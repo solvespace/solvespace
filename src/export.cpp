@@ -759,8 +759,8 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
 void VectorFileWriter::BezierAsPwl(SBezier *sb) {
     List<Vector> lv = {};
     sb->MakePwlInto(&lv, SS.ExportChordTolMm());
-    int i;
-    for(i = 1; i < lv.n; i++) {
+
+    for(int i = 1; i < lv.n; i++) {
         SBezier sb = SBezier::From(lv[i-1], lv[i]);
         Bezier(&sb);
     }

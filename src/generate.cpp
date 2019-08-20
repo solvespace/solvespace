@@ -148,6 +148,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
             // Start from the first dirty group, and solve until the active group,
             // since all groups after the active group are hidden.
+            // Not using range-for because we're tracking the indices.
             for(i = 0; i < SK.groupOrder.n; i++) {
                 Group *g = SK.GetGroup(SK.groupOrder[i]);
                 if((!g->clean) || !g->IsSolvedOkay()) {
@@ -213,6 +214,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     SK.entity.Clear();
     SK.entity.ReserveMore(oldEntityCount);
 
+    // Not using range-for because we're using the index inside the loop.
     for(i = 0; i < SK.groupOrder.n; i++) {
         Group *g = SK.GetGroup(SK.groupOrder[i]);
 

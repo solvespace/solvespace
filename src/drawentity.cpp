@@ -20,13 +20,12 @@ std::string Entity::DescriptionString() const {
 void Entity::GenerateEdges(SEdgeList *el) {
     SBezierList *sbl = GetOrGenerateBezierCurves();
 
-    int i, j;
-    for(i = 0; i < sbl->l.n; i++) {
+    for(int i = 0; i < sbl->l.n; i++) {
         SBezier *sb = &(sbl->l[i]);
 
         List<Vector> lv = {};
         sb->MakePwlInto(&lv);
-        for(j = 1; j < lv.n; j++) {
+        for(int j = 1; j < lv.n; j++) {
             el->AddEdge(lv[j-1], lv[j], style.v, i);
         }
         lv.Clear();

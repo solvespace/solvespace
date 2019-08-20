@@ -335,10 +335,9 @@ bool SEdgeList::ContainsEdge(const SEdge *set) const {
 //-----------------------------------------------------------------------------
 void SEdgeList::CullExtraneousEdges(bool both) {
     l.ClearTags();
-    int i, j;
-    for(i = 0; i < l.n; i++) {
+    for(int i = 0; i < l.n; i++) {
         SEdge *se = &(l[i]);
-        for(j = i+1; j < l.n; j++) {
+        for(int j = i + 1; j < l.n; j++) {
             SEdge *set = &(l[j]);
             if((set->a).Equals(se->a) && (set->b).Equals(se->b)) {
                 // Two parallel edges exist; so keep only the first one.

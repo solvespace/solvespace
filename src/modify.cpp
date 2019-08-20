@@ -96,8 +96,7 @@ void GraphicsWindow::FixConstraintsForPointBeingDeleted(hEntity hpt) {
     // those two points were implicitly coincident with each other. By
     // deleting hpt (and all constraints that mention it), we will delete
     // that relationship. So put it back here now.
-    int i;
-    for(i = 1; i < ld.n; i++) {
+    for(int i = 1; i < ld.n; i++) {
         Constraint::ConstrainCoincident(ld[i-1], ld[i]);
     }
     ld.Clear();

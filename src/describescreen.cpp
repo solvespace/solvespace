@@ -175,8 +175,8 @@ void TextWindow::DescribeSelection() {
                         e->str.c_str(), &ScreenEditTtfText, e->h.request().v);
                     Printf(true, "  select new font");
                     SS.fonts.LoadAll();
-                    int i;
-                    for(i = 0; i < SS.fonts.l.n; i++) {
+                    // Not using range-for here because we use i inside the output.
+                    for(int i = 0; i < SS.fonts.l.n; i++) {
                         TtfFont *tf = &(SS.fonts.l[i]);
                         if(e->font == tf->FontFileBaseName()) {
                             Printf(false, "%Bp    %s",

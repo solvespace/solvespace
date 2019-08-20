@@ -849,6 +849,7 @@ void GraphicsWindow::EnsureValidActives() {
     // The active group must exist, and not be the references.
     Group *g = SK.group.FindByIdNoOops(activeGroup);
     if((!g) || (g->h == Group::HGROUP_REFERENCES)) {
+        // Not using range-for because this is used to find an index.
         int i;
         for(i = 0; i < SK.groupOrder.n; i++) {
             if(SK.groupOrder[i] != Group::HGROUP_REFERENCES) {
