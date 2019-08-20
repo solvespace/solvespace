@@ -540,7 +540,7 @@ void BitmapFont::AddGlyph(char32_t codepoint, std::shared_ptr<const Pixmap> pixm
     BitmapFont::Glyph glyph = {};
     glyph.advanceCells = (uint8_t)(pixmap->width / 8);
     glyph.position     = nextPosition++;
-    glyphs.emplace(codepoint, std::move(glyph));
+    glyphs.emplace(codepoint, glyph);
 
     for(size_t y = 0; y < pixmap->height; y++) {
         uint8_t *row = BitmapFontTextureRow(texture, glyph.position, y);
@@ -623,7 +623,8 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
             }
         }
 
-        it = glyphs.emplace(codepoint, std::move(glyph)).first;
+        it = glyphs.emplace(codepoint, glyph).first;
+
         textureUpdated = true;
         return (*it).second;
     }
