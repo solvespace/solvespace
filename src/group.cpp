@@ -297,10 +297,10 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             // Assign the default name of the group based on the name of
             // the linked file.
             g.name = g.linkFile.FileStem();
-            for(size_t i = 0; i < g.name.length(); i++) {
-                if(!(isalnum(g.name[i]) || (unsigned)g.name[i] >= 0x80)) {
+            for(auto &c : g.name) {
+                if(!(isalnum(c) || (unsigned)c >= 0x80)) {
                     // convert punctuation to dashes
-                    g.name[i] = '-';
+                    c = '-';
                 }
             }
             break;

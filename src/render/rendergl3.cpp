@@ -1072,13 +1072,13 @@ public:
     void Draw() override {
         renderer->current = {};
 
-        for(std::shared_ptr<DrawCall> dc : drawCalls) {
+        for(const std::shared_ptr<DrawCall> &dc : drawCalls) {
             dc->Draw(renderer);
         }
     }
 
     void Clear() override {
-        for(std::shared_ptr<DrawCall> dc : drawCalls) {
+        for(const std::shared_ptr<DrawCall> &dc : drawCalls) {
             dc->Remove(renderer);
         }
         drawCalls.clear();

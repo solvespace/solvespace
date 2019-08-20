@@ -349,8 +349,8 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
     }
     inters.RemoveTagged();
 
-    for(i = 0; i < inters.n; i++) {
-        Point2d puv = inters[i].p;
+    for(auto &inter : inters) {
+        Point2d puv = inter.p;
 
         // Make sure the point lies within the finite line segment
         Vector pxyz = PointAt(puv.x, puv.y);

@@ -272,17 +272,18 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) co
     for(;;) {
         Vector first = Vector::From(0, 0, 0);
         Vector last  = Vector::From(0, 0, 0);
-        int i;
-        for(i = 0; i < l.n; i++) {
-            if(!l[i].tag) {
-                first = l[i].a;
-                last = l[i].b;
+        bool foundUntagged = false;
+        for(const auto &se : l) {
+            if(!se.tag) {
+                first = se.a;
+                last  = se.b;
                 /// @todo fix const!
-                const_cast<SEdge*>(&(l[i]))->tag = 1;
+                const_cast<SEdge *>(&(se))->tag = 1;
+                foundUntagged                   = true;
                 break;
             }
         }
-        if(i >= l.n) {
+        if(foundUntagged) {
             return allClosed;
         }
 
@@ -661,9 +662,8 @@ void SContour::Reverse() {
 
 
 void SPolygon::Clear() {
-    int i;
-    for(i = 0; i < l.n; i++) {
-        (l[i]).l.Clear();
+    for(auto &sc : l) {
+        sc.l.Clear();
     }
     l.Clear();
 }
@@ -674,9 +674,8 @@ void SPolygon::AddEmptyContour() {
 }
 
 void SPolygon::MakeEdgesInto(SEdgeList *el) const {
-    int i;
-    for(i = 0; i < l.n; i++) {
-        (l[i]).MakeEdgesInto(el);
+    for(auto &sc : l) {
+        sc.MakeEdgesInto(el);
     }
 }
 
@@ -690,8 +689,8 @@ double SPolygon::SignedArea() const {
     double area = 0;
     // This returns the true area only if the contours are all oriented
     // correctly, with the holes backwards from the outer contours.
-    for(const SContour *sc = l.First(); sc; sc = l.NextAfter(sc)) {
-        area += sc->SignedAreaProjdToNormal(normal);
+    for(const SContour &sc : l) {
+        area += sc.SignedAreaProjdToNormal(normal);
     }
     return area;
 }
@@ -712,30 +711,31 @@ void SPolygon::FixContourDirections() {
     l.ClearTags();
 
     // Outside curve looks counterclockwise, projected against our normal.
-    int i, j;
-    for(i = 0; i < l.n; i++) {
-        SContour *sc = &(l[i]);
-        if(sc->l.n < 2) continue;
+    for(auto &sc : l) {
+        if(sc.l.n < 2)
+            continue;
         // The contours may not intersect, but they may share vertices; so
         // testing a vertex for point-in-polygon may fail, but the midpoint
         // of an edge is okay.
-        Vector pt = (((sc->l[0]).p).Plus(sc->l[1].p)).ScaledBy(0.5);
+        Vector pt = (((sc.l[0]).p).Plus(sc.l[1].p)).ScaledBy(0.5);
 
-        sc->timesEnclosed = 0;
+        sc.timesEnclosed = 0;
         bool outer = true;
-        for(j = 0; j < l.n; j++) {
-            if(i == j) continue;
-            SContour *sct = &(l[j]);
-            if(sct->ContainsPointProjdToNormal(normal, pt)) {
+        for(const auto &sct : l) {
+            if(&sct == &sc) {
+                continue;
+            }
+
+            if(sct.ContainsPointProjdToNormal(normal, pt)) {
                 outer = !outer;
-                (sc->timesEnclosed)++;
+                (sc.timesEnclosed)++;
             }
         }
 
-        bool clockwise = sc->IsClockwiseProjdToNormal(normal);
+        bool clockwise = sc.IsClockwiseProjdToNormal(normal);
         if((clockwise && outer) || (!clockwise && !outer)) {
-            sc->Reverse();
-            sc->tag = 1;
+            sc.Reverse();
+            sc.tag = 1;
         }
     }
 }

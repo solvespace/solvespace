@@ -408,13 +408,13 @@ void GraphicsWindow::MakeTangentArc() {
     if (SS.tangentArcModify) {
         // Delete the coincident constraint for the removed point.
         SK.constraint.ClearTags();
-        for(i = 0; i < SK.constraint.n; i++) {
-            Constraint *cs = &(SK.constraint[i]);
+        for(auto &constraint : SK.constraint) {
+            Constraint *cs = &constraint;
             if(cs->group != activeGroup) continue;
             if(cs->workplane != ActiveWorkplane()) continue;
             if(cs->type != Constraint::Type::POINTS_COINCIDENT) continue;
             if (SK.GetEntity(cs->ptA)->PointGetNum().Equals(pshared)) {
-            cs->tag = 1;
+                cs->tag = 1;
             }
         }
         SK.constraint.RemoveTagged();

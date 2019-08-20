@@ -885,10 +885,9 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
 
                 FILE *f = OpenFile(dialog->GetFilename(), "wb");
                 if(f) {
-                    int i;
                     SContour *sc = &(SS.traced.path);
-                    for(i = 0; i < sc->l.n; i++) {
-                        Vector p = sc->l[i].p;
+                    for(const auto &point : sc->l) {
+                        Vector p = point.p;
                         double s = SS.exportScale;
                         fprintf(f, "%.10f, %.10f, %.10f\r\n",
                             p.x/s, p.y/s, p.z/s);
