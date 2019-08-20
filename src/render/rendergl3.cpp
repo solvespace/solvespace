@@ -1021,7 +1021,7 @@ public:
     void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack = {}) override {
         drawCalls.emplace(MeshDrawCall::Create(renderer, m, fills.FindById(hcfFront),
                                                fills.FindByIdNoOops(hcfBack),
-                                               /*lighting=*/true));
+                                               /*isShaded=*/true));
     }
 
     void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override {
