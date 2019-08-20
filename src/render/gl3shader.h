@@ -74,7 +74,7 @@ public:
               const std::vector<std::pair<GLuint, std::string>> &locations = {});
     void Clear();
 
-    void SetUniformMatrix(const char *name, double *md);
+    void SetUniformMatrix(const char *name, const double *md);
     void SetUniformVector(const char *name, const Vector &v);
     void SetUniformVector(const char *name, const Vector4f &v);
     void SetUniformColor(const char *name, RgbaColor c);
@@ -163,8 +163,8 @@ public:
     void Draw(const Handle &handle);
     void Draw(const SEdgeList &edges);
 
-    void SetModelview(double *matrix);
-    void SetProjection(double *matrix);
+    void SetModelview(const double *matrix);
+    void SetProjection(const double *matrix);
     void SetStroke(const Canvas::Stroke &stroke, double pixel);
 };
 
@@ -203,8 +203,8 @@ public:
     void Draw(const Handle &handle, Canvas::DrawOutlinesAs mode);
     void Draw(const SOutlineList &outlines, Canvas::DrawOutlinesAs mode);
 
-    void SetModelview(double *matrix);
-    void SetProjection(double *matrix);
+    void SetModelview(const double *matrix);
+    void SetProjection(const double *matrix);
     void SetStroke(const Canvas::Stroke &stroke, double pixel);
 };
 
@@ -252,8 +252,8 @@ public:
     void Draw(const Handle &handle);
     void Draw(const SIndexedMesh &mesh);
 
-    void SetModelview(double *matrix);
-    void SetProjection(double *matrix);
+    void SetModelview(const double *matrix);
+    void SetProjection(const double *matrix);
 
     bool NeedsTexture() const;
 

@@ -102,7 +102,7 @@ std::string AcceleratorDescription(const KeyboardEvent &accel);
 #if defined(__GNUC__)
 __attribute__((noreturn))
 #endif
-void FatalError(std::string message);
+void FatalError(const std::string &message);
 
 // A native settings store.
 class Settings {

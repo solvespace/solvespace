@@ -50,7 +50,7 @@ static std::string PrepareMnemonics(std::string label) {
     return label;
 }
 
-static std::string PrepareTitle(std::string title) {
+static std::string PrepareTitle(const std::string &title) {
     return title + " — SolveSpace";
 }
 
@@ -58,7 +58,7 @@ static std::string PrepareTitle(std::string title) {
 // Fatal errors
 //-----------------------------------------------------------------------------
 
-void FatalError(std::string message) {
+void FatalError(const std::string &message) {
     fprintf(stderr, "%s", message.c_str());
     abort();
 }

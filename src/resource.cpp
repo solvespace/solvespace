@@ -918,7 +918,7 @@ Vector VectorFont::GetExtents(double forCapHeight, const std::string &str) {
 }
 
 void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const std::string &str,
-                       std::function<void(Vector, Vector)> traceEdge) {
+                       const std::function<void(Vector, Vector)> &traceEdge) {
     ssassert(!IsEmpty(), "Expected a loaded font");
 
     double scale = (forCapHeight / capHeight);
@@ -945,7 +945,7 @@ void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const 
 }
 
 void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const std::string &str,
-                       std::function<void(Vector, Vector)> traceEdge, const Camera &camera) {
+                       const std::function<void(Vector, Vector)> &traceEdge, const Camera &camera) {
     ssassert(!IsEmpty(), "Expected a loaded font");
 
     // Perform grid-fitting only when the text is parallel to the view plane.

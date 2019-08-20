@@ -84,7 +84,7 @@ crash_info_t crashAnnotation __attribute__((section("__DATA,__crash_info"))) = {
     CRASH_VERSION, NULL, NULL, NULL, NULL, NULL, NULL
 };
 
-void FatalError(std::string message) {
+void FatalError(const std::string &message) {
     crashAnnotation.message = message.c_str();
     abort();
 }

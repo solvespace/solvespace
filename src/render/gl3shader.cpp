@@ -162,7 +162,7 @@ void Shader::Clear() {
     glDeleteProgram(program);
 }
 
-void Shader::SetUniformMatrix(const char *name, double *md) {
+void Shader::SetUniformMatrix(const char *name, const double *md) {
     Enable();
     float mf[16];
     for(int i = 0; i < 16; i++) mf[i] = (float)md[i];
@@ -621,11 +621,11 @@ void EdgeRenderer::Draw(const SEdgeList &edges) {
     Remove(handle);
 }
 
-void EdgeRenderer::SetModelview(double *matrix) {
+void EdgeRenderer::SetModelview(const double *matrix) {
     shader.SetUniformMatrix("modelview", matrix);
 }
 
-void EdgeRenderer::SetProjection(double *matrix) {
+void EdgeRenderer::SetProjection(const double *matrix) {
     shader.SetUniformMatrix("projection", matrix);
 }
 
@@ -833,11 +833,11 @@ void OutlineRenderer::Draw(const SOutlineList &outlines, Canvas::DrawOutlinesAs 
     Remove(handle);
 }
 
-void OutlineRenderer::SetModelview(double *matrix) {
+void OutlineRenderer::SetModelview(const double *matrix) {
     shader.SetUniformMatrix("modelview", matrix);
 }
 
-void OutlineRenderer::SetProjection(double *matrix) {
+void OutlineRenderer::SetProjection(const double *matrix) {
     shader.SetUniformMatrix("projection", matrix);
 }
 
@@ -1037,14 +1037,14 @@ bool IndexedMeshRenderer::NeedsTexture() const {
         selectedShader == &pointShader;
 }
 
-void IndexedMeshRenderer::SetModelview(double *matrix) {
+void IndexedMeshRenderer::SetModelview(const double *matrix) {
     colShader.SetUniformMatrix("modelview", matrix);
     texShader.SetUniformMatrix("modelview", matrix);
     texaShader.SetUniformMatrix("modelview", matrix);
     pointShader.SetUniformMatrix("modelview", matrix);
 }
 
-void IndexedMeshRenderer::SetProjection(double *matrix) {
+void IndexedMeshRenderer::SetProjection(const double *matrix) {
     colShader.SetUniformMatrix("projection", matrix);
     texShader.SetUniformMatrix("projection", matrix);
     texaShader.SetUniformMatrix("projection", matrix);
