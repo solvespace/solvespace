@@ -142,6 +142,7 @@ public:
     BitmapFont bitmapFont = {};
 
     virtual void Clear();
+    virtual ~Canvas() = default;
 
     hStroke GetStroke(const Stroke &stroke);
     hFill GetFill(const Fill &fill);
