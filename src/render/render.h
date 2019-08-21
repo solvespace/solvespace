@@ -284,7 +284,7 @@ public:
     const Camera &GetCamera() const override { return camera; }
 
     // ViewportCanvas interface.
-    void SetCamera(const Camera &camera) override { this->camera = camera; };
+    void SetCamera(const Camera &camera) override { this->camera = camera; }
     void SetLighting(const Lighting &lighting) override { this->lighting = lighting; }
 
     void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override;
