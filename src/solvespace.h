@@ -214,7 +214,7 @@ class ReadUTF8 {
 public:
     ReadUTF8(const std::string &str) : str(str) {}
     utf8_iterator begin() const { return utf8_iterator(&str[0]); }
-    utf8_iterator end()   const { return utf8_iterator(&str[str.length()]); }
+    utf8_iterator end()   const { return utf8_iterator(&str[0] + str.length()); }
 };
 
 
