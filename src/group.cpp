@@ -163,6 +163,10 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             break;
 
         case Command::GROUP_LATHE:
+            if(!SS.GW.LockedInWorkplane()) {
+                Error(_("Lathe operation can only be applied to planar sketches."));
+                return;
+            }
             if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
                 g.predef.origin = gs.point[0];
                 g.predef.entityB = gs.vector[0];
@@ -185,6 +189,10 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             break;
 
         case Command::GROUP_REVOLVE:
+            if(!SS.GW.LockedInWorkplane()) {
+                Error(_("Revolve operation can only be applied to planar sketches."));
+                return;
+            }
             if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
                 g.predef.origin  = gs.point[0];
                 g.predef.entityB = gs.vector[0];
@@ -209,6 +217,10 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             break;
 
         case Command::GROUP_HELIX:
+            if(!SS.GW.LockedInWorkplane()) {
+                Error(_("Helix operation can only be applied to planar sketches."));
+                return;
+            }
             if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
                 g.predef.origin  = gs.point[0];
                 g.predef.entityB = gs.vector[0];
