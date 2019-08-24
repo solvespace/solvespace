@@ -637,10 +637,6 @@ bool SShell::CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector
     return (vp.Dot(sbls->normal) > 0);
 }
 
-typedef struct {
-    hSSurface d[100];
-} Revolved;
-
 // sketch must not contain the axis of revolution as a non-construction line for helix
 void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                                          RgbaColor color, Group *group, double angles,
@@ -651,9 +647,6 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     // distance will need to be parameters in the future.
     double dist  = distf - dists;
     int sections = fabs(anglef - angles) / (PI / 2) + 1;
-    if(sections > 99) {
-        sections = 99;
-    }
     double wedge = (anglef - angles) / sections;
 
     if(CheckNormalAxisRelationship(sbls, pt, axis, anglef-angles, distf-dists)) {
@@ -694,18 +687,18 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
         int i, j;
         SBezier *sb;
-        List<Revolved> hsl = {};
+        List<std::vector<hSSurface>> hsl = {};
 
         // This is where all the NURBS are created and Remapped to the generating curve
         for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
-            Revolved revs;
+            std::vector<hSSurface> revs(sections);
             for(j = 0; j < sections; j++) {
                 if((dist == 0) && sb->deg == 1 &&
                    (sb->ctrl[0]).DistanceToLine(pt, axis) < LENGTH_EPS &&
                    (sb->ctrl[1]).DistanceToLine(pt, axis) < LENGTH_EPS) {
                     // This is a line on the axis of revolution; it does
                     // not contribute a surface.
-                    revs.d[j].v = 0;
+                    revs[j].v = 0;
                 } else {
                     SSurface ss = SSurface::FromRevolutionOf(
                         sb, pt, axis, angles + (wedge)*j, angles + (wedge) * (j + 1),
@@ -719,14 +712,14 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                             ss.face = hface.v;
                         }
                     }
-                    revs.d[j] = surface.AddAndAssignId(&ss);
+                    revs[j] = surface.AddAndAssignId(&ss);
                 }
             }
             hsl.Add(&revs);
         }
         // Still the same loop. Need to create trim curves
         for(i = 0; i < sbl->l.n; i++) {
-            Revolved revs = hsl[i], revsp = hsl[WRAP(i - 1, sbl->l.n)];
+            std::vector<hSSurface> revs = hsl[i], revsp = hsl[WRAP(i - 1, sbl->l.n)];
 
             sb = &(sbl->l[i]);
 
@@ -740,7 +733,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
 
                 // If this input curve generated a surface, then trim that
                 // surface with the rotated version of the input curve.
-                if(revs.d[0].v) { // not d[j] because crash on j==sections
+                if(revs[0].v) { // not d[j] because crash on j==sections
                     sc         = {};
                     sc.isExact = true;
                     sc.exact   = sb->TransformedBy(ts, qs, 1.0);
@@ -748,13 +741,13 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
 
                     // the surfaces already exist so trim with this curve
                     if(j < sections) {
-                        sc.surfA = revs.d[j];
+                        sc.surfA = revs[j];
                     } else {
                         sc.surfA = hs1; // end cap
                     }
 
                     if(j > 0) {
-                        sc.surfB = revs.d[j - 1];
+                        sc.surfB = revs[j - 1];
                     } else {
                         sc.surfB = hs0; // staring cap
                     }
@@ -784,16 +777,16 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                 // And if this input curve and the one after it both generated
                 // surfaces, then trim both of those by the appropriate
                 // curve based on the control points.
-                if((j < sections) && revs.d[j].v && revsp.d[j].v) {
-                    SSurface *ss = surface.FindById(revs.d[j]);
+                if((j < sections) && revs[j].v && revsp[j].v) {
+                    SSurface *ss = surface.FindById(revs[j]);
 
                     sc         = {};
                     sc.isExact = true;
                     sc.exact   = SBezier::From(ss->ctrl[0][0], ss->ctrl[0][1], ss->ctrl[0][2]);
                     sc.exact.weight[1] = ss->weight[0][1];
                     (sc.exact).MakePwlInto(&(sc.pts));
-                    sc.surfA = revs.d[j];
-                    sc.surfB = revsp.d[j];
+                    sc.surfA = revs[j];
+                    sc.surfB = revsp[j];
 
                     hSCurve hcc = curve.AddAndAssignId(&sc);
 
