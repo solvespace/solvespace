@@ -827,10 +827,10 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
     for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
         int i, j;
         SBezier *sb;
-        List<Revolved> hsl = {};
+        List<std::vector<hSSurface>> hsl = {};
 
         for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
-            Revolved revs;
+            std::vector<hSSurface> revs(4);
             for(j = 0; j < 4; j++) {
                 if(sb->deg == 1 &&
                     (sb->ctrl[0]).DistanceToLine(pt, axis) < LENGTH_EPS &&
@@ -838,7 +838,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                 {
                     // This is a line on the axis of revolution; it does
                     // not contribute a surface.
-                    revs.d[j].v = 0;
+                    revs[j].v = 0;
                 } else {
                     SSurface ss = SSurface::FromRevolutionOf(sb, pt, axis, (PI / 2) * j,
                                                              (PI / 2) * (j + 1), 0.0, 0.0);
@@ -851,14 +851,14 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                             ss.face = hface.v;
                         }
                     }
-                    revs.d[j] = surface.AddAndAssignId(&ss);
+                    revs[j] = surface.AddAndAssignId(&ss);
                 }
             }
             hsl.Add(&revs);
         }
 
         for(i = 0; i < sbl->l.n; i++) {
-            Revolved revs  = hsl[i],
+            std::vector<hSSurface> revs  = hsl[i],
                      revsp = hsl[WRAP(i-1, sbl->l.n)];
 
             sb   = &(sbl->l[i]);
@@ -871,13 +871,13 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
 
                 // If this input curve generate a surface, then trim that
                 // surface with the rotated version of the input curve.
-                if(revs.d[j].v) {
+                if(revs[j].v) {
                     sc = {};
                     sc.isExact = true;
                     sc.exact = sb->TransformedBy(ts, qs, 1.0);
                     (sc.exact).MakePwlInto(&(sc.pts));
-                    sc.surfA = revs.d[j];
-                    sc.surfB = revs.d[WRAP(j-1, 4)];
+                    sc.surfA = revs[j];
+                    sc.surfB = revs[WRAP(j-1, 4)];
 
                     hSCurve hcb = curve.AddAndAssignId(&sc);
 
@@ -891,8 +891,8 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                 // And if this input curve and the one after it both generated
                 // surfaces, then trim both of those by the appropriate
                 // circle.
-                if(revs.d[j].v && revsp.d[j].v) {
-                    SSurface *ss = surface.FindById(revs.d[j]);
+                if(revs[j].v && revsp[j].v) {
+                    SSurface *ss = surface.FindById(revs[j]);
 
                     sc = {};
                     sc.isExact = true;
@@ -901,8 +901,8 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                                              ss->ctrl[0][2]);
                     sc.exact.weight[1] = ss->weight[0][1];
                     (sc.exact).MakePwlInto(&(sc.pts));
-                    sc.surfA = revs.d[j];
-                    sc.surfB = revsp.d[j];
+                    sc.surfA = revs[j];
+                    sc.surfB = revsp[j];
 
                     hSCurve hcc = curve.AddAndAssignId(&sc);
 
