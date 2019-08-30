@@ -21,7 +21,6 @@ Build and install the module:
 
 ```bash
 python setup.py install
-python setup.py install --user  # User mode
 ```
 
 Run unit test:
