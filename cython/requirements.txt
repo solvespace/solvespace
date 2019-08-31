@@ -1,1 +1,3 @@
-cython<=0.29.8
+setuptools
+wheel
+cython

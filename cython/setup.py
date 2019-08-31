@@ -8,6 +8,11 @@ __license__ = "GPLv3+"
 __email__ = "pyslvs@gmail.com"
 
 import os
+from os.path import (
+    abspath,
+    dirname,
+    join as pth_join,
+)
 import re
 import codecs
 from textwrap import dedent
@@ -16,7 +21,7 @@ from setuptools.command.build_ext import build_ext
 from platform import system
 from distutils import sysconfig
 
-here = os.path.abspath(os.path.dirname(__file__))
+here = abspath(dirname(__file__))
 include_path = '../include/'
 src_path = '../src/'
 platform_path = src_path + 'platform/'
@@ -25,12 +30,12 @@ lib = sysconfig.get_config_var('BINDIR')
 
 
 def write(doc, *parts):
-    with codecs.open(os.path.join(here, *parts), 'w') as f:
+    with codecs.open(pth_join(here, *parts), 'w') as f:
         f.write(doc)
 
 
 def read(*parts):
-    with codecs.open(os.path.join(here, *parts), 'r') as f:
+    with codecs.open(pth_join(here, *parts), 'r') as f:
         return f.read()
 
 
@@ -123,11 +128,7 @@ setup(
     )],
     cmdclass={'build_ext': Build},
     python_requires=">=3.6",
-    setup_requires=[
-        'setuptools',
-        'wheel',
-        'cython',
-    ],
+    setup_requires=read('requirements.txt').splitlines(),
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Cython",
