@@ -152,7 +152,7 @@ class Entity:
 
 class SolverSystem:
 
-    def __init__(self):
+    def __init__(self) -> None:
         ...
 
     def clear(self) -> None:
@@ -164,7 +164,7 @@ class SolverSystem:
     def group(self) -> int:
         ...
 
-    def set_params(self, p: Params, params: Sequence[float]):
+    def set_params(self, p: Params, params: Sequence[float]) -> None:
         ...
 
     def params(self, p: Params) -> Tuple[float, ...]:
