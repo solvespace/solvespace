@@ -129,6 +129,7 @@ setup(
     cmdclass={'build_ext': Build},
     python_requires=">=3.6",
     setup_requires=read('requirements.txt').splitlines(),
+    test_suite="tests",
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Cython",
