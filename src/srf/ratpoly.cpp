@@ -511,6 +511,11 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool mustConve
         double du = dp.Dot(tu), dv = dp.Dot(tv);
         *u += du / (tu.MagSquared());
         *v += dv / (tv.MagSquared());
+
+        if (*u < 0.0) *u = 0.0;
+        else if (*u > 1.0) *u = 1.0;
+        if (*v < 0.0) *v = 0.0;
+        else if (*v > 1.0) *v = 1.0;
     }
 
     if(mustConverge) {
