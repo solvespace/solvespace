@@ -567,6 +567,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
             int ai = 1;
 
+            // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->Get(i));
                 if(e->group != opA)
@@ -579,6 +580,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                            NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
 
                 for(a = 0; a < 2; a++) {
+                    //! @todo is this check redundant?
                     Entity *e = &(entity->Get(i));
                     if(e->group != opA)
                         continue;
@@ -617,6 +619,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
             int ai = 1;
 
+            // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->Get(i));
                 if(e->group.v != opA.v)
@@ -640,6 +643,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 if(e->IsPoint()) {
                     Vector check = e->PointGetNum().Minus(axis_pos).Cross(axis_dir);
                     if (check.Dot(check) < LENGTH_EPS) {
+                        //! @todo isn't this the same as &(ent[i])?
                         Entity *ep = SK.GetEntity(e->h);
                         Entity en = {};
                         // A point gets extruded to form a line segment
