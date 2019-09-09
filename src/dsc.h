@@ -474,9 +474,9 @@ public:
     T const &operator[](size_t i) const { return Get(i); }
 
     T *begin() { return IsEmpty() ? nullptr : &elem[0]; }
-    T *end() { return IsEmpty() ? nullptr : &elem[n]; }
+    T *end() { return IsEmpty() ? nullptr : &elem[0] + n; }
     const T *begin() const { return IsEmpty() ? nullptr : &elem[0]; }
-    const T *end() const { return IsEmpty() ? nullptr : &elem[n]; }
+    const T *end() const { return IsEmpty() ? nullptr : &elem[0] + n; }
     const T *cbegin() const { return begin(); }
     const T *cend() const { return end(); }
 
