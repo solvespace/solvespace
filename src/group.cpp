@@ -566,27 +566,26 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(6), axis_dir.z);
 
             int ai = 1;
+            EntityList& ent = *entity;
 
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
-                Entity *e = &(entity->Get(i));
-                if(e->group != opA)
+                if(ent[i].group != opA)
                     continue;
 
-                e->CalculateNumerical(/*forExport=*/false);
-                hEntity he = e->h;
+                ent[i].CalculateNumerical(/*forExport=*/false);
+                hEntity he = ent[i].h;
 
                 CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai, NO_PARAM, NO_PARAM,
                            NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
 
                 for(a = 0; a < 2; a++) {
                     //! @todo is this check redundant?
-                    Entity *e = &(entity->Get(i));
-                    if(e->group != opA)
+                    if(ent[i].group != opA)
                         continue;
 
-                    e->CalculateNumerical(false);
-                    CopyEntity(entity, e, a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : 1),
+                    ent[i].CalculateNumerical(false);
+                    CopyEntity(entity, &(ent[i]), a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : 1),
                            (a == 1) ? REMAP_LATHE_END : REMAP_LATHE_START, h.param(0),
                            h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
                            h.param(6), NO_PARAM, CopyAs::N_ROT_AA);
@@ -618,33 +617,32 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(7), 20);
 
             int ai = 1;
+            EntityList& ent = *entity;
 
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
-                Entity *e = &(entity->Get(i));
-                if(e->group.v != opA.v)
+                if(ent[i].group.v != opA.v)
                     continue;
 
-                e->CalculateNumerical(/*forExport=*/false);
+                ent[i].CalculateNumerical(/*forExport=*/false);
 
                 CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai, NO_PARAM, NO_PARAM,
                            NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
 
                 for(a = 0; a < 2; a++) {
                     Entity *e = &(entity->Get(i));
-                    e->CalculateNumerical(false);
-                    CopyEntity(entity, e, a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : 1),
+                    ent[i].CalculateNumerical(false);
+                    CopyEntity(entity, &(ent[i]), a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : 1),
                                (a == 1) ? REMAP_LATHE_END : REMAP_LATHE_START, h.param(0),
                                h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
                                h.param(6), h.param(7), CopyAs::N_ROT_AXIS_TRANS);
                 }
                 // For point entities on the axis, create a construction line
-                e = &(entity->Get(i));
-                if(e->IsPoint()) {
-                    Vector check = e->PointGetNum().Minus(axis_pos).Cross(axis_dir);
+                if(ent[i].IsPoint()) {
+                    Vector check = ent[i].PointGetNum().Minus(axis_pos).Cross(axis_dir);
                     if (check.Dot(check) < LENGTH_EPS) {
                         //! @todo isn't this the same as &(ent[i])?
-                        Entity *ep = SK.GetEntity(e->h);
+                        Entity *ep = SK.GetEntity(ent[i].h);
                         Entity en = {};
                         // A point gets extruded to form a line segment
                         en.point[0] = Remap(ep->h, REMAP_LATHE_START);
