@@ -567,8 +567,9 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
             int ai = 1;
 
+            // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
-                Entity *e = &((*entity)[i]);
+                Entity *e = &(entity->Get(i));
                 if(e->group != opA)
                     continue;
 
@@ -579,6 +580,8 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                            NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
 
                 for(a = 0; a < 2; a++) {
+                    //! @todo is this check redundant?
+                    Entity *e = &(entity->Get(i));
                     if(e->group != opA)
                         continue;
 
@@ -616,6 +619,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
             int ai = 1;
 
+            // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->Get(i));
                 if(e->group.v != opA.v)
@@ -627,16 +631,19 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                            NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
 
                 for(a = 0; a < 2; a++) {
+                    Entity *e = &(entity->Get(i));
                     e->CalculateNumerical(false);
-		    CopyEntity(entity, e, a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : 1),
-                           (a == 1) ? REMAP_LATHE_END : REMAP_LATHE_START, h.param(0),
-                           h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
-                           h.param(6), h.param(7), CopyAs::N_ROT_AXIS_TRANS);
+                    CopyEntity(entity, e, a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : 1),
+                               (a == 1) ? REMAP_LATHE_END : REMAP_LATHE_START, h.param(0),
+                               h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
+                               h.param(6), h.param(7), CopyAs::N_ROT_AXIS_TRANS);
                 }
                 // For point entities on the axis, create a construction line
+                e = &(entity->Get(i));
                 if(e->IsPoint()) {
                     Vector check = e->PointGetNum().Minus(axis_pos).Cross(axis_dir);
                     if (check.Dot(check) < LENGTH_EPS) {
+                        //! @todo isn't this the same as &(ent[i])?
                         Entity *ep = SK.GetEntity(e->h);
                         Entity en = {};
                         // A point gets extruded to form a line segment
@@ -649,7 +656,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         en.type = Entity::Type::LINE_SEGMENT;
                         entity->Add(&en);
                     }
-		}
+                }
                 ai++;
             }
             return;
