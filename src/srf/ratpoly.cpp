@@ -504,13 +504,10 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool mustConve
         Vector tu, tv, tx, ty;
         TangentsAt(*u, *v, &tu, &tv);
         Vector n = tu.Cross(tv);
-        double tu2 = tu.MagSquared(),
-               tv2 = tv.MagSquared(),
-               s = sqrt(n.MagSquared() / (tu2 * tv2));
         // since tu and tv may not be orthogonal, use y in place of v.
         // |y| = |v|sin(theta) where theta is the angle between tu and tv.
-        ty = n.Cross(tu).ScaledBy(1.0/tu2);
-        tx = tv.Cross(n).ScaledBy(1.0/tv2);
+        ty = n.Cross(tu).ScaledBy(1.0/tu.MagSquared());
+        tx = tv.Cross(n).ScaledBy(1.0/tv.MagSquared());
 
         // Project the point into a plane through p0, with basis tu, tv; a
         // second-order thing would converge faster but needs second
@@ -518,8 +515,8 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool mustConve
         Vector dp = p.Minus(p0);
         double du = dp.Dot(tx),
                dv = dp.Dot(ty);
-        *u += du / (tu2*s);
-        *v += dv / (tv2*s);
+        *u += du / (tx.MagSquared());
+        *v += dv / (ty.MagSquared());
 
         if (*u < 0.0) *u = 0.0;
         else if (*u > 1.0) *u = 1.0;
@@ -555,13 +552,17 @@ bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
         // Check for convergence
         if(pi.Equals(p, RATPOLY_EPS)) return true;
 
+        n = tu.Cross(tv);
+        Vector ty = n.Cross(tu).ScaledBy(1.0/tu.MagSquared());
+        Vector tx = tv.Cross(n).ScaledBy(1.0/tv.MagSquared());
+
         // Adjust our guess and iterate
         Vector dp = pi.Minus(p);
-        double du = dp.Dot(tu), dv = dp.Dot(tv);
-        *u += du / (tu.MagSquared());
-        *v += dv / (tv.MagSquared());
+        double du = dp.Dot(tx), dv = dp.Dot(ty);
+        *u += du / tx.MagSquared();
+        *v += dv / ty.MagSquared();
     }
-//    dbp("didn't converge (surface intersecting line)");
+    dbp("didn't converge (surface intersecting line)");
     return false;
 }
 
@@ -652,10 +653,15 @@ void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2, double *up, double *v
         if(parallel) break;
 
         for(j = 0; j < 3; j++) {
+            Vector n = tu[j].Cross(tv[j]);
+            Vector ty = n.Cross(tu[j]).ScaledBy(1.0/tu[j].MagSquared());
+            Vector tx = tv[j].Cross(n).ScaledBy(1.0/tv[j].MagSquared());
+
             Vector dp = pi.Minus(p[j]);
-            double du = dp.Dot(tu[j]), dv = dp.Dot(tv[j]);
-            u[j] += du / (tu[j]).MagSquared();
-            v[j] += dv / (tv[j]).MagSquared();
+            double du = dp.Dot(tx), dv = dp.Dot(ty);
+
+            u[j] += du / tx.MagSquared();
+            v[j] += dv / ty.MagSquared();
         }
     }
     dbp("didn't converge (three surfaces intersecting)");
