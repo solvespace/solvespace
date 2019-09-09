@@ -503,10 +503,14 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool mustConve
 
         Vector tu, tv, tx, ty;
         TangentsAt(*u, *v, &tu, &tv);
+        Vector n = tu.Cross(tv);
+        double tu2 = tu.MagSquared(),
+               tv2 = tv.MagSquared(),
+               s = sqrt(n.MagSquared() / (tu2 * tv2));
         // since tu and tv may not be orthogonal, use y in place of v.
         // |y| = |v|sin(theta) where theta is the angle between tu and tv.
-        ty = tu.Cross(tv).Cross(tu).ScaledBy(1.0/tu.MagSquared());
-        tx = tv.Cross(tu).Cross(tv).ScaledBy(1.0/tv.MagSquared());
+        ty = n.Cross(tu).ScaledBy(1.0/tu2);
+        tx = tv.Cross(n).ScaledBy(1.0/tv2);
 
         // Project the point into a plane through p0, with basis tu, tv; a
         // second-order thing would converge faster but needs second
@@ -514,8 +518,8 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool mustConve
         Vector dp = p.Minus(p0);
         double du = dp.Dot(tx),
                dv = dp.Dot(ty);
-        *u += du / (tu.Magnitude() * tx.Magnitude());
-        *v += dv / (tv.Magnitude() * ty.Magnitude());
+        *u += du / (tu2*s);
+        *v += dv / (tv2*s);
 
         if (*u < 0.0) *u = 0.0;
         else if (*u > 1.0) *u = 1.0;
