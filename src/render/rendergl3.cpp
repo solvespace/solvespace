@@ -727,8 +727,8 @@ public:
     // Data
     EdgeRenderer::Handle        handle;
 
-    virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
-    virtual int GetZIndex() const override { return stroke.zIndex; };
+    Canvas::Layer GetLayer() const override { return stroke.layer; }
+    int GetZIndex() const override { return stroke.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SEdgeList &el,
                                             Canvas::Stroke *stroke) {
@@ -757,8 +757,8 @@ public:
     OutlineRenderer::Handle     handle;
     Canvas::DrawOutlinesAs      drawAs;
 
-    virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
-    virtual int GetZIndex() const override { return stroke.zIndex; };
+    Canvas::Layer GetLayer() const override { return stroke.layer; }
+    int GetZIndex() const override { return stroke.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SOutlineList &ol,
                                             Canvas::Stroke *stroke,
@@ -788,8 +788,8 @@ public:
     // Data
     IndexedMeshRenderer::Handle  handle;
 
-    virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
-    virtual int GetZIndex() const override { return stroke.zIndex; };
+    Canvas::Layer GetLayer() const override { return stroke.layer; }
+    int GetZIndex() const override { return stroke.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SIndexedMesh &mesh,
                                             Canvas::Stroke *stroke) {
@@ -817,8 +817,8 @@ public:
     // Data
     IndexedMeshRenderer::Handle  handle;
 
-    virtual Canvas::Layer GetLayer() const override { return fill.layer; };
-    virtual int GetZIndex() const override { return fill.zIndex; };
+    Canvas::Layer GetLayer() const override { return fill.layer; }
+    int GetZIndex() const override { return fill.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SIndexedMesh &mesh,
                                             Canvas::Fill *fill) {
@@ -856,8 +856,8 @@ public:
     bool                    hasFillBack;
     bool                    isShaded;
 
-    virtual Canvas::Layer GetLayer() const override { return fillFront.layer; };
-    virtual int GetZIndex() const override { return fillFront.zIndex; };
+    Canvas::Layer GetLayer() const override { return fillFront.layer; }
+    int GetZIndex() const override { return fillFront.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SMesh &m,
                                             Canvas::Fill *fillFront, Canvas::Fill *fillBack = NULL,

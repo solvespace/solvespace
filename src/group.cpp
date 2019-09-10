@@ -49,7 +49,7 @@ bool Group::IsVisible() {
     return true;
 }
 
-size_t Group::GetNumConstraints(void) {
+size_t Group::GetNumConstraints() {
     return SK.constraint.CountIf([&](Constraint const & c) { return c.group == h; });
 }
 

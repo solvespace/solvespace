@@ -54,8 +54,7 @@ void *AllocTemporary(size_t n)
     return (void *)&h[1];
 }
 
-void FreeAllTemporary(void)
-{
+void FreeAllTemporary() {
     AllocTempHeader *h = Head;
     while(h) {
         AllocTempHeader *f = h;

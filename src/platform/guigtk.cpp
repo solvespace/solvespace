@@ -124,7 +124,7 @@ public:
         }
     }
 
-    ~SettingsImplGtk() {
+    ~SettingsImplGtk() override {
         if(!_path.IsEmpty()) {
             // json-c <0.12 has the first argument non-const
             if(json_object_to_file_ext((char *)_path.raw.c_str(), _json,

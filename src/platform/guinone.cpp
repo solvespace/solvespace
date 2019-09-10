@@ -53,22 +53,24 @@ void FatalError(std::string message) {
 
 class SettingsImplDummy final : public Settings {
 public:
-    void FreezeInt(const std::string &key, uint32_t value) {}
+    void FreezeInt(const std::string &key, uint32_t value) override {
+    }
 
-    uint32_t ThawInt(const std::string &key, uint32_t defaultValue = 0) {
+    uint32_t ThawInt(const std::string &key, uint32_t defaultValue = 0) override {
         return defaultValue;
     }
 
-    void FreezeFloat(const std::string &key, double value) {}
+    void FreezeFloat(const std::string &key, double value) override {
+    }
 
-    double ThawFloat(const std::string &key, double defaultValue = 0.0) {
+    double ThawFloat(const std::string &key, double defaultValue = 0.0) override {
         return defaultValue;
     }
 
-    void FreezeString(const std::string &key, const std::string &value) {}
+    void FreezeString(const std::string &key, const std::string &value) override {
+    }
 
-    std::string ThawString(const std::string &key,
-                           const std::string &defaultValue = "") {
+    std::string ThawString(const std::string &key, const std::string &defaultValue = "") override {
         return defaultValue;
     }
 };

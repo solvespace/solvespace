@@ -45,7 +45,7 @@ public:
         Expr    *b;
     };
 
-    Expr() { }
+    Expr() = default;
     Expr(double val) : op(Op::CONSTANT) { v = val; }
 
     static inline Expr *AllocExpr()
