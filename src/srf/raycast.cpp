@@ -463,7 +463,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
     }
 
     if(edge_inters == 2) {
-        // TODO, make this use the appropriate curved normals
+        //! @todo make this use the appropriate curved normals
         double dotp[2];
         for(int i = 0; i < 2; i++) {
             dotp[i] = edge_n_out.DirectionCosineWith(inter_surf_n[i]);
