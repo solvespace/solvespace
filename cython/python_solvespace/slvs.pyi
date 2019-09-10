@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Tuple, List, Sequence, Counter
+from typing import Tuple, List, Sequence, Counter, ClassVar
 from enum import IntEnum, auto
 
 
@@ -93,9 +93,8 @@ class Params:
 
 class Entity:
 
-    FREE_IN_3D: Entity
-    NONE: Entity
-
+    FREE_IN_3D: ClassVar[Entity]
+    NONE: ClassVar[Entity]
     params: Params
 
     def is_3d(self) -> bool:
