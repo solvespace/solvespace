@@ -439,9 +439,14 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
                bu   = (ctrl[1][0]).Minus(orig),
                bv   = (ctrl[0][1]).Minus(orig);
         if((ctrl[1][1]).Equals(orig.Plus(bu).Plus(bv))) {
+
+            Vector n = bu.Cross(bv);
+            Vector ty = n.Cross(bu).ScaledBy(1.0/bu.MagSquared());
+            Vector tx = bv.Cross(n).ScaledBy(1.0/bv.MagSquared());
+
             Vector dp = p.Minus(orig);
-            *u = dp.Dot(bu) / bu.MagSquared();
-            *v = dp.Dot(bv) / bv.MagSquared();
+            *u = dp.Dot(bu) / tx.MagSquared();
+            *v = dp.Dot(bv) / ty.MagSquared();
             return;
         }
     }
@@ -598,10 +603,14 @@ Vector SSurface::ClosestPointOnThisAndSurface(SSurface *srf2, Vector p) {
 
         // Adjust our guess and iterate
         for(j = 0; j < 2; j++) {
+            Vector n = tu[j].Cross(tv[j]);
+            Vector ty = n.Cross(tu[j]).ScaledBy(1.0/tu[j].MagSquared());
+            Vector tx = tv[j].Cross(n).ScaledBy(1.0/tv[j].MagSquared());
+
             Vector dc = pc.Minus(cp[j]);
-            double du = dc.Dot(tu[j]), dv = dc.Dot(tv[j]);
-            puv[j].x += du / ((tu[j]).MagSquared());
-            puv[j].y += dv / ((tv[j]).MagSquared());
+            double du = dc.Dot(tx), dv = dc.Dot(ty);
+            puv[j].x += du / tx.MagSquared();
+            puv[j].y += dv / ty.MagSquared();
         }
     }
     if(i >= 10) {
