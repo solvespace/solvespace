@@ -599,7 +599,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             return;
         }
 
-        case Type::HELIX:   {
+        case Type::HELIX: {
             Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
             Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
 
