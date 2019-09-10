@@ -360,7 +360,7 @@ public:
     void OutputEnd() override;
 };
 
-class CairoPixmapRenderer : public CairoRenderer {
+class CairoPixmapRenderer final : public CairoRenderer {
 public:
     std::shared_ptr<Pixmap>  pixmap;
 
