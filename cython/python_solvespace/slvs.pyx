@@ -54,7 +54,7 @@ cdef class Params:
         return params
 
     def __repr__(self) -> str:
-        cdef str m = f"{self.__class__.__name__}(["
+        cdef str m = f"{type(self).__name__}(["
         cdef size_t i
         cdef size_t s = self.param_list.size()
         for i in range(s):
@@ -227,7 +227,7 @@ cdef class Entity:
         cdef int g = <int>self.g
         cdef str t = _NAME_OF_ENTITIES[<int>self.t]
         return (
-            f"{self.__class__.__name__}"
+            f"{type(self).__name__}"
             f"(handle={h}, group={g}, type=<{t}>, is_3d={self.is_3d()}, params={self.params})"
         )
 
