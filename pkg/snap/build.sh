@@ -7,6 +7,6 @@ trap "rm -rf $solvespace_snap_src" EXIT
 cd "$dir"
 
 git_root="$(git rev-parse --show-toplevel)"
-rsync -r "$git_root"/ "$solvespace_snap_src"
+rsync --filter=":- .gitignore" -r "$git_root"/ "$solvespace_snap_src"
 
 snapcraft "$@"
