@@ -12,7 +12,6 @@ description: |
   * mechanism design — use the constraint solver to simulate planar or spatial linkages, with pin, ball, or slide joints
   * plane and solid geometry — replace hand-solved trigonometry and spreadsheets with a live dimensioned drawing
 
-grade: stable
 confinement: strict
 
 layout:
@@ -40,6 +39,8 @@ parts:
       snapcraftctl pull
       version="3.0~$(git rev-parse --short=8 HEAD)"
       snapcraftctl set-version "$version"
+      git describe --exact-match HEAD && grade="stable" || grade="devel"
+      snapcraftctl set-grade "$grade"
       git submodule update --init extlib/libdxfrw extlib/flatbuffers extlib/q3d
     configflags:
       - -DCMAKE_INSTALL_PREFIX=/usr
