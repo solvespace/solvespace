@@ -1181,3 +1181,14 @@ double SMesh::CalculateVolume() const {
     }
     return vol;
 }
+
+double SMesh::CalculateSurfaceArea(const std::vector<uint32_t> &faces) const {
+    double area = 0.0;
+    for(uint32_t f : faces) {
+        for(const STriangle &t : l) {
+            if(f != t.meta.face) continue;
+            area += t.Area();
+        }
+    }
+    return area;
+}

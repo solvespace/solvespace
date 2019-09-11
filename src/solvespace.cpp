@@ -797,6 +797,23 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
 
         case Command::AREA: {
             Group *g = SK.GetGroup(SS.GW.activeGroup);
+            SS.GW.GroupSelection();
+            auto const &gs = SS.GW.gs;
+            double scale = SS.MmPerUnit();
+
+            if(gs.faces > 0) {
+                std::vector<uint32_t> faces;
+                faces.push_back(gs.face[0].v);
+                if(gs.faces > 1) faces.push_back(gs.face[1].v);
+                double area = g->displayMesh.CalculateSurfaceArea(faces);
+                Message(_("The surface area of the selected faces is:\n\n"
+                          "    %s\n\n"
+                          "Curves have been approximated as piecewise linear.\n"
+                          "This introduces error, typically of around 1%%."),
+                    SS.MmToStringSI(area, /*dim=*/2).c_str());
+                break;
+            }
+
             if(g->polyError.how != PolyError::GOOD) {
                 Error(_("This group does not contain a correctly-formed "
                         "2d closed area. It is open, not coplanar, or self-"

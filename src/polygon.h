@@ -191,6 +191,7 @@ public:
     bool Raytrace(const Vector &rayPoint, const Vector &rayDir,
                   double *t, Vector *inters) const;
     double SignedVolume() const;
+    double Area() const;
     bool IsDegenerate() const;
 };
 
@@ -281,6 +282,7 @@ public:
     void PrecomputeTransparency();
     void RemoveDegenerateTriangles();
     double CalculateVolume() const;
+    double CalculateSurfaceArea(const std::vector<uint32_t> &faces) const;
 
     bool IsEmpty() const;
     void RemapFaces(Group *g, int remap);

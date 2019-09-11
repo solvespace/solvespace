@@ -72,6 +72,8 @@ New measurement/analysis features:
   * New option for displaying areas of closed contours.
   * When calculating volume of the mesh, volume of the solid from the current
     group is now shown alongside total volume of all solids.
+  * When calculating area, and faces are selected, calculate area of those faces
+    instead of the closed contour in the sketch.
   * When selecting a point and a line, projected distance to current
     workplane is displayed.
 

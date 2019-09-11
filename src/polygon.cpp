@@ -87,6 +87,12 @@ double STriangle::SignedVolume() const {
     return a.Dot(b.Cross(c)) / 6.0;
 }
 
+double STriangle::Area() const {
+    Vector ab = a.Minus(b);
+    Vector cb = c.Minus(b);
+    return ab.Cross(cb).Magnitude() / 2.0;
+}
+
 bool STriangle::IsDegenerate() const {
     return a.OnLineSegment(b, c) ||
            b.OnLineSegment(a, c) ||
