@@ -700,11 +700,11 @@ bool SPolygon::ContainsPoint(Vector p) const {
     return (WindingNumberForPoint(p) % 2) == 1;
 }
 
-int SPolygon::WindingNumberForPoint(Vector p) const {
+size_t SPolygon::WindingNumberForPoint(Vector p) const {
     auto winding = std::count_if(l.begin(), l.end(), [&](const SContour &sc) {
         return sc.ContainsPointProjdToNormal(normal, p);
     });
-    return static_cast<int>(winding);
+    return winding;
 }
 
 void SPolygon::FixContourDirections() {

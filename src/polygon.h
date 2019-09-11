@@ -149,7 +149,7 @@ public:
 
     Vector ComputeNormal() const;
     void AddEmptyContour();
-    int WindingNumberForPoint(Vector p) const;
+    size_t WindingNumberForPoint(Vector p) const;
     double SignedArea() const;
     bool ContainsPoint(Vector p) const;
     void MakeEdgesInto(SEdgeList *el) const;
