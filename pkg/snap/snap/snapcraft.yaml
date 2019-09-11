@@ -13,6 +13,7 @@ description: |
   * plane and solid geometry — replace hand-solved trigonometry and spreadsheets with a live dimensioned drawing
 
 confinement: strict
+license: GPL-3.0
 
 layout:
   /usr/share/solvespace:
