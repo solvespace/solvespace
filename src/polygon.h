@@ -280,6 +280,7 @@ public:
 
     void PrecomputeTransparency();
     void RemoveDegenerateTriangles();
+    double CalculateVolume() const;
 
     bool IsEmpty() const;
     void RemapFaces(Group *g, int remap);

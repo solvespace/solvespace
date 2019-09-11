@@ -70,6 +70,8 @@ New measurement/analysis features:
   * New command for measuring center of mass, with live updates as the sketch
     changes, "Analyze → Center of Mass".
   * New option for displaying areas of closed contours.
+  * When calculating volume of the mesh, volume of the solid from the current
+    group is now shown alongside total volume of all solids.
   * When selecting a point and a line, projected distance to current
     workplane is displayed.
 
