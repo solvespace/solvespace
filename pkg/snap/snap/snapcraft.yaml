@@ -38,7 +38,9 @@ parts:
     source-type: local
     override-pull: |
       snapcraftctl pull
-      version="3.0~$(git rev-parse --short=8 HEAD)"
+      version_major=$(grep "solvespace_VERSION_MAJOR" CMakeLists.txt | tr -d "()" | cut -d" " -f2)
+      version_minor=$(grep "solvespace_VERSION_MINOR" CMakeLists.txt | tr -d "()" | cut -d" " -f2)
+      version="$version_major.$version_minor~$(git rev-parse --short=8 HEAD)"
       snapcraftctl set-version "$version"
       git describe --exact-match HEAD && grade="stable" || grade="devel"
       snapcraftctl set-grade "$grade"
