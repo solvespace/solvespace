@@ -697,15 +697,8 @@ Vector4 Vector::Project4d() const {
 }
 
 double Vector::DivPivoting(Vector delta) const {
-    double mx = fabs(delta.x), my = fabs(delta.y), mz = fabs(delta.z);
-
-    if(mx > my && mx > mz) {
-        return x/delta.x;
-    } else if(my > mz) {
-        return y/delta.y;
-    } else {
-        return z/delta.z;
-    }
+    return (x*delta.x + y*delta.y + z*delta.z)
+         / (delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
 }
 
 Vector Vector::ClosestOrtho() const {
