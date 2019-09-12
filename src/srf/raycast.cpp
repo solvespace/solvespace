@@ -311,7 +311,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
         }
         int i;
         for(i = 0; i < ip_n; i++) {
-            double t = (ip[i].Minus(ap)).DivPivoting(bp.Minus(ap));
+            double t = (ip[i].Minus(ap)).DivProjected(bp.Minus(ap));
             // This is a point on the circle; but is it on the arc?
             Point2d pp = ap.Plus((bp.Minus(ap)).ScaledBy(t));
             double theta = atan2(pp.y, pp.x);

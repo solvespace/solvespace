@@ -988,12 +988,8 @@ Point2d Point2d::ScaledBy(double s) const {
     return { x * s, y * s };
 }
 
-double Point2d::DivPivoting(Point2d delta) const {
-    if(fabs(delta.x) > fabs(delta.y)) {
-        return x/delta.x;
-    } else {
-        return y/delta.y;
-    }
+double Point2d::DivProjected(Point2d delta) const {
+    return (x*delta.x + y*delta.y) / (delta.x*delta.x + delta.y*delta.y);
 }
 
 double Point2d::MagSquared() const {
