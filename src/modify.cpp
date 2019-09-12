@@ -373,8 +373,8 @@ void GraphicsWindow::MakeTangentArc() {
         tp[1] = t[1];
 
         // And convert those points to parameter values along the curve.
-        t[0] += (pa0.Minus(p0)).DivPivoting(t0);
-        t[1] += (pa1.Minus(p1)).DivPivoting(t1);
+        t[0] += (pa0.Minus(p0)).DivProjected(t0);
+        t[1] += (pa1.Minus(p1)).DivProjected(t1);
     }
 
     // Stupid check for convergence, and for an out of range result (as

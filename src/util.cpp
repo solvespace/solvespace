@@ -607,7 +607,7 @@ bool Vector::OnLineSegment(Vector a, Vector b, double tol) const {
 
     if(distsq >= tol*tol) return false;
 
-    double t = (this->Minus(a)).DivPivoting(d);
+    double t = (this->Minus(a)).DivProjected(d);
     // On-endpoint already tested
     if(t < 0 || t > 1) return false;
     return true;
@@ -696,7 +696,7 @@ Vector4 Vector::Project4d() const {
     return Vector4::From(1, x, y, z);
 }
 
-double Vector::DivPivoting(Vector delta) const {
+double Vector::DivProjected(Vector delta) const {
     return (x*delta.x + y*delta.y + z*delta.z)
          / (delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
 }

@@ -354,7 +354,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
 
         // Make sure the point lies within the finite line segment
         Vector pxyz = PointAt(puv.x, puv.y);
-        double t = (pxyz.Minus(a)).DivPivoting(ba);
+        double t = (pxyz.Minus(a)).DivProjected(ba);
         if(asSegment && (t > 1 - LENGTH_EPS/bam || t < LENGTH_EPS/bam)) {
             continue;
         }
@@ -566,7 +566,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
 
         SInter *si;
         for(si = l.First(); si; si = l.NextAfter(si)) {
-            double t = ((si->p).Minus(p)).DivPivoting(ray);
+            double t = ((si->p).Minus(p)).DivProjected(ray);
             if(t*ray.Magnitude() < -LENGTH_EPS) {
                 // wrong side, doesn't count
                 continue;

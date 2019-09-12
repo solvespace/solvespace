@@ -120,7 +120,7 @@ public:
     Vector ScaledBy(double s) const;
     Vector ProjectInto(hEntity wrkpl) const;
     Vector ProjectVectorInto(hEntity wrkpl) const;
-    double DivPivoting(Vector delta) const;
+    double DivProjected(Vector delta) const;
     Vector ClosestOrtho() const;
     void MakeMaxMin(Vector *maxv, Vector *minv) const;
     Vector ClampWithin(double minv, double maxv) const;

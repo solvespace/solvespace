@@ -148,7 +148,7 @@ int Constraint::DoLineTrimmedAgainstBox(Canvas *canvas, Canvas::hStroke hcs,
         }
         if(j < 4) continue;
 
-        double t = (p.Minus(a)).DivPivoting(dl);
+        double t = (p.Minus(a)).DivProjected(dl);
         tmin = min(t, tmin);
         tmax = max(t, tmax);
     }
@@ -642,7 +642,7 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
                 // Draw the projection marker from the closest point on the
                 // projected line to the projected point on the real line.
                 Vector lAB = (lA.Minus(lB));
-                double t = (lA.Minus(closest)).DivPivoting(lAB);
+                double t = (lA.Minus(closest)).DivProjected(lAB);
 
                 Vector lA = SK.GetEntity(line->point[0])->PointGetNum();
                 Vector lB = SK.GetEntity(line->point[1])->PointGetNum();
