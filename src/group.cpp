@@ -622,7 +622,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->Get(i));
-                if(e->group.v != opA.v)
+                if((e->group.v != opA.v) && !(e->h == predef.origin))
                     continue;
 
                 e->CalculateNumerical(/*forExport=*/false);
