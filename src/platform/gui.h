@@ -107,7 +107,7 @@ void FatalError(std::string message);
 // A native settings store.
 class Settings {
 public:
-    virtual ~Settings() {}
+    virtual ~Settings() = default;
 
     virtual void FreezeInt(const std::string &key, uint32_t value) = 0;
     virtual uint32_t ThawInt(const std::string &key, uint32_t defaultValue = 0) = 0;
@@ -135,7 +135,7 @@ class Timer {
 public:
     std::function<void()>   onTimeout;
 
-    virtual ~Timer() {}
+    virtual ~Timer() = default;
 
     virtual void RunAfter(unsigned milliseconds) = 0;
     virtual void RunAfterNextFrame() { RunAfter(1); }
@@ -157,7 +157,7 @@ public:
 
     std::function<void()>   onTrigger;
 
-    virtual ~MenuItem() {}
+    virtual ~MenuItem() = default;
 
     virtual void SetAccelerator(KeyboardEvent accel) = 0;
     virtual void SetIndicator(Indicator type) = 0;
@@ -170,7 +170,7 @@ typedef std::shared_ptr<MenuItem> MenuItemRef;
 // A native menu.
 class Menu {
 public:
-    virtual ~Menu() {}
+    virtual ~Menu() = default;
 
     virtual std::shared_ptr<MenuItem> AddItem(
         const std::string &label, std::function<void()> onTrigger = std::function<void()>(),
@@ -188,7 +188,7 @@ typedef std::shared_ptr<Menu> MenuRef;
 // A native menu bar.
 class MenuBar {
 public:
-    virtual ~MenuBar() {}
+    virtual ~MenuBar() = default;
 
     virtual std::shared_ptr<Menu> AddSubMenu(const std::string &label) = 0;
 
@@ -222,7 +222,7 @@ public:
     std::function<void(double)>         onScrollbarAdjusted;
     std::function<void()>               onRender;
 
-    virtual ~Window() {}
+    virtual ~Window() = default;
 
     // Returns physical display DPI.
     virtual double GetPixelDensity() = 0;
@@ -299,7 +299,7 @@ public:
 
     std::function<void(Response)> onResponse;
 
-    virtual ~MessageDialog() {}
+    virtual ~MessageDialog() = default;
 
     virtual void SetType(Type type) = 0;
     virtual void SetTitle(std::string title) = 0;
@@ -347,7 +347,7 @@ extern std::vector<FileFilter> CsvFileFilters;
 // A native dialog that asks to choose a file.
 class FileDialog {
 public:
-    virtual ~FileDialog() {}
+    virtual ~FileDialog() = default;
 
     virtual void SetTitle(std::string title) = 0;
     virtual void SetCurrentName(std::string name) = 0;
@@ -380,6 +380,7 @@ void OpenInBrowser(const std::string &url);
 void InitGui(int argc, char **argv);
 void RunGui();
 void ExitGui();
+void ClearGui();
 
 }
 

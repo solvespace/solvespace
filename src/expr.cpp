@@ -361,8 +361,8 @@ Expr *Expr::PartialWrt(hParam p) const {
     Expr *da, *db;
 
     switch(op) {
-        case Op::PARAM_PTR: return From(p.v == parp->h.v ? 1 : 0);
-        case Op::PARAM:     return From(p.v == parh.v ? 1 : 0);
+        case Op::PARAM_PTR: return From(p == parp->h ? 1 : 0);
+        case Op::PARAM:     return From(p == parh ? 1 : 0);
 
         case Op::CONSTANT:  return From(0.0);
         case Op::VARIABLE:  ssassert(false, "Not supported yet");
@@ -412,8 +412,8 @@ uint64_t Expr::ParamsUsed() const {
 }
 
 bool Expr::DependsOn(hParam p) const {
-    if(op == Op::PARAM)     return (parh.v    == p.v);
-    if(op == Op::PARAM_PTR) return (parp->h.v == p.v);
+    if(op == Op::PARAM)     return (parh    == p);
+    if(op == Op::PARAM_PTR) return (parp->h == p);
 
     int c = Children();
     if(c == 1)          return a->DependsOn(p);
@@ -494,7 +494,7 @@ Expr *Expr::FoldConstants() {
 void Expr::Substitute(hParam oldh, hParam newh) {
     ssassert(op != Op::PARAM_PTR, "Expected an expression that refer to params via handles");
 
-    if(op == Op::PARAM && parh.v == oldh.v) {
+    if(op == Op::PARAM && parh == oldh) {
         parh = newh;
     }
     int c = Children();
@@ -528,11 +528,11 @@ hParam Expr::ReferencedParams(ParamList *pl) const {
         hParam pa, pb;
         pa = a->ReferencedParams(pl);
         pb = b->ReferencedParams(pl);
-        if(pa.v == NO_PARAMS.v) {
+        if(pa == NO_PARAMS) {
             return pb;
-        } else if(pb.v == NO_PARAMS.v) {
+        } else if(pb == NO_PARAMS) {
             return pa;
-        } else if(pa.v == pb.v) {
+        } else if(pa == pb) {
             return pa; // either, doesn't matter
         } else {
             return MULTIPLE_PARAMS;

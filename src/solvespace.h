@@ -165,13 +165,8 @@ enum class Unit : uint32_t {
     METERS
 };
 
-template<class T>
-struct CompareHandle {
-    bool operator()(T lhs, T rhs) const { return lhs.v < rhs.v; }
-};
-
 template<class Key, class T>
-using handle_map = std::map<Key, T, CompareHandle<Key>>;
+using handle_map = std::map<Key, T>;
 
 class Group;
 class SSurface;
@@ -219,7 +214,7 @@ class ReadUTF8 {
 public:
     ReadUTF8(const std::string &str) : str(str) {}
     utf8_iterator begin() const { return utf8_iterator(&str[0]); }
-    utf8_iterator end()   const { return utf8_iterator(&str[str.length()]); }
+    utf8_iterator end()   const { return utf8_iterator(&str[0] + str.length()); }
 };
 
 
@@ -703,6 +698,7 @@ public:
     void ExportMeshAsObjTo(FILE *fObj, FILE *fMtl, SMesh *sm);
     void ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename,
                                SMesh *sm, SOutlineList *sol);
+    void ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, SMesh *sm);
     void ExportViewOrWireframeTo(const Platform::Path &filename, bool exportWireframe);
     void ExportSectionTo(const Platform::Path &filename);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,

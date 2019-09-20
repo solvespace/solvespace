@@ -20,8 +20,8 @@ void SolveSpaceUI::ClearExisting() {
     UndoClearStack(&redo);
     UndoClearStack(&undo);
 
-    for(int i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
+    for(hGroup hg : SK.groupOrder) {
+        Group *g = SK.GetGroup(hg);
         g->Clear();
     }
 
@@ -301,39 +301,39 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     fprintf(fh, "%s\n\n\n", VERSION_STRING);
 
     int i, j;
-    for(i = 0; i < SK.group.n; i++) {
-        sv.g = SK.group.elem[i];
+    for(auto &g : SK.group) {
+        sv.g = g;
         SaveUsingTable(filename, 'g');
         fprintf(fh, "AddGroup\n\n");
     }
 
-    for(i = 0; i < SK.param.n; i++) {
-        sv.p = SK.param.elem[i];
+    for(auto &p : SK.param) {
+        sv.p = p;
         SaveUsingTable(filename, 'p');
         fprintf(fh, "AddParam\n\n");
     }
 
-    for(i = 0; i < SK.request.n; i++) {
-        sv.r = SK.request.elem[i];
+    for(auto &r : SK.request) {
+        sv.r = r;
         SaveUsingTable(filename, 'r');
         fprintf(fh, "AddRequest\n\n");
     }
 
-    for(i = 0; i < SK.entity.n; i++) {
-        (SK.entity.elem[i]).CalculateNumerical(/*forExport=*/true);
-        sv.e = SK.entity.elem[i];
+    for(auto &e : SK.entity) {
+        e.CalculateNumerical(/*forExport=*/true);
+        sv.e = e;
         SaveUsingTable(filename, 'e');
         fprintf(fh, "AddEntity\n\n");
     }
 
-    for(i = 0; i < SK.constraint.n; i++) {
-        sv.c = SK.constraint.elem[i];
+    for(auto &c : SK.constraint) {
+        sv.c = c;
         SaveUsingTable(filename, 'c');
         fprintf(fh, "AddConstraint\n\n");
     }
 
-    for(i = 0; i < SK.style.n; i++) {
-        sv.s = SK.style.elem[i];
+    for(auto &s : SK.style) {
+        sv.s = s;
         if(sv.s.h.v >= Style::FIRST_CUSTOM) {
             SaveUsingTable(filename, 's');
             fprintf(fh, "AddStyle\n\n");
@@ -343,10 +343,10 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     // A group will have either a mesh or a shell, but not both; but the code
     // to print either of those just does nothing if the mesh/shell is empty.
 
-    Group *g = SK.GetGroup(SK.groupOrder.elem[SK.groupOrder.n - 1]);
+    Group *g = SK.GetGroup(*SK.groupOrder.Last());
     SMesh *m = &g->runningMesh;
     for(i = 0; i < m->l.n; i++) {
-        STriangle *tr = &(m->l.elem[i]);
+        STriangle *tr = &(m->l[i]);
         fprintf(fh, "Triangle %08x %08x "
                 "%.20f %.20f %.20f  %.20f %.20f %.20f  %.20f %.20f %.20f\n",
             tr->meta.face, tr->meta.color.ToPackedInt(),
@@ -436,8 +436,17 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
                         if (fgets(line2, (int)sizeof(line2), fh) == NULL)
                             break;
                         if(sscanf(line2, "%d %x %d", &(ei.v), &(ek.input.v),
-                                                     &(ek.copyNumber)) == 3)
-                        {
+                                                     &(ek.copyNumber)) == 3) {
+                            if(ei.v == Entity::NO_ENTITY.v) {
+                                // Commit bd84bc1a mistakenly introduced code that would remap
+                                // some entities to NO_ENTITY. This was fixed in commit bd84bc1a,
+                                // but files created meanwhile are corrupt, and can cause crashes.
+                                //
+                                // To fix this, we skip any such remaps when loading; they will be
+                                // recreated on the next regeneration. Any resulting orphans will
+                                // be pruned in the usual way, recovering to a well-defined state.
+                                continue;
+                            }
                             p->M().insert({ ek, ei });
                         } else {
                             break;
@@ -540,7 +549,7 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
         Error(_("Unrecognized data in file. This file may be corrupt, or "
                 "from a newer version of the program."));
         // At least leave the program in a non-crashing state.
-        if(SK.group.n == 0) {
+        if(SK.group.IsEmpty()) {
             NewFile();
         }
     }

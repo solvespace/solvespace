@@ -35,7 +35,7 @@ void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
     if(!r) return;
 
     SS.UndoRemember();
-    r->font = SS.fonts.l.elem[i].FontFileBaseName();
+    r->font = SS.fonts.l[i].FontFileBaseName();
     SS.MarkGroupDirty(r->group);
     SS.ScheduleShowTW();
 }
@@ -175,9 +175,9 @@ void TextWindow::DescribeSelection() {
                         e->str.c_str(), &ScreenEditTtfText, e->h.request().v);
                     Printf(true, "  select new font");
                     SS.fonts.LoadAll();
-                    int i;
-                    for(i = 0; i < SS.fonts.l.n; i++) {
-                        TtfFont *tf = &(SS.fonts.l.elem[i]);
+                    // Not using range-for here because we use i inside the output.
+                    for(int i = 0; i < SS.fonts.l.n; i++) {
+                        TtfFont *tf = &(SS.fonts.l[i]);
                         if(e->font == tf->FontFileBaseName()) {
                             Printf(false, "%Bp    %s",
                                 (i & 1) ? 'd' : 'a',
@@ -214,7 +214,7 @@ void TextWindow::DescribeSelection() {
         Group *g = SK.GetGroup(e->group);
         Printf(false, "");
         Printf(false, "%FtIN GROUP%E      %s", g->DescriptionString().c_str());
-        if(e->workplane.v == Entity::FREE_IN_3D.v) {
+        if(e->workplane == Entity::FREE_IN_3D) {
             Printf(false, "%FtNOT LOCKED IN WORKPLANE%E");
         } else {
             Entity *w = SK.GetEntity(e->workplane);
@@ -232,12 +232,13 @@ void TextWindow::DescribeSelection() {
 
         std::vector<hConstraint> lhc = {};
         for(const Constraint &c : SK.constraint) {
-            if(!(c.ptA.v == e->h.v ||
-                 c.ptB.v == e->h.v ||
-                 c.entityA.v == e->h.v ||
-                 c.entityB.v == e->h.v ||
-                 c.entityC.v == e->h.v ||
-                 c.entityD.v == e->h.v)) continue;
+            if(!(c.ptA == e->h ||
+                 c.ptB == e->h ||
+                 c.entityA == e->h ||
+                 c.entityB == e->h ||
+                 c.entityC == e->h ||
+                 c.entityD == e->h))
+                continue;
             lhc.push_back(c.h);
         }
 
@@ -314,8 +315,7 @@ void TextWindow::DescribeSelection() {
         Printf(true,  " pt-ln distance = %Fi%s%E",
             SS.MmToString(pp.DistanceToLine(lp0, lp1.Minus(lp0))).c_str());
         hEntity wrkpl = SS.GW.ActiveWorkplane();
-        if(wrkpl.v != Entity::FREE_IN_3D.v &&
-                !(p->workplane.v == wrkpl.v && ln->workplane.v == wrkpl.v)) {
+        if(wrkpl != Entity::FREE_IN_3D && !(p->workplane == wrkpl && ln->workplane == wrkpl)) {
             Vector ppw  = pp.ProjectInto(wrkpl);
             Vector lp0w = lp0.ProjectInto(wrkpl);
             Vector lp1w = lp1.ProjectInto(wrkpl);
@@ -385,10 +385,9 @@ void TextWindow::DescribeSelection() {
         lhe.push_back(c->entityC);
         lhe.push_back(c->entityD);
 
-        auto it = std::remove_if(lhe.begin(), lhe.end(),
-            [](hEntity he) {
-                return he.v == Entity::NO_ENTITY.v || !he.isFromRequest();
-            });
+        auto it = std::remove_if(lhe.begin(), lhe.end(), [](hEntity he) {
+            return he == Entity::NO_ENTITY || !he.isFromRequest();
+        });
         lhe.erase(it, lhe.end());
 
         if(!lhe.empty()) {

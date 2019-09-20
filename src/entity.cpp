@@ -37,7 +37,7 @@ ExprVector EntityBase::VectorGetExprsInWorkplane(hEntity wrkpl) const {
         case Type::NORMAL_N_ROT:
         case Type::NORMAL_N_ROT_AA: {
             ExprVector ev = NormalExprsN();
-            if(wrkpl.v == EntityBase::FREE_IN_3D.v) {
+            if(wrkpl == EntityBase::FREE_IN_3D) {
                 return ev;
             }
             // Get the offset and basis vectors for this weird exotic csys.
@@ -245,6 +245,7 @@ bool EntityBase::IsPoint() const {
         case Type::POINT_N_TRANS:
         case Type::POINT_N_ROT_TRANS:
         case Type::POINT_N_ROT_AA:
+        case Type::POINT_N_ROT_AXIS_TRANS:
             return true;
 
         default:
@@ -454,7 +455,35 @@ void EntityBase::PointForceTo(Vector p) {
             // in order to avoid jumps when you cross from +pi to -pi
             while(dtheta < -PI) dtheta += 2*PI;
             while(dtheta > PI) dtheta -= 2*PI;
+            // this extra *2 explains the mystery *4
             SK.GetParam(param[3])->val = (thetai + dtheta)/(timesApplied*2);
+            break;
+        }
+
+        case Type::POINT_N_ROT_AXIS_TRANS: {
+            if(timesApplied == 0) break;
+            // is the point on the rotation axis?
+            Vector offset = Vector::From(param[0], param[1], param[2]);
+            Vector normal = Vector::From(param[4], param[5], param[6]).WithMagnitude(1.0);
+            Vector check = numPoint.Minus(offset).Cross(normal);
+            if (check.Dot(check) < LENGTH_EPS) { // if so, do extrusion style drag
+                Vector trans = (p.Minus(numPoint));
+                SK.GetParam(param[7])->val = trans.Dot(normal)/timesApplied;
+            } else { // otherwise do rotation style
+                Vector u = normal.Normal(0), v = normal.Normal(1);
+                Vector po = p.Minus(offset), numo = numPoint.Minus(offset);
+                double thetap = atan2(v.Dot(po), u.Dot(po));
+                double thetan = atan2(v.Dot(numo), u.Dot(numo));
+                double thetaf = (thetap - thetan);
+                double thetai = (SK.GetParam(param[3])->val)*timesApplied*2;
+                double dtheta = thetaf - thetai;
+                // Take the smallest possible change in the actual step angle,
+                // in order to avoid jumps when you cross from +pi to -pi
+                while(dtheta < -PI) dtheta += 2*PI;
+                while(dtheta > PI) dtheta -= 2*PI;
+                // this extra *2 explains the mystery *4
+                SK.GetParam(param[3])->val = (thetai + dtheta)/(timesApplied*2);
+            }
             break;
         }
 
@@ -503,6 +532,17 @@ Vector EntityBase::PointGetNum() const {
             p = numPoint.Minus(offset);
             p = q.Rotate(p);
             p = p.Plus(offset);
+            break;
+        }
+
+        case Type::POINT_N_ROT_AXIS_TRANS: {
+            Vector offset = Vector::From(param[0], param[1], param[2]);
+            Vector displace = Vector::From(param[4], param[5], param[6])
+               .WithMagnitude(SK.GetParam(param[7])->val).ScaledBy(timesApplied);
+            Quaternion q = PointGetQuaternion();
+            p = numPoint.Minus(offset);
+            p = q.Rotate(p);
+            p = p.Plus(offset).Plus(displace);
             break;
         }
 
@@ -555,6 +595,18 @@ ExprVector EntityBase::PointGetExprs() const {
             r = orig.Plus(trans);
             break;
         }
+        case Type::POINT_N_ROT_AXIS_TRANS: {
+            ExprVector orig = ExprVector::From(numPoint);
+            ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
+            ExprVector displace = ExprVector::From(param[4], param[5], param[6])
+               .WithMagnitude(Expr::From(1.0)).ScaledBy(Expr::From(timesApplied)).ScaledBy(Expr::From(param[7]));
+
+            ExprQuaternion q = GetAxisAngleQuaternionExprs(3);
+            orig = orig.Minus(trans);
+            orig = q.Rotate(orig);
+            r = orig.Plus(trans).Plus(displace);
+            break;
+        }
         case Type::POINT_N_COPY:
             r = ExprVector::From(numPoint);
             break;
@@ -565,7 +617,7 @@ ExprVector EntityBase::PointGetExprs() const {
 }
 
 void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) const {
-    if(type == Type::POINT_IN_2D && workplane.v == wrkpl.v) {
+    if(type == Type::POINT_IN_2D && workplane == wrkpl) {
         // They want our coordinates in the form that we've written them,
         // very nice.
         *u = Expr::From(param[0]);
@@ -587,7 +639,7 @@ void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) con
 }
 
 ExprVector EntityBase::PointGetExprsInWorkplane(hEntity wrkpl) const {
-    if(wrkpl.v == Entity::FREE_IN_3D.v) {
+    if(wrkpl == Entity::FREE_IN_3D) {
         return PointGetExprs();
     }
 
@@ -633,7 +685,7 @@ ExprQuaternion EntityBase::GetAxisAngleQuaternionExprs(int param0) const {
 Quaternion EntityBase::PointGetQuaternion() const {
     Quaternion q;
 
-    if(type == Type::POINT_N_ROT_AA) {
+    if(type == Type::POINT_N_ROT_AA || type == Type::POINT_N_ROT_AXIS_TRANS) {
         q = GetAxisAngleQuaternion(3);
     } else if(type == Type::POINT_N_ROT_TRANS) {
         q = Quaternion::From(param[3], param[4], param[5], param[6]);
@@ -807,7 +859,7 @@ bool EntityBase::IsInPlane(Vector norm, double distance) const {
 
         case Type::CIRCLE:
         case Type::ARC_OF_CIRCLE: {
-            // If it is an (arc of) a circle, check whether the normals 
+            // If it is an (arc of) a circle, check whether the normals
             // are parallel and the mid point is in the plane.
             Vector n = Normal()->NormalN();
             if (!norm.Equals(n) && !norm.Equals(n.Negated())) return false;
@@ -870,19 +922,16 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             // If the two endpoints of the arc are constrained coincident
             // (to make a complete circle), then our distance constraint
             // would be redundant and therefore overconstrain things.
-            int i;
-            for(i = 0; i < SK.constraint.n; i++) {
-                ConstraintBase *c = &(SK.constraint.elem[i]);
-                if(c->group.v != group.v) continue;
-                if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-
-                if((c->ptA.v == point[1].v && c->ptB.v == point[2].v) ||
-                   (c->ptA.v == point[2].v && c->ptB.v == point[1].v))
-                {
-                    break;
-                }
+            auto it = std::find_if(SK.constraint.begin(), SK.constraint.end(),
+                                   [&](ConstraintBase const &con) {
+                                       return (con.group == group) &&
+                                              (con.type == Constraint::Type::POINTS_COINCIDENT) &&
+                                              ((con.ptA == point[1] && con.ptB == point[2]) ||
+                                               (con.ptA == point[2] && con.ptB == point[1]));
+                                   });
+            if(it != SK.constraint.end()) {
+                break;
             }
-            if(i < SK.constraint.n) break;
 
             Expr *ra = Constraint::Distance(workplane, point[0], point[1]);
             Expr *rb = Constraint::Distance(workplane, point[0], point[2]);

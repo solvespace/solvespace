@@ -28,7 +28,7 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
 
     SS.GW.GroupSelection();
     auto const &gs = SS.GW.gs;
-    if((gs.n == 0 && g->activeWorkplane.v != Entity::FREE_IN_3D.v)) {
+    if((gs.n == 0 && g->activeWorkplane != Entity::FREE_IN_3D)) {
         Entity *wrkpl = SK.GetEntity(g->activeWorkplane);
         origin = wrkpl->WorkplaneGetOffset();
         n = wrkpl->Normal()->NormalN();
@@ -94,11 +94,10 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
     // Remove all overlapping edges/beziers to merge the areas they describe.
     el.CullExtraneousEdges(/*both=*/true);
     bl.CullIdenticalBeziers(/*both=*/true);
-    
+
     // Collect lines and beziers with custom style & export.
-    int i;
-    for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
+    for(auto &ent : SK.entity) {
+        Entity *e = &ent;
         if (!e->IsVisible()) continue;
         if (e->style.v < Style::FIRST_CUSTOM) continue;
         if (!Style::Exportable(e->style.v)) continue;
@@ -186,7 +185,6 @@ public:
 };
 
 void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool exportWireframe) {
-    int i;
     SEdgeList edges = {};
     SBezierList beziers = {};
 
@@ -206,8 +204,8 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
         sm = NULL;
     }
 
-    for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
+    for(auto &entity : SK.entity) {
+        Entity *e = &entity;
         if(!e->IsVisible()) continue;
         if(e->construction) continue;
 
@@ -321,16 +319,14 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
 
     // Project into the export plane; so when we're done, z doesn't matter,
     // and x and y are what goes in the DXF.
-    SEdge *e;
-    for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
+    for(SEdge *e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
         // project into the specified csys, and apply export scale
         (e->a) = e->a.InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
         (e->b) = e->b.InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
     }
 
-    SBezier *b;
     if(sbl) {
-        for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
+        for(SBezier *b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
             *b = b->InPerspective(u, v, n, origin, cameraTan);
             int i;
             for(i = 0; i <= b->deg; i++) {
@@ -459,7 +455,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     // segments with zero-length projections.
     sel->l.ClearTags();
     for(int i = 0; i < sel->l.n; ++i) {
-        SEdge *sei = &sel->l.elem[i];
+        SEdge *sei = &sel->l[i];
         hStyle hsi = { (uint32_t)sei->auxA };
         Style *si = Style::Get(hsi);
         if(sei->tag != 0) continue;
@@ -476,7 +472,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
         }
 
         for(int j = i + 1; j < sel->l.n; ++j) {
-            SEdge *sej = &sel->l.elem[j];
+            SEdge *sej = &sel->l[j];
             if(sej->tag != 0) continue;
 
             Vector *pAj = &sej->a;
@@ -578,12 +574,13 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     // We kept the line segments and Beziers separate until now; but put them
     // all together, and also project everything into the xy plane, since not
     // all export targets ignore the z component of the points.
-    for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
+    ssassert(sbl != nullptr, "Adding line segments to beziers assumes bezier list is non-null.");
+    for(SEdge *e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
         SBezier sb = SBezier::From(e->a, e->b);
         sb.auxA = e->auxA;
         sbl->l.Add(&sb);
     }
-    for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
+    for(SBezier *b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
         for(int i = 0; i <= b->deg; i++) {
             b->ctrl[i].z = 0;
         }
@@ -762,9 +759,9 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
 void VectorFileWriter::BezierAsPwl(SBezier *sb) {
     List<Vector> lv = {};
     sb->MakePwlInto(&lv, SS.ExportChordTolMm());
-    int i;
-    for(i = 1; i < lv.n; i++) {
-        SBezier sb = SBezier::From(lv.elem[i-1], lv.elem[i]);
+
+    for(int i = 1; i < lv.n; i++) {
+        SBezier sb = SBezier::From(lv[i-1], lv[i]);
         Bezier(&sb);
     }
     lv.Clear();
@@ -849,6 +846,8 @@ void SolveSpaceUI::ExportMeshTo(const Platform::Path &filename) {
               filename.HasExtension("html")) {
         SOutlineList *e = &(SK.GetGroup(SS.GW.activeGroup)->displayOutlines);
         ExportMeshAsThreeJsTo(f, filename, m, e);
+    } else if(filename.HasExtension("wrl")) {
+        ExportMeshAsVrmlTo(f, filename, m);
     } else {
         Error("Can't identify output file type from file extension of "
               "filename '%s'; try .stl, .obj, .js, .html.", filename.raw.c_str());
@@ -876,7 +875,7 @@ void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
     double s = SS.exportScale;
     int i;
     for(i = 0; i < sm->l.n; i++) {
-        STriangle *tr = &(sm->l.elem[i]);
+        STriangle *tr = &(sm->l[i]);
         Vector n = tr->Normal().WithMagnitude(1);
         float w;
         w = (float)n.x;           fwrite(&w, 4, 1, f);
@@ -900,7 +899,7 @@ void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
 // Export the mesh as a Q3DO (https://github.com/q3k/q3d) file.
 //-----------------------------------------------------------------------------
 
-#include "object_generated.h"
+#include "q3d_object_generated.h"
 void SolveSpaceUI::ExportMeshAsQ3doTo(FILE *f, SMesh *sm) {
     flatbuffers::FlatBufferBuilder builder(1024);
     double s = SS.exportScale;
@@ -982,7 +981,7 @@ void SolveSpaceUI::ExportMeshAsObjTo(FILE *fObj, FILE *fMtl, SMesh *sm) {
 
     RgbaColor currentColor = {};
     for(int i = 0; i < sm->l.n; i++) {
-        const STriangle &t = sm->l.elem[i];
+        const STriangle &t = sm->l[i];
         if(!currentColor.Equals(t.meta.color)) {
             currentColor = t.meta.color;
             fprintf(fObj, "usemtl %s\n", colors[currentColor].c_str());
@@ -1166,6 +1165,139 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
     }
 
     spl.Clear();
+}
+
+//-----------------------------------------------------------------------------
+// Export the mesh as a VRML text file / WRL.
+//-----------------------------------------------------------------------------
+void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, SMesh *sm) {
+    struct STriangleSpan {
+        STriangle *first, *past_last;
+
+        STriangle *begin() const { return first; }
+        STriangle *end() const { return past_last; }
+    };
+
+
+    std::string basename = filename.FileStem();
+    for(auto & c : basename) {
+        if(!(isalnum(c) || ((unsigned)c >= 0x80))) {
+            c = '_';
+        }
+    }
+
+    fprintf(f, "#VRML V2.0 utf8\n"
+               "#Exported from SolveSpace %s\n"
+               "\n"
+               "DEF %s Transform {\n"
+               "  children [",
+            PACKAGE_VERSION,
+            basename.c_str());
+
+
+    std::map<std::uint8_t, std::vector<STriangleSpan>> opacities;
+    STriangle *start          = sm->l.begin();
+    std::uint8_t last_opacity = start->meta.color.alpha;
+    for(auto & tr : sm->l) {
+        if(tr.meta.color.alpha != last_opacity) {
+            opacities[last_opacity].push_back(STriangleSpan{start, &tr});
+            start = &tr;
+            last_opacity = start->meta.color.alpha;
+        }
+    }
+    opacities[last_opacity].push_back(STriangleSpan{start, sm->l.end()});
+
+    for(auto && op : opacities) {
+        fprintf(f, "\n"
+                   "    Shape {\n"
+                   "      appearance Appearance {\n"
+                   "        material DEF %s_material_%u Material {\n"
+                   "          diffuseColor %f %f %f\n"
+                   "          ambientIntensity %f\n"
+                   "          transparency %f\n"
+                   "        }\n"
+                   "      }\n"
+                   "      geometry IndexedFaceSet {\n"
+                   "        colorPerVertex TRUE\n"
+                   "        coord Coordinate { point [\n",
+                basename.c_str(),
+                (unsigned)op.first,
+                SS.ambientIntensity,
+                SS.ambientIntensity,
+                SS.ambientIntensity,
+                SS.ambientIntensity,
+                1.f - ((float)op.first / 255.0f));
+
+        SPointList spl = {};
+
+        for(const auto & sp : op.second) {
+            for(const auto & tr : sp) {
+                spl.IncrementTagFor(tr.a);
+                spl.IncrementTagFor(tr.b);
+                spl.IncrementTagFor(tr.c);
+            }
+        }
+
+        // Output all the vertices.
+        for(auto sp : spl.l) {
+            fprintf(f, "          %f %f %f,\n",
+                    sp.p.x / SS.exportScale,
+                    sp.p.y / SS.exportScale,
+                    sp.p.z / SS.exportScale);
+        }
+
+        fputs("        ] }\n"
+              "        coordIndex [\n", f);
+        // And now all the triangular faces, in terms of those vertices.
+        for(const auto & sp : op.second) {
+            for(const auto & tr : sp) {
+                fprintf(f, "          %d, %d, %d, -1,\n",
+                        spl.IndexForPoint(tr.a),
+                        spl.IndexForPoint(tr.b),
+                        spl.IndexForPoint(tr.c));
+            }
+        }
+
+        fputs("        ]\n"
+              "        color Color { color [\n", f);
+        // Output triangle colors.
+        std::vector<int> triangle_colour_ids;
+        std::vector<RgbaColor> colours_present;
+        for(const auto & sp : op.second) {
+            for(const auto & tr : sp) {
+                const auto colour_itr = std::find_if(colours_present.begin(), colours_present.end(),
+                                                     [&](const RgbaColor & c) {
+                                                         return c.Equals(tr.meta.color);
+                                                     });
+                if(colour_itr == colours_present.end()) {
+                    fprintf(f, "          %.10f %.10f %.10f,\n",
+                            tr.meta.color.redF(),
+                            tr.meta.color.greenF(),
+                            tr.meta.color.blueF());
+                    triangle_colour_ids.push_back(colours_present.size());
+                    colours_present.insert(colours_present.end(), tr.meta.color);
+                } else {
+                    triangle_colour_ids.push_back(colour_itr - colours_present.begin());
+                }
+            }
+        }
+
+        fputs("        ] }\n"
+              "        colorIndex [\n", f);
+
+        for(auto colour_idx : triangle_colour_ids) {
+            fprintf(f, "          %d, %d, %d, -1,\n", colour_idx, colour_idx, colour_idx);
+        }
+
+        fputs("        ]\n"
+              "      }\n"
+              "    }\n", f);
+
+        spl.Clear();
+    }
+
+    fputs("  ]\n"
+          "}\n", f);
 }
 
 //-----------------------------------------------------------------------------

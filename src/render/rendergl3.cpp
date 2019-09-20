@@ -195,7 +195,7 @@ static void ssglDepthRange(Canvas::Layer layer, int zIndex) {
 //-----------------------------------------------------------------------------
 
 Canvas::Stroke *OpenGl3Renderer::SelectStroke(hStroke hcs) {
-    if(current.hcs.v == hcs.v) return current.stroke;
+    if(current.hcs == hcs) return current.stroke;
 
     Stroke *stroke = strokes.FindById(hcs);
     ssglDepthRange(stroke->layer, stroke->zIndex);
@@ -241,7 +241,7 @@ void OpenGl3Renderer::SelectMask(FillPattern pattern) {
 }
 
 Canvas::Fill *OpenGl3Renderer::SelectFill(hFill hcf) {
-    if(current.hcf.v == hcf.v) return current.fill;
+    if(current.hcf == hcf) return current.fill;
 
     Fill *fill = fills.FindById(hcf);
     ssglDepthRange(fill->layer, fill->zIndex);
@@ -458,7 +458,8 @@ void OpenGl3Renderer::DrawEdges(const SEdgeList &el, hStroke hcs) {
 }
 
 void OpenGl3Renderer::DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs mode) {
-    if(ol.l.n == 0) return;
+    if(ol.l.IsEmpty())
+        return;
 
     Stroke *stroke = SelectStroke(hcs);
     ssassert(stroke->stipplePattern != StipplePattern::ZIGZAG &&
@@ -726,8 +727,8 @@ public:
     // Data
     EdgeRenderer::Handle        handle;
 
-    virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
-    virtual int GetZIndex() const override { return stroke.zIndex; };
+    Canvas::Layer GetLayer() const override { return stroke.layer; }
+    int GetZIndex() const override { return stroke.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SEdgeList &el,
                                             Canvas::Stroke *stroke) {
@@ -756,8 +757,8 @@ public:
     OutlineRenderer::Handle     handle;
     Canvas::DrawOutlinesAs      drawAs;
 
-    virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
-    virtual int GetZIndex() const override { return stroke.zIndex; };
+    Canvas::Layer GetLayer() const override { return stroke.layer; }
+    int GetZIndex() const override { return stroke.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SOutlineList &ol,
                                             Canvas::Stroke *stroke,
@@ -787,8 +788,8 @@ public:
     // Data
     IndexedMeshRenderer::Handle  handle;
 
-    virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
-    virtual int GetZIndex() const override { return stroke.zIndex; };
+    Canvas::Layer GetLayer() const override { return stroke.layer; }
+    int GetZIndex() const override { return stroke.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SIndexedMesh &mesh,
                                             Canvas::Stroke *stroke) {
@@ -816,8 +817,8 @@ public:
     // Data
     IndexedMeshRenderer::Handle  handle;
 
-    virtual Canvas::Layer GetLayer() const override { return fill.layer; };
-    virtual int GetZIndex() const override { return fill.zIndex; };
+    Canvas::Layer GetLayer() const override { return fill.layer; }
+    int GetZIndex() const override { return fill.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SIndexedMesh &mesh,
                                             Canvas::Fill *fill) {
@@ -855,8 +856,8 @@ public:
     bool                    hasFillBack;
     bool                    isShaded;
 
-    virtual Canvas::Layer GetLayer() const override { return fillFront.layer; };
-    virtual int GetZIndex() const override { return fillFront.zIndex; };
+    Canvas::Layer GetLayer() const override { return fillFront.layer; }
+    int GetZIndex() const override { return fillFront.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SMesh &m,
                                             Canvas::Fill *fillFront, Canvas::Fill *fillBack = NULL,
@@ -1020,7 +1021,7 @@ public:
     void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack = {}) override {
         drawCalls.emplace(MeshDrawCall::Create(renderer, m, fills.FindById(hcfFront),
                                                fills.FindByIdNoOops(hcfBack),
-                                               /*lighting=*/true));
+                                               /*isShaded=*/true));
     }
 
     void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override {

@@ -540,7 +540,7 @@ void BitmapFont::AddGlyph(char32_t codepoint, std::shared_ptr<const Pixmap> pixm
     BitmapFont::Glyph glyph = {};
     glyph.advanceCells = (uint8_t)(pixmap->width / 8);
     glyph.position     = nextPosition++;
-    glyphs.emplace(codepoint, std::move(glyph));
+    glyphs.emplace(codepoint, glyph);
 
     for(size_t y = 0; y < pixmap->height; y++) {
         uint8_t *row = BitmapFontTextureRow(texture, glyph.position, y);
@@ -623,7 +623,8 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
             }
         }
 
-        it = glyphs.emplace(codepoint, std::move(glyph)).first;
+        it = glyphs.emplace(codepoint, glyph).first;
+
         textureUpdated = true;
         return (*it).second;
     }
@@ -1147,7 +1148,7 @@ PluralExpr::Token PluralExpr::Lex() {
 }
 
 PluralExpr::Token PluralExpr::PopToken() {
-    ssassert(stack.size() > 0, "Expected a non-empty stack");
+    ssassert(!stack.empty(), "Expected a non-empty stack");
     Token t = stack.back();
     stack.pop_back();
     return t;
@@ -1406,7 +1407,7 @@ void GettextParser::Parse() {
             }
         }
 
-        if(key.ident == "") {
+        if(key.ident.empty()) {
             ssassert(msgstrs.size() == 1,
                      "Expected exactly one header msgstr");
             ParseHeader(msgstrs[0]);

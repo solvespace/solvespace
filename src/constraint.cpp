@@ -59,12 +59,12 @@ std::string Constraint::DescriptionString() const {
 void Constraint::DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA, hEntity ptA)
 {
     SK.constraint.ClearTags();
-    for(int i = 0; i < SK.constraint.n; i++) {
-        ConstraintBase *ct = &(SK.constraint.elem[i]);
+    for(auto &constraint : SK.constraint) {
+        ConstraintBase *ct = &constraint;
         if(ct->type != type) continue;
 
-        if(ct->entityA.v != entityA.v) continue;
-        if(ct->ptA.v != ptA.v) continue;
+        if(ct->entityA != entityA) continue;
+        if(ct->ptA != ptA) continue;
         ct->tag = 1;
     }
     SK.constraint.RemoveTagged();
@@ -406,7 +406,7 @@ void Constraint::MenuConstrain(Command id) {
                 Entity *l0 = SK.GetEntity(gs.entity[0]),
                        *l1 = SK.GetEntity(gs.entity[1]);
 
-                if((l1->group.v != SS.GW.activeGroup.v) ||
+                if((l1->group != SS.GW.activeGroup) ||
                    (l1->construction && !(l0->construction)))
                 {
                     swap(l0, l1);
@@ -433,10 +433,10 @@ void Constraint::MenuConstrain(Command id) {
                             "(symmetric about workplane)\n"));
                 return;
             }
-            if(c.entityA.v == Entity::NO_ENTITY.v) {
+            if(c.entityA == Entity::NO_ENTITY) {
                 // Horizontal / vertical symmetry, implicit symmetry plane
                 // normal to the workplane
-                if(c.workplane.v == Entity::FREE_IN_3D.v) {
+                if(c.workplane == Entity::FREE_IN_3D) {
                     Error(_("A workplane must be active when constraining "
                             "symmetric without an explicit symmetry plane."));
                     return;
@@ -466,7 +466,7 @@ void Constraint::MenuConstrain(Command id) {
         case Command::VERTICAL:
         case Command::HORIZONTAL: {
             hEntity ha, hb;
-            if(c.workplane.v == Entity::FREE_IN_3D.v) {
+            if(c.workplane == Entity::FREE_IN_3D) {
                 Error(_("Activate a workplane (with Sketch -> In Workplane) before "
                         "applying a horizontal or vertical constraint."));
                 return;
@@ -510,12 +510,10 @@ void Constraint::MenuConstrain(Command id) {
 
             Entity *nfree = SK.GetEntity(c.entityA);
             Entity *nref  = SK.GetEntity(c.entityB);
-            if(nref->group.v == SS.GW.activeGroup.v) {
+            if(nref->group == SS.GW.activeGroup) {
                 swap(nref, nfree);
             }
-            if(nfree->group.v == SS.GW.activeGroup.v &&
-               nref ->group.v != SS.GW.activeGroup.v)
-            {
+            if(nfree->group == SS.GW.activeGroup && nref->group != SS.GW.activeGroup) {
                 // nfree is free, and nref is locked (since it came from a
                 // previous group); so let's force nfree aligned to nref,
                 // and make convergence easy
@@ -746,7 +744,7 @@ void Constraint::MenuConstrain(Command id) {
     }
 
     for(const Constraint &cc : SK.constraint) {
-        if(c.h.v != cc.h.v && c.Equals(cc)) {
+        if(c.h != cc.h && c.Equals(cc)) {
             // Oops, we already have this exact constraint. Remove the one we just added.
             SK.constraint.RemoveById(c.h);
             SS.GW.ClearSelection();

@@ -243,7 +243,7 @@ void SurfaceRenderer::ConvertBeziersToEdges() {
                 List<Vector> lv = {};
                 b.MakePwlInto(&lv, chordTolerance);
                 for(int i = 1; i < lv.n; i++) {
-                    el.AddEdge(lv.elem[i-1], lv.elem[i]);
+                    el.AddEdge(lv[i-1], lv[i]);
                 }
                 lv.Clear();
             }
@@ -255,7 +255,8 @@ void SurfaceRenderer::ConvertBeziersToEdges() {
 
 void SurfaceRenderer::CullOccludedStrokes() {
     // Perform occlusion testing, if necessary.
-    if(mesh.l.n == 0) return;
+    if(mesh.l.IsEmpty())
+        return;
 
     // We can't perform hidden line removal on exact curves.
     ConvertBeziersToEdges();

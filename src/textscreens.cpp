@@ -57,8 +57,9 @@ void TextWindow::ScreenToggleGroupShown(int link, uint32_t v) {
 }
 void TextWindow::ScreenShowGroupsSpecial(int link, uint32_t v) {
     bool state = link == 's';
-    for(int i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
+    for(hGroup hg : SK.groupOrder) {
+        Group *g = SK.GetGroup(hg);
+
         g->visible = state;
     }
     SS.GW.persistentDirty = true;
@@ -71,7 +72,7 @@ void TextWindow::ScreenActivateGroup(int link, uint32_t v) {
 void TextWindow::ReportHowGroupSolved(hGroup hg) {
     SS.GW.ClearSuper();
     SS.TW.GoToScreen(Screen::GROUP_SOLVE_INFO);
-    SS.TW.shown.group.v = hg.v;
+    SS.TW.shown.group = hg;
     SS.ScheduleShowTW();
 }
 void TextWindow::ScreenHowGroupSolved(int link, uint32_t v) {
@@ -98,12 +99,13 @@ void TextWindow::ShowListOfGroups() {
 
     Printf(true, "%Ft active");
     Printf(false, "%Ft    shown dof group-name%E");
-    int i;
     bool afterActive = false;
-    for(i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
+    bool backgroundParity = false;
+    for(hGroup hg : SK.groupOrder) {
+        Group *g = SK.GetGroup(hg);
+
         std::string s = g->DescriptionString();
-        bool active = (g->h.v == SS.GW.activeGroup.v);
+        bool active = (g->h == SS.GW.activeGroup);
         bool shown = g->visible;
         bool ok = g->IsSolvedOkay();
         bool warn = (g->type == Group::Type::DRAWING_WORKPLANE &&
@@ -120,31 +122,33 @@ void TextWindow::ShowListOfGroups() {
               sprintf(sdof, "%-3d", dof);
             }
         }
-        bool ref = (g->h.v == Group::HGROUP_REFERENCES.v);
-        Printf(false, "%Bp%Fd "
+        bool ref = (g->h == Group::HGROUP_REFERENCES);
+        Printf(false,
+               "%Bp%Fd "
                "%Ft%s%Fb%D%f%Ll%s%E "
                "%Fb%s%D%f%Ll%s%E  "
                "%Fp%D%f%s%Ll%s%E "
                "%Fl%Ll%D%f%s",
-            // Alternate between light and dark backgrounds, for readability
-                (i & 1) ? 'd' : 'a',
-            // Link that activates the group
-                ref ? "   " : "",
-                g->h.v, (&TextWindow::ScreenActivateGroup),
-                ref ? "" : (active ? radioTrue : radioFalse),
-            // Link that hides or shows the group
-                afterActive ? " - " : "",
-                g->h.v, (&TextWindow::ScreenToggleGroupShown),
-                afterActive ? "" : (shown ? checkTrue : checkFalse),
-            // Link to the errors, if a problem occurred while solving
-                ok ? (warn ? 'm' : (dof > 0 ? 'i' : 's')) : 'x',
-                g->h.v, (&TextWindow::ScreenHowGroupSolved),
-                ok ? (warn ? "err" : sdof) : "",
-                ok ? "" : "ERR",
-            // Link to a screen that gives more details on the group
-                g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
+               // Alternate between light and dark backgrounds, for readability
+               backgroundParity ? 'd' : 'a',
+               // Link that activates the group
+               ref ? "   " : "",
+               g->h.v, (&TextWindow::ScreenActivateGroup),
+               ref ? "" : (active ? radioTrue : radioFalse),
+               // Link that hides or shows the group
+               afterActive ? " - " : "",
+               g->h.v, (&TextWindow::ScreenToggleGroupShown),
+               afterActive ? "" : (shown ? checkTrue : checkFalse),
+               // Link to the errors, if a problem occurred while solving
+               ok ? (warn ? 'm' : (dof > 0 ? 'i' : 's')) : 'x',
+               g->h.v, (&TextWindow::ScreenHowGroupSolved),
+               ok ? (warn ? "err" : sdof) : "",
+               ok ? "" : "ERR",
+               // Link to a screen that gives more details on the group
+               g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
 
         if(active) afterActive = true;
+        backgroundParity = !backgroundParity;
     }
 
     Printf(true,  "  %Fl%Ls%fshow all%E / %Fl%Lh%fhide all%E",
@@ -245,7 +249,7 @@ void TextWindow::ScreenOpacity(int link, uint32_t v) {
 
     SS.TW.ShowEditControl(11, ssprintf("%.2f", g->color.alphaF()));
     SS.TW.edit.meaning = Edit::GROUP_OPACITY;
-    SS.TW.edit.group.v = g->h.v;
+    SS.TW.edit.group = g->h;
 }
 void TextWindow::ScreenChangeExprA(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
@@ -271,7 +275,7 @@ void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
     SS.UndoRemember();
 
     hGroup hg = SS.TW.shown.group;
-    if(hg.v == SS.GW.activeGroup.v) {
+    if(hg == SS.GW.activeGroup) {
         SS.GW.activeGroup = SK.GetGroup(SS.GW.activeGroup)->PreviousGroup()->h;
     }
 
@@ -291,7 +295,7 @@ void TextWindow::ShowGroupInfo() {
     Group *g = SK.GetGroup(shown.group);
     const char *s = "???";
 
-    if(shown.group.v == Group::HGROUP_REFERENCES.v) {
+    if(shown.group == Group::HGROUP_REFERENCES) {
         Printf(true, "%FtGROUP  %E%s", g->DescriptionString().c_str());
         goto list_items;
     } else {
@@ -304,14 +308,18 @@ void TextWindow::ShowGroupInfo() {
     if(g->type == Group::Type::LATHE) {
         Printf(true, " %Ftlathe plane sketch");
     } else if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::ROTATE ||
-              g->type == Group::Type::TRANSLATE)
-    {
+              g->type == Group::Type::TRANSLATE || g->type == Group::Type::REVOLVE ||
+              g->type == Group::Type::HELIX) {
         if(g->type == Group::Type::EXTRUDE) {
             s = "extrude plane sketch";
         } else if(g->type == Group::Type::TRANSLATE) {
             s = "translate original sketch";
+        } else if(g->type == Group::Type::HELIX) {
+            s = "create helical extrusion";
         } else if(g->type == Group::Type::ROTATE) {
             s = "rotate original sketch";
+        } else if(g->type == Group::Type::REVOLVE) {
+            s = "revolve original sketch";
         }
         Printf(true, " %Ft%s%E", s);
 
@@ -362,10 +370,9 @@ void TextWindow::ShowGroupInfo() {
     }
     Printf(false, "");
 
-    if(g->type == Group::Type::EXTRUDE ||
-       g->type == Group::Type::LATHE ||
-       g->type == Group::Type::LINKED)
-    {
+    if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
+       g->type == Group::Type::REVOLVE || g->type == Group::Type::LINKED ||
+       g->type == Group::Type::HELIX) {
         bool un   = (g->meshCombine == Group::CombineAs::UNION);
         bool diff = (g->meshCombine == Group::CombineAs::DIFFERENCE);
         bool asy  = (g->meshCombine == Group::CombineAs::ASSEMBLE);
@@ -384,9 +391,8 @@ void TextWindow::ShowGroupInfo() {
             Group::CombineAs::ASSEMBLE,
             (asy ? RADIO_TRUE : RADIO_FALSE));
 
-        if(g->type == Group::Type::EXTRUDE ||
-           g->type == Group::Type::LATHE)
-        {
+        if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
+           g->type == Group::Type::REVOLVE || g->type == Group::Type::HELIX) {
             Printf(false,
                 "%Bd   %Ftcolor   %E%Bz  %Bd (%@, %@, %@) %f%D%Lf%Fl[change]%E",
                 &g->color,
@@ -397,9 +403,9 @@ void TextWindow::ShowGroupInfo() {
                 &TextWindow::ScreenOpacity);
         }
 
-        if(g->type == Group::Type::EXTRUDE ||
-           g->type == Group::Type::LATHE ||
-           g->type == Group::Type::LINKED) {
+        if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
+           g->type == Group::Type::REVOLVE || g->type == Group::Type::LINKED ||
+           g->type == Group::Type::HELIX) {
             Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
                 &TextWindow::ScreenChangeGroupOption,
                 g->suppress ? CHECK_TRUE : CHECK_FALSE);
@@ -443,16 +449,17 @@ list_items:
     Printf(false, "");
     Printf(false, "%Ft requests in group");
 
-    int i, a = 0;
-    for(i = 0; i < SK.request.n; i++) {
-        Request *r = &(SK.request.elem[i]);
+    int a = 0;
+    for(auto &r : SK.request) {
 
-        if(r->group.v == shown.group.v) {
-            std::string s = r->DescriptionString();
+        if(r.group == shown.group) {
+            std::string s = r.DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
-                (a & 1) ? 'd' : 'a',
-                r->h.v, (&TextWindow::ScreenSelectRequest),
-                &(TextWindow::ScreenHoverRequest), s.c_str());
+                   (a & 1) ? 'd' : 'a',
+                   r.h.v,
+                   (&TextWindow::ScreenSelectRequest),
+                   &(TextWindow::ScreenHoverRequest),
+                   s.c_str());
             a++;
         }
     }
@@ -461,16 +468,17 @@ list_items:
     a = 0;
     Printf(false, "");
     Printf(false, "%Ft constraints in group (%d DOF)", g->solved.dof);
-    for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
+    for(auto &c : SK.constraint) {
 
-        if(c->group.v == shown.group.v) {
-            std::string s = c->DescriptionString();
+        if(c.group == shown.group) {
+            std::string s = c.DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E %s",
-                (a & 1) ? 'd' : 'a',
-                c->h.v, (&TextWindow::ScreenSelectConstraint),
-                (&TextWindow::ScreenHoverConstraint), s.c_str(),
-                c->reference ? "(ref)" : "");
+                   (a & 1) ? 'd' : 'a',
+                   c.h.v,
+                   (&TextWindow::ScreenSelectConstraint),
+                   (&TextWindow::ScreenHoverConstraint),
+                   s.c_str(),
+                   c.reference ? "(ref)" : "");
             a++;
         }
     }
@@ -526,7 +534,7 @@ void TextWindow::ShowGroupSolveInfo() {
     }
 
     for(int i = 0; i < g->solved.remove.n; i++) {
-        hConstraint hc = g->solved.remove.elem[i];
+        hConstraint hc = g->solved.remove[i];
         Constraint *c = SK.constraint.FindByIdNoOops(hc);
         if(!c) continue;
 
@@ -750,7 +758,7 @@ void TextWindow::EditControlDone(std::string s) {
 
                 Group *g = SK.group.FindByIdNoOops(SS.TW.shown.group);
                 if(!g) break;
-                g->color = RGBf(rgb.x, rgb.y, rgb.z);
+                g->color = RgbaColor::FromFloat(rgb.x, rgb.y, rgb.z, g->color.alphaF());
 
                 SS.MarkGroupDirty(g->h);
                 SS.GW.ClearSuper();

@@ -51,7 +51,7 @@ void SMesh::GetBounding(Vector *vmax, Vector *vmin) const {
     *vmin = Vector::From( 1e12,  1e12,  1e12);
     *vmax = Vector::From(-1e12, -1e12, -1e12);
     for(i = 0; i < l.n; i++) {
-        STriangle *st = &(l.elem[i]);
+        const STriangle *st = &(l[i]);
         DoBounding(st->a, vmax, vmin);
         DoBounding(st->b, vmax, vmin);
         DoBounding(st->c, vmax, vmin);
@@ -70,7 +70,7 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
     m.l.ClearTags();
     int i;
     for(i = 0; i < m.l.n; i++) {
-        STriangle *tr = &(m.l.elem[i]);
+        STriangle *tr = &(m.l[i]);
 
         if((fabs(n.Dot(tr->a) - d) >= LENGTH_EPS) ||
            (fabs(n.Dot(tr->b) - d) >= LENGTH_EPS) ||
@@ -96,7 +96,7 @@ void SMesh::MakeOutlinesInto(SOutlineList *sol, EdgeKind edgeKind) {
 }
 
 //-----------------------------------------------------------------------------
-// When we are called, all of the triangles from l.elem[start] to the end must
+// When we are called, all of the triangles from l[start] to the end must
 // be coplanar. So we try to find a set of fewer triangles that covers the
 // exact same area, in order to reduce the number of triangles in the mesh.
 // We use this after a triangle has been split against the BSP.
@@ -108,7 +108,7 @@ void SMesh::MakeOutlinesInto(SOutlineList *sol, EdgeKind edgeKind) {
 void SMesh::Simplify(int start) {
     int maxTriangles = (l.n - start) + 10;
 
-    STriMeta meta = l.elem[start].meta;
+    STriMeta meta = l[start].meta;
 
     STriangle *tout = (STriangle *)MemAlloc(maxTriangles*sizeof(*tout));
     int toutc = 0;
@@ -121,7 +121,7 @@ void SMesh::Simplify(int start) {
 
     int i, j;
     for(i = start; i < l.n; i++) {
-        STriangle *tr = &(l.elem[i]);
+        STriangle *tr = &(l[i]);
         if(tr->MinAltitude() < LENGTH_EPS) {
             tr->tag = 1;
         } else {
@@ -133,7 +133,7 @@ void SMesh::Simplify(int start) {
         bool didAdd;
         convc = 0;
         for(i = start; i < l.n; i++) {
-            STriangle *tr = &(l.elem[i]);
+            STriangle *tr = &(l[i]);
             if(tr->tag) continue;
 
             tr->tag = 1;
@@ -158,7 +158,7 @@ void SMesh::Simplify(int start) {
 
                 Vector c;
                 for(i = start; i < l.n; i++) {
-                    STriangle *tr = &(l.elem[i]);
+                    STriangle *tr = &(l[i]);
                     if(tr->tag) continue;
 
                     if((tr->a).Equals(d) && (tr->b).Equals(b)) {
@@ -242,7 +242,7 @@ void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
     int i;
 
     for(i = 0; i < srcm->l.n; i++) {
-        STriangle *st = &(srcm->l.elem[i]);
+        STriangle *st = &(srcm->l[i]);
         int pn = l.n;
         atLeastOneDiscarded = false;
         SBsp3::InsertOrCreate(bsp3, st, this);
@@ -289,7 +289,7 @@ void SMesh::MakeFromDifferenceOf(SMesh *a, SMesh *b) {
 void SMesh::MakeFromCopyOf(SMesh *a) {
     ssassert(this != a, "Can't make from copy of self");
     for(int i = 0; i < a->l.n; i++) {
-        AddTriangle(&(a->l.elem[i]));
+        AddTriangle(&(a->l[i]));
     }
 }
 
@@ -318,9 +318,7 @@ void SMesh::MakeFromTransformationOf(SMesh *a, Vector trans,
     }
 }
 
-bool SMesh::IsEmpty() const {
-    return (l.n == 0);
-}
+bool SMesh::IsEmpty() const { return (l.IsEmpty()); }
 
 uint32_t SMesh::FirstIntersectionWith(Point2d mp) const {
     Vector rayPoint = SS.GW.UnProjectPoint3(Vector::From(mp.x, mp.y, 0.0));
@@ -329,7 +327,7 @@ uint32_t SMesh::FirstIntersectionWith(Point2d mp) const {
     uint32_t face = 0;
     double faceT = VERY_NEGATIVE;
     for(int i = 0; i < l.n; i++) {
-        const STriangle &tr = l.elem[i];
+        const STriangle &tr = l[i];
         if(tr.meta.face == 0) continue;
 
         double t;
@@ -347,7 +345,7 @@ Vector SMesh::GetCenterOfMass() const {
     Vector center = {};
     double vol = 0.0;
     for(int i = 0; i < l.n; i++) {
-        STriangle &tr = l.elem[i];
+        const STriangle &tr = l[i];
         double tvol = tr.SignedVolume();
         center = center.Plus(tr.a.Plus(tr.b.Plus(tr.c)).ScaledBy(tvol / 4.0));
         vol += tvol;
@@ -365,7 +363,7 @@ SKdNode *SKdNode::From(SMesh *m) {
     STriangle *tra = (STriangle *)AllocTemporary((m->l.n) * sizeof(*tra));
 
     for(i = 0; i < m->l.n; i++) {
-        tra[i] = m->l.elem[i];
+        tra[i] = m->l[i];
     }
 
     srand(0);
@@ -637,7 +635,7 @@ void SKdNode::SnapToVertex(Vector v, SMesh *extras) {
 void SKdNode::SnapToMesh(SMesh *m) {
     int i, j, k;
     for(i = 0; i < m->l.n; i++) {
-        STriangle *tr = &(m->l.elem[i]);
+        STriangle *tr = &(m->l[i]);
         if(tr->IsDegenerate()) {
             continue;
         }
@@ -649,7 +647,7 @@ void SKdNode::SnapToMesh(SMesh *m) {
 
             for(k = 0; k < extra.l.n; k++) {
                 STriangle *tra = (STriangle *)AllocTemporary(sizeof(*tra));
-                *tra = extra.l.elem[k];
+                *tra = extra.l[k];
                 AddTriangle(tra);
             }
             extra.Clear();
@@ -1129,4 +1127,68 @@ void SMesh::RemoveDegenerateTriangles() {
         tr.tag = (int)tr.IsDegenerate();
     }
     l.RemoveTagged();
+}
+
+double SMesh::CalculateVolume() const {
+    double vol = 0;
+    for(STriangle tr : l) {
+        // Translate to place vertex A at (x, y, 0)
+        Vector trans = Vector::From(tr.a.x, tr.a.y, 0);
+        tr.a = (tr.a).Minus(trans);
+        tr.b = (tr.b).Minus(trans);
+        tr.c = (tr.c).Minus(trans);
+
+        // Rotate to place vertex B on the y-axis. Depending on
+        // whether the triangle is CW or CCW, C is either to the
+        // right or to the left of the y-axis. This handles the
+        // sign of our normal.
+        Vector u = Vector::From(-tr.b.y, tr.b.x, 0);
+        u = u.WithMagnitude(1);
+        Vector v = Vector::From(tr.b.x, tr.b.y, 0);
+        v = v.WithMagnitude(1);
+        Vector n = Vector::From(0, 0, 1);
+
+        tr.a = (tr.a).DotInToCsys(u, v, n);
+        tr.b = (tr.b).DotInToCsys(u, v, n);
+        tr.c = (tr.c).DotInToCsys(u, v, n);
+
+        n = tr.Normal().WithMagnitude(1);
+
+        // Triangles on edge don't contribute
+        if(fabs(n.z) < LENGTH_EPS) continue;
+
+        // The plane has equation p dot n = a dot n
+        double d = (tr.a).Dot(n);
+        // nx*x + ny*y + nz*z = d
+        // nz*z = d - nx*x - ny*y
+        double A = -n.x/n.z, B = -n.y/n.z, C = d/n.z;
+
+        double mac = tr.c.y/tr.c.x, mbc = (tr.c.y - tr.b.y)/tr.c.x;
+        double xc = tr.c.x, yb = tr.b.y;
+
+        // I asked Maple for
+        //    int(int(A*x + B*y +C, y=mac*x..(mbc*x + yb)), x=0..xc);
+        double integral =
+            (1.0/3)*(
+                A*(mbc-mac)+
+                (1.0/2)*B*(mbc*mbc-mac*mac)
+            )*(xc*xc*xc)+
+            (1.0/2)*(A*yb+B*yb*mbc+C*(mbc-mac))*xc*xc+
+            C*yb*xc+
+            (1.0/2)*B*yb*yb*xc;
+
+        vol += integral;
+    }
+    return vol;
+}
+
+double SMesh::CalculateSurfaceArea(const std::vector<uint32_t> &faces) const {
+    double area = 0.0;
+    for(uint32_t f : faces) {
+        for(const STriangle &t : l) {
+            if(f != t.meta.face) continue;
+            area += t.Area();
+        }
+    }
+    return area;
 }

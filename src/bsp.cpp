@@ -12,26 +12,19 @@ SBsp2 *SBsp2::Alloc() { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }
 SBsp3 *SBsp3::Alloc() { return (SBsp3 *)AllocTemporary(sizeof(SBsp3)); }
 
 SBsp3 *SBsp3::FromMesh(const SMesh *m) {
-    SBsp3 *bsp3 = NULL;
-    int i;
-
     SMesh mc = {};
-    for(i = 0; i < m->l.n; i++) {
-        mc.AddTriangle(&(m->l.elem[i]));
-    }
+    for(auto const &elt : m->l) { mc.AddTriangle(&elt); }
 
     srand(0); // Let's be deterministic, at least!
     int n = mc.l.n;
     while(n > 1) {
         int k = rand() % n;
         n--;
-        swap(mc.l.elem[k], mc.l.elem[n]);
+        swap(mc.l[k], mc.l[n]);
     }
 
-    for(i = 0; i < mc.l.n; i++) {
-        bsp3 = InsertOrCreate(bsp3, &(mc.l.elem[i]), NULL);
-    }
-
+    SBsp3 *bsp3 = NULL;
+    for(auto &elt : mc.l) { bsp3 = InsertOrCreate(bsp3, &elt, NULL); }
     mc.Clear();
     return bsp3;
 }

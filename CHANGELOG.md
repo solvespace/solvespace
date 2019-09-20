@@ -5,6 +5,7 @@ Changelog
 ---
 
 New sketch features:
+  * New groups, revolution and helical extrusion.
   * Extrude, lathe, translate and rotate groups can use the "assembly"
     boolean operation, to increase performance.
   * The solid model of extrude and lathe groups can be suppressed,
@@ -52,6 +53,7 @@ New export/import features:
     exported. This format allows to easily hack on triangle mesh data created
     in SolveSpace, supports colour information and is more space efficient than
     most other formats.
+  * VRML (WRL) triangle meshes can now be exported, useful for e.g. [KiCAD](http://kicad.org).
   * Export 2d section: custom styled entities that lie in the same
     plane as the exported section are included.
 
@@ -68,6 +70,10 @@ New measurement/analysis features:
   * New command for measuring center of mass, with live updates as the sketch
     changes, "Analyze → Center of Mass".
   * New option for displaying areas of closed contours.
+  * When calculating volume of the mesh, volume of the solid from the current
+    group is now shown alongside total volume of all solids.
+  * When calculating area, and faces are selected, calculate area of those faces
+    instead of the closed contour in the sketch.
   * When selecting a point and a line, projected distance to current
     workplane is displayed.
 

@@ -146,7 +146,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         p.group = group;
         p.style = style;
         p.construction = e.construction;
-        if(workplane.v == Entity::FREE_IN_3D.v) {
+        if(workplane == Entity::FREE_IN_3D) {
             p.type = Entity::Type::POINT_IN_3D;
             // params for x y z
             p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
@@ -168,7 +168,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         n.group = group;
         n.style = style;
         n.construction = e.construction;
-        if(workplane.v == Entity::FREE_IN_3D.v) {
+        if(workplane == Entity::FREE_IN_3D) {
             n.type = Entity::Type::NORMAL_IN_3D;
             n.param[0] = AddParam(param, h.param(32+0));
             n.param[1] = AddParam(param, h.param(32+1));
@@ -203,11 +203,11 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 
 std::string Request::DescriptionString() const {
     const char *s = "";
-    if(h.v == Request::HREQUEST_REFERENCE_XY.v) {
+    if(h == Request::HREQUEST_REFERENCE_XY) {
         s = "#XY";
-    } else if(h.v == Request::HREQUEST_REFERENCE_YZ.v) {
+    } else if(h == Request::HREQUEST_REFERENCE_YZ) {
         s = "#YZ";
-    } else if(h.v == Request::HREQUEST_REFERENCE_ZX.v) {
+    } else if(h == Request::HREQUEST_REFERENCE_ZX) {
         s = "#ZX";
     } else {
         switch(type) {
@@ -228,10 +228,10 @@ std::string Request::DescriptionString() const {
 
 int Request::IndexOfPoint(hEntity he) const {
     if(type == Type::DATUM_POINT) {
-        return (he.v == h.entity(0).v) ? 0 : -1;
+        return (he == h.entity(0)) ? 0 : -1;
     }
     for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
-        if(he.v == h.entity(i + 1).v) {
+        if(he == h.entity(i + 1)) {
             return i;
         }
     }

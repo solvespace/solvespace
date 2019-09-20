@@ -58,7 +58,7 @@ void CairoRenderer::OutputEnd() {
 }
 
 void CairoRenderer::SelectStroke(hStroke hcs) {
-    if(current.hcs.v == hcs.v) return;
+    if(current.hcs == hcs) return;
     FinishPath();
 
     Stroke *stroke = strokes.FindById(hcs);

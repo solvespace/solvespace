@@ -151,6 +151,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my, UiCanvas *canvas,
 
     int x = 17, y = (int)(height - 52);
 
+    // When changing these values, also change the asReference drawing code in drawentity.cpp.
     int fudge = 8;
     int h = 34*16 + 3*16 + fudge;
     int aleft = 0, aright = 66, atop = y+16+fudge/2, abot = y+16-h;
@@ -174,7 +175,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my, UiCanvas *canvas,
 
     bool leftpos = true;
     for(ToolIcon &icon : Toolbar) {
-        if(icon.name == "") { // spacer
+        if(icon.name.empty()) { // spacer
             if(!leftpos) {
                 leftpos = true;
                 y -= 32;

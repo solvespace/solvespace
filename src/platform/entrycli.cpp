@@ -312,7 +312,7 @@ static bool RunCommand(const std::vector<std::string> args) {
         return false;
     }
 
-    if(inputFiles.size() == 0) {
+    if(inputFiles.empty()) {
         fprintf(stderr, "At least one input file must be specified.\n");
         return false;
     }

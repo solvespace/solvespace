@@ -142,6 +142,7 @@ public:
     BitmapFont bitmapFont = {};
 
     virtual void Clear();
+    virtual ~Canvas() = default;
 
     hStroke GetStroke(const Stroke &stroke);
     hFill GetFill(const Fill &fill);
@@ -171,6 +172,13 @@ public:
 
     virtual std::shared_ptr<BatchCanvas> CreateBatch();
 };
+
+template<>
+struct IsHandleOracle<Canvas::hStroke> : std::true_type {};
+
+template<>
+struct IsHandleOracle<Canvas::hFill> : std::true_type {};
+
 
 // An interface for view-dependent visualization.
 class ViewportCanvas : public Canvas {
@@ -276,7 +284,7 @@ public:
     const Camera &GetCamera() const override { return camera; }
 
     // ViewportCanvas interface.
-    void SetCamera(const Camera &camera) override { this->camera = camera; };
+    void SetCamera(const Camera &camera) override { this->camera = camera; }
     void SetLighting(const Lighting &lighting) override { this->lighting = lighting; }
 
     void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override;
@@ -353,7 +361,7 @@ public:
     void OutputEnd() override;
 };
 
-class CairoPixmapRenderer : public CairoRenderer {
+class CairoPixmapRenderer final : public CairoRenderer {
 public:
     std::shared_ptr<Pixmap>  pixmap;
 
