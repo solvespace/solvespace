@@ -105,7 +105,9 @@ const MenuEntry Menu[] = {
 { 1, N_("Step &Rotating"),              Command::GROUP_ROT,        S|'r',   KN, mGrp   },
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
 { 1, N_("E&xtrude"),                    Command::GROUP_EXTRUDE,    S|'x',   KN, mGrp   },
+{ 1, N_("&Helix"),                      Command::GROUP_HELIX,      S|'h',   KN, mGrp   },
 { 1, N_("&Lathe"),                      Command::GROUP_LATHE,      S|'l',   KN, mGrp   },
+{ 1, N_("Re&volve"),                    Command::GROUP_REVOLVE,    S|'v',   KN, mGrp   },
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
 { 1, N_("Link / Assemble..."),          Command::GROUP_LINK,       S|'i',   KN, mGrp   },
 { 1, N_("Link Recent"),                 Command::GROUP_RECENT,     0,       KN, mGrp   },
@@ -379,7 +381,9 @@ void GraphicsWindow::Init() {
     orig.projUp = projUp;
 
     // And with the last group active
-    activeGroup = SK.groupOrder.elem[SK.groupOrder.n - 1];
+    ssassert(!SK.groupOrder.IsEmpty(),
+             "Group order can't be empty since we will activate the last group.");
+    activeGroup = *SK.groupOrder.Last();
     SK.GetGroup(activeGroup)->Activate();
 
     showWorkplanes = false;
@@ -571,7 +575,7 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
     Group *g = SK.GetGroup(activeGroup);
     g->GenerateDisplayItems();
     for(int i = 0; i < g->displayMesh.l.n; i++) {
-        STriangle *tr = &(g->displayMesh.l.elem[i]);
+        STriangle *tr = &(g->displayMesh.l[i]);
         if(!includeMesh) {
             bool found = false;
             for(const hEntity &face : faces) {
@@ -587,9 +591,9 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
     }
     if(!includeMesh) return;
     for(int i = 0; i < g->polyLoops.l.n; i++) {
-        SContour *sc = &(g->polyLoops.l.elem[i]);
+        SContour *sc = &(g->polyLoops.l[i]);
         for(int j = 0; j < sc->l.n; j++) {
-            HandlePointForZoomToFit(sc->l.elem[j].p, pmax, pmin, wmin, usePerspective, camera);
+            HandlePointForZoomToFit(sc->l[j].p, pmax, pmin, wmin, usePerspective, camera);
         }
     }
 }
@@ -606,7 +610,7 @@ double GraphicsWindow::ZoomToFit(const Camera &camera,
 
     if(useSelection) {
         for(int i = 0; i < selection.n; i++) {
-            Selection *s = &selection.elem[i];
+            Selection *s = &selection[i];
             if(s->entity.v != 0) {
                 Entity *e = SK.entity.FindById(s->entity);
                 if(e->IsFace()) {
@@ -844,10 +848,11 @@ void GraphicsWindow::EnsureValidActives() {
     bool change = false;
     // The active group must exist, and not be the references.
     Group *g = SK.group.FindByIdNoOops(activeGroup);
-    if((!g) || (g->h.v == Group::HGROUP_REFERENCES.v)) {
+    if((!g) || (g->h == Group::HGROUP_REFERENCES)) {
+        // Not using range-for because this is used to find an index.
         int i;
         for(i = 0; i < SK.groupOrder.n; i++) {
-            if(SK.groupOrder.elem[i].v != Group::HGROUP_REFERENCES.v) {
+            if(SK.groupOrder[i] != Group::HGROUP_REFERENCES) {
                 break;
             }
         }
@@ -863,7 +868,7 @@ void GraphicsWindow::EnsureValidActives() {
             // do it now so that drawing mode isn't switched to "Free in 3d".
             SS.GenerateAll(SolveSpaceUI::Generate::ALL);
         } else {
-            activeGroup = SK.groupOrder.elem[i];
+            activeGroup = SK.groupOrder[i];
         }
         SK.GetGroup(activeGroup)->Activate();
         change = true;
@@ -874,7 +879,7 @@ void GraphicsWindow::EnsureValidActives() {
         Entity *e = SK.entity.FindByIdNoOops(ActiveWorkplane());
         if(e) {
             hGroup hgw = e->group;
-            if(hgw.v != activeGroup.v && SS.GroupsInOrder(activeGroup, hgw)) {
+            if(hgw != activeGroup && SS.GroupsInOrder(activeGroup, hgw)) {
                 // The active workplane is in a group that comes after the
                 // active group; so any request or constraint will fail.
                 SetWorkplaneFreeIn3d();
@@ -931,7 +936,7 @@ hEntity GraphicsWindow::ActiveWorkplane() {
     }
 }
 bool GraphicsWindow::LockedInWorkplane() {
-    return (SS.GW.ActiveWorkplane().v != Entity::FREE_IN_3D.v);
+    return (SS.GW.ActiveWorkplane() != Entity::FREE_IN_3D);
 }
 
 void GraphicsWindow::ForceTextWindowShown() {
@@ -1026,7 +1031,7 @@ void GraphicsWindow::MenuEdit(Command id) {
         case Command::SELECT_ALL: {
             Entity *e;
             for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                if(e->group.v != SS.GW.activeGroup.v) continue;
+                if(e->group != SS.GW.activeGroup) continue;
                 if(e->IsFace() || e->IsDistance()) continue;
                 if(!e->IsVisible()) continue;
 
@@ -1044,7 +1049,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             do {
                 didSomething = false;
                 for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                    if(e->group.v != SS.GW.activeGroup.v) continue;
+                    if(e->group != SS.GW.activeGroup) continue;
                     if(!e->HasEndpoints()) continue;
                     if(!e->IsVisible()) continue;
 
@@ -1055,7 +1060,7 @@ void GraphicsWindow::MenuEdit(Command id) {
                     List<Selection> *ls = &(SS.GW.selection);
                     for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
                         if(!s->entity.v) continue;
-                        if(s->entity.v == e->h.v) {
+                        if(s->entity == e->h) {
                             alreadySelected = true;
                             continue;
                         }
@@ -1302,7 +1307,7 @@ void GraphicsWindow::ToggleBool(bool *v) {
     // If the mesh or edges were previously hidden, they haven't been generated,
     // and if we are going to show them, we need to generate them first.
     Group *g = SK.GetGroup(SS.GW.activeGroup);
-    if(*v && (g->displayOutlines.l.n == 0 && (v == &showEdges || v == &showOutlines))) {
+    if(*v && (g->displayOutlines.l.IsEmpty() && (v == &showEdges || v == &showOutlines))) {
         SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
     }
 

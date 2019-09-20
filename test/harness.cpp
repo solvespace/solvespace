@@ -363,6 +363,7 @@ int main(int argc, char **argv) {
         }
 
         SS.Init();
+        SS.showToolbar = false;
         SS.checkClosedContour = false;
 
         Test::Helper helper = {};

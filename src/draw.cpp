@@ -8,8 +8,8 @@
 #include "solvespace.h"
 
 bool GraphicsWindow::Selection::Equals(Selection *b) {
-    if(entity.v     != b->entity.v)     return false;
-    if(constraint.v != b->constraint.v) return false;
+    if(entity     != b->entity)     return false;
+    if(constraint != b->constraint) return false;
     return true;
 }
 
@@ -151,7 +151,8 @@ void GraphicsWindow::MakeUnselected(Selection *stog, bool coincidentPointTrick){
             Vector ep = e->PointGetNum();
             for(s = selection.First(); s; s = selection.NextAfter(s)) {
                 if(!s->entity.v) continue;
-                if(s->entity.v == stog->entity.v) continue;
+                if(s->entity == stog->entity)
+                    continue;
                 Entity *se = SK.GetEntity(s->entity);
                 if(!se->IsPoint()) continue;
                 if(ep.Equals(se->PointGetNum())) {
@@ -211,7 +212,7 @@ void GraphicsWindow::SelectByMarquee() {
 
     Entity *e;
     for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-        if(e->group.v != SS.GW.activeGroup.v) continue;
+        if(e->group != SS.GW.activeGroup) continue;
         if(e->IsFace() || e->IsDistance()) continue;
         if(!e->IsVisible()) continue;
 
@@ -232,7 +233,7 @@ void GraphicsWindow::GroupSelection() {
     gs = {};
     int i;
     for(i = 0; i < selection.n; i++) {
-        Selection *s = &(selection.elem[i]);
+        Selection *s = &(selection[i]);
         if(s->entity.v) {
             (gs.n)++;
 
@@ -328,7 +329,8 @@ Lighting GraphicsWindow::GetLighting() const {
 
 GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
     Selection sel = {};
-    if(hoverList.n == 0) return sel;
+    if(hoverList.IsEmpty())
+        return sel;
 
     Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
     int bestOrder = -1;
@@ -701,7 +703,7 @@ void GraphicsWindow::Draw(Canvas *canvas) {
     if(SS.showContourAreas) {
         for(hGroup hg : SK.groupOrder) {
             Group *g = SK.GetGroup(hg);
-            if(g->h.v != activeGroup.v) continue;
+            if(g->h != activeGroup) continue;
             if(!(g->IsVisible())) continue;
             g->DrawContourAreaLabels(canvas);
         }

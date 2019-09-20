@@ -772,70 +772,48 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
         }
 
         case Command::VOLUME: {
-            SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
+            Group *g = SK.GetGroup(SS.GW.activeGroup);
+            double totalVol = g->displayMesh.CalculateVolume();
+            std::string msg = ssprintf(
+                _("The volume of the solid model is:\n\n"
+                  "    %s"),
+                SS.MmToStringSI(totalVol, /*dim=*/3).c_str());
 
-            double vol = 0;
-            int i;
-            for(i = 0; i < m->l.n; i++) {
-                STriangle tr = m->l.elem[i];
-
-                // Translate to place vertex A at (x, y, 0)
-                Vector trans = Vector::From(tr.a.x, tr.a.y, 0);
-                tr.a = (tr.a).Minus(trans);
-                tr.b = (tr.b).Minus(trans);
-                tr.c = (tr.c).Minus(trans);
-
-                // Rotate to place vertex B on the y-axis. Depending on
-                // whether the triangle is CW or CCW, C is either to the
-                // right or to the left of the y-axis. This handles the
-                // sign of our normal.
-                Vector u = Vector::From(-tr.b.y, tr.b.x, 0);
-                u = u.WithMagnitude(1);
-                Vector v = Vector::From(tr.b.x, tr.b.y, 0);
-                v = v.WithMagnitude(1);
-                Vector n = Vector::From(0, 0, 1);
-
-                tr.a = (tr.a).DotInToCsys(u, v, n);
-                tr.b = (tr.b).DotInToCsys(u, v, n);
-                tr.c = (tr.c).DotInToCsys(u, v, n);
-
-                n = tr.Normal().WithMagnitude(1);
-
-                // Triangles on edge don't contribute
-                if(fabs(n.z) < LENGTH_EPS) continue;
-
-                // The plane has equation p dot n = a dot n
-                double d = (tr.a).Dot(n);
-                // nx*x + ny*y + nz*z = d
-                // nz*z = d - nx*x - ny*y
-                double A = -n.x/n.z, B = -n.y/n.z, C = d/n.z;
-
-                double mac = tr.c.y/tr.c.x, mbc = (tr.c.y - tr.b.y)/tr.c.x;
-                double xc = tr.c.x, yb = tr.b.y;
-
-                // I asked Maple for
-                //    int(int(A*x + B*y +C, y=mac*x..(mbc*x + yb)), x=0..xc);
-                double integral =
-                    (1.0/3)*(
-                        A*(mbc-mac)+
-                        (1.0/2)*B*(mbc*mbc-mac*mac)
-                    )*(xc*xc*xc)+
-                    (1.0/2)*(A*yb+B*yb*mbc+C*(mbc-mac))*xc*xc+
-                    C*yb*xc+
-                    (1.0/2)*B*yb*yb*xc;
-
-                vol += integral;
+            SMesh curMesh = {};
+            g->thisShell.TriangulateInto(&curMesh);
+            double curVol = curMesh.CalculateVolume();
+            if(curVol > 0.0) {
+                msg += ssprintf(
+                    _("\nThe volume of current group mesh is:\n\n"
+                      "    %s"),
+                    SS.MmToStringSI(curVol, /*dim=*/3).c_str());
             }
-            Message(_("The volume of the solid model is:\n\n"
-                      "    %s\n\n"
-                      "Curved surfaces have been approximated as triangles.\n"
-                      "This introduces error, typically of around 1%%."),
-                SS.MmToStringSI(vol, /*dim=*/3).c_str());
+
+            msg += _("\n\nCurved surfaces have been approximated as triangles.\n"
+                     "This introduces error, typically of around 1%.");
+            Message("%s", msg.c_str());
             break;
         }
 
         case Command::AREA: {
             Group *g = SK.GetGroup(SS.GW.activeGroup);
+            SS.GW.GroupSelection();
+            auto const &gs = SS.GW.gs;
+            double scale = SS.MmPerUnit();
+
+            if(gs.faces > 0) {
+                std::vector<uint32_t> faces;
+                faces.push_back(gs.face[0].v);
+                if(gs.faces > 1) faces.push_back(gs.face[1].v);
+                double area = g->displayMesh.CalculateSurfaceArea(faces);
+                Message(_("The surface area of the selected faces is:\n\n"
+                          "    %s\n\n"
+                          "Curves have been approximated as piecewise linear.\n"
+                          "This introduces error, typically of around 1%%."),
+                    SS.MmToStringSI(area, /*dim=*/2).c_str());
+                break;
+            }
+
             if(g->polyError.how != PolyError::GOOD) {
                 Error(_("This group does not contain a correctly-formed "
                         "2d closed area. It is open, not coplanar, or self-"
@@ -907,7 +885,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                     int i;
                     SContour *sc = &(SS.traced.path);
                     for(i = 0; i < sc->l.n; i++) {
-                        Vector p = sc->l.elem[i].p;
+                        Vector p = sc->l[i].p;
                         double s = SS.exportScale;
                         fprintf(f, "%.10f, %.10f, %.10f\r\n",
                             p.x/s, p.y/s, p.z/s);
@@ -938,7 +916,7 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
     root->MakeCertainEdgesInto(&(SS.nakedEdges),
         EdgeKind::NAKED_OR_SELF_INTER, /*coplanarIsInter=*/true, &inters, &leaks);
 
-    if(reportOnlyWhenNotOkay && !inters && !leaks && SS.nakedEdges.l.n == 0) {
+    if(reportOnlyWhenNotOkay && !inters && !leaks && SS.nakedEdges.l.IsEmpty()) {
         return;
     }
     SS.GW.Invalidate();
@@ -954,7 +932,7 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
         _("\n\nThe model contains %d triangles, from %d surfaces."),
         g->displayMesh.l.n, g->runningShell.surface.n);
 
-    if(SS.nakedEdges.l.n == 0) {
+    if(SS.nakedEdges.l.IsEmpty()) {
         Message(_("%s\n\n%s\n\nZero problematic edges, good.%s"),
             intersMsg, leaksMsg, cntMsg.c_str());
     } else {
@@ -1045,7 +1023,7 @@ BBox Sketch::CalculateEntityBBox(bool includingInvisible) {
         // arc center point shouldn't be included in bounding box calculation
         if(e.IsPoint() && e.h.isFromRequest()) {
             Request *r = SK.GetRequest(e.h.request());
-            if(r->type == Request::Type::ARC_OF_CIRCLE && e.h.v == r->h.entity(1).v) {
+            if(r->type == Request::Type::ARC_OF_CIRCLE && e.h == r->h.entity(1)) {
                 continue;
             }
         }

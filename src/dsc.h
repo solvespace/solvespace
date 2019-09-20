@@ -9,6 +9,34 @@
 
 #include "solvespace.h"
 
+#include <type_traits>
+
+/// Trait indicating which types are handle types and should get the associated operators.
+/// Specialize for each handle type and inherit from std::true_type.
+template<typename T>
+struct IsHandleOracle : std::false_type {};
+
+// Equality-compare any two instances of a handle type.
+template<typename T>
+static inline typename std::enable_if<IsHandleOracle<T>::value, bool>::type
+operator==(T const &lhs, T const &rhs) {
+    return lhs.v == rhs.v;
+}
+
+// Inequality-compare any two instances of a handle type.
+template<typename T>
+static inline typename std::enable_if<IsHandleOracle<T>::value, bool>::type
+operator!=(T const &lhs, T const &rhs) {
+    return !(lhs == rhs);
+}
+
+// Less-than-compare any two instances of a handle type.
+template<typename T>
+static inline typename std::enable_if<IsHandleOracle<T>::value, bool>::type
+operator<(T const &lhs, T const &rhs) {
+    return lhs.v < rhs.v;
+}
+
 class Vector;
 class Vector4;
 class Point2d;
@@ -92,7 +120,7 @@ public:
     Vector ScaledBy(double s) const;
     Vector ProjectInto(hEntity wrkpl) const;
     Vector ProjectVectorInto(hEntity wrkpl) const;
-    double DivPivoting(Vector delta) const;
+    double DivProjected(Vector delta) const;
     Vector ClosestOrtho() const;
     void MakeMaxMin(Vector *maxv, Vector *minv) const;
     Vector ClampWithin(double minv, double maxv) const;
@@ -159,7 +187,7 @@ public:
     Point2d Plus(const Point2d &b) const;
     Point2d Minus(const Point2d &b) const;
     Point2d ScaledBy(double s) const;
-    double DivPivoting(Point2d delta) const;
+    double DivProjected(Point2d delta) const;
     double Dot(Point2d p) const;
     double DistanceTo(const Point2d &p) const;
     double DistanceToLine(const Point2d &p0, const Point2d &dp, bool asSegment) const;
@@ -174,17 +202,20 @@ public:
 };
 
 // A simple list
-template <class T>
+template<class T>
 class List {
+    T *elem            = nullptr;
+    int elemsAllocated = 0;
+
 public:
-    T   *elem;
-    int  n;
-    int  elemsAllocated;
+    int  n = 0;
+
+    bool IsEmpty() const { return n == 0; }
 
     void ReserveMore(int howMuch) {
         if(n + howMuch > elemsAllocated) {
             elemsAllocated = n + howMuch;
-            T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(elem[0]));
+            T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(T));
             for(int i = 0; i < n; i++) {
                 new(&newElem[i]) T(std::move(elem[i]));
                 elem[i].~T();
@@ -214,31 +245,41 @@ public:
     }
 
     T *First() {
-        return (n == 0) ? NULL : &(elem[0]);
+        return IsEmpty() ? nullptr : &(elem[0]);
     }
     const T *First() const {
-        return (n == 0) ? NULL : &(elem[0]);
+        return IsEmpty() ? nullptr : &(elem[0]);
     }
+
+    T *Last() { return IsEmpty() ? nullptr : &(elem[n - 1]); }
+    const T *Last() const { return IsEmpty() ? nullptr : &(elem[n - 1]); }
+
     T *NextAfter(T *prev) {
-        if(!prev) return NULL;
-        if(prev - elem == (n - 1)) return NULL;
+        if(IsEmpty() || !prev) return NULL;
+        if(prev - First() == (n - 1)) return NULL;
         return prev + 1;
     }
     const T *NextAfter(const T *prev) const {
-        if(!prev) return NULL;
-        if(prev - elem == (n - 1)) return NULL;
+        if(IsEmpty() || !prev) return NULL;
+        if(prev - First() == (n - 1)) return NULL;
         return prev + 1;
     }
 
-    T *begin() { return &elem[0]; }
-    T *end() { return &elem[n]; }
-    const T *begin() const { return &elem[0]; }
-    const T *end() const { return &elem[n]; }
+    T &Get(size_t i) { return elem[i]; }
+    T const &Get(size_t i) const { return elem[i]; }
+    T &operator[](size_t i) { return Get(i); }
+    T const &operator[](size_t i) const { return Get(i); }
+
+    T *begin() { return IsEmpty() ? nullptr : &elem[0]; }
+    T *end() { return IsEmpty() ? nullptr : &elem[n]; }
+    const T *begin() const { return IsEmpty() ? nullptr : &elem[0]; }
+    const T *end() const { return IsEmpty() ? nullptr : &elem[n]; }
+    const T *cbegin() const { return begin(); }
+    const T *cend() const { return end(); }
 
     void ClearTags() {
-        int i;
-        for(i = 0; i < n; i++) {
-            elem[i].tag = 0;
+        for(auto & elt : *this) {
+            elt.tag = 0;
         }
     }
 
@@ -251,21 +292,20 @@ public:
     }
 
     void RemoveTagged() {
-        int src, dest;
-        dest = 0;
-        for(src = 0; src < n; src++) {
-            if(elem[src].tag) {
-                // this item should be deleted
-            } else {
-                if(src != dest) {
-                    elem[dest] = elem[src];
-                }
-                dest++;
+        auto newEnd = std::remove_if(this->begin(), this->end(), [](T &t) {
+            if(t.tag) {
+                return true;
+            }
+            return false;
+        });
+        auto oldEnd = this->end();
+        n = newEnd - begin();
+        if (newEnd != nullptr && oldEnd != nullptr) {
+            while(newEnd != oldEnd) {
+                newEnd->~T();
+                ++newEnd;
             }
         }
-        for(int i = dest; i < n; i++)
-            elem[i].~T();
-        n = dest;
         // and elemsAllocated is untouched, because we didn't resize
     }
 
@@ -285,21 +325,44 @@ public:
     }
 };
 
+// Comparison functor used by IdList and related classes
+template <class T, class H>
+struct CompareId {
+    bool operator()(T const& lhs, T const& rhs) const {
+        return lhs.h.v < rhs.h.v;
+    }
+    bool operator()(T const& lhs, H rhs) const {
+        return lhs.h.v < rhs.v;
+    }
+};
+
 // A list, where each element has an integer identifier. The list is kept
 // sorted by that identifier, and items can be looked up in log n time by
 // id.
 template <class T, class H>
 class IdList {
+    T *elem            = nullptr;
+    int elemsAllocated = 0;
 public:
-    T     *elem;
-    int   n;
-    int   elemsAllocated;
+    int n = 0;
+
+    using Compare = CompareId<T, H>;
+
+    bool IsEmpty() const {
+        return n == 0;
+    }
+
+    void AllocForOneMore() {
+        if(n >= elemsAllocated) {
+            ReserveMore((elemsAllocated + 32)*2 - n);
+        }
+    }
 
     uint32_t MaximumId() {
-        if(n == 0) {
+        if(IsEmpty()) {
             return 0;
         } else {
-            return elem[n - 1].h.v;
+            return Last()->h.v;
         }
     }
 
@@ -310,10 +373,35 @@ public:
         return t->h;
     }
 
+    T * LowerBound(T const& t) {
+        if(IsEmpty()) {
+            return nullptr;
+        }
+        auto it = std::lower_bound(begin(), end(), t, Compare());
+        return it;
+    }
+
+    T * LowerBound(H const& h) {
+        if(IsEmpty()) {
+            return nullptr;
+        }
+        auto it = std::lower_bound(begin(), end(), h, Compare());
+        return it;
+    }
+
+    int LowerBoundIndex(T const& t) {
+        if(IsEmpty()) {
+            return 0;
+        }
+        auto it = LowerBound(t);
+        auto idx = std::distance(begin(), it);
+        auto i = static_cast<int>(idx);
+        return i;
+    }
     void ReserveMore(int howMuch) {
         if(n + howMuch > elemsAllocated) {
             elemsAllocated = n + howMuch;
-            T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(elem[0]));
+            T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(T));
             for(int i = 0; i < n; i++) {
                 new(&newElem[i]) T(std::move(elem[i]));
                 elem[i].~T();
@@ -324,28 +412,16 @@ public:
     }
 
     void Add(T *t) {
-        if(n >= elemsAllocated) {
-            ReserveMore((elemsAllocated + 32)*2 - n);
-        }
+        AllocForOneMore();
 
-        int first = 0, last = n;
-        // We know that we must insert within the closed interval [first,last]
-        while(first != last) {
-            int mid = (first + last)/2;
-            H hm = elem[mid].h;
-            ssassert(hm.v != t->h.v, "Handle isn't unique");
-            if(hm.v > t->h.v) {
-                last = mid;
-            } else if(hm.v < t->h.v) {
-                first = mid + 1;
-            }
-        }
+        // Look to see if we already have something with the same handle value.
+        ssassert(FindByIdNoOops(t->h) == nullptr, "Handle isn't unique");
 
-        int i = first;
-        new(&elem[n]) T();
-        std::move_backward(elem + i, elem + n, elem + n + 1);
-        elem[i] = *t;
-        n++;
+        // Copy-construct at the end of the list.
+        new(&elem[n]) T(*t);
+        ++n;
+        // The item we just added is trivially sorted, so "merge"
+        std::inplace_merge(begin(), end() - 1, end(), Compare());
     }
 
     T *FindById(H h) {
@@ -355,50 +431,54 @@ public:
     }
 
     int IndexOf(H h) {
-        int first = 0, last = n-1;
-        while(first <= last) {
-            int mid = (first + last)/2;
-            H hm = elem[mid].h;
-            if(hm.v > h.v) {
-                last = mid-1; // and first stays the same
-            } else if(hm.v < h.v) {
-                first = mid+1; // and last stays the same
-            } else {
-                return mid;
-            }
+        if(IsEmpty()) {
+            return -1;
+        }
+        auto it = LowerBound(h);
+        auto idx = std::distance(begin(), it);
+        if (idx < n) {
+            return idx;
         }
         return -1;
     }
 
     T *FindByIdNoOops(H h) {
-        int first = 0, last = n-1;
-        while(first <= last) {
-            int mid = (first + last)/2;
-            H hm = elem[mid].h;
-            if(hm.v > h.v) {
-                last = mid-1; // and first stays the same
-            } else if(hm.v < h.v) {
-                first = mid+1; // and last stays the same
-            } else {
-                return &(elem[mid]);
-            }
+        if(IsEmpty()) {
+            return nullptr;
         }
-        return NULL;
+        auto it = LowerBound(h);
+        if (it == nullptr || it == end()) {
+            return nullptr;
+        }
+        if (it->h.v == h.v) {
+            return it;
+        }
+        return nullptr;
     }
 
     T *First() {
-        return (n == 0) ? NULL : &(elem[0]);
+        return (IsEmpty()) ? NULL : &(elem[0]);
+    }
+    T *Last() {
+        return (IsEmpty()) ? NULL : &(elem[n-1]);
     }
     T *NextAfter(T *prev) {
-        if(!prev) return NULL;
-        if(prev - elem == (n - 1)) return NULL;
+        if(IsEmpty() || !prev) return NULL;
+        if(prev - First() == (n - 1)) return NULL;
         return prev + 1;
     }
 
-    T *begin() { return &elem[0]; }
-    T *end() { return &elem[n]; }
-    const T *begin() const { return &elem[0]; }
-    const T *end() const { return &elem[n]; }
+    T &Get(size_t i) { return elem[i]; }
+    T const &Get(size_t i) const { return elem[i]; }
+    T &operator[](size_t i) { return Get(i); }
+    T const &operator[](size_t i) const { return Get(i); }
+
+    T *begin() { return IsEmpty() ? nullptr : &elem[0]; }
+    T *end() { return IsEmpty() ? nullptr : &elem[0] + n; }
+    const T *begin() const { return IsEmpty() ? nullptr : &elem[0]; }
+    const T *end() const { return IsEmpty() ? nullptr : &elem[0] + n; }
+    const T *cbegin() const { return begin(); }
+    const T *cend() const { return end(); }
 
     template<typename F>
     size_t CountIf(F &&predicate) const {
@@ -406,18 +486,13 @@ public:
     }
 
     void ClearTags() {
-        int i;
-        for(i = 0; i < n; i++) {
-            elem[i].tag = 0;
-        }
+        for(auto &elt : *this) { elt.tag = 0; }
     }
 
     void Tag(H h, int tag) {
-        int i;
-        for(i = 0; i < n; i++) {
-            if(elem[i].h.v == h.v) {
-                elem[i].tag = tag;
-            }
+        auto it = FindByIdNoOops(h);
+        if (it != nullptr) {
+            it->tag = tag;
         }
     }
 
@@ -448,9 +523,9 @@ public:
 
     void MoveSelfInto(IdList<T,H> *l) {
         l->Clear();
-        *l = *this;
-        elemsAllocated = n = 0;
-        elem = NULL;
+        std::swap(l->elem, elem);
+        std::swap(l->elemsAllocated, elemsAllocated);
+        std::swap(l->n, n);
     }
 
     void DeepCopyInto(IdList<T,H> *l) {
@@ -467,9 +542,9 @@ public:
             elem[i].Clear();
             elem[i].~T();
         }
-        elemsAllocated = n = 0;
         if(elem) MemFree(elem);
         elem = NULL;
+        elemsAllocated = n = 0;
     }
 
 };

@@ -1,0 +1,76 @@
+name: solvespace
+base: core18
+summary: Parametric 2d/3d CAD
+adopt-info: solvespace
+description: |
+  SOLVESPACE is a free (GPLv3) parametric 3d CAD tool.
+  Applications include
+  * modeling 3d parts — draw with extrudes, revolves, and Boolean (union / difference) operations
+  * modeling 2d parts — draw the part as a single section, and export DXF, PDF, SVG; use 3d assembly to verify fit
+  * 3d-printed parts — export the STL or other triangle mesh expected by most 3d printers
+  * preparing CAM data — export 2d vector art for a waterjet machine or laser cutter; or generate STEP or STL, for import into third-party CAM software for machining
+  * mechanism design — use the constraint solver to simulate planar or spatial linkages, with pin, ball, or slide joints
+  * plane and solid geometry — replace hand-solved trigonometry and spreadsheets with a live dimensioned drawing
+
+confinement: strict
+license: GPL-3.0
+
+layout:
+  /usr/share/solvespace:
+    bind: $SNAP/usr/share/solvespace
+
+apps:
+  solvespace:
+    command: usr/bin/solvespace
+    desktop: solvespace.desktop
+    extensions: [gnome-3-28]
+    plugs: [opengl, unity7, home, removable-media, gsettings, network]
+    environment:
+      __EGL_VENDOR_LIBRARY_DIRS: $SNAP/usr/share/glvnd/egl_vendor.d
+  cli:
+    command: usr/bin/solvespace-cli
+    plugs: [home, removable-media, network]
+
+parts:
+  solvespace:
+    plugin: cmake
+    source: ./solvespace-snap-src
+    source-type: local
+    override-pull: |
+      snapcraftctl pull
+      version_major=$(grep "solvespace_VERSION_MAJOR" CMakeLists.txt | tr -d "()" | cut -d" " -f2)
+      version_minor=$(grep "solvespace_VERSION_MINOR" CMakeLists.txt | tr -d "()" | cut -d" " -f2)
+      version="$version_major.$version_minor~$(git rev-parse --short=8 HEAD)"
+      snapcraftctl set-version "$version"
+      git describe --exact-match HEAD && grade="stable" || grade="devel"
+      snapcraftctl set-grade "$grade"
+      git submodule update --init extlib/libdxfrw extlib/flatbuffers extlib/q3d
+    configflags:
+      - -DCMAKE_INSTALL_PREFIX=/usr
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DENABLE_TESTS=OFF
+      - -DSNAP=ON
+    build-packages:
+      - zlib1g-dev
+      - libpng-dev
+      - libcairo2-dev
+      - libfreetype6-dev
+      - libjson-c-dev
+      - libfontconfig1-dev
+      - libgtkmm-3.0-dev
+      - libpangomm-1.4-dev
+      - libgl-dev
+      - libglu-dev
+      - libspnav-dev
+      - git
+    stage-packages:
+      - libspnav0
+      - libatkmm-1.6-1v5
+      - libcairomm-1.0-1v5
+      - libgtkmm-3.0-1v5
+      - libglibmm-2.4-1v5
+      - libpangomm-1.4-1v5
+      - libsigc++-2.0-0v5
+      - libglew2.0
+      - libegl-mesa0
+      - libdrm2

@@ -14,13 +14,15 @@ void Group::AssembleLoops(bool *allClosed,
     SBezierList sbl = {};
 
     int i;
-    for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
-        if(e->group.v != h.v) continue;
-        if(e->construction) continue;
-        if(e->forceHidden) continue;
+    for(auto &e : SK.entity) {
+        if(e.group != h)
+            continue;
+        if(e.construction)
+            continue;
+        if(e.forceHidden)
+            continue;
 
-        e->GenerateBezierCurves(&sbl);
+        e.GenerateBezierCurves(&sbl);
     }
 
     SBezier *sb;
@@ -84,7 +86,7 @@ void SShell::RemapFaces(Group *g, int remap) {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)){
         hEntity face = { ss->face };
-        if(face.v == Entity::NO_ENTITY.v) continue;
+        if(face == Entity::NO_ENTITY) continue;
 
         face = g->Remap(face, remap);
         ss->face = face.v;
@@ -95,7 +97,7 @@ void SMesh::RemapFaces(Group *g, int remap) {
     STriangle *tr;
     for(tr = l.First(); tr; tr = l.NextAfter(tr)) {
         hEntity face = { tr->meta.face };
-        if(face.v == Entity::NO_ENTITY.v) continue;
+        if(face == Entity::NO_ENTITY) continue;
 
         face = g->Remap(face, remap);
         tr->meta.face = face.v;
@@ -191,7 +193,7 @@ void Group::GenerateShellAndMesh() {
     // Don't attempt a lathe or extrusion unless the source section is good:
     // planar and not self-intersecting.
     bool haveSrc = true;
-    if(type == Type::EXTRUDE || type == Type::LATHE) {
+    if(type == Type::EXTRUDE || type == Type::LATHE || type == Type::REVOLVE) {
         Group *src = SK.GetGroup(opA);
         if(src->polyError.how != PolyError::GOOD) {
             haveSrc = false;
@@ -235,8 +237,10 @@ void Group::GenerateShellAndMesh() {
             // that face, so that the user can select them with the mouse.
             Vector onOrig = sbls->point;
             int i;
+            // Not using range-for here because we're starting at a different place and using
+            // indices for meaning.
             for(i = is; i < thisShell.surface.n; i++) {
-                SSurface *ss = &(thisShell.surface.elem[i]);
+                SSurface *ss = &(thisShell.surface[i]);
                 hEntity face = Entity::NO_ENTITY;
 
                 Vector p = ss->PointAt(0, 0),
@@ -261,7 +265,7 @@ void Group::GenerateShellAndMesh() {
 
                 Entity *e;
                 for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                    if(e->group.v != opA.v) continue;
+                    if(e->group != opA) continue;
                     if(e->type != Entity::Type::LINE_SEGMENT) continue;
 
                     Vector a = SK.GetEntity(e->point[0])->PointGetNum(),
@@ -292,6 +296,51 @@ void Group::GenerateShellAndMesh() {
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
             thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
+        }
+    } else if(type == Type::REVOLVE && haveSrc) {
+        Group *src    = SK.GetGroup(opA);
+        double anglef = SK.GetParam(h.param(3))->val * 4; // why the 4 is needed?
+        double dists = 0, distf = 0;
+        double angles = 0.0;
+        if(subtype != Subtype::ONE_SIDED) {
+            anglef *= 0.5;
+            angles = -anglef;
+        }
+        Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
+               axis = SK.GetEntity(predef.entityB)->VectorGetNum();
+        axis        = axis.WithMagnitude(1);
+
+        SBezierLoopSetSet *sblss = &(src->bezierLoops);
+        SBezierLoopSet *sbls;
+        for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
+            if(fabs(anglef - angles) < 2 * PI) {
+                thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
+                                                      angles, anglef, dists, distf);
+            } else {
+                thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
+            }
+        }
+    } else if(type == Type::HELIX && haveSrc) {
+        Group *src    = SK.GetGroup(opA);
+        double anglef = SK.GetParam(h.param(3))->val * 4; // why the 4 is needed?
+        double dists = 0, distf = 0;
+        double angles = 0.0;
+        distf = SK.GetParam(h.param(7))->val * 2; // dist is applied twice
+        if(subtype != Subtype::ONE_SIDED) {
+            anglef *= 0.5;
+            angles = -anglef;
+            distf *= 0.5;
+            dists = -distf;
+        }
+        Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
+               axis = SK.GetEntity(predef.entityB)->VectorGetNum();
+        axis        = axis.WithMagnitude(1);
+
+        SBezierLoopSetSet *sblss = &(src->bezierLoops);
+        SBezierLoopSet *sbls;
+        for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
+            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
+                                                  angles, anglef, dists, distf);
         }
     } else if(type == Type::LINKED) {
         // The imported shell or mesh are copied over, with the appropriate
@@ -417,7 +466,7 @@ void Group::GenerateDisplayItems() {
 
             if(SS.GW.showEdges || SS.GW.showOutlines) {
                 SOutlineList rawOutlines = {};
-                if(runningMesh.l.n > 0) {
+                if(!runningMesh.l.IsEmpty()) {
                     // Triangle mesh only; no shell or emphasized edges.
                     runningMesh.MakeOutlinesInto(&rawOutlines, EdgeKind::EMPHASIZED);
                 } else {
@@ -437,7 +486,7 @@ void Group::GenerateDisplayItems() {
         displayMesh.PrecomputeTransparency();
 
         // Recalculate mass center if needed
-        if(SS.centerOfMass.draw && SS.centerOfMass.dirty && h.v == SS.GW.activeGroup.v) {
+        if(SS.centerOfMass.draw && SS.centerOfMass.dirty && h == SS.GW.activeGroup) {
             SS.UpdateCenterOfMass();
         }
         displayDirty = false;
@@ -445,13 +494,15 @@ void Group::GenerateDisplayItems() {
 }
 
 Group *Group::PreviousGroup() const {
-    int i;
-    for(i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
-        if(g->h.v == h.v) break;
+    Group *prev = nullptr;
+    for(auto const &gh : SK.groupOrder) {
+        Group *g = SK.GetGroup(gh);
+        if(g->h == h) {
+            return prev;
+        }
+        prev = g;
     }
-    if(i == 0 || i >= SK.groupOrder.n) return NULL;
-    return SK.GetGroup(SK.groupOrder.elem[i - 1]);
+    return nullptr;
 }
 
 Group *Group::RunningMeshGroup() const {
@@ -466,6 +517,8 @@ bool Group::IsMeshGroup() {
     switch(type) {
         case Group::Type::EXTRUDE:
         case Group::Type::LATHE:
+        case Group::Type::REVOLVE:
+        case Group::Type::HELIX:
         case Group::Type::ROTATE:
         case Group::Type::TRANSLATE:
             return true;
@@ -653,11 +706,12 @@ void Group::DrawPolyError(Canvas *canvas) {
 
 void Group::DrawFilledPaths(Canvas *canvas) {
     for(const SBezierLoopSet &sbls : bezierLoops.l) {
-        if(sbls.l.n == 0 || sbls.l.elem[0].l.n == 0) continue;
+        if(sbls.l.IsEmpty() || sbls.l[0].l.IsEmpty())
+            continue;
 
         // In an assembled loop, all the styles should be the same; so doesn't
         // matter which one we grab.
-        SBezier *sb = &(sbls.l.elem[0].l.elem[0]);
+        const SBezier *sb = &(sbls.l[0].l[0]);
         Style *s = Style::Get({ (uint32_t)sb->auxA });
 
         Canvas::Fill fill = {};
@@ -665,7 +719,7 @@ void Group::DrawFilledPaths(Canvas *canvas) {
         if(s->filled) {
             // This is a filled loop, where the user specified a fill color.
             fill.color = s->fillColor;
-        } else if(h.v == SS.GW.activeGroup.v && SS.checkClosedContour &&
+        } else if(h == SS.GW.activeGroup && SS.checkClosedContour &&
                     polyError.how == PolyError::GOOD) {
             // If this is the active group, and we are supposed to check
             // for closed contours, and we do indeed have a closed and
@@ -687,9 +741,10 @@ void Group::DrawContourAreaLabels(Canvas *canvas) {
     Vector gu = camera.projUp.ScaledBy(1 / camera.scale);
 
     for(SBezierLoopSet &sbls : bezierLoops.l) {
-        if(sbls.l.n == 0 || sbls.l.elem[0].l.n == 0) continue;
+        if(sbls.l.IsEmpty() || sbls.l[0].l.IsEmpty())
+            continue;
 
-        Vector min = sbls.l.elem[0].l.elem[0].ctrl[0];
+        Vector min = sbls.l[0].l[0].ctrl[0];
         Vector max = min;
         Vector zero = Vector::From(0.0, 0.0, 0.0);
         sbls.GetBoundingProjd(Vector::From(1.0, 0.0, 0.0), zero, &min.x, &max.x);

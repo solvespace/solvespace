@@ -1369,7 +1369,9 @@ public:
     }
 };
 
+#if HAVE_OPENGL == 3
 EGLDisplay WindowImplWin32::eglDisplay = EGL_NO_DISPLAY;
+#endif
 
 WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     return std::make_shared<WindowImplWin32>(kind,
@@ -1674,6 +1676,8 @@ void RunGui() {
 void ExitGui() {
     PostQuitMessage(0);
 }
+
+void ClearGui() {}
 
 }
 }

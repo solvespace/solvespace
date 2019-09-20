@@ -277,7 +277,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
         int i;
         for(i = 0; i < lv.n - 1; i++) {
-            Vector pa = lv.elem[i], pb = lv.elem[i+1];
+            Vector pa = lv[i], pb = lv[i+1];
             pa = pa.Minus(axis.ScaledBy(pa.Dot(axis)));
             pb = pb.Minus(axis.ScaledBy(pb.Dot(axis)));
             pa = pa.Plus(axisc);
@@ -326,12 +326,13 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
                 srfB->AllPointsIntersecting(se->a, se->b, &lsi,
                     /*asSegment=*/true, /*trimmed=*/true, /*inclTangent=*/false);
-                if(lsi.n == 0) continue;
+                if(lsi.IsEmpty())
+                    continue;
 
                 // Find the other surface that this curve trims.
                 hSCurve hsc = { (uint32_t)se->auxA };
                 SCurve *sc = shA->curve.FindById(hsc);
-                hSSurface hother = (sc->surfA.v == srfA->h.v) ?
+                hSSurface hother = (sc->surfA == srfA->h) ?
                                                     sc->surfB : sc->surfA;
                 SSurface *other = shA->surface.FindById(hother);
 
@@ -368,10 +369,10 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             sc.isExact = false;
             sc.source = SCurve::Source::INTERSECTION;
 
-            Vector start  = spl.l.elem[0].p,
-                   startv = spl.l.elem[0].auxv;
+            Vector start  = spl.l[0].p,
+                   startv = spl.l[0].auxv;
             spl.l.ClearTags();
-            spl.l.elem[0].tag = 1;
+            spl.l[0].tag = 1;
             spl.l.RemoveTagged();
 
             // Our chord tolerance is whatever the user specified

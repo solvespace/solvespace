@@ -138,6 +138,13 @@ else()
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages
             RENAME      com.solvespace.SolveSpace-slvs.xml)
 
+        install(FILES freedesktop/solvespace-scalable.svg
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps
+            RENAME      com.solvespace.SolveSpace.svg)
+        install(FILES freedesktop/solvespace-scalable.svg
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/mimetypes
+            RENAME      com.solvespace.SolveSpace.svg)
+
         foreach(SIZE 16x16 24x24 32x32 48x48)
             install(FILES freedesktop/solvespace-${SIZE}.png
                 DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/apps
@@ -145,6 +152,22 @@ else()
             install(FILES freedesktop/solvespace-${SIZE}.png
                 DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/mimetypes
                 RENAME      com.solvespace.SolveSpace.png)
+        endforeach()
+    elseif(SNAP)
+        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/freedesktop/solvespace-snap.desktop
+            DESTINATION /
+            RENAME      solvespace.desktop)
+        
+        # snapd does not support registering new mime types
+
+        install(FILES freedesktop/solvespace-scalable.svg
+            DESTINATION /meta/icons/hicolor/scalable/apps
+            RENAME      snap.solvespace.svg)
+
+        foreach(SIZE 16x16 24x24 32x32 48x48)
+            install(FILES freedesktop/solvespace-${SIZE}.png
+                DESTINATION /meta/icons/hicolor/${SIZE}/apps
+                RENAME      snap.solvespace.png)
         endforeach()
     else()
         configure_file(
@@ -156,6 +179,13 @@ else()
         install(FILES freedesktop/solvespace-mime.xml
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages
             RENAME      solvespace-slvs.xml)
+        
+        install(FILES freedesktop/solvespace-scalable.svg
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps
+            RENAME      solvespace.svg)
+        install(FILES freedesktop/solvespace-scalable.svg
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/mimetypes
+            RENAME      application.x-solvespace.svg)
 
         foreach(SIZE 16x16 24x24 32x32 48x48)
             install(FILES freedesktop/solvespace-${SIZE}.png

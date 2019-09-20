@@ -311,7 +311,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
         }
         int i;
         for(i = 0; i < ip_n; i++) {
-            double t = (ip[i].Minus(ap)).DivPivoting(bp.Minus(ap));
+            double t = (ip[i].Minus(ap)).DivProjected(bp.Minus(ap));
             // This is a point on the circle; but is it on the arc?
             Point2d pp = ap.Plus((bp.Minus(ap)).ScaledBy(t));
             double theta = atan2(pp.y, pp.x);
@@ -342,19 +342,19 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
     int i, j;
     for(i = 0; i < inters.n; i++) {
         for(j = i + 1; j < inters.n; j++) {
-            if(inters.elem[i].p.Equals(inters.elem[j].p)) {
-                inters.elem[j].tag = 1;
+            if(inters[i].p.Equals(inters[j].p)) {
+                inters[j].tag = 1;
             }
         }
     }
     inters.RemoveTagged();
 
     for(i = 0; i < inters.n; i++) {
-        Point2d puv = inters.elem[i].p;
+        Point2d puv = inters[i].p;
 
         // Make sure the point lies within the finite line segment
         Vector pxyz = PointAt(puv.x, puv.y);
-        double t = (pxyz.Minus(a)).DivPivoting(ba);
+        double t = (pxyz.Minus(a)).DivProjected(ba);
         if(asSegment && (t > 1 - LENGTH_EPS/bam || t < LENGTH_EPS/bam)) {
             continue;
         }
@@ -463,7 +463,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
     }
 
     if(edge_inters == 2) {
-        // TODO, make this use the appropriate curved normals
+        //! @todo make this use the appropriate curved normals
         double dotp[2];
         for(int i = 0; i < 2; i++) {
             dotp[i] = edge_n_out.DirectionCosineWith(inter_surf_n[i]);
@@ -566,7 +566,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
 
         SInter *si;
         for(si = l.First(); si; si = l.NextAfter(si)) {
-            double t = ((si->p).Minus(p)).DivPivoting(ray);
+            double t = ((si->p).Minus(p)).DivProjected(ray);
             if(t*ray.Magnitude() < -LENGTH_EPS) {
                 // wrong side, doesn't count
                 continue;

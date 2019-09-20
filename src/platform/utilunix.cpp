@@ -54,8 +54,7 @@ void *AllocTemporary(size_t n)
     return (void *)&h[1];
 }
 
-void FreeAllTemporary(void)
-{
+void FreeAllTemporary() {
     AllocTempHeader *h = Head;
     while(h) {
         AllocTempHeader *f = h;
@@ -77,8 +76,9 @@ void MemFree(void *p) {
 
 std::vector<std::string> InitPlatform(int argc, char **argv) {
     std::vector<std::string> args;
+    args.reserve(argc);
     for(int i = 0; i < argc; i++) {
-        args.push_back(argv[i]);
+        args.emplace_back(argv[i]);
     }
     return args;
 }

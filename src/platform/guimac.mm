@@ -1479,5 +1479,7 @@ void ExitGui() {
     [NSApp terminate:nil];
 }
 
+void ClearGui() {}
+
 }
 }

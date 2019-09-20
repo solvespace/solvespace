@@ -124,7 +124,7 @@ public:
         }
     }
 
-    ~SettingsImplGtk() {
+    ~SettingsImplGtk() override {
         if(!_path.IsEmpty()) {
             // json-c <0.12 has the first argument non-const
             if(json_object_to_file_ext((char *)_path.raw.c_str(), _json,
@@ -1292,7 +1292,8 @@ public:
 
     void FilterChanged() {
         std::string extension = GetExtension();
-        if(extension == "") return;
+        if(extension.empty())
+            return;
 
         Platform::Path path = GetFilename();
         SetCurrentName(path.WithExtension(extension).FileName());
@@ -1470,11 +1471,14 @@ void InitGui(int argc, char **argv) {
 }
 
 void RunGui() {
-    gtkMain->run();
+    Gtk::Main::run();
 }
 
 void ExitGui() {
-    gtkMain->quit();
+    Gtk::Main::quit();
+}
+
+void ClearGui() {
     delete gtkMain;
 }
 

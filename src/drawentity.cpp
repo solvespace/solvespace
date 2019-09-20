@@ -20,32 +20,31 @@ std::string Entity::DescriptionString() const {
 void Entity::GenerateEdges(SEdgeList *el) {
     SBezierList *sbl = GetOrGenerateBezierCurves();
 
-    int i, j;
-    for(i = 0; i < sbl->l.n; i++) {
-        SBezier *sb = &(sbl->l.elem[i]);
+    for(int i = 0; i < sbl->l.n; i++) {
+        SBezier *sb = &(sbl->l[i]);
 
         List<Vector> lv = {};
         sb->MakePwlInto(&lv);
-        for(j = 1; j < lv.n; j++) {
-            el->AddEdge(lv.elem[j-1], lv.elem[j], style.v, i);
+        for(int j = 1; j < lv.n; j++) {
+            el->AddEdge(lv[j-1], lv[j], style.v, i);
         }
         lv.Clear();
     }
 }
 
 SBezierList *Entity::GetOrGenerateBezierCurves() {
-    if(beziers.l.n == 0)
+    if(beziers.l.IsEmpty())
         GenerateBezierCurves(&beziers);
     return &beziers;
 }
 
 SEdgeList *Entity::GetOrGenerateEdges() {
-    if(edges.l.n != 0) {
+    if(!edges.l.IsEmpty()) {
         if(EXACT(edgesChordTol == SS.ChordTolMm()))
             return &edges;
         edges.l.Clear();
     }
-    if(edges.l.n == 0)
+    if(edges.l.IsEmpty())
         GenerateEdges(&edges);
     edgesChordTol = SS.ChordTolMm();
     return &edges;
@@ -55,7 +54,7 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
     SBezierList *sbl = GetOrGenerateBezierCurves();
 
     // We don't bother with bounding boxes for workplanes, etc.
-    *hasBBox = (IsPoint() || IsNormal() || sbl->l.n > 0);
+    *hasBBox = (IsPoint() || IsNormal() || !sbl->l.IsEmpty());
     if(!*hasBBox) return {};
 
     if(screenBBoxValid)
@@ -67,16 +66,14 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
     } else if(IsNormal()) {
         Vector proj = SK.GetEntity(point[0])->PointGetNum();
         screenBBox = BBox::From(proj, proj);
-    } else if(sbl->l.n > 0) {
-        Vector first = SS.GW.ProjectPoint3(sbl->l.elem[0].ctrl[0]);
+    } else if(!sbl->l.IsEmpty()) {
+        Vector first = SS.GW.ProjectPoint3(sbl->l[0].ctrl[0]);
         screenBBox = BBox::From(first, first);
-        for(int i = 0; i < sbl->l.n; i++) {
-            SBezier *sb = &sbl->l.elem[i];
-            for(int i = 0; i <= sb->deg; i++) {
-                screenBBox.Include(SS.GW.ProjectPoint3(sb->ctrl[i]));
-            }
+        for(auto &sb : sbl->l) {
+            for(int i = 0; i < sb.deg; ++i) { screenBBox.Include(SS.GW.ProjectPoint3(sb.ctrl[i])); }
         }
-    } else ssassert(false, "Expected entity to be a point or have beziers");
+    } else
+        ssassert(false, "Expected entity to be a point or have beziers");
 
     screenBBoxValid = true;
     return screenBBox;
@@ -88,6 +85,7 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
         case Type::POINT_N_TRANS:
         case Type::POINT_N_ROT_TRANS:
         case Type::POINT_N_ROT_AA:
+        case Type::POINT_N_ROT_AXIS_TRANS:
         case Type::POINT_IN_3D:
         case Type::POINT_IN_2D:
             refs->push_back(PointGetNum());
@@ -150,7 +148,7 @@ bool Entity::IsStylable() const {
 bool Entity::IsVisible() const {
     Group *g = SK.GetGroup(group);
 
-    if(g->h.v == Group::HGROUP_REFERENCES.v && IsNormal()) {
+    if(g->h == Group::HGROUP_REFERENCES && IsNormal()) {
         // The reference normals are always shown
         return true;
     }
@@ -162,7 +160,7 @@ bool Entity::IsVisible() const {
 
     if(!SS.GW.showWorkplanes) {
         if(IsWorkplane() && !h.isFromRequest()) {
-            if(g->h.v != SS.GW.activeGroup.v) {
+            if(g->h != SS.GW.activeGroup) {
                 // The group-associated workplanes are hidden outside
                 // their group.
                 return false;
@@ -440,7 +438,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
 
     // Record our style for all of the Beziers that we just created.
     for(; i < sbl->l.n; i++) {
-        sbl->l.elem[i].auxA = style.v;
+        sbl->l[i].auxA = style.v;
     }
 }
 
@@ -453,7 +451,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         zIndex = 5;
     } else if(how == DrawAs::HIDDEN) {
         zIndex = 2;
-    } else if(group.v != SS.GW.activeGroup.v) {
+    } else if(group != SS.GW.activeGroup) {
         zIndex = 3;
     } else {
         zIndex = 4;
@@ -502,6 +500,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         case Type::POINT_N_TRANS:
         case Type::POINT_N_ROT_TRANS:
         case Type::POINT_N_ROT_AA:
+        case Type::POINT_N_ROT_AXIS_TRANS:
         case Type::POINT_IN_3D:
         case Type::POINT_IN_2D: {
             if(how == DrawAs::HIDDEN) return;
@@ -568,11 +567,11 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                     // dimmer for the ones at the model origin.
                     hRequest hr   = h.request();
                     uint8_t  luma = (asReference) ? 255 : 100;
-                    if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
+                    if(hr == Request::HREQUEST_REFERENCE_XY) {
                         stroke.color = RgbaColor::From(0, 0, luma);
-                    } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
+                    } else if(hr == Request::HREQUEST_REFERENCE_YZ) {
                         stroke.color = RgbaColor::From(luma, 0, 0);
-                    } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
+                    } else if(hr == Request::HREQUEST_REFERENCE_ZX) {
                         stroke.color = RgbaColor::From(0, luma, 0);
                     }
                 }
@@ -587,6 +586,11 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                     double s = camera.scale;
                     double h = 60 - camera.height / 2.0;
                     double w = 60 - camera.width  / 2.0;
+                    // Shift the axis to the right if they would overlap with the toolbar.
+                    if(SS.showToolbar) {
+                        if(h + 30 > -(34*16 + 3*16 + 8) / 2)
+                            w += 60;
+                    }
                     tail = camera.projRight.ScaledBy(w/s).Plus(
                            camera.projUp.   ScaledBy(h/s)).Minus(camera.offset);
                 } else {

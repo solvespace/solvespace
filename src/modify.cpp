@@ -12,11 +12,11 @@
 // Useful when splitting, tangent arcing, or removing bezier points.
 //-----------------------------------------------------------------------------
 void GraphicsWindow::ReplacePointInConstraints(hEntity oldpt, hEntity newpt) {
-    int i;
-    for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
-        if(c->ptA.v == oldpt.v) c->ptA = newpt;
-        if(c->ptB.v == oldpt.v) c->ptB = newpt;
+    for(auto &c : SK.constraint) {
+        if(c.ptA == oldpt)
+            c.ptA = newpt;
+        if(c.ptB == oldpt)
+            c.ptB = newpt;
     }
 }
 
@@ -25,14 +25,13 @@ void GraphicsWindow::ReplacePointInConstraints(hEntity oldpt, hEntity newpt) {
 //-----------------------------------------------------------------------------
 void GraphicsWindow::RemoveConstraintsForPointBeingDeleted(hEntity hpt) {
     SK.constraint.ClearTags();
-    for(int i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
-        if(c->ptA.v == hpt.v || c->ptB.v == hpt.v) {
-            c->tag = 1;
+    for(auto &c : SK.constraint) {
+        if(c.ptA == hpt || c.ptB == hpt) {
+            c.tag = 1;
             (SS.deleted.constraints)++;
-            if(c->type != Constraint::Type::POINTS_COINCIDENT &&
-               c->type != Constraint::Type::HORIZONTAL &&
-               c->type != Constraint::Type::VERTICAL)
+            if(c.type != Constraint::Type::POINTS_COINCIDENT &&
+               c.type != Constraint::Type::HORIZONTAL &&
+               c.type != Constraint::Type::VERTICAL)
             {
                 (SS.deleted.nonTrivialConstraints)++;
             }
@@ -49,12 +48,12 @@ void GraphicsWindow::RemoveConstraintsForPointBeingDeleted(hEntity hpt) {
 //-----------------------------------------------------------------------------
 void GraphicsWindow::FixConstraintsForRequestBeingDeleted(hRequest hr) {
     Request *r = SK.GetRequest(hr);
-    if(r->group.v != SS.GW.activeGroup.v) return;
+    if(r->group != SS.GW.activeGroup) return;
 
     Entity *e;
     for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
         if(!(e->h.isFromRequest())) continue;
-        if(e->h.request().v != hr.v) continue;
+        if(e->h.request() != hr) continue;
 
         if(e->type != Entity::Type::POINT_IN_2D &&
            e->type != Entity::Type::POINT_IN_3D)
@@ -74,13 +73,13 @@ void GraphicsWindow::FixConstraintsForPointBeingDeleted(hEntity hpt) {
     SK.constraint.ClearTags();
     for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
         if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-        if(c->group.v != SS.GW.activeGroup.v) continue;
+        if(c->group != SS.GW.activeGroup) continue;
 
-        if(c->ptA.v == hpt.v) {
+        if(c->ptA == hpt) {
             ld.Add(&(c->ptB));
             c->tag = 1;
         }
-        if(c->ptB.v == hpt.v) {
+        if(c->ptB == hpt) {
             ld.Add(&(c->ptA));
             c->tag = 1;
         }
@@ -97,9 +96,8 @@ void GraphicsWindow::FixConstraintsForPointBeingDeleted(hEntity hpt) {
     // those two points were implicitly coincident with each other. By
     // deleting hpt (and all constraints that mention it), we will delete
     // that relationship. So put it back here now.
-    int i;
-    for(i = 1; i < ld.n; i++) {
-        Constraint::ConstrainCoincident(ld.elem[i-1], ld.elem[i]);
+    for(int i = 1; i < ld.n; i++) {
+        Constraint::ConstrainCoincident(ld[i-1], ld[i]);
     }
     ld.Clear();
 }
@@ -233,10 +231,10 @@ void GraphicsWindow::ParametricCurve::ConstrainPointIfCoincident(hEntity hpt) {
     ptv = pt->PointGetNum();
 
     for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-        if(e->h.v == pt->h.v) continue;
+        if(e->h == pt->h) continue;
         if(!e->IsPoint()) continue;
-        if(e->group.v != pt->group.v) continue;
-        if(e->workplane.v != pt->workplane.v) continue;
+        if(e->group != pt->group) continue;
+        if(e->workplane != pt->workplane) continue;
 
         ev = e->PointGetNum();
         if(!ev.Equals(ptv)) continue;
@@ -270,18 +268,18 @@ void GraphicsWindow::MakeTangentArc() {
     hRequest hreq[2];
     hEntity hent[2];
     bool pointf[2];
-    for(i = 0; i < SK.request.n; i++) {
-        Request *r = &(SK.request.elem[i]);
-        if(r->group.v != activeGroup.v) continue;
-        if(r->workplane.v != ActiveWorkplane().v) continue;
-        if(r->construction) continue;
-        if(r->type != Request::Type::LINE_SEGMENT &&
-           r->type != Request::Type::ARC_OF_CIRCLE)
-        {
+    for(auto &r : SK.request) {
+        if(r.group != activeGroup)
+            continue;
+        if(r.workplane != ActiveWorkplane())
+            continue;
+        if(r.construction)
+            continue;
+        if(r.type != Request::Type::LINE_SEGMENT && r.type != Request::Type::ARC_OF_CIRCLE) {
             continue;
         }
 
-        Entity *e = SK.GetEntity(r->h.entity(0));
+        Entity *e = SK.GetEntity(r.h.entity(0));
         Vector ps = e->EndpointStart(),
                pf = e->EndpointFinish();
 
@@ -292,8 +290,8 @@ void GraphicsWindow::MakeTangentArc() {
                 // finish of this entity.
                 ent[c] = e;
                 hent[c] = e->h;
-                req[c] = r;
-                hreq[c] = r->h;
+                req[c] = &r;
+                hreq[c] = r.h;
                 pointf[c] = (pf.Equals(pshared));
             }
             c++;
@@ -375,8 +373,8 @@ void GraphicsWindow::MakeTangentArc() {
         tp[1] = t[1];
 
         // And convert those points to parameter values along the curve.
-        t[0] += (pa0.Minus(p0)).DivPivoting(t0);
-        t[1] += (pa1.Minus(p1)).DivPivoting(t1);
+        t[0] += (pa0.Minus(p0)).DivProjected(t0);
+        t[1] += (pa1.Minus(p1)).DivProjected(t1);
     }
 
     // Stupid check for convergence, and for an out of range result (as
@@ -411,9 +409,9 @@ void GraphicsWindow::MakeTangentArc() {
         // Delete the coincident constraint for the removed point.
         SK.constraint.ClearTags();
         for(i = 0; i < SK.constraint.n; i++) {
-            Constraint *cs = &(SK.constraint.elem[i]);
-            if(cs->group.v != activeGroup.v) continue;
-            if(cs->workplane.v != ActiveWorkplane().v) continue;
+            Constraint *cs = &(SK.constraint[i]);
+            if(cs->group != activeGroup) continue;
+            if(cs->workplane != ActiveWorkplane()) continue;
             if(cs->type != Constraint::Type::POINTS_COINCIDENT) continue;
             if (SK.GetEntity(cs->ptA)->PointGetNum().Equals(pshared)) {
             cs->tag = 1;
@@ -536,7 +534,7 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
     double t;
     int i, j;
     for(i = 0; i < sbl.l.n; i++) {
-        SBezier *sb = &(sbl.l.elem[i]);
+        SBezier *sb = &(sbl.l[i]);
         ssassert(sb->deg == 3, "Expected a cubic bezier");
 
         sb->ClosestPointTo(pinter, &t, /*mustConverge=*/false);
@@ -603,15 +601,16 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     // Finally, delete the request that generated the original entity.
     Request::Type reqType = EntReqTable::GetRequestForEntity(entityType);
     SK.request.ClearTags();
-    for(int i = 0; i < SK.request.n; i++) {
-        Request *r = &(SK.request.elem[i]);
-        if(r->group.v != activeGroup.v) continue;
-        if(r->type != reqType) continue;
+    for(auto &r : SK.request) {
+        if(r.group != activeGroup)
+            continue;
+        if(r.type != reqType)
+            continue;
 
         // If the user wants to keep the old entities around, they can just
         // mark them construction first.
-        if(he.v == r->h.entity(0).v && !r->construction) {
-            r->tag = 1;
+        if(he == r.h.entity(0) && !r.construction) {
+            r.tag = 1;
             break;
         }
     }
@@ -659,8 +658,8 @@ void GraphicsWindow::SplitLinesOrCurves() {
         }
 
         for(Constraint &c : SK.constraint) {
-            if(c.ptA.request().v == hb.request().v &&
-               c.entityA.request().v == ha.request().v) {
+            if(c.ptA.request() == hb.request() &&
+               c.entityA.request() == ha.request()) {
                 pi = SK.GetEntity(c.ptA)->PointGetNum();
 
                 if(ea->type == Entity::Type::LINE_SEGMENT && !pi.OnLineSegment(p0, p1)) {
@@ -682,7 +681,7 @@ void GraphicsWindow::SplitLinesOrCurves() {
         sbla.AllIntersectionsWith(&sblb, &inters);
 
         // If there's multiple points, then take the one closest to the mouse pointer.
-        if(inters.l.n > 0) {
+        if(!inters.l.IsEmpty()) {
             double dmin = VERY_POSITIVE;
             SPoint *sp;
             for(sp = inters.l.First(); sp; sp = inters.l.NextAfter(sp)) {
@@ -713,7 +712,7 @@ void GraphicsWindow::SplitLinesOrCurves() {
             // Remove datum point, as it has now been superseded by the split point.
             SK.request.ClearTags();
             for(Request &r : SK.request) {
-                if(r.h.v == hb.request().v) {
+                if(r.h == hb.request()) {
                     if(r.type == Request::Type::DATUM_POINT) {
                         // Delete datum point.
                         r.tag = 1;

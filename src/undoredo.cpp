@@ -36,8 +36,6 @@ void SolveSpaceUI::UndoEnableMenus() {
 }
 
 void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
-    int i;
-
     if(uk->cnt == MAX_UNDO) {
         UndoClearState(&(uk->d[uk->write]));
         // And then write in to this one again
@@ -48,9 +46,9 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
     UndoState *ut = &(uk->d[uk->write]);
     *ut = {};
     ut->group.ReserveMore(SK.group.n);
-    for(i = 0; i < SK.group.n; i++) {
-        Group *src = &(SK.group.elem[i]);
-        Group dest = *src;
+    for(Group &src : SK.group) {
+        // Shallow copy
+        Group dest(src);
         // And then clean up all the stuff that needs to be a deep copy,
         // and zero out all the dynamic stuff that will get regenerated.
         dest.clean = false;
@@ -66,42 +64,32 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
         dest.displayMesh = {};
         dest.displayOutlines = {};
 
-        dest.remap = src->remap;
+        dest.remap = src.remap;
 
         dest.impMesh = {};
         dest.impShell = {};
         dest.impEntity = {};
         ut->group.Add(&dest);
     }
-    for(i = 0; i < SK.groupOrder.n; i++) {
-        ut->groupOrder.Add(&(SK.groupOrder.elem[i]));
-    }
+    for(auto &src : SK.groupOrder) { ut->groupOrder.Add(&src); }
     ut->request.ReserveMore(SK.request.n);
-    for(i = 0; i < SK.request.n; i++) {
-        ut->request.Add(&(SK.request.elem[i]));
-    }
+    for(auto &src : SK.request) { ut->request.Add(&src); }
     ut->constraint.ReserveMore(SK.constraint.n);
-    for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *src = &(SK.constraint.elem[i]);
-        Constraint dest = *src;
+    for(auto &src : SK.constraint) {
+        // Shallow copy
+        Constraint dest(src);
         ut->constraint.Add(&dest);
     }
     ut->param.ReserveMore(SK.param.n);
-    for(i = 0; i < SK.param.n; i++) {
-        ut->param.Add(&(SK.param.elem[i]));
-    }
+    for(auto &src : SK.param) { ut->param.Add(&src); }
     ut->style.ReserveMore(SK.style.n);
-    for(i = 0; i < SK.style.n; i++) {
-        ut->style.Add(&(SK.style.elem[i]));
-    }
+    for(auto &src : SK.style) { ut->style.Add(&src); }
     ut->activeGroup = SS.GW.activeGroup;
 
     uk->write = WRAP(uk->write + 1, MAX_UNDO);
 }
 
 void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
-    int i;
-
     ssassert(uk->cnt > 0, "Cannot pop from empty undo stack");
     (uk->cnt)--;
     uk->write = WRAP(uk->write - 1, MAX_UNDO);
@@ -109,8 +97,8 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     UndoState *ut = &(uk->d[uk->write]);
 
     // Free everything in the main copy of the program before replacing it
-    for(i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
+    for(hGroup hg : SK.groupOrder) {
+        Group *g = SK.GetGroup(hg);
         g->Clear();
     }
     SK.group.Clear();
@@ -122,8 +110,7 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
 
     // And then do a shallow copy of the state from the undo list
     ut->group.MoveSelfInto(&(SK.group));
-    for(i = 0; i < ut->groupOrder.n; i++)
-        SK.groupOrder.Add(&ut->groupOrder.elem[i]);
+    for(auto &gh : ut->groupOrder) { SK.groupOrder.Add(&gh); }
     ut->request.MoveSelfInto(&(SK.request));
     ut->constraint.MoveSelfInto(&(SK.constraint));
     ut->param.MoveSelfInto(&(SK.param));
@@ -156,12 +143,7 @@ void SolveSpaceUI::UndoClearStack(UndoStack *uk) {
 }
 
 void SolveSpaceUI::UndoClearState(UndoState *ut) {
-    int i;
-    for(i = 0; i < ut->group.n; i++) {
-        Group *g = &(ut->group.elem[i]);
-
-        g->remap.clear();
-    }
+    for(auto &g : ut->group) { g.remap.clear(); }
     ut->group.Clear();
     ut->request.Clear();
     ut->constraint.Clear();

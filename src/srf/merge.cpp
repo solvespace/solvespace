@@ -13,11 +13,12 @@ void SShell::MergeCoincidentSurfaces() {
     SSurface *si, *sj;
 
     for(i = 0; i < surface.n; i++) {
-        si = &(surface.elem[i]);
+        si = &(surface[i]);
         if(si->tag) continue;
         // Let someone else clean up the empty surfaces; we can certainly merge
         // them, but we don't know how to calculate a reasonable bounding box.
-        if(si->trim.n == 0) continue;
+        if(si->trim.IsEmpty())
+            continue;
         // And for now we handle only coincident planes, so no sense wasting
         // time on other surfaces.
         if(si->degm != 1 || si->degn != 1) continue;
@@ -30,7 +31,7 @@ void SShell::MergeCoincidentSurfaces() {
             mergedThisTime = false;
 
             for(j = i + 1; j < surface.n; j++) {
-                sj = &(surface.elem[j]);
+                sj = &(surface[j]);
                 if(sj->tag) continue;
                 if(!sj->CoincidentWith(si, /*sameNormal=*/true)) continue;
                 if(!sj->color.Equals(si->color)) continue;
@@ -59,8 +60,8 @@ void SShell::MergeCoincidentSurfaces() {
                 // new srf
                 SCurve *sc;
                 for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
-                    if(sc->surfA.v == sj->h.v) sc->surfA = si->h;
-                    if(sc->surfB.v == sj->h.v) sc->surfB = si->h;
+                    if(sc->surfA == sj->h) sc->surfA = si->h;
+                    if(sc->surfB == sj->h) sc->surfB = si->h;
                 }
             }
 

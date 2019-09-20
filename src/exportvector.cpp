@@ -325,7 +325,7 @@ public:
 
     void assignEntityDefaults(DRW_Entity *entity, hStyle hs) {
         Style *s = Style::Get(hs);
-        RgbaColor color = s->Color(hs, /*forExport=*/true);
+        RgbaColor color = Style::Color(hs, /*forExport=*/true);
         entity->color24 = color.ToPackedIntBGRA();
         entity->color = findDxfColor(color);
         entity->layer = s->DescriptionString();
@@ -370,7 +370,7 @@ public:
         DRW_Polyline polyline;
         assignEntityDefaults(&polyline, hs);
         for(int i = 0; i < lv.n; i++) {
-            Vector *v = &lv.elem[i];
+            Vector *v = &lv[i];
             DRW_Vertex *vertex = new DRW_Vertex(v->x, v->y, v->z, 0.0);
             polyline.vertlist.push_back(vertex);
         }
@@ -1027,8 +1027,9 @@ void SvgFileWriter::StartFile() {
     double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
     fprintf(f, "stroke-width:%f;\r\n", sw);
     fprintf(f, "}\r\n");
-    for(int i = 0; i < SK.style.n; i++) {
-        Style *s = &SK.style.elem[i];
+    for(auto &style : SK.style) {
+        Style *s = &style;
+
         RgbaColor strokeRgb = Style::Color(s->h, /*forExport=*/true);
         StipplePattern pattern = Style::PatternType(s->h);
         double stippleScale = Style::StippleScaleMm(s->h);
