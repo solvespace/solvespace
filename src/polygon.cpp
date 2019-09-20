@@ -164,13 +164,13 @@ bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) cons
         // on the other
         bool inters = false;
         double t;
-        t = a.Minus(ea).DivPivoting(d);
+        t = a.Minus(ea).DivProjected(d);
         if(t > t_eps && t < (1 - t_eps)) inters = true;
-        t = b.Minus(ea).DivPivoting(d);
+        t = b.Minus(ea).DivProjected(d);
         if(t > t_eps && t < (1 - t_eps)) inters = true;
-        t = ea.Minus(a).DivPivoting(dthis);
+        t = ea.Minus(a).DivProjected(dthis);
         if(t > tthis_eps && t < (1 - tthis_eps)) inters = true;
-        t = eb.Minus(a).DivPivoting(dthis);
+        t = eb.Minus(a).DivProjected(dthis);
         if(t > tthis_eps && t < (1 - tthis_eps)) inters = true;
 
         if(inters) {
@@ -500,8 +500,8 @@ void SEdgeList::MergeCollinearSegments(Vector a, Vector b) {
     const Vector lineStart = a;
     const Vector lineDirection = b.Minus(a);
     std::sort(l.begin(), l.end(), [&](const SEdge &a, const SEdge &b) {
-        double ta = (a.a.Minus(lineStart)).DivPivoting(lineDirection);
-        double tb = (b.a.Minus(lineStart)).DivPivoting(lineDirection);
+        double ta = (a.a.Minus(lineStart)).DivProjected(lineDirection);
+        double tb = (b.a.Minus(lineStart)).DivProjected(lineDirection);
 
         return (ta < tb);
     });

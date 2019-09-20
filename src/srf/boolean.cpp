@@ -96,8 +96,8 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
             const Vector lineStart     = prev.p;
             const Vector lineDirection = (p->p).Minus(prev.p);
             std::sort(il.begin(), il.end(), [&](const SInter &a, const SInter &b) {
-                double ta = (a.p.Minus(lineStart)).DivPivoting(lineDirection);
-                double tb = (b.p.Minus(lineStart)).DivPivoting(lineDirection);
+                double ta = (a.p.Minus(lineStart)).DivProjected(lineDirection);
+                double tb = (b.p.Minus(lineStart)).DivProjected(lineDirection);
 
                 return (ta < tb);
             });

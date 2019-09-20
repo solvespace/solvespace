@@ -311,7 +311,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
         }
         int i;
         for(i = 0; i < ip_n; i++) {
-            double t = (ip[i].Minus(ap)).DivPivoting(bp.Minus(ap));
+            double t = (ip[i].Minus(ap)).DivProjected(bp.Minus(ap));
             // This is a point on the circle; but is it on the arc?
             Point2d pp = ap.Plus((bp.Minus(ap)).ScaledBy(t));
             double theta = atan2(pp.y, pp.x);
@@ -354,7 +354,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
 
         // Make sure the point lies within the finite line segment
         Vector pxyz = PointAt(puv.x, puv.y);
-        double t = (pxyz.Minus(a)).DivPivoting(ba);
+        double t = (pxyz.Minus(a)).DivProjected(ba);
         if(asSegment && (t > 1 - LENGTH_EPS/bam || t < LENGTH_EPS/bam)) {
             continue;
         }
@@ -566,7 +566,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
 
         SInter *si;
         for(si = l.First(); si; si = l.NextAfter(si)) {
-            double t = ((si->p).Minus(p)).DivPivoting(ray);
+            double t = ((si->p).Minus(p)).DivProjected(ray);
             if(t*ray.Magnitude() < -LENGTH_EPS) {
                 // wrong side, doesn't count
                 continue;

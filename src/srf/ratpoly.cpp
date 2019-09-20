@@ -155,7 +155,7 @@ void SBezier::ClosestPointTo(Vector p, double *t, bool mustConverge) const {
 
         Vector dp = TangentAt(*t);
         Vector pc = p.ClosestPointOnLine(p0, dp);
-        *t += (pc.Minus(p0)).DivPivoting(dp);
+        *t += (pc.Minus(p0)).DivProjected(dp);
     }
     if(mustConverge) {
         dbp("didn't converge (closest point on bezier curve)");
