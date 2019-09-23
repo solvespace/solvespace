@@ -113,6 +113,7 @@ setup(
     author_email=__email__,
     description="Python library of Solvespace",
     long_description=read("README.md"),
+    long_description_content_type='text/markdown',
     url="https://github.com/solvespace/solvespace",
     packages=find_packages(exclude=('tests',)),
     package_data={'': ["*.pyi"]},

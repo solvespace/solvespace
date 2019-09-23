@@ -38,16 +38,16 @@ matrix:
         - python3 -m pip install -r cython/requirements.txt
       script: &python-script
         - cd cython && python3 setup.py test && cd -
-      deploy:
-        provider: pypi
-        user: $TWINE_USERNAME
-        password: $TWINE_PASSWORD
-        skip_cleanup: true
-        skip_existing: true
-        file: cython/dist/*.whl
-        on:
-          repo: KmolYuan/solvespace
-          tags: true
+      before_deploy: cd cython
+      after_success:
+        # PyPI deployment
+        - if [[ "$TRAVIS_REPO_SLUG" == "KmolYuan/Pyslvs-UI" && -n "$TRAVIS_TAG" ]]; then
+          python3 -m pip install auditwheel twine;
+          python3 setup.py sdist bdist_wheel;
+          mkdir dist-new;
+          auditwheel repair dist/*.whl -w dist-new;
+          python3 -m twine upload dist-new/*.whl --skip-existing;
+          fi
 
     - <<: *linux
       python: "3.7"
@@ -77,7 +77,7 @@ matrix:
           python3 -m pip install twine;
           cd cython;
           python3 setup.py sdist bdist_wheel;
-          python3 -m twine upload cython/dist/*.whl --skip-existing;
+          python3 -m twine upload dist/*.whl --skip-existing;
           fi
 
     - <<: *osx

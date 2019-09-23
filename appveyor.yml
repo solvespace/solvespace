@@ -63,7 +63,7 @@ for:
         pip install twine &&
         cd cython &&
         python setup.py bdist_wheel &&
-        twine upload cython\dist\*.whl --skip-existing
+        twine upload dist\*.whl --skip-existing
         )
 
   - matrix:
