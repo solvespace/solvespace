@@ -39,12 +39,10 @@ def read(*parts):
         return f.read()
 
 
-def get_version(*file_paths):
-    doc = read(*file_paths)
-    m1 = re.search(r"^set\(solvespace_VERSION_MAJOR (\d)\)", doc, re.M)
-    m2 = re.search(r"^set\(solvespace_VERSION_MINOR (\d)\)", doc, re.M)
-    if m1 and m2:
-        return f"{m1.group(1)}.{m2.group(1)}"
+def find_version(*file_paths):
+    m = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", read(*file_paths), re.M)
+    if m:
+        return m.group(1)
     raise RuntimeError("Unable to find version string.")
 
 
@@ -110,7 +108,7 @@ class Build(build_ext):
 
 setup(
     name="python_solvespace",
-    version=get_version('..', 'CMakeLists.txt'),
+    version=find_version('python_solvespace', '__init__.py'),
     author=__author__,
     author_email=__email__,
     description="Python library of Solvespace",

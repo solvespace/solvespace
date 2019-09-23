@@ -1,4 +1,4 @@
-language: c
+language: python
 
 matrix:
   include:
@@ -6,25 +6,89 @@ matrix:
     - os: linux
       sudo: required
       dist: trusty
+      language: c
+      install:
+        - ./.travis/install-debian.sh
+      script:
+        - ./.travis/build-debian.sh
 
     - os: osx
-      osx_image: xcode8.2
+      osx_image: xcode8.3
+      language: c
+      install:
+        - ./.travis/install-macos.sh
+      script:
+        # the awk command is a workaround for https://github.com/travis-ci/travis-ci/issues/4704.
+        - ./.travis/build-macos.sh | awk '/.{0,32}/ {print $0}'
+      deploy:
+        - provider: releases
+          api_key:
+            secure: dDlkIawHcODlW9B/20/cQCtzeoocvs0hKuNngRKXKqzXLWTRq33oq/B7+39tAixWbmv6exTpijiKrRNFiSCW5Z4iwHLwaRD4XJznxw63e/Hus/dxg2Tvqx7XFpkCz8mT1Z+gZQE5YxAngeZPpI/sZbZtF1UO3yH5eLeeokZ15p26ZskQUPoYuzrTgTzYL3XfpG3F+20rNBawH1ycsCTVD/08/n31d2m3CrKAsbW7er92ek6w4fzKr7NW8WeXjrPJETVpw5fQg1Od3pRGW8dPQaJcvKQEogMp8Mm0ETYd0qigg89/giBz7QwOgmAWQ4dH+DfZH4Ojl//127QztBolMvyDMQBykWrtJoGcij05sT6K2IJr2FHeUBO12MAEdjiVvhQj3DtTzjPiZAHHDBSLWxLKWWhlhHE4pq7g1MQhqXkaAHI2BLNzwLmaowbMT0bECf9yfz6xx18h6XPQFX44oOktraobVALFlyHqeKa8zdcUt22LF6uAL1m5dxL0tny3eXCIPE4UH/RZgua/cHV9G3cUvKQa/QnFSLRhvWVSbGB+7YsHouBJcsUOOW1gmd5442XuC7mpppccRldh+GSxUk6TBJRAx7TeQ0ybDUaoco9MUqp2twv3KreR2+8Q12PDaAhfQVNEGdF3wTm1sShImjCN4VN3eSLlBEbve1QRQXM=
+          skip_cleanup: true
+          file: build/SolveSpace.dmg
+          on:
+            repo: solvespace/solvespace
+            tags: true
 
-install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./.travis/install-debian.sh; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/install-macos.sh; fi
-script:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./.travis/build-debian.sh; fi
-  # the awk command is a workaround for https://github.com/travis-ci/travis-ci/issues/4704.
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/build-macos.sh | awk '/.{0,32}/ {print $0}'; fi
+    - &linux
+      os: linux
+      sudo: required
+      dist: xenial
+      python: "3.6"
+      install: &python-install
+        - cd cython && python3 -m pip install -r requirements.txt && cd -
+      script: &python-script
+        - cd cython && python3 setup.py test && cd -
+      deploy:
+        provider: pypi
+        user: $TWINE_USERNAME
+        password: $TWINE_PASSWORD
+        skip_cleanup: true
+        skip_existing: true
+        file: cython/dist/*.whl
+        on:
+          repo: KmolYuan/solvespace
+          tags: true
 
-deploy:
-  - provider: releases
-    api_key:
-      secure: dDlkIawHcODlW9B/20/cQCtzeoocvs0hKuNngRKXKqzXLWTRq33oq/B7+39tAixWbmv6exTpijiKrRNFiSCW5Z4iwHLwaRD4XJznxw63e/Hus/dxg2Tvqx7XFpkCz8mT1Z+gZQE5YxAngeZPpI/sZbZtF1UO3yH5eLeeokZ15p26ZskQUPoYuzrTgTzYL3XfpG3F+20rNBawH1ycsCTVD/08/n31d2m3CrKAsbW7er92ek6w4fzKr7NW8WeXjrPJETVpw5fQg1Od3pRGW8dPQaJcvKQEogMp8Mm0ETYd0qigg89/giBz7QwOgmAWQ4dH+DfZH4Ojl//127QztBolMvyDMQBykWrtJoGcij05sT6K2IJr2FHeUBO12MAEdjiVvhQj3DtTzjPiZAHHDBSLWxLKWWhlhHE4pq7g1MQhqXkaAHI2BLNzwLmaowbMT0bECf9yfz6xx18h6XPQFX44oOktraobVALFlyHqeKa8zdcUt22LF6uAL1m5dxL0tny3eXCIPE4UH/RZgua/cHV9G3cUvKQa/QnFSLRhvWVSbGB+7YsHouBJcsUOOW1gmd5442XuC7mpppccRldh+GSxUk6TBJRAx7TeQ0ybDUaoco9MUqp2twv3KreR2+8Q12PDaAhfQVNEGdF3wTm1sShImjCN4VN3eSLlBEbve1QRQXM=
-    skip_cleanup: true
-    file: build/SolveSpace.dmg
-    on:
-      repo: solvespace/solvespace
-      tags: true
-      condition: "$TRAVIS_OS_NAME == osx"
+    - <<: *linux
+      python: "3.7"
+
+    - <<: *linux
+      python: "3.8-dev"
+
+    - &osx
+      os: osx
+      osx_image: xcode10
+      language: generic
+      env: PYTHON=3.6.0
+      before_install:
+        - brew update
+        - brew upgrade pyenv
+        - export PATH="/Users/travis/.pyenv/shims:${PATH}"
+        - pyenv install ${PYTHON}
+        - pyenv global ${PYTHON}
+        - python3 -m pip install pip -U
+        - python3 --version
+        - python3 -m pip --version
+      install: *python-install
+      script: *python-script
+      after_success:
+        # PyPI deployment
+        - if [ -n "$TRAVIS_TAG" ]; then
+          python3 -m pip install twine;
+          python3 setup.py sdist bdist_wheel;
+          python3 -m twine upload cython/dist/*.whl --skip-existing;
+          fi
+
+    - <<: *osx
+      env: PYTHON=3.7.0
+
+    - <<: *osx
+      env: PYTHON=3.8-dev
+
+before_cache:
+  - rm -rf $HOME/.cache/pip/log
+
+cache:
+  directories:
+    - $HOME/.cache/pip

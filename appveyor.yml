@@ -30,4 +30,5 @@ deploy:
     description: ""
     artifact: solvespace.exe,solvespace-cli.exe,solvespace.pdb
     on:
-      appveyor_repo_tag: true
+      APPVEYOR_REPO_NAME: solvespace/solvespace
+      APPVEYOR_REPO_TAG: true
