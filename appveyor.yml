@@ -1,7 +1,17 @@
 version: '{build}'
 clone_depth: 1
+environment:
+  MSYS_DIR: C:\msys64
+  matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      PYTHON_DIR: C:\Python36-x64
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      PYTHON_DIR: C:\Python37-x64
 for:
-  - image: Visual Studio 2013
+  - matrix:
+      only:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
     before_build:
       - git submodule update --init
       - set tag=x%APPVEYOR_REPO_TAG_NAME%
@@ -14,6 +24,55 @@ for:
       - msbuild "build\test\solvespace-testsuite.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
     test_script:
       - build\bin\%BUILD_TYPE%\solvespace-testsuite.exe
+    deploy:
+      - provider: GitHub
+        auth_token:
+          secure: P9/pf2nM+jlWKe7pCjMp41HycBNP/+5AsmE/TETrDUoBOa/9WFHelqdVFrbRn9IC
+        description: ""
+        artifact: solvespace.exe,solvespace-cli.exe,solvespace.pdb
+        on:
+          APPVEYOR_REPO_NAME: solvespace/solvespace
+          APPVEYOR_REPO_TAG: true
+
+  - matrix:
+      only:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          PYTHON_DIR: C:\Python36-x64
+    install: &python-install
+      # Environment variables
+      - set Path=%MSYS_DIR%\mingw64\bin;%MSYS_DIR%\usr\bin;%Path%
+      - set Path=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%Path%
+      # Show Python
+      - python --version
+      - pip --version
+      # Upgrade setuptools
+      - pip install setuptools -U
+      # Set Python compiler to MinGW
+      - cython\platform\set_pycompiler %PYTHON_DIR%
+      # Install modules
+      - pip install -r cython\requirements.txt
+      # Show tool kits
+      - gcc --version
+      - mingw32-make --version
+    build_script: &python-script
+      - cd cython && python setup.py test && cd ..
+    deploy_script: &python-deploy
+      # PyPI deployment
+      - IF "%APPVEYOR_REPO_TAG%"=="true"
+        IF "%APPVEYOR_REPO_NAME%"=="KmolYuan/solvespace" (
+        pip install twine &&
+        cd cython &&
+        python setup.py bdist_wheel &&
+        twine upload dist\*.whl --skip-existing
+        )
+
+  - matrix:
+      only:
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+          PYTHON_DIR: C:\Python37-x64
+    install: *python-install
+    build_script: *python-script
+    deploy_script: *python-deploy
 
 artifacts:
   - path: build\bin\%BUILD_TYPE%\solvespace.exe
@@ -22,13 +81,4 @@ artifacts:
     name: solvespace-cli.exe
   - path: build\bin\%BUILD_TYPE%\solvespace.pdb
     name: solvespace.pdb
-
-deploy:
-  - provider: GitHub
-    auth_token:
-      secure: P9/pf2nM+jlWKe7pCjMp41HycBNP/+5AsmE/TETrDUoBOa/9WFHelqdVFrbRn9IC
-    description: ""
-    artifact: solvespace.exe,solvespace-cli.exe,solvespace.pdb
-    on:
-      APPVEYOR_REPO_NAME: solvespace/solvespace
-      APPVEYOR_REPO_TAG: true
+  - path: cython\dist\*.whl
