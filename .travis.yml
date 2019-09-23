@@ -1,5 +1,3 @@
-language: python
-
 matrix:
   include:
 
@@ -34,9 +32,10 @@ matrix:
       os: linux
       sudo: required
       dist: xenial
+      language: python
       python: "3.6"
       install: &python-install
-        - cd cython && python3 -m pip install -r requirements.txt && cd -
+        - python3 -m pip install -r cython/requirements.txt
       script: &python-script
         - cd cython && python3 setup.py test && cd -
       deploy:
@@ -74,8 +73,9 @@ matrix:
       script: *python-script
       after_success:
         # PyPI deployment
-        - if [ -n "$TRAVIS_TAG" ]; then
+        - if [ "$TRAVIS_REPO_SLUG" == "KmolYuan/solvespace" && -n "$TRAVIS_TAG" ]; then
           python3 -m pip install twine;
+          cd cython;
           python3 setup.py sdist bdist_wheel;
           python3 -m twine upload cython/dist/*.whl --skip-existing;
           fi
