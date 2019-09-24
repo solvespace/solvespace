@@ -31,23 +31,29 @@ matrix:
     - &linux
       os: linux
       sudo: required
-      dist: xenial
+      dist: bionic
       language: python
       python: "3.6"
+      addons:
+        apt:
+          update: true
+          packages:
+            - patchelf
       install: &python-install
         - python3 -m pip install -r cython/requirements.txt
       script: &python-script
         - cd cython && python3 setup.py test && cd -
       before_deploy: cd cython
-      after_success:
-        # PyPI deployment
-        - if [[ "$TRAVIS_REPO_SLUG" == "KmolYuan/Pyslvs-UI" && -n "$TRAVIS_TAG" ]]; then
-          python3 -m pip install auditwheel twine;
-          python3 setup.py sdist bdist_wheel;
-          mkdir dist-new;
-          auditwheel repair dist/*.whl -w dist-new;
-          python3 -m twine upload dist-new/*.whl --skip-existing;
-          fi
+      deploy:
+        - provider: pypi
+          user: $TWINE_USERNAME
+          password: $TWINE_PASSWORD
+          skip_cleanup: true
+          skip_existing: true
+          distributions: sdist
+          on:
+            repo: KmolYuan/solvespace
+            tags: true
 
     - <<: *linux
       python: "3.7"
@@ -73,10 +79,10 @@ matrix:
       script: *python-script
       after_success:
         # PyPI deployment
-        - if [ "$TRAVIS_REPO_SLUG" == "KmolYuan/solvespace" && -n "$TRAVIS_TAG" ]; then
+        - if [[ "$TRAVIS_REPO_SLUG" == "KmolYuan/solvespace" && -n "$TRAVIS_TAG" ]]; then
           python3 -m pip install twine;
           cd cython;
-          python3 setup.py sdist bdist_wheel;
+          python3 setup.py bdist_wheel;
           python3 -m twine upload dist/*.whl --skip-existing;
           fi
 
