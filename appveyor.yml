@@ -81,4 +81,3 @@ artifacts:
     name: solvespace-cli.exe
   - path: build\bin\%BUILD_TYPE%\solvespace.pdb
     name: solvespace.pdb
-  - path: cython\dist\*.whl
