@@ -56,7 +56,7 @@ for:
       - mingw32-make --version
     build_script: &python-script
       - cd cython && python setup.py test && cd ..
-    deploy_script: &python-deploy
+    after_build: &python-deploy
       # PyPI deployment
       - IF "%APPVEYOR_REPO_TAG%"=="true"
         IF "%APPVEYOR_REPO_NAME%"=="KmolYuan/solvespace" (
@@ -72,7 +72,7 @@ for:
           PYTHON_DIR: C:\Python37-x64
     install: *python-install
     build_script: *python-script
-    deploy_script: *python-deploy
+    after_build: *python-deploy
 
 artifacts:
   - path: build\bin\%BUILD_TYPE%\solvespace.exe
