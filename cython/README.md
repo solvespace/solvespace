@@ -4,19 +4,20 @@
 [![PyPI](https://img.shields.io/pypi/v/python-solvespace.svg)](https://pypi.org/project/python-solvespace/)
 [![GitHub license](https://img.shields.io/badge/license-GPLv3+-blue.svg)](https://raw.githubusercontent.com/KmolYuan/solvespace/master/LICENSE)
 
-python-solvespace
-===
+# python-solvespace
 
 Python library from solver of SolveSpace.
 
-Feature for CDemo and Python interface can see [here](https://github.com/solvespace/solvespace/blob/master/exposed/DOC.txt).
++ [Python API](https://pyslvs-ui.readthedocs.io/en/stable/python-solvespace-api/)
++ [C API](https://github.com/solvespace/solvespace/blob/master/exposed/DOC.txt)
 
-Build and Test
-===
+# Install
 
-Requirement:
+```bash
+pip install python-solvespace
+```
 
-+ [Cython]
+# Build and Test (Repository)
 
 Build and install the module:
 
@@ -33,7 +34,7 @@ python tests
 Uninstall the module:
 
 ```bash
-pip uninstall python_solvespace
+pip uninstall python-solvespace
 ```
 
 [GNU Make]: https://sourceforge.net/projects/mingw-w64/files/latest/download?source=files

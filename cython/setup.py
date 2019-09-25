@@ -114,7 +114,7 @@ setup(
     description="Python library of Solvespace",
     long_description=read("README.md"),
     long_description_content_type='text/markdown',
-    url="https://github.com/solvespace/solvespace",
+    url="https://github.com/KmolYuan/solvespace",
     packages=find_packages(exclude=('tests',)),
     package_data={'': ["*.pyi"]},
     ext_modules=[Extension(
