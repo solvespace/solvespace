@@ -7,24 +7,26 @@ __copyright__ = "Copyright (C) 2016-2019"
 __license__ = "GPLv3+"
 __email__ = "pyslvs@gmail.com"
 
-import os
 from os.path import (
     abspath,
     dirname,
+    isdir,
     join as pth_join,
 )
 import re
 import codecs
-from textwrap import dedent
 from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
+from setuptools.command.sdist import sdist
+from distutils import dir_util
 from platform import system
 from distutils import sysconfig
 
 here = abspath(dirname(__file__))
-include_path = '../include/'
-src_path = '../src/'
-platform_path = src_path + 'platform/'
+include_path = pth_join('python_solvespace', 'include')
+src_path = pth_join('python_solvespace', 'src')
+platform_path = pth_join(src_path, 'platform')
+extra_path = pth_join(here, 'platform')
 ver = sysconfig.get_config_var('VERSION')
 lib = sysconfig.get_config_var('BINDIR')
 
@@ -66,14 +68,14 @@ compile_args = [
 ]
 
 sources = [
-    'python_solvespace/' + 'slvs.pyx',
-    src_path + 'util.cpp',
-    src_path + 'entity.cpp',
-    src_path + 'expr.cpp',
-    src_path + 'constrainteq.cpp',
-    src_path + 'constraint.cpp',
-    src_path + 'system.cpp',
-    src_path + 'lib.cpp',
+    pth_join('python_solvespace', 'slvs.pyx'),
+    pth_join(src_path, 'util.cpp'),
+    pth_join(src_path, 'entity.cpp'),
+    pth_join(src_path, 'expr.cpp'),
+    pth_join(src_path, 'constrainteq.cpp'),
+    pth_join(src_path, 'constraint.cpp'),
+    pth_join(src_path, 'system.cpp'),
+    pth_join(src_path, 'lib.cpp'),
 ]
 
 if system() == 'Windows':
@@ -87,23 +89,32 @@ if system() == 'Windows':
     macros.append(('WIN32', None))
 
     # Platform sources
-    sources.append(platform_path + 'utilwin.cpp')
-    sources.append(platform_path + 'platform.cpp')
+    sources.append(pth_join(platform_path, 'utilwin.cpp'))
+    sources.append(pth_join(platform_path, 'platform.cpp'))
 else:
-    sources.append(platform_path + 'utilunix.cpp')
+    sources.append(pth_join(platform_path, 'utilunix.cpp'))
 
 
 class Build(build_ext):
     def run(self):
-        # Generate "config.h", actually not used.
-        config_h = src_path + "config.h"
-        write(dedent(f"""\
-            #ifndef SOLVESPACE_CONFIG_H
-            #define SOLVESPACE_CONFIG_H
-            #endif
-        """), config_h)
+        has_src = isdir(include_path) and isdir(src_path)
+        if not has_src:
+            dir_util.copy_tree(pth_join('..', 'include'), include_path)
+            dir_util.copy_tree(pth_join('..', 'src'), src_path)
         super(Build, self).run()
-        os.remove(config_h)
+        if not has_src:
+            dir_util.remove_tree(include_path, dry_run=self.dry_run)
+            dir_util.remove_tree(src_path, dry_run=self.dry_run)
+
+
+class PackSource(sdist):
+    def run(self):
+        dir_util.copy_tree(pth_join('..', 'include'), include_path)
+        dir_util.copy_tree(pth_join('..', 'src'), src_path)
+        super(PackSource, self).run()
+        if not self.keep_temp:
+            dir_util.remove_tree(include_path, dry_run=self.dry_run)
+            dir_util.remove_tree(src_path, dry_run=self.dry_run)
 
 
 setup(
@@ -116,16 +127,16 @@ setup(
     long_description_content_type='text/markdown',
     url="https://github.com/KmolYuan/solvespace",
     packages=find_packages(exclude=('tests',)),
-    package_data={'': ["*.pyi"]},
+    package_data={'': ["*.pyi", "*.pxd"]},
     ext_modules=[Extension(
         "python_solvespace.slvs",
         sources,
         language="c++",
-        include_dirs=[include_path, src_path, platform_path],
+        include_dirs=[include_path, src_path, platform_path, extra_path],
         define_macros=macros,
         extra_compile_args=compile_args
     )],
-    cmdclass={'build_ext': Build},
+    cmdclass={'build_ext': Build, 'sdist': PackSource},
     python_requires=">=3.6",
     install_requires=read('requirements.txt').splitlines(),
     test_suite="tests",
