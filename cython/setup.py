@@ -57,7 +57,6 @@ macros = [
     ('EXPORT_DLL', None),
     ('_CRT_SECURE_NO_WARNINGS', None),
 ]
-
 compile_args = [
     '-O3',
     '-Wno-cpp',
@@ -67,7 +66,6 @@ compile_args = [
     '-fPIC',
     '-std=c++11',
 ]
-
 sources = [
     pth_join('python_solvespace', 'slvs.pyx'),
     pth_join(src_path, 'util.cpp'),
@@ -78,17 +76,14 @@ sources = [
     pth_join(src_path, 'system.cpp'),
     pth_join(src_path, 'lib.cpp'),
 ]
-
 if system() == 'Windows':
     # Avoid compile error with CYTHON_USE_PYLONG_INTERNALS.
     # https://github.com/cython/cython/issues/2670#issuecomment-432212671
     macros.append(('MS_WIN64', None))
     # Disable format warning
     compile_args.append('-Wno-format')
-
     # Solvespace arguments
     macros.append(('WIN32', None))
-
     # Platform sources
     sources.append(pth_join(platform_path, 'utilwin.cpp'))
     sources.append(pth_join(platform_path, 'platform.cpp'))
@@ -137,7 +132,7 @@ setup(
     version=find_version('python_solvespace', '__init__.py'),
     author=__author__,
     author_email=__email__,
-    description="Python library of Solvespace",
+    description="Python library of Solvespace.",
     long_description=read("README.md"),
     long_description_content_type='text/markdown',
     url="https://github.com/KmolYuan/solvespace",
