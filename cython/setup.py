@@ -23,7 +23,6 @@ from distutils import file_util, dir_util
 from platform import system
 from distutils import sysconfig
 
-here = abspath(dirname(__file__))
 include_path = pth_join('python_solvespace', 'include')
 src_path = pth_join('python_solvespace', 'src')
 platform_path = pth_join(src_path, 'platform')
@@ -33,12 +32,12 @@ lib = sysconfig.get_config_var('BINDIR')
 
 
 def write(doc, *parts):
-    with codecs.open(pth_join(here, *parts), 'w') as f:
+    with codecs.open(pth_join(*parts), 'w') as f:
         f.write(doc)
 
 
 def read(*parts):
-    with codecs.open(pth_join(here, *parts), 'r') as f:
+    with codecs.open(pth_join(*parts), 'r') as f:
         return f.read()
 
 
@@ -109,11 +108,12 @@ def copy_source(dry_run):
 
 class Build(build_ext):
     def build_extensions(self):
-        if self.compiler.compiler_type in {'mingw32'}:
+        compiler = self.compiler.compiler_type
+        if compiler in {'mingw32', 'unix'}:
             for e in self.extensions:
                 e.define_macros = macros
                 e.extra_compile_args = compile_args
-        elif self.compiler.compiler_type == 'msvc':
+        elif compiler == 'msvc':
             for e in self.extensions:
                 e.define_macros = [('_USE_MATH_DEFINES', None)] + macros[2:]
                 e.libraries = ['shell32']
