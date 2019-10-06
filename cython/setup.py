@@ -108,6 +108,17 @@ def copy_source(dry_run):
 
 
 class Build(build_ext):
+    def build_extensions(self):
+        if self.compiler.compiler_type in {'mingw32'}:
+            for e in self.extensions:
+                e.define_macros = macros
+                e.extra_compile_args = compile_args
+        elif self.compiler.compiler_type == 'msvc':
+            for e in self.extensions:
+                e.define_macros = [('_USE_MATH_DEFINES', None)] + macros[2:]
+                e.libraries = ['shell32']
+        super(Build, self).build_extensions()
+
     def run(self):
         has_src = isdir(include_path) and isdir(src_path)
         if not has_src:
@@ -142,9 +153,7 @@ setup(
         "python_solvespace.slvs",
         sources,
         language="c++",
-        include_dirs=[include_path, src_path, platform_path, extra_path],
-        define_macros=macros,
-        extra_compile_args=compile_args
+        include_dirs=[include_path, src_path, platform_path, extra_path]
     )],
     cmdclass={'build_ext': Build, 'sdist': PackSource},
     zip_safe=False,
