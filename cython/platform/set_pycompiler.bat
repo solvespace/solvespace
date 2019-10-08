@@ -9,12 +9,15 @@ set PYTHON_DIR=%1
 set COMPILER=%2
 
 REM Create "distutils.cfg"
-echo [build]>> "%PYTHON_DIR%\Lib\distutils\distutils.cfg"
-echo compiler=%COMPILER%>> "%PYTHON_DIR%\Lib\distutils\distutils.cfg"
-
+set DISTUTILS=%PYTHON_DIR%\Lib\distutils\distutils.cfg
+if exist "%DISTUTILS%" del "%DISTUTILS%" /Q /S
+echo [build]>> "%DISTUTILS%"
+echo compiler=%COMPILER%>> "%DISTUTILS%"
+echo patched file "%DISTUTILS%"
 REM Apply the patch of "cygwinccompiler.py".
 REM Unix "patch" command of Msys.
-patch "%PYTHON_DIR%\lib\distutils\cygwinccompiler.py" "%HERE%patch.diff"
+patch -N "%PYTHON_DIR%\lib\distutils\cygwinccompiler.py" "%HERE%\patch.diff"
 
 REM Copy "vcruntime140.dll" to "libs".
 copy "%PYTHON_DIR%\vcruntime140.dll" "%PYTHON_DIR%\libs"
+echo copied "vcruntime140.dll".
