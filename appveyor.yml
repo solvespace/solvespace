@@ -6,8 +6,13 @@ environment:
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       PYTHON_DIR: C:\Python36-x64
+      COMPILER: mingw32
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       PYTHON_DIR: C:\Python37-x64
+      COMPILER: mingw32
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      PYTHON_DIR: C:\Python37-x64
+      COMPILER: msvc
 for:
   - matrix:
       only:
@@ -33,12 +38,10 @@ for:
         on:
           APPVEYOR_REPO_NAME: solvespace/solvespace
           APPVEYOR_REPO_TAG: true
-
   - matrix:
       only:
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-          PYTHON_DIR: C:\Python36-x64
-    install: &python-install
+    install:
       # Environment variables
       - set Path=%MSYS_DIR%\mingw64\bin;%MSYS_DIR%\usr\bin;%Path%
       - set Path=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%Path%
@@ -48,32 +51,24 @@ for:
       # Upgrade setuptools
       - pip install setuptools -U
       # Set Python compiler to MinGW
-      - cython\platform\set_pycompiler %PYTHON_DIR%
+      - cython\platform\set_pycompiler %PYTHON_DIR% %COMPILER%
       # Install modules
       - pip install -r cython\requirements.txt
       # Show tool kits
       - gcc --version
       - mingw32-make --version
-    build_script: &python-script
+    build_script:
       - cd cython && python setup.py test && cd ..
-    after_build: &python-deploy
+    after_build:
       # PyPI deployment
       - IF "%APPVEYOR_REPO_TAG%"=="true"
-        IF "%APPVEYOR_REPO_NAME%"=="KmolYuan/solvespace" (
+        IF "%APPVEYOR_REPO_NAME%"=="KmolYuan/solvespace"
+        IF "%COMPILER%"=="mingw32" (
         pip install twine &&
         cd cython &&
         python setup.py bdist_wheel &&
         twine upload dist\*.whl --skip-existing
         )
-
-  - matrix:
-      only:
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-          PYTHON_DIR: C:\Python37-x64
-    install: *python-install
-    build_script: *python-script
-    after_build: *python-deploy
-
 artifacts:
   - path: build\bin\%BUILD_TYPE%\solvespace.exe
     name: solvespace.exe
