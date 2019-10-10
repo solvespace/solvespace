@@ -9,7 +9,6 @@ license: GPLv3+
 email: pyslvs@gmail.com
 """
 
-cimport cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from cpython.object cimport Py_EQ, Py_NE
 from libcpp.pair cimport pair
@@ -150,7 +149,7 @@ cdef class Entity:
         entity.params = Params.create(e.param, p_size)
         return entity
 
-    def __richcmp__(self, other: Entity, op: cython.int) -> bint:
+    def __richcmp__(self, Entity other, int op) -> bint:
         """Compare the entities."""
         if op == Py_EQ:
             return (
