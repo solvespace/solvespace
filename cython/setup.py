@@ -8,12 +8,7 @@ __license__ = "GPLv3+"
 __email__ = "pyslvs@gmail.com"
 
 from os import walk
-from os.path import (
-    abspath,
-    dirname,
-    isdir,
-    join as pth_join,
-)
+from os.path import dirname, isdir, join as pth_join
 import re
 import codecs
 from setuptools import setup, Extension, find_packages
@@ -148,7 +143,7 @@ setup(
     long_description_content_type='text/markdown',
     url="https://github.com/KmolYuan/solvespace",
     packages=find_packages(exclude=('tests',)),
-    package_data={'': ["*.pyi", "*.pxd"]},
+    package_data={'': ["*.pyi", "*.pxd"], 'python_solvespace': ['py.typed']},
     ext_modules=[Extension(
         "python_solvespace.slvs",
         sources,
@@ -159,7 +154,7 @@ setup(
     zip_safe=False,
     python_requires=">=3.6",
     install_requires=read('requirements.txt').splitlines(),
-    test_suite="tests",
+    test_suite='tests',
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
