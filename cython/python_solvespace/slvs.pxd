@@ -31,12 +31,9 @@ cdef extern from "slvs.h" nogil:
     # Entity type
     int SLVS_E_POINT_IN_3D
     int SLVS_E_POINT_IN_2D
-
     int SLVS_E_NORMAL_IN_2D
     int SLVS_E_NORMAL_IN_3D
-
     int SLVS_E_DISTANCE
-
     int SLVS_E_WORKPLANE
     int SLVS_E_LINE_SEGMENT
     int SLVS_E_CUBIC
@@ -52,6 +49,41 @@ cdef extern from "slvs.h" nogil:
         Slvs_hEntity normal
         Slvs_hEntity distance
         Slvs_hParam param[4]
+
+    int SLVS_C_POINTS_COINCIDENT
+    int SLVS_C_PT_PT_DISTANCE
+    int SLVS_C_PT_PLANE_DISTANCE
+    int SLVS_C_PT_LINE_DISTANCE
+    int SLVS_C_PT_FACE_DISTANCE
+    int SLVS_C_PT_IN_PLANE
+    int SLVS_C_PT_ON_LINE
+    int SLVS_C_PT_ON_FACE
+    int SLVS_C_EQUAL_LENGTH_LINES
+    int SLVS_C_LENGTH_RATIO
+    int SLVS_C_EQ_LEN_PT_LINE_D
+    int SLVS_C_EQ_PT_LN_DISTANCES
+    int SLVS_C_EQUAL_ANGLE
+    int SLVS_C_EQUAL_LINE_ARC_LEN
+    int SLVS_C_SYMMETRIC
+    int SLVS_C_SYMMETRIC_HORIZ
+    int SLVS_C_SYMMETRIC_VERT
+    int SLVS_C_SYMMETRIC_LINE
+    int SLVS_C_AT_MIDPOINT
+    int SLVS_C_HORIZONTAL
+    int SLVS_C_VERTICAL
+    int SLVS_C_DIAMETER
+    int SLVS_C_PT_ON_CIRCLE
+    int SLVS_C_SAME_ORIENTATION
+    int SLVS_C_ANGLE
+    int SLVS_C_PARALLEL
+    int SLVS_C_PERPENDICULAR
+    int SLVS_C_ARC_LINE_TANGENT
+    int SLVS_C_CUBIC_LINE_TANGENT
+    int SLVS_C_EQUAL_RADIUS
+    int SLVS_C_PROJ_PT_DISTANCE
+    int SLVS_C_WHERE_DRAGGED
+    int SLVS_C_CURVE_CURVE_TANGENT
+    int SLVS_C_LENGTH_DIFFERENCE
 
     ctypedef struct Slvs_Constraint:
         Slvs_hConstraint h
@@ -163,58 +195,10 @@ cdef extern from "slvs.h" nogil:
         Slvs_hEntity entityB
     )
 
-
-cpdef enum Constraint:
-    # Expose macro of constraint types
-    POINTS_COINCIDENT = 100000
-    PT_PT_DISTANCE
-    PT_PLANE_DISTANCE
-    PT_LINE_DISTANCE
-    PT_FACE_DISTANCE
-    PT_IN_PLANE
-    PT_ON_LINE
-    PT_ON_FACE
-    EQUAL_LENGTH_LINES
-    LENGTH_RATIO
-    EQ_LEN_PT_LINE_D
-    EQ_PT_LN_DISTANCES
-    EQUAL_ANGLE
-    EQUAL_LINE_ARC_LEN
-    SYMMETRIC
-    SYMMETRIC_HORIZ
-    SYMMETRIC_VERT
-    SYMMETRIC_LINE
-    AT_MIDPOINT
-    HORIZONTAL
-    VERTICAL
-    DIAMETER
-    PT_ON_CIRCLE
-    SAME_ORIENTATION
-    ANGLE
-    PARALLEL
-    PERPENDICULAR
-    ARC_LINE_TANGENT
-    CUBIC_LINE_TANGENT
-    EQUAL_RADIUS
-    PROJ_PT_DISTANCE
-    WHERE_DRAGGED
-    CURVE_CURVE_TANGENT
-    LENGTH_DIFFERENCE
-
-
-cpdef enum ResultFlag:
-    # Expose macro of result flags
-    OKAY
-    INCONSISTENT
-    DIDNT_CONVERGE
-    TOO_MANY_UNKNOWNS
-
-
 cpdef tuple quaternion_u(double qw, double qx, double qy, double qz)
 cpdef tuple quaternion_v(double qw, double qx, double qy, double qz)
 cpdef tuple quaternion_n(double qw, double qx, double qy, double qz)
 cpdef tuple make_quaternion(double ux, double uy, double uz, double vx, double vy, double vz)
-
 
 cdef class Params:
 
@@ -222,7 +206,6 @@ cdef class Params:
 
     @staticmethod
     cdef Params create(Slvs_hParam *p, size_t count)
-
 
 cdef class Entity:
 
@@ -291,7 +274,7 @@ cdef class SolverSystem:
     cpdef Entity add_work_plane(self, Entity origin, Entity nm)
     cpdef void add_constraint(
         self,
-        Constraint c_type,
+        int c_type,
         Entity wp,
         double v,
         Entity p1,
