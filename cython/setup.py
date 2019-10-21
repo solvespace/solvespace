@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2016-2019"
 __license__ = "GPLv3+"
 __email__ = "pyslvs@gmail.com"
 
+import sys
 from os import walk
 from os.path import dirname, isdir, join as pth_join
 import re
@@ -70,7 +71,10 @@ sources = [
     pth_join(src_path, 'system.cpp'),
     pth_join(src_path, 'lib.cpp'),
 ]
-if system() == 'Windows':
+if {'sdist', 'bdist'} & set(sys.argv):
+    for s in ('utilwin', 'utilunix', 'platform'):
+        sources.append(pth_join(platform_path, f'{s}.cpp'))
+elif system() == 'Windows':
     # Avoid compile error with CYTHON_USE_PYLONG_INTERNALS.
     # https://github.com/cython/cython/issues/2670#issuecomment-432212671
     macros.append(('MS_WIN64', None))
