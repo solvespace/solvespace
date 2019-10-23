@@ -46,7 +46,8 @@ def find_version(*file_paths):
 
 macros = [
     ('_hypot', 'hypot'),
-    ('M_PI', 'PI'),  # C++ 11
+    ('M_PI', 'PI'),
+    ('_USE_MATH_DEFINES', None),
     ('ISOLATION_AWARE_ENABLED', None),
     ('LIBRARY', None),
     ('EXPORT_DLL', None),
@@ -59,7 +60,7 @@ compile_args = [
     '-Wno-write-strings',
     '-fpermissive',
     '-fPIC',
-    '-std=c++11',
+    '-std=c++17',
 ]
 sources = [
     pth_join('python_solvespace', 'slvs.pyx'),
@@ -114,7 +115,7 @@ class Build(build_ext):
                 e.extra_compile_args = compile_args
         elif compiler == 'msvc':
             for e in self.extensions:
-                e.define_macros = [('_USE_MATH_DEFINES', None)] + macros[2:]
+                e.define_macros = macros[2:]
                 e.libraries = ['shell32']
         super(Build, self).build_extensions()
 
