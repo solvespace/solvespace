@@ -59,7 +59,7 @@ matrix:
       python: "3.7"
 
     - <<: *linux
-      python: "3.8-dev"
+      python: "3.8"
 
     - &osx
       os: osx
@@ -90,7 +90,7 @@ matrix:
       env: PYTHON=3.7.0
 
     - <<: *osx
-      env: PYTHON=3.8-dev
+      env: PYTHON=3.8.0
 
 before_cache:
   - rm -rf $HOME/.cache/pip/log
