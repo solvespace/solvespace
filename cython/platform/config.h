@@ -1,3 +1,0 @@
-#ifndef SOLVESPACE_CONFIG_H
-#define SOLVESPACE_CONFIG_H
-#endif

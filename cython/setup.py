@@ -22,7 +22,6 @@ from distutils import sysconfig
 include_path = pth_join('python_solvespace', 'include')
 src_path = pth_join('python_solvespace', 'src')
 platform_path = pth_join(src_path, 'platform')
-extra_path = 'platform'
 ver = sysconfig.get_config_var('VERSION')
 lib = sysconfig.get_config_var('BINDIR')
 
@@ -76,9 +75,6 @@ if {'sdist', 'bdist'} & set(sys.argv):
     for s in ('utilwin', 'utilunix', 'platform'):
         sources.append(pth_join(platform_path, f'{s}.cpp'))
 elif system() == 'Windows':
-    # Avoid compile error with CYTHON_USE_PYLONG_INTERNALS.
-    # https://github.com/cython/cython/issues/2670#issuecomment-432212671
-    macros.append(('MS_WIN64', None))
     # Disable format warning
     compile_args.append('-Wno-format')
     # Solvespace arguments
@@ -92,7 +88,7 @@ else:
 
 def copy_source(dry_run):
     dir_util.copy_tree(pth_join('..', 'include'), include_path, dry_run=dry_run)
-    dir_util.mkpath(pth_join('python_solvespace', 'src'))
+    dir_util.mkpath(src_path)
     for root, _, files in walk(pth_join('..', 'src')):
         for f in files:
             if not f.endswith('.h'):
@@ -104,6 +100,7 @@ def copy_source(dry_run):
             file_util.copy_file(f, f_new, dry_run=dry_run)
     for f in sources[1:]:
         file_util.copy_file(f.replace('python_solvespace', '..'), f, dry_run=dry_run)
+    open(pth_join(platform_path, 'config.h'), 'a').close()
 
 
 class Build(build_ext):
@@ -153,7 +150,7 @@ setup(
         "python_solvespace.slvs",
         sources,
         language="c++",
-        include_dirs=[include_path, src_path, platform_path, extra_path]
+        include_dirs=[include_path, src_path, platform_path]
     )],
     cmdclass={'build_ext': Build, 'sdist': PackSource},
     zip_safe=False,
