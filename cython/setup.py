@@ -17,13 +17,10 @@ from setuptools.command.build_ext import build_ext
 from setuptools.command.sdist import sdist
 from distutils import file_util, dir_util
 from platform import system
-from distutils import sysconfig
 
 include_path = pth_join('python_solvespace', 'include')
 src_path = pth_join('python_solvespace', 'src')
 platform_path = pth_join(src_path, 'platform')
-ver = sysconfig.get_config_var('VERSION')
-lib = sysconfig.get_config_var('BINDIR')
 
 
 def write(doc, *parts):
@@ -44,7 +41,6 @@ def find_version(*file_paths):
 
 
 macros = [
-    ('_hypot', 'hypot'),
     ('M_PI', 'PI'),
     ('_USE_MATH_DEFINES', None),
     ('ISOLATION_AWARE_ENABLED', None),
@@ -82,6 +78,8 @@ elif system() == 'Windows':
     # Platform sources
     sources.append(pth_join(platform_path, 'utilwin.cpp'))
     sources.append(pth_join(platform_path, 'platform.cpp'))
+    if sys.version_info < (3, 7):
+        macros.append(('_hypot', 'hypot'))
 else:
     sources.append(pth_join(platform_path, 'utilunix.cpp'))
 
@@ -112,7 +110,7 @@ class Build(build_ext):
                 e.extra_compile_args = compile_args
         elif compiler == 'msvc':
             for e in self.extensions:
-                e.define_macros = macros[2:]
+                e.define_macros = macros[1:]
                 e.libraries = ['shell32']
         super(Build, self).build_extensions()
 
