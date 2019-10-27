@@ -10,8 +10,14 @@ environment:
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       PYTHON_DIR: C:\Python37-x64
       COMPILER: mingw32
+    # Cython not yet support
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-      PYTHON_DIR: C:\Python37-x64
+      PYTHON_DEV: 3.8.0
+      PYTHON_DIR: C:\Python38-x64
+      COMPILER: mingw32
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      PYTHON_DEV: 3.8.0
+      PYTHON_DIR: C:\Python38-x64
       COMPILER: msvc
 for:
   - matrix:
@@ -42,6 +48,8 @@ for:
       only:
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     install:
+      # Install Python-dev
+      - IF DEFINED PYTHON_DEV choco install -y python --version %PYTHON_DEV%
       # Environment variables
       - set Path=%MSYS_DIR%\mingw64\bin;%MSYS_DIR%\usr\bin;%Path%
       - set Path=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%Path%
