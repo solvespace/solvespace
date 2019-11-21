@@ -17,7 +17,7 @@ from collections import Counter
 
 cpdef tuple quaternion_u(double qw, double qx, double qy, double qz):
     cdef double x, y, z
-    Slvs_QuaternionV(qw, qx, qy, qz, &x, &y, &z)
+    Slvs_QuaternionU(qw, qx, qy, qz, &x, &y, &z)
     return x, y, z
 
 
