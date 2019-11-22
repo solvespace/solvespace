@@ -390,7 +390,7 @@ GLuint Generate(const std::vector<double> &pattern) {
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &size);
     RgbaColor *textureData = new RgbaColor[size];
 
-    int mipCount = (int)log2(size) + 1;
+    int mipCount = (int)log2(size);
     for(int mip = 0; mip < mipCount; mip++) {
         int dashI = 0;
         double dashT = 0.0;
