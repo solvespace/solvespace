@@ -152,13 +152,12 @@ static int Clamp(int x, int a, int b) {
 
 bool handlingFatalError = false;
 
-void FatalError(std::string message) {
+void FatalError(const std::string &message) {
     // Indicate that we're handling a fatal error, to avoid re-entering application code
     // and potentially crashing even harder.
     handlingFatalError = true;
 
-    message += "\nGenerate debug report?";
-    switch(MessageBoxW(NULL, Platform::Widen(message).c_str(),
+    switch(MessageBoxW(NULL, Platform::Widen(message + "\nGenerate debug report?").c_str(),
                        L"Fatal error — SolveSpace",
                        MB_ICONERROR|MB_TASKMODAL|MB_SETFOREGROUND|MB_TOPMOST|
                        MB_OKCANCEL|MB_DEFBUTTON2)) {
