@@ -261,7 +261,7 @@ public:
     void DoQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
                 int zIndex, int comparePosition = 0);
 
-    bool Pick(std::function<void()> drawFn);
+    bool Pick(const std::function<void()> &drawFn);
 };
 
 // A canvas that renders onto a 2d surface, performing z-index sorting, occlusion testing, etc,

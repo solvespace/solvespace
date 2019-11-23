@@ -141,10 +141,9 @@ PolylineBuilder::Edge *PolylineBuilder::AddEdge(const Vector &p0, const Vector &
 }
 
 void PolylineBuilder::Generate(
-        std::function<void(Vertex *start, Vertex *next, Edge *edge)> startFunc,
-        std::function<void(Vertex *next, Edge *edge)> nextFunc,
-        std::function<void(Edge *alone)> aloneFunc,
-        std::function<void()> endFunc) {
+    std::function<void(Vertex *start, Vertex *next, Edge *edge)> const &startFunc,
+    std::function<void(Vertex *next, Edge *edge)> const &nextFunc,
+    std::function<void(Edge *alone)> const &aloneFunc, std::function<void()> const &endFunc) {
     bool found;
     bool loop = false;
     do {

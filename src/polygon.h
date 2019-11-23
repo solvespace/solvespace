@@ -403,11 +403,10 @@ public:
 
     Vertex *AddVertex(const Vector &pos);
     Edge *AddEdge(const Vector &p0, const Vector &p1, uint32_t kind, uintptr_t data = 0);
-    void Generate(
-        std::function<void(Vertex *start, Vertex *next, Edge *edge)> startFunc,
-        std::function<void(Vertex *next, Edge *edge)> nextFunc,
-        std::function<void(Edge *)> aloneFunc,
-        std::function<void()> endFunc = [](){});
+    void Generate(std::function<void(Vertex *start, Vertex *next, Edge *edge)> const &startFunc,
+                  std::function<void(Vertex *next, Edge *edge)> const &nextFunc,
+                  std::function<void(Edge *)> const &aloneFunc,
+                  std::function<void()> const &endFunc = []() {});
 
     void MakeFromEdges(const SEdgeList &sel);
     void MakeFromOutlines(const SOutlineList &sol);
