@@ -255,9 +255,10 @@ bool Test::Helper::CheckRender(const char *file, int line, const char *reference
     pixmapCanvas.SetCamera(camera);
     pixmapCanvas.Init();
 
-    pixmapCanvas.NewFrame();
+    pixmapCanvas.StartFrame();
     SS.GW.Draw(&pixmapCanvas);
     pixmapCanvas.FlushFrame();
+    pixmapCanvas.FinishFrame();
     std::shared_ptr<Pixmap> frame = pixmapCanvas.ReadFrame();
 
     pixmapCanvas.Clear();

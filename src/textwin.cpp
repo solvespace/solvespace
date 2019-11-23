@@ -924,7 +924,7 @@ void TextWindow::Paint() {
 
     canvas->SetLighting(lighting);
     canvas->SetCamera(camera);
-    canvas->NewFrame();
+    canvas->StartFrame();
 
     UiCanvas uiCanvas = {};
     uiCanvas.canvas = canvas;
@@ -1041,6 +1041,7 @@ void TextWindow::Paint() {
     DrawOrHitTestColorPicker(&uiCanvas, PAINT, false, 0, 0);
 
     canvas->FlushFrame();
+    canvas->FinishFrame();
     canvas->Clear();
 }
 

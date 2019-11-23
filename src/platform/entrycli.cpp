@@ -208,9 +208,10 @@ static bool RunCommand(const std::vector<std::string> args) {
             pixmapCanvas.SetCamera(camera);
             pixmapCanvas.Init();
 
-            pixmapCanvas.NewFrame();
+            pixmapCanvas.StartFrame();
             SS.GW.Draw(&pixmapCanvas);
             pixmapCanvas.FlushFrame();
+            pixmapCanvas.FinishFrame();
             pixmapCanvas.ReadFrame()->WritePng(output, /*flip=*/true);
 
             pixmapCanvas.Clear();

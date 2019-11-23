@@ -134,8 +134,9 @@ public:
     void SetCamera(const Camera &c) override;
     void SetLighting(const Lighting &l) override;
 
-    void NewFrame() override;
+    void StartFrame() override;
     void FlushFrame() override;
+    void FinishFrame() override;
     void Clear() override;
     std::shared_ptr<Pixmap> ReadFrame() override;
 
@@ -618,7 +619,7 @@ void OpenGl3Renderer::UpdateProjection() {
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGl3Renderer::NewFrame() {
+void OpenGl3Renderer::StartFrame() {
     if(!initialized) {
         Init();
         initialized = true;
@@ -667,12 +668,16 @@ void OpenGl3Renderer::FlushFrame() {
     }
     points.Clear();
 
-    glFinish();
+    glFlush();
 
     GLenum error = glGetError();
     if(error != GL_NO_ERROR) {
         dbp("glGetError() == 0x%X", error);
     }
+}
+
+void OpenGl3Renderer::FinishFrame() {
+    glFinish();
 }
 
 void OpenGl3Renderer::Clear() {

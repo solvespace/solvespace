@@ -186,8 +186,9 @@ public:
     virtual void SetCamera(const Camera &camera) = 0;
     virtual void SetLighting(const Lighting &lighting) = 0;
 
-    virtual void NewFrame() = 0;
+    virtual void StartFrame() = 0;
     virtual void FlushFrame() = 0;
+    virtual void FinishFrame() = 0;
     virtual std::shared_ptr<Pixmap> ReadFrame() = 0;
 
     virtual void GetIdent(const char **vendor, const char **renderer, const char **version) = 0;
@@ -342,8 +343,9 @@ public:
 
     void Clear() override;
 
-    void NewFrame() override {}
+    void StartFrame() override {}
     void FlushFrame() override;
+    void FinishFrame() override {}
     std::shared_ptr<Pixmap> ReadFrame() override;
 
     void GetIdent(const char **vendor, const char **renderer, const char **version) override;

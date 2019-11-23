@@ -220,8 +220,9 @@ public:
     void SetCamera(const Camera &camera) override;
     void SetLighting(const Lighting &lighting) override;
 
-    void NewFrame() override;
+    void StartFrame() override;
     void FlushFrame() override;
+    void FinishFrame() override;
     std::shared_ptr<Pixmap> ReadFrame() override;
 
     void GetIdent(const char **vendor, const char **renderer, const char **version) override;
@@ -751,7 +752,7 @@ void OpenGl1Renderer::UpdateProjection() {
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGl1Renderer::NewFrame() {
+void OpenGl1Renderer::StartFrame() {
     glEnable(GL_NORMALIZE);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -806,12 +807,17 @@ void OpenGl1Renderer::NewFrame() {
 
 void OpenGl1Renderer::FlushFrame() {
     UnSelectPrimitive();
+
     glFlush();
 
     GLenum error = glGetError();
     if(error != GL_NO_ERROR) {
         dbp("glGetError() == 0x%X %s", error, gluErrorString(error));
     }
+}
+
+void OpenGl1Renderer::FinishFrame() {
+    glFinish();
 }
 
 std::shared_ptr<Pixmap> OpenGl1Renderer::ReadFrame() {
