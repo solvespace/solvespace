@@ -66,6 +66,14 @@ endif()
 
 # common compiler flags
 
+if((CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND NOT (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 8.0)) OR
+        CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    set(DEBUG_FLAGS "-fdebug-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
+    set(DEBUG_FLAGS "${DEBUG_FLAGS} -ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${DEBUG_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${DEBUG_FLAGS}")
+endif()
+
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
