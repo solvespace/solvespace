@@ -669,15 +669,15 @@ void OpenGl3Renderer::FlushFrame() {
     points.Clear();
 
     glFlush();
+}
+
+void OpenGl3Renderer::FinishFrame() {
+    glFinish();
 
     GLenum error = glGetError();
     if(error != GL_NO_ERROR) {
         dbp("glGetError() == 0x%X", error);
     }
-}
-
-void OpenGl3Renderer::FinishFrame() {
-    glFinish();
 }
 
 void OpenGl3Renderer::Clear() {

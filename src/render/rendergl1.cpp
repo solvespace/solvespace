@@ -809,15 +809,15 @@ void OpenGl1Renderer::FlushFrame() {
     UnSelectPrimitive();
 
     glFlush();
+}
+
+void OpenGl1Renderer::FinishFrame() {
+    glFinish();
 
     GLenum error = glGetError();
     if(error != GL_NO_ERROR) {
         dbp("glGetError() == 0x%X %s", error, gluErrorString(error));
     }
-}
-
-void OpenGl1Renderer::FinishFrame() {
-    glFinish();
 }
 
 std::shared_ptr<Pixmap> OpenGl1Renderer::ReadFrame() {
