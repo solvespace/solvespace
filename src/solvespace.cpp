@@ -799,7 +799,6 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             Group *g = SK.GetGroup(SS.GW.activeGroup);
             SS.GW.GroupSelection();
             auto const &gs = SS.GW.gs;
-            double scale = SS.MmPerUnit();
 
             if(gs.faces > 0) {
                 std::vector<uint32_t> faces;
