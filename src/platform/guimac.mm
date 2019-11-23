@@ -225,9 +225,9 @@ public:
 
         NSUInteger modifierMask = 0;
         if(accel.shiftDown)
-            modifierMask |= NSShiftKeyMask;
+            modifierMask |= NSEventModifierFlagShift;
         if(accel.controlDown)
-            modifierMask |= NSCommandKeyMask;
+            modifierMask |= NSEventModifierFlagCommand;
         nsMenuItem.keyEquivalentModifierMask = modifierMask;
     }
 
@@ -236,7 +236,7 @@ public:
     }
 
     void SetActive(bool active) override {
-        nsMenuItem.state = active ? NSOnState : NSOffState;
+        nsMenuItem.state = active ? NSControlStateValueOn : NSControlStateValueOff;
     }
 
     void SetEnabled(bool enabled) override {
@@ -422,7 +422,7 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
         width * 4, colorspace, kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipFirst,
         provider, NULL, true, kCGRenderingIntentDefault);
 
-    CGContextDrawImage((CGContextRef) [[NSGraphicsContext currentContext] graphicsPort],
+    CGContextDrawImage((CGContextRef) [[NSGraphicsContext currentContext] CGContext],
                        [self bounds], image);
 
     CGImageRelease(image);
@@ -453,8 +453,8 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     event.y = self.bounds.size.height - nsPoint.y;
 
     NSUInteger nsFlags = [nsEvent modifierFlags];
-    if(nsFlags & NSShiftKeyMask)   event.shiftDown   = true;
-    if(nsFlags & NSCommandKeyMask) event.controlDown = true;
+    if(nsFlags & NSEventModifierFlagShift)   event.shiftDown   = true;
+    if(nsFlags & NSEventModifierFlagCommand) event.controlDown = true;
 
     return event;
 }
@@ -587,9 +587,9 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     KeyboardEvent event = {};
 
     NSUInteger nsFlags = [nsEvent modifierFlags];
-    if(nsFlags & NSShiftKeyMask)
+    if(nsFlags & NSEventModifierFlagShift)
         event.shiftDown = true;
-    if(nsFlags & NSCommandKeyMask)
+    if(nsFlags & NSEventModifierFlagCommand)
         event.controlDown = true;
 
     unichar chr = 0;
@@ -610,7 +610,7 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 - (void)keyDown:(NSEvent *)nsEvent {
     using Platform::KeyboardEvent;
 
-    if([NSEvent modifierFlags] & ~(NSShiftKeyMask|NSCommandKeyMask)) {
+    if([NSEvent modifierFlags] & ~(NSEventModifierFlagShift|NSEventModifierFlagCommand)) {
         [super keyDown:nsEvent];
         return;
     }
@@ -629,7 +629,7 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 - (void)keyUp:(NSEvent *)nsEvent {
     using Platform::KeyboardEvent;
 
-    if([NSEvent modifierFlags] & ~(NSShiftKeyMask|NSCommandKeyMask)) {
+    if([NSEvent modifierFlags] & ~(NSEventModifierFlagShift|NSEventModifierFlagCommand)) {
         [super keyUp:nsEvent];
         return;
     }
@@ -811,16 +811,16 @@ public:
         switch(kind) {
             case Window::Kind::TOPLEVEL:
                 nsWindow = [[NSWindow alloc] init];
-                nsWindow.styleMask = NSTitledWindowMask | NSResizableWindowMask |
-                                     NSClosableWindowMask | NSMiniaturizableWindowMask;
+                nsWindow.styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskResizable |
+                NSWindowStyleMaskClosable | NSWindowStyleMaskMiniaturizable;
                 nsWindow.collectionBehavior = NSWindowCollectionBehaviorFullScreenPrimary;
                 ssView.acceptsFirstResponder = YES;
                 break;
 
             case Window::Kind::TOOL:
                 NSPanel *nsPanel = [[NSPanel alloc] init];
-                nsPanel.styleMask = NSTitledWindowMask | NSResizableWindowMask |
-                                    NSClosableWindowMask | NSUtilityWindowMask;
+                nsPanel.styleMask = NSWindowStyleMaskTitled | NSWindowStyleMaskResizable |
+                NSWindowStyleMaskClosable | NSWindowStyleMaskUtilityWindow;
                 [nsPanel standardWindowButton:NSWindowMiniaturizeButton].hidden = YES;
                 [nsPanel standardWindowButton:NSWindowZoomButton].hidden = YES;
                 nsPanel.floatingPanel = YES;
@@ -1128,17 +1128,17 @@ void Open3DConnexion() {
     connexionClient = registerConnexionClient(connexionSignature, connexionName,
             kConnexionClientModeTakeOver, kConnexionMaskButtons | kConnexionMaskAxis);
 
-    [NSEvent addLocalMonitorForEventsMatchingMask:(NSKeyDownMask | NSFlagsChangedMask)
+    [NSEvent addLocalMonitorForEventsMatchingMask:(NSEventMaskKeyDown | NSEventMaskFlagsChanged)
                                           handler:^(NSEvent *event) {
-        connexionShiftIsDown = (event.modifierFlags & NSShiftKeyMask);
-        connexionCommandIsDown = (event.modifierFlags & NSCommandKeyMask);
+        connexionShiftIsDown = (event.modifierFlags & NSEventModifierFlagShift);
+        connexionCommandIsDown = (event.modifierFlags & NSEventModifierFlagCommand);
         return event;
     }];
 
-    [NSEvent addLocalMonitorForEventsMatchingMask:(NSKeyUpMask | NSFlagsChangedMask)
+    [NSEvent addLocalMonitorForEventsMatchingMask:(NSEventMaskKeyUp | NSEventMaskFlagsChanged)
                                           handler:^(NSEvent *event) {
-        connexionShiftIsDown = (event.modifierFlags & NSShiftKeyMask);
-        connexionCommandIsDown = (event.modifierFlags & NSCommandKeyMask);
+        connexionShiftIsDown = (event.modifierFlags & NSEventModifierFlagShift);
+        connexionCommandIsDown = (event.modifierFlags & NSEventModifierFlagCommand);
         return event;
     }];
 }
@@ -1173,12 +1173,12 @@ public:
         switch(type) {
             case Type::INFORMATION:
             case Type::QUESTION:
-                nsAlert.alertStyle = NSInformationalAlertStyle;
+                nsAlert.alertStyle = NSAlertStyleInformational;
                 break;
 
             case Type::WARNING:
             case Type::ERROR:
-                nsAlert.alertStyle = NSWarningAlertStyle;
+                nsAlert.alertStyle = NSAlertStyleWarning;
                 break;
         }
     }
@@ -1289,7 +1289,7 @@ public:
     }
 
     bool RunModal() override {
-        if([nsPanel runModal] == NSFileHandlingPanelOKButton) {
+        if([nsPanel runModal] == NSModalResponseOK) {
             return true;
         } else {
             return false;
