@@ -152,7 +152,7 @@ static int Clamp(int x, int a, int b) {
 
 bool handlingFatalError = false;
 
-void FatalError(const std::string &message) {
+void FatalError(std::string message) {
     // Indicate that we're handling a fatal error, to avoid re-entering application code
     // and potentially crashing even harder.
     handlingFatalError = true;
