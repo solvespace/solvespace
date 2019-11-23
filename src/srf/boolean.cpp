@@ -195,7 +195,6 @@ static bool KeepRegion(SSurface::CombineAs type, bool opA, SShell::Class shell, 
     bool inShell = (shell == SShell::Class::INSIDE),
          outSide = (shell == SShell::Class::OUTSIDE),
          inSame  = (shell == SShell::Class::COINC_SAME),
-//         inOpp   = (shell == SShell::Class::COINC_OPP),
          inOrig  = (orig == SShell::Class::INSIDE);
 
     if(!inOrig) return false;
