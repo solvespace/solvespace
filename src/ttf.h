@@ -20,14 +20,14 @@ public:
     bool IsResource() const;
 
     std::string FontFileBaseName() const;
-    bool LoadFromFile(FT_LibraryRec_ *fontLibrary, bool nameOnly = true);
-    bool LoadFromResource(FT_LibraryRec_ *fontLibrary, bool nameOnly = true);
+    bool LoadFromFile(FT_LibraryRec_ *fontLibrary, bool keepOpen = false);
+    bool LoadFromResource(FT_LibraryRec_ *fontLibrary, bool keepOpen = false);
 
     void PlotString(const std::string &str,
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
     double AspectRatio(const std::string &str);
 
-    bool ExtractTTFData(bool nameOnly);
+    bool ExtractTTFData(bool keepOpen);
 };
 
 class TtfFontList {
