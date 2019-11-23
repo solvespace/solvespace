@@ -563,21 +563,24 @@ void TextWindow::Show() {
         }
     }
 
-    if(window) {
-        double width, height;
-        window->GetContentSize(&width, &height);
+    if(window) Resize();
+}
 
-        halfRows = (int)height / (LINE_HEIGHT/2);
+void TextWindow::Resize()
+{
+    double width, height;
+    window->GetContentSize(&width, &height);
 
-        int bottom = top[rows-1] + 2;
-        scrollPos = min(scrollPos, bottom - halfRows);
-        scrollPos = max(scrollPos, 0);
+    halfRows = (int)height / (LINE_HEIGHT/2);
 
-        window->ConfigureScrollbar(0, top[rows - 1] + 1, halfRows);
-        window->SetScrollbarPosition(scrollPos);
-        window->SetScrollbarVisible(top[rows - 1] + 1 > halfRows);
-        window->Invalidate();
-    }
+    int bottom = top[rows-1] + 2;
+    scrollPos = min(scrollPos, bottom - halfRows);
+    scrollPos = max(scrollPos, 0);
+
+    window->ConfigureScrollbar(0, top[rows - 1] + 1, halfRows);
+    window->SetScrollbarPosition(scrollPos);
+    window->SetScrollbarVisible(top[rows - 1] + 1 > halfRows);
+    window->Invalidate();
 }
 
 void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow how,
@@ -909,6 +912,8 @@ void TextWindow::Paint() {
 
     double width, height;
     window->GetContentSize(&width, &height);
+    if(halfRows != (int)height / (LINE_HEIGHT/2))
+        Resize();
 
     Camera camera = {};
     camera.width      = width;

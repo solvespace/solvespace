@@ -253,6 +253,7 @@ public:
     void ClearScreen();
 
     void Show();
+    void Resize();
 
     // State for the screen that we are showing in the text window.
     enum class Screen : uint32_t {
