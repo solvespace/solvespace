@@ -25,3 +25,28 @@ jobs:
         on:
           repo: solvespace/solvespace
           tags: true
+    - stage: deploy
+      name: "Snap"
+      os: linux
+      dist: bionic
+      addons:
+        snaps:
+          - name: snapcraft
+            confinement: classic
+      script: ./.travis/build-snap.sh
+      deploy:
+        - provider: snap
+          skip_cleanup: true
+          snap: pkg/snap/*.snap
+          channel: edge
+          on:
+            branch: master
+            tags: false
+        - provider: snap
+          skip_cleanup: true
+          snap: pkg/snap/*.snap
+          channel: edge,beta
+          on:
+            branch: master
+            tags: true
+
