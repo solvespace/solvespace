@@ -1129,8 +1129,10 @@ void TextWindow::MouseLeave() {
 }
 
 void TextWindow::ScrollbarEvent(double newPos) {
-    if(window->IsEditorVisible())
+    if(window->IsEditorVisible()) {
+        window->SetScrollbarPosition(scrollPos);
         return;
+    }
 
     int bottom = top[rows-1] + 2;
     newPos = min((int)newPos, bottom - halfRows);

@@ -952,9 +952,10 @@ public:
     }
 
     void SetScrollbarPosition(double pos) override {
-        if(pos > ssView.scrollerMax) {
+        if(pos > ssView.scrollerMax)
             pos = ssView.scrollerMax;
-        }
+        if(GetScrollbarPosition() == pos)
+            return;
         [nsScroller setDoubleValue:(pos / (ssView.scrollerMax - ssView.scrollerMin))];
         if(onScrollbarAdjusted) {
             onScrollbarAdjusted(pos);

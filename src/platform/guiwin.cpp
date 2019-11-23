@@ -1354,7 +1354,11 @@ public:
         SCROLLINFO si = {};
         si.cbSize = sizeof(si);
         si.fMask  = SIF_POS;
-        si.nPos   = (UINT)(pos * SCROLLBAR_UNIT);
+        sscheck(GetScrollInfo(hWindow, SB_VERT, &si));
+        if(si.nPos == (int)(pos * SCROLLBAR_UNIT))
+            return;
+
+        si.nPos   = (int)(pos * SCROLLBAR_UNIT);
         sscheck(SetScrollInfo(hWindow, SB_VERT, &si, /*redraw=*/TRUE));
 
         // Windows won't synthesize a WM_VSCROLL for us here.
