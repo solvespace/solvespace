@@ -344,7 +344,7 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 // Cocoa NSView and NSWindow extensions
 //-----------------------------------------------------------------------------
 
-@interface SSView : NSView
+@interface SSView : NSOpenGLView
 @property Platform::Window *receiver;
 
 @property BOOL acceptsFirstResponder;
@@ -362,8 +362,6 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 
 @implementation SSView
 {
-    GlOffscreen         offscreen;
-    NSOpenGLContext    *glContext;
     NSTrackingArea     *trackingArea;
     NSTextField        *editor;
 }
@@ -371,17 +369,15 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 @synthesize acceptsFirstResponder;
 
 - (id)initWithFrame:(NSRect)frameRect {
-    if(self = [super initWithFrame:frameRect]) {
+    NSOpenGLPixelFormatAttribute attrs[] = {
+        NSOpenGLPFAColorSize, 24,
+        NSOpenGLPFADepthSize, 24,
+        0
+    };
+    NSOpenGLPixelFormat *pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
+    if(self = [super initWithFrame:frameRect pixelFormat:pixelFormat]) {
+        self.wantsBestResolutionOpenGLSurface = YES;
         self.wantsLayer = YES;
-
-        NSOpenGLPixelFormatAttribute attrs[] = {
-            NSOpenGLPFAColorSize, 24,
-            NSOpenGLPFADepthSize, 24,
-            0
-        };
-        NSOpenGLPixelFormat *pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
-        glContext = [[NSOpenGLContext alloc] initWithFormat:pixelFormat shareContext:NULL];
-
         editor = [[NSTextField alloc] init];
         editor.editable = YES;
         [[editor cell] setWraps:NO];
@@ -394,7 +390,6 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 }
 
 - (void)dealloc {
-    offscreen.Clear();
 }
 
 - (BOOL)isFlipped {
@@ -404,29 +399,11 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 @synthesize receiver;
 
 - (void)drawRect:(NSRect)aRect {
-    [glContext makeCurrentContext];
-
-    NSSize size   = [self convertSizeToBacking:self.bounds.size];
-    int    width  = (int)size.width,
-           height = (int)size.height;
-    offscreen.Render(width, height, [&] {
-        if(receiver->onRender) {
-            receiver->onRender();
-        }
-    });
-
-    CGDataProviderRef provider = CGDataProviderCreateWithData(
-        NULL, &offscreen.data[0], width * height * 4, NULL);
-    CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
-    CGImageRef image = CGImageCreate(width, height, 8, 32,
-        width * 4, colorspace, kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipFirst,
-        provider, NULL, true, kCGRenderingIntentDefault);
-
-    CGContextDrawImage((CGContextRef) [[NSGraphicsContext currentContext] CGContext],
-                       [self bounds], image);
-
-    CGImageRelease(image);
-    CGDataProviderRelease(provider);
+    [[self openGLContext] makeCurrentContext];
+    if(receiver->onRender) {
+        receiver->onRender();
+    }
+    [[self openGLContext] flushBuffer];
 }
 
 - (BOOL)acceptsFirstMouse:(NSEvent *)event {
@@ -892,7 +869,7 @@ public:
     }
 
     void GetContentSize(double *width, double *height) override {
-        NSSize nsSize = [ssView frame].size;
+        NSSize nsSize = ssView.frame.size;
         *width  = nsSize.width;
         *height = nsSize.height;
     }
