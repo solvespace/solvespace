@@ -183,6 +183,7 @@ set(solvespace_core_SOURCES
     graphicswin.cpp
     group.cpp
     groupmesh.cpp
+    importcsv.cpp
     importdxf.cpp
     mesh.cpp
     modify.cpp

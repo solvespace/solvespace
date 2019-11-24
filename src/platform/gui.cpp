@@ -118,7 +118,7 @@ std::vector<FileFilter> Vector3dFileFilters = {
 };
 
 std::vector<FileFilter> ImportFileFilters = {
-    { CN_("file-type", "AutoCAD DXF and DWG files"), { "dxf", "dwg" } },
+    { CN_("file-type", "AutoCAD DXF, DWG and SolveSpace Trace CSV files."), { "dxf", "dwg", "csv" } },
 };
 
 std::vector<FileFilter> CsvFileFilters = {
