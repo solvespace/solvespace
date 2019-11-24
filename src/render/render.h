@@ -376,22 +376,6 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// 3d renderers
-//-----------------------------------------------------------------------------
-
-// An offscreen renderer based on OpenGL framebuffers.
-class GlOffscreen {
-public:
-    unsigned int          framebuffer = 0;
-    unsigned int          colorRenderbuffer = 0;
-    unsigned int          depthRenderbuffer = 0;
-    std::vector<uint8_t>  data;
-
-    bool Render(int width, int height, std::function<void()> renderFn);
-    void Clear();
-};
-
-//-----------------------------------------------------------------------------
 // Factories
 //-----------------------------------------------------------------------------
 
