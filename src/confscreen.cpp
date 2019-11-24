@@ -350,10 +350,14 @@ void TextWindow::ShowConfiguration() {
     if(canvas) {
         const char *gl_vendor, *gl_renderer, *gl_version;
         canvas->GetIdent(&gl_vendor, &gl_renderer, &gl_version);
-        Printf(false, "");
-        Printf(false, " %Ftgl vendor   %E%s", gl_vendor);
-        Printf(false, " %Ft   renderer %E%s", gl_renderer);
-        Printf(false, " %Ft   version  %E%s", gl_version);
+        if (!gl_vendor) {
+            Printf(false, "  gl info not found");
+        } else {
+            Printf(false, "");
+            Printf(false, " %Ftgl vendor   %E%s", gl_vendor);
+            Printf(false, " %Ft   renderer %E%s", gl_renderer);
+            Printf(false, " %Ft   version  %E%s", gl_version);
+        }
     }
 }
 
