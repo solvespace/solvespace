@@ -87,6 +87,9 @@ public:
         Fill       *fill;
         std::weak_ptr<const Pixmap> texture;
     } current;
+    const char *vendor   = "<uninitialized>";
+    const char *renderer = "<uninitialized>";
+    const char *version  = "<uninitialized>";
 
     // List-initialize current to work around MSVC bug 746973.
     OpenGl3Renderer() :
@@ -440,6 +443,10 @@ void OpenGl3Renderer::Init() {
     meshRenderer.Init();
     imeshRenderer.Init();
 
+    vendor   = (const char *)glGetString(GL_VENDOR);
+    renderer = (const char *)glGetString(GL_RENDERER);
+    version  = (const char *)glGetString(GL_VERSION);
+
 #if !defined(HAVE_GLES) && !defined(__APPLE__)
     GLuint array;
     glGenVertexArrays(1, &array);
@@ -696,9 +703,9 @@ std::shared_ptr<Pixmap> OpenGl3Renderer::ReadFrame() {
 }
 
 void OpenGl3Renderer::GetIdent(const char **vendor, const char **renderer, const char **version) {
-    *vendor   = (const char *)glGetString(GL_VENDOR);
-    *renderer = (const char *)glGetString(GL_RENDERER);
-    *version  = (const char *)glGetString(GL_VERSION);
+    *vendor   = this->vendor;
+    *renderer = this->renderer;
+    *version  = this->version;
 }
 
 void OpenGl3Renderer::SetCamera(const Camera &c) {
