@@ -211,7 +211,8 @@ set(solvespace_core_SOURCES
     srf/raycast.cpp
     srf/surface.cpp
     srf/surfinter.cpp
-    srf/triangulate.cpp)
+    srf/triangulate.cpp
+    ../extlib/clipper/cpp/clipper.cpp)
 
 set(solvespace_core_gl_SOURCES
     solvespace.cpp)
