@@ -430,6 +430,7 @@ public:
     static void ScreenChangeShowContourAreas(int link, uint32_t v);
     static void ScreenChangeCheckClosedContour(int link, uint32_t v);
     static void ScreenChangeTurntableNav(int link, uint32_t v);
+    static void ScreenChangeImmediatelyEditDimension(int link, uint32_t v);
     static void ScreenChangeAutomaticLineConstraints(int link, uint32_t v);
     static void ScreenChangePwlCurves(int link, uint32_t v);
     static void ScreenChangeCanvasSizeAuto(int link, uint32_t v);
@@ -690,6 +691,7 @@ public:
     void RemoveConstraintsForPointBeingDeleted(hEntity hpt);
     void FixConstraintsForRequestBeingDeleted(hRequest hr);
     void FixConstraintsForPointBeingDeleted(hEntity hpt);
+    void EditConstraint(hConstraint constraint);
 
     // A selected entity.
     class Selection {
