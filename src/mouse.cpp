@@ -1339,73 +1339,77 @@ void GraphicsWindow::MouseLeftUp(double mx, double my, bool shiftDown, bool ctrl
     }
 }
 
+void GraphicsWindow::EditConstraint(hConstraint constraint) {
+    constraintBeingEdited = constraint;
+    ClearSuper();
+
+    Constraint *c = SK.GetConstraint(constraintBeingEdited);
+    if(!c->HasLabel()) {
+        // Not meaningful to edit a constraint without a dimension
+        return;
+    }
+    if(c->reference) {
+        // Not meaningful to edit a reference dimension
+        return;
+    }
+
+    Vector p3 = c->GetLabelPos(GetCamera());
+    Point2d p2 = ProjectPoint(p3);
+
+    std::string editValue;
+    std::string editPlaceholder;
+    switch(c->type) {
+        case Constraint::Type::COMMENT:
+            editValue = c->comment;
+            editPlaceholder = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+            break;
+
+        default: {
+            double value = fabs(c->valA);
+
+            // If displayed as radius, also edit as radius.
+            if(c->type == Constraint::Type::DIAMETER && c->other)
+                value /= 2;
+
+            // Try showing value with default number of digits after decimal first.
+            if(c->type == Constraint::Type::LENGTH_RATIO) {
+                editValue = ssprintf("%.3f", value);
+            } else if(c->type == Constraint::Type::ANGLE) {
+                editValue = SS.DegreeToString(value);
+            } else {
+                editValue = SS.MmToString(value);
+                value /= SS.MmPerUnit();
+            }
+            // If that's not enough to represent it exactly, show the value with as many
+            // digits after decimal as required, up to 10.
+            int digits = 0;
+            while(fabs(std::stod(editValue) - value) > 1e-10) {
+                editValue = ssprintf("%.*f", digits, value);
+                digits++;
+            }
+            editPlaceholder = "10.000000";
+            break;
+        }
+    }
+
+    double width, height;
+    window->GetContentSize(&width, &height);
+    hStyle hs = c->disp.style;
+    if(hs.v == 0) hs.v = Style::CONSTRAINT;
+    double capHeight = Style::TextHeight(hs);
+    double fontHeight = VectorFont::Builtin()->GetHeight(capHeight);
+    double editMinWidth = VectorFont::Builtin()->GetWidth(capHeight, editPlaceholder);
+    window->ShowEditor(p2.x + width / 2, height / 2 - p2.y,
+                        fontHeight, editMinWidth,
+                        /*isMonospace=*/false, editValue);
+}
+
 void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
     if(window->IsEditorVisible()) return;
     SS.TW.HideEditControl();
 
     if(hover.constraint.v) {
-        constraintBeingEdited = hover.constraint;
-        ClearSuper();
-
-        Constraint *c = SK.GetConstraint(constraintBeingEdited);
-        if(!c->HasLabel()) {
-            // Not meaningful to edit a constraint without a dimension
-            return;
-        }
-        if(c->reference) {
-            // Not meaningful to edit a reference dimension
-            return;
-        }
-
-        Vector p3 = c->GetLabelPos(GetCamera());
-        Point2d p2 = ProjectPoint(p3);
-
-        std::string editValue;
-        std::string editPlaceholder;
-        switch(c->type) {
-            case Constraint::Type::COMMENT:
-                editValue = c->comment;
-                editPlaceholder = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-                break;
-
-            default: {
-                double value = fabs(c->valA);
-
-                // If displayed as radius, also edit as radius.
-                if(c->type == Constraint::Type::DIAMETER && c->other)
-                    value /= 2;
-
-                // Try showing value with default number of digits after decimal first.
-                if(c->type == Constraint::Type::LENGTH_RATIO) {
-                    editValue = ssprintf("%.3f", value);
-                } else if(c->type == Constraint::Type::ANGLE) {
-                    editValue = SS.DegreeToString(value);
-                } else {
-                    editValue = SS.MmToString(value);
-                    value /= SS.MmPerUnit();
-                }
-                // If that's not enough to represent it exactly, show the value with as many
-                // digits after decimal as required, up to 10.
-                int digits = 0;
-                while(fabs(std::stod(editValue) - value) > 1e-10) {
-                    editValue = ssprintf("%.*f", digits, value);
-                    digits++;
-                }
-                editPlaceholder = "10.000000";
-                break;
-            }
-        }
-
-        double width, height;
-        window->GetContentSize(&width, &height);
-        hStyle hs = c->disp.style;
-        if(hs.v == 0) hs.v = Style::CONSTRAINT;
-        double capHeight = Style::TextHeight(hs);
-        double fontHeight = VectorFont::Builtin()->GetHeight(capHeight);
-        double editMinWidth = VectorFont::Builtin()->GetWidth(capHeight, editPlaceholder);
-        window->ShowEditor(p2.x + width / 2, height / 2 - p2.y,
-                           fontHeight, editMinWidth,
-                           /*isMonospace=*/false, editValue);
+        EditConstraint(hover.constraint);
     }
 }
 
