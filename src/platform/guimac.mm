@@ -1409,6 +1409,9 @@ void OpenInBrowser(const std::string &url) {
 
 @implementation SSApplicationDelegate
 - (IBAction)preferences:(id)sender {
+    if (!SS.GW.showTextWindow) {
+        SolveSpace::SS.GW.MenuView(SolveSpace::Command::SHOW_TEXT_WND);
+    }
     SolveSpace::SS.TW.GoToScreen(SolveSpace::TextWindow::Screen::CONFIGURATION);
     SolveSpace::SS.ScheduleShowTW();
 }
