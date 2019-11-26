@@ -689,6 +689,7 @@ public:
     void RemoveConstraintsForPointBeingDeleted(hEntity hpt);
     void FixConstraintsForRequestBeingDeleted(hRequest hr);
     void FixConstraintsForPointBeingDeleted(hEntity hpt);
+    void EditConstraint(hConstraint constraint);
 
     // A selected entity.
     class Selection {

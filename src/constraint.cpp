@@ -196,6 +196,7 @@ void Constraint::MenuConstrain(Command id) {
             c.valA = 0;
             c.ModifyToSatisfy();
             AddConstraint(&c);
+            SS.GW.EditConstraint(c.h);
             break;
         }
 
