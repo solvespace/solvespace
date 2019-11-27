@@ -65,7 +65,7 @@ jobs:
       env: PYTHON=3.6.0
       before_install:
         - brew update
-        - brew upgrade pyenv
+        - brew upgrade pyenv || true
         - export PATH="/Users/travis/.pyenv/shims:${PATH}"
         - pyenv install ${PYTHON}
         - pyenv global ${PYTHON}
