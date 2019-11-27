@@ -97,9 +97,9 @@ TtfFont *TtfFontList::LoadFont(const std::string &font)
     if(tf != l.end()) {
         if(tf->fontFace == NULL) {
             if(tf->IsResource())
-                tf->LoadFromResource(fontLibrary, /*nameOnly=*/false);
+                tf->LoadFromResource(fontLibrary, /*keepOpen=*/true);
             else
-                tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
+                tf->LoadFromFile(fontLibrary, /*keepOpen=*/true);
         }
         return tf;
     } else {
@@ -155,7 +155,7 @@ bool TtfFont::IsResource() const {
 //-----------------------------------------------------------------------------
 // Load a TrueType font into memory.
 //-----------------------------------------------------------------------------
-bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
+bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool keepOpen) {
     ssassert(!IsResource(), "Cannot load a font provided by a resource as a file.");
 
     FT_Open_Args args = {};
@@ -171,14 +171,14 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
         return false;
     }
 
-    return ExtractTTFData(nameOnly);
+    return ExtractTTFData(keepOpen);
 }
 
 //-----------------------------------------------------------------------------
 // Load a TrueType from resource in memory. Implemented to load bundled fonts
 // through theresource system.
 //-----------------------------------------------------------------------------
-bool TtfFont::LoadFromResource(FT_Library fontLibrary, bool nameOnly) {
+bool TtfFont::LoadFromResource(FT_Library fontLibrary, bool keepOpen) {
     ssassert(IsResource(), "Font to be loaded as resource is not provided by a resource "
              "or does not have the 'res://' prefix.");
 
@@ -196,13 +196,13 @@ bool TtfFont::LoadFromResource(FT_Library fontLibrary, bool nameOnly) {
             return false;
     }
 
-    return ExtractTTFData(nameOnly);
+    return ExtractTTFData(keepOpen);
 }
 
 //-----------------------------------------------------------------------------
 // Extract font information. We care about the font name and unit size.
 //-----------------------------------------------------------------------------
-bool TtfFont::ExtractTTFData(bool nameOnly) {
+bool TtfFont::ExtractTTFData(bool keepOpen) {
     if(int fterr = FT_Select_Charmap(fontFace, FT_ENCODING_UNICODE)) {
         dbp("freetype: loading unicode CMap for file '%s' failed: %s",
             fontFile.raw.c_str(), ft_error_string(fterr));
@@ -213,12 +213,6 @@ bool TtfFont::ExtractTTFData(bool nameOnly) {
 
     name = std::string(fontFace->family_name) +
            " (" + std::string(fontFace->style_name) + ")";
-
-    if(nameOnly) {
-        FT_Done_Face(fontFace);
-        fontFace = NULL;
-        return true;
-    }
 
     // We always ask Freetype to give us a unit size character.
     // It uses fixed point; put the unit size somewhere in the middle of the dynamic
@@ -231,8 +225,8 @@ bool TtfFont::ExtractTTFData(bool nameOnly) {
     sizeRequest.horiResolution = 128;
     sizeRequest.vertResolution = 128;
     if(int fterr = FT_Request_Size(fontFace, &sizeRequest)) {
-        dbp("freetype: cannot set character size: %s",
-            ft_error_string(fterr));
+        dbp("freetype: size request for file '%s' failed: %s",
+            fontFile.raw.c_str(), ft_error_string(fterr));
         FT_Done_Face(fontFace);
         fontFace = NULL;
         return false;
@@ -241,16 +235,17 @@ bool TtfFont::ExtractTTFData(bool nameOnly) {
     char chr = 'A';
     uint32_t gid = FT_Get_Char_Index(fontFace, 'A');
     if (gid == 0) {
-        dbp("freetype: CID-to-GID mapping for CID 0x%04x failed: %s; using CID as GID",
-            chr, ft_error_string(gid));
+        dbp("freetype: CID-to-GID mapping for CID 0x%04x in file '%s' failed: %s; "
+            "using CID as GID",
+            chr, fontFile.raw.c_str(), ft_error_string(gid));
         dbp("Assuming cap height is the same as requested height (this is likely wrong).");
         capHeight = (double)sizeRequest.height;
     }
 
     if(gid) {
         if(int fterr = FT_Load_Glyph(fontFace, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING)) {
-            dbp("freetype: cannot load glyph for GID 0x%04x: %s",
-                gid, ft_error_string(fterr));
+            dbp("freetype: cannot load glyph for GID 0x%04x in file '%s': %s",
+                gid, fontFile.raw.c_str(), ft_error_string(fterr));
             FT_Done_Face(fontFace);
             fontFace = NULL;
             return false;
@@ -259,6 +254,15 @@ bool TtfFont::ExtractTTFData(bool nameOnly) {
         FT_BBox bbox;
         FT_Outline_Get_CBox(&fontFace->glyph->outline, &bbox);
         capHeight = (double)bbox.yMax;
+    }
+
+    // If we just wanted to get the font's name and figure out if it's actually usable, close
+    // it now. If we don't do this, and there are a lot of fonts, we can bump into the file
+    // descriptor limit (especially on Windows), breaking all file operations.
+    if(!keepOpen) {
+        FT_Done_Face(fontFace);
+        fontFace = NULL;
+        return true;
     }
 
     return true;
@@ -343,8 +347,9 @@ void TtfFont::PlotString(const std::string &str,
     for(char32_t cid : ReadUTF8(str)) {
         uint32_t gid = FT_Get_Char_Index(fontFace, cid);
         if (gid == 0) {
-            dbp("freetype: CID-to-GID mapping for CID 0x%04x failed: %s; using CID as GID",
-                cid, ft_error_string(gid));
+            dbp("freetype: CID-to-GID mapping for CID 0x%04x in file '%s' failed: %s; "
+                "using CID as GID",
+                cid, fontFile.raw.c_str(), ft_error_string(gid));
             gid = cid;
         }
 
@@ -357,8 +362,8 @@ void TtfFont::PlotString(const std::string &str,
          *    ones, antialiasing mitigates this considerably though.
          */
         if(int fterr = FT_Load_Glyph(fontFace, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING)) {
-            dbp("freetype: cannot load glyph for GID 0x%04x: %s",
-                gid, ft_error_string(fterr));
+            dbp("freetype: cannot load glyph for GID 0x%04x in file '%s': %s",
+                gid, fontFile.raw.c_str(), ft_error_string(fterr));
             return;
         }
 
@@ -390,8 +395,8 @@ void TtfFont::PlotString(const std::string &str,
         data.factor  = (float)(1.0 / capHeight);
         data.bx      = bx;
         if(int fterr = FT_Outline_Decompose(&fontFace->glyph->outline, &outlineFuncs, &data)) {
-            dbp("freetype: bezier decomposition failed (gid %d): %s",
-                gid, ft_error_string(fterr));
+            dbp("freetype: bezier decomposition failed for GID 0x%4x in file '%s': %s",
+                gid, fontFile.raw.c_str(), ft_error_string(fterr));
         }
 
         // And we're done, so advance our position by the requested advance
@@ -408,13 +413,14 @@ double TtfFont::AspectRatio(const std::string &str) {
     for(char32_t chr : ReadUTF8(str)) {
         uint32_t gid = FT_Get_Char_Index(fontFace, chr);
         if (gid == 0) {
-            dbp("freetype: CID-to-GID mapping for CID 0x%04x failed: %s; using CID as GID",
-                chr, ft_error_string(gid));
+            dbp("freetype: CID-to-GID mapping for CID 0x%04x in file '%s' failed: %s; "
+                "using CID as GID",
+                chr, fontFile.raw.c_str(), ft_error_string(gid));
         }
 
         if(int fterr = FT_Load_Glyph(fontFace, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING)) {
-            dbp("freetype: cannot load glyph (GID 0x%04x): %s",
-                gid, ft_error_string(fterr));
+            dbp("freetype: cannot load glyph for GID 0x%04x in file '%s': %s",
+                gid, fontFile.raw.c_str(), ft_error_string(fterr));
             break;
         }
 

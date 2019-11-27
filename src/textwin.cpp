@@ -563,21 +563,24 @@ void TextWindow::Show() {
         }
     }
 
-    if(window) {
-        double width, height;
-        window->GetContentSize(&width, &height);
+    if(window) Resize();
+}
 
-        halfRows = (int)height / (LINE_HEIGHT/2);
+void TextWindow::Resize()
+{
+    double width, height;
+    window->GetContentSize(&width, &height);
 
-        int bottom = top[rows-1] + 2;
-        scrollPos = min(scrollPos, bottom - halfRows);
-        scrollPos = max(scrollPos, 0);
+    halfRows = (int)height / (LINE_HEIGHT/2);
 
-        window->ConfigureScrollbar(0, top[rows - 1] + 1, halfRows);
-        window->SetScrollbarPosition(scrollPos);
-        window->SetScrollbarVisible(top[rows - 1] + 1 > halfRows);
-        window->Invalidate();
-    }
+    int bottom = top[rows-1] + 2;
+    scrollPos = min(scrollPos, bottom - halfRows);
+    scrollPos = max(scrollPos, 0);
+
+    window->ConfigureScrollbar(0, top[rows - 1] + 1, halfRows);
+    window->SetScrollbarPosition(scrollPos);
+    window->SetScrollbarVisible(top[rows - 1] + 1 > halfRows);
+    window->Invalidate();
 }
 
 void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow how,
@@ -909,6 +912,8 @@ void TextWindow::Paint() {
 
     double width, height;
     window->GetContentSize(&width, &height);
+    if(halfRows != (int)height / (LINE_HEIGHT/2))
+        Resize();
 
     Camera camera = {};
     camera.width      = width;
@@ -924,7 +929,7 @@ void TextWindow::Paint() {
 
     canvas->SetLighting(lighting);
     canvas->SetCamera(camera);
-    canvas->NewFrame();
+    canvas->StartFrame();
 
     UiCanvas uiCanvas = {};
     uiCanvas.canvas = canvas;
@@ -1041,6 +1046,7 @@ void TextWindow::Paint() {
     DrawOrHitTestColorPicker(&uiCanvas, PAINT, false, 0, 0);
 
     canvas->FlushFrame();
+    canvas->FinishFrame();
     canvas->Clear();
 }
 
@@ -1123,8 +1129,10 @@ void TextWindow::MouseLeave() {
 }
 
 void TextWindow::ScrollbarEvent(double newPos) {
-    if(window->IsEditorVisible())
+    if(window->IsEditorVisible()) {
+        window->SetScrollbarPosition(scrollPos);
         return;
+    }
 
     int bottom = top[rows-1] + 2;
     newPos = min((int)newPos, bottom - halfRows);

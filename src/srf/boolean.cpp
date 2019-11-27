@@ -193,28 +193,24 @@ void SSurface::TrimFromEdgeList(SEdgeList *el, bool asUv) {
 static bool KeepRegion(SSurface::CombineAs type, bool opA, SShell::Class shell, SShell::Class orig)
 {
     bool inShell = (shell == SShell::Class::INSIDE),
+         outSide = (shell == SShell::Class::OUTSIDE),
          inSame  = (shell == SShell::Class::COINC_SAME),
-         inOpp   = (shell == SShell::Class::COINC_OPP),
          inOrig  = (orig == SShell::Class::INSIDE);
 
-    bool inFace = inSame || inOpp;
-
-    // If these are correct, then they should be independent of inShell
-    // if inFace is true.
     if(!inOrig) return false;
     switch(type) {
         case SSurface::CombineAs::UNION:
             if(opA) {
-                return (!inShell && !inFace);
+                return outSide;
             } else {
-                return (!inShell && !inFace) || inSame;
+                return outSide || inSame;
             }
 
         case SSurface::CombineAs::DIFFERENCE:
             if(opA) {
-                return (!inShell && !inFace);
+                return outSide;
             } else {
-                return (inShell && !inFace) || inSame;
+                return inShell || inSame;
             }
 
         default: ssassert(false, "Unexpected combine type");

@@ -22,7 +22,7 @@ namespace Platform {
 // Fatal errors
 //-----------------------------------------------------------------------------
 
-void FatalError(std::string message) {
+void FatalError(const std::string &message) {
     fprintf(stderr, "%s", message.c_str());
 
 #if !defined(LIBRARY) && defined(HAVE_BACKTRACE)

@@ -1068,8 +1068,9 @@ public:
     }
 };
 
-static void ImportDwgDxf(const Platform::Path &filename,
-                         std::function<bool(const std::string &data, DRW_Interface *intf)> read) {
+static void
+ImportDwgDxf(const Platform::Path &filename,
+             const std::function<bool(const std::string &data, DRW_Interface *intf)> &read) {
     std::string fileType = ToUpper(filename.Extension());
 
     std::string data;

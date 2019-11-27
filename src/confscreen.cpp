@@ -102,6 +102,11 @@ void TextWindow::ScreenChangeTurntableNav(int link, uint32_t v) {
     }
 }
 
+void TextWindow::ScreenChangeImmediatelyEditDimension(int link, uint32_t v) {
+    SS.immediatelyEditDimension = !SS.immediatelyEditDimension;
+    SS.GW.Invalidate(/*clearPersistent=*/true);
+}
+
 void TextWindow::ScreenChangeShowContourAreas(int link, uint32_t v) {
     SS.showContourAreas = !SS.showContourAreas;
     SS.GW.Invalidate();
@@ -342,6 +347,9 @@ void TextWindow::ShowConfiguration() {
         SS.automaticLineConstraints ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  use turntable mouse navigation%E", &ScreenChangeTurntableNav,
         SS.turntableNav ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%s  edit newly added dimensions%E",
+        &ScreenChangeImmediatelyEditDimension,
+        SS.immediatelyEditDimension ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "");
     Printf(false, "%Ft autosave interval (in minutes)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",

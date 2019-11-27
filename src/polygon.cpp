@@ -302,16 +302,10 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) co
 // but they are considered to cross if they are coincident and overlapping.
 // If pi is not NULL, then a crossing is returned in that.
 //-----------------------------------------------------------------------------
-int SEdgeList::AnyEdgeCrossings(Vector a, Vector b,
-                                Vector *ppi, SPointList *spl) const
-{
-    int cnt = 0;
-    for(const SEdge *se = l.First(); se; se = l.NextAfter(se)) {
-        if(se->EdgeCrosses(a, b, ppi, spl)) {
-            cnt++;
-        }
-    }
-    return cnt;
+int SEdgeList::AnyEdgeCrossings(Vector a, Vector b, Vector *ppi, SPointList *spl) const {
+    auto cnt = std::count_if(l.begin(), l.end(),
+                             [&](SEdge const &se) { return se.EdgeCrosses(a, b, ppi, spl); });
+    return static_cast<int>(cnt);
 }
 
 //-----------------------------------------------------------------------------
@@ -706,15 +700,10 @@ bool SPolygon::ContainsPoint(Vector p) const {
     return (WindingNumberForPoint(p) % 2) == 1;
 }
 
-int SPolygon::WindingNumberForPoint(Vector p) const {
-    int winding = 0;
-    int i;
-    for(i = 0; i < l.n; i++) {
-        const SContour *sc = &(l[i]);
-        if(sc->ContainsPointProjdToNormal(normal, p)) {
-            winding++;
-        }
-    }
+size_t SPolygon::WindingNumberForPoint(Vector p) const {
+    auto winding = std::count_if(l.begin(), l.end(), [&](const SContour &sc) {
+        return sc.ContainsPointProjdToNormal(normal, p);
+    });
     return winding;
 }
 

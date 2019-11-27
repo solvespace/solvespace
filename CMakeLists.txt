@@ -8,7 +8,7 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
 endif()
 
 cmake_minimum_required(VERSION 3.2.0 FATAL_ERROR)
-cmake_policy(VERSION 3.2.0)
+cmake_policy(VERSION 3.11)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
     "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_STANDARD 11)
@@ -49,6 +49,9 @@ set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/bin)
+if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/bin>)
+endif()
 
 if(NOT CMAKE_C_COMPILER_ID STREQUAL CMAKE_CXX_COMPILER_ID)
     message(FATAL_ERROR "C and C++ compilers should be supplied by the same vendor")
@@ -62,6 +65,15 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 # common compiler flags
+
+include(CheckCXXCompilerFlag)
+
+set(FILE_PREFIX_MAP "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
+check_cxx_compiler_flag("${FILE_PREFIX_MAP}" HAS_FILE_PREFIX_MAP)
+if(HAS_FILE_PREFIX_MAP)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${FILE_PREFIX_MAP}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FILE_PREFIX_MAP}")
+endif()
 
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")

@@ -196,6 +196,9 @@ void Constraint::MenuConstrain(Command id) {
             c.valA = 0;
             c.ModifyToSatisfy();
             AddConstraint(&c);
+            if (SS.immediatelyEditDimension) {
+                SS.GW.EditConstraint(c.h);
+            }
             break;
         }
 
@@ -607,6 +610,9 @@ void Constraint::MenuConstrain(Command id) {
 
             c.ModifyToSatisfy();
             AddConstraint(&c);
+            if (SS.immediatelyEditDimension) {
+                SS.GW.EditConstraint(c.h);
+            }
             break;
         }
 

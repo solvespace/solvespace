@@ -152,13 +152,12 @@ static int Clamp(int x, int a, int b) {
 
 bool handlingFatalError = false;
 
-void FatalError(std::string message) {
+void FatalError(const std::string &message) {
     // Indicate that we're handling a fatal error, to avoid re-entering application code
     // and potentially crashing even harder.
     handlingFatalError = true;
 
-    message += "\nGenerate debug report?";
-    switch(MessageBoxW(NULL, Platform::Widen(message).c_str(),
+    switch(MessageBoxW(NULL, Platform::Widen(message + "\nGenerate debug report?").c_str(),
                        L"Fatal error — SolveSpace",
                        MB_ICONERROR|MB_TASKMODAL|MB_SETFOREGROUND|MB_TOPMOST|
                        MB_OKCANCEL|MB_DEFBUTTON2)) {
@@ -1355,7 +1354,11 @@ public:
         SCROLLINFO si = {};
         si.cbSize = sizeof(si);
         si.fMask  = SIF_POS;
-        si.nPos   = (UINT)(pos * SCROLLBAR_UNIT);
+        sscheck(GetScrollInfo(hWindow, SB_VERT, &si));
+        if(si.nPos == (int)(pos * SCROLLBAR_UNIT))
+            return;
+
+        si.nPos   = (int)(pos * SCROLLBAR_UNIT);
         sscheck(SetScrollInfo(hWindow, SB_VERT, &si, /*redraw=*/TRUE));
 
         // Windows won't synthesize a WM_VSCROLL for us here.
