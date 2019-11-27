@@ -128,7 +128,6 @@ elseif(APPLE)
         -fobjc-arc)
 
     list(APPEND platform_SOURCES
-        render/rendergl.cpp
         platform/guimac.mm)
 else()
     list(APPEND platform_SOURCES

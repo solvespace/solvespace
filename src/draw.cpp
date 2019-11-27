@@ -845,7 +845,7 @@ void GraphicsWindow::Paint() {
 
     canvas->SetLighting(lighting);
     canvas->SetCamera(camera);
-    canvas->NewFrame();
+    canvas->StartFrame();
     Draw(canvas.get());
     canvas->FlushFrame();
 
@@ -902,6 +902,7 @@ void GraphicsWindow::Paint() {
                             5, 5, renderTimeColor);
 
     canvas->FlushFrame();
+    canvas->FinishFrame();
     canvas->Clear();
 }
 

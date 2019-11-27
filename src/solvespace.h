@@ -587,6 +587,7 @@ public:
     bool     showContourAreas;
     bool     checkClosedContour;
     bool     turntableNav;
+    bool     immediatelyEditDimension;
     bool     automaticLineConstraints;
     bool     showToolbar;
     Platform::Path screenshotFile;

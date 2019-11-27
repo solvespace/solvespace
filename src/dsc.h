@@ -480,11 +480,6 @@ public:
     const T *cbegin() const { return begin(); }
     const T *cend() const { return end(); }
 
-    template<typename F>
-    size_t CountIf(F &&predicate) const {
-        return std::count_if(begin(), end(), std::forward<F&&>(predicate));
-    }
-
     void ClearTags() {
         for(auto &elt : *this) { elt.tag = 0; }
     }

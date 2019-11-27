@@ -42,6 +42,8 @@ New constraint features:
     constraints on line segments.
   * Automatic creation of constraints no longer happens if the constraint
     would have been redundant with other ones.
+  * New option to open the constraint editor for newly created constraints
+    with a value.
 
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially

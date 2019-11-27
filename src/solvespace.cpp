@@ -72,6 +72,8 @@ void SolveSpaceUI::Init() {
     drawBackFaces = settings->ThawBool("DrawBackFaces", true);
     // Use turntable mouse navigation
     turntableNav = settings->ThawBool("TurntableNav", false);
+    // Immediately edit dimension
+    immediatelyEditDimension = settings->ThawBool("ImmediatelyEditDimension", false);
     // Check that contours are closed and not self-intersecting
     checkClosedContour = settings->ThawBool("CheckClosedContour", true);
     // Enable automatic constrains for lines
@@ -251,6 +253,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeBool("CheckClosedContour", checkClosedContour);
     // Use turntable mouse navigation
     settings->FreezeBool("TurntableNav", turntableNav);
+    // Immediately edit dimensions
+    settings->FreezeBool("ImmediatelyEditDimension", immediatelyEditDimension);
     // Enable automatic constrains for lines
     settings->FreezeBool("AutomaticLineConstraints", automaticLineConstraints);
     // Export shaded triangles in a 2d view
@@ -799,7 +803,6 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             Group *g = SK.GetGroup(SS.GW.activeGroup);
             SS.GW.GroupSelection();
             auto const &gs = SS.GW.gs;
-            double scale = SS.MmPerUnit();
 
             if(gs.faces > 0) {
                 std::vector<uint32_t> faces;

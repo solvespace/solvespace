@@ -186,8 +186,9 @@ public:
     virtual void SetCamera(const Camera &camera) = 0;
     virtual void SetLighting(const Lighting &lighting) = 0;
 
-    virtual void NewFrame() = 0;
+    virtual void StartFrame() = 0;
     virtual void FlushFrame() = 0;
+    virtual void FinishFrame() = 0;
     virtual std::shared_ptr<Pixmap> ReadFrame() = 0;
 
     virtual void GetIdent(const char **vendor, const char **renderer, const char **version) = 0;
@@ -260,7 +261,7 @@ public:
     void DoQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
                 int zIndex, int comparePosition = 0);
 
-    bool Pick(std::function<void()> drawFn);
+    bool Pick(const std::function<void()> &drawFn);
 };
 
 // A canvas that renders onto a 2d surface, performing z-index sorting, occlusion testing, etc,
@@ -342,8 +343,9 @@ public:
 
     void Clear() override;
 
-    void NewFrame() override {}
+    void StartFrame() override {}
     void FlushFrame() override;
+    void FinishFrame() override {}
     std::shared_ptr<Pixmap> ReadFrame() override;
 
     void GetIdent(const char **vendor, const char **renderer, const char **version) override;
@@ -371,22 +373,6 @@ public:
     void Clear() override;
 
     std::shared_ptr<Pixmap> ReadFrame() override;
-};
-
-//-----------------------------------------------------------------------------
-// 3d renderers
-//-----------------------------------------------------------------------------
-
-// An offscreen renderer based on OpenGL framebuffers.
-class GlOffscreen {
-public:
-    unsigned int          framebuffer = 0;
-    unsigned int          colorRenderbuffer = 0;
-    unsigned int          depthRenderbuffer = 0;
-    std::vector<uint8_t>  data;
-
-    bool Render(int width, int height, std::function<void()> renderFn);
-    void Clear();
 };
 
 //-----------------------------------------------------------------------------
