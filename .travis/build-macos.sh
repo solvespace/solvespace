@@ -11,6 +11,7 @@ make test_solvespace
 ls bin
 
 app="bin/SolveSpace.app"
+dmg="bin/SolveSpace.dmg"
 bundle_id="com.solvespace.solvespace"
 
 # get the signing certificate (this is the Developer ID:Application: Your Name, exported to a p12 file, then converted to base64, e.g.: cat ~/Desktop/certificate.p12 | base64 | pbcopy)
@@ -33,11 +34,16 @@ security find-identity -v
 # sign the .app
 codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${app}"
 
-# zip the .app with "ditto" (special macOS tool)
-/usr/bin/ditto -c -k --keepParent $app SolveSpace.zip
+# create the .dmg from the signed .app
+hdiutil create -srcfolder "${app}" "${dmg}"
 
-notarize_uuid=$(xcrun altool --notarize-app --primary-bundle-id "${bundle_id}" --username "${MACOS_APPSTORE_USERNAME}" --password "${MACOS_APPSTORE_APP_PASSWORD}" --file "SolveSpace.zip" 2>&1 | grep RequestUUID | awk '{print $3'})
+# sign the .dmg
+codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f "${dmg}"
 
+# notarize and store request uuid in variable
+notarize_uuid=$(xcrun altool --notarize-app --primary-bundle-id "${bundle_id}" --username "${MACOS_APPSTORE_USERNAME}" --password "${MACOS_APPSTORE_APP_PASSWORD}" --file "${dmg}" 2>&1 | grep RequestUUID | awk '{print $3'})
+
+# wait a bit so we don't get errors during checking
 sleep 5
 
 success=0
@@ -61,4 +67,5 @@ do
     sleep 10
 done
 
+# staple
 xcrun stapler staple $app
