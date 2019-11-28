@@ -1,5 +1,7 @@
 #!/bin/sh -xe
 
+cd build
+
 app="bin/SolveSpace.app"
 dmg="bin/SolveSpace.dmg"
 bundle_id="com.solvespace.solvespace"
