@@ -6,7 +6,7 @@ jobs:
     - stage: coverage
       name: "macOS"
       os: osx
-      osx_image: xcode10.1
+      osx_image: xcode11.2
       install: ./.travis/install-macos.sh
       # the awk command is a workaround for https://github.com/travis-ci/travis-ci/issues/4704.
       script: ./.travis/build-macos.sh | awk '/.{0,32}/ {print $0}'
