@@ -9,4 +9,7 @@ openssl aes-256-cbc -K $encrypted_02880a344e9c_key -iv $encrypted_02880a344e9c_i
   -out "$lp_credentials" -d
 chmod 600 "$lp_credentials" 
 
-./pkg/snap/build.sh remote-build --launchpad-user ppd --launchpad-accept-public-upload --build-on=amd64
+./pkg/snap/build.sh remote-build \
+  --launchpad-user ppd \
+  --launchpad-accept-public-upload \
+  --build-on=amd64,arm64,armhf,i386
