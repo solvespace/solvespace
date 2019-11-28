@@ -9,9 +9,6 @@ jobs:
     osx_image: xcode11.2
     install: "./.travis/install-macos.sh"
     script: "./.travis/build-macos.sh"
-    before_deploy:
-      - export TRAVIS_TAG=$(date +'%Y%m%d%H%M%S')-$(git log --format=%h -1)
-      - git tag $TRAVIS_TAG
     deploy:
       provider: releases
       # api_key:
@@ -22,4 +19,4 @@ jobs:
       file: build/bin/SolveSpace.dmg
       on:
         repo: vespakoen/solvespace
-        # tags: true
+        tags: true
