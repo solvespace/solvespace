@@ -26,7 +26,7 @@ security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PASSWORD
 security find-identity -v
 
 # sign the .app
-codesign -s $MACOS_DEVELOPER_ID --timestamp --options runtime -f --deep $app
+codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${app}"
 
 # zip the .app with "ditto" (special macOS tool)
 /usr/bin/ditto -c -k --keepParent $app SolveSpace.zip
