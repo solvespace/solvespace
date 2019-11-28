@@ -32,7 +32,6 @@ jobs:
       addons:
         snaps:
           - name: snapcraft
-            channel: edge
             confinement: classic
       script: ./.travis/build-snap.sh
       deploy:
