@@ -18,5 +18,5 @@ jobs:
       skip_cleanup: true
       file: build/bin/SolveSpace.app
       on:
-        repo: solvespace/solvespace
-        tags: true
+        repo: vespakoen/solvespace
+        # tags: true
