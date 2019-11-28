@@ -8,7 +8,8 @@ cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.9 -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
 make -j 2 VERBOSE=1
 make test_solvespace
 
-app="build/bin/SolveSpace.app"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+app="${DIR}/../build/bin/SolveSpace.app"
 bundle_id="com.solvespace.solvespace"
 
 # get the signing certificate (this is the Developer ID:Application: Your Name, exported to a p12 file, then converted to base64, e.g.: cat ~/Desktop/certificate.p12 | base64 | pbcopy)
