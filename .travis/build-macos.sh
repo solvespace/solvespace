@@ -20,6 +20,7 @@ echo $MACOS_CERTIFICATE_P12 | base64 --decode > certificate.p12
 security create-keychain -p secret build.keychain
 security default-keychain -s build.keychain
 security unlock-keychain -p secret build.keychain
+security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k secret build.keychain
 
 # import the key
 security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PASSWORD -T /usr/bin/codesign
