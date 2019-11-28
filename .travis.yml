@@ -8,7 +8,7 @@ jobs:
     os: osx
     osx_image: xcode11.2
     install: "./.travis/install-macos.sh"
-    script: "./.travis/build-macos.sh"
+    script: "./.travis/build-macos.sh && ./.travis/sign-macos.sh"
     deploy:
       provider: releases
       # api_key:
