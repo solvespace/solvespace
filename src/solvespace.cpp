@@ -361,7 +361,7 @@ std::string SolveSpaceUI::MmToStringSI(double v, int dim) {
     }
 
     v /= pow((viewUnits == Unit::INCHES) ? 25.4 : 1000, dim);
-    int vdeg = floor((log10(fabs(v))) / dim);
+    int vdeg = (int)((log10(fabs(v))) / dim);
     std::string unit;
     if(fabs(v) > 0.0) {
         int sdeg = 0;
@@ -371,7 +371,7 @@ std::string SolveSpaceUI::MmToStringSI(double v, int dim) {
             : SelectSIPrefixMm(vdeg);
         v /= pow(10.0, sdeg * dim);
     }
-    int pdeg = ceil(log10(fabs(v) + 1e-10));
+    int pdeg = (int)ceil(log10(fabs(v) + 1e-10));
     return ssprintf("%#.*g%s%s%s", pdeg + UnitDigitsAfterDecimal(), v,
                     compact ? "" : " ", unit.c_str(), DimToString(dim));
 }

@@ -708,8 +708,8 @@ void OpenGl1Renderer::UpdateProjection() {
     UnSelectPrimitive();
 
     glViewport(0, 0,
-               camera.width  * camera.pixelRatio,
-               camera.height * camera.pixelRatio);
+               (GLsizei)(camera.width  * camera.pixelRatio),
+               (GLsizei)(camera.height * camera.pixelRatio));
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
@@ -821,8 +821,8 @@ void OpenGl1Renderer::FinishFrame() {
 }
 
 std::shared_ptr<Pixmap> OpenGl1Renderer::ReadFrame() {
-    int width  = camera.width  * camera.pixelRatio;
-    int height = camera.height * camera.pixelRatio;
+    int width  = (int)(camera.width  * camera.pixelRatio);
+    int height = (int)(camera.height * camera.pixelRatio);
     std::shared_ptr<Pixmap> pixmap =
         Pixmap::Create(Pixmap::Format::RGB, (size_t)width, (size_t)height);
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, &pixmap->data[0]);
