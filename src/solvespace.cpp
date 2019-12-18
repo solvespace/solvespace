@@ -802,7 +802,6 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
         case Command::AREA: {
             Group *g = SK.GetGroup(SS.GW.activeGroup);
             SS.GW.GroupSelection();
-            auto const &gs = SS.GW.gs;
 
             if(gs.faces > 0) {
                 std::vector<uint32_t> faces;
@@ -844,8 +843,8 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             if(gs.n > 0 && gs.n == gs.entities) {
                 double perimeter = 0.0;
                 for(int i = 0; i < gs.entities; i++) {
-                    Entity *e = SK.entity.FindById(gs.entity[i]);
-                    SEdgeList *el = e->GetOrGenerateEdges();
+                    Entity *en = SK.entity.FindById(gs.entity[i]);
+                    SEdgeList *el = en->GetOrGenerateEdges();
                     for(const SEdge &e : el->l) {
                         perimeter += e.b.Minus(e.a).Magnitude();
                     }

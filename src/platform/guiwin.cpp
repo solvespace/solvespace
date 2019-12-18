@@ -1227,7 +1227,7 @@ public:
     }
 
     void SetCursor(Cursor cursor) override {
-        LPWSTR cursorName;
+        LPWSTR cursorName = IDC_ARROW;
         switch(cursor) {
             case Cursor::POINTER: cursorName = IDC_ARROW; break;
             case Cursor::HAND:    cursorName = IDC_HAND;  break;
