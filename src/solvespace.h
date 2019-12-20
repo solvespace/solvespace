@@ -810,8 +810,8 @@ public:
     // where it puts zero-initialized global data in the binary (~30M of zeroes)
     // in release builds.
     SolveSpaceUI()
-        : pTW(new TextWindow({})), TW(*pTW),
-          pSys(new System({})), sys(*pSys) {}
+        : pTW(new TextWindow()), TW(*pTW),
+          pSys(new System()), sys(*pSys) {}
 
     ~SolveSpaceUI() {
         delete pTW;
