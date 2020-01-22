@@ -35,17 +35,15 @@ jobs:
             confinement: classic
       script: ./.travis/build-snap.sh
       deploy:
-        - provider: snap
+        - provider: script
+          script: ./.travis/deploy-snap.sh edge
           skip_cleanup: true
-          snap: pkg/snap/*.snap
-          channel: edge
           on:
             branch: master
             tags: false
-        - provider: snap
+        - provider: script
+          script: ./.travis/deploy-snap.sh edge,beta
           skip_cleanup: true
-          snap: pkg/snap/*.snap
-          channel: edge,beta
           on:
             branch: master
             tags: true
