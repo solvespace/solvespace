@@ -32,7 +32,7 @@ the SolveSpace maintainers for each stable release.
 
 ### Via Snap Store
 
-Builds from master are automatically released to the `edge` channel in the Snap Store. Those packages receive no manual scrutiny and do not constitute official releases.
+Builds from master are automatically released to the `edge` channel in the Snap Store. Those packages contain the latest improvements, but receive less testing than release builds.
 
 Future official releases will appear in the `stable` channel.
 
