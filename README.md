@@ -30,6 +30,20 @@ the SolveSpace maintainers for each stable release.
 
 [rel]: https://github.com/solvespace/solvespace/releases
 
+### Via Snap Store
+
+Builds from master are automatically released to the `edge` channel in the Snap Store. Those packages contain the latest improvements, but receive less testing than release builds.
+
+Future official releases will appear in the `stable` channel.
+
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/solvespace)
+
+Or install from a terminal:
+
+```
+snap install --edge solvespace
+```
+
 ### Via third-party binary packages
 
 _Third-party_ nightly binary packages for Debian and Ubuntu are available
