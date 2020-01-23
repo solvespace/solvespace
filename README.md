@@ -30,15 +30,6 @@ the SolveSpace maintainers for each stable release.
 
 [rel]: https://github.com/solvespace/solvespace/releases
 
-### Via third-party binary packages
-
-_Third-party_ nightly binary packages for Debian and Ubuntu are available
-via [notesalexp.org][notesalexp]. These packages are automatically built from non-released
-source code. The SolveSpace maintainers do not control the contents of these packages
-and cannot guarantee their functionality.
-
-[notesalexp]: https://notesalexp.org/packages/en/source/solvespace/
-
 ### Via Snap Store
 
 Builds from master are automatically released to the `edge` channel in the Snap Store. Those packages receive no manual scrutiny and do not constitute official releases.
@@ -52,6 +43,15 @@ Or install from a terminal:
 ```
 snap install --edge solvespace
 ```
+
+### Via third-party binary packages
+
+_Third-party_ nightly binary packages for Debian and Ubuntu are available
+via [notesalexp.org][notesalexp]. These packages are automatically built from non-released
+source code. The SolveSpace maintainers do not control the contents of these packages
+and cannot guarantee their functionality.
+
+[notesalexp]: https://notesalexp.org/packages/en/source/solvespace/
 
 ### Via source code
 
