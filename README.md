@@ -39,6 +39,20 @@ and cannot guarantee their functionality.
 
 [notesalexp]: https://notesalexp.org/packages/en/source/solvespace/
 
+### Via Snap Store
+
+Builds from master are automatically released to the `edge` channel in the Snap Store. Those packages receive no manual scrutiny and do not constitute official releases.
+
+Future official releases will appear in the `stable` channel.
+
+[![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/solvespace)
+
+Or install from a terminal:
+
+```
+snap install --edge solvespace
+```
+
 ### Via source code
 
 See below.
