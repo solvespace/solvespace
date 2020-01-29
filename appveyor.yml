@@ -68,8 +68,7 @@ for:
     after_build:
       # PyPI deployment
       - IF "%APPVEYOR_REPO_TAG%"=="true"
-        IF "%APPVEYOR_REPO_NAME%"=="KmolYuan/solvespace"
-        IF "%COMPILER%"=="mingw32" (
+        IF "%APPVEYOR_REPO_NAME%"=="KmolYuan/solvespace" (
         pip install twine &&
         cd cython &&
         python setup.py bdist_wheel &&
