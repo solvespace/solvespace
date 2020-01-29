@@ -45,8 +45,8 @@ class Params:
 
 class Entity:
 
-    FREE_IN_3D: ClassVar[Entity]
-    NONE: ClassVar[Entity]
+    FREE_IN_3D: ClassVar[Entity] = ...
+    NONE: ClassVar[Entity] = ...
     params: Params
 
     def is_3d(self) -> bool:
