@@ -347,7 +347,7 @@ cdef class SolverSystem:
             cons_list.append(_NAME_OF_CONSTRAINTS[con.type])
         return Counter(cons_list)
 
-    cpdef list faileds(self):
+    cpdef list failures(self):
         """Return the count of failed constraint."""
         failed_list = []
         cdef Slvs_hConstraint error

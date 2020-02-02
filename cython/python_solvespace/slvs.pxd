@@ -255,7 +255,7 @@ cdef class SolverSystem:
     cpdef tuple params(self, Params p)
     cpdef int dof(self)
     cpdef object constraints(self)
-    cpdef list faileds(self)
+    cpdef list failures(self)
     cpdef int solve(self)
     cpdef Entity create_2d_base(self)
     cdef Slvs_hParam new_param(self, double val) nogil
