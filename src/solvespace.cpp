@@ -598,7 +598,16 @@ void SolveSpaceUI::MenuFile(Command id) {
         case Command::EXPORT_IMAGE: {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::RasterFileFilters);
+            // png
+            std::string stem = SS.saveFile.FileStem();
+            std::string ext = settings->ThawString("Dialog_ExportImage_Filter");
+            if(ext == ""){
+                ext = "png";
+                settings->FreezeString("Dialog_ExportImage_Filter", ext);
+            }
+            
             dialog->ThawChoices(settings, "ExportImage");
+            dialog->SetCurrentName(stem + "." + ext);
             if(dialog->RunModal()) {
                 dialog->FreezeChoices(settings, "ExportImage");
                 SS.ExportAsPngTo(dialog->GetFilename());
@@ -609,10 +618,19 @@ void SolveSpaceUI::MenuFile(Command id) {
         case Command::EXPORT_VIEW: {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::VectorFileFilters);
+            
+            std::string stem = SS.saveFile.FileStem();
+            std::string ext = settings->ThawString("Dialog_ExportView_Filter");
+            if(ext == ""){
+                ext = "pdf";
+                settings->FreezeString("Dialog_ExportView_Filter", ext);
+            }
+            
             dialog->ThawChoices(settings, "ExportView");
+            dialog->SetCurrentName(stem + "." + ext);
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportView");
-
+            
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
             if(SS.GW.showConstraints &&
@@ -632,7 +650,16 @@ void SolveSpaceUI::MenuFile(Command id) {
         case Command::EXPORT_WIREFRAME: {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::Vector3dFileFilters);
+
+            std::string stem = SS.saveFile.FileStem();
+            std::string ext = settings->ThawString("Dialog_ExportWireframe_Filter");
+            if(ext == ""){
+                ext = "step";
+                settings->FreezeString("Dialog_ExportWireframe_Filter", ext);
+            }
+            
             dialog->ThawChoices(settings, "ExportWireframe");
+            dialog->SetCurrentName(stem + "." + ext);
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportWireframe");
 
@@ -643,7 +670,15 @@ void SolveSpaceUI::MenuFile(Command id) {
         case Command::EXPORT_SECTION: {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::VectorFileFilters);
+            // pdf
+            std::string stem = SS.saveFile.FileStem();
+            std::string ext = settings->ThawString("Dialog_ExportSection_Filter");
+            if(ext == ""){
+                ext = "pdf";
+                settings->FreezeString("Dialog_ExportSection_Filter", ext);
+            }
             dialog->ThawChoices(settings, "ExportSection");
+            dialog->SetCurrentName(stem + "." + ext);
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportSection");
 
@@ -654,7 +689,16 @@ void SolveSpaceUI::MenuFile(Command id) {
         case Command::EXPORT_MESH: {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::MeshFileFilters);
+
+            std::string stem = SS.saveFile.FileStem();
+            std::string ext = settings->ThawString("Dialog_ExportMesh_Filter");
+            if(ext == ""){
+                ext = "stl";
+                settings->FreezeString("Dialog_ExportMesh_Filter", ext);
+            }
+            
             dialog->ThawChoices(settings, "ExportMesh");
+            dialog->SetCurrentName(stem + "." + ext);
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportMesh");
 
@@ -665,7 +709,16 @@ void SolveSpaceUI::MenuFile(Command id) {
         case Command::EXPORT_SURFACES: {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::SurfaceFileFilters);
+
+            std::string stem = SS.saveFile.FileStem();
+            std::string ext = settings->ThawString("Dialog_ExportSurfaces_Filter");
+            if(ext == ""){
+                ext = "step";
+                settings->FreezeString("Dialog_ExportSurfaces_Filter", ext);
+            }
+            
             dialog->ThawChoices(settings, "ExportSurfaces");
+            dialog->SetCurrentName(stem + "." + ext);
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportSurfaces");
 
