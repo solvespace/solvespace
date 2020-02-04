@@ -196,9 +196,6 @@ void Constraint::MenuConstrain(Command id) {
             c.valA = 0;
             c.ModifyToSatisfy();
             AddConstraint(&c);
-            if (SS.immediatelyEditDimension) {
-                SS.GW.EditConstraint(c.h);
-            }
             break;
         }
 
@@ -610,9 +607,6 @@ void Constraint::MenuConstrain(Command id) {
 
             c.ModifyToSatisfy();
             AddConstraint(&c);
-            if (SS.immediatelyEditDimension) {
-                SS.GW.EditConstraint(c.h);
-            }
             break;
         }
 
@@ -767,6 +761,10 @@ void Constraint::MenuConstrain(Command id) {
                 constraint->HasLabel()) {
             constraint->reference = true;
         }
+    }
+
+    if ((id == Command::DISTANCE_DIA || id == Command::ANGLE) && SS.immediatelyEditDimension) {
+        SS.GW.EditConstraint(c.h);
     }
 
     SS.GW.ClearSelection();
