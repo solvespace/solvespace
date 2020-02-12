@@ -1,5 +1,6 @@
 /CMakeCache.txt
 /build*/
+!/build-aux/
 /test/**/*.diff.*
 /test/**/*.curr.*
 *.trace
@@ -13,3 +14,4 @@
 /debian/libslvs1-dev/
 /obj-*/
 /*.slvs
+*.snap

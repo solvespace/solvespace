@@ -34,7 +34,7 @@ apps:
 parts:
   solvespace:
     plugin: cmake
-    source: ./solvespace-snap-src
+    source: .
     source-type: local
     override-pull: |
       snapcraftctl pull
