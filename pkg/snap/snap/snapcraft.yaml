@@ -29,6 +29,7 @@ apps:
       __EGL_VENDOR_LIBRARY_DIRS: $SNAP/gnome-platform/usr/share/glvnd/egl_vendor.d:$SNAP/usr/share/glvnd/egl_vendor.d
   cli:
     command: usr/bin/solvespace-cli
+    extensions: [gnome-3-28]
     plugs: [home, removable-media, network]
 
 parts:
