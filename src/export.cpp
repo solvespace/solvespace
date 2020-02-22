@@ -917,13 +917,13 @@ void SolveSpaceUI::ExportMeshAsQ3doTo(FILE *f, SMesh *sm) {
         }
 
         Vector faceNormal = t.Normal();
-        auto a = q3d::Vector3(t.a.x/s, t.a.y/s, t.a.z/s);
-        auto b = q3d::Vector3(t.b.x/s, t.b.y/s, t.b.z/s);
-        auto c = q3d::Vector3(t.c.x/s, t.c.y/s, t.c.z/s);
-        auto fn = q3d::Vector3(faceNormal.x, faceNormal.y, faceNormal.x);
-        auto n1 = q3d::Vector3(t.normals[0].x, t.normals[0].y, t.normals[0].z);
-        auto n2 = q3d::Vector3(t.normals[1].x, t.normals[1].y, t.normals[1].z);
-        auto n3 = q3d::Vector3(t.normals[2].x, t.normals[2].y, t.normals[2].z);
+        auto a = q3d::Vector3((float)(t.a.x/s), (float)(t.a.y/s), (float)(t.a.z/s));
+        auto b = q3d::Vector3((float)(t.b.x/s), (float)(t.b.y/s), (float)(t.b.z/s));
+        auto c = q3d::Vector3((float)(t.c.x/s), (float)(t.c.y/s), (float)(t.c.z/s));
+        auto fn = q3d::Vector3((float)faceNormal.x, (float)faceNormal.y, (float)faceNormal.x);
+        auto n1 = q3d::Vector3((float)t.normals[0].x, (float)t.normals[0].y, (float)t.normals[0].z);
+        auto n2 = q3d::Vector3((float)t.normals[1].x, (float)t.normals[1].y, (float)t.normals[1].z);
+        auto n3 = q3d::Vector3((float)t.normals[2].x, (float)t.normals[2].y, (float)t.normals[2].z);
         auto tri = q3d::CreateTriangle(builder, &a, &b, &c, &fn, &n1, &n2, &n3);
         materialTriangles[color].push_back(tri);
     }

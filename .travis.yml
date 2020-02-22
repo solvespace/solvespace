@@ -25,3 +25,30 @@ jobs:
         on:
           repo: solvespace/solvespace
           tags: true
+    - &deploy-snap
+      stage: deploy
+      name: Snap amd64
+      os: linux
+      arch: amd64
+      dist: bionic
+      addons:
+          snaps:
+            - name: snapcraft
+              confinement: classic
+      script: ./.travis/build-snap.sh
+      deploy:
+        - provider: script
+          script: sudo ./.travis/deploy-snap.sh edge
+          skip_cleanup: true
+          on:
+            branch: master
+            tags: false
+        - provider: script
+          script: sudo ./.travis/deploy-snap.sh edge,beta
+          skip_cleanup: true
+          on:
+            branch: master
+            tags: true
+    - <<: *deploy-snap
+      name: Snap arm64
+      arch: arm64
