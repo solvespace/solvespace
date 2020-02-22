@@ -604,7 +604,7 @@ void TextWindow::ScreenStepDimGo(int link, uint32_t v) {
                 if(time - SS.TW.stepDim.time < STEP_MILLIS) {
                     SS.TW.stepDim.timer->RunAfterNextFrame();
                 } else {
-                    SS.TW.stepDim.timer->RunAfter(time - SS.TW.stepDim.time - STEP_MILLIS);
+                    SS.TW.stepDim.timer->RunAfter((unsigned)(time - SS.TW.stepDim.time - STEP_MILLIS));
                 }
                 SS.TW.stepDim.time = time;
             } else {
@@ -758,7 +758,8 @@ void TextWindow::EditControlDone(std::string s) {
 
                 Group *g = SK.group.FindByIdNoOops(SS.TW.shown.group);
                 if(!g) break;
-                g->color = RgbaColor::FromFloat(rgb.x, rgb.y, rgb.z, g->color.alphaF());
+                g->color = RgbaColor::FromFloat((float)rgb.x, (float)rgb.y, (float)rgb.z,
+                                                g->color.alphaF());
 
                 SS.MarkGroupDirty(g->h);
                 SS.GW.ClearSuper();

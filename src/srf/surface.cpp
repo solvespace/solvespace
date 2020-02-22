@@ -646,7 +646,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     // for testing - hard code the axial distance, and number of sections.
     // distance will need to be parameters in the future.
     double dist  = distf - dists;
-    int sections = fabs(anglef - angles) / (PI / 2) + 1;
+    int sections = (int)(fabs(anglef - angles) / (PI / 2) + 1);
     double wedge = (anglef - angles) / sections;
 
     if(CheckNormalAxisRelationship(sbls, pt, axis, anglef-angles, distf-dists)) {

@@ -16,6 +16,7 @@ using namespace SolveSpace;
 + (NSToolTipManager *)sharedToolTipManager;
 - (void)setInitialToolTipDelay:(double)delay;
 - (void)orderOutToolTip;
+- (void)abortToolTip;
 - (void)_displayTemporaryToolTipForView:(id)arg1 withString:(id)arg2;
 @end
 
@@ -909,7 +910,11 @@ public:
 
             NSToolTipManager *nsToolTipManager = [NSToolTipManager sharedToolTipManager];
             if(newText.empty()) {
-                [nsToolTipManager orderOutToolTip];
+                if ([nsToolTipManager respondsToSelector:@selector(abortToolTip)]) {
+                    [nsToolTipManager abortToolTip];
+                } else {
+                    [nsToolTipManager orderOutToolTip];
+                }
             } else {
                 [nsToolTipManager _displayTemporaryToolTipForView:ssView withString:Wrap(newText)];
             }

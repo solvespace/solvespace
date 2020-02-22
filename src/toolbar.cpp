@@ -219,7 +219,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my, UiCanvas *canvas,
             {
                 if(hitCommand) *hitCommand = icon.command;
                 if(hitX) *hitX = x - boxhw;
-                if(hitY) *hitY = height - (y + boxhw);
+                if(hitY) *hitY = (int)height - (y + boxhw);
             }
         }
 
