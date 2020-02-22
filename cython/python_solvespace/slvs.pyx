@@ -16,24 +16,42 @@ from collections import Counter
 
 
 cpdef tuple quaternion_u(double qw, double qx, double qy, double qz):
+    """Input quaternion, return unit vector of U axis.
+
+    Where `qw`, `qx`, `qy`, `qz` are corresponded to the W, X, Y, Z value of 
+    quaternion.
+    """
     cdef double x, y, z
     Slvs_QuaternionU(qw, qx, qy, qz, &x, &y, &z)
     return x, y, z
 
 
 cpdef tuple quaternion_v(double qw, double qx, double qy, double qz):
+    """Input quaternion, return unit vector of V axis.
+
+    Signature is same as [quaternion_u](#quaternion_u).
+    """
     cdef double x, y, z
     Slvs_QuaternionV(qw, qx, qy, qz, &x, &y, &z)
     return x, y, z
 
 
 cpdef tuple quaternion_n(double qw, double qx, double qy, double qz):
+    """Input quaternion, return unit vector of normal.
+
+    Signature is same as [quaternion_u](#quaternion_u).
+    """
     cdef double x, y, z
     Slvs_QuaternionN(qw, qx, qy, qz, &x, &y, &z)
     return x, y, z
 
 
 cpdef tuple make_quaternion(double ux, double uy, double uz, double vx, double vy, double vz):
+    """Input two unit vector, return quaternion.
+
+    Where `ux`, `uy`, `uz` are corresponded to the value of U vector;
+    `vx`, `vy`, `vz` are corresponded to the value of V vector.
+    """
     cdef double qw, qx, qy, qz
     Slvs_MakeQuaternion(ux, uy, uz, vx, vy, vz, &qw, &qx, &qy, &qz)
     return qw, qx, qy, qz
@@ -144,7 +162,7 @@ _NAME_OF_CONSTRAINTS = {
 
 cdef class Entity:
 
-    """Python object to handle a pointer of 'Slvs_hEntity'."""
+    """The handles of entities."""
 
     FREE_IN_3D = _E_FREE_IN_3D
     NONE = _E_NONE
@@ -180,51 +198,67 @@ cdef class Entity:
             )
 
     cpdef bint is_3d(self):
+        """Return True if this is a 3D entity."""
         return self.wp == SLVS_FREE_IN_3D
 
     cpdef bint is_none(self):
+        """Return True if this is a empty entity."""
         return self.h == 0
 
     cpdef bint is_point_2d(self):
+        """Return True if this is a 2D point."""
         return self.t == SLVS_E_POINT_IN_2D
 
     cpdef bint is_point_3d(self):
+        """Return True if this is a 3D point."""
         return self.t == SLVS_E_POINT_IN_3D
 
     cpdef bint is_point(self):
+        """Return True if this is a point."""
         return self.is_point_2d() or self.is_point_3d()
 
     cpdef bint is_normal_2d(self):
+        """Return True if this is a 2D normal."""
         return self.t == SLVS_E_NORMAL_IN_2D
 
     cpdef bint is_normal_3d(self):
+        """Return True if this is a 3D normal."""
         return self.t == SLVS_E_NORMAL_IN_3D
 
     cpdef bint is_normal(self):
+        """Return True if this is a normal."""
         return self.is_normal_2d() or self.is_normal_3d()
 
     cpdef bint is_distance(self):
+        """Return True if this is a distance."""
         return self.t == SLVS_E_DISTANCE
 
     cpdef bint is_work_plane(self):
+        """Return True if this is a work plane."""
         return self.t == SLVS_E_WORKPLANE
 
     cpdef bint is_line_2d(self):
+        """Return True if this is a 2D line."""
         return self.is_line() and not self.is_3d()
 
     cpdef bint is_line_3d(self):
+        """Return True if this is a 3D line."""
         return self.is_line() and self.is_3d()
 
     cpdef bint is_line(self):
+        """Return True if this is a line."""
         return self.t == SLVS_E_LINE_SEGMENT
 
     cpdef bint is_cubic(self):
+        """Return True if this is a cubic."""
         return self.t == SLVS_E_CUBIC
 
     cpdef bint is_circle(self):
+        """Return True if this is a circle."""
         return self.t == SLVS_E_CIRCLE
 
     cpdef bint is_arc(self):
+        """Return True if this is a arc."""
         return self.t == SLVS_E_ARC_OF_CIRCLE
 
     def __repr__(self) -> str:
@@ -239,7 +273,11 @@ cdef class Entity:
 
 cdef class SolverSystem:
 
-    """Python object of 'Slvs_System'."""
+    """A solver system of Python-Solvespace.
+
+    The operation of entities and constraints are using the methods of this
+    class.
+    """
 
     def __cinit__(self):
         self.g = 0
@@ -282,6 +320,7 @@ cdef class SolverSystem:
             self.cons_list.push_back(self.sys.constraint[i])
 
     cpdef void clear(self):
+        """Clear the system."""
         self.g = 0
         self.param_list.clear()
         self.entity_list.clear()
@@ -307,15 +346,18 @@ cdef class SolverSystem:
         self.sys.params = self.sys.entities = self.sys.constraints = 0
 
     cpdef void set_group(self, size_t g):
-        """Set the current group by integer."""
+        """Set the current group (`g`)."""
         self.g = <Slvs_hGroup>g
 
     cpdef int group(self):
-        """Return the current group by integer."""
+        """Return the current group."""
         return <int>self.g
 
     cpdef void set_params(self, Params p, object params):
-        """Set the parameters by Params object and sequence object."""
+        """Set the parameters from a [Params] handle (`p`) belong to this 
+        system.
+        The values is come from `params`, length must be equal to the handle.
+        """
         params = tuple(params)
         cdef int i = p.param_list.size()
         if i != len(params):
@@ -328,7 +370,10 @@ cdef class SolverSystem:
             i += 1
 
     cpdef tuple params(self, Params p):
-        """Get the parameters by Params object."""
+        """Get the parameters from a [Params] handle (`p`) belong to this 
+        system.
+        The length of tuple is decided by handle.
+        """
         param_list = []
         cdef Slvs_hParam h
         for h in p.param_list:
@@ -336,11 +381,15 @@ cdef class SolverSystem:
         return tuple(param_list)
 
     cpdef int dof(self):
-        """Return the DOF of system."""
+        """Return the degrees of freedom of current group.
+        Only can be called after solving.
+        """
         return self.sys.dof
 
     cpdef object constraints(self):
-        """Return the list of all constraints."""
+        """Return the number of each constraint type.
+        The name of constraints is represented by string.
+        """
         cons_list = []
         cdef Slvs_Constraint con
         for con in self.cons_list:
@@ -348,7 +397,7 @@ cdef class SolverSystem:
         return Counter(cons_list)
 
     cpdef list failures(self):
-        """Return the count of failed constraint."""
+        """Return a list of failed constraint numbers."""
         failed_list = []
         cdef Slvs_hConstraint error
         for error in self.failed_list:
@@ -356,7 +405,7 @@ cdef class SolverSystem:
         return failed_list
 
     cpdef int solve(self):
-        """Solve the system."""
+        """Start the solving, return the result flag."""
         # Parameters
         self.sys.param = <Slvs_Param *>PyMem_Malloc(self.param_list.size() * sizeof(Slvs_Param))
         # Entities
@@ -378,7 +427,9 @@ cdef class SolverSystem:
         return self.sys.result
 
     cpdef Entity create_2d_base(self):
-        """Create a basic 2D system and return the work plane."""
+        """Create a 2D system on current group,
+        return the handle of work plane.
+        """
         cdef double qw, qx, qy, qz
         qw, qx, qy, qz = make_quaternion(1, 0, 0, 0, 1, 0)
         cdef Entity nm = self.add_normal_3d(qw, qx, qy, qz)
@@ -397,7 +448,11 @@ cdef class SolverSystem:
         return <Slvs_hEntity>self.sys.entities
 
     cpdef Entity add_point_2d(self, double u, double v, Entity wp):
-        """Add 2D point."""
+        """Add a 2D point to specific work plane (`wp`) then return the handle.
+
+        Where `u`, `v` are corresponded to the value of U, V axis on the work
+        plane.
+        """
         if wp is None or not wp.is_work_plane():
             raise TypeError(f"{wp} is not a work plane")
 
@@ -409,7 +464,10 @@ cdef class SolverSystem:
         return Entity.create(&e, 2)
 
     cpdef Entity add_point_3d(self, double x, double y, double z):
-        """Add 3D point."""
+        """Add a 3D point then return the handle.
+
+        Where `x`, `y`, `z` are corresponded to the value of X, Y, Z axis.
+        """
         cdef Slvs_hParam x_p = self.new_param(x)
         cdef Slvs_hParam y_p = self.new_param(y)
         cdef Slvs_hParam z_p = self.new_param(z)
@@ -419,7 +477,9 @@ cdef class SolverSystem:
         return Entity.create(&e, 3)
 
     cpdef Entity add_normal_2d(self, Entity wp):
-        """Add a 2D normal."""
+        """Add a 2D normal orthogonal to specific work plane (`wp`)
+        then return the handle.
+        """
         if wp is None or not wp.is_work_plane():
             raise TypeError(f"{wp} is not a work plane")
         cdef Slvs_Entity e = Slvs_MakeNormal2d(self.eh(), self.g, wp.h)
@@ -427,7 +487,11 @@ cdef class SolverSystem:
         return Entity.create(&e, 0)
 
     cpdef Entity add_normal_3d(self, double qw, double qx, double qy, double qz):
-        """Add a 3D normal."""
+        """Add a 3D normal from quaternion then return the handle.
+
+        Where `qw`, `qx`, `qy`, `qz` are corresponded to
+        the W, X, Y, Z value of quaternion.
+        """
         cdef Slvs_hParam w_p = self.new_param(qw)
         cdef Slvs_hParam x_p = self.new_param(qx)
         cdef Slvs_hParam y_p = self.new_param(qy)
@@ -437,7 +501,10 @@ cdef class SolverSystem:
         return Entity.create(&self.entity_list.back(), 4)
 
     cpdef Entity add_distance(self, double d, Entity wp):
-        """Add a 2D distance."""
+        """Add a distance to specific work plane (`wp`) then return the handle.
+
+        Where `d` is distance value.
+        """
         if wp is None or not wp.is_work_plane():
             raise TypeError(f"{wp} is not a work plane")
 
@@ -447,7 +514,10 @@ cdef class SolverSystem:
         return Entity.create(&self.entity_list.back(), 1)
 
     cpdef Entity add_line_2d(self, Entity p1, Entity p2, Entity wp):
-        """Add a 2D line."""
+        """Add a 2D line to specific work plane (`wp`) then return the handle.
+
+        Where `p1` is the start point; `p2` is the end point.
+        """
         if wp is None or not wp.is_work_plane():
             raise TypeError(f"{wp} is not a work plane")
         if p1 is None or not p1.is_point_2d():
@@ -460,7 +530,10 @@ cdef class SolverSystem:
         return Entity.create(&self.entity_list.back(), 0)
 
     cpdef Entity add_line_3d(self, Entity p1, Entity p2):
-        """Add a 3D line."""
+        """Add a 3D line then return the handle.
+
+        Where `p1` is the start point; `p2` is the end point.
+        """
         if p1 is None or not p1.is_point_3d():
             raise TypeError(f"{p1} is not a 3d point")
         if p2 is None or not p2.is_point_3d():
@@ -471,7 +544,11 @@ cdef class SolverSystem:
         return Entity.create(&self.entity_list.back(), 0)
 
     cpdef Entity add_cubic(self, Entity p1, Entity p2, Entity p3, Entity p4, Entity wp):
-        """Add a 2D cubic."""
+        """Add a cubic curve to specific work plane (`wp`) then return the
+        handle.
+
+        Where `p1` to `p4` is the control points.
+        """
         if wp is None or not wp.is_work_plane():
             raise TypeError(f"{wp} is not a work plane")
         if p1 is None or not p1.is_point_2d():
@@ -488,7 +565,11 @@ cdef class SolverSystem:
         return Entity.create(&self.entity_list.back(), 0)
 
     cpdef Entity add_arc(self, Entity nm, Entity ct, Entity start, Entity end, Entity wp):
-        """Add an 2D arc."""
+        """Add an arc to specific work plane (`wp`) then return the handle.
+
+        Where `nm` is the orthogonal normal; `ct` is the center point;
+        `start` is the start point; `end` is the end point.
+        """
         if wp is None or not wp.is_work_plane():
             raise TypeError(f"{wp} is not a work plane")
         if nm is None or not nm.is_normal_3d():
@@ -504,7 +585,12 @@ cdef class SolverSystem:
         return Entity.create(&self.entity_list.back(), 0)
 
     cpdef Entity add_circle(self, Entity nm, Entity ct, Entity radius, Entity wp):
-        """Add a 2D circle."""
+        """Add an circle to specific work plane (`wp`) then return the handle.
+
+        Where `nm` is the orthogonal normal;
+        `ct` is the center point;
+        `radius` is the distance value represent radius.
+        """
         if wp is None or not wp.is_work_plane():
             raise TypeError(f"{wp} is not a work plane")
         if nm is None or not nm.is_normal_3d():
@@ -519,7 +605,11 @@ cdef class SolverSystem:
         return Entity.create(&self.entity_list.back(), 0)
 
     cpdef Entity add_work_plane(self, Entity origin, Entity nm):
-        """Add a 3D work plane."""
+        """Add a work plane then return the handle.
+
+        Where `origin` is the origin point of the plane;
+        `nm` is the orthogonal normal.
+        """
         if origin is None or origin.t != SLVS_E_POINT_IN_3D:
             raise TypeError(f"{origin} is not a 3d point")
         if nm is None or nm.t != SLVS_E_NORMAL_IN_3D:
@@ -542,7 +632,14 @@ cdef class SolverSystem:
         int other = 0,
         int other2 = 0
     ):
-        """Add customized constraint."""
+        """Add a constraint by type code `c_type`.
+        This is an origin function mapping to different constraint methods.
+
+        Where `wp` represents work plane; `v` represents constraint value;
+        `p1` and `p2` represent point entities; `e1` to `e4` represent other 
+        types of entity;
+        `other` and `other2` are control options of the constraint.
+        """
         if wp is None or not wp.is_work_plane():
             raise TypeError(f"{wp} is not a work plane")
 
@@ -576,7 +673,15 @@ cdef class SolverSystem:
     #####
 
     cpdef void coincident(self, Entity e1, Entity e2, Entity wp = _E_FREE_IN_3D):
-        """Coincident two entities."""
+        """Coincident two entities.
+
+        | Entity 1 (`e1`) | Entity 2 (`e2`) | Work plane (`wp`) |
+        |:---------------:|:---------------:|:-----------------:|
+        | [is_point] | [is_point] | Optional |
+        | [is_point] | [is_work_plane] | [Entity.FREE_IN_3D] |
+        | [is_point] | [is_line] | Optional |
+        | [is_point] | [is_circle] | Optional |
+        """
         cdef int t
         if e1.is_point() and e2.is_point():
             self.add_constraint(SLVS_C_POINTS_COINCIDENT, wp, 0., e1, e2,
@@ -600,7 +705,17 @@ cdef class SolverSystem:
         double value,
         Entity wp = _E_FREE_IN_3D
     ):
-        """Distance constraint between two entities."""
+        """Distance constraint between two entities.
+
+        If `value` is equal to zero, then turn into
+        [coincident](#solversystemcoincident)
+
+        | Entity 1 (`e1`) | Entity 2 (`e2`) | Work plane (`wp`) |
+        |:---------------:|:---------------:|:-----------------:|
+        | [is_point] | [is_point] | Optional |
+        | [is_point] | [is_work_plane] | [Entity.FREE_IN_3D] |
+        | [is_point] | [is_line] | Optional |
+        """
         if value == 0.:
             self.coincident(e1, e2, wp)
             return
@@ -617,7 +732,18 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
     cpdef void equal(self, Entity e1, Entity e2, Entity wp = _E_FREE_IN_3D):
-        """Equal constraint between two entities."""
+        """Equal constraint between two entities.
+
+       | Entity 1 (`e1`) | Entity 2 (`e2`) | Work plane (`wp`) |
+       |:---------------:|:---------------:|:-----------------:|
+       | [is_line] | [is_line] | Optional |
+       | [is_line] | [is_arc] | Optional |
+       | [is_line] | [is_circle] | Optional |
+       | [is_arc] | [is_arc] | Optional |
+       | [is_arc] | [is_circle] | Optional |
+       | [is_circle] | [is_circle] | Optional |
+       | [is_circle] | [is_arc] | Optional |
+       """
         if e1.is_line() and e2.is_line():
             self.add_constraint(SLVS_C_EQUAL_LENGTH_LINES, wp, 0., _E_NONE,
                                 _E_NONE, e1, e2)
@@ -637,8 +763,9 @@ cdef class SolverSystem:
         Entity e4,
         Entity wp
     ):
-        """Constraint that line 1 and line 2, line 3 and line 4
-        must have same included angle.
+        """Constraint that 2D line 1 (`e1`) and line 2 (`e2`),
+        line 3 (`e3`) and line 4 (`e4`) must have same included angle on work 
+        plane `wp`.
         """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
@@ -656,8 +783,9 @@ cdef class SolverSystem:
         Entity e4,
         Entity wp
     ):
-        """Constraint that point 1 and line 1, point 2 and line 2
-        must have same distance.
+        """Constraint that point 1 (`e1`) and line 1 (`e2`),
+        point 2 (`e3`) and line 2  (`e4`) must have same distance on work 
+        plane `wp`.
         """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
@@ -667,7 +795,9 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {e3}, {e4}, {wp}")
 
     cpdef void ratio(self, Entity e1, Entity e2, double value, Entity wp):
-        """The ratio constraint between two lines."""
+        """The ratio (`value`) constraint between two 2D lines (`e1` and 
+        `e2`).
+        """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_line_2d() and e2.is_line_2d():
@@ -683,7 +813,14 @@ cdef class SolverSystem:
         Entity e3 = _E_NONE,
         Entity wp = _E_FREE_IN_3D
     ):
-        """Symmetric constraint between two points."""
+        """Symmetric constraint between two points.
+
+        | Entity 1 (`e1`) | Entity 2 (`e2`) | Entity 3 (`e3`) | Work plane (`wp`) |
+        |:---------------:|:---------------:|:---------------:|:-----------------:|
+        | [is_point_3d] | [is_point_3d] | [is_work_plane] | [Entity.FREE_IN_3D] |
+        | [is_point_2d] | [is_point_2d] | [is_work_plane] | [Entity.FREE_IN_3D] |
+        | [is_point_2d] | [is_point_2d] | [is_line_2d] | Is not [Entity.FREE_IN_3D] |
+        """
         if e1.is_point_3d() and e2.is_point_3d() and e3.is_work_plane() and wp is _E_FREE_IN_3D:
             self.add_constraint(SLVS_C_SYMMETRIC, wp, 0., e1, e2, e3, _E_NONE)
         elif e1.is_point_2d() and e2.is_point_2d() and e3.is_work_plane() and wp is _E_FREE_IN_3D:
@@ -696,7 +833,10 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {e3}, {wp}")
 
     cpdef void symmetric_h(self, Entity e1, Entity e2, Entity wp):
-        """Symmetric constraint between two points with horizontal line."""
+        """Symmetric constraint between two 2D points (`e1` and `e2`)
+        with horizontal line on the work plane (`wp` can not be
+        [Entity.FREE_IN_3D]).
+        """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_point_2d() and e2.is_point_2d():
@@ -705,7 +845,10 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
     cpdef void symmetric_v(self, Entity e1, Entity e2, Entity wp):
-        """Symmetric constraint between two points with vertical line."""
+        """Symmetric constraint between two 2D points (`e1` and `e2`)
+        with vertical line on the work plane (`wp` can not be
+        [Entity.FREE_IN_3D]).
+        """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_point_2d() and e2.is_point_2d():
@@ -719,14 +862,18 @@ cdef class SolverSystem:
         Entity e2,
         Entity wp = _E_FREE_IN_3D
     ):
-        """Midpoint constraint between a point and a line."""
+        """Midpoint constraint between a point (`e1`) and
+        a line (`e2`) on work plane (`wp`).
+        """
         if e1.is_point() and e2.is_line():
             self.add_constraint(SLVS_C_AT_MIDPOINT, wp, 0., e1, _E_NONE, e2, _E_NONE)
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
     cpdef void horizontal(self, Entity e1, Entity wp):
-        """Horizontal constraint of a 2d point."""
+        """Vertical constraint of a 2d point (`e1`) on
+        work plane (`wp` can not be [Entity.FREE_IN_3D]).
+        """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_line_2d():
@@ -735,7 +882,9 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {wp}")
 
     cpdef void vertical(self, Entity e1, Entity wp):
-        """Vertical constraint of a 2d point."""
+        """Vertical constraint of a 2d point (`e1`) on
+        work plane (`wp` can not be [Entity.FREE_IN_3D]).
+        """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_line_2d():
@@ -744,7 +893,13 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {wp}")
 
     cpdef void diameter(self, Entity e1, double value, Entity wp):
-        """Diameter constraint of a circular entities."""
+        """Diameter (`value`) constraint of a circular entities.
+
+        | Entity 1 (`e1`) | Work plane (`wp`) |
+        |:---------------:|:-----------------:|
+        | [is_arc] | Optional |
+        | [is_circle] | Optional |
+        """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_arc() or e1.is_circle():
@@ -754,7 +909,9 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {wp}")
 
     cpdef void same_orientation(self, Entity e1, Entity e2):
-        """Equal orientation constraint between two 3d normals."""
+        """Equal orientation constraint between two 3d normals (`e1` and
+        `e2`).
+        """
         if e1.is_normal_3d() and e2.is_normal_3d():
             self.add_constraint(SLVS_C_SAME_ORIENTATION, _E_FREE_IN_3D, 0.,
                                 _E_NONE, _E_NONE, e1, e2)
@@ -762,7 +919,9 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {e2}")
 
     cpdef void angle(self, Entity e1, Entity e2, double value, Entity wp, bint inverse = False):
-        """Degrees angle constraint between two 2d lines."""
+        """Degrees angle (`value`) constraint between two 2d lines (`e1` and
+        `e2`) on the work plane (`wp` can not be [Entity.FREE_IN_3D]).
+        """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_line_2d() and e2.is_line_2d():
@@ -772,7 +931,10 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
     cpdef void perpendicular(self, Entity e1, Entity e2, Entity wp, bint inverse = False):
-        """Perpendicular constraint between two 2d lines."""
+        """Perpendicular constraint between two 2d lines (`e1` and `e2`)
+        on the work plane (`wp` can not be [Entity.FREE_IN_3D]) with
+        `inverse` option.
+        """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_line_2d() and e2.is_line_2d():
@@ -782,14 +944,26 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
     cpdef void parallel(self, Entity e1, Entity e2, Entity wp = _E_FREE_IN_3D):
-        """Parallel constraint between two lines."""
+        """Parallel constraint between two lines (`e1` and `e2`) on
+        the work plane (`wp`).
+        """
         if e1.is_line() and e2.is_line():
             self.add_constraint(SLVS_C_PARALLEL, wp, 0., _E_NONE, _E_NONE, e1, e2)
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
     cpdef void tangent(self, Entity e1, Entity e2, Entity wp = _E_FREE_IN_3D):
-        """Parallel constraint between two entities."""
+        """Parallel constraint between two entities (`e1` and `e2`) on the
+        work plane (`wp`).
+
+        | Entity 1 (`e1`) | Entity 2 (`e2`) | Work plane (`wp`) |
+        |:---------------:|:---------------:|:-----------------:|
+        | [is_arc] | [is_line_2d] | Is not [Entity.FREE_IN_3D] |
+        | [is_cubic] | [is_line_3d] | [Entity.FREE_IN_3D] |
+        | [is_arc] | [is_cubic] | Is not [Entity.FREE_IN_3D] |
+        | [is_arc] | [is_arc] | Is not [Entity.FREE_IN_3D] |
+        | [is_cubic] | [is_cubic] | Optional |
+        """
         if e1.is_arc() and e2.is_line_2d():
             if wp is _E_FREE_IN_3D:
                 raise ValueError("this is a 2d constraint")
@@ -804,7 +978,9 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
     cpdef void distance_proj(self, Entity e1, Entity e2, double value):
-        """Projected distance constraint between two 3d points."""
+        """Projected distance (`value`) constraint between
+        two 3d points (`e1` and `e2`).
+        """
         if e1.is_point_3d() and e2.is_point_3d():
             self.add_constraint(SLVS_C_CURVE_CURVE_TANGENT, _E_FREE_IN_3D,
                                 value, e1, e2, _E_NONE, _E_NONE)
@@ -812,7 +988,7 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {e2}")
 
     cpdef void dragged(self, Entity e1, Entity wp = _E_FREE_IN_3D):
-        """Dragged constraint of a point."""
+        """Dragged constraint of a point (`e1`) on the work plane (`wp`)."""
         if e1.is_point():
             self.add_constraint(SLVS_C_WHERE_DRAGGED, wp, 0., e1, _E_NONE, _E_NONE, _E_NONE)
         else:
