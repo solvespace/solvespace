@@ -48,7 +48,7 @@ jobs:
           script: sudo ./.travis/deploy-snap.sh edge,beta
           skip_cleanup: true
           on:
-            branch: master
+            repo: solvespace/solvespace
             tags: true
     - <<: *deploy-snap
       name: Snap arm64
