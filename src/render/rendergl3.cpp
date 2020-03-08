@@ -693,8 +693,8 @@ void OpenGl3Renderer::Clear() {
 }
 
 std::shared_ptr<Pixmap> OpenGl3Renderer::ReadFrame() {
-    int width  = camera.width  * camera.pixelRatio;
-    int height = camera.height * camera.pixelRatio;
+    int width  = (int)(camera.width  * camera.pixelRatio);
+    int height = (int)(camera.height * camera.pixelRatio);
     std::shared_ptr<Pixmap> pixmap =
         Pixmap::Create(Pixmap::Format::RGBA, (size_t)width, (size_t)height);
     glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, &pixmap->data[0]);
