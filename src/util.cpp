@@ -138,9 +138,11 @@ static void MessageBox(const char *fmt, va_list va, bool error,
         }
     }
 
-    std::string::iterator it = description.begin();
-    while(isspace(*it)) it++;
-    description = description.substr(it - description.begin());
+    if(description.length() > 0) {
+        std::string::iterator it = description.begin();
+        while(isspace(*it)) it++;
+        description = description.substr(it - description.begin());
+    }
 
     Platform::MessageDialogRef dialog = CreateMessageDialog(SS.GW.window);
     if (!dialog) {
