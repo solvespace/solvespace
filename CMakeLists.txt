@@ -144,11 +144,9 @@ if(WIN32 OR APPLE)
     include(FindVendoredPackage)
     include(AddVendoredSubdirectory)
 
-    if(APPLE)
-        set(FORCE_VENDORED_ZLIB     ON)
-        set(FORCE_VENDORED_PNG      ON)
-        set(FORCE_VENDORED_Freetype ON)
-    endif()
+    set(FORCE_VENDORED_ZLIB     ON)
+    set(FORCE_VENDORED_PNG      ON)
+    set(FORCE_VENDORED_Freetype ON)
 
     find_vendored_package(ZLIB zlib
         ZLIB_LIBRARY            zlibstatic
