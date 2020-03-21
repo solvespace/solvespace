@@ -627,6 +627,7 @@ void SolveSpaceUI::MenuFile(Command id) {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::RasterFileFilters);
             dialog->ThawChoices(settings, "ExportImage");
+            dialog->SuggestFilename(SS.saveFile);
             if(dialog->RunModal()) {
                 dialog->FreezeChoices(settings, "ExportImage");
                 SS.ExportAsPngTo(dialog->GetFilename());
@@ -638,6 +639,7 @@ void SolveSpaceUI::MenuFile(Command id) {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::VectorFileFilters);
             dialog->ThawChoices(settings, "ExportView");
+            dialog->SuggestFilename(SS.saveFile);
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportView");
 
@@ -661,6 +663,7 @@ void SolveSpaceUI::MenuFile(Command id) {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::Vector3dFileFilters);
             dialog->ThawChoices(settings, "ExportWireframe");
+            dialog->SuggestFilename(SS.saveFile);
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportWireframe");
 
@@ -672,6 +675,7 @@ void SolveSpaceUI::MenuFile(Command id) {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::VectorFileFilters);
             dialog->ThawChoices(settings, "ExportSection");
+            dialog->SuggestFilename(SS.saveFile);
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportSection");
 
@@ -683,6 +687,7 @@ void SolveSpaceUI::MenuFile(Command id) {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::MeshFileFilters);
             dialog->ThawChoices(settings, "ExportMesh");
+            dialog->SuggestFilename(SS.saveFile);
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportMesh");
 
@@ -694,6 +699,7 @@ void SolveSpaceUI::MenuFile(Command id) {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::SurfaceFileFilters);
             dialog->ThawChoices(settings, "ExportSurfaces");
+            dialog->SuggestFilename(SS.saveFile);
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportSurfaces");
 
@@ -907,6 +913,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::CsvFileFilters);
             dialog->ThawChoices(settings, "Trace");
+            dialog->SetFilename(SS.saveFile);
             if(dialog->RunModal()) {
                 dialog->FreezeChoices(settings, "Trace");
 

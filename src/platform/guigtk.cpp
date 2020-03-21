@@ -1246,6 +1246,10 @@ public:
         gtkChooser->set_filename(path.raw);
     }
 
+    void SuggestFilename(Platform::Path path) override {
+        SetFilename(path.WithExtension(""));  // TODO
+    }
+
     void AddFilter(std::string name, std::vector<std::string> extensions) override {
         Glib::RefPtr<Gtk::FileFilter> gtkFilter = Gtk::FileFilter::create();
         Glib::ustring desc;
