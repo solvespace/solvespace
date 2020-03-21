@@ -904,11 +904,13 @@ try_again:
         } else if(linkMap.count(g.linkFile) == 0) {
             dbp("Missing file for group: %s", g.name.c_str());
             // The file was moved; prompt the user for its new location.
-            switch(LocateImportedFile(g.linkFile.RelativeTo(saveFile), canCancel)) {
+            const auto linkFileRelative = g.linkFile.RelativeTo(saveFile);
+            switch(LocateImportedFile(linkFileRelative, canCancel)) {
                 case Platform::MessageDialog::Response::YES: {
                     Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
                     dialog->AddFilters(Platform::SolveSpaceModelFileFilters);
                     dialog->ThawChoices(settings, "LinkSketch");
+                    dialog->SuggestFilename(linkFileRelative);
                     if(dialog->RunModal()) {
                         dialog->FreezeChoices(settings, "LinkSketch");
                         linkMap[g.linkFile] = dialog->GetFilename();
@@ -985,6 +987,7 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
         Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
         dialog->AddFilters(Platform::RasterFileFilters);
         dialog->ThawChoices(settings, "LinkImage");
+        dialog->SuggestFilename(filename->RelativeTo(saveFile));
         if(dialog->RunModal()) {
             dialog->FreezeChoices(settings, "LinkImage");
             *filename = dialog->GetFilename();

@@ -1274,6 +1274,10 @@ public:
         nsPanel.nameFieldStringValue = Wrap(path.FileStem());
     }
 
+    void SuggestFilename(Platform::Path path) override {
+        SetFilename(path.WithExtension(""));
+    }
+
     void FreezeChoices(SettingsRef settings, const std::string &key) override {
         settings->FreezeString("Dialog_" + key + "_Folder",
                                [nsPanel.directoryURL.absoluteString UTF8String]);

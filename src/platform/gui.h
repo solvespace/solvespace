@@ -356,6 +356,7 @@ public:
 
     virtual Platform::Path GetFilename() = 0;
     virtual void SetFilename(Platform::Path path) = 0;
+    virtual void SuggestFilename(Platform::Path path) = 0;
 
     virtual void AddFilter(std::string name, std::vector<std::string> extensions) = 0;
     void AddFilter(const FileFilter &filter);

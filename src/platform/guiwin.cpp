@@ -1582,6 +1582,10 @@ public:
         wcsncpy(filenameWC, Widen(path.raw).c_str(), sizeof(filenameWC) / sizeof(wchar_t) - 1);
     }
 
+    void SuggestFilename(Platform::Path path) override {
+        SetFilename(Platform::Path::From(path.FileStem()));
+    }
+
     void AddFilter(std::string name, std::vector<std::string> extensions) override {
         std::string desc, patterns;
         for(auto extension : extensions) {
