@@ -83,6 +83,7 @@ TEST_CASE(extension) {
 }
 
 TEST_CASE(with_extension) {
+    CHECK_EQ_STR(Path::From("foo.bar").WithExtension("").raw, "foo");
     CHECK_EQ_STR(Path::From("foo.bar").WithExtension("baz").raw, "foo.baz");
     CHECK_EQ_STR(Path::From("foo").WithExtension("baz").raw, "foo.baz");
 }
