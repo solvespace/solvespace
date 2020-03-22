@@ -185,8 +185,10 @@ Path Path::WithExtension(std::string ext) const {
     if(dot != std::string::npos) {
         withExt.raw.erase(dot);
     }
-    withExt.raw += ".";
-    withExt.raw += ext;
+    if(!ext.empty()) {
+        withExt.raw += ".";
+        withExt.raw += ext;
+    }
     return withExt;
 }
 
