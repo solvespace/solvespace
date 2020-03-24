@@ -80,11 +80,20 @@ endif()
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+endif()
 
-    if(TRIPLE STREQUAL "i686-w64-mingw32")
-        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -msse2")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
+# Ensure that all platforms use 64-bit IEEE floating point operations for consistency;
+# this is most important for the testsuite, which compares savefiles directly
+# and depends on consistent rounding of intermediate results.
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "i686" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "X86")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        set(FLOAT_FLAGS "-mfpmath=sse -msse2")
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(FLOAT_FLAGS "-msse2")
     endif()
+
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${FLOAT_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLOAT_FLAGS}")
 endif()
 
 if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
