@@ -94,6 +94,10 @@ void TextWindow::ScreenChangeFixExportColors(int link, uint32_t v) {
     SS.fixExportColors = !SS.fixExportColors;
 }
 
+void TextWindow::ScreenChangeExportBackgroundColor(int link, uint32_t v) {
+    SS.exportBackgroundColor = !SS.exportBackgroundColor;
+}
+
 void TextWindow::ScreenChangeBackFaces(int link, uint32_t v) {
     SS.drawBackFaces = !SS.drawBackFaces;
     SS.GW.Invalidate(/*clearPersistent=*/true);
@@ -299,6 +303,9 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "  %Fd%f%Ll%s  fix white exported lines%E",
         &ScreenChangeFixExportColors,
         SS.fixExportColors ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%s  export background color%E",
+        &ScreenChangeExportBackgroundColor,
+        SS.exportBackgroundColor ? CHECK_TRUE : CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "%Ft export canvas size:  "

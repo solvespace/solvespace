@@ -68,6 +68,8 @@ void SolveSpaceUI::Init() {
     exportOffset = settings->ThawFloat("ExportOffset", 0.0);
     // Rewrite exported colors close to white into black (assuming white bg)
     fixExportColors = settings->ThawBool("FixExportColors", true);
+    // Export background color
+    exportBackgroundColor = settings->ThawBool("ExportBackgroundColor", false);
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     drawBackFaces = settings->ThawBool("DrawBackFaces", true);
     // Use turntable mouse navigation
@@ -246,6 +248,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeFloat("ExportOffset", exportOffset);
     // Rewrite exported colors close to white into black (assuming white bg)
     settings->FreezeBool("FixExportColors", fixExportColors);
+    // Export background color
+    settings->FreezeBool("ExportBackgroundColor", exportBackgroundColor);
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     settings->FreezeBool("DrawBackFaces", drawBackFaces);
     // Draw closed polygons areas
