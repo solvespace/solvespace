@@ -563,6 +563,7 @@ public:
     double   exportScale;
     double   exportOffset;
     bool     fixExportColors;
+    bool     exportBackgroundColor;
     bool     drawBackFaces;
     bool     showContourAreas;
     bool     checkClosedContour;
