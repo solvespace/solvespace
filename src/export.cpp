@@ -724,6 +724,9 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
     }
 
     StartFile();
+    if(SS.exportBackgroundColor) {
+        Background(SS.backgroundColor);
+    }
     if(sm && SS.exportShadedTriangles) {
         for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
             Triangle(tr);

@@ -339,6 +339,7 @@ public:
     virtual void Bezier(SBezier *sb) = 0;
     virtual void Triangle(STriangle *tr) = 0;
     virtual bool OutputConstraints(IdList<Constraint,hConstraint> *) { return false; }
+    virtual void Background(RgbaColor color) = 0;
     virtual void StartFile() = 0;
     virtual void FinishAndCloseFile() = 0;
     virtual bool HasCanvasSize() const = 0;
@@ -363,6 +364,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return false; }
@@ -380,6 +382,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return true; }
@@ -398,6 +401,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return true; }
@@ -414,6 +418,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return true; }
@@ -428,6 +433,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return false; }
@@ -441,6 +447,7 @@ class Step2dFileWriter : public VectorFileWriter {
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return false; }
@@ -455,6 +462,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return false; }
