@@ -647,7 +647,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             int index = r->IndexOfPoint(gs.point[0]);
             if((r->type == Request::Type::CUBIC && (index > 1 && index < r->extraPoints + 2)) ||
                     r->type == Request::Type::CUBIC_PERIODIC) {
-                menu->AddItem(_("Remove Spline Point"), [&]() {
+                menu->AddItem(_("Remove Spline Point"), [this, r]() {
                     int index = r->IndexOfPoint(gs.point[0]);
                     ssassert(r->extraPoints != 0,
                              "Expected a bezier with interior control points");
