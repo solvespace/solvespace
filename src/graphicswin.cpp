@@ -75,9 +75,9 @@ const MenuEntry Menu[] = {
 { 1, N_("Select &All"),                 Command::SELECT_ALL,       C|'a',   KN, mEdit  },
 { 1, N_("&Unselect All"),               Command::UNSELECT_ALL,     '\x1b',  KN, mEdit  },
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
-{ 1, N_("&Line Styles"),                Command::EDIT_LINE_STYLES, 0,       KN, mEdit  },
-{ 1, N_("&View Projection"),            Command::VIEW_PROJECTION,  0,       KN, mEdit  },
-{ 1, N_("Con&figuration"),              Command::CONFIGURATION,    0,       KN, mEdit  },
+{ 1, N_("&Line Styles..."),             Command::EDIT_LINE_STYLES, 0,       KN, mEdit  },
+{ 1, N_("&View Projection..."),         Command::VIEW_PROJECTION,  0,       KN, mEdit  },
+{ 1, N_("Con&figuration..."),           Command::CONFIGURATION,    0,       KN, mEdit  },
 
 { 0, N_("&View"),                       Command::NONE,             0,       KN, mView  },
 { 1, N_("Zoom &In"),                    Command::ZOOM_IN,          '+',     KN, mView  },
