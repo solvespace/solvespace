@@ -17,7 +17,7 @@ license: GPL-3.0
 
 layout:
   /usr/share/solvespace:
-    bind: $SNAP/usr/share/solvespace
+    symlink: $SNAP/usr/share/solvespace
 
 apps:
   solvespace:
