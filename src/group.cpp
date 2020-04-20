@@ -566,8 +566,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(5), axis_dir.y);
             AddParam(param, h.param(6), axis_dir.z);
 
-            int ai = 1;
-
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->Get(i));
@@ -576,10 +574,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
                 e->CalculateNumerical(/*forExport=*/false);
                 hEntity he = e->h;
-
-                CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai, NO_PARAM, NO_PARAM,
-                           NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
-
+                // one copy for each end of the revolved surface
                 for(a = 0; a < 2; a++) {
                     //! @todo is this check redundant?
                     Entity *e = &(entity->Get(i));
@@ -596,7 +591,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 // entity is not chiral, and dragging a revolve may break the arc by inverting it.
                 // MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
                 MakeLatheSurfacesSelectable(entity, he, axis_dir);
-                ai++;
             }
 
             return;
@@ -618,8 +612,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             // distance to translate along the rotation axis
             AddParam(param, h.param(7), 20);
 
-            int ai = 1;
-
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->Get(i));
@@ -628,9 +620,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
                 e->CalculateNumerical(/*forExport=*/false);
 
-                CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai, NO_PARAM, NO_PARAM,
-                           NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
-
+                // one copy for each end of the helix
                 for(a = 0; a < 2; a++) {
                     Entity *e = &(entity->Get(i));
                     e->CalculateNumerical(false);
@@ -658,7 +648,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         entity->Add(&en);
                     }
                 }
-                ai++;
             }
             return;
         }
