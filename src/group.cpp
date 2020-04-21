@@ -516,9 +516,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
             Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
 
-            // Remapped entity index.
-            int ai = 1;
-
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->Get(i));
@@ -529,24 +526,22 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
-                CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai,
-                    NO_PARAM, NO_PARAM, NO_PARAM,
-                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    CopyAs::NUMERIC);
 
+                // this is the regular copy of all entities
                 CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_START,
                     NO_PARAM, NO_PARAM, NO_PARAM,
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::NUMERIC);
 
-                CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_END,
-                    NO_PARAM, NO_PARAM, NO_PARAM,
-                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    CopyAs::NUMERIC);
-
-                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+                if (e->IsPoint()) {
+                // for points this copy is used for the circle centers
+                    CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_ARC_CENTER,
+                        NO_PARAM, NO_PARAM, NO_PARAM,
+                        NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                        CopyAs::NUMERIC);
+                    MakeLatheCircles(entity, param, he, axis_pos, axis_dir);
+                };
                 MakeLatheSurfacesSelectable(entity, he, axis_dir);
-                ai++;
             }
             return;
         }
@@ -589,7 +584,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 }
                 // Arcs are not generated for revolve groups, for now, because our current arc
                 // entity is not chiral, and dragging a revolve may break the arc by inverting it.
-                // MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+                // MakeLatheCircles(entity, param, he, axis_pos, axis_dir);
                 MakeLatheSurfacesSelectable(entity, he, axis_dir);
             }
 
@@ -853,15 +848,15 @@ void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
     }
 }
 
-void Group::MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis, int ai) {
+void Group::MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis) {
     Entity *ep = SK.GetEntity(in);
 
     Entity en = {};
     if(ep->IsPoint()) {
         // A point gets revolved to form an arc.
-        en.point[0] = Remap(predef.origin, ai);
+        en.point[0] = Remap(ep->h, REMAP_LATHE_ARC_CENTER);
         en.point[1] = Remap(ep->h, REMAP_LATHE_START);
-        en.point[2] = Remap(ep->h, REMAP_LATHE_END);
+        en.point[2] = en.point[1]; //Remap(ep->h, REMAP_LATHE_END);
 
         // Get arc center and point on arc.
         Entity *pc = SK.GetEntity(en.point[0]);
