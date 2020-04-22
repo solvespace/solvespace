@@ -285,6 +285,7 @@ public:
     void MakeExtrusionLines(EntityList *el, hEntity in);
     void MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis);
     void MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in, Vector axis);
+    void MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt);
     void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
     void CopyEntity(EntityList *el,
                     Entity *ep, int timesApplied, int remap,

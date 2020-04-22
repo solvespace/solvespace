@@ -561,11 +561,17 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(5), axis_dir.y);
             AddParam(param, h.param(6), axis_dir.z);
 
+            // Get some arbitrary point in the sketch, that will be used
+            // as a reference when defining end faces.
+            hEntity pt = { 0 };
+
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->Get(i));
                 if(e->group != opA)
                     continue;
+
+                if(e->IsPoint()) pt = e->h;
 
                 e->CalculateNumerical(/*forExport=*/false);
                 hEntity he = e->h;
@@ -587,7 +593,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 // MakeLatheCircles(entity, param, he, axis_pos, axis_dir);
                 MakeLatheSurfacesSelectable(entity, he, axis_dir);
             }
-
+            MakeRevolveEndFaces(entity, pt);
             return;
         }
 
@@ -607,11 +613,17 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             // distance to translate along the rotation axis
             AddParam(param, h.param(7), 20);
 
+            // Get some arbitrary point in the sketch, that will be used
+            // as a reference when defining end faces.
+            hEntity pt = { 0 };
+
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->Get(i));
                 if((e->group.v != opA.v) && !(e->h == predef.origin))
                     continue;
+
+                if(e->IsPoint()) pt = e->h;
 
                 e->CalculateNumerical(/*forExport=*/false);
 
@@ -644,6 +656,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     }
                 }
             }
+            MakeRevolveEndFaces(entity, pt);
             return;
         }
 
@@ -925,6 +938,32 @@ void Group::MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in,
             el->Add(&en);
         }
     }
+}
+
+void Group::MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt)
+{
+    if(pt.v == 0) return;
+    Group *src = SK.GetGroup(opA);
+    Vector n = src->polyLoops.normal;
+
+    // When there is no loop normal (e.g. if the loop is broken), use normal of workplane
+    // as fallback, to avoid breaking constraints depending on the faces.
+    if(n.Equals(Vector::From(0.0, 0.0, 0.0)) && src->type == Group::Type::DRAWING_WORKPLANE) {
+        n = SK.GetEntity(src->h.entity(0))->Normal()->NormalN();
+    }
+
+    Entity en = {};
+    en.type = Entity::Type::FACE_NORMAL_PT;
+    en.group = h;
+
+    en.numNormal = Quaternion::From(0, n.x, n.y, n.z);
+    en.point[0] = Remap(pt, REMAP_LATHE_END);
+    en.h = Remap(Entity::NO_ENTITY, REMAP_LATHE_END);
+    el->Add(&en);
+
+    en.point[0] = Remap(pt, REMAP_LATHE_START);
+    en.h = Remap(Entity::NO_ENTITY, REMAP_LATHE_START);
+    el->Add(&en);
 }
 
 void Group::MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt)
