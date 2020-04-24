@@ -285,7 +285,7 @@ public:
     void MakeExtrusionLines(EntityList *el, hEntity in);
     void MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis);
     void MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in, Vector axis);
-    void MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt);
+    void MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt, int ai, int af);
     void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
     void CopyEntity(EntityList *el,
                     Entity *ep, int timesApplied, int remap,
@@ -407,6 +407,7 @@ public:
         FACE_N_ROT_TRANS       =  5002,
         FACE_N_TRANS           =  5003,
         FACE_N_ROT_AA          =  5004,
+        FACE_ROT_NORMAL_PT     =  5005,
 
         WORKPLANE              = 10000,
         LINE_SEGMENT           = 11000,
