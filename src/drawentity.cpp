@@ -120,6 +120,7 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
         case Type::FACE_N_ROT_TRANS:
         case Type::FACE_N_TRANS:
         case Type::FACE_N_ROT_AA:
+        case Type::FACE_ROT_NORMAL_PT:
             break;
     }
 }
@@ -755,6 +756,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         case Type::FACE_N_ROT_TRANS:
         case Type::FACE_N_TRANS:
         case Type::FACE_N_ROT_AA:
+        case Type::FACE_ROT_NORMAL_PT:
             // Do nothing; these are drawn with the triangle mesh
             return;
     }
