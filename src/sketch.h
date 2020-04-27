@@ -152,6 +152,7 @@ public:
         N_ROT_AA,
         N_ROT_TRANS,
         N_ROT_AXIS_TRANS,
+        MIRROR,
     };
 
     enum class Type : uint32_t {
@@ -161,6 +162,7 @@ public:
         LATHE                         = 5101,
         REVOLVE                       = 5102,
         HELIX                         = 5103,
+        MIRROR                        = 5104,
         ROTATE                        = 5200,
         TRANSLATE                     = 5201,
         LINKED                        = 5300
@@ -312,6 +314,7 @@ public:
     void GenerateShellAndMesh();
     template<class T> void GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat);
     template<class T> void GenerateForBoolean(T *a, T *b, T *o, Group::CombineAs how);
+    template<class T> void GenerateForMirror(T *steps, T *outs, Group::CombineAs forWhat);
     void GenerateDisplayItems();
 
     enum class DrawMeshAs { DEFAULT, HOVERED, SELECTED };
@@ -392,12 +395,14 @@ public:
         POINT_N_COPY           =  2012,
         POINT_N_ROT_AA         =  2013,
         POINT_N_ROT_AXIS_TRANS =  2014,
+        POINT_MIRROR           =  2015,
 
         NORMAL_IN_3D           =  3000,
         NORMAL_IN_2D           =  3001,
         NORMAL_N_COPY          =  3010,
         NORMAL_N_ROT           =  3011,
         NORMAL_N_ROT_AA        =  3012,
+        NORMAL_MIRROR          =  3015,
 
         DISTANCE               =  4000,
         DISTANCE_N_COPY        =  4001,
@@ -408,6 +413,7 @@ public:
         FACE_N_TRANS           =  5003,
         FACE_N_ROT_AA          =  5004,
         FACE_ROT_NORMAL_PT     =  5005,
+        FACE_MIRROR            =  5006,
 
         WORKPLANE              = 10000,
         LINE_SEGMENT           = 11000,

@@ -130,6 +130,7 @@ enum class Command : uint32_t {
     GROUP_EXTRUDE,
     GROUP_HELIX,
     GROUP_LATHE,
+    GROUP_MIRROR,
     GROUP_REVOLVE,
     GROUP_ROT,
     GROUP_TRANS,
