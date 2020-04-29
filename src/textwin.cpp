@@ -82,6 +82,62 @@ public:
         }
     }
 };
+#include <array>
+class TriStateButton : public Button {
+public:
+    TriStateButton(GraphicsWindow::ShowConstraintMode*variable,
+                   const std::array<GraphicsWindow::ShowConstraintMode,3> &states,
+                   const std::array<std::string,3> &tooltips,
+                   const std::array<std::string,3> &iconNames  ):variable(variable),states(states),tooltips(tooltips),iconNames(iconNames){}
+
+    GraphicsWindow::ShowConstraintMode* variable;
+    std::array<GraphicsWindow::ShowConstraintMode,3> states;
+    std::array<std::string,3> tooltips;
+    std::array<std::string,3> iconNames;
+    std::shared_ptr<Pixmap> icons[3];
+
+    std::string Tooltip() override {
+        for (size_t k = 0; k < 3; ++k )
+            if ( *variable == states[k] ) return tooltips[k];
+        ssassert(false, "Unexpected mode");
+    }
+
+    void Draw(UiCanvas *uiCanvas, int x, int y, bool asHovered) override {
+        for (size_t k = 0; k < 3;++k)
+            if(icons[k] == nullptr)
+                icons[k] = LoadPng("icons/text-window/" + iconNames[k] + ".png");
+
+        std::shared_ptr<Pixmap> icon;
+        for (size_t k = 0; k < 3; ++k )
+            if ( *variable == states[k] ){
+                icon = icons[k];
+                break;
+            }
+
+        uiCanvas->DrawPixmap(icon, x, y - 24);
+        if(asHovered) {
+            uiCanvas->DrawRect(x - 2, x + 26, y + 2, y - 26,
+                               /*fillColor=*/{ 255, 255, 0, 75 },
+                               /*outlineColor=*/{});
+        }
+    }
+
+
+    int AdvanceWidth() override { return 32; }
+
+    void Click() override {
+        for (size_t k = 0;k < 3;++k)
+            if ( *variable == states[k] ){
+                *variable = states[(k+1)%3];
+                break;
+            }
+
+        SS.GenerateAll();
+        SS.GW.Invalidate();
+        SS.ScheduleShowTW();
+    }
+};
+
 
 class OccludedLinesButton : public Button {
 public:
@@ -163,8 +219,15 @@ static ShowHideButton pointsButton =
     { &(SS.GW.showPoints),       "point",         "points"                          };
 static ShowHideButton constructionButton =
     { &(SS.GW.showConstruction), "construction",  "construction entities"           };
-static ShowHideButton constraintsButton =
-    { &(SS.GW.showConstraints),  "constraint",    "constraints and dimensions"      };
+static TriStateButton constraintsButton =
+    { &(SS.GW.showConstraints),
+      {GraphicsWindow::ShowConstraintMode::SCM_SHOW_ALL,
+       GraphicsWindow::ShowConstraintMode::SCM_SHOW_DIM,
+       GraphicsWindow::ShowConstraintMode::SCM_NOSHOW},
+      {"constraints and dimensions","dimensions","none"},
+      {"constraint","constraint-dimo","constraint-wo"}
+    };
+
 static FacesButton facesButton;
 static ShowHideButton shadedButton =
     { &(SS.GW.showShaded),       "shaded",        "shaded view of solid model"      };
