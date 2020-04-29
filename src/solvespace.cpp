@@ -719,7 +719,7 @@ void SolveSpaceUI::MenuFile(Command id) {
 
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
-            if(SS.GW.showConstraints &&
+            if(SS.GW.showConstraints != GraphicsWindow::ShowConstraintMode::SCM_NOSHOW &&
                 (dialog->GetFilename().HasExtension("txt") ||
                  fabs(SS.exportOffset) > LENGTH_EPS))
             {

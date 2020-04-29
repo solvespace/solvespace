@@ -801,12 +801,14 @@ public:
     bool ToolbarMouseDown(int x, int y);
     Command toolbarHovered;
 
+    enum    class ShowConstraintMode{SCM_NOSHOW,SCM_SHOW_ALL,SCM_SHOW_DIM};
+
     // This sets what gets displayed.
     bool    showWorkplanes;
     bool    showNormals;
     bool    showPoints;
     bool    showConstruction;
-    bool    showConstraints;
+    ShowConstraintMode    showConstraints;
     bool    showTextWindow;
     bool    showShaded;
     bool    showEdges;
