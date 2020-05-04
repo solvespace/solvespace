@@ -231,9 +231,8 @@ void GraphicsWindow::SelectByMarquee() {
 //-----------------------------------------------------------------------------
 void GraphicsWindow::GroupSelection() {
     gs = {};
-    int i;
-    for(i = 0; i < selection.n; i++) {
-        Selection *s = &(selection[i]);
+    for(auto &sel : selection) {
+        Selection *s = &sel;
         if(s->entity.v) {
             (gs.n)++;
 

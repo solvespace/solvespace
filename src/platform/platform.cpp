@@ -279,7 +279,7 @@ Path Path::Expand(bool fromCurrentDirectory) const {
     }
 
     std::vector<std::string> expandedComponents;
-    for(std::string component : Split(source.raw.substr(splitAt), SEPARATOR)) {
+    for(const std::string &component : Split(source.raw.substr(splitAt), SEPARATOR)) {
         if(component == ".") {
             // skip
         } else if(component == "..") {

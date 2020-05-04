@@ -1248,7 +1248,7 @@ public:
     void AddFilter(std::string name, std::vector<std::string> extensions) override {
         Glib::RefPtr<Gtk::FileFilter> gtkFilter = Gtk::FileFilter::create();
         Glib::ustring desc;
-        for(auto extension : extensions) {
+        for(const auto &extension : extensions) {
             Glib::ustring pattern = "*";
             if(!extension.empty()) {
                 pattern = "*." + extension;

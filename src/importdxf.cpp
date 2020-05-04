@@ -981,8 +981,8 @@ public:
 
     void addPolyline(const DRW_Polyline &data) override {
         if(data.space != DRW::ModelSpace) return;
-        for(size_t i = 0; i < data.vertlist.size(); i++) {
-            checkCoord(data.vertlist[i]->basePoint);
+        for(const auto &vert : data.vertlist) {
+            checkCoord(vert->basePoint);
         }
     }
 

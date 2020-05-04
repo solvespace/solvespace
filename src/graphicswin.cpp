@@ -352,7 +352,7 @@ static void PopulateMenuWithPathnames(Platform::MenuRef menu,
         Platform::MenuItemRef menuItem = menu->AddItem(_("(no recent files)"));
         menuItem->SetEnabled(false);
     } else {
-        for(Platform::Path pathname : pathnames) {
+        for(const Platform::Path &pathname : pathnames) {
             Platform::MenuItemRef menuItem = menu->AddItem(pathname.raw, [=]() {
                 if(FileExists(pathname)) {
                     onTrigger(pathname);
@@ -1291,11 +1291,10 @@ c:
                 break;
             }
             SS.UndoRemember();
-            int i;
-            for(i = 0; i < SS.GW.gs.entities; i++) {
-                hEntity he = SS.GW.gs.entity[i];
-                if(!he.isFromRequest()) continue;
-                Request *r = SK.GetRequest(he.request());
+            for(const hEntity &he : SS.GW.gs.entity) {
+                if(!he.isFromRequest())
+                    continue;
+                Request *r      = SK.GetRequest(he.request());
                 r->construction = !(r->construction);
                 SS.MarkGroupDirty(r->group);
             }

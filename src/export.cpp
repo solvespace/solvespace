@@ -873,9 +873,8 @@ void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
     fwrite(&n, 4, 1, f);
 
     double s = SS.exportScale;
-    int i;
-    for(i = 0; i < sm->l.n; i++) {
-        STriangle *tr = &(sm->l[i]);
+    for(const auto &tri : sm->l) {
+        const STriangle *tr = &tri;
         Vector n = tr->Normal().WithMagnitude(1);
         float w;
         w = (float)n.x;           fwrite(&w, 4, 1, f);
@@ -1053,9 +1052,9 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
     double largerBoundZ = max(largerBoundXY, (bndh.z - bndl.z + 1));
 
     std::string basename = filename.FileStem();
-    for(size_t i = 0; i < basename.length(); i++) {
-        if(!(isalnum(basename[i]) || ((unsigned)basename[i] >= 0x80))) {
-            basename[i] = '_';
+    for(auto &c : basename) {
+        if(!(isalnum(c) || ((unsigned)c >= 0x80))) {
+            c = '_';
         }
     }
 

@@ -78,7 +78,8 @@ void FileDialog::AddFilter(const FileFilter &filter) {
 }
 
 void FileDialog::AddFilters(const std::vector<FileFilter> &filters) {
-    for(auto filter : filters) AddFilter(filter);
+    for(const auto &filter : filters)
+        AddFilter(filter);
 }
 
 std::vector<FileFilter> SolveSpaceModelFileFilters = {

@@ -49,12 +49,12 @@ Commands:
 
     auto FormatListFromFileFilters = [](const std::vector<Platform::FileFilter> &filters) {
         std::string descr;
-        for(auto filter : filters) {
+        for(const auto &filter : filters) {
             descr += "\n        ";
             descr += filter.name;
             descr += " (";
             bool first = true;
-            for(auto extension : filter.extensions) {
+            for(const auto &extension : filter.extensions) {
                 if(!first) {
                     descr += ", ";
                 }

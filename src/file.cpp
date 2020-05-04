@@ -345,8 +345,8 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
 
     Group *g = SK.GetGroup(*SK.groupOrder.Last());
     SMesh *m = &g->runningMesh;
-    for(i = 0; i < m->l.n; i++) {
-        STriangle *tr = &(m->l[i]);
+    for(const auto &tri : m->l) {
+        const STriangle *tr = &tri;
         fprintf(fh, "Triangle %08x %08x "
                 "%.20f %.20f %.20f  %.20f %.20f %.20f  %.20f %.20f %.20f\n",
             tr->meta.face, tr->meta.color.ToPackedInt(),

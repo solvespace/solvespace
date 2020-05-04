@@ -137,9 +137,7 @@ void Style::AssignSelectionToStyle(uint32_t v) {
     SS.GW.GroupSelection();
 
     SS.UndoRemember();
-    int i;
-    for(i = 0; i < SS.GW.gs.entities; i++) {
-        hEntity he = SS.GW.gs.entity[i];
+    for(hEntity he : SS.GW.gs.entity) {
         Entity *e = SK.GetEntity(he);
         if(!e->IsStylable()) continue;
 
@@ -153,8 +151,8 @@ void Style::AssignSelectionToStyle(uint32_t v) {
         r->style.v = v;
         SS.MarkGroupDirty(r->group);
     }
-    for(i = 0; i < SS.GW.gs.constraints; i++) {
-        hConstraint hc = SS.GW.gs.constraint[i];
+
+    for(hConstraint hc : SS.GW.gs.constraint) {
         Constraint *c = SK.GetConstraint(hc);
         if(!c->IsStylable()) continue;
 
