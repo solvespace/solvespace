@@ -53,7 +53,7 @@ public:
     void AddEdge(Vector a, Vector b, int auxA=0, int auxB=0, int tag=0);
     bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir=false) const;
     bool AssembleContour(Vector first, Vector last, SContour *dest,
-                            SEdge *errorAt, bool keepDir) const;
+                            SEdge *errorAt, bool keepDir, int start) const;
     int AnyEdgeCrossings(Vector a, Vector b,
         Vector *pi=NULL, SPointList *spl=NULL) const;
     bool ContainsEdgeFrom(const SEdgeList *sel) const;
