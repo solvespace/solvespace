@@ -224,7 +224,7 @@ void SEdgeList::AddEdge(Vector a, Vector b, int auxA, int auxB, int tag) {
 }
 
 bool SEdgeList::AssembleContour(Vector first, Vector last, SContour *dest,
-                                SEdge *errorAt, bool keepDir) const
+                                SEdge *errorAt, bool keepDir, int start) const
 {
     int i;
 
@@ -232,7 +232,7 @@ bool SEdgeList::AssembleContour(Vector first, Vector last, SContour *dest,
     dest->AddPoint(last);
 
     do {
-        for(i = 0; i < l.n; i++) {
+        for(i = start; i < l.n; i++) {
             /// @todo fix const!
             SEdge *se = const_cast<SEdge*>(&(l[i]));
             if(se->tag) continue;
@@ -281,7 +281,7 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) co
             // Create a new empty contour in our polygon, and finish assembling
             // into that contour.
             dest->AddEmptyContour();
-            if(!AssembleContour(first, last, dest->l.Last(), errorAt, keepDir)) {
+            if(!AssembleContour(first, last, dest->l.Last(), errorAt, keepDir, i+1)) {
                 allClosed = false;
             }
             // But continue assembling, even if some of the contours are open
