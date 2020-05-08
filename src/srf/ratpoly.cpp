@@ -436,6 +436,13 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
     }
 
     // If we failed to converge, then at least don't return NaN.
+    if(mustConverge) {
+        Vector p0 = PointAt(*u, *v);
+        dbp("didn't converge");
+        dbp("have %.3f %.3f %.3f", CO(p0));
+        dbp("want %.3f %.3f %.3f", CO(p));
+        dbp("distance = %g", (p.Minus(p0)).Magnitude());
+    }
     if(isnan(*u) || isnan(*v)) {
         *u = *v = 0;
     }
@@ -477,12 +484,6 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool mustConve
 
     }
 
-    if(mustConverge) {
-        dbp("didn't converge");
-        dbp("have %.3f %.3f %.3f", CO(p0));
-        dbp("want %.3f %.3f %.3f", CO(p));
-        dbp("distance = %g", (p.Minus(p0)).Magnitude());
-    }
     return false;
 }
 
