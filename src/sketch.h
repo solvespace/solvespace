@@ -239,7 +239,8 @@ public:
     enum class CombineAs : uint32_t {
         UNION           = 0,
         DIFFERENCE      = 1,
-        ASSEMBLE        = 2
+        ASSEMBLE        = 2,
+        INTERSECTION    = 3
     };
     CombineAs meshCombine;
 

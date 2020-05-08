@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
-// Top-level functions to compute the Boolean union or difference between
-// two shells of rational polynomial surfaces.
+// Top-level functions to compute the Boolean union, difference or intersection
+// between two shells of rational polynomial surfaces.
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
@@ -14,6 +14,10 @@ void SShell::MakeFromUnionOf(SShell *a, SShell *b) {
 
 void SShell::MakeFromDifferenceOf(SShell *a, SShell *b) {
     MakeFromBoolean(a, b, SSurface::CombineAs::DIFFERENCE);
+}
+
+void SShell::MakeFromIntersectionOf(SShell *a, SShell *b) {
+    MakeFromBoolean(a, b, SSurface::CombineAs::INTERSECTION);
 }
 
 //-----------------------------------------------------------------------------
@@ -209,6 +213,13 @@ static bool KeepRegion(SSurface::CombineAs type, bool opA, SShell::Class shell, 
         case SSurface::CombineAs::DIFFERENCE:
             if(opA) {
                 return outSide;
+            } else {
+                return inShell || inSame;
+            }
+
+        case SSurface::CombineAs::INTERSECTION:
+            if(opA) {
+                return inShell;
             } else {
                 return inShell || inSame;
             }
@@ -463,7 +474,10 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                     // point opposite to the surface normal.
                     bool bkwds = true;
                     if((tn.Cross(b.Minus(a))).Dot(sn) < 0) bkwds = !bkwds;
-                    if(type == SSurface::CombineAs::DIFFERENCE && !opA) bkwds = !bkwds;
+                    if((type == SSurface::CombineAs::DIFFERENCE && !opA) ||
+                       (type == SSurface::CombineAs::INTERSECTION)) { // Invert all newly created edges for intersection
+                        bkwds = !bkwds;
+                    }
                     if(bkwds) {
                         inter.AddEdge(tb, ta, sc->h.v, 1);
                     } else {
@@ -573,7 +587,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     // we can get duplicate edges if our surface intersects the other shell
     // at an edge, so that both surfaces intersect coincident (and both
     // generate an intersection edge).
-    final.CullExtraneousEdges();
+    final.CullExtraneousEdges(/*both=*/true);
 
     // Use our reassembled edges to trim the new surface.
     ret.TrimFromEdgeList(&final, /*asUv=*/true);
@@ -849,14 +863,14 @@ void SBspUv::InsertEdge(Point2d ea, Point2d eb, SSurface *srf) {
         m->more = more;
         more = m;
     } else if(fabs(dea) < LENGTH_EPS) {
-        // Point A lies on this lie, but point B does not
+        // Point A lies on this line, but point B does not
         if(deb > 0) {
             pos = InsertOrCreateEdge(pos, ea, eb, srf);
         } else {
             neg = InsertOrCreateEdge(neg, ea, eb, srf);
         }
     } else if(fabs(deb) < LENGTH_EPS) {
-        // Point B lies on this lie, but point A does not
+        // Point B lies on this line, but point A does not
         if(dea > 0) {
             pos = InsertOrCreateEdge(pos, ea, eb, srf);
         } else {
