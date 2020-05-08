@@ -269,6 +269,7 @@ public:
     void AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3);
     void MakeFromUnionOf(SMesh *a, SMesh *b);
     void MakeFromDifferenceOf(SMesh *a, SMesh *b);
+    void MakeFromIntersectionOf(SMesh *a, SMesh *b);
 
     void MakeFromCopyOf(SMesh *a);
     void MakeFromTransformationOf(SMesh *a, Vector trans,

@@ -5,6 +5,7 @@ Changelog
 ---
 
 New sketch features:
+  * New intersection boolean operation for solid models.
   * New groups, revolution and helical extrusion.
   * Extrude, lathe, translate and rotate groups can use the "assembly"
     boolean operation, to increase performance.
