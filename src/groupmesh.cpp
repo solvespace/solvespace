@@ -143,7 +143,7 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat
         // And tack this transformed copy on to the return.
         if(soFar->IsEmpty()) {
             scratch->MakeFromCopyOf(&transd);
-        } else if (forWhat == CombineAs::ASSEMBLE) {
+        } else if(forWhat == CombineAs::ASSEMBLE) {
             scratch->MakeFromAssemblyOf(soFar, &transd);
         } else {
             scratch->MakeFromUnionOf(soFar, &transd);
@@ -170,12 +170,22 @@ void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs, Group::CombineAs how
 
     // So our group's shell appears in thisShell. Combine this with the
     // previous group's shell, using the requested operation.
-    if(how == CombineAs::UNION) {
-        outs->MakeFromUnionOf(prevs, thiss);
-    } else if(how == CombineAs::DIFFERENCE) {
-        outs->MakeFromDifferenceOf(prevs, thiss);
-    } else {
-        outs->MakeFromAssemblyOf(prevs, thiss);
+    switch(how) {
+        case CombineAs::UNION:
+            outs->MakeFromUnionOf(prevs, thiss);
+            break;
+
+        case CombineAs::DIFFERENCE:
+            outs->MakeFromDifferenceOf(prevs, thiss);
+            break;
+
+        case CombineAs::INTERSECTION:
+            outs->MakeFromIntersectionOf(prevs, thiss);
+            break;
+
+        case CombineAs::ASSEMBLE:
+            outs->MakeFromAssemblyOf(prevs, thiss);
+            break;
     }
 }
 

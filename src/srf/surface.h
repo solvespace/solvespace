@@ -256,7 +256,7 @@ public:
     enum class CombineAs : uint32_t {
         UNION      = 10,
         DIFFERENCE = 11,
-        INTERSECT  = 12
+        INTERSECTION  = 12
     };
 
     int             tag;
@@ -386,6 +386,7 @@ public:
     void MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0);
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);
+    void MakeFromIntersectionOf(SShell *a, SShell *b);
     void MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type);
     void CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into);
     void CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSurface::CombineAs type);
