@@ -41,7 +41,7 @@ static bool RunBenchmark(std::function<void()> setupFn,
 }
 
 int main(int argc, char **argv) {
-    std::vector<std::string> args = InitPlatform(argc, argv);
+    std::vector<std::string> args = Platform::InitCli(argc, argv);
 
     std::string mode;
     Platform::Path filename;

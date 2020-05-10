@@ -4,11 +4,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 // Copyright 2013 Daniel Richard G. <skunk@iSKUNK.ORG>
 //-----------------------------------------------------------------------------
-#include "config.h"
 #include "solvespace.h"
-#if defined(HAVE_BACKTRACE)
-#  include BACKTRACE_HEADER
-#endif
 
 namespace SolveSpace {
 
@@ -59,15 +55,6 @@ void FreeAllTemporary() {
         free(f);
     }
     Head = NULL;
-}
-
-std::vector<std::string> InitPlatform(int argc, char **argv) {
-    std::vector<std::string> args;
-    args.reserve(argc);
-    for(int i = 0; i < argc; i++) {
-        args.emplace_back(argv[i]);
-    }
-    return args;
 }
 
 };

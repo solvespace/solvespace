@@ -14,6 +14,7 @@
 #if defined(WIN32)
 // Conversely, include Microsoft headers after solvespace.h to avoid clashes.
 #   include <windows.h>
+#   include <shellapi.h>
 #else
 #   include <unistd.h>
 #   include <sys/stat.h>
@@ -452,7 +453,7 @@ bool WriteFile(const Platform::Path &filename, const std::string &data) {
 }
 
 //-----------------------------------------------------------------------------
-// Loading resources, on Windows
+// Loading resources, on Windows.
 //-----------------------------------------------------------------------------
 
 #if defined(WIN32)
@@ -470,7 +471,7 @@ const void *LoadResource(const std::string &name, size_t *size) {
 #endif
 
 //-----------------------------------------------------------------------------
-// Loading resources, on *nix
+// Loading resources, on *nix.
 //-----------------------------------------------------------------------------
 
 #if defined(__APPLE__)
@@ -588,8 +589,49 @@ const void *LoadResource(const std::string &name, size_t *size) {
 #endif
 
 //-----------------------------------------------------------------------------
-// Command-line argument handling
+// Startup and command-line argument handling, on Windows.
 //-----------------------------------------------------------------------------
+
+#if defined(WIN32)
+
+std::vector<std::string> InitCli(int argc, char **argv) {
+#if defined(_MSC_VER)
+    // We display our own message on abort; just call ReportFault.
+    _set_abort_behavior(_CALL_REPORTFAULT, _WRITE_ABORT_MSG|_CALL_REPORTFAULT);
+    int crtReportTypes[] = {_CRT_WARN, _CRT_ERROR, _CRT_ASSERT};
+    for(int crtReportType : crtReportTypes) {
+        _CrtSetReportMode(crtReportType, _CRTDBG_MODE_FILE|_CRTDBG_MODE_DEBUG);
+        _CrtSetReportFile(crtReportType, _CRTDBG_FILE_STDERR);
+    }
+#endif
+
+    // Create the heap that we use to store Exprs and other temp stuff.
+    FreeAllTemporary();
+
+    // Extract the command-line arguments; the ones from main() are ignored,
+    // since they are in the OEM encoding.
+    int argcW;
+    LPWSTR *argvW = CommandLineToArgvW(GetCommandLineW(), &argcW);
+    std::vector<std::string> args;
+    for(int i = 0; i < argcW; i++)
+        args.push_back(Platform::Narrow(argvW[i]));
+    LocalFree(argvW);
+    return args;
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// Startup and command-line argument handling, on *nix.
+//-----------------------------------------------------------------------------
+
+#if !defined(WIN32)
+
+std::vector<std::string> InitCli(int argc, char **argv) {
+    return {&argv[0], &argv[argc]};
+}
+
+#endif
 
 }
 }

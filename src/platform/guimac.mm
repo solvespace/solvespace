@@ -1441,7 +1441,9 @@ namespace Platform {
 
 static SSApplicationDelegate *ssDelegate;
 
-void InitGui(int argc, char **argv) {
+std::vector<std::string> InitGui(int argc, char **argv) {
+    std::vector<std::string> args = InitCli(argc, argv);
+
     ssDelegate = [[SSApplicationDelegate alloc] init];
     NSApplication.sharedApplication.delegate = ssDelegate;
 
@@ -1454,6 +1456,8 @@ void InitGui(int argc, char **argv) {
     if(languages.count == 0) {
         SolveSpace::SetLocale("en_US");
     }
+
+    return args;
 }
 
 void RunGui() {

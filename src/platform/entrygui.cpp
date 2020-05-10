@@ -11,9 +11,8 @@
 using namespace SolveSpace;
 
 int main(int argc, char** argv) {
-    std::vector<std::string> args = InitPlatform(argc, argv);
+    std::vector<std::string> args = Platform::InitGui(argc, argv);
 
-    Platform::InitGui(argc, argv);
     Platform::Open3DConnexion();
     SS.Init();
 

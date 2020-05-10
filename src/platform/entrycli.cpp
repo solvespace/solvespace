@@ -351,7 +351,7 @@ static bool RunCommand(const std::vector<std::string> args) {
 }
 
 int main(int argc, char **argv) {
-    std::vector<std::string> args = InitPlatform(argc, argv);
+    std::vector<std::string> args = Platform::InitCli(argc, argv);
 
     if(args.size() == 1) {
         ShowUsage(args[0]);
