@@ -110,11 +110,11 @@ void SMesh::Simplify(int start) {
 
     STriMeta meta = l[start].meta;
 
-    STriangle *tout = (STriangle *)MemAlloc(maxTriangles*sizeof(*tout));
+    STriangle *tout = new STriangle[maxTriangles];
     int toutc = 0;
 
     Vector n = Vector::From(0, 0, 0);
-    Vector *conv = (Vector *)MemAlloc(maxTriangles*3*sizeof(*conv));
+    Vector *conv = new Vector[maxTriangles * 3];
     int convc = 0;
 
     int start0 = start;
@@ -234,8 +234,8 @@ void SMesh::Simplify(int start) {
     for(i = 0; i < toutc; i++) {
         AddTriangle(&(tout[i]));
     }
-    MemFree(tout);
-    MemFree(conv);
+    delete[] tout;
+    delete[] conv;
 }
 
 void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
