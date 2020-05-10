@@ -252,6 +252,7 @@ public:
     List<STriangle>     l;
 
     bool    flipNormal;
+    bool    keepInsideOtherShell;
     bool    keepCoplanar;
     bool    atLeastOneDiscarded;
     bool    isTransparent;
