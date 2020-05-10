@@ -13,7 +13,7 @@
 #include <shellapi.h>
 
 namespace SolveSpace {
-static HANDLE PermHeap, TempHeap;
+static HANDLE TempHeap;
 
 void dbp(const char *str, ...)
 {
@@ -51,23 +51,15 @@ void FreeAllTemporary()
 {
     if(TempHeap) HeapDestroy(TempHeap);
     TempHeap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
-    // This is a good place to validate, because it gets called fairly
-    // often.
-    vl();
 }
 
 void *MemAlloc(size_t n) {
-    void *p = HeapAlloc(PermHeap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
+    void *p = malloc(n);
     ssassert(p != NULL, "Cannot allocate memory");
     return p;
 }
 void MemFree(void *p) {
-    HeapFree(PermHeap, HEAP_NO_SERIALIZE, p);
-}
-
-void vl() {
-    ssassert(HeapValidate(TempHeap, HEAP_NO_SERIALIZE, NULL), "Corrupted heap");
-    ssassert(HeapValidate(PermHeap, HEAP_NO_SERIALIZE, NULL), "Corrupted heap");
+    free(p);
 }
 
 std::vector<std::string> InitPlatform(int argc, char **argv) {
@@ -81,8 +73,6 @@ std::vector<std::string> InitPlatform(int argc, char **argv) {
     }
 #endif
 
-    // Create the heap used for long-lived stuff (that gets freed piecewise).
-    PermHeap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
     // Create the heap that we use to store Exprs and other temp stuff.
     FreeAllTemporary();
 
