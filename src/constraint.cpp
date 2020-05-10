@@ -763,7 +763,9 @@ void Constraint::MenuConstrain(Command id) {
         }
     }
 
-    if ((id == Command::DISTANCE_DIA || id == Command::ANGLE) && SS.immediatelyEditDimension) {
+    if((id == Command::DISTANCE_DIA || id == Command::ANGLE ||
+        id == Command::RATIO || id == Command::DIFFERENCE) &&
+       SS.immediatelyEditDimension) {
         SS.GW.EditConstraint(c.h);
     }
 
