@@ -203,7 +203,9 @@ by passing the `-DENABLE_GUI=OFF` flag to the cmake invocation.
 Building on Windows
 -------------------
 
-You will need [git][gitwin], [cmake][cmakewin] and Visual C++.
+You will need [git][gitwin], [cmake][cmakewin] and a C++ compiler
+(either Visual C++ or MinGW). If using Visual C++, Visual Studio 2015
+or later is required.
 
 ### Building with Visual Studio IDE
 
