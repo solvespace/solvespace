@@ -212,15 +212,15 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
                 // extrusion. If no constraints were added, flip it when we switch between
                 // union/assemble and difference/intersection modes to avoid manual work doing the same.
                 if(g->meshCombine != (Group::CombineAs)v && g->GetNumConstraints() == 0) {
-                    // I apologise for his if statement
-                    if(((Group::CombineAs::DIFFERENCE == g->meshCombine ||
-                         Group::CombineAs::INTERSECTION == g->meshCombine) &&
-                         (Group::CombineAs::DIFFERENCE != (Group::CombineAs)v &&
-                         Group::CombineAs::INTERSECTION != (Group::CombineAs)v)) ||
-                       ((Group::CombineAs::DIFFERENCE != g->meshCombine &&
-                         Group::CombineAs::INTERSECTION != g->meshCombine) &&
-                         (Group::CombineAs::DIFFERENCE == (Group::CombineAs)v ||
-                         Group::CombineAs::INTERSECTION == (Group::CombineAs)v))) {
+                    // I apologise for this if statement
+                    if((((Group::CombineAs::DIFFERENCE == g->meshCombine) ||
+                         (Group::CombineAs::INTERSECTION == g->meshCombine)) &&
+                        (Group::CombineAs::DIFFERENCE != (Group::CombineAs)v) &&
+                        (Group::CombineAs::INTERSECTION != (Group::CombineAs)v)) ||
+                       ((Group::CombineAs::DIFFERENCE != g->meshCombine) &&
+                        (Group::CombineAs::INTERSECTION != g->meshCombine) &&
+                        ((Group::CombineAs::DIFFERENCE == (Group::CombineAs)v) ||
+                         (Group::CombineAs::INTERSECTION == (Group::CombineAs)v)))) {
                         g->ExtrusionForceVectorTo(g->ExtrusionGetVector().Negated());
                     }
                 }
