@@ -633,5 +633,53 @@ std::vector<std::string> InitCli(int argc, char **argv) {
 
 #endif
 
+//-----------------------------------------------------------------------------
+// Debug output, on *nix.
+//-----------------------------------------------------------------------------
+
+#if defined(WIN32)
+
+void DebugPrint(const char *fmt, ...)
+{
+    va_list va;
+    va_start(va, fmt);
+    int len = _vscprintf(fmt, va) + 1;
+    va_end(va);
+
+    va_start(va, fmt);
+    char *buf = (char *)_alloca(len);
+    _vsnprintf(buf, len, fmt, va);
+    va_end(va);
+
+    // The native version of OutputDebugString, unlike most others,
+    // is OutputDebugStringA.
+    OutputDebugStringA(buf);
+    OutputDebugStringA("\n");
+
+#ifndef NDEBUG
+    // Duplicate to stderr in debug builds, but not in release; this is slow.
+    fputs(buf, stderr);
+    fputc('\n', stderr);
+#endif
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// Debug output, on *nix.
+//-----------------------------------------------------------------------------
+
+#if !defined(WIN32)
+
+void DebugPrint(const char *fmt, ...) {
+    va_list va;
+    va_start(va, fmt);
+    vfprintf(stderr, fmt, va);
+    fputc('\n', stderr);
+    va_end(va);
+}
+
+#endif
+
 }
 }

@@ -8,17 +8,6 @@
 
 namespace SolveSpace {
 
-void dbp(const char *fmt, ...)
-{
-    va_list va;
-    va_start(va, fmt);
-    vfprintf(stdout, fmt, va);
-    fputc('\n', stdout);
-    va_end(va);
-
-    fflush(stdout);
-}
-
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since fragmentation is less of a concern, and it also makes it possible
