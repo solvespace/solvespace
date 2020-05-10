@@ -122,7 +122,9 @@ Bugs fixed:
     them, such that their constraints are retained.
   * When linking a sketch file, missing custom styles are now imported from
     the linked file.
-  * 3Dconnexion SpaceMouse should now work (on Windows).
+  * 3Dconnexion SpaceMouse should now work (on Windows and macOS X).
+  * Improved NURBS boolean operations on curved surfaces in some cases.
+  * Show only usable fonts in the font selector.
 
 2.x
 ---
