@@ -98,7 +98,8 @@ endif()
 
 # We use OpenMP to speed up some geometric operations, but it's optional.
 include(FindOpenMP)
-if(OpenMP_FOUND)
+# No MinGW distribution actually ships an OpenMP runtime, but FindOpenMP detects it anyway.
+if(OpenMP_FOUND AND NOT MINGW)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 else()
     message(WARNING "OpenMP not found, geometric operations will be single-threaded")

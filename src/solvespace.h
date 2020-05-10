@@ -152,7 +152,6 @@ void *AllocTemporary(size_t n);
 void FreeAllTemporary();
 void *MemAlloc(size_t n);
 void MemFree(void *p);
-void vl(); // debug function to validate heaps
 
 // End of platform-specific functions
 //================
