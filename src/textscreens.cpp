@@ -388,21 +388,21 @@ void TextWindow::ShowGroupInfo() {
 
         Printf(false, " %Ftsolid model as");
         Printf(false, "%Ba   %f%D%Lc%Fd%s union%E  "
-                             "%f%D%Lc%Fd%s difference%E  "
-                             "%f%D%Lc%Fd%s intersection%E  "
                              "%f%D%Lc%Fd%s assemble%E  ",
             &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::UNION,
             un ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
+            Group::CombineAs::ASSEMBLE,
+            (asy ? RADIO_TRUE : RADIO_FALSE));
+        Printf(false, "%Ba   %f%D%Lc%Fd%s difference%E  "
+                             "%f%D%Lc%Fd%s intersection%E  ",
+            &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::DIFFERENCE,
             diff ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::INTERSECTION,
-            intr ? RADIO_TRUE : RADIO_FALSE,
-            &TextWindow::ScreenChangeGroupOption,
-            Group::CombineAs::ASSEMBLE,
-            (asy ? RADIO_TRUE : RADIO_FALSE));
+            intr ? RADIO_TRUE : RADIO_FALSE);
 
         if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
            g->type == Group::Type::REVOLVE || g->type == Group::Type::HELIX) {
