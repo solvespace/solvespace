@@ -148,7 +148,9 @@ std::vector<Platform::Path> GetFontFiles() {
 
 void OpenInBrowser(const std::string &url) {}
 
-void InitGui(int argc, char **argv) {}
+std::vector<std::string> InitGui(int argc, char **argv) {
+    return {};
+}
 
 void RunGui() {}
 

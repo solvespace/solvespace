@@ -146,8 +146,6 @@ void dbp(const char *str, ...);
     dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
         CO((tri).a), CO((tri).b), CO((tri).c))
 
-std::vector<std::string> InitPlatform(int argc, char **argv);
-
 void *AllocTemporary(size_t n);
 void FreeAllTemporary();
 
