@@ -1,8 +1,5 @@
 //-----------------------------------------------------------------------------
-// Utility functions that depend on Win32. Notably, our memory allocation;
-// we use two separate allocators, one for long-lived stuff and one for
-// stuff that gets freed after every regeneration of the model, to save us
-// the trouble of freeing the latter explicitly.
+// Utility functions that depend on Win32.
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
@@ -51,15 +48,6 @@ void FreeAllTemporary()
 {
     if(TempHeap) HeapDestroy(TempHeap);
     TempHeap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
-}
-
-void *MemAlloc(size_t n) {
-    void *p = malloc(n);
-    ssassert(p != NULL, "Cannot allocate memory");
-    return p;
-}
-void MemFree(void *p) {
-    free(p);
 }
 
 std::vector<std::string> InitPlatform(int argc, char **argv) {

@@ -150,8 +150,6 @@ std::vector<std::string> InitPlatform(int argc, char **argv);
 
 void *AllocTemporary(size_t n);
 void FreeAllTemporary();
-void *MemAlloc(size_t n);
-void MemFree(void *p);
 
 // End of platform-specific functions
 //================
