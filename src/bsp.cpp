@@ -62,14 +62,17 @@ void SBsp3::InsertInPlane(bool pos2, STriangle *tr, SMesh *m) {
         ll = ll->more;
     }
 
-    if(m->flipNormal && ((!pos2 && !onFace) ||
-                                   (onFace && !sameNormal && m->keepCoplanar)))
-    {
-        m->AddTriangle(tr->meta, tr->c, tr->b, tr->a);
-    } else if(!(m->flipNormal) && ((pos2 && !onFace) ||
-                                   (onFace && sameNormal && m->keepCoplanar)))
-    {
-        m->AddTriangle(tr->meta, tr->a, tr->b, tr->c);
+    if((!onFace && ((m->keepInsideOtherShell && !pos2) ||
+                    (!m->keepInsideOtherShell && pos2))) ||
+       (onFace && ((m->keepCoplanar && m->flipNormal && !sameNormal) ||
+                   (m->keepCoplanar && !m->flipNormal && sameNormal)))) {
+        // We have decided that we need to keep a triangle either inside,
+        // outside or on the other shell. So add it and flip it if requested.
+        if(!(m->flipNormal)) {
+            m->AddTriangle(tr->meta, tr->a, tr->b, tr->c);
+        } else {
+            m->AddTriangle(tr->meta, tr->c, tr->b, tr->a);
+        }
     } else {
         m->atLeastOneDiscarded = true;
     }
@@ -101,10 +104,15 @@ void SBsp3::InsertHow(BspClass how, STriangle *tr, SMesh *instead) {
     return;
 
 alt:
-    if(how == BspClass::POS && !(instead->flipNormal)) {
-        instead->AddTriangle(tr->meta, tr->a, tr->b, tr->c);
-    } else if(how == BspClass::NEG && instead->flipNormal) {
-        instead->AddTriangle(tr->meta, tr->c, tr->b, tr->a);
+    if(((BspClass::POS == how) && !instead->keepInsideOtherShell) ||
+       ((BspClass::NEG == how) && instead->keepInsideOtherShell)) {
+        // We have decided that we need to keep a triangle (either inside or
+        // outside the other shell. So add it and flip it if requested.
+        if(!(instead->flipNormal)) {
+            instead->AddTriangle(tr->meta, tr->a, tr->b, tr->c);
+        } else {
+            instead->AddTriangle(tr->meta, tr->c, tr->b, tr->a);
+        }
     } else if(how == BspClass::COPLANAR) {
         if(edges) {
             edges->InsertTriangle(tr, instead, this);
@@ -431,6 +439,9 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, size_t cnt, SMesh *ins
 SBsp3 *SBsp3::InsertOrCreate(SBsp3 *where, STriangle *tr, SMesh *instead) {
     if(where == NULL) {
         if(instead) {
+            // ruevs: I do not think this code is reachable, but in
+            // principle should we use instead->keepInsideOtherShell
+            // in place of instead->flipNormal ?
             if(instead->flipNormal) {
                 instead->atLeastOneDiscarded = true;
             } else {
