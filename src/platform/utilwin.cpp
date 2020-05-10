@@ -10,26 +10,6 @@
 
 namespace SolveSpace {
 
-void dbp(const char *str, ...)
-{
-    va_list f;
-    static char buf[1024*50];
-    va_start(f, str);
-    _vsnprintf(buf, sizeof(buf), str, f);
-    va_end(f);
-
-    // The native version of OutputDebugString, unlike most others,
-    // is OutputDebugStringA.
-    OutputDebugStringA(buf);
-    OutputDebugStringA("\n");
-
-#ifndef NDEBUG
-    // Duplicate to stderr in debug builds, but not in release; this is slow.
-    fputs(buf, stderr);
-    fputc('\n', stderr);
-#endif
-}
-
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since no fragmentation issues whatsoever, and it also makes it possible

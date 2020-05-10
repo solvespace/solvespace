@@ -71,6 +71,11 @@ typedef struct _cairo_surface cairo_surface_t;
     } while(0)
 #endif
 
+#define dbp SolveSpace::Platform::DebugPrint
+#define DBPTRI(tri) \
+    dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
+        CO((tri).a), CO((tri).b), CO((tri).c))
+
 #ifndef isnan
 #   define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
 #endif
@@ -140,11 +145,6 @@ enum class Command : uint32_t;
 const size_t MAX_RECENT = 8;
 
 #define AUTOSAVE_EXT "slvs~"
-
-void dbp(const char *str, ...);
-#define DBPTRI(tri) \
-    dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
-        CO((tri).a), CO((tri).b), CO((tri).c))
 
 void *AllocTemporary(size_t n);
 void FreeAllTemporary();
