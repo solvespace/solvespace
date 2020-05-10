@@ -71,6 +71,11 @@ typedef struct _cairo_surface cairo_surface_t;
     } while(0)
 #endif
 
+#define dbp SolveSpace::Platform::DebugPrint
+#define DBPTRI(tri) \
+    dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
+        CO((tri).a), CO((tri).b), CO((tri).c))
+
 #ifndef isnan
 #   define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
 #endif
@@ -80,6 +85,7 @@ namespace SolveSpace {
 using std::min;
 using std::max;
 using std::swap;
+using std::fabs;
 
 #if defined(__GNUC__)
 __attribute__((noreturn))
@@ -111,19 +117,20 @@ inline double WRAP_SYMMETRIC(double v, double n) {
     return v;
 }
 
-// Why is this faster than the library function?
-inline double ffabs(double v) { return (v > 0) ? v : (-v); }
-
 #define CO(v) (v).x, (v).y, (v).z
 
-#define ANGLE_COS_EPS   (1e-6)
-#define LENGTH_EPS      (1e-6)
-#define VERY_POSITIVE   (1e10)
-#define VERY_NEGATIVE   (-1e10)
+static constexpr double ANGLE_COS_EPS =  1e-6;
+static constexpr double LENGTH_EPS    =  1e-6;
+static constexpr double VERY_POSITIVE =  1e10;
+static constexpr double VERY_NEGATIVE = -1e10;
 
 inline double Random(double vmax) {
     return (vmax*rand()) / RAND_MAX;
 }
+
+#include "platform/platform.h"
+#include "platform/gui.h"
+#include "resource.h"
 
 class Expr;
 class ExprVector;
@@ -131,33 +138,9 @@ class ExprQuaternion;
 class RgbaColor;
 enum class Command : uint32_t;
 
-//================
-// From the platform-specific code.
-
-#include "platform/platform.h"
-#include "platform/gui.h"
-
-const size_t MAX_RECENT = 8;
-
-#define AUTOSAVE_EXT "slvs~"
-
-void dbp(const char *str, ...);
-#define DBPTRI(tri) \
-    dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
-        CO((tri).a), CO((tri).b), CO((tri).c))
-
-std::vector<std::string> InitPlatform(int argc, char **argv);
-
+// Temporary heap, defined in the platform-specific code.
 void *AllocTemporary(size_t n);
 void FreeAllTemporary();
-void *MemAlloc(size_t n);
-void MemFree(void *p);
-void vl(); // debug function to validate heaps
-
-// End of platform-specific functions
-//================
-
-#include "resource.h"
 
 enum class Unit : uint32_t {
     MM = 0,
@@ -675,7 +658,9 @@ public:
     static void MenuFile(Command id);
     void Autosave();
     void RemoveAutosave();
-    static const size_t MAX_RECENT = 8;
+    static constexpr size_t MAX_RECENT = 8;
+    static constexpr const char *SKETCH_EXT = "slvs";
+    static constexpr const char *BACKUP_EXT = "slvs~";
     std::vector<Platform::Path> recentFiles;
     bool Load(const Platform::Path &filename);
     bool GetFilenameAndSave(bool saveAs);

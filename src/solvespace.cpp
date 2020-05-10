@@ -151,7 +151,7 @@ void SolveSpaceUI::Init() {
 }
 
 bool SolveSpaceUI::LoadAutosaveFor(const Platform::Path &filename) {
-    Platform::Path autosaveFile = filename.WithExtension(AUTOSAVE_EXT);
+    Platform::Path autosaveFile = filename.WithExtension(BACKUP_EXT);
 
     FILE *f = OpenFile(autosaveFile, "rb");
     if(!f)
@@ -474,7 +474,7 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
 
     if(saveAs || saveFile.IsEmpty()) {
         Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(GW.window);
-        dialog->AddFilter(C_("file-type", "SolveSpace models"), { "slvs" });
+        dialog->AddFilter(C_("file-type", "SolveSpace models"), { SKETCH_EXT });
         dialog->ThawChoices(settings, "Sketch");
         if(!newSaveFile.IsEmpty()) {
             dialog->SetFilename(newSaveFile);
@@ -503,13 +503,13 @@ void SolveSpaceUI::Autosave()
     ScheduleAutosave();
 
     if(!saveFile.IsEmpty() && unsaved) {
-        SaveToFile(saveFile.WithExtension(AUTOSAVE_EXT));
+        SaveToFile(saveFile.WithExtension(BACKUP_EXT));
     }
 }
 
 void SolveSpaceUI::RemoveAutosave()
 {
-    Platform::Path autosaveFile = saveFile.WithExtension(AUTOSAVE_EXT);
+    Platform::Path autosaveFile = saveFile.WithExtension(BACKUP_EXT);
     RemoveFile(autosaveFile);
 }
 

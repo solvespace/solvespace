@@ -335,7 +335,7 @@ int Test::Case::Register(Test::Case testCase) {
 }
 
 int main(int argc, char **argv) {
-    std::vector<std::string> args = InitPlatform(argc, argv);
+    std::vector<std::string> args = Platform::InitCli(argc, argv);
 
     std::regex filter(".*");
     if(args.size() == 1) {

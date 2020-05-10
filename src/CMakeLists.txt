@@ -224,6 +224,7 @@ add_dependencies(solvespace-core
     q3d_header)
 
 target_link_libraries(solvespace-core
+    ${OpenMP_CXX_LIBRARIES}
     dxfrw
     ${util_LIBRARIES}
     ${ZLIB_LIBRARY}

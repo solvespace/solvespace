@@ -6,7 +6,7 @@
 #include "solvespace.h"
 
 int main(int argc, char **argv) {
-    std::vector<std::string> args = InitPlatform(argc, argv);
+    std::vector<std::string> args = Platform::InitCli(argc, argv);
 
     if(args.size() == 3 && args[1] == "expr") {
         std::string expr = args[2], err;
