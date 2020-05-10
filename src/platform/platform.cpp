@@ -634,7 +634,7 @@ std::vector<std::string> InitCli(int argc, char **argv) {
 #endif
 
 //-----------------------------------------------------------------------------
-// Debug output, on *nix.
+// Debug output, on Windows.
 //-----------------------------------------------------------------------------
 
 #if defined(WIN32)
