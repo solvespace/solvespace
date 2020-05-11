@@ -76,10 +76,6 @@ typedef struct _cairo_surface cairo_surface_t;
     dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
         CO((tri).a), CO((tri).b), CO((tri).c))
 
-#ifndef isnan
-#   define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
-#endif
-
 namespace SolveSpace {
 
 using std::min;
@@ -98,6 +94,9 @@ __attribute__((__format__ (__printf__, 1, 2)))
 #endif
 std::string ssprintf(const char *fmt, ...);
 
+static inline bool IsReasonable(double x) {
+    return (((x) != (x)) || (x > 1e11) || (x < -1e11));
+}
 inline int WRAP(int v, int n) {
     // Clamp it to the range [0, n)
     while(v >= n) v -= n;
