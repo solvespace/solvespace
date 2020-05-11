@@ -1050,16 +1050,12 @@ void SShell::MakeSectionEdgesInto(Vector n, double d, SEdgeList *sel, SBezierLis
 }
 
 void SShell::TriangulateInto(SMesh *sm) {
-    std::vector<SMesh> tm(surface.n);
-
 #pragma omp parallel for
     for(int i=0; i<surface.n; i++) {
         SSurface *s = &surface[i];
-        s->TriangulateInto(this, &tm[i]);
-    }
-
-    // merge the per-surface meshes
-    for (auto& m : tm) {
+        SMesh m;
+        s->TriangulateInto(this, &m);
+        #pragma omp critical
         sm->MakeFromCopyOf(&m);
         m.Clear();
     }
