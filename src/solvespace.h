@@ -97,19 +97,19 @@ std::string ssprintf(const char *fmt, ...);
 static inline bool IsReasonable(double x) {
     return (((x) != (x)) || (x > 1e11) || (x < -1e11));
 }
-inline int WRAP(int v, int n) {
+static inline int WRAP(int v, int n) {
     // Clamp it to the range [0, n)
     while(v >= n) v -= n;
     while(v < 0) v += n;
     return v;
 }
-inline double WRAP_NOT_0(double v, double n) {
+static inline double WRAP_NOT_0(double v, double n) {
     // Clamp it to the range (0, n]
     while(v > n) v -= n;
     while(v <= 0) v += n;
     return v;
 }
-inline double WRAP_SYMMETRIC(double v, double n) {
+static inline double WRAP_SYMMETRIC(double v, double n) {
     // Clamp it to the range (-n/2, n/2]
     while(v >   n/2) v -= n;
     while(v <= -n/2) v += n;
