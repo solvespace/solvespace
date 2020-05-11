@@ -443,6 +443,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
         // generate two triangles in the mesh, and cut it out of our polygon.
         // Quads around the perimeter would be rejected by AnyEdgeCrossings.
         std::vector<bool> bottom(lj.n, false); // did we use this quad?
+        Vector tu = {0,0,0}, tv = {0,0,0};
         int i, j;
         for(i = 1; i < (li.n-1); i++) {
             bool prev_flag = false;
@@ -480,16 +481,28 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
                 
                 if (this_flag) {
                     // Add the quad to our mesh
-                    STriangle tr = {};
-                    tr.a = a;
-                    tr.b = b;
-                    tr.c = c;
-                    mesh->AddTriangle(&tr);
-                    tr.a = a;
-                    tr.b = c;
-                    tr.c = d;
-                    mesh->AddTriangle(&tr);
-
+                    srf->TangentsAt(us,vs, &tu,&tv);
+                    if (tu.Dot(tv) < 0.0) {  //split the other way if angle>90
+                        STriangle tr = {};
+                        tr.a = a;
+                        tr.b = b;
+                        tr.c = c;
+                        mesh->AddTriangle(&tr);
+                        tr.a = a;
+                        tr.b = c;
+                        tr.c = d;
+                        mesh->AddTriangle(&tr);
+                    } else{
+                        STriangle tr = {};
+                        tr.a = a;
+                        tr.b = b;
+                        tr.c = d;
+                        mesh->AddTriangle(&tr);
+                        tr.a = b;
+                        tr.b = c;
+                        tr.c = d;
+                        mesh->AddTriangle(&tr);
+                    }
                     if (!prev_flag) // add our own left edge
                         holes.AddEdge(d, a);
                     if (!bottom[j]) // add our own bottom edge
