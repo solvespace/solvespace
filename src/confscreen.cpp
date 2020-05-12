@@ -448,7 +448,7 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
             Expr *e = Expr::From(s, /*popUpError=*/true);
             if(e) {
                 double ev = e->Eval();
-                if(fabs(ev) < 0.001 || isnan(ev)) {
+                if(fabs(ev) < 0.001 || IsReasonable(ev)) {
                     Error(_("Export scale must not be zero!"));
                 } else {
                     SS.exportScale = (float)ev;
@@ -460,7 +460,7 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
             Expr *e = Expr::From(s, /*popUpError=*/true);
             if(e) {
                 double ev = SS.ExprToMm(e);
-                if(isnan(ev) || ev < 0) {
+                if(IsReasonable(ev) || ev < 0) {
                     Error(_("Cutter radius offset must not be negative!"));
                 } else {
                     SS.exportOffset = (float)ev;

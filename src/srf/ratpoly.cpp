@@ -443,7 +443,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
         dbp("want %.3f %.3f %.3f", CO(p));
         dbp("distance = %g", (p.Minus(p0)).Magnitude());
     }
-    if(isnan(*u) || isnan(*v)) {
+    if(IsReasonable(*u) || IsReasonable(*v)) {
         *u = *v = 0;
     }
 }

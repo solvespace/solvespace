@@ -383,7 +383,7 @@ void GraphicsWindow::MakeTangentArc() {
     if(fabs(tp[0] - t[0]) > 1e-3 || fabs(tp[1] - t[1]) > 1e-3 ||
         t[0] < 0.01 || t[1] < 0.01 ||
         t[0] > 0.99 || t[1] > 0.99 ||
-        isnan(t[0]) || isnan(t[1]))
+        IsReasonable(t[0]) || IsReasonable(t[1]))
     {
         Error(_("Couldn't round this corner. Try a smaller radius, or try "
                 "creating the desired geometry by hand with tangency "
