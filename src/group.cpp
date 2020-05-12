@@ -533,6 +533,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::NUMERIC);
 
+                e = &(entity->Get(i)); // because we copied.
                 if (e->IsPoint()) {
                 // for points this copy is used for the circle centers
                     CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_ARC_CENTER,
@@ -586,6 +587,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                        h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
                        h.param(6), NO_PARAM, CopyAs::N_ROT_AA);
 
+                e = &(entity->Get(i)); // because we copied.
                 CopyEntity(entity, e, af, REMAP_LATHE_END, h.param(0),
                        h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
                        h.param(6), NO_PARAM, CopyAs::N_ROT_AA);
@@ -641,6 +643,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                            h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
                            h.param(6), h.param(7), CopyAs::N_ROT_AXIS_TRANS);
 
+                e = &(entity->Get(i)); // because we copied.
                 CopyEntity(entity, e, af, REMAP_LATHE_END, h.param(0),
                            h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
                            h.param(6), h.param(7), CopyAs::N_ROT_AXIS_TRANS);
