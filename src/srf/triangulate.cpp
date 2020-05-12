@@ -482,7 +482,11 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
                 if (this_flag) {
                     // Add the quad to our mesh
                     srf->TangentsAt(us,vs, &tu,&tv);
-                    if (tu.Dot(tv) < 0.0) {  //split the other way if angle>90
+                    if(tu.Dot(tv) < LENGTH_EPS) {
+                        /* Split "the other way" if angle>90
+                           compare to LENGTH_EPS instead of zero to avoid alternating triangle
+                           "orientations" when the tangents are orthogonal (revolve, lathe etc.)
+                           this results in a higher quality mesh. */
                         STriangle tr = {};
                         tr.a = a;
                         tr.b = b;
