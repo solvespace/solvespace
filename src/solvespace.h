@@ -7,16 +7,16 @@
 #ifndef SOLVESPACE_H
 #define SOLVESPACE_H
 
-#include <ctype.h>
-#include <limits.h>
-#include <math.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <climits>
+#include <cmath>
+#include <csetjmp>
+#include <cstdarg>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <algorithm>
 #include <chrono>
 #include <functional>
