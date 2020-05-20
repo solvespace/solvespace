@@ -403,7 +403,8 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
 SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                                        SShell *sha, SShell *shb,
                                        SShell *into,
-                                       SSurface::CombineAs type)
+                                       SSurface::CombineAs type,
+                                       int dbg_index)
 {
     bool opA = (parent == sha);
     SShell *agnst = opA ? shb : sha;
@@ -594,9 +595,11 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
     SPolygon poly = {};
     final.l.ClearTags();
-    if(!final.AssemblePolygon(&poly, NULL, /*keepDir=*/true)) {
+    if(!final.AssemblePolygon(&poly, NULL, /*keepDir=*/true))
+#pragma omp critical
+    {
         into->booleanFailed = true;
-        dbp("failed: I=%d, avoid=%d", I, choosing.l.n);
+        dbp("failed: I=%d, avoid=%d", I+dbg_index, choosing.l.n);
         DEBUGEDGELIST(&final, &ret);
     }
     poly.Clear();
@@ -609,13 +612,18 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 }
 
 void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSurface::CombineAs type) {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
+#pragma omp parallel for
+    for (int i = 0; i < surface.n; i++)
+    {
+        SSurface *ss = &surface[i];
         SSurface ssn;
-        ssn = ss->MakeCopyTrimAgainst(this, sha, shb, into, type);
-        ss->newH = into->surface.AddAndAssignId(&ssn);
-        I++;
+        ssn = ss->MakeCopyTrimAgainst(this, sha, shb, into, type, i);
+#pragma omp critical
+        {
+            ss->newH = into->surface.AddAndAssignId(&ssn);
+        }
     }
+    I += surface.n;
 }
 
 void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
@@ -758,9 +766,9 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type) {
 // All of the BSP routines that we use to perform and accelerate polygon ops.
 //-----------------------------------------------------------------------------
 void SShell::MakeClassifyingBsps(SShell *useCurvesFrom) {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        ss->MakeClassifyingBsp(this, useCurvesFrom);
+#pragma omp parallel for
+    for(int i = 0; i<surface.n; i++) {
+        surface[i].MakeClassifyingBsp(this, useCurvesFrom);
     }
 }
 
