@@ -299,7 +299,7 @@ public:
                                   SShell *shell, SShell *sha, SShell *shb);
     void FindChainAvoiding(SEdgeList *src, SEdgeList *dest, SPointList *avoid);
     SSurface MakeCopyTrimAgainst(SShell *parent, SShell *a, SShell *b,
-                                    SShell *into, SSurface::CombineAs type);
+                                    SShell *into, SSurface::CombineAs type, int dbg_index);
     void TrimFromEdgeList(SEdgeList *el, bool asUv);
     void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                           SShell *into);
