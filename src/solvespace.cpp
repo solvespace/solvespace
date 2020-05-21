@@ -365,7 +365,7 @@ std::string SolveSpaceUI::MmToStringSI(double v, int dim) {
         v /= pow(10.0, sdeg * dim);
     }
     int pdeg = (int)ceil(log10(fabs(v) + 1e-10));
-    return ssprintf("%#.*g%s%s%s", pdeg + UnitDigitsAfterDecimal(), v,
+    return ssprintf("%.*g%s%s%s", pdeg + UnitDigitsAfterDecimal(), v,
                     compact ? "" : " ", unit.c_str(), DimToString(dim));
 }
 std::string SolveSpaceUI::DegreeToString(double v) {
