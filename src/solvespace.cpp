@@ -322,14 +322,7 @@ const char *SolveSpaceUI::UnitName() {
 
 std::string SolveSpaceUI::MmToString(double v) {
     v /= MmPerUnit();
-    switch(viewUnits) {
-        case Unit::INCHES:
-            return ssprintf("%.*f", afterDecimalInch, v);
-        case Unit::METERS:
-        case Unit::MM:
-            return ssprintf("%.*f", afterDecimalMm, v);
-    }
-    return "";
+    return ssprintf("%.*f", UnitDigitsAfterDecimal(), v);
 }
 static const char *DimToString(int dim) {
     switch(dim) {
