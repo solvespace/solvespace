@@ -132,15 +132,14 @@ inline double Random(double vmax) {
 #include "platform/gui.h"
 #include "resource.h"
 
+using Platform::AllocTemporary;
+using Platform::FreeAllTemporary;
+
 class Expr;
 class ExprVector;
 class ExprQuaternion;
 class RgbaColor;
 enum class Command : uint32_t;
-
-// Temporary heap, defined in the platform-specific code.
-void *AllocTemporary(size_t n);
-void FreeAllTemporary();
 
 enum class Unit : uint32_t {
     MM = 0,
