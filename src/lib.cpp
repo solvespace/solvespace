@@ -67,9 +67,6 @@ void Slvs_MakeQuaternion(double ux, double uy, double uz,
 
 void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)
 {
-    // Create the temporary heap, if this is the first time we're solving.
-    FreeAllTemporary();
-
     int i;
     for(i = 0; i < ssys->params; i++) {
         Slvs_Param *sp = &(ssys->param[i]);

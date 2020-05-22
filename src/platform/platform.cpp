@@ -18,6 +18,7 @@
 #else
 #   include <unistd.h>
 #   include <sys/stat.h>
+#   include <mutex>
 #endif
 
 namespace SolveSpace {
@@ -605,9 +606,6 @@ std::vector<std::string> InitCli(int argc, char **argv) {
     }
 #endif
 
-    // Create the heap that we use to store Exprs and other temp stuff.
-    FreeAllTemporary();
-
     // Extract the command-line arguments; the ones from main() are ignored,
     // since they are in the OEM encoding.
     int argcW;
@@ -677,6 +675,66 @@ void DebugPrint(const char *fmt, ...) {
     vfprintf(stderr, fmt, va);
     fputc('\n', stderr);
     va_end(va);
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// Temporary arena, on Windows.
+//-----------------------------------------------------------------------------
+
+#if defined(WIN32)
+
+static HANDLE TempArena = NULL;
+
+void *AllocTemporary(size_t size)
+{
+    if(!TempArena)
+        TempArena = HeapCreate(0, 0, 0);
+    void *ptr = HeapAlloc(TempArena, HEAP_ZERO_MEMORY, size);
+    ssassert(ptr != NULL, "out of memory");
+    return ptr;
+}
+
+void FreeAllTemporary()
+{
+    HeapDestroy(TempArena);
+    TempArena = NULL;
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// Temporary arena, on Linux.
+//-----------------------------------------------------------------------------
+
+#if !defined(WIN32)
+
+struct ArenaChunk {
+    ArenaChunk *next;
+};
+
+static std::mutex TempArenaMutex;
+static ArenaChunk *TempArena = NULL;
+
+void *AllocTemporary(size_t size)
+{
+    ArenaChunk *chunk = (ArenaChunk *)calloc(1, sizeof(ArenaChunk) + size);
+    ssassert(chunk != NULL, "out of memory");
+    std::lock_guard<std::mutex> guard(TempArenaMutex);
+    chunk->next = TempArena;
+    TempArena = chunk;
+    return (void *)(chunk + 1);
+}
+
+void FreeAllTemporary()
+{
+    std::lock_guard<std::mutex> guard(TempArenaMutex);
+    while(TempArena) {
+        ArenaChunk *chunk = TempArena;
+        TempArena = TempArena->next;
+        free(chunk);
+    }
 }
 
 #endif

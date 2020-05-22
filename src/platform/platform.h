@@ -70,6 +70,10 @@ std::vector<std::string> InitCli(int argc, char **argv);
 // Debug print function.
 void DebugPrint(const char *fmt, ...);
 
+// Temporary arena functions.
+void *AllocTemporary(size_t size);
+void FreeAllTemporary();
+
 }
 
 #endif

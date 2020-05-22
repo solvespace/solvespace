@@ -26,14 +26,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 # platform utilities
 
-if(WIN32)
-    set(util_SOURCES
-        platform/utilwin.cpp)
-else()
-    set(util_SOURCES
-        platform/utilunix.cpp)
-endif()
-
 if(APPLE)
     set(util_LIBRARIES
         ${APPKIT_LIBRARY})
