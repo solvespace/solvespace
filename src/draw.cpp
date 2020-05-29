@@ -841,17 +841,15 @@ void GraphicsWindow::Paint() {
         ForceTextWindowShown();
     }
 
-    auto renderStartTime = std::chrono::high_resolution_clock::now();
-
     canvas->SetLighting(lighting);
     canvas->SetCamera(camera);
     canvas->StartFrame();
+
+    // Draw the 3d objects.
     Draw(canvas.get());
     canvas->FlushFrame();
 
-    auto renderEndTime = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> renderTime = renderEndTime - renderStartTime;
-
+    // Draw the 2d UI overlay.
     camera.LoadIdentity();
     camera.offset.x = -(double)camera.width  / 2.0;
     camera.offset.y = -(double)camera.height / 2.0;
@@ -887,19 +885,6 @@ void GraphicsWindow::Paint() {
         canvas->SetCamera(camera);
         ToolbarDraw(&uiCanvas);
     }
-
-    // Also display an fps counter.
-    RgbaColor renderTimeColor;
-    if(renderTime.count() > 16.67) {
-        // We aim for a steady 60fps; draw the counter in red when we're slower.
-        renderTimeColor = { 255, 0, 0, 255 };
-    } else {
-        renderTimeColor = { 255, 255, 255, 255 };
-    }
-    uiCanvas.DrawBitmapText(ssprintf("rendered in %ld ms (%ld 1/s)",
-                                     (long)renderTime.count(),
-                                     (long)(1000 / std::max(0.1, renderTime.count()))),
-                            5, 5, renderTimeColor);
 
     canvas->FlushFrame();
     canvas->FinishFrame();
