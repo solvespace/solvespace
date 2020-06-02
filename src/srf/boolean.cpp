@@ -379,11 +379,17 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
            enxyz = (ab.Cross(*surfn)).WithMagnitude(SS.ChordTolMm());
     // And based on that, compute the edge's inner normal in uv space. This
     // vector is perpendicular to the edge in xyz, but not necessarily in uv.
-    Vector tu, tv;
+    Vector tu, tv, tx, ty;
     TangentsAt(muv.x, muv.y, &tu, &tv);
+    Vector n = tu.Cross(tv);
+    // since tu and tv may not be orthogonal, use y in place of v, x in place of u.
+    // |y| = |v|sin(theta) where theta is the angle between tu and tv.
+    ty = n.Cross(tu).ScaledBy(1.0/tu.MagSquared());
+    tx = tv.Cross(n).ScaledBy(1.0/tv.MagSquared());
+
     Point2d enuv;
-    enuv.x = enxyz.Dot(tu) / tu.MagSquared();
-    enuv.y = enxyz.Dot(tv) / tv.MagSquared();
+    enuv.x = enxyz.Dot(tx) / tx.MagSquared();
+    enuv.y = enxyz.Dot(ty) / ty.MagSquared();
 
     // Compute the inner and outer normals of this edge (within the srf),
     // in xyz space. These are not necessarily antiparallel, if the
