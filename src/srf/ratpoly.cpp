@@ -259,7 +259,7 @@ void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double
                 });
 
     double step = 1.0/SS.GetMaxSegments();
-    if((tb - ta) < step || d < chordTol) {
+    if( ((tb - ta) < step || d < chordTol) && ((tb-ta) < 0.2) ) {
         // A previous call has already added the beginning of our interval.
         l->Add(&pb);
     } else {
