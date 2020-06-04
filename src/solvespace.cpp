@@ -44,9 +44,9 @@ void SolveSpaceUI::Init() {
 
     exportMode = false;
     // Chord tolerance
-    chordTol = settings->ThawFloat("ChordTolerancePct", 0.5);
+    chordTol = settings->ThawFloat("ChordTolerancePct", 0.1);
     // Max pwl segments to generate
-    maxSegments = settings->ThawInt("MaxSegments", 10);
+    maxSegments = settings->ThawInt("MaxSegments", 20);
     // Chord tolerance
     exportChordTol = settings->ThawFloat("ExportChordTolerance", 0.1);
     // Max pwl segments to generate
