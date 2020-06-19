@@ -101,9 +101,7 @@ std::string AcceleratorDescription(const KeyboardEvent &accel);
 //-----------------------------------------------------------------------------
 
 // Handling fatal errors.
-#if defined(__GNUC__)
-__attribute__((noreturn))
-#endif
+[[noreturn]]
 void FatalError(const std::string &message);
 
 // A native settings store.
