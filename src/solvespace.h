@@ -83,9 +83,7 @@ using std::max;
 using std::swap;
 using std::fabs;
 
-#if defined(__GNUC__)
-__attribute__((noreturn))
-#endif
+[[noreturn]]
 void AssertFailure(const char *file, unsigned line, const char *function,
                    const char *condition, const char *message);
 
