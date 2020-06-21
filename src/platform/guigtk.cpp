@@ -565,7 +565,8 @@ protected:
         KeyboardEvent event = {};
         event.type = type;
 
-        if(gdk_event->state & ~(GDK_SHIFT_MASK|GDK_CONTROL_MASK)) {
+        Gdk::ModifierType mod_mask = get_modifier_mask(Gdk::MODIFIER_INTENT_DEFAULT_MOD_MASK);
+        if((gdk_event->state & mod_mask) & ~(GDK_SHIFT_MASK|GDK_CONTROL_MASK)) {
             return false;
         }
 
