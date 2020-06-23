@@ -954,9 +954,17 @@ void GraphicsWindow::ForceTextWindowShown() {
 }
 
 void GraphicsWindow::DeleteTaggedRequests() {
+    Request *r;
+    // Delete any requests that were affected by this deletion.
+    for(r = SK.request.First(); r; r = SK.request.NextAfter(r)) {
+        if(r->workplane == Entity::FREE_IN_3D) continue;
+        if(!r->workplane.isFromRequest()) continue;
+        Request *wrkpl = SK.GetRequest(r->workplane.request());
+        if(wrkpl->tag)
+            r->tag = 1;
+    }
     // Rewrite any point-coincident constraints that were affected by this
     // deletion.
-    Request *r;
     for(r = SK.request.First(); r; r = SK.request.NextAfter(r)) {
         if(!r->tag) continue;
         FixConstraintsForRequestBeingDeleted(r->h);
