@@ -769,9 +769,13 @@ void GraphicsWindow::Draw(Canvas *canvas) {
         const double size = 10.0;
         const int subdiv = 16;
         double h = Style::DefaultTextHeight() / camera.scale;
-        canvas->DrawVectorText(ssprintf("%.3f, %.3f, %.3f", p.x, p.y, p.z), h,
+        std::string s =
+            SS.MmToStringSI(p.x) + ", " +
+            SS.MmToStringSI(p.y) + ", " +
+            SS.MmToStringSI(p.z);
+        canvas->DrawVectorText(s.c_str(), h,
                                p.Plus(u.ScaledBy((size + 5.0)/scale)).Minus(v.ScaledBy(h / 2.0)),
-                               u, v,hcsDatum);
+                               u, v, hcsDatum);
         u = u.WithMagnitude(size / scale);
         v = v.WithMagnitude(size / scale);
 
