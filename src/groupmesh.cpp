@@ -767,11 +767,7 @@ void Group::DrawContourAreaLabels(Canvas *canvas) {
         Canvas::Stroke stroke = Style::Stroke(hs);
         stroke.layer = Canvas::Layer::FRONT;
 
-        double scale = SS.MmPerUnit();
-        std::string label = ssprintf("%.3f %s²",
-                                     fabs(sbls.SignedArea() / (scale * scale)),
-                                     SS.UnitName());
-
+        std::string label = SS.MmToStringSI(fabs(sbls.SignedArea()), /*dim=*/2);
         double fontHeight = Style::TextHeight(hs);
         double textWidth  = VectorFont::Builtin()->GetWidth(fontHeight, label),
                textHeight = VectorFont::Builtin()->GetCapHeight(fontHeight);
