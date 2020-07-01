@@ -382,13 +382,24 @@ Vector SSurface::PointAtMaybeSwapped(double u, double v, bool swapped) const {
     }
 }
 
+Vector SSurface::NormalAtMaybeSwapped(double u, double v, bool swapped) const {
+    Vector du, dv;
+    if(swapped) {
+        TangentsAt(v, u, &dv, &du);
+    } else {
+        TangentsAt(u, v, &du, &dv);
+    }
+    return du.Cross(dv).WithMagnitude(1.0);
+}
+
 void SSurface::MakeTriangulationGridInto(List<double> *l, double vs, double vf,
-                                         bool swapped) const
+                                         bool swapped, int depth) const
 {
     double worst = 0;
 
     // Try piecewise linearizing four curves, at u = 0, 1/3, 2/3, 1; choose
     // the worst chord tolerance of any of those.
+    double worst_twist = 1.0;
     int i;
     for(i = 0; i <= 3; i++) {
         double u = i/3.0;
@@ -405,16 +416,24 @@ void SSurface::MakeTriangulationGridInto(List<double> *l, double vs, double vf,
         Vector pm1 = PointAtMaybeSwapped(u, vm1, swapped),
                pm2 = PointAtMaybeSwapped(u, vm2, swapped);
 
+        // 0.999 is about 2.5 degrees of twist over the middle 1/3 V-span.
+        // we don't check at the ends because the derivative may not be valid there.
+        double twist = 1.0;
+        if (degm == 1) twist = NormalAtMaybeSwapped(u, vm1, swapped).Dot(
+                               NormalAtMaybeSwapped(u, vm2, swapped) );
+        if (twist < worst_twist) worst_twist = twist;
+
         worst = max(worst, pm1.DistanceToLine(ps, pf.Minus(ps)));
         worst = max(worst, pm2.DistanceToLine(ps, pf.Minus(ps)));
     }
 
     double step = 1.0/SS.GetMaxSegments();
-    if((vf - vs) < step || worst < SS.ChordTolMm()) {
+    if( ((vf - vs) < step || worst < SS.ChordTolMm())
+        && ((worst_twist > 0.999) || (depth > 4)) ) {
         l->Add(&vf);
     } else {
-        MakeTriangulationGridInto(l, vs, (vs+vf)/2, swapped);
-        MakeTriangulationGridInto(l, (vs+vf)/2, vf, swapped);
+        MakeTriangulationGridInto(l, vs, (vs+vf)/2, swapped, depth+1);
+        MakeTriangulationGridInto(l, (vs+vf)/2, vf, swapped, depth+1);
     }
 }
 
@@ -432,11 +451,22 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
     List<double> li, lj;
     li = {};
     lj = {};
-    double v = 0;
-    li.Add(&v);
-    srf->MakeTriangulationGridInto(&li, 0, 1, /*swapped=*/true);
-    lj.Add(&v);
-    srf->MakeTriangulationGridInto(&lj, 0, 1, /*swapped=*/false);
+    double v[5] = {0.0, 0.25, 0.5, 0.75, 1.0};
+    li.Add(&v[0]);
+    srf->MakeTriangulationGridInto(&li, 0, 1, /*swapped=*/true, 0);
+    lj.Add(&v[0]);
+    srf->MakeTriangulationGridInto(&lj, 0, 1, /*swapped=*/false, 0);
+
+    // force 2nd order grid to have at least 4 segments in each direction
+    if ((li.n < 5) && (srf->degm>1)) { // 4 segments minimun
+        li.Clear();
+        li.Add(&v[0]);li.Add(&v[1]);li.Add(&v[2]);li.Add(&v[3]);li.Add(&v[4]);
+    }
+    if ((lj.n < 5) && (srf->degn>1)) { // 4 segments minimun
+        lj.Clear();
+        lj.Add(&v[0]);lj.Add(&v[1]);lj.Add(&v[2]);lj.Add(&v[3]);lj.Add(&v[4]);
+    }
+
     if ((li.n > 3) && (lj.n > 3)) {
         // Now iterate over each quad in the grid. If it's outside the polygon,
         // or if it intersects the polygon, then we discard it. Otherwise we
