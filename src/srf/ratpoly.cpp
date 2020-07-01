@@ -173,18 +173,18 @@ void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) const {
     }
 }
 
-void SBezier::MakePwlInto(SEdgeList *sel, double chordTol) const {
+void SBezier::MakePwlInto(SEdgeList *sel, double chordTol, double max_dt) const {
     List<Vector> lv = {};
-    MakePwlInto(&lv, chordTol);
+    MakePwlInto(&lv, chordTol, max_dt);
     int i;
     for(i = 1; i < lv.n; i++) {
         sel->AddEdge(lv[i-1], lv[i]);
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) const {
+void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol, double max_dt) const {
     List<Vector> lv = {};
-    MakePwlInto(&lv, chordTol);
+    MakePwlInto(&lv, chordTol, max_dt);
     int i;
     for(i = 0; i < lv.n; i++) {
         SCurvePt scpt;
@@ -195,32 +195,42 @@ void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) const {
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(SContour *sc, double chordTol) const {
+void SBezier::MakePwlInto(SContour *sc, double chordTol, double max_dt) const {
     List<Vector> lv = {};
-    MakePwlInto(&lv, chordTol);
+    MakePwlInto(&lv, chordTol, max_dt);
     int i;
     for(i = 0; i < lv.n; i++) {
         sc->AddPoint(lv[i]);
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(List<Vector> *l, double chordTol) const {
+//--------------------------------------------------------------------------------------
+// all variants of MakePwlInto come here. Split a rational Bezier into Piecewise Linear
+// segments that don't deviate from the actual curve by more than the chordTol distance.
+// max_dt allows to force curves to be split into spans of no more than a certain
+// length based on t-parameter. RemoveShortSegments() may delete points when dt <= 0.1
+//--------------------------------------------------------------------------------------
+void SBezier::MakePwlInto(List<Vector> *l, double chordTol, double max_dt) const {
     if(EXACT(chordTol == 0)) {
         // Use the default chord tolerance.
         chordTol = SS.ChordTolMm();
     }
+    // Never do fewer than three intermediate points for curves; people seem to get
+    // unhappy when their circles turn into squares, but maybe less
+    // unhappy with octagons. Now 16-gons.
+    if (EXACT(max_dt == 0.0)) {
+        max_dt = (deg == 1) ? 1.0 : 0.25;
+    }
     l->Add(&(ctrl[0]));
-    if(deg == 1) {
+    // don't split first degee (lines) unless asked to by the caller via max_dt
+    if((deg == 1) && (max_dt >= 1.0)) {
         l->Add(&(ctrl[1]));
     } else {
-        // Never do fewer than one intermediate point; people seem to get
-        // unhappy when their circles turn into squares, but maybe less
-        // unhappy with octagons.
-        MakePwlInitialWorker(l, 0.0, 0.5, chordTol);
-        MakePwlInitialWorker(l, 0.5, 1.0, chordTol);
+        MakePwlInitialWorker(l, 0.0, 0.5, chordTol, max_dt);
+        MakePwlInitialWorker(l, 0.5, 1.0, chordTol, max_dt);
     }
 }
-void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol) const
+void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol, double max_dt) const
 {
     Vector pa = PointAt(ta);
     Vector pb = PointAt(tb);
@@ -229,16 +239,16 @@ void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordT
     double d = pm.DistanceToLine(pa, pb.Minus(pa));
 
     double step = 1.0/SS.GetMaxSegments();
-    if((tb - ta) < step || d < chordTol) {
+    if(((tb - ta) < step || d < chordTol) && ((tb-ta) <= max_dt) ) {
         // A previous call has already added the beginning of our interval.
         l->Add(&pb);
     } else {
         double tm = (ta + tb) / 2;
-        MakePwlWorker(l, ta, tm, chordTol);
-        MakePwlWorker(l, tm, tb, chordTol);
+        MakePwlWorker(l, ta, tm, chordTol, max_dt);
+        MakePwlWorker(l, tm, tb, chordTol, max_dt);
     }
 }
-void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol) const
+void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol, double max_dt) const
 {
     Vector pa = PointAt(ta);
     Vector pb = PointAt(tb);
@@ -259,13 +269,13 @@ void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double
                 });
 
     double step = 1.0/SS.GetMaxSegments();
-    if( ((tb - ta) < step || d < chordTol) && ((tb-ta) < 0.2) ) {
+    if( ((tb - ta) < step || d < chordTol) && ((tb-ta) <= max_dt) ) {
         // A previous call has already added the beginning of our interval.
         l->Add(&pb);
     } else {
         double tm = (ta + tb) / 2;
-        MakePwlWorker(l, ta, tm, chordTol);
-        MakePwlWorker(l, tm, tb, chordTol);
+        MakePwlWorker(l, ta, tm, chordTol, max_dt);
+        MakePwlWorker(l, tm, tb, chordTol, max_dt);
     }
 }
 

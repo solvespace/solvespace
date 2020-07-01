@@ -746,7 +746,9 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                     sc         = {};
                     sc.isExact = true;
                     sc.exact   = sb->TransformedBy(ts, qs, 1.0);
-                    (sc.exact).MakePwlInto(&(sc.pts));
+                    double max_dt = 0.5;
+                    if (sc.exact.deg > 1) max_dt = 0.25;
+                    (sc.exact).MakePwlInto(&(sc.pts), 0.0, max_dt);
 
                     // the surfaces already exist so trim with this curve
                     if(j < sections) {
@@ -771,7 +773,9 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                     sc         = {};
                     sc.isExact = true;
                     sc.exact   = sb->TransformedBy(ts, qs, 1.0);
-                    (sc.exact).MakePwlInto(&(sc.pts));
+                    double max_dt = 0.5;
+                    if (sc.exact.deg > 1) max_dt = 0.25;
+                    (sc.exact).MakePwlInto(&(sc.pts), 0.0, max_dt);
                     sc.surfA    = hs1; // end cap
                     sc.surfB    = hs0; // staring cap
                     hSCurve hcb = curve.AddAndAssignId(&sc);
@@ -793,7 +797,9 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                     sc.isExact = true;
                     sc.exact   = SBezier::From(ss->ctrl[0][0], ss->ctrl[0][1], ss->ctrl[0][2]);
                     sc.exact.weight[1] = ss->weight[0][1];
-                    (sc.exact).MakePwlInto(&(sc.pts));
+                    double max_dt = 0.5;
+                    if (sc.exact.deg > 1) max_dt = 0.125;
+                    (sc.exact).MakePwlInto(&(sc.pts), 0.0, max_dt);
                     sc.surfA = revs[j];
                     sc.surfB = revsp[j];
 
