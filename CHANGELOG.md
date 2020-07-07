@@ -5,6 +5,7 @@ Changelog
 ---
 
 New sketch features:
+  * New intersection boolean operation for solid models.
   * New groups, revolution and helical extrusion.
   * Extrude, lathe, translate and rotate groups can use the "assembly"
     boolean operation, to increase performance.
@@ -101,6 +102,8 @@ Other new features:
   * The numpad decimal separator key is bound to "." regardless of locale.
   * On Windows, full-screen mode is implemented.
   * On Linux, native file chooser dialog can be used.
+  * New edit menu items "Line Styles", "View Projection" and "Configuration"
+    that are shortcuts to the respective configuration screens.
 
 Bugs fixed:
   * A point in 3d constrained to any line whose length is free no longer
@@ -120,6 +123,9 @@ Bugs fixed:
     them, such that their constraints are retained.
   * When linking a sketch file, missing custom styles are now imported from
     the linked file.
+  * 3Dconnexion SpaceMouse should now work (on Windows and macOS X).
+  * Improved NURBS boolean operations on curved surfaces in some cases.
+  * Show only usable fonts in the font selector.
 
 2.x
 ---

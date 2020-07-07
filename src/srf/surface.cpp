@@ -674,14 +674,23 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     // So we can now generate the end caps of the extrusion within
     // a translated and rotated (and maybe mirrored) version of that csys.
     SSurface s0, s1;
-    s0       = SSurface::FromPlane(orig.RotatedAbout(pt, axis, angles).Plus(axis.ScaledBy(dists)),
+    s0 = SSurface::FromPlane(orig.RotatedAbout(pt, axis, angles).Plus(axis.ScaledBy(dists)),
                              u.RotatedAbout(axis, angles), v.RotatedAbout(axis, angles));
     s0.color = color;
-    s1       = SSurface::FromPlane(
+
+    hEntity face0 = group->Remap(Entity::NO_ENTITY, Group::REMAP_LATHE_START);
+    s0.face = face0.v;
+
+    s1 = SSurface::FromPlane(
         orig.Plus(u).RotatedAbout(pt, axis, anglef).Plus(axis.ScaledBy(distf)),
         u.ScaledBy(-1).RotatedAbout(axis, anglef), v.RotatedAbout(axis, anglef));
-    s1.color      = color;
-    hSSurface hs0 = surface.AddAndAssignId(&s0), hs1 = surface.AddAndAssignId(&s1);
+    s1.color = color;
+
+    hEntity face1 = group->Remap(Entity::NO_ENTITY, Group::REMAP_LATHE_END);
+    s1.face = face1.v;
+
+    hSSurface hs0 = surface.AddAndAssignId(&s0);
+    hSSurface hs1 = surface.AddAndAssignId(&s1);
 
     // Now we actually build and trim the swept surfaces. One loop at a time.
     for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
@@ -1041,9 +1050,14 @@ void SShell::MakeSectionEdgesInto(Vector n, double d, SEdgeList *sel, SBezierLis
 }
 
 void SShell::TriangulateInto(SMesh *sm) {
-    SSurface *s;
-    for(s = surface.First(); s; s = surface.NextAfter(s)) {
-        s->TriangulateInto(this, sm);
+#pragma omp parallel for
+    for(int i=0; i<surface.n; i++) {
+        SSurface *s = &surface[i];
+        SMesh m;
+        s->TriangulateInto(this, &m);
+        #pragma omp critical
+        sm->MakeFromCopyOf(&m);
+        m.Clear();
     }
 }
 

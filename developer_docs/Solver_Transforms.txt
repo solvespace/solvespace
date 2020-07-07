@@ -1,0 +1,154 @@
+
+CREATING NEW GROUPS in 3D
+=================================
+
+New Transformed Entity Types:
+-----------------------------
+New construction tools may require new transformations of entities - Points,
+Normals, and Faces. A number of "Types" exist to transform an entity to a new
+location. The term "Type" refers to the type of transformation an entity was
+created from, and should not be confused with the 3 kinds of Entity (there are
+other entities but they rely on others of the 3 base types for position and
+orientation information, so they don't directly transform). A list of
+Types is at the top of the EntityBase class definition:
+
+    enum class Type : uint32_t {
+        POINT_IN_3D            =  2000,
+        POINT_IN_2D            =  2001,
+        POINT_N_TRANS          =  2010,
+        POINT_N_ROT_TRANS      =  2011,
+        POINT_N_COPY           =  2012,
+        POINT_N_ROT_AA         =  2013,
+        POINT_N_ROT_AXIS_TRANS =  2014,
+
+        NORMAL_IN_3D           =  3000,
+        NORMAL_IN_2D           =  3001,
+        NORMAL_N_COPY          =  3010,
+        NORMAL_N_ROT           =  3011,
+        NORMAL_N_ROT_AA        =  3012,
+
+        FACE_NORMAL_PT         =  5000,
+        FACE_XPROD             =  5001,
+        FACE_N_ROT_TRANS       =  5002,
+        FACE_N_TRANS           =  5003,
+        FACE_N_ROT_AA          =  5004,
+
+Some of the point definitions with _N_ in the name are points defined by
+N application of a transformation. The number of times a particular entity
+is transformed is given in the member variable "timesApplied". The following
+is a dectription of the various transformation Types.
+
+POINT_N_TRANS: Translates a point by a vector defined by param[0],param[1],param[2]
+               the vector is multiplied by timesApplied.
+
+POINT_N_ROT_TRANS: Rotates a point via quaternion param[3],param[4],param[5],param[6]
+                   and then translates it by vector param[0],param[1],param[2]
+
+POINT_N_COPY:      A non-transformed copy of a point - numeric copy?
+
+POINT_N_ROT_AA:    A point rotated arount point param[0],param[1],param[2] Where the
+                   angle is given by param[3]*timesApplied (times 2?) and the axis
+                   of rotation defined by param[4],param[5],param[6]
+
+POINT_N_ROT_AXIS_TRANS: Same as POINT_N_ROT_AA but after rotation, the point is
+                        translated along the rotation axis by distance param[7].
+
+NORMAL_N_COPY      A non-transformed copy of a normal - numeric copy?
+
+NORMAL_N_ROT: A normal rotated by a quaternion defeined by param[0],param[1],param[2],param[3]
+
+NORMAL_N_ROT_AA    A normal rotated by timesApplied*param[0] around the axis
+                   specified by param[1],param[2],parma[3]
+
+FACE_N_ROT_TRANS   A face rotated then translated. Rotation is defined by
+                   quaternion param[3],param[4],param[5],param[6]. The translation
+                   is defined by param[0],param[1],param[2].
+
+FACE_N_TRANS: Translates a face by a vector defined by param[0],param[1],param[2]
+              faces are defined by a point and a normal, so this just moves the point.
+
+FACE_N_ROT_AA      Face rotated about point param[0],param[1],param[2]. The axis
+                   is param[4],param[5],param[6]. Angle is timesApplied*param[3].
+
+
+All entities are copied by the function  Group::CopyEntity()  which has a CopyAs
+parameter to indicate which kind of copy is to be made. The mapping from CopyAs to
+Entity Types can be found in that function. Most point types get copied the same
+way depending on CopyAs. Several of the normals get copied to the same new
+entity Type because they are unaffected by translation - you don't care if CopyAs
+specified a translation with rotation or just a rotation, a normal is affected the
+same in either case. The mapping from entity type to new entity type has to be
+decoded from the cases and if-else logic in that function.
+
+It is important that a transformation be properly applied to all three of the
+fundamental entities - points, normals, and surfaces.
+
+FUNCTIONS THAT MAY NEED TO BE EXTENDED when new entity types are defined:
+
+These functions have default cases, so they only need to be extended to return True:
+EntityBase::IsPoint()
+EntityBase::IsNormal()
+EntityBAse::IsFace()
+
+For new normal transforms the following should be filled in:
+Quaternion EntityBase::NormalGetNum()
+void EntityBase::NormalForceTo(Quaternion q)
+ExprQuaternion EntityBase::NormalGetExprs()
+
+For points:
+Vector EntityBase::PointGetNum()
+void EntityBase::PointForceTo(Vector p)
+ExprVector EntityBase::PointGetExprs()
+
+For Faces:
+ExprVector EntityBase::FaceGetNormalExprs()
+Vector EntityBase::FaceGetNormalNum()
+ExprVector EntityBase::FaceGetPointExprs()
+Vector EntityBase::FaceGetPointNum()
+
+The basic model for these transformed entities is that the group containing them
+will have parameters that define the transformed entity in terms of the one it
+was copied from. For example, in PointGetNum() under the case POINT_N_TRANS we see:
+
+            Vector trans = Vector::From(param[0], param[1], param[2]);
+            p = numPoint.Plus(trans.ScaledBy(timesApplied));
+            break;
+
+This take the original "numPoint" and adds a vector created from 3 parameters and
+multiplied by "timesApplied". This is used in the step-translating groups. It's also
+used in extrude groups where there are constraints on the 3 parameters to keep the
+vector perpendicular to the sketch it was extruded from. This function returns a
+numerical version of the copied point, hence "GetNum" in the name.
+
+Another function  PointGetExprs()  returns the same coordinates of the point but
+returns an expression vector. When the user applies a constraint to a point, this
+function is called to get algebraic expressions for the point that are suitable for
+use in the solver. Most points will not be constrained directly, so expressions
+are not needed for them. It is also notable that the expressions are not part of
+the entity itself.
+
+The ForceTo() functions are shortcuts for using the solver. They are passed the
+desired location of a point (or orientation of a normal...) and have the opportunity
+to back-calculate what the group parameters should be to place it there. This is
+used for mouse dragging of copied entites. It is notable that the constraints will
+still be applied afterward, but this is a good shortcut.
+
+When creating a new entity transformation, the first thing to do is define the
+numerical copy (xxxGetNum). That should allow display. Dragging will not work
+until ForceTo is implemented, and user constraints will not work until GetExprs()
+is completed. Most of these functions have an assert that will fire if the required
+new case is missing. This is may not be a complete list of everything you need to
+make new entity transformations.
+
+One thing of note, parameters in both entities and groups are stored by their handle.
+An entity can have up to 8 parameters to define how it is transformed from another
+entity. By convention this array of parameter handles matches that of the group but
+this is probably not strictly necessary.
+
+ADDING GROUP CONSTRAINTS:
+The example above where a point is copied via POINT_N_TRANS for both EXTRUDE and
+STEP TRANSLATING groups is a good example here. For the EXTRUDE case, two constraint
+equations are added to keep the offset vector perpendicular to the sketch. These
+equations are created in Group::GenerateEquations() and are nothing more than an
+expression which is implicitly set equal to zero in the solver.
+

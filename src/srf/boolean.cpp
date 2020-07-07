@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
-// Top-level functions to compute the Boolean union or difference between
-// two shells of rational polynomial surfaces.
+// Top-level functions to compute the Boolean union, difference or intersection
+// between two shells of rational polynomial surfaces.
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
@@ -14,6 +14,10 @@ void SShell::MakeFromUnionOf(SShell *a, SShell *b) {
 
 void SShell::MakeFromDifferenceOf(SShell *a, SShell *b) {
     MakeFromBoolean(a, b, SSurface::CombineAs::DIFFERENCE);
+}
+
+void SShell::MakeFromIntersectionOf(SShell *a, SShell *b) {
+    MakeFromBoolean(a, b, SSurface::CombineAs::INTERSECTION);
 }
 
 //-----------------------------------------------------------------------------
@@ -213,6 +217,13 @@ static bool KeepRegion(SSurface::CombineAs type, bool opA, SShell::Class shell, 
                 return inShell || inSame;
             }
 
+        case SSurface::CombineAs::INTERSECTION:
+            if(opA) {
+                return inShell;
+            } else {
+                return inShell || inSame;
+            }
+
         default: ssassert(false, "Unexpected combine type");
     }
 }
@@ -368,11 +379,17 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
            enxyz = (ab.Cross(*surfn)).WithMagnitude(SS.ChordTolMm());
     // And based on that, compute the edge's inner normal in uv space. This
     // vector is perpendicular to the edge in xyz, but not necessarily in uv.
-    Vector tu, tv;
+    Vector tu, tv, tx, ty;
     TangentsAt(muv.x, muv.y, &tu, &tv);
+    Vector n = tu.Cross(tv);
+    // since tu and tv may not be orthogonal, use y in place of v, x in place of u.
+    // |y| = |v|sin(theta) where theta is the angle between tu and tv.
+    ty = n.Cross(tu).ScaledBy(1.0/tu.MagSquared());
+    tx = tv.Cross(n).ScaledBy(1.0/tv.MagSquared());
+
     Point2d enuv;
-    enuv.x = enxyz.Dot(tu) / tu.MagSquared();
-    enuv.y = enxyz.Dot(tv) / tv.MagSquared();
+    enuv.x = enxyz.Dot(tx) / tx.MagSquared();
+    enuv.y = enxyz.Dot(ty) / ty.MagSquared();
 
     // Compute the inner and outer normals of this edge (within the srf),
     // in xyz space. These are not necessarily antiparallel, if the
@@ -392,7 +409,8 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
 SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                                        SShell *sha, SShell *shb,
                                        SShell *into,
-                                       SSurface::CombineAs type)
+                                       SSurface::CombineAs type,
+                                       int dbg_index)
 {
     bool opA = (parent == sha);
     SShell *agnst = opA ? shb : sha;
@@ -463,7 +481,10 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                     // point opposite to the surface normal.
                     bool bkwds = true;
                     if((tn.Cross(b.Minus(a))).Dot(sn) < 0) bkwds = !bkwds;
-                    if(type == SSurface::CombineAs::DIFFERENCE && !opA) bkwds = !bkwds;
+                    if((type == SSurface::CombineAs::DIFFERENCE && !opA) ||
+                       (type == SSurface::CombineAs::INTERSECTION)) { // Invert all newly created edges for intersection
+                        bkwds = !bkwds;
+                    }
                     if(bkwds) {
                         inter.AddEdge(tb, ta, sc->h.v, 1);
                     } else {
@@ -573,16 +594,18 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     // we can get duplicate edges if our surface intersects the other shell
     // at an edge, so that both surfaces intersect coincident (and both
     // generate an intersection edge).
-    final.CullExtraneousEdges();
+    final.CullExtraneousEdges(/*both=*/true);
 
     // Use our reassembled edges to trim the new surface.
     ret.TrimFromEdgeList(&final, /*asUv=*/true);
 
     SPolygon poly = {};
     final.l.ClearTags();
-    if(!final.AssemblePolygon(&poly, NULL, /*keepDir=*/true)) {
+    if(!final.AssemblePolygon(&poly, NULL, /*keepDir=*/true))
+#pragma omp critical
+    {
         into->booleanFailed = true;
-        dbp("failed: I=%d, avoid=%d", I, choosing.l.n);
+        dbp("failed: I=%d, avoid=%d", I+dbg_index, choosing.l.n);
         DEBUGEDGELIST(&final, &ret);
     }
     poly.Clear();
@@ -595,13 +618,18 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 }
 
 void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSurface::CombineAs type) {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
+#pragma omp parallel for
+    for (int i = 0; i < surface.n; i++)
+    {
+        SSurface *ss = &surface[i];
         SSurface ssn;
-        ssn = ss->MakeCopyTrimAgainst(this, sha, shb, into, type);
-        ss->newH = into->surface.AddAndAssignId(&ssn);
-        I++;
+        ssn = ss->MakeCopyTrimAgainst(this, sha, shb, into, type, i);
+#pragma omp critical
+        {
+            ss->newH = into->surface.AddAndAssignId(&ssn);
+        }
     }
+    I += surface.n;
 }
 
 void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
@@ -744,9 +772,9 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type) {
 // All of the BSP routines that we use to perform and accelerate polygon ops.
 //-----------------------------------------------------------------------------
 void SShell::MakeClassifyingBsps(SShell *useCurvesFrom) {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        ss->MakeClassifyingBsp(this, useCurvesFrom);
+#pragma omp parallel for
+    for(int i = 0; i<surface.n; i++) {
+        surface[i].MakeClassifyingBsp(this, useCurvesFrom);
     }
 }
 
@@ -849,14 +877,14 @@ void SBspUv::InsertEdge(Point2d ea, Point2d eb, SSurface *srf) {
         m->more = more;
         more = m;
     } else if(fabs(dea) < LENGTH_EPS) {
-        // Point A lies on this lie, but point B does not
+        // Point A lies on this line, but point B does not
         if(deb > 0) {
             pos = InsertOrCreateEdge(pos, ea, eb, srf);
         } else {
             neg = InsertOrCreateEdge(neg, ea, eb, srf);
         }
     } else if(fabs(deb) < LENGTH_EPS) {
-        // Point B lies on this lie, but point A does not
+        // Point B lies on this line, but point A does not
         if(dea > 0) {
             pos = InsertOrCreateEdge(pos, ea, eb, srf);
         } else {

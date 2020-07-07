@@ -53,7 +53,7 @@ public:
     void AddEdge(Vector a, Vector b, int auxA=0, int auxB=0, int tag=0);
     bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir=false) const;
     bool AssembleContour(Vector first, Vector last, SContour *dest,
-                            SEdge *errorAt, bool keepDir) const;
+                            SEdge *errorAt, bool keepDir, int start) const;
     int AnyEdgeCrossings(Vector a, Vector b,
         Vector *pi=NULL, SPointList *spl=NULL) const;
     bool ContainsEdgeFrom(const SEdgeList *sel) const;
@@ -252,6 +252,7 @@ public:
     List<STriangle>     l;
 
     bool    flipNormal;
+    bool    keepInsideOtherShell;
     bool    keepCoplanar;
     bool    atLeastOneDiscarded;
     bool    isTransparent;
@@ -269,6 +270,7 @@ public:
     void AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3);
     void MakeFromUnionOf(SMesh *a, SMesh *b);
     void MakeFromDifferenceOf(SMesh *a, SMesh *b);
+    void MakeFromIntersectionOf(SMesh *a, SMesh *b);
 
     void MakeFromCopyOf(SMesh *a);
     void MakeFromTransformationOf(SMesh *a, Vector trans,

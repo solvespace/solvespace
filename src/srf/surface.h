@@ -10,10 +10,6 @@
 #ifndef SOLVESPACE_SURFACE_H
 #define SOLVESPACE_SURFACE_H
 
-// Utility functions, Bernstein polynomials of order 1-3 and their derivatives.
-double Bernstein(int k, int deg, double t);
-double BernsteinDerivative(int k, int deg, double t);
-
 class SBezierList;
 class SSurface;
 class SCurvePt;
@@ -260,7 +256,7 @@ public:
     enum class CombineAs : uint32_t {
         UNION      = 10,
         DIFFERENCE = 11,
-        INTERSECT  = 12
+        INTERSECTION  = 12
     };
 
     int             tag;
@@ -303,7 +299,7 @@ public:
                                   SShell *shell, SShell *sha, SShell *shb);
     void FindChainAvoiding(SEdgeList *src, SEdgeList *dest, SPointList *avoid);
     SSurface MakeCopyTrimAgainst(SShell *parent, SShell *a, SShell *b,
-                                    SShell *into, SSurface::CombineAs type);
+                                    SShell *into, SSurface::CombineAs type, int dbg_index);
     void TrimFromEdgeList(SEdgeList *el, bool asUv);
     void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                           SShell *into);
@@ -390,6 +386,7 @@ public:
     void MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0);
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);
+    void MakeFromIntersectionOf(SShell *a, SShell *b);
     void MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type);
     void CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into);
     void CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSurface::CombineAs type);

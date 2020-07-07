@@ -105,6 +105,9 @@ enum class Command : uint32_t {
     ROTATE_90,
     UNSELECT_ALL,
     REGEN_ALL,
+    EDIT_LINE_STYLES,
+    VIEW_PROJECTION,
+    CONFIGURATION,
     // Request
     SEL_WORKPLANE,
     FREE_IN_3D,

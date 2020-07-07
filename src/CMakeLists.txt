@@ -26,14 +26,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 # platform utilities
 
-if(WIN32)
-    set(util_SOURCES
-        platform/utilwin.cpp)
-else()
-    set(util_SOURCES
-        platform/utilunix.cpp)
-endif()
-
 if(APPLE)
     set(util_LIBRARIES
         ${APPKIT_LIBRARY})
@@ -224,6 +216,7 @@ add_dependencies(solvespace-core
     q3d_header)
 
 target_link_libraries(solvespace-core
+    ${OpenMP_CXX_LIBRARIES}
     dxfrw
     ${util_LIBRARIES}
     ${ZLIB_LIBRARY}
@@ -340,7 +333,7 @@ if(ENABLE_GUI)
 
     if(MSVC)
         set_target_properties(solvespace PROPERTIES
-            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF /STACK:33554432")
+            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
     elseif(APPLE)
         set_target_properties(solvespace PROPERTIES
             OUTPUT_NAME SolveSpace)

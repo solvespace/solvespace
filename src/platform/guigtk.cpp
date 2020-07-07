@@ -565,7 +565,8 @@ protected:
         KeyboardEvent event = {};
         event.type = type;
 
-        if(gdk_event->state & ~(GDK_SHIFT_MASK|GDK_CONTROL_MASK)) {
+        Gdk::ModifierType mod_mask = get_modifier_mask(Gdk::MODIFIER_INTENT_DEFAULT_MOD_MASK);
+        if((gdk_event->state & mod_mask) & ~(GDK_SHIFT_MASK|GDK_CONTROL_MASK)) {
             return false;
         }
 
@@ -1432,7 +1433,7 @@ void OpenInBrowser(const std::string &url) {
 
 Gtk::Main *gtkMain;
 
-void InitGui(int argc, char **argv) {
+std::vector<std::string> InitGui(int argc, char **argv) {
     // It would in principle be possible to judiciously use Glib::filename_{from,to}_utf8,
     // but it's not really worth the effort.
     // The setlocale() call is necessary for Glib::get_charset() to detect the system
@@ -1445,7 +1446,11 @@ void InitGui(int argc, char **argv) {
     }
     setlocale(LC_ALL, "C");
 
+    // Let GTK parse arguments and update argc/argv. (They're passed by reference.)
     gtkMain = new Gtk::Main(argc, argv, /*set_locale=*/false);
+
+    // Now that GTK arguments are removed, grab arguments for ourselves.
+    std::vector<std::string> args = InitCli(argc, argv);
 
     // Add our application-specific styles, to override GTK defaults.
     Glib::RefPtr<Gtk::CssProvider> style_provider = Gtk::CssProvider::create();
@@ -1468,6 +1473,8 @@ void InitGui(int argc, char **argv) {
     if(!*langNames) {
         SetLocale("en_US");
     }
+
+    return args;
 }
 
 void RunGui() {

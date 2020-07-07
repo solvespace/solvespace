@@ -11,8 +11,6 @@
 Sketch SolveSpace::SK = {};
 static System SYS;
 
-static int IsInit = 0;
-
 void SolveSpace::Platform::FatalError(const std::string &message) {
     fprintf(stderr, "%s", message.c_str());
     abort();
@@ -69,11 +67,6 @@ void Slvs_MakeQuaternion(double ux, double uy, double uz,
 
 void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)
 {
-    if(!IsInit) {
-        InitPlatform(0, NULL);
-        IsInit = 1;
-    }
-
     int i;
     for(i = 0; i < ssys->params; i++) {
         Slvs_Param *sp = &(ssys->param[i]);

@@ -1,6 +1,9 @@
 git:
   submodules: false
 jobs:
+  allow_failures:
+    - stage: deploy
+      name: Snap arm64
   include:
     - stage: test
       name: "Debian"

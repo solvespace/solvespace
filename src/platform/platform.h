@@ -64,6 +64,16 @@ void RemoveFile(const Platform::Path &filename);
 // Resource loading function.
 const void *LoadResource(const std::string &name, size_t *size);
 
+// Startup and command-line argument handling.
+std::vector<std::string> InitCli(int argc, char **argv);
+
+// Debug print function.
+void DebugPrint(const char *fmt, ...);
+
+// Temporary arena functions.
+void *AllocTemporary(size_t size);
+void FreeAllTemporary();
+
 }
 
 #endif

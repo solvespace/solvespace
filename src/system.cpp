@@ -187,15 +187,15 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
         // greater. First, find a pivot (between rows i and N-1).
         max = 0;
         for(ip = i; ip < n; ip++) {
-            if(ffabs(A[ip][i]) > max) {
+            if(fabs(A[ip][i]) > max) {
                 imax = ip;
-                max = ffabs(A[ip][i]);
+                max = fabs(A[ip][i]);
             }
         }
         // Don't give up on a singular matrix unless it's really bad; the
         // assumption code is responsible for identifying that condition,
         // so we're not responsible for reporting that error.
-        if(ffabs(max) < 1e-20) continue;
+        if(fabs(max) < 1e-20) continue;
 
         // Swap row imax with row i
         for(jp = 0; jp < n; jp++) {
@@ -217,7 +217,7 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
     // We've put the matrix in upper triangular form, so at this point we
     // can solve by back-substitution.
     for(i = n - 1; i >= 0; i--) {
-        if(ffabs(A[i][i]) < 1e-20) continue;
+        if(fabs(A[i][i]) < 1e-20) continue;
 
         temp = B[i];
         for(j = n - 1; j > i; j--) {
@@ -293,7 +293,7 @@ bool System::NewtonSolve(int tag) {
         for(i = 0; i < mat.n; i++) {
             Param *p = param.FindById(mat.param[i]);
             p->val -= mat.X[i];
-            if(isnan(p->val)) {
+            if(IsReasonable(p->val)) {
                 // Very bad, and clearly not convergent
                 return false;
             }
@@ -306,10 +306,10 @@ bool System::NewtonSolve(int tag) {
         // Check for convergence
         converged = true;
         for(i = 0; i < mat.m; i++) {
-            if(isnan(mat.B.num[i])) {
+            if(IsReasonable(mat.B.num[i])) {
                 return false;
             }
-            if(ffabs(mat.B.num[i]) > CONVERGE_TOLERANCE) {
+            if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE) {
                 converged = false;
                 break;
             }
@@ -493,7 +493,7 @@ didnt_converge:
     SK.constraint.ClearTags();
     // Not using range-for here because index is used in additional ways
     for(i = 0; i < eq.n; i++) {
-        if(ffabs(mat.B.num[i]) > CONVERGE_TOLERANCE || isnan(mat.B.num[i])) {
+        if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE || IsReasonable(mat.B.num[i])) {
             // This constraint is unsatisfied.
             if(!mat.eq[i].isFromConstraint()) continue;
 
