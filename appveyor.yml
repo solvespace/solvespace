@@ -5,17 +5,16 @@ environment:
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-      PYTHON_DIR: C:\Python36-x64
+      PY: 36
       COMPILER: mingw32
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-      PYTHON_DIR: C:\Python37-x64
+      PY: 37
       COMPILER: mingw32
-    # Cython not yet support
-#    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-#      PYTHON_DIR: C:\Python38-x64
-#      COMPILER: mingw32
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
-      PYTHON_DIR: C:\Python38-x64
+      PY: 38
+      COMPILER: mingw32
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      PY: 38
       COMPILER: msvc
 for:
   - matrix:
@@ -49,6 +48,7 @@ for:
       # Install Python-dev
       - IF DEFINED PYTHON_DEV choco install -y python --version %PYTHON_DEV%
       # Environment variables
+      - set PYTHON_DIR=C:\Python%PY%-x64
       - set Path=%MSYS_DIR%\mingw64\bin;%MSYS_DIR%\usr\bin;%Path%
       - set Path=%PYTHON_DIR%;%PYTHON_DIR%\Scripts;%Path%
       # Show Python
@@ -60,9 +60,6 @@ for:
       - cython\platform\set_pycompiler %PYTHON_DIR% %COMPILER%
       # Install modules
       - pip install -r cython\requirements.txt
-      # Show tool kits
-      - gcc --version
-      - mingw32-make --version
     build_script:
       - cd cython && python setup.py test && cd ..
     after_build:

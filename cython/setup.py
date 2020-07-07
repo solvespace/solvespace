@@ -57,6 +57,10 @@ compile_args = [
     '-fPIC',
     '-std=c++17',
 ]
+link_args = ['-static-libgcc', '-static-libstdc++',
+             '-Wl,-Bstatic,--whole-archive',
+             '-lwinpthread',
+             '-Wl,--no-whole-archive']
 sources = [
     pth_join('python_solvespace', 'slvs.pyx'),
     pth_join(src_path, 'util.cpp'),
@@ -108,10 +112,13 @@ class Build(build_ext):
             for e in self.extensions:
                 e.define_macros = macros
                 e.extra_compile_args = compile_args
+                if compiler == 'mingw32':
+                    e.extra_link_args = link_args
         elif compiler == 'msvc':
             for e in self.extensions:
                 e.define_macros = macros[1:]
                 e.libraries = ['shell32']
+                e.extra_compile_args = ['/O2']
         super(Build, self).build_extensions()
 
     def run(self):
