@@ -210,11 +210,19 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
             if(g->type == Group::Type::EXTRUDE) {
                 // When an extrude group is first created, it's positioned for a union
                 // extrusion. If no constraints were added, flip it when we switch between
-                // union and difference modes to avoid manual work doing the same.
-                if(g->meshCombine != (Group::CombineAs)v && g->GetNumConstraints() == 0 &&
-                        ((Group::CombineAs)v == Group::CombineAs::DIFFERENCE ||
-                        g->meshCombine == Group::CombineAs::DIFFERENCE)) {
-                    g->ExtrusionForceVectorTo(g->ExtrusionGetVector().Negated());
+                // union/assemble and difference/intersection modes to avoid manual work doing the same.
+                if(g->meshCombine != (Group::CombineAs)v && g->GetNumConstraints() == 0) {
+                    // I apologise for this if statement
+                    if((((Group::CombineAs::DIFFERENCE == g->meshCombine) ||
+                         (Group::CombineAs::INTERSECTION == g->meshCombine)) &&
+                        (Group::CombineAs::DIFFERENCE != (Group::CombineAs)v) &&
+                        (Group::CombineAs::INTERSECTION != (Group::CombineAs)v)) ||
+                       ((Group::CombineAs::DIFFERENCE != g->meshCombine) &&
+                        (Group::CombineAs::INTERSECTION != g->meshCombine) &&
+                        ((Group::CombineAs::DIFFERENCE == (Group::CombineAs)v) ||
+                         (Group::CombineAs::INTERSECTION == (Group::CombineAs)v)))) {
+                        g->ExtrusionForceVectorTo(g->ExtrusionGetVector().Negated());
+                    }
                 }
             }
             g->meshCombine = (Group::CombineAs)v;
@@ -375,21 +383,26 @@ void TextWindow::ShowGroupInfo() {
        g->type == Group::Type::HELIX) {
         bool un   = (g->meshCombine == Group::CombineAs::UNION);
         bool diff = (g->meshCombine == Group::CombineAs::DIFFERENCE);
+        bool intr = (g->meshCombine == Group::CombineAs::INTERSECTION);
         bool asy  = (g->meshCombine == Group::CombineAs::ASSEMBLE);
 
         Printf(false, " %Ftsolid model as");
         Printf(false, "%Ba   %f%D%Lc%Fd%s union%E  "
-                             "%f%D%Lc%Fd%s difference%E  "
                              "%f%D%Lc%Fd%s assemble%E  ",
             &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::UNION,
             un ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
+            Group::CombineAs::ASSEMBLE,
+            (asy ? RADIO_TRUE : RADIO_FALSE));
+        Printf(false, "%Ba   %f%D%Lc%Fd%s difference%E  "
+                             "%f%D%Lc%Fd%s intersection%E  ",
+            &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::DIFFERENCE,
             diff ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
-            Group::CombineAs::ASSEMBLE,
-            (asy ? RADIO_TRUE : RADIO_FALSE));
+            Group::CombineAs::INTERSECTION,
+            intr ? RADIO_TRUE : RADIO_FALSE);
 
         if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
            g->type == Group::Type::REVOLVE || g->type == Group::Type::HELIX) {

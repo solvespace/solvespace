@@ -701,6 +701,7 @@ bool EntityBase::IsFace() const {
         case Type::FACE_N_ROT_TRANS:
         case Type::FACE_N_TRANS:
         case Type::FACE_N_ROT_AA:
+        case Type::FACE_ROT_NORMAL_PT:
             return true;
         default:
             return false;
@@ -728,7 +729,7 @@ ExprVector EntityBase::FaceGetNormalExprs() const {
         r = q.Rotate(r);
     } else if(type == Type::FACE_N_TRANS) {
         r = ExprVector::From(numNormal.vx, numNormal.vy, numNormal.vz);
-    } else if(type == Type::FACE_N_ROT_AA) {
+    } else if((type == Type::FACE_N_ROT_AA) || (type == Type::FACE_ROT_NORMAL_PT)) {
         r = ExprVector::From(numNormal.vx, numNormal.vy, numNormal.vz);
         ExprQuaternion q = GetAxisAngleQuaternionExprs(3);
         r = q.Rotate(r);
@@ -751,7 +752,7 @@ Vector EntityBase::FaceGetNormalNum() const {
         r = q.Rotate(r);
     } else if(type == Type::FACE_N_TRANS) {
         r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
-    } else if(type == Type::FACE_N_ROT_AA) {
+    } else if((type == Type::FACE_N_ROT_AA) || (type == Type::FACE_ROT_NORMAL_PT)) {
         r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
         Quaternion q = GetAxisAngleQuaternion(3);
         r = q.Rotate(r);
@@ -761,7 +762,7 @@ Vector EntityBase::FaceGetNormalNum() const {
 
 ExprVector EntityBase::FaceGetPointExprs() const {
     ExprVector r;
-    if(type == Type::FACE_NORMAL_PT) {
+    if((type == Type::FACE_NORMAL_PT) || (type==Type::FACE_ROT_NORMAL_PT)) {
         r = SK.GetEntity(point[0])->PointGetExprs();
     } else if(type == Type::FACE_XPROD) {
         r = ExprVector::From(numPoint);
@@ -790,7 +791,7 @@ ExprVector EntityBase::FaceGetPointExprs() const {
 
 Vector EntityBase::FaceGetPointNum() const {
     Vector r;
-    if(type == Type::FACE_NORMAL_PT) {
+    if((type == Type::FACE_NORMAL_PT) || (type==Type::FACE_ROT_NORMAL_PT)) {
         r = SK.GetEntity(point[0])->PointGetNum();
     } else if(type == Type::FACE_XPROD) {
         r = numPoint;

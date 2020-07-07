@@ -799,20 +799,37 @@ SSurface *SCurve::GetSurfaceB(SShell *a, SShell *b) const {
 // stuff in the Booleans. So remove them.
 //-----------------------------------------------------------------------------
 void SCurve::RemoveShortSegments(SSurface *srfA, SSurface *srfB) {
-    // Three, not two; curves are pwl'd to at least two edges (three points)
-    // even if not necessary, to avoid square holes.
-    if(pts.n <= 3) return;
+    if(pts.n <= 2) return;
     pts.ClearTags();
 
     Vector prev = pts[0].p;
+    double tprev = 0;
+    double t = 0;
+    double tnext = 0;
+
     int i, a;
     for(i = 1; i < pts.n - 1; i++) {
         SCurvePt *sct = &(pts[i]),
                  *scn = &(pts[i+1]);
+
         if(sct->vertex) {
             prev = sct->p;
             continue;
         }
+
+        // if the curve is exact and points are >0.1 appart wrt t, point is there
+        // deliberately regardless of chord tolerance (ex: small circles)
+        tprev = t = tnext = 0;
+        if (isExact) {
+            exact.ClosestPointTo(prev, &tprev, /*mustconverge=*/ true);
+            exact.ClosestPointTo(sct->p, &t, /*mustconverge=*/ true);
+            exact.ClosestPointTo(scn->p, &tnext, /*mustconverge=*/ true);
+        }
+        if ( (t - tprev > 0.1) && (tnext - t > 0.1) ) {
+            prev = sct->p;
+            continue;
+        }
+
         bool mustKeep = false;
 
         // We must check against both surfaces; the piecewise linear edge
@@ -826,7 +843,7 @@ void SCurve::RemoveShortSegments(SSurface *srfA, SSurface *srfB) {
             srf->ClosestPointTo(prev,   &(puv.x), &(puv.y));
             srf->ClosestPointTo(scn->p, &(nuv.x), &(nuv.y));
 
-            if(srf->ChordToleranceForEdge(nuv, puv) > SS.ChordTolMm()) {
+            if(srf->ChordToleranceForEdge(nuv, puv) > SS.ChordTolMm() ) {
                 mustKeep = true;
             }
         }

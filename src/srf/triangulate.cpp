@@ -437,68 +437,105 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
     srf->MakeTriangulationGridInto(&li, 0, 1, /*swapped=*/true);
     lj.Add(&v);
     srf->MakeTriangulationGridInto(&lj, 0, 1, /*swapped=*/false);
+    if ((li.n > 3) && (lj.n > 3)) {
+        // Now iterate over each quad in the grid. If it's outside the polygon,
+        // or if it intersects the polygon, then we discard it. Otherwise we
+        // generate two triangles in the mesh, and cut it out of our polygon.
+        // Quads around the perimeter would be rejected by AnyEdgeCrossings.
+        std::vector<bool> bottom(lj.n, false); // did we use this quad?
+        Vector tu = {0,0,0}, tv = {0,0,0};
+        int i, j;
+        for(i = 1; i < (li.n-1); i++) {
+            bool prev_flag = false;
+            for(j = 1; j < (lj.n-1); j++) {
+                bool this_flag = true;
+                double us = li[i], uf = li[i+1],
+                       vs = lj[j], vf = lj[j+1];
 
-    // Now iterate over each quad in the grid. If it's outside the polygon,
-    // or if it intersects the polygon, then we discard it. Otherwise we
-    // generate two triangles in the mesh, and cut it out of our polygon.
-    int i, j;
-    for(i = 0; i < (li.n - 1); i++) {
-        for(j = 0; j < (lj.n - 1); j++) {
-            double us = li[i], uf = li[i+1],
-                   vs = lj[j], vf = lj[j+1];
+                Vector a = Vector::From(us, vs, 0),
+                       b = Vector::From(us, vf, 0),
+                       c = Vector::From(uf, vf, 0),
+                       d = Vector::From(uf, vs, 0);
 
-            Vector a = Vector::From(us, vs, 0),
-                   b = Vector::From(us, vf, 0),
-                   c = Vector::From(uf, vf, 0),
-                   d = Vector::From(uf, vs, 0);
+                //  |   d-----c
+                //  |   |     |
+                //  |   |     |
+                //  |   a-----b
+                //  |
+                //  +-------------> j/v axis
 
-            if(orig.AnyEdgeCrossings(a, b, NULL) ||
-               orig.AnyEdgeCrossings(b, c, NULL) ||
-               orig.AnyEdgeCrossings(c, d, NULL) ||
-               orig.AnyEdgeCrossings(d, a, NULL))
-            {
-                continue;
+                if( (i==(li.n-2)) || (j==(lj.n-2)) ||
+                   orig.AnyEdgeCrossings(a, b, NULL) ||
+                   orig.AnyEdgeCrossings(b, c, NULL) ||
+                   orig.AnyEdgeCrossings(c, d, NULL) ||
+                   orig.AnyEdgeCrossings(d, a, NULL))
+                {
+                    this_flag = false;
+                }
+
+                // There's no intersections, so it doesn't matter which point
+                // we decide to test.
+                if(!this->ContainsPoint(a)) {
+                    this_flag = false;
+                }
+                
+                if (this_flag) {
+                    // Add the quad to our mesh
+                    srf->TangentsAt(us,vs, &tu,&tv);
+                    if(tu.Dot(tv) < LENGTH_EPS) {
+                        /* Split "the other way" if angle>90
+                           compare to LENGTH_EPS instead of zero to avoid alternating triangle
+                           "orientations" when the tangents are orthogonal (revolve, lathe etc.)
+                           this results in a higher quality mesh. */
+                        STriangle tr = {};
+                        tr.a = a;
+                        tr.b = b;
+                        tr.c = c;
+                        mesh->AddTriangle(&tr);
+                        tr.a = a;
+                        tr.b = c;
+                        tr.c = d;
+                        mesh->AddTriangle(&tr);
+                    } else{
+                        STriangle tr = {};
+                        tr.a = a;
+                        tr.b = b;
+                        tr.c = d;
+                        mesh->AddTriangle(&tr);
+                        tr.a = b;
+                        tr.b = c;
+                        tr.c = d;
+                        mesh->AddTriangle(&tr);
+                    }
+                    if (!prev_flag) // add our own left edge
+                        holes.AddEdge(d, a);
+                    if (!bottom[j]) // add our own bottom edge
+                        holes.AddEdge(a, b);
+                } else {
+                    if (prev_flag) // add our left neighbots right edge
+                        holes.AddEdge(a, d);
+                    if (bottom[j]) // add our bottom neighbors top edge
+                        holes.AddEdge(b, a);
+                }
+                prev_flag = this_flag;
+                bottom[j] = this_flag;
             }
-
-            // There's no intersections, so it doesn't matter which point
-            // we decide to test.
-            if(!this->ContainsPoint(a)) {
-                continue;
-            }
-
-            // Add the quad to our mesh
-            STriangle tr = {};
-            tr.a = a;
-            tr.b = b;
-            tr.c = c;
-            mesh->AddTriangle(&tr);
-            tr.a = a;
-            tr.b = c;
-            tr.c = d;
-            mesh->AddTriangle(&tr);
-
-            holes.AddEdge(a, b);
-            holes.AddEdge(b, c);
-            holes.AddEdge(c, d);
-            holes.AddEdge(d, a);
         }
+
+        // Because no duplicate edges were created we do not need to cull them.
+        SPolygon hp = {};
+        holes.AssemblePolygon(&hp, NULL, /*keepDir=*/true);
+
+        SContour *sc;
+        for(sc = hp.l.First(); sc; sc = hp.l.NextAfter(sc)) {
+            l.Add(sc);
+        }
+        hp.l.Clear();
     }
-
-    holes.CullExtraneousEdges();
-    SPolygon hp = {};
-    holes.AssemblePolygon(&hp, NULL, /*keepDir=*/true);
-
-    SContour *sc;
-    for(sc = hp.l.First(); sc; sc = hp.l.NextAfter(sc)) {
-        l.Add(sc);
-    }
-
     orig.Clear();
     holes.Clear();
     li.Clear();
     lj.Clear();
-    hp.l.Clear();
-
     UvTriangulateInto(mesh, srf);
 }
 

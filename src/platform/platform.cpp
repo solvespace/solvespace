@@ -14,9 +14,11 @@
 #if defined(WIN32)
 // Conversely, include Microsoft headers after solvespace.h to avoid clashes.
 #   include <windows.h>
+#   include <shellapi.h>
 #else
 #   include <unistd.h>
 #   include <sys/stat.h>
+#   include <mutex>
 #endif
 
 namespace SolveSpace {
@@ -452,7 +454,7 @@ bool WriteFile(const Platform::Path &filename, const std::string &data) {
 }
 
 //-----------------------------------------------------------------------------
-// Loading resources, on Windows
+// Loading resources, on Windows.
 //-----------------------------------------------------------------------------
 
 #if defined(WIN32)
@@ -470,7 +472,7 @@ const void *LoadResource(const std::string &name, size_t *size) {
 #endif
 
 //-----------------------------------------------------------------------------
-// Loading resources, on *nix
+// Loading resources, on *nix.
 //-----------------------------------------------------------------------------
 
 #if defined(__APPLE__)
@@ -588,8 +590,154 @@ const void *LoadResource(const std::string &name, size_t *size) {
 #endif
 
 //-----------------------------------------------------------------------------
-// Command-line argument handling
+// Startup and command-line argument handling, on Windows.
 //-----------------------------------------------------------------------------
+
+#if defined(WIN32)
+
+std::vector<std::string> InitCli(int argc, char **argv) {
+#if defined(_MSC_VER)
+    // We display our own message on abort; just call ReportFault.
+    _set_abort_behavior(_CALL_REPORTFAULT, _WRITE_ABORT_MSG|_CALL_REPORTFAULT);
+    int crtReportTypes[] = {_CRT_WARN, _CRT_ERROR, _CRT_ASSERT};
+    for(int crtReportType : crtReportTypes) {
+        _CrtSetReportMode(crtReportType, _CRTDBG_MODE_FILE|_CRTDBG_MODE_DEBUG);
+        _CrtSetReportFile(crtReportType, _CRTDBG_FILE_STDERR);
+    }
+#endif
+
+    // Extract the command-line arguments; the ones from main() are ignored,
+    // since they are in the OEM encoding.
+    int argcW;
+    LPWSTR *argvW = CommandLineToArgvW(GetCommandLineW(), &argcW);
+    std::vector<std::string> args;
+    for(int i = 0; i < argcW; i++)
+        args.push_back(Platform::Narrow(argvW[i]));
+    LocalFree(argvW);
+    return args;
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// Startup and command-line argument handling, on *nix.
+//-----------------------------------------------------------------------------
+
+#if !defined(WIN32)
+
+std::vector<std::string> InitCli(int argc, char **argv) {
+    return {&argv[0], &argv[argc]};
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// Debug output, on Windows.
+//-----------------------------------------------------------------------------
+
+#if defined(WIN32)
+
+void DebugPrint(const char *fmt, ...)
+{
+    va_list va;
+    va_start(va, fmt);
+    int len = _vscprintf(fmt, va) + 1;
+    va_end(va);
+
+    va_start(va, fmt);
+    char *buf = (char *)_alloca(len);
+    _vsnprintf(buf, len, fmt, va);
+    va_end(va);
+
+    // The native version of OutputDebugString, unlike most others,
+    // is OutputDebugStringA.
+    OutputDebugStringA(buf);
+    OutputDebugStringA("\n");
+
+#ifndef NDEBUG
+    // Duplicate to stderr in debug builds, but not in release; this is slow.
+    fputs(buf, stderr);
+    fputc('\n', stderr);
+#endif
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// Debug output, on *nix.
+//-----------------------------------------------------------------------------
+
+#if !defined(WIN32)
+
+void DebugPrint(const char *fmt, ...) {
+    va_list va;
+    va_start(va, fmt);
+    vfprintf(stderr, fmt, va);
+    fputc('\n', stderr);
+    va_end(va);
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// Temporary arena, on Windows.
+//-----------------------------------------------------------------------------
+
+#if defined(WIN32)
+
+static HANDLE TempArena = NULL;
+
+void *AllocTemporary(size_t size)
+{
+    if(!TempArena)
+        TempArena = HeapCreate(0, 0, 0);
+    void *ptr = HeapAlloc(TempArena, HEAP_ZERO_MEMORY, size);
+    ssassert(ptr != NULL, "out of memory");
+    return ptr;
+}
+
+void FreeAllTemporary()
+{
+    HeapDestroy(TempArena);
+    TempArena = NULL;
+}
+
+#endif
+
+//-----------------------------------------------------------------------------
+// Temporary arena, on Linux.
+//-----------------------------------------------------------------------------
+
+#if !defined(WIN32)
+
+struct ArenaChunk {
+    ArenaChunk *next;
+};
+
+static std::mutex TempArenaMutex;
+static ArenaChunk *TempArena = NULL;
+
+void *AllocTemporary(size_t size)
+{
+    ArenaChunk *chunk = (ArenaChunk *)calloc(1, sizeof(ArenaChunk) + size);
+    ssassert(chunk != NULL, "out of memory");
+    std::lock_guard<std::mutex> guard(TempArenaMutex);
+    chunk->next = TempArena;
+    TempArena = chunk;
+    return (void *)(chunk + 1);
+}
+
+void FreeAllTemporary()
+{
+    std::lock_guard<std::mutex> guard(TempArenaMutex);
+    while(TempArena) {
+        ArenaChunk *chunk = TempArena;
+        TempArena = TempArena->next;
+        free(chunk);
+    }
+}
+
+#endif
 
 }
 }

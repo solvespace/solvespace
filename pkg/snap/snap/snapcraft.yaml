@@ -17,19 +17,19 @@ license: GPL-3.0
 
 layout:
   /usr/share/solvespace:
-    bind: $SNAP/usr/share/solvespace
+    symlink: $SNAP/usr/share/solvespace
 
 apps:
   solvespace:
     command: usr/bin/solvespace
     desktop: solvespace.desktop
-    extensions: [gnome-3-28]
+    extensions: [gnome-3-34]
     plugs: [opengl, unity7, home, removable-media, gsettings, network]
     environment:
       __EGL_VENDOR_LIBRARY_DIRS: $SNAP/gnome-platform/usr/share/glvnd/egl_vendor.d:$SNAP/usr/share/glvnd/egl_vendor.d
   cli:
     command: usr/bin/solvespace-cli
-    extensions: [gnome-3-28]
+    extensions: [gnome-3-34]
     plugs: [home, removable-media, network]
 
 parts:
@@ -54,32 +54,25 @@ parts:
     build-packages:
       - zlib1g-dev
       - libpng-dev
-      - libcairo2-dev
       - libfreetype6-dev
       - libjson-c-dev
-      - libfontconfig1-dev
-      - libgtkmm-3.0-dev
-      - libpangomm-1.4-dev
       - libgl-dev
-      - libglu-dev
+      - libsigc++-2.0-dev
       - libspnav-dev
       - git
+      - g++
     stage-packages:
       - libspnav0
-      - libatkmm-1.6-1v5
-      - libcairomm-1.0-1v5
-      - libgtkmm-3.0-1v5
-      - libglibmm-2.4-1v5
-      - libpangomm-1.4-1v5
       - libsigc++-2.0-0v5
+
   cleanup:
     after: [solvespace]
     plugin: nil
-    build-snaps: [core18, gnome-3-28-1804]
+    build-snaps: [core18, gnome-3-34-1804]
     override-prime: |
       # Remove all files from snap that are already included in the base snap or in
       # any connected content snaps
       set -eux
-      for snap in "core18" "gnome-3-28-1804"; do  # List all content-snaps and base snaps you're using here
+      for snap in "core18" "gnome-3-34-1804"; do  # List all content-snaps and base snaps you're using here
         cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
       done
