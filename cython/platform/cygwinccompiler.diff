@@ -1,6 +1,6 @@
 --- cygwinccompiler.py
 +++ cygwinccompiler.py
-@@ -82,7 +82,25 @@ def get_msvcr():
+@@ -84,7 +84,21 @@ def get_msvcr():
          elif msc_ver == '1600':
              # VS2010 / MSVC 10.0
              return ['msvcr100']
@@ -14,13 +14,9 @@
 +            # Visual Studio 2015 / Visual C++ 14.0
 +            # "msvcr140.dll no longer exists" http://blogs.msdn.com/b/vcblog/archive/2014/06/03/visual-studio-14-ctp.aspx
 +            return ['vcruntime140']
-+        elif msc_ver == '1910':
++        elif 1910 <= int(msc_ver) <= 1916:
 +            return ['vcruntime140']
-+        elif msc_ver == '1914':
-+            return ['vcruntime140']
-+        elif msc_ver == '1915':
-+            return ['vcruntime140']
-+        elif msc_ver == '1916':
++        elif 1920 <= int(msc_ver) <= 1926:
 +            return ['vcruntime140']
          else:
              raise ValueError("Unknown MS Compiler version %s " % msc_ver)

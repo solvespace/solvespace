@@ -3,7 +3,8 @@ clone_depth: 1
 environment:
   MSYS_DIR: C:\msys64
   matrix:
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      CPP: true
     - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       PY: 36
       COMPILER: mingw32
@@ -19,7 +20,7 @@ environment:
 for:
   - matrix:
       only:
-        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
+        - CPP: true
     before_build:
       - git submodule update --init
       - set tag=x%APPVEYOR_REPO_TAG_NAME%

@@ -79,8 +79,6 @@ elif system() == 'Windows':
     compile_args.append('-Wno-format')
     # Solvespace arguments
     macros.append(('WIN32', None))
-    # Platform sources
-    sources.append(pth_join(platform_path, 'platform.cpp'))
     if sys.version_info < (3, 7):
         macros.append(('_hypot', 'hypot'))
 else:
