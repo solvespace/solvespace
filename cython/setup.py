@@ -70,22 +70,21 @@ sources = [
     pth_join(src_path, 'constraint.cpp'),
     pth_join(src_path, 'system.cpp'),
     pth_join(src_path, 'lib.cpp'),
+    pth_join(platform_path, 'platform.cpp'),
 ]
 if {'sdist', 'bdist'} & set(sys.argv):
-    for s in ('utilwin', 'utilunix', 'platform'):
-        sources.append(pth_join(platform_path, f'{s}.cpp'))
+    sources.append(pth_join(platform_path, 'platform.cpp'))
 elif system() == 'Windows':
     # Disable format warning
     compile_args.append('-Wno-format')
     # Solvespace arguments
     macros.append(('WIN32', None))
     # Platform sources
-    sources.append(pth_join(platform_path, 'utilwin.cpp'))
     sources.append(pth_join(platform_path, 'platform.cpp'))
     if sys.version_info < (3, 7):
         macros.append(('_hypot', 'hypot'))
 else:
-    sources.append(pth_join(platform_path, 'utilunix.cpp'))
+    macros.append(('UNIX_DATADIR', '"solvespace"'))
 
 
 def copy_source(dry_run):
