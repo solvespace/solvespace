@@ -175,6 +175,14 @@ message(STATUS "Using in-tree q3d")
 add_subdirectory(extlib/q3d)
 set(Q3D_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/q3d)
 
+message(STATUS "Using in-tree mimalloc")
+set(MI_OVERRIDE OFF CACHE BOOL "")
+set(MI_BUILD_SHARED OFF CACHE BOOL "")
+set(MI_BUILD_OBJECT OFF CACHE BOOL "")
+set(MI_BUILD_TESTS OFF CACHE BOOL "")
+add_subdirectory(extlib/mimalloc)
+set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
+
 if(WIN32 OR APPLE)
     # On Win32 and macOS we use vendored packages, since there is little to no benefit
     # to trying to find system versions. In particular, trying to link to libraries from
