@@ -59,7 +59,11 @@ target_include_directories(slvs
     PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 target_link_libraries(slvs
-    ${util_LIBRARIES})
+    ${util_LIBRARIES}
+    mimalloc-static)
+
+add_dependencies(slvs
+    mimalloc-static)
 
 set_target_properties(slvs PROPERTIES
     PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/slvs.h
@@ -81,7 +85,8 @@ include_directories(
     ${PNG_PNG_INCLUDE_DIR}
     ${FREETYPE_INCLUDE_DIRS}
     ${CAIRO_INCLUDE_DIRS}
-    ${Q3D_INCLUDE_DIR})
+    ${Q3D_INCLUDE_DIR}
+    ${MIMALLOC_INCLUDE_DIR})
 
 if(Backtrace_FOUND)
     include_directories(
@@ -213,7 +218,8 @@ add_library(solvespace-core STATIC
     ${solvespace_core_SOURCES})
 
 add_dependencies(solvespace-core
-    q3d_header)
+    q3d_header
+    mimalloc-static)
 
 target_link_libraries(solvespace-core
     ${OpenMP_CXX_LIBRARIES}
@@ -222,7 +228,8 @@ target_link_libraries(solvespace-core
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
     ${FREETYPE_LIBRARY}
-    flatbuffers)
+    flatbuffers
+    mimalloc-static)
 
 if(Backtrace_FOUND)
     target_link_libraries(solvespace-core
