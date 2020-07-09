@@ -6,7 +6,7 @@
 
 # python-solvespace
 
-Python library from solver of SolveSpace.
+Python library from the solver of SolveSpace, an open source CAD software.
 
 + [Python API](https://pyslvs-ui.readthedocs.io/en/stable/python-solvespace-api/)
 + [C API](https://github.com/solvespace/solvespace/blob/master/exposed/DOC.txt)
