@@ -429,7 +429,7 @@ void SSurface::MakeTriangulationGridInto(List<double> *l, double vs, double vf,
 
     double step = 1.0/SS.GetMaxSegments();
     if( ((vf - vs) < step || worst < SS.ChordTolMm())
-        && ((worst_twist > 0.999) || (depth > 4)) ) {
+        && ((worst_twist > 0.999) || (depth > 3)) ) {
         l->Add(&vf);
     } else {
         MakeTriangulationGridInto(l, vs, (vs+vf)/2, swapped, depth+1);
