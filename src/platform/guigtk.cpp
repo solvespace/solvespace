@@ -10,6 +10,7 @@
 #include <json-c/json_util.h>
 #include <glibmm/convert.h>
 #include <glibmm/main.h>
+#include <glibmm/ustring.h>
 #include <gtkmm/box.h>
 #include <gtkmm/checkmenuitem.h>
 #include <gtkmm/cssprovider.h>
@@ -1235,7 +1236,7 @@ public:
     }
 
     void SetCurrentName(std::string name) override {
-        gtkChooser->set_current_name(name);
+        gtkChooser->set_filename(name);
     }
 
     Platform::Path GetFilename() override {
@@ -1314,7 +1315,7 @@ public:
     void CheckForUntitledFile() {
         if(gtkChooser->get_action() == Gtk::FILE_CHOOSER_ACTION_SAVE &&
                 Path::From(gtkChooser->get_current_name()).FileStem().empty()) {
-            gtkChooser->set_current_name(std::string(_("untitled")) + "." + GetExtension());
+            gtkChooser->set_current_name(Glib::ustring(_("untitled")) + "." + GetExtension());
         }
     }
 };
