@@ -180,7 +180,7 @@ set(MI_OVERRIDE OFF CACHE BOOL "")
 set(MI_BUILD_SHARED OFF CACHE BOOL "")
 set(MI_BUILD_OBJECT OFF CACHE BOOL "")
 set(MI_BUILD_TESTS OFF CACHE BOOL "")
-add_subdirectory(extlib/mimalloc)
+add_subdirectory(extlib/mimalloc EXCLUDE_FROM_ALL)
 set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
 
 if(WIN32 OR APPLE)
