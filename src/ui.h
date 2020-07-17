@@ -315,6 +315,7 @@ public:
         G_CODE_FEED           = 114,
         G_CODE_PLUNGE_FEED    = 115,
         AUTOSAVE_INTERVAL     = 116,
+        LIGHT_AMBIENT         = 117,
         // For TTF text
         TTF_TEXT              = 300,
         // For the step dimension screen
@@ -467,6 +468,7 @@ public:
     static void ScreenChangeGroupScale(int link, uint32_t v);
     static void ScreenChangeLightDirection(int link, uint32_t v);
     static void ScreenChangeLightIntensity(int link, uint32_t v);
+    static void ScreenChangeLightAmbient(int link, uint32_t v);
     static void ScreenChangeColor(int link, uint32_t v);
     static void ScreenChangeChordTolerance(int link, uint32_t v);
     static void ScreenChangeMaxSegments(int link, uint32_t v);
