@@ -18,6 +18,12 @@ void TextWindow::ScreenChangeLightIntensity(int link, uint32_t v) {
     SS.TW.edit.i = v;
 }
 
+void TextWindow::ScreenChangeLightAmbient(int link, uint32_t v) {
+    SS.TW.ShowEditControl(31, ssprintf("%.2f", SS.ambientIntensity));
+    SS.TW.edit.meaning = Edit::LIGHT_AMBIENT;
+    SS.TW.edit.i = 0;
+}
+
 void TextWindow::ScreenChangeColor(int link, uint32_t v) {
     SS.TW.ShowEditControlWithColorPicker(13, SS.modelColor[v]);
 
@@ -218,6 +224,10 @@ void TextWindow::ShowConfiguration() {
             CO(SS.lightDir[i]), i, &ScreenChangeLightDirection,
             SS.lightIntensity[i], i, &ScreenChangeLightIntensity);
     }
+    Printf(false, "%Bp         ambient lighting     "
+                  "%2 %Fl%D%f%Ll[c]%E",
+            (i & 1) ? 'd' : 'a', i,
+        SS.ambientIntensity, &ScreenChangeLightAmbient);
 
     Printf(false, "");
     Printf(false, "%Ft chord tolerance (in percents)%E");
@@ -371,7 +381,10 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
             SS.lightIntensity[edit.i] = min(1.0, max(0.0, atof(s.c_str())));
             SS.GW.Invalidate();
             break;
-
+        case Edit::LIGHT_AMBIENT:
+            SS.ambientIntensity = min(1.0, max(0.0, atof(s.c_str())));
+            SS.GW.Invalidate();
+            break;
         case Edit::LIGHT_DIRECTION: {
             double x, y, z;
             if(sscanf(s.c_str(), "%lf, %lf, %lf", &x, &y, &z)==3) {
