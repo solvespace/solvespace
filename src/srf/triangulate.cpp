@@ -312,14 +312,6 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
 
     bool toggle = false;
     while(l.n > 3) {
-        // Some points may have changed ear-ness, so recalculate
-        for(i = 0; i < l.n; i++) {
-            if(l[i].ear == EarType::UNKNOWN) {
-                (l[i]).ear = IsEar(i, scaledEps) ?
-                                        EarType::EAR : EarType::NOT_EAR;
-            }
-        }
-
         int bestEar = -1;
         double bestChordTol = VERY_POSITIVE;
         // Alternate the starting position so we generate strip-like
@@ -328,6 +320,9 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
         int offset = toggle ? -1 : 0;
         for(i = 0; i < l.n; i++) {
             int ear = WRAP(i+offset, l.n);
+            if(l[ear].ear == EarType::UNKNOWN) {
+                (l[ear]).ear = IsEar(ear, scaledEps) ? EarType::EAR : EarType::NOT_EAR;
+            }
             if(l[ear].ear == EarType::EAR) {
                 if(srf->degm == 1 && srf->degn == 1) {
                     // This is a plane; any ear is a good ear.
