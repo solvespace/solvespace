@@ -1,3 +1,1 @@
-setuptools
-wheel
 cython
