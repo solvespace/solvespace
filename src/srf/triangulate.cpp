@@ -297,18 +297,16 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
 
     int i;
     // Clean the original contour by removing any zero-length edges.
+    // initialize eartypes to unknown while we're going over them.
     l.ClearTags();
+    l[0].ear = EarType::UNKNOWN;
     for(i = 1; i < l.n; i++) {
+       l[i].ear = EarType::UNKNOWN;
        if((l[i].p).Equals(l[i-1].p)) {
             l[i].tag = 1;
         }
     }
     l.RemoveTagged();
-
-    // Now calculate the ear-ness of each vertex
-    for(i = 0; i < l.n; i++) {
-        (l[i]).ear = IsEar(i, scaledEps) ? EarType::EAR : EarType::NOT_EAR;
-    }
 
     bool toggle = false;
     while(l.n > 3) {
