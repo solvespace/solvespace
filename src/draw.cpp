@@ -353,13 +353,29 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
     return sel;
 }
 
+// This is different from ChooseFromHoverToSelect() by allowing us to drag
+// an entity from a previous group. However it doesn't behave quite the
+// same in the current group, so if it fails at selecting a underlying
+// entity we shall use ChooseFromHoverToSelect instead
 GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToDrag() {
     Selection sel = {};
+    Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
+
     for(const Hover &hov : hoverList) {
         if(hov.selection.entity.v == 0) continue;
         if(!hov.selection.entity.isFromRequest()) continue;
-        sel = hov.selection;
-        break;
+        // determine the group of hov.selection
+        hGroup hg = {};
+        if(hov.selection.entity.v != 0) {
+            hg = SK.GetEntity(hov.selection.entity)->group;
+        } else if(hov.selection.constraint.v != 0) {
+            hg = SK.GetConstraint(hov.selection.constraint)->group;
+        }
+        Group *g = SK.GetGroup(hg);
+        if((g->order < activeGroup->order) && (g->order > 0)) {
+            sel = hov.selection;
+            break;
+        }
     }
     if(!sel.IsEmpty()) {
         return sel;
