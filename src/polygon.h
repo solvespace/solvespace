@@ -131,6 +131,7 @@ public:
     void FindPointWithMinX();
     Vector AnyEdgeMidpoint() const;
 
+    bool IsEmptyTriangle(int ap, int bp, int cp, double scaledEPS) const;
     bool IsEar(int bp, double scaledEps) const;
     bool BridgeToContour(SContour *sc, SEdgeList *el, List<Vector> *vl);
     void ClipEarInto(SMesh *m, int bp, double scaledEps);
