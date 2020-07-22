@@ -213,6 +213,41 @@ haveEdge:
     return true;
 }
 
+bool SContour::IsEmptyTriangle(int ap, int bp, int cp, double scaledEPS) const {
+
+    STriangle tr = {};
+    tr.a = l[ap].p;
+    tr.b = l[bp].p;
+    tr.c = l[cp].p;
+
+    // Accelerate with an axis-aligned bounding box test
+    Vector maxv = tr.a, minv = tr.a;
+    (tr.b).MakeMaxMin(&maxv, &minv);
+    (tr.c).MakeMaxMin(&maxv, &minv);
+
+    Vector n = Vector::From(0, 0, -1);
+
+    int i;
+    for(i = 0; i < l.n; i++) {
+        if(i == ap || i == bp || i == cp) continue;
+
+        Vector p = l[i].p;
+        if(p.OutsideAndNotOn(maxv, minv)) continue;
+
+        // A point on the edge of the triangle is considered to be inside,
+        // and therefore makes it a non-ear; but a point on the vertex is
+        // "outside", since that's necessary to make bridges work.
+        if(p.EqualsExactly(tr.a)) continue;
+        if(p.EqualsExactly(tr.b)) continue;
+        if(p.EqualsExactly(tr.c)) continue;
+
+        if(tr.ContainsPointProjd(n, p)) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool SContour::IsEar(int bp, double scaledEps) const {
     int ap = WRAP(bp-1, l.n),
         cp = WRAP(bp+1, l.n);
@@ -307,6 +342,71 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
         }
     }
     l.RemoveTagged();
+
+    // Handle simple triangle fans all at once. This pass is optional.
+    if(srf->degm == 1 && srf->degn == 1) {
+        l.ClearTags();
+        int j=0;
+        int pstart = 0;
+        double elen = -1.0;
+        double oldspan = 0.0;
+        for(i = 1; i < l.n; i++) {
+            Vector ab = l[i].p.Minus(l[i-1].p);
+            // first time just measure the segment
+            if (elen < 0.0) {
+                elen = ab.Dot(ab);
+                oldspan = elen;
+                j = 1;
+                continue;
+            }
+            // check for consecutive segments of similar size which are also
+            // ears and where the group forms a convex ear
+            bool end = false;
+            double ratio = ab.Dot(ab) / elen;
+            if ((ratio < 0.25) || (ratio > 4.0)) end = true;
+
+            double slen = l[pstart].p.Minus(l[i].p).MagSquared();
+            if (slen < oldspan) end = true;
+
+            if (!IsEar(i-1, scaledEps) ) end = true;
+//            if ((j>0) && !IsEar(pstart, i-1, i, scaledEps)) end = true;
+            if ((j>0) && !IsEmptyTriangle(pstart, i-1, i, scaledEps)) end = true;
+            // the new segment is valid so add to the fan
+            if (!end) {
+                j++;
+                oldspan = slen;
+            }
+            // we need to stop at the end of polygon but may still
+            if (i == l.n-1) {
+                end = true;
+            }
+            if (end) {  // triangulate the fan and tag the verticies
+                if (j > 3) {
+                    Vector center = l[pstart+1].p.Plus(l[pstart+j-1].p).ScaledBy(0.5);
+                    for (int x=0; x<j; x++) {
+                        STriangle tr = {};
+                        tr.a = center;
+                        tr.b = l[pstart+x].p;
+                        tr.c = l[pstart+x+1].p;
+                        m->AddTriangle(&tr);
+                    }
+                    for (int x=1; x<j; x++) {
+                        l[pstart+x].tag = 1;
+                    }
+                    STriangle tr = {};
+                    tr.a = center;
+                    tr.b = l[pstart+j].p;
+                    tr.c = l[pstart].p;
+                    m->AddTriangle(&tr);    
+                }
+                pstart = i-1;
+                elen = ab.Dot(ab);
+                oldspan = elen;
+                j = 1;
+            }
+        }
+        l.RemoveTagged();
+    }  // end optional fan creation pass
 
     bool toggle = false;
     while(l.n > 3) {
