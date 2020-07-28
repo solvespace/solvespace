@@ -221,52 +221,96 @@ void TextWindow::DescribeSelection() {
                 break;
         }
 
-        Group *g = SK.GetGroup(e->group);
         Printf(false, "");
-        Printf(false, "%FtIN GROUP%E      %s", g->DescriptionString().c_str());
+        if(e->h.isFromRequest()) {
+            Request *r = SK.GetRequest(e->h.request());
+            if(e->h == r->h.entity(0)) {
+                Printf(false, "%FtFROM REQUEST%E  %s",
+                    r->DescriptionString().c_str());
+            } else {
+                Printf(false, "%FtFROM REQUEST%E  %Fl%Ll%D%f%h%s%E",
+                    r->h.v, (&TextWindow::ScreenSelectRequest), &(TextWindow::ScreenHoverRequest),
+                    r->DescriptionString().c_str());
+            }
+        }
+        Group *g = SK.GetGroup(e->group);
+        Printf(false, "%FtIN GROUP%E      %Fl%Ll%D%f%s%E",
+            g->h.v, (&TextWindow::ScreenSelectGroup),
+            g->DescriptionString().c_str());
         if(e->workplane == Entity::FREE_IN_3D) {
             Printf(false, "%FtNOT LOCKED IN WORKPLANE%E");
         } else {
             Entity *w = SK.GetEntity(e->workplane);
-            Printf(false, "%FtIN WORKPLANE%E  %s", w->DescriptionString().c_str());
+            if(w->h.isFromRequest()) {
+                Printf(false, "%FtIN WORKPLANE%E  %Fl%Ll%D%f%h%s%E",
+                    w->h.request().v,
+                    (&TextWindow::ScreenSelectRequest), &(TextWindow::ScreenHoverRequest),
+                    w->DescriptionString().c_str());
+            } else {
+                Printf(false, "%FtIN WORKPLANE%E  %Fl%Ll%D%f%h%s%E",
+                    w->h.group().v,
+                    (&TextWindow::ScreenSelectGroup), (&TextWindow::ScreenHoverGroupWorkplane),
+                    w->DescriptionString().c_str());
+            }
         }
-        if(e->style.v) {
-            Style *s = Style::Get(e->style);
-            Printf(false, "%FtIN STYLE%E      %s", s->DescriptionString().c_str());
-        } else {
-            Printf(false, "%FtIN STYLE%E      none");
+        if(e->IsStylable()) {
+            if(e->style.v) {
+                Style *s = Style::Get(e->style);
+                Printf(false, "%FtIN STYLE%E      %Fl%Ll%D%f%s%E",
+                    s->h.v, (&TextWindow::ScreenShowStyleInfo),
+                    s->DescriptionString().c_str());
+            } else {
+                Printf(false, "%FtIN STYLE%E      none");
+            }
         }
         if(e->construction) {
             Printf(false, "%FtCONSTRUCTION");
         }
 
         std::vector<hConstraint> lhc = {};
-        for(const Constraint &c : SK.constraint) {
-            if(!(c.ptA == e->h ||
-                 c.ptB == e->h ||
-                 c.entityA == e->h ||
-                 c.entityB == e->h ||
-                 c.entityC == e->h ||
-                 c.entityD == e->h))
-                continue;
-            lhc.push_back(c.h);
+        auto FindConstraints = [&](hEntity he) {
+            for(const Constraint &c : SK.constraint) {
+                if(!(c.ptA == he || c.ptB == he ||
+                     c.entityA == he || c.entityB == he || c.entityC == he || c.entityD == he))
+                    continue;
+                lhc.push_back(c.h);
+            }
+        };
+        FindConstraints(e->h);
+        if(!e->IsPoint()) {
+            for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
+                if(e->point[i].v == 0) break;
+                FindConstraints(e->point[i]);
+            }
         }
 
-        if(!lhc.empty()) {
-            Printf(true, "%FtCONSTRAINED BY:%E");
+        std::sort(lhc.begin(), lhc.end());
+        lhc.erase(std::unique(lhc.begin(), lhc.end()), lhc.end());
 
+        auto ListConstraints = [&](bool reference) {
+            bool first = true;
             int a = 0;
             for(hConstraint hc : lhc) {
                 Constraint *c = SK.GetConstraint(hc);
-                std::string s = c->DescriptionString();
-                Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E %s",
+                if(c->reference != reference) continue;
+                if(first) {
+                    first = false;
+                    if(reference) {
+                        Printf(true, "%FtMEASURED BY:%E");
+                    } else {
+                        Printf(true, "%FtCONSTRAINED BY:%E");
+                    }
+                }
+                Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                     (a & 1) ? 'd' : 'a',
                     c->h.v, (&TextWindow::ScreenSelectConstraint),
-                    (&TextWindow::ScreenHoverConstraint), s.c_str(),
-                    c->reference ? "(ref)" : "");
+                    (&TextWindow::ScreenHoverConstraint),
+                    c->DescriptionString().c_str());
                 a++;
             }
-        }
+        };
+        ListConstraints(/*reference=*/false);
+        ListConstraints(/*reference=*/true);
     } else if(gs.n == 2 && gs.points == 2) {
         Printf(false, "%FtTWO POINTS");
         Vector p0 = SK.GetEntity(gs.point[0])->PointGetNum();
