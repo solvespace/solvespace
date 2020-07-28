@@ -6,11 +6,6 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR})
 
-set(HAVE_BACKTRACE ${Backtrace_FOUND})
-if(HAVE_BACKTRACE)
-    set(BACKTRACE_HEADER <${Backtrace_HEADER}>)
-endif()
-
 set(HAVE_SPACEWARE ${SPACEWARE_FOUND})
 
 if(NOT WIN32 OR APPLE)
