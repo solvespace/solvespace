@@ -28,6 +28,50 @@ bool ConstraintBase::HasLabel() const {
     }
 }
 
+bool ConstraintBase::IsProjectible() const {
+    switch(type) {
+        case Type::POINTS_COINCIDENT:
+        case Type::PT_PT_DISTANCE:
+        case Type::PT_LINE_DISTANCE:
+        case Type::PT_ON_LINE:
+        case Type::EQUAL_LENGTH_LINES:
+        case Type::EQ_LEN_PT_LINE_D:
+        case Type::EQ_PT_LN_DISTANCES:
+        case Type::EQUAL_ANGLE:
+        case Type::LENGTH_RATIO:
+        case Type::LENGTH_DIFFERENCE:
+        case Type::SYMMETRIC:
+        case Type::SYMMETRIC_HORIZ:
+        case Type::SYMMETRIC_VERT:
+        case Type::SYMMETRIC_LINE:
+        case Type::AT_MIDPOINT:
+        case Type::HORIZONTAL:
+        case Type::VERTICAL:
+        case Type::ANGLE:
+        case Type::PARALLEL:
+        case Type::PERPENDICULAR:
+        case Type::WHERE_DRAGGED:
+        case Type::COMMENT:
+            return true;
+
+        case Type::PT_PLANE_DISTANCE:
+        case Type::PT_FACE_DISTANCE:
+        case Type::PROJ_PT_DISTANCE:
+        case Type::PT_IN_PLANE:
+        case Type::PT_ON_FACE:
+        case Type::EQUAL_LINE_ARC_LEN:
+        case Type::DIAMETER:
+        case Type::PT_ON_CIRCLE:
+        case Type::SAME_ORIENTATION:
+        case Type::CUBIC_LINE_TANGENT:
+        case Type::CURVE_CURVE_TANGENT:
+        case Type::ARC_LINE_TANGENT:
+        case Type::EQUAL_RADIUS:
+            return false;
+    }
+    ssassert(false, "Impossible");
+}
+
 ExprVector ConstraintBase::VectorsParallel3d(ExprVector a, ExprVector b, hParam p) {
     return a.Minus(b.ScaledBy(Expr::From(p)));
 }
