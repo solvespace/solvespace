@@ -397,6 +397,7 @@ public:
     static void ScreenUnselectAll(int link, uint32_t v);
 
     // when we're describing a constraint
+    static void ScreenConstraintToggleReference(int link, uint32_t v);
     static void ScreenConstraintShowAsRadius(int link, uint32_t v);
 
     // and the rest from the stuff in textscreens.cpp

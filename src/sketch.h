@@ -703,6 +703,7 @@ public:
     }
 
     bool HasLabel() const;
+    bool IsProjectible() const;
 
     void Generate(IdList<Param, hParam> *param);
 
