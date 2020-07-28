@@ -40,6 +40,16 @@ void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
     SS.ScheduleShowTW();
 }
 
+void TextWindow::ScreenConstraintToggleReference(int link, uint32_t v) {
+    hConstraint hc = { v };
+    Constraint *c = SK.GetConstraint(hc);
+
+    SS.UndoRemember();
+    c->reference = !c->reference;
+
+    SS.ScheduleShowTW();
+}
+
 void TextWindow::ScreenConstraintShowAsRadius(int link, uint32_t v) {
     hConstraint hc = { v };
     Constraint *c = SK.GetConstraint(hc);
@@ -365,16 +375,45 @@ void TextWindow::DescribeSelection() {
         Printf(false, "%FtSELECTED:%E comment text");
     } else if(gs.n == 0 && gs.constraints == 1) {
         Constraint *c = SK.GetConstraint(gs.constraint[0]);
+        const std::string &desc = c->DescriptionString().c_str();
 
-        if(c->type == Constraint::Type::DIAMETER) {
-            Printf(false, "%FtDIAMETER CONSTRAINT");
-
-            Printf(true, "  %Fd%f%D%Ll%s  show as radius",
-                   &ScreenConstraintShowAsRadius, gs.constraint[0].v,
-                   c->other ? CHECK_TRUE : CHECK_FALSE);
+        if(c->type == Constraint::Type::COMMENT) {
+            Printf(false, "%FtCOMMENT%E  %s", desc.c_str());
+        } else if(c->HasLabel()) {
+            if(c->reference) {
+                Printf(false, "%FtREFERENCE%E  %s", desc.c_str());
+            } else {
+                Printf(false, "%FtDIMENSION%E  %s", desc.c_str());
+            }
+            Printf(true, "  %Fd%f%D%Ll%s  reference",
+                   &ScreenConstraintToggleReference, gs.constraint[0].v,
+                   c->reference ? CHECK_TRUE : CHECK_FALSE);
+            if(c->type == Constraint::Type::DIAMETER) {
+                Printf(false, "  %Fd%f%D%Ll%s  use radius",
+                       &ScreenConstraintShowAsRadius, gs.constraint[0].v,
+                       c->other ? CHECK_TRUE : CHECK_FALSE);
+            }
         } else {
-            Printf(false, "%FtSELECTED:%E %s",
-            c->DescriptionString().c_str());
+            Printf(false, "%FtCONSTRAINT%E  %s", desc.c_str());
+        }
+
+        if(c->IsProjectible()) {
+            if(c->workplane == Entity::FREE_IN_3D) {
+                Printf(true, "%FtNOT PROJECTED TO WORKPLANE%E");
+            } else {
+                Entity *w = SK.GetEntity(c->workplane);
+                if(w->h.isFromRequest()) {
+                    Printf(true, "%FtIN WORKPLANE%E  %Fl%Ll%D%f%h%s%E",
+                        w->h.request().v,
+                        (&TextWindow::ScreenSelectRequest), &(TextWindow::ScreenHoverRequest),
+                        w->DescriptionString().c_str());
+                } else {
+                    Printf(true, "%FtIN WORKPLANE%E  %Fl%Ll%D%f%h%s%E",
+                        w->h.group().v,
+                        (&TextWindow::ScreenSelectGroup), (&TextWindow::ScreenHoverGroupWorkplane),
+                        w->DescriptionString().c_str());
+                }
+            }
         }
 
         std::vector<hEntity> lhe = {};
@@ -391,16 +430,20 @@ void TextWindow::DescribeSelection() {
         lhe.erase(it, lhe.end());
 
         if(!lhe.empty()) {
-            Printf(true, "%FtCONSTRAINS:%E");
+            if(c->reference) {
+                Printf(true, "%FtMEASURES:%E");
+            } else {
+                Printf(true, "%FtCONSTRAINS:%E");
+            }
 
             int a = 0;
             for(hEntity he : lhe) {
-                Request *r = SK.GetRequest(he.request());
-                std::string s = r->DescriptionString();
+                Entity *e = SK.GetEntity(he);
                 Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                     (a & 1) ? 'd' : 'a',
-                    r->h.v, (&TextWindow::ScreenSelectRequest),
-                    &(TextWindow::ScreenHoverRequest), s.c_str());
+                    e->h.v, (&TextWindow::ScreenSelectEntity),
+                    &(TextWindow::ScreenHoverEntity),
+                    e->DescriptionString().c_str());
                 a++;
             }
         }
