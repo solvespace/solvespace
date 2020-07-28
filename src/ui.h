@@ -408,9 +408,12 @@ public:
     static void ScreenShowGroupsSpecial(int link, uint32_t v);
     static void ScreenDeleteGroup(int link, uint32_t v);
 
-    static void ScreenHoverConstraint(int link, uint32_t v);
+    static void ScreenHoverGroupWorkplane(int link, uint32_t v);
     static void ScreenHoverRequest(int link, uint32_t v);
+    static void ScreenHoverEntity(int link, uint32_t v);
+    static void ScreenHoverConstraint(int link, uint32_t v);
     static void ScreenSelectRequest(int link, uint32_t v);
+    static void ScreenSelectEntity(int link, uint32_t v);
     static void ScreenSelectConstraint(int link, uint32_t v);
 
     static void ScreenChangeGroupOption(int link, uint32_t v);
