@@ -46,6 +46,7 @@ jobs:
           skip_cleanup: true
           on:
             branch: master
+            repo: solvespace/solvespace
             tags: false
         - provider: script
           script: sudo ./.travis/deploy-snap.sh edge,beta
