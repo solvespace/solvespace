@@ -558,6 +558,7 @@ void Constraint::MenuConstrain(Command id) {
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SK.GetConstraint(gs.constraint[0]);
                 if(c->HasLabel() && c->type != Type::COMMENT) {
+                    SS.UndoRemember();
                     (c->reference) = !(c->reference);
                     SS.MarkGroupDirty(c->group, /*onlyThis=*/true);
                     break;

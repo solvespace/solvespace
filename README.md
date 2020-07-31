@@ -83,7 +83,7 @@ Before building, check out the project and the necessary submodules:
 
     git clone https://github.com/solvespace/solvespace
     cd solvespace
-    git submodule update --init extlib/libdxfrw extlib/flatbuffers extlib/q3d
+    git submodule update --init extlib/libdxfrw extlib/flatbuffers extlib/q3d extlib/mimalloc
 
 After that, build SolveSpace as following:
 
@@ -185,7 +185,7 @@ Before building, check out the project and the necessary submodules:
 
     git clone https://github.com/solvespace/solvespace
     cd solvespace
-    git submodule update --init extlib/libdxfrw extlib/flatbuffers extlib/q3do
+    git submodule update --init extlib/libdxfrw extlib/flatbuffers extlib/q3d extlib/mimalloc
 
 After that, build SolveSpace as following:
 

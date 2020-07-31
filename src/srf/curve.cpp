@@ -817,7 +817,7 @@ void SCurve::RemoveShortSegments(SSurface *srfA, SSurface *srfB) {
             continue;
         }
 
-        // if the curve is exact and points are >0.1 appart wrt t, point is there
+        // if the curve is exact and points are >0.05 appart wrt t, point is there
         // deliberately regardless of chord tolerance (ex: small circles)
         tprev = t = tnext = 0;
         if (isExact) {
@@ -825,7 +825,7 @@ void SCurve::RemoveShortSegments(SSurface *srfA, SSurface *srfB) {
             exact.ClosestPointTo(sct->p, &t, /*mustconverge=*/ true);
             exact.ClosestPointTo(scn->p, &tnext, /*mustconverge=*/ true);
         }
-        if ( (t - tprev > 0.1) && (tnext - t > 0.1) ) {
+        if ( (t - tprev > 0.05) && (tnext - t > 0.05) ) {
             prev = sct->p;
             continue;
         }
