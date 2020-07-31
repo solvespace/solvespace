@@ -83,6 +83,7 @@ elif system() == 'Windows':
         macros.append(('_hypot', 'hypot'))
 else:
     macros.append(('UNIX_DATADIR', '"solvespace"'))
+compiler_directives = {'binding': True, 'cdivision': True}
 
 
 def copy_source(dry_run):
@@ -105,14 +106,14 @@ def copy_source(dry_run):
 class Build(build_ext):
     def build_extensions(self):
         compiler = self.compiler.compiler_type
-        if compiler in {'mingw32', 'unix'}:
-            for e in self.extensions:
+        for e in self.extensions:
+            e.cython_directives = compiler_directives
+            if compiler in {'mingw32', 'unix'}:
                 e.define_macros = macros
                 e.extra_compile_args = compile_args
                 if compiler == 'mingw32':
                     e.extra_link_args = link_args
-        elif compiler == 'msvc':
-            for e in self.extensions:
+            elif compiler == 'msvc':
                 e.define_macros = macros[1:]
                 e.libraries = ['shell32']
                 e.extra_compile_args = ['/O2']

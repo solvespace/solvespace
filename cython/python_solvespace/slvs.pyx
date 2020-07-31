@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# cython: language_level=3, embedsignature=True, cdivision=True
+# cython: language_level=3
 
 """Wrapper source code of Solvespace.
 
@@ -18,7 +18,7 @@ from collections import Counter
 cpdef tuple quaternion_u(double qw, double qx, double qy, double qz):
     """Input quaternion, return unit vector of U axis.
 
-    Where `qw`, `qx`, `qy`, `qz` are corresponded to the W, X, Y, Z value of 
+    Where `qw`, `qx`, `qy`, `qz` are corresponded to the W, X, Y, Z value of
     quaternion.
     """
     cdef double x, y, z
@@ -354,7 +354,7 @@ cdef class SolverSystem:
         return <int>self.g
 
     cpdef void set_params(self, Params p, object params):
-        """Set the parameters from a [Params] handle (`p`) belong to this 
+        """Set the parameters from a [Params] handle (`p`) belong to this
         system.
         The values is come from `params`, length must be equal to the handle.
         """
@@ -370,7 +370,7 @@ cdef class SolverSystem:
             i += 1
 
     cpdef tuple params(self, Params p):
-        """Get the parameters from a [Params] handle (`p`) belong to this 
+        """Get the parameters from a [Params] handle (`p`) belong to this
         system.
         The length of tuple is decided by handle.
         """
@@ -636,7 +636,7 @@ cdef class SolverSystem:
         This is an origin function mapping to different constraint methods.
 
         Where `wp` represents work plane; `v` represents constraint value;
-        `p1` and `p2` represent point entities; `e1` to `e4` represent other 
+        `p1` and `p2` represent point entities; `e1` to `e4` represent other
         types of entity;
         `other` and `other2` are control options of the constraint.
         """
@@ -764,7 +764,7 @@ cdef class SolverSystem:
         Entity wp
     ):
         """Constraint that 2D line 1 (`e1`) and line 2 (`e2`),
-        line 3 (`e3`) and line 4 (`e4`) must have same included angle on work 
+        line 3 (`e3`) and line 4 (`e4`) must have same included angle on work
         plane `wp`.
         """
         if wp is _E_FREE_IN_3D:
@@ -784,7 +784,7 @@ cdef class SolverSystem:
         Entity wp
     ):
         """Constraint that point 1 (`e1`) and line 1 (`e2`),
-        point 2 (`e3`) and line 2  (`e4`) must have same distance on work 
+        point 2 (`e3`) and line 2  (`e4`) must have same distance on work
         plane `wp`.
         """
         if wp is _E_FREE_IN_3D:
@@ -795,7 +795,7 @@ cdef class SolverSystem:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {e3}, {e4}, {wp}")
 
     cpdef void ratio(self, Entity e1, Entity e2, double value, Entity wp):
-        """The ratio (`value`) constraint between two 2D lines (`e1` and 
+        """The ratio (`value`) constraint between two 2D lines (`e1` and
         `e2`).
         """
         if wp is _E_FREE_IN_3D:
