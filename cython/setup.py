@@ -60,8 +60,9 @@ compile_args = [
     '-Wno-write-strings',
     '-fpermissive',
     '-fPIC',
-    '-std=c++17',
 ]
+if system() != 'Darwin':
+    compile_args.append('-std=c++17')
 link_args = ['-static-libgcc', '-static-libstdc++',
              '-Wl,-Bstatic,--whole-archive',
              '-lwinpthread',
@@ -142,7 +143,7 @@ class Build(build_ext):
             elif compiler == 'msvc':
                 e.define_macros = macros[1:]
                 e.libraries = ['shell32']
-                e.extra_compile_args = ['/O2']
+                e.extra_compile_args = ['/O2', '/std:c++17']
         super(Build, self).build_extensions()
 
     def run(self):
