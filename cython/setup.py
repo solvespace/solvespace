@@ -142,7 +142,7 @@ class Build(build_ext):
                     e.extra_link_args = link_args
             elif compiler == 'msvc':
                 e.define_macros = macros[1:]
-                e.libraries = ['shell32']
+                e.libraries = ['shell32', 'advapi32', 'Ws2_32']
                 e.extra_compile_args = ['/O2', '/std:c++17']
         super(Build, self).build_extensions()
 
