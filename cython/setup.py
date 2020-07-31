@@ -22,7 +22,8 @@ m_path = 'python_solvespace'
 include_path = pth_join(m_path, 'include')
 src_path = pth_join(m_path, 'src')
 platform_path = pth_join(src_path, 'platform')
-mimalloc_path = pth_join(m_path, 'extlib', 'mimalloc')
+extlib_path = pth_join(m_path, 'extlib')
+mimalloc_path = pth_join(extlib_path, 'mimalloc')
 mimalloc_include_path = pth_join(mimalloc_path, 'include')
 mimalloc_src_path = pth_join(mimalloc_path, 'src')
 
@@ -64,9 +65,10 @@ compile_args = [
 link_args = ['-static-libgcc', '-static-libstdc++',
              '-Wl,-Bstatic,--whole-archive',
              '-lwinpthread',
+             '-Wl,--no-whole-archive',
              '-lbcrypt',
              '-lpsapi',
-             '-Wl,--no-whole-archive']
+             '-Wl,-Bdynamic']
 sources = [
     pth_join(m_path, 'slvs.pyx'),
     pth_join(src_path, 'util.cpp'),
@@ -144,14 +146,14 @@ class Build(build_ext):
         super(Build, self).build_extensions()
 
     def run(self):
-        has_src = isdir(include_path) and isdir(src_path) and isdir(mimalloc_path)
+        has_src = isdir(include_path) and isdir(src_path) and isdir(extlib_path)
         if not has_src:
             copy_source(self.dry_run)
         super(Build, self).run()
         if not has_src:
             dir_util.remove_tree(include_path, dry_run=self.dry_run)
             dir_util.remove_tree(src_path, dry_run=self.dry_run)
-            dir_util.remove_tree(mimalloc_path, dry_run=self.dry_run)
+            dir_util.remove_tree(extlib_path, dry_run=self.dry_run)
 
 
 class PackSource(sdist):
@@ -161,7 +163,7 @@ class PackSource(sdist):
         if not self.keep_temp:
             dir_util.remove_tree(include_path, dry_run=self.dry_run)
             dir_util.remove_tree(src_path, dry_run=self.dry_run)
-            dir_util.remove_tree(mimalloc_path, dry_run=self.dry_run)
+            dir_util.remove_tree(extlib_path, dry_run=self.dry_run)
 
 
 setup(
