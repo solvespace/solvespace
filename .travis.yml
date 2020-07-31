@@ -69,6 +69,8 @@ jobs:
           update: true
           packages:
             - patchelf
+      before_install:
+        - git submodule update --init -- extlib/mimalloc
       install: &python-install
         - python3 -m pip install -r cython/requirements.txt
       script: &python-script
@@ -95,6 +97,7 @@ jobs:
       language: generic
       env: PYTHON=3.6.0
       before_install:
+        - git submodule update --init -- extlib/mimalloc
         - brew update
         - brew upgrade pyenv || true
         - export PATH="/Users/travis/.pyenv/shims:${PATH}"

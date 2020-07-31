@@ -46,6 +46,7 @@ for:
       only:
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     install:
+      - git submodule update --init -- extlib/mimalloc
       # Install Python-dev
       - IF DEFINED PYTHON_DEV choco install -y python --version %PYTHON_DEV%
       # Environment variables

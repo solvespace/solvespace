@@ -18,9 +18,13 @@ from setuptools.command.sdist import sdist
 from distutils import file_util, dir_util
 from platform import system
 
-include_path = pth_join('python_solvespace', 'include')
-src_path = pth_join('python_solvespace', 'src')
+m_path = 'python_solvespace'
+include_path = pth_join(m_path, 'include')
+src_path = pth_join(m_path, 'src')
 platform_path = pth_join(src_path, 'platform')
+mimalloc_path = pth_join(m_path, 'extlib', 'mimalloc')
+mimalloc_include_path = pth_join(mimalloc_path, 'include')
+mimalloc_src_path = pth_join(mimalloc_path, 'src')
 
 
 def write(doc, *parts):
@@ -60,17 +64,33 @@ compile_args = [
 link_args = ['-static-libgcc', '-static-libstdc++',
              '-Wl,-Bstatic,--whole-archive',
              '-lwinpthread',
+             '-lbcrypt',
+             '-lpsapi',
              '-Wl,--no-whole-archive']
 sources = [
-    pth_join('python_solvespace', 'slvs.pyx'),
+    pth_join(m_path, 'slvs.pyx'),
     pth_join(src_path, 'util.cpp'),
     pth_join(src_path, 'entity.cpp'),
     pth_join(src_path, 'expr.cpp'),
-    pth_join(src_path, 'constrainteq.cpp'),
     pth_join(src_path, 'constraint.cpp'),
+    pth_join(src_path, 'constrainteq.cpp'),
     pth_join(src_path, 'system.cpp'),
     pth_join(src_path, 'lib.cpp'),
     pth_join(platform_path, 'platform.cpp'),
+    # MiMalloc
+    pth_join(mimalloc_src_path, 'stats.c'),
+    pth_join(mimalloc_src_path, 'random.c'),
+    pth_join(mimalloc_src_path, 'os.c'),
+    pth_join(mimalloc_src_path, 'arena.c'),
+    pth_join(mimalloc_src_path, 'region.c'),
+    pth_join(mimalloc_src_path, 'segment.c'),
+    pth_join(mimalloc_src_path, 'page.c'),
+    pth_join(mimalloc_src_path, 'alloc.c'),
+    pth_join(mimalloc_src_path, 'alloc-aligned.c'),
+    pth_join(mimalloc_src_path, 'alloc-posix.c'),
+    pth_join(mimalloc_src_path, 'heap.c'),
+    pth_join(mimalloc_src_path, 'options.c'),
+    pth_join(mimalloc_src_path, 'init.c'),
 ]
 if {'sdist', 'bdist'} & set(sys.argv):
     sources.append(pth_join(platform_path, 'platform.cpp'))
@@ -88,18 +108,22 @@ compiler_directives = {'binding': True, 'cdivision': True}
 
 def copy_source(dry_run):
     dir_util.copy_tree(pth_join('..', 'include'), include_path, dry_run=dry_run)
+    dir_util.copy_tree(pth_join('..', 'extlib', 'mimalloc', 'include'), include_path, dry_run=dry_run)
     dir_util.mkpath(src_path)
-    for root, _, files in walk(pth_join('..', 'src')):
-        for f in files:
-            if not f.endswith('.h'):
-                continue
-            f = pth_join(root, f)
-            f_new = f.replace('..', 'python_solvespace')
-            if not isdir(dirname(f_new)):
-                dir_util.mkpath(dirname(f_new))
-            file_util.copy_file(f, f_new, dry_run=dry_run)
+    dir_util.mkpath(mimalloc_src_path)
+    for path in (pth_join('..', 'src'), pth_join('..', 'extlib', 'mimalloc', 'src')):
+        for root, _, files in walk(path):
+            for f in files:
+                if not (f.endswith('.h') or f.endswith('.c')):
+                    continue
+                f = pth_join(root, f)
+                f_new = f.replace('..', m_path)
+                if not isdir(dirname(f_new)):
+                    dir_util.mkpath(dirname(f_new))
+                file_util.copy_file(f, f_new, dry_run=dry_run)
     for f in sources[1:]:
-        file_util.copy_file(f.replace('python_solvespace', '..'), f, dry_run=dry_run)
+        file_util.copy_file(f.replace(m_path, '..'), f, dry_run=dry_run)
+    # Create an empty header
     open(pth_join(platform_path, 'config.h'), 'a').close()
 
 
@@ -120,13 +144,14 @@ class Build(build_ext):
         super(Build, self).build_extensions()
 
     def run(self):
-        has_src = isdir(include_path) and isdir(src_path)
+        has_src = isdir(include_path) and isdir(src_path) and isdir(mimalloc_path)
         if not has_src:
             copy_source(self.dry_run)
         super(Build, self).run()
         if not has_src:
             dir_util.remove_tree(include_path, dry_run=self.dry_run)
             dir_util.remove_tree(src_path, dry_run=self.dry_run)
+            dir_util.remove_tree(mimalloc_path, dry_run=self.dry_run)
 
 
 class PackSource(sdist):
@@ -136,11 +161,12 @@ class PackSource(sdist):
         if not self.keep_temp:
             dir_util.remove_tree(include_path, dry_run=self.dry_run)
             dir_util.remove_tree(src_path, dry_run=self.dry_run)
+            dir_util.remove_tree(mimalloc_path, dry_run=self.dry_run)
 
 
 setup(
     name="python_solvespace",
-    version=find_version('python_solvespace', '__init__.py'),
+    version=find_version(m_path, '__init__.py'),
     author=__author__,
     author_email=__email__,
     description="Python library of Solvespace.",
@@ -153,7 +179,7 @@ setup(
         "python_solvespace.slvs",
         sources,
         language="c++",
-        include_dirs=[include_path, src_path, platform_path]
+        include_dirs=[include_path, src_path, mimalloc_include_path, mimalloc_src_path]
     )],
     cmdclass={'build_ext': Build, 'sdist': PackSource},
     zip_safe=False,
