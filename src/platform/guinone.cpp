@@ -24,26 +24,6 @@ namespace Platform {
 
 void FatalError(const std::string &message) {
     fprintf(stderr, "%s", message.c_str());
-
-#if !defined(LIBRARY) && defined(HAVE_BACKTRACE)
-    static void *ptrs[1024] = {};
-    size_t nptrs = backtrace(ptrs, sizeof(ptrs) / sizeof(ptrs[0]));
-    char **syms = backtrace_symbols(ptrs, nptrs);
-
-    fprintf(stderr, "Backtrace:\n");
-    if(syms != NULL) {
-        for(size_t i = 0; i < nptrs; i++) {
-            fprintf(stderr, "%2zu: %s\n", i, syms[i]);
-        }
-    } else {
-        for(size_t i = 0; i < nptrs; i++) {
-            fprintf(stderr, "%2zu: %p\n", i, ptrs[i]);
-        }
-    }
-#else
-    fprintf(stderr, "Backtrace support not compiled in.\n");
-#endif
-
     abort();
 }
 

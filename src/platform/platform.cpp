@@ -10,6 +10,7 @@
 #   include <CoreFoundation/CFBundle.h>
 #endif
 #include "solvespace.h"
+#include "mimalloc.h"
 #include "config.h"
 #if defined(WIN32)
 // Conversely, include Microsoft headers after solvespace.h to avoid clashes.
@@ -18,7 +19,6 @@
 #else
 #   include <unistd.h>
 #   include <sys/stat.h>
-#   include <mutex>
 #endif
 
 namespace SolveSpace {
@@ -680,64 +680,34 @@ void DebugPrint(const char *fmt, ...) {
 #endif
 
 //-----------------------------------------------------------------------------
-// Temporary arena, on Windows.
+// Temporary arena.
 //-----------------------------------------------------------------------------
 
-#if defined(WIN32)
+struct MimallocHeap {
+    mi_heap_t *heap = NULL;
 
-static HANDLE TempArena = NULL;
+    ~MimallocHeap() {
+        if(heap != NULL)
+            mi_heap_destroy(heap);
+    }
+};
 
-void *AllocTemporary(size_t size)
-{
-    if(!TempArena)
-        TempArena = HeapCreate(0, 0, 0);
-    void *ptr = HeapAlloc(TempArena, HEAP_ZERO_MEMORY, size);
+static thread_local MimallocHeap TempArena;
+
+void *AllocTemporary(size_t size) {
+    if(TempArena.heap == NULL) {
+        TempArena.heap = mi_heap_new();
+        ssassert(TempArena.heap != NULL, "out of memory");
+    }
+    void *ptr = mi_heap_zalloc(TempArena.heap, size);
     ssassert(ptr != NULL, "out of memory");
     return ptr;
 }
 
-void FreeAllTemporary()
-{
-    HeapDestroy(TempArena);
-    TempArena = NULL;
+void FreeAllTemporary() {
+    MimallocHeap temp;
+    std::swap(TempArena.heap, temp.heap);
 }
-
-#endif
-
-//-----------------------------------------------------------------------------
-// Temporary arena, on Linux.
-//-----------------------------------------------------------------------------
-
-#if !defined(WIN32)
-
-struct ArenaChunk {
-    ArenaChunk *next;
-};
-
-static std::mutex TempArenaMutex;
-static ArenaChunk *TempArena = NULL;
-
-void *AllocTemporary(size_t size)
-{
-    ArenaChunk *chunk = (ArenaChunk *)calloc(1, sizeof(ArenaChunk) + size);
-    ssassert(chunk != NULL, "out of memory");
-    std::lock_guard<std::mutex> guard(TempArenaMutex);
-    chunk->next = TempArena;
-    TempArena = chunk;
-    return (void *)(chunk + 1);
-}
-
-void FreeAllTemporary()
-{
-    std::lock_guard<std::mutex> guard(TempArenaMutex);
-    while(TempArena) {
-        ArenaChunk *chunk = TempArena;
-        TempArena = TempArena->next;
-        free(chunk);
-    }
-}
-
-#endif
 
 }
 }

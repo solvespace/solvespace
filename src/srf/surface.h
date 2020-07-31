@@ -92,12 +92,12 @@ public:
     Vector Start() const;
     Vector Finish() const;
     bool Equals(SBezier *b) const;
-    void MakePwlInto(SEdgeList *sel, double chordTol=0) const;
-    void MakePwlInto(List<SCurvePt> *l, double chordTol=0) const;
-    void MakePwlInto(SContour *sc, double chordTol=0) const;
-    void MakePwlInto(List<Vector> *l, double chordTol=0) const;
-    void MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol) const;
-    void MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol) const;
+    void MakePwlInto(SEdgeList *sel, double chordTol=0, double max_dt=0.0) const;
+    void MakePwlInto(List<SCurvePt> *l, double chordTol=0, double max_dt=0.0) const;
+    void MakePwlInto(SContour *sc, double chordTol=0, double max_dt=0.0) const;
+    void MakePwlInto(List<Vector> *l, double chordTol=0, double max_dt=0.0) const;
+    void MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol, double max_dt) const;
+    void MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol, double max_dt) const;
     void MakeNonrationalCubicInto(SBezierList *bl, double tolerance, int depth = 0) const;
 
     void AllIntersectionsWith(const SBezier *sbb, SPointList *spl) const;
@@ -362,8 +362,9 @@ public:
     void MakeClassifyingBsp(SShell *shell, SShell *useCurvesFrom);
     double ChordToleranceForEdge(Vector a, Vector b) const;
     void MakeTriangulationGridInto(List<double> *l, double vs, double vf,
-                                    bool swapped) const;
+                                    bool swapped, int depth) const;
     Vector PointAtMaybeSwapped(double u, double v, bool swapped) const;
+    Vector NormalAtMaybeSwapped(double u, double v, bool swapped) const;
 
     void Reverse();
     void Clear();
