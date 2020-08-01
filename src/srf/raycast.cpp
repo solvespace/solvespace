@@ -130,39 +130,38 @@ void SSurface::SplitInHalf(bool byU, SSurface *sa, SSurface *sb) {
     sa->degn = sb->degn = degn;
 
     // by de Casteljau's algorithm in a projective space; so we must work
-    // on points (w*x, w*y, w*z, w)
-    WeightControlPoints();
+    // on points (w*x, w*y, w*z, w) so create a temporary copy
+    SSurface st;
+    st = *this;
+    st.WeightControlPoints();
 
     switch(byU ? degm : degn) {
         case 1:
-            sa->CopyRowOrCol (byU, 0, this, 0);
-            sb->CopyRowOrCol (byU, 1, this, 1);
+            sa->CopyRowOrCol (byU, 0, &st, 0);
+            sb->CopyRowOrCol (byU, 1, &st, 1);
 
-            sa->BlendRowOrCol(byU, 1, this, 0, this, 1);
-            sb->BlendRowOrCol(byU, 0, this, 0, this, 1);
+            sa->BlendRowOrCol(byU, 1, &st, 0, &st, 1);
+            sb->BlendRowOrCol(byU, 0, &st, 0, &st, 1);
             break;
 
         case 2:
-            sa->CopyRowOrCol (byU, 0, this, 0);
-            sb->CopyRowOrCol (byU, 2, this, 2);
+            sa->CopyRowOrCol (byU, 0, &st, 0);
+            sb->CopyRowOrCol (byU, 2, &st, 2);
 
-            sa->BlendRowOrCol(byU, 1, this, 0, this, 1);
-            sb->BlendRowOrCol(byU, 1, this, 1, this, 2);
+            sa->BlendRowOrCol(byU, 1, &st, 0, &st, 1);
+            sb->BlendRowOrCol(byU, 1, &st, 1, &st, 2);
 
             sa->BlendRowOrCol(byU, 2, sa,   1, sb,   1);
             sb->BlendRowOrCol(byU, 0, sa,   1, sb,   1);
             break;
 
         case 3: {
-            SSurface st;
-            st.degm = degm; st.degn = degn;
+            sa->CopyRowOrCol (byU, 0, &st, 0);
+            sb->CopyRowOrCol (byU, 3, &st, 3);
 
-            sa->CopyRowOrCol (byU, 0, this, 0);
-            sb->CopyRowOrCol (byU, 3, this, 3);
-
-            sa->BlendRowOrCol(byU, 1, this, 0, this, 1);
-            sb->BlendRowOrCol(byU, 2, this, 2, this, 3);
-            st. BlendRowOrCol(byU, 0, this, 1, this, 2); // scratch var
+            sa->BlendRowOrCol(byU, 1, &st, 0, &st, 1);
+            sb->BlendRowOrCol(byU, 2, &st, 2, &st, 3);
+            st. BlendRowOrCol(byU, 0, &st, 1, &st, 2); // use row/col 0 as scratch
 
             sa->BlendRowOrCol(byU, 2, sa,   1, &st,  0);
             sb->BlendRowOrCol(byU, 1, sb,   2, &st,  0);
@@ -177,7 +176,6 @@ void SSurface::SplitInHalf(bool byU, SSurface *sa, SSurface *sb) {
 
     sa->UnWeightControlPoints();
     sb->UnWeightControlPoints();
-    UnWeightControlPoints();
 }
 
 //-----------------------------------------------------------------------------
