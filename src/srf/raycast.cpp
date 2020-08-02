@@ -419,6 +419,11 @@ SShell::Class SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
 // using the closest intersection point. If the ray hits a surface on edge,
 // then just reattempt in a different random direction.
 //-----------------------------------------------------------------------------
+
+// table of vectors in 6 arbitrary directions covering 4 of the 8 octants.
+// use overlapping sets of 3 to reduce memory usage.
+static const double Random[8] = {1.278, 5.0103, 9.427, -2.331, 7.13, 2.954, 5.034, -4.777};
+ 
 bool SShell::ClassifyEdge(Class *indir, Class *outdir,
                           Vector ea, Vector eb,
                           Vector p,
@@ -549,7 +554,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         // Cast a ray in a random direction (two-sided so that we test if
         // the point lies on a surface, but use only one side for in/out
         // testing)
-        Vector ray = Vector::From(Random(1), Random(1), Random(1));
+        Vector ray = Vector::From(Random[cnt], Random[cnt+1], Random[cnt+2]);
 
         AllPointsIntersecting(
             p.Minus(ray), p.Plus(ray), &l,
@@ -598,7 +603,8 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         // then our ray always lies on edge, and that's okay. Otherwise
         // try again in a different random direction.
         if(!onEdge) break;
-        if(cnt++ > 5) {
+        cnt++;
+        if(cnt > 5) {
             dbp("can't find a ray that doesn't hit on edge!");
             dbp("on edge = %d, edge_inters = %d", onEdge, edge_inters);
             SS.nakedEdges.AddEdge(ea, eb);
