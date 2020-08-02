@@ -122,10 +122,6 @@ static constexpr double LENGTH_EPS    =  1e-6;
 static constexpr double VERY_POSITIVE =  1e10;
 static constexpr double VERY_NEGATIVE = -1e10;
 
-inline double Random(double vmax) {
-    return (vmax*rand()) / RAND_MAX;
-}
-
 #include "platform/platform.h"
 #include "platform/gui.h"
 #include "resource.h"
