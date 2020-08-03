@@ -431,8 +431,6 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
 {
     List<SInter> l = {};
 
-    srand(0);
-
     // First, check for edge-on-edge
     int edge_inters = 0;
     Vector inter_surf_n[2], inter_edge_n[2];
