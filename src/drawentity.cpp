@@ -180,6 +180,25 @@ bool Entity::IsVisible() const {
     return true;
 }
 
+// entities that were created via some copy types will not be
+// draggable with the mouse. We identify the undraggables here
+bool Entity::CanBeDragged() const {
+    // a numeric copy can not move
+    if(type == Entity::Type::POINT_N_COPY) return false;
+    // these transforms applied zero times can not be moved
+    if(((type == Entity::Type::POINT_N_TRANS) ||
+       (type == Entity::Type::POINT_N_ROT_AA) ||
+       (type == Entity::Type::POINT_N_ROT_TRANS) ||
+       (type == Entity::Type::POINT_N_ROT_AXIS_TRANS))
+        && (timesApplied == 0)) return false;
+    // for these types of entities the first point will indicate draggability
+    if(HasEndpoints() || type == Entity::Type::CIRCLE) {
+        return SK.GetEntity(point[0])->CanBeDragged();
+    }
+    // if we're not certain it can't be dragged then default to true
+    return true;
+}
+
 void Entity::CalculateNumerical(bool forExport) {
     if(IsPoint()) actPoint = PointGetNum();
     if(IsNormal()) actNormal = NormalGetNum();
