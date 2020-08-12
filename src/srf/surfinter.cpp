@@ -341,7 +341,11 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                     Vector p = si->p;
                     double u, v;
                     srfB->ClosestPointTo(p, &u, &v);
-                    srfB->PointOnSurfaces(srfA, other, &u, &v);
+                    if(sc->isExact) {
+                        srfB->PointOnCurve(&(sc->exact), &u, &v);
+                    } else {
+                        srfB->PointOnSurfaces(srfA, other, &u, &v);
+                    }
                     p = srfB->PointAt(u, v);
                     if(!spl.ContainsPoint(p)) {
                         SPoint sp;

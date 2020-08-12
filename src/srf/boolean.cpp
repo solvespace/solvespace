@@ -88,8 +88,15 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
                     }
                 }
 
-                // We're keeping the intersection, so actually refine it.
-                (pi->srf)->PointOnSurfaces(srfA, srfB, &(puv.x), &(puv.y));
+                // We're keeping the intersection, so actually refine it. Finding the intersection
+                // to within EPS is important to match the ends of different chopped trim curves.
+                // The general 3-surface intersection fails to refine for trims where surfaces
+                // are tangent at the curve, but those trims are usually exact, so…
+                if(isExact) {
+                    (pi->srf)->PointOnCurve(&exact, &(puv.x), &(puv.y));
+                } else {
+                    (pi->srf)->PointOnSurfaces(srfA, srfB, &(puv.x), &(puv.y));
+                }
                 pi->p = (pi->srf)->PointAt(puv);
             }
             il.RemoveTagged();
