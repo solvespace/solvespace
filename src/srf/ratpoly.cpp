@@ -447,11 +447,13 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
 
     // If we failed to converge, then at least don't return NaN.
     if(mustConverge) {
-        Vector p0 = PointAt(*u, *v);
-        dbp("didn't converge");
-        dbp("have %.3f %.3f %.3f", CO(p0));
-        dbp("want %.3f %.3f %.3f", CO(p));
-        dbp("distance = %g", (p.Minus(p0)).Magnitude());
+// This is expected not to converge when the target point is not on the surface but nearby.
+// let's not pollute the output window for normal use.
+//        Vector p0 = PointAt(*u, *v);
+//        dbp("didn't converge");
+//        dbp("have %.3f %.3f %.3f", CO(p0));
+//        dbp("want %.3f %.3f %.3f", CO(p));
+//        dbp("distance = %g", (p.Minus(p0)).Magnitude());
     }
     if(IsReasonable(*u) || IsReasonable(*v)) {
         *u = *v = 0;
@@ -500,7 +502,7 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool mustConve
 bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v) const
 {
     int i;
-    for(i = 0; i < 15; i++) {
+    for(i = 0; i < 20; i++) {
         Vector pi, p, tu, tv;
         p = PointAt(*u, *v);
         TangentsAt(*u, *v, &tu, &tv);
@@ -510,7 +512,10 @@ bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
 
         bool parallel;
         pi = Vector::AtIntersectionOfPlaneAndLine(n, d, p0, p1, &parallel);
-        if(parallel) break;
+        if(parallel) {
+            dbp("parallel (surface intersecting line)");
+            break;
+        }
 
         // Check for convergence
         if(pi.Equals(p, RATPOLY_EPS)) return true;
@@ -617,7 +622,10 @@ void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2, double *up, double *v
         Vector pi = Vector::AtIntersectionOfPlanes(n[0], d[0],
                                                    n[1], d[1],
                                                    n[2], d[2], &parallel);
-        if(parallel) break;
+
+        if(parallel) { // lets try something else for parallel planes
+            pi = p[0].Plus(p[1]).Plus(p[2]).ScaledBy(1.0/3.0);
+        }
 
         for(j = 0; j < 3; j++) {
             Vector n = tu[j].Cross(tv[j]);
