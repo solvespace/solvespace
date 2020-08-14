@@ -109,6 +109,7 @@ bool SContour::BridgeToContour(SContour *sc,
                                SEdgeList *avoidEdges, List<Vector> *avoidPts)
 {
     int i, j;
+    bool withbridge = true;
 
     // Start looking for a bridge on our new hole near its leftmost (min x)
     // point.
@@ -152,6 +153,7 @@ bool SContour::BridgeToContour(SContour *sc,
             b = sc->l[scp].p;
 
             if(a.Equals(b)) {
+                withbridge = false;
                 goto haveEdge;
             }
         }
@@ -190,7 +192,9 @@ bool SContour::BridgeToContour(SContour *sc,
 haveEdge:
     SContour merged = {};
     for(i = 0; i < l.n; i++) {
-        merged.AddPoint(l[i].p);
+        if(withbridge || (i != thisp)) {
+            merged.AddPoint(l[i].p);
+        }
         if(i == thisp) {
             // less than or equal; need to duplicate the join point
             for(j = 0; j <= (sc->l.n - 1); j++) {
@@ -198,7 +202,9 @@ haveEdge:
                 merged.AddPoint((sc->l[jp]).p);
             }
             // and likewise duplicate join point for the outer curve
-            merged.AddPoint(l[i].p);
+            if(withbridge) {
+                merged.AddPoint(l[i].p);
+            }
         }
     }
 
