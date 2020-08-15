@@ -624,16 +624,17 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 }
 
 void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSurface::CombineAs type) {
+    std::vector <SSurface> ssn(surface.n);
 #pragma omp parallel for
     for (int i = 0; i < surface.n; i++)
     {
         SSurface *ss = &surface[i];
-        SSurface ssn;
-        ssn = ss->MakeCopyTrimAgainst(this, sha, shb, into, type, i);
-#pragma omp critical
-        {
-            ss->newH = into->surface.AddAndAssignId(&ssn);
-        }
+        ssn[i] = ss->MakeCopyTrimAgainst(this, sha, shb, into, type, i);
+    }
+
+    for (int i = 0; i < surface.n; i++)
+    {
+        surface[i].newH = into->surface.AddAndAssignId(&ssn[i]);
     }
     I += surface.n;
 }
