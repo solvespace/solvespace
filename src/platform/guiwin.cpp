@@ -1075,6 +1075,11 @@ public:
                     sscheck(SendMessageW(hWindow, msg, wParam, lParam));
                     return 0;
                 }
+                break;
+            case WM_CHAR:
+                if((msg == WM_CHAR) && ((lParam & 0xFF0000) == 0x1c0000)) {
+                    return 0;
+                }
         }
 
         return CallWindowProc(window->editorWndProc, h, msg, wParam, lParam);
