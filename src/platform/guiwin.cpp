@@ -1058,7 +1058,7 @@ public:
         sscheck(window = (WindowImplWin32 *)GetWindowLongPtr(hWindow, 0));
 
         switch(msg) {
-            case WM_KEYDOWN:
+            case WM_CHAR:
                 if(wParam == VK_RETURN) {
                     if(window->onEditingDone) {
                         int length;
@@ -1073,11 +1073,6 @@ public:
                     }
                 } else if(wParam == VK_ESCAPE) {
                     sscheck(SendMessageW(hWindow, msg, wParam, lParam));
-                    return 0;
-                }
-                break;
-            case WM_CHAR:
-                if((msg == WM_CHAR) && ((lParam & 0xFF0000) == 0x1c0000)) {
                     return 0;
                 }
         }
