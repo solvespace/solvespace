@@ -368,7 +368,11 @@ public:
 
     H AddAndAssignId(T *t) {
         t->h.v = (MaximumId() + 1);
-        Add(t);
+        AllocForOneMore();
+
+        // Copy-construct at the end of the list.
+        new(&elem[n]) T(*t);
+        ++n;
 
         return t->h;
     }
