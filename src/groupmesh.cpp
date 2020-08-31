@@ -149,7 +149,6 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat
     std::vector<T> *scratch = &workA;
     // do the boolean operations
     while(n > 1) {
-#pragma omp parallel for
         for(a = 0; a < n; a+=2) {
             scratch->at(a/2).Clear();
             // combine a pair of shells
