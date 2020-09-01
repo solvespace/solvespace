@@ -106,25 +106,28 @@ void SMesh::RemapFaces(Group *g, int remap) {
 
 template<class T>
 void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat) {
-    T workA, workB;
-    workA = {};
-    workB = {};
-    T *soFar = &workA, *scratch = &workB;
 
     int n = (int)valA, a0 = 0;
     if(subtype == Subtype::ONE_SIDED && skipFirst) {
         a0++; n++;
     }
-    int a;
-    for(a = a0; a < n; a++) {
-        int ap = a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1));
-        int remap = (a == (n - 1)) ? REMAP_LAST : a;
 
-        T transd = {};
+    int a;
+    // create all the transformed copies
+    std::vector <T> transd(n);
+    std::vector <T> workA(n);
+    workA[0] = {};
+    // first generate a shell/mesh with each transformed copy
+#pragma omp parallel for
+    for(a = a0; a < n; a++) {
+        transd[a] = {};
+        workA[a] = {};
+        int ap = a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1));
+
         if(type == Type::TRANSLATE) {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
             trans = trans.ScaledBy(ap);
-            transd.MakeFromTransformationOf(steps,
+            transd[a].MakeFromTransformationOf(steps,
                 trans, Quaternion::IDENTITY, 1.0);
         } else {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
@@ -133,29 +136,45 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat
             Vector axis = Vector::From(h.param(4), h.param(5), h.param(6));
             Quaternion q = Quaternion::From(c, s*axis.x, s*axis.y, s*axis.z);
             // Rotation is centered at t; so A(x - t) + t = Ax + (t - At)
-            transd.MakeFromTransformationOf(steps,
+            transd[a].MakeFromTransformationOf(steps,
                 trans.Minus(q.Rotate(trans)), q, 1.0);
         }
-
+    }
+    for(a = a0; a < n; a++) {
         // We need to rewrite any plane face entities to the transformed ones.
-        transd.RemapFaces(this, remap);
-
-        // And tack this transformed copy on to the return.
-        if(soFar->IsEmpty()) {
-            scratch->MakeFromCopyOf(&transd);
-        } else if(forWhat == CombineAs::ASSEMBLE) {
-            scratch->MakeFromAssemblyOf(soFar, &transd);
-        } else {
-            scratch->MakeFromUnionOf(soFar, &transd);
-        }
-
-        swap(scratch, soFar);
-        scratch->Clear();
-        transd.Clear();
+        int remap = (a == (n - 1)) ? REMAP_LAST : a;
+        transd[a].RemapFaces(this, remap);
     }
 
+    std::vector<T> *soFar = &transd;
+    std::vector<T> *scratch = &workA;
+    // do the boolean operations on pairs of equal size
+    while(n > 1) {
+        for(a = 0; a < n; a+=2) {
+            scratch->at(a/2).Clear();
+            // combine a pair of shells
+            if((a==0) && (a0==1)) { // if the first was skipped just copy the 2nd
+                scratch->at(a/2).MakeFromCopyOf(&(soFar->at(a+1)));
+                (soFar->at(a+1)).Clear();
+                a0 = 0;
+            } else if (a == n-1) { // for an odd number just copy the last one
+                scratch->at(a/2).MakeFromCopyOf(&(soFar->at(a)));
+                (soFar->at(a)).Clear();
+            } else if(forWhat == CombineAs::ASSEMBLE) {
+                scratch->at(a/2).MakeFromAssemblyOf(&(soFar->at(a)), &(soFar->at(a+1)));
+                (soFar->at(a)).Clear();
+                (soFar->at(a+1)).Clear();
+            } else {
+                scratch->at(a/2).MakeFromUnionOf(&(soFar->at(a)), &(soFar->at(a+1)));
+                (soFar->at(a)).Clear();
+                (soFar->at(a+1)).Clear();
+            }
+        }
+        swap(scratch, soFar);
+        n = (n+1)/2;
+    }
     outs->Clear();
-    *outs = *soFar;
+    *outs = soFar->at(0);
 }
 
 template<class T>
