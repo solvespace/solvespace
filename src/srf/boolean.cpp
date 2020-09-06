@@ -640,8 +640,10 @@ void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSu
 }
 
 void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
-    SSurface *sa;
-    for(sa = surface.First(); sa; sa = surface.NextAfter(sa)) {
+#pragma omp parallel for
+    for(int i = 0; i< surface.n; i++) {
+        SSurface *sa = &surface[i];
+
         SSurface *sb;
         for(sb = agnst->surface.First(); sb; sb = agnst->surface.NextAfter(sb)){
             // Intersect every surface from our shell against every surface
