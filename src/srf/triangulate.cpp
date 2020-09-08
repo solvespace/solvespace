@@ -124,7 +124,7 @@ bool SContour::BridgeToContour(SContour *sc,
     // to the leftmost point of the new segment.
     int thiso = 0;
     double dmin = 1e10;
-    for(i = 0; i < l.n; i++) {
+    for(i = 0; i < l.n-1; i++) {
         Vector p = l[i].p;
         double d = (p.Minus(sc->xminPt)).MagSquared();
         if(d < dmin) {
@@ -140,7 +140,7 @@ bool SContour::BridgeToContour(SContour *sc,
     // First check if the contours share a point; in that case we should
     // merge them there, without a bridge.
     for(i = 0; i < l.n; i++) {
-        thisp = WRAP(i+thiso, l.n);
+        thisp = WRAP(i+thiso, l.n-1);
         a = l[thisp].p;
 
         for(f = avoidPts->First(); f; f = avoidPts->NextAfter(f)) {
@@ -256,6 +256,28 @@ bool SContour::IsEmptyTriangle(int ap, int bp, int cp, double scaledEPS) const {
     return true;
 }
 
+// Test if ray b->d passes through triangle a,b,c
+static bool RayIsInside(Vector a, Vector c, Vector b, Vector d) {
+    // coincident edges are not considered to intersect the triangle
+    if (d.Equals(a)) return false;
+    if (d.Equals(c)) return false;
+    // if d and c are on opposite sides of ba, we are ok
+    // likewise if d and a are on opposite sides of bc
+    Vector ba = a.Minus(b);
+    Vector bc = c.Minus(b);
+    Vector bd = d.Minus(b);
+
+    // perpendicular to (x,y) is (x,-y) so dot that with the two points. If they
+    // have opposite signs their product will be negative. If bd and bc are on
+    // opposite sides of ba the ray does not intersect. Likewise for bd,ba and bc.
+    if ( (bd.x*(ba.y) + (bd.y * (-ba.x))) * ( bc.x*(ba.y) + (bc.y * (-ba.x))) < LENGTH_EPS)
+        return false;
+    if ( (bd.x*(bc.y) + (bd.y * (-bc.x))) * ( ba.x*(bc.y) + (ba.y * (-bc.x))) < LENGTH_EPS)
+        return false;
+
+    return true;
+}
+
 bool SContour::IsEar(int bp, double scaledEps) const {
     int ap = WRAP(bp-1, l.n),
         cp = WRAP(bp+1, l.n);
@@ -294,8 +316,19 @@ bool SContour::IsEar(int bp, double scaledEps) const {
         // and therefore makes it a non-ear; but a point on the vertex is
         // "outside", since that's necessary to make bridges work.
         if(p.EqualsExactly(tr.a)) continue;
-        if(p.EqualsExactly(tr.b)) continue;
         if(p.EqualsExactly(tr.c)) continue;
+        // points coincident with bp have to be allowed for bridges but edges
+        // from that other point must not cross through our triangle.
+        if(p.EqualsExactly(tr.b)) {
+            int j = WRAP(i-1, l.n);
+            int k = WRAP(i+1, l.n);
+            Vector jp = l[j].p;
+            Vector kp = l[k].p;
+
+            // check both edges from the point in question
+            if (!RayIsInside(tr.a, tr.c, p,jp) && !RayIsInside(tr.a, tr.c, p,kp))
+                continue;
+        }
 
         if(tr.ContainsPointProjd(n, p)) {
             return false;
@@ -348,6 +381,9 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
        if((l[i].p).Equals(l[i-1].p)) {
             l[i].tag = 1;
         }
+    }
+    if( (l[0].p).Equals(l[l.n-1].p) ) {
+        l[l.n-1].tag = 1;
     }
     l.RemoveTagged();
 
