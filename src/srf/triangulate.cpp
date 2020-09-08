@@ -325,6 +325,8 @@ bool SContour::IsEar(int bp, double scaledEps) const {
             Vector jp = l[j].p;
             Vector kp = l[k].p;
 
+            // two consecutive bridges (A,B,C) and later (C,B,A) are not an ear
+            if (jp.Equals(tr.c) && kp.Equals(tr.a)) return false;
             // check both edges from the point in question
             if (!RayIsInside(tr.a, tr.c, p,jp) && !RayIsInside(tr.a, tr.c, p,kp))
                 continue;
