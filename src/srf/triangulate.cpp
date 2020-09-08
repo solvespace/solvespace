@@ -210,8 +210,10 @@ haveEdge:
 
     // and future bridges mustn't cross our bridge, and it's tricky to get
     // things right if two bridges come from the same point
-    avoidEdges->AddEdge(a, b);
-    avoidPts->Add(&a);
+    if(withbridge) {
+        avoidEdges->AddEdge(a, b);
+        avoidPts->Add(&a);
+    }
     avoidPts->Add(&b);
 
     l.Clear();
