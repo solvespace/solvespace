@@ -189,6 +189,7 @@ public:
     struct {
         SolveResult         how;
         int                 dof;
+        bool                timeout;
         List<hConstraint>   remove;
     } solved;
 
