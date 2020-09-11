@@ -578,6 +578,11 @@ void TextWindow::ShowGroupSolveInfo() {
             c->DescriptionString().c_str());
     }
 
+    if(g->solved.timeout) {
+        Printf(true,  "%FxSome items in list have been ommitted%Fd");
+        Printf(false,  "%Fxbecause the operation timed out.%Fd");
+    }
+
     Printf(true,  "It may be possible to fix the problem ");
     Printf(false, "by selecting Edit -> Undo.");
 
