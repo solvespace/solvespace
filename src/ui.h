@@ -316,6 +316,7 @@ public:
         G_CODE_PLUNGE_FEED    = 115,
         AUTOSAVE_INTERVAL     = 116,
         LIGHT_AMBIENT         = 117,
+        FIND_CONSTRAINT_TIMEOUT = 118,
         // For TTF text
         TTF_TEXT              = 300,
         // For the step dimension screen
@@ -488,6 +489,7 @@ public:
     static void ScreenChangeExportOffset(int link, uint32_t v);
     static void ScreenChangeGCodeParameter(int link, uint32_t v);
     static void ScreenChangeAutosaveInterval(int link, uint32_t v);
+    static void ScreenChangeFindConstraintTimeout(int link, uint32_t v);
     static void ScreenChangeStyleName(int link, uint32_t v);
     static void ScreenChangeStyleMetric(int link, uint32_t v);
     static void ScreenChangeStyleTextAngle(int link, uint32_t v);
