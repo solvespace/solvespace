@@ -361,7 +361,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bo
 
     for(a = 0; a < 2; a++) {
         for(auto &con : SK.constraint) {
-            if((GetMilliseconds() - time) > 1500) { // todo: make timeout configurable
+            if((GetMilliseconds() - time) > g->solved.findToFixTimeout) {
                 g->solved.timeout = true;
                 return;
             }
