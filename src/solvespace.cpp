@@ -51,6 +51,8 @@ void SolveSpaceUI::Init() {
     exportChordTol = settings->ThawFloat("ExportChordTolerance", 0.1);
     // Max pwl segments to generate
     exportMaxSegments = settings->ThawInt("ExportMaxSegments", 64);
+    // Timeout value for finding redundant constrains (ms)
+    timeoutRedundantConstr = settings->ThawInt("TimeoutRedundantConstraints", 1000);
     // View units
     viewUnits = (Unit)settings->ThawInt("ViewUnits", (uint32_t)Unit::MM);
     // Number of digits after the decimal point
@@ -231,6 +233,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeFloat("ExportChordTolerance", (float)exportChordTol);
     // Export Max pwl segments to generate
     settings->FreezeInt("ExportMaxSegments", (uint32_t)exportMaxSegments);
+    // Timeout for finding which constraints to fix Jacobian
+    settings->FreezeInt("TimeoutRedundantConstraints", (uint32_t)timeoutRedundantConstr);
     // View units
     settings->FreezeInt("ViewUnits", (uint32_t)viewUnits);
     // Number of digits after the decimal point

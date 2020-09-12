@@ -268,7 +268,8 @@ public:
     void EvalJacobian();
 
     void WriteEquationsExceptFor(hConstraint hc, Group *g);
-    void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bool forceDofCheck);
+    void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad,
+                                        bool forceDofCheck);
     void SolveBySubstitution();
 
     bool IsDragged(hParam p);
@@ -562,6 +563,7 @@ public:
     int      maxSegments;
     double   exportChordTol;
     int      exportMaxSegments;
+    int      timeoutRedundantConstr; //milliseconds
     double   cameraTangent;
     double   gridSpacing;
     double   exportScale;
