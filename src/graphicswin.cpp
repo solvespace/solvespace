@@ -1243,6 +1243,8 @@ void GraphicsWindow::MenuRequest(Command id) {
                         "not have a default workplane. Try selecting a "
                         "workplane, or activating a sketch-in-new-workplane "
                         "group."));
+                //update checkboxes in the menus
+                SS.GW.EnsureValidActives();
             }
             break;
         }
