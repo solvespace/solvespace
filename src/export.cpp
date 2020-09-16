@@ -717,8 +717,8 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
         ptMin.y -= s*SS.exportMargin.bottom;
         ptMax.y += s*SS.exportMargin.top;
     } else {
-        ptMin.x = -(s*SS.exportCanvas.dx);
-        ptMin.y = -(s*SS.exportCanvas.dy);
+        ptMin.x = (s*SS.exportCanvas.dx);
+        ptMin.y = (s*SS.exportCanvas.dy);
         ptMax.x = ptMin.x + (s*SS.exportCanvas.width);
         ptMax.y = ptMin.y + (s*SS.exportCanvas.height);
     }
