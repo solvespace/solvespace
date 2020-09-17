@@ -188,7 +188,6 @@ bool Entity::CanBeDragged() const {
     // these transforms applied zero times can not be moved
     if(((type == Entity::Type::POINT_N_TRANS) ||
        (type == Entity::Type::POINT_N_ROT_AA) ||
-       (type == Entity::Type::POINT_N_ROT_TRANS) ||
        (type == Entity::Type::POINT_N_ROT_AXIS_TRANS))
         && (timesApplied == 0)) return false;
     // for these types of entities the first point will indicate draggability
