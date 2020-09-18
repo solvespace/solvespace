@@ -696,11 +696,11 @@ msgstr "&Wiederholen"
 
 #: graphicswin.cpp:51
 msgid "Re&generate All"
-msgstr "Alles neu zeichnen"
+msgstr "Alles &neu zeichnen"
 
 #: graphicswin.cpp:53
 msgid "Snap Selection to &Grid"
-msgstr "Auswahl auf Raster ausrichten"
+msgstr "Auswahl auf &Raster ausrichten"
 
 #: graphicswin.cpp:54
 msgid "Rotate Imported &90°"
@@ -720,23 +720,35 @@ msgstr "Einfügen"
 
 #: graphicswin.cpp:59
 msgid "Paste &Transformed..."
-msgstr "Transformiert einfügen…"
+msgstr "&Transformiert einfügen…"
 
 #: graphicswin.cpp:60
 msgid "&Delete"
-msgstr "Löschen"
+msgstr "&Löschen"
 
 #: graphicswin.cpp:62
 msgid "Select &Edge Chain"
-msgstr "Kantenverlauf auswählen"
+msgstr "&Kantenverlauf auswählen"
 
 #: graphicswin.cpp:63
 msgid "Select &All"
-msgstr "Alle auswählen"
+msgstr "&Alle auswählen"
 
 #: graphicswin.cpp:64
 msgid "&Unselect All"
-msgstr "Alle deselektieren"
+msgstr "Alle &deselektieren"
+
+#: graphicswin.cpp:78
+msgid "&Line Styles..."
+msgstr "&Linien Stile..."
+
+#: graphicswin.cpp:78
+msgid "&View Projection..."
+msgstr "An&sichts Projektion..."
+
+#: graphicswin.cpp:78
+msgid "Con&figuration..."
+msgstr "&Einstellungen..."
 
 #: graphicswin.cpp:66
 msgid "&View"
@@ -830,9 +842,17 @@ msgstr "Kopieren und drehen"
 msgid "E&xtrude"
 msgstr "Extrudieren"
 
+#: graphicswin.cpp:114
+msgid "&Helix"
+msgstr "&Helix"
+
 #: graphicswin.cpp:96
 msgid "&Lathe"
 msgstr "Rotieren"
+
+#: graphicswin.cpp:96
+msgid "Re&volve"
+msgstr "D&rehen"
 
 #: graphicswin.cpp:98
 msgid "Link / Assemble..."
@@ -1014,9 +1034,9 @@ msgstr "Freiliegende Kanten anzeigen"
 msgid "Show &Center of Mass"
 msgstr "Massenmittelpunkt anzeigen"
 
-#: graphicswin.cpp:154
-msgid "Show Degrees of &Freedom"
-msgstr "Freiheitsgrade anzeigen"
+#: graphicswin.cpp:174
+msgid "Show &Underconstrained Points"
+msgstr "&Unterbeschränkte Punkte anzeigen"
 
 #: graphicswin.cpp:156
 msgid "&Trace Point"
