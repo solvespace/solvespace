@@ -211,8 +211,8 @@ static bool RunCommand(const std::vector<std::string> args) {
             camera.gridFit    = true;
             camera.width      = width;
             camera.height     = height;
-            camera.projUp     = SS.GW.projUp;
-            camera.projRight  = SS.GW.projRight;
+            camera.projUp     = projUp;
+            camera.projRight  = projRight;
 
             SS.GW.projUp      = projUp;
             SS.GW.projRight   = projRight;
