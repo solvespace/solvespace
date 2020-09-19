@@ -118,7 +118,7 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat
     std::vector <T> workA(n);
     workA[0] = {};
     // first generate a shell/mesh with each transformed copy
-#pragma omp parallel for
+
     for(a = a0; a < n; a++) {
         transd[a] = {};
         workA[a] = {};
