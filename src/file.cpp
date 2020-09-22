@@ -892,6 +892,7 @@ try_again:
                 }
             }
         } else if(linkMap.count(g.linkFile) == 0) {
+            dbp("Missing file for group: %s", g.name.c_str());
             // The file was moved; prompt the user for its new location.
             switch(LocateImportedFile(g.linkFile.RelativeTo(saveFile), canCancel)) {
                 case Platform::MessageDialog::Response::YES: {
