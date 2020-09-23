@@ -458,13 +458,25 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     }
 }
 
+- (void)mouseMotionEvent:(NSEvent *)nsEvent withButton:(Platform::MouseEvent::Button)button {
+    using Platform::MouseEvent;
+
+    MouseEvent event = [self convertMouseEvent:nsEvent];
+    event.type   = MouseEvent::Type::MOTION;
+    event.button = button;
+
+    if(receiver->onMouseEvent) {
+        receiver->onMouseEvent(event);
+    }
+}
+
 - (void)mouseMoved:(NSEvent *)nsEvent {
     [self mouseMotionEvent:nsEvent];
     [super mouseMoved:nsEvent];
 }
 
 - (void)mouseDragged:(NSEvent *)nsEvent {
-    [self mouseMotionEvent:nsEvent];
+    [self mouseMotionEvent:nsEvent withButton:Platform::MouseEvent::Button::LEFT];
 }
 
 - (void)otherMouseDragged:(NSEvent *)nsEvent {
