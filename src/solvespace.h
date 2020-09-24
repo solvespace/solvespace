@@ -679,6 +679,8 @@ public:
     void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
+    bool LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
+                              SMesh *m, SShell *sh);
     bool ReloadAllLinked(const Platform::Path &filename, bool canCancel = false);
     // And the various export options
     void ExportAsPngTo(const Platform::Path &filename);
@@ -810,6 +812,7 @@ public:
 
 void ImportDxf(const Platform::Path &file);
 void ImportDwg(const Platform::Path &file);
+bool LinkIDF(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh);
 
 extern SolveSpaceUI SS;
 extern Sketch SK;

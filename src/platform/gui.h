@@ -329,6 +329,8 @@ struct FileFilter {
 
 // SolveSpace's native file format
 extern std::vector<FileFilter> SolveSpaceModelFileFilters;
+// SolveSpace's linkable file formats
+extern std::vector<FileFilter> SolveSpaceLinkFileFilters;
 // Raster image
 extern std::vector<FileFilter> RasterFileFilters;
 // Triangle mesh

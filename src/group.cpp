@@ -287,7 +287,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             g.meshCombine = CombineAs::ASSEMBLE;
             if(g.linkFile.IsEmpty()) {
                 Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
-                dialog->AddFilters(Platform::SolveSpaceModelFileFilters);
+                dialog->AddFilters(Platform::SolveSpaceLinkFileFilters);
                 dialog->ThawChoices(settings, "LinkSketch");
                 if(!dialog->RunModal()) return;
                 dialog->FreezeChoices(settings, "LinkSketch");
