@@ -703,6 +703,16 @@ void SolveSpaceUI::UpgradeLegacyData() {
 bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                                         SMesh *m, SShell *sh)
 {
+    if(strcmp(filename.Extension().c_str(), "emn")==0) {
+        return LinkIDF(filename, le, m, sh);    
+    } else {
+        return LoadEntitiesFromSlvs(filename, le, m, sh);
+    }
+}
+
+bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
+                                        SMesh *m, SShell *sh)
+{
     SSurface srf = {};
     SCurve crv = {};
 
