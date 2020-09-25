@@ -169,7 +169,7 @@ message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
 
 message(STATUS "Using in-tree eigen")
-INCLUDE_DIRECTORIES(extlib/eigen)
+INCLUDE_DIRECTORIES(extlib/eigen/Eigen)
 
 message(STATUS "Using in-tree flatbuffers")
 set(FLATBUFFERS_BUILD_FLATLIB ON CACHE BOOL "")
