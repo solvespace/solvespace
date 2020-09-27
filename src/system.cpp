@@ -158,7 +158,7 @@ void System::SolveBySubstitution() {
             }
 
             if(a.v == b.v) {
-                teq->tag = EQ_SUBSTITUTED;
+                teq.tag = EQ_SUBSTITUTED;
                 continue;
             }
 
@@ -533,10 +533,9 @@ SolveResult System::SolveRank(Group *g, int *rank, int *dof, List<hConstraint> *
         // When we are testing with redundant allowed, we don't want to have additional info
         // about redundants since this test is working only for single redundant constraint
         if(!g->suppressDofCalculation && !g->allowRedundant) {
-            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, forceDofCheck);
+            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, true);
         }
     } else {
-        if(dof) *dof = CalculateDof();
         MarkParamsFree(andFindFree);
     }
     return rankOk ? SolveResult::OKAY : SolveResult::REDUNDANT_OKAY;
