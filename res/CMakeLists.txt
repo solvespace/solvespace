@@ -256,6 +256,7 @@ add_resources(
     locales/fr_FR.po
     locales/uk_UA.po
     locales/ru_RU.po
+    locales/zh_CN.po
     fonts/unifont.hex.gz
     fonts/private/0-check-false.png
     fonts/private/1-check-true.png
