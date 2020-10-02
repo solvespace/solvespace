@@ -48,8 +48,8 @@ bool System::WriteJacobian(int tag) {
             continue;
 
         mat.eq[i] = e.h;
-        Expr *f   = e.e->DeepCopyWithParamsAsPointers(&param, &(SK.param));
-        f = f->FoldConstants();
+        Expr *f = e.e->FoldConstants();
+        f = f->DeepCopyWithParamsAsPointers(&param, &(SK.param));
 
         for(j = 0; j < mat.n; j++) {
             mat.A.sym[i][j] = zero;
@@ -63,7 +63,6 @@ bool System::WriteJacobian(int tag) {
             if(j == paramToIndex.end()) continue;
             Expr *pd = f->PartialWrt(p);
             pd = pd->FoldConstants();
-            pd = pd->DeepCopyWithParamsAsPointers(&param, &(SK.param));
             mat.A.sym[i][j->second] = pd;
         }
         paramsUsed.Clear();
