@@ -68,7 +68,7 @@ for:
       # PyPI deployment
       - IF "%APPVEYOR_REPO_TAG%"=="true"
         IF "%APPVEYOR_REPO_NAME%"=="KmolYuan/solvespace" (
-        pip install twine &&
+        pip install wheel twine &&
         cd cython &&
         python setup.py bdist_wheel &&
         twine upload dist\*.whl --skip-existing

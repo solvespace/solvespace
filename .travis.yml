@@ -111,7 +111,7 @@ jobs:
       after_success:
         # PyPI deployment
         - if [[ "$TRAVIS_REPO_SLUG" == "KmolYuan/solvespace" && -n "$TRAVIS_TAG" ]]; then
-          python3 -m pip install twine;
+          python3 -m pip install wheel twine;
           cd cython;
           python3 setup.py bdist_wheel;
           python3 -m twine upload dist/*.whl --skip-existing;
