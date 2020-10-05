@@ -188,7 +188,7 @@ setup(
     zip_safe=False,
     python_requires=">=3.6",
     install_requires=read('requirements.txt').splitlines(),
-    test_suite='tests',
+    test_suite='test',
     classifiers=[
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",

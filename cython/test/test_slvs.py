@@ -7,7 +7,6 @@ __copyright__ = "Copyright (C) 2016-2019"
 __license__ = "GPLv3+"
 __email__ = "pyslvs@gmail.com"
 
-import unittest
 from unittest import TestCase
 from math import radians
 from python_solvespace import ResultFlag, SolverSystem, make_quaternion
@@ -242,7 +241,3 @@ class CoreTest(TestCase):
         x, = sys.params(d307.params)
         self.assertAlmostEqual(17, x, 4)
         self.assertEqual(6, sys.dof())
-
-
-if __name__ == '__main__':
-    unittest.main()
