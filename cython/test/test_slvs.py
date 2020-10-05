@@ -145,10 +145,10 @@ class CoreTest(TestCase):
         self.assertAlmostEqual(2.625, ans_max, 4)
 
     def test_pydemo(self):
-        """
-        Some sample code for slvs.dll. We draw some geometric entities, provide
-        initial guesses for their positions, and then constrain them. The solver
-        calculates their new positions, in order to satisfy the constraints.
+        """Some sample code for slvs.dll.
+        We draw some geometric entities, provide initial guesses for their positions,
+        and then constrain them. The solver calculates their new positions,
+        in order to satisfy the constraints.
 
         Copyright 2008-2013 Jonathan Westhues.
         Copyright 2016-2017 Yuan Chang [pyslvs@gmail.com] Python-Solvespace bundled.
