@@ -703,6 +703,16 @@ void SolveSpaceUI::UpgradeLegacyData() {
 bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                                         SMesh *m, SShell *sh)
 {
+    if(strcmp(filename.Extension().c_str(), "emn")==0) {
+        return LinkIDF(filename, le, m, sh);    
+    } else {
+        return LoadEntitiesFromSlvs(filename, le, m, sh);
+    }
+}
+
+bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
+                                        SMesh *m, SShell *sh)
+{
     SSurface srf = {};
     SCurve crv = {};
 
@@ -892,6 +902,7 @@ try_again:
                 }
             }
         } else if(linkMap.count(g.linkFile) == 0) {
+            dbp("Missing file for group: %s", g.name.c_str());
             // The file was moved; prompt the user for its new location.
             switch(LocateImportedFile(g.linkFile.RelativeTo(saveFile), canCancel)) {
                 case Platform::MessageDialog::Response::YES: {

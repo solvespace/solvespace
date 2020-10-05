@@ -121,6 +121,7 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
         case Type::FACE_N_TRANS:
         case Type::FACE_N_ROT_AA:
         case Type::FACE_ROT_NORMAL_PT:
+        case Type::FACE_N_ROT_AXIS_TRANS:
             break;
     }
 }
@@ -176,6 +177,24 @@ bool Entity::IsVisible() const {
 
     if(forceHidden) return false;
 
+    return true;
+}
+
+// entities that were created via some copy types will not be
+// draggable with the mouse. We identify the undraggables here
+bool Entity::CanBeDragged() const {
+    // a numeric copy can not move
+    if(type == Entity::Type::POINT_N_COPY) return false;
+    // these transforms applied zero times can not be moved
+    if(((type == Entity::Type::POINT_N_TRANS) ||
+       (type == Entity::Type::POINT_N_ROT_AA) ||
+       (type == Entity::Type::POINT_N_ROT_AXIS_TRANS))
+        && (timesApplied == 0)) return false;
+    // for these types of entities the first point will indicate draggability
+    if(HasEndpoints() || type == Entity::Type::CIRCLE) {
+        return SK.GetEntity(point[0])->CanBeDragged();
+    }
+    // if we're not certain it can't be dragged then default to true
     return true;
 }
 
@@ -757,6 +776,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         case Type::FACE_N_TRANS:
         case Type::FACE_N_ROT_AA:
         case Type::FACE_ROT_NORMAL_PT:
+        case Type::FACE_N_ROT_AXIS_TRANS:
             // Do nothing; these are drawn with the triangle mesh
             return;
     }

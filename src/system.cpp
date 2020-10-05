@@ -355,10 +355,17 @@ void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
 }
 
 void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bool forceDofCheck) {
+    auto time = GetMilliseconds();
+    g->solved.timeout = false;
     int a;
 
     for(a = 0; a < 2; a++) {
         for(auto &con : SK.constraint) {
+            if((GetMilliseconds() - time) > g->solved.findToFixTimeout) {
+                g->solved.timeout = true;
+                return;
+            }
+
             ConstraintBase *c = &con;
             if(c->group != g->h) continue;
             if((c->type == Constraint::Type::POINTS_COINCIDENT && a == 0) ||

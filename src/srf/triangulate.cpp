@@ -109,6 +109,7 @@ bool SContour::BridgeToContour(SContour *sc,
                                SEdgeList *avoidEdges, List<Vector> *avoidPts)
 {
     int i, j;
+    bool withbridge = true;
 
     // Start looking for a bridge on our new hole near its leftmost (min x)
     // point.
@@ -123,7 +124,7 @@ bool SContour::BridgeToContour(SContour *sc,
     // to the leftmost point of the new segment.
     int thiso = 0;
     double dmin = 1e10;
-    for(i = 0; i < l.n; i++) {
+    for(i = 0; i < l.n-1; i++) {
         Vector p = l[i].p;
         double d = (p.Minus(sc->xminPt)).MagSquared();
         if(d < dmin) {
@@ -139,7 +140,7 @@ bool SContour::BridgeToContour(SContour *sc,
     // First check if the contours share a point; in that case we should
     // merge them there, without a bridge.
     for(i = 0; i < l.n; i++) {
-        thisp = WRAP(i+thiso, l.n);
+        thisp = WRAP(i+thiso, l.n-1);
         a = l[thisp].p;
 
         for(f = avoidPts->First(); f; f = avoidPts->NextAfter(f)) {
@@ -152,6 +153,7 @@ bool SContour::BridgeToContour(SContour *sc,
             b = sc->l[scp].p;
 
             if(a.Equals(b)) {
+                withbridge = false;
                 goto haveEdge;
             }
         }
@@ -190,7 +192,9 @@ bool SContour::BridgeToContour(SContour *sc,
 haveEdge:
     SContour merged = {};
     for(i = 0; i < l.n; i++) {
-        merged.AddPoint(l[i].p);
+        if(withbridge || (i != thisp)) {
+            merged.AddPoint(l[i].p);
+        }
         if(i == thisp) {
             // less than or equal; need to duplicate the join point
             for(j = 0; j <= (sc->l.n - 1); j++) {
@@ -198,18 +202,79 @@ haveEdge:
                 merged.AddPoint((sc->l[jp]).p);
             }
             // and likewise duplicate join point for the outer curve
-            merged.AddPoint(l[i].p);
+            if(withbridge) {
+                merged.AddPoint(l[i].p);
+            }
         }
     }
 
     // and future bridges mustn't cross our bridge, and it's tricky to get
     // things right if two bridges come from the same point
-    avoidEdges->AddEdge(a, b);
-    avoidPts->Add(&a);
+    if(withbridge) {
+        avoidEdges->AddEdge(a, b);
+        avoidPts->Add(&a);
+    }
     avoidPts->Add(&b);
 
     l.Clear();
     l = merged.l;
+    return true;
+}
+
+bool SContour::IsEmptyTriangle(int ap, int bp, int cp, double scaledEPS) const {
+
+    STriangle tr = {};
+    tr.a = l[ap].p;
+    tr.b = l[bp].p;
+    tr.c = l[cp].p;
+
+    // Accelerate with an axis-aligned bounding box test
+    Vector maxv = tr.a, minv = tr.a;
+    (tr.b).MakeMaxMin(&maxv, &minv);
+    (tr.c).MakeMaxMin(&maxv, &minv);
+
+    Vector n = Vector::From(0, 0, -1);
+
+    int i;
+    for(i = 0; i < l.n; i++) {
+        if(i == ap || i == bp || i == cp) continue;
+
+        Vector p = l[i].p;
+        if(p.OutsideAndNotOn(maxv, minv)) continue;
+
+        // A point on the edge of the triangle is considered to be inside,
+        // and therefore makes it a non-ear; but a point on the vertex is
+        // "outside", since that's necessary to make bridges work.
+        if(p.EqualsExactly(tr.a)) continue;
+        if(p.EqualsExactly(tr.b)) continue;
+        if(p.EqualsExactly(tr.c)) continue;
+
+        if(tr.ContainsPointProjd(n, p)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// Test if ray b->d passes through triangle a,b,c
+static bool RayIsInside(Vector a, Vector c, Vector b, Vector d) {
+    // coincident edges are not considered to intersect the triangle
+    if (d.Equals(a)) return false;
+    if (d.Equals(c)) return false;
+    // if d and c are on opposite sides of ba, we are ok
+    // likewise if d and a are on opposite sides of bc
+    Vector ba = a.Minus(b);
+    Vector bc = c.Minus(b);
+    Vector bd = d.Minus(b);
+
+    // perpendicular to (x,y) is (x,-y) so dot that with the two points. If they
+    // have opposite signs their product will be negative. If bd and bc are on
+    // opposite sides of ba the ray does not intersect. Likewise for bd,ba and bc.
+    if ( (bd.x*(ba.y) + (bd.y * (-ba.x))) * ( bc.x*(ba.y) + (bc.y * (-ba.x))) < LENGTH_EPS)
+        return false;
+    if ( (bd.x*(bc.y) + (bd.y * (-bc.x))) * ( ba.x*(bc.y) + (ba.y * (-bc.x))) < LENGTH_EPS)
+        return false;
+
     return true;
 }
 
@@ -251,8 +316,21 @@ bool SContour::IsEar(int bp, double scaledEps) const {
         // and therefore makes it a non-ear; but a point on the vertex is
         // "outside", since that's necessary to make bridges work.
         if(p.EqualsExactly(tr.a)) continue;
-        if(p.EqualsExactly(tr.b)) continue;
         if(p.EqualsExactly(tr.c)) continue;
+        // points coincident with bp have to be allowed for bridges but edges
+        // from that other point must not cross through our triangle.
+        if(p.EqualsExactly(tr.b)) {
+            int j = WRAP(i-1, l.n);
+            int k = WRAP(i+1, l.n);
+            Vector jp = l[j].p;
+            Vector kp = l[k].p;
+
+            // two consecutive bridges (A,B,C) and later (C,B,A) are not an ear
+            if (jp.Equals(tr.c) && kp.Equals(tr.a)) return false;
+            // check both edges from the point in question
+            if (!RayIsInside(tr.a, tr.c, p,jp) && !RayIsInside(tr.a, tr.c, p,kp))
+                continue;
+        }
 
         if(tr.ContainsPointProjd(n, p)) {
             return false;
@@ -306,7 +384,75 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
             l[i].tag = 1;
         }
     }
+    if( (l[0].p).Equals(l[l.n-1].p) ) {
+        l[l.n-1].tag = 1;
+    }
     l.RemoveTagged();
+
+    // Handle simple triangle fans all at once. This pass is optional.
+    if(srf->degm == 1 && srf->degn == 1) {
+        l.ClearTags();
+        int j=0;
+        int pstart = 0;
+        double elen = -1.0;
+        double oldspan = 0.0;
+        for(i = 1; i < l.n; i++) {
+            Vector ab = l[i].p.Minus(l[i-1].p);
+            // first time just measure the segment
+            if (elen < 0.0) {
+                elen = ab.Dot(ab);
+                oldspan = elen;
+                j = 1;
+                continue;
+            }
+            // check for consecutive segments of similar size which are also
+            // ears and where the group forms a convex ear
+            bool end = false;
+            double ratio = ab.Dot(ab) / elen;
+            if ((ratio < 0.25) || (ratio > 4.0)) end = true;
+
+            double slen = l[pstart].p.Minus(l[i].p).MagSquared();
+            if (slen < oldspan) end = true;
+
+            if (!IsEar(i-1, scaledEps) ) end = true;
+//            if ((j>0) && !IsEar(pstart, i-1, i, scaledEps)) end = true;
+            if ((j>0) && !IsEmptyTriangle(pstart, i-1, i, scaledEps)) end = true;
+            // the new segment is valid so add to the fan
+            if (!end) {
+                j++;
+                oldspan = slen;
+            }
+            // we need to stop at the end of polygon but may still
+            if (i == l.n-1) {
+                end = true;
+            }
+            if (end) {  // triangulate the fan and tag the verticies
+                if (j > 3) {
+                    Vector center = l[pstart+1].p.Plus(l[pstart+j-1].p).ScaledBy(0.5);
+                    for (int x=0; x<j; x++) {
+                        STriangle tr = {};
+                        tr.a = center;
+                        tr.b = l[pstart+x].p;
+                        tr.c = l[pstart+x+1].p;
+                        m->AddTriangle(&tr);
+                    }
+                    for (int x=1; x<j; x++) {
+                        l[pstart+x].tag = 1;
+                    }
+                    STriangle tr = {};
+                    tr.a = center;
+                    tr.b = l[pstart+j].p;
+                    tr.c = l[pstart].p;
+                    m->AddTriangle(&tr);    
+                }
+                pstart = i-1;
+                elen = ab.Dot(ab);
+                oldspan = elen;
+                j = 1;
+            }
+        }
+        l.RemoveTagged();
+    }  // end optional fan creation pass
 
     bool toggle = false;
     while(l.n > 3) {

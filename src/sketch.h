@@ -189,6 +189,8 @@ public:
     struct {
         SolveResult         how;
         int                 dof;
+        int                 findToFixTimeout;
+        bool                timeout;
         List<hConstraint>   remove;
     } solved;
 
@@ -409,6 +411,7 @@ public:
         FACE_N_TRANS           =  5003,
         FACE_N_ROT_AA          =  5004,
         FACE_ROT_NORMAL_PT     =  5005,
+        FACE_N_ROT_AXIS_TRANS  =  5006,
 
         WORKPLANE              = 10000,
         LINE_SEGMENT           = 11000,
@@ -565,6 +568,7 @@ public:
 
     bool IsStylable() const;
     bool IsVisible() const;
+    bool CanBeDragged() const;
 
     enum class DrawAs { DEFAULT, OVERLAY, HIDDEN, HOVERED, SELECTED };
     void Draw(DrawAs how, Canvas *canvas);
@@ -703,6 +707,7 @@ public:
     }
 
     bool HasLabel() const;
+    bool IsProjectible() const;
 
     void Generate(IdList<Param, hParam> *param);
 

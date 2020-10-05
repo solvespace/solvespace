@@ -287,7 +287,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             g.meshCombine = CombineAs::ASSEMBLE;
             if(g.linkFile.IsEmpty()) {
                 Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
-                dialog->AddFilters(Platform::SolveSpaceModelFileFilters);
+                dialog->AddFilters(Platform::SolveSpaceLinkFileFilters);
                 dialog->ThawChoices(settings, "LinkSketch");
                 if(!dialog->RunModal()) return;
                 dialog->FreezeChoices(settings, "LinkSketch");
@@ -1113,6 +1113,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
         case Entity::Type::FACE_N_TRANS:
         case Entity::Type::FACE_N_ROT_AA:
         case Entity::Type::FACE_ROT_NORMAL_PT:
+        case Entity::Type::FACE_N_ROT_AXIS_TRANS:
             if(as == CopyAs::N_TRANS) {
                 en.type = Entity::Type::FACE_N_TRANS;
                 en.param[0] = dx;
@@ -1120,8 +1121,18 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
                 en.param[2] = dz;
             } else if (as == CopyAs::NUMERIC) {
                 en.type = Entity::Type::FACE_NORMAL_PT;
+            } else if (as == CopyAs::N_ROT_AXIS_TRANS) {
+                en.type = Entity::Type::FACE_N_ROT_AXIS_TRANS;
+                en.param[0] = dx;
+                en.param[1] = dy;
+                en.param[2] = dz;
+                en.param[3] = qw;
+                en.param[4] = qvx;
+                en.param[5] = qvy;
+                en.param[6] = qvz;
+                en.param[7] = dist;
             } else {
-                if(as == CopyAs::N_ROT_AA || as == CopyAs::N_ROT_AXIS_TRANS) {
+                if(as == CopyAs::N_ROT_AA) {
                     en.type = Entity::Type::FACE_N_ROT_AA;
                 } else {
                     en.type = Entity::Type::FACE_N_ROT_TRANS;

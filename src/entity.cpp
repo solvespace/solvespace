@@ -702,6 +702,7 @@ bool EntityBase::IsFace() const {
         case Type::FACE_N_TRANS:
         case Type::FACE_N_ROT_AA:
         case Type::FACE_ROT_NORMAL_PT:
+        case Type::FACE_N_ROT_AXIS_TRANS:
             return true;
         default:
             return false;
@@ -774,6 +775,15 @@ ExprVector EntityBase::FaceGetPointExprs() const {
         r = ExprVector::From(numPoint);
         r = q.Rotate(r);
         r = r.Plus(trans);
+    } else if(type == Type::FACE_N_ROT_AXIS_TRANS) {
+            ExprVector orig = ExprVector::From(numPoint);
+            ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
+            ExprVector displace = ExprVector::From(param[4], param[5], param[6])
+               .WithMagnitude(Expr::From(param[7])).ScaledBy(Expr::From(timesApplied));
+            ExprQuaternion q = GetAxisAngleQuaternionExprs(3);
+            orig = orig.Minus(trans);
+            orig = q.Rotate(orig);
+            r = orig.Plus(trans).Plus(displace);
     } else if(type == Type::FACE_N_TRANS) {
         ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
         r = ExprVector::From(numPoint);
@@ -801,6 +811,14 @@ Vector EntityBase::FaceGetPointNum() const {
         Quaternion q = Quaternion::From(param[3], param[4], param[5], param[6]);
         r = q.Rotate(numPoint);
         r = r.Plus(trans);
+    } else if(type == Type::FACE_N_ROT_AXIS_TRANS) {
+            Vector offset = Vector::From(param[0], param[1], param[2]);
+            Vector displace = Vector::From(param[4], param[5], param[6])
+               .WithMagnitude(SK.GetParam(param[7])->val).ScaledBy(timesApplied);
+            Quaternion q = PointGetQuaternion();
+            r = numPoint.Minus(offset);
+            r = q.Rotate(r);
+            r = r.Plus(offset).Plus(displace);
     } else if(type == Type::FACE_N_TRANS) {
         Vector trans = Vector::From(param[0], param[1], param[2]);
         r = numPoint.Plus(trans.ScaledBy(timesApplied));
