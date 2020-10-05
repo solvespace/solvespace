@@ -8,7 +8,7 @@ __author__ = "Yuan Chang"
 __copyright__ = "Copyright (C) 2016-2019"
 __license__ = "GPLv3+"
 __email__ = "pyslvs@gmail.com"
-__version__ = "3.0.2"
+__version__ = "3.0.3"
 
 from enum import IntEnum, auto
 from .slvs import (
