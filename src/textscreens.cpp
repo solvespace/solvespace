@@ -44,6 +44,7 @@ void TextWindow::ShowHeader(bool withNav) {
 // to hide or show them, and to view them in detail. This is our home page.
 //-----------------------------------------------------------------------------
 void TextWindow::ScreenSelectGroup(int link, uint32_t v) {
+    GraphicsWindow::MenuEdit(Command::UNSELECT_ALL);
     SS.TW.GoToScreen(Screen::GROUP_INFO);
     SS.TW.shown.group.v = v;
 }
@@ -167,12 +168,16 @@ void TextWindow::ShowListOfGroups() {
 // The screen that shows information about a specific group, and allows the
 // user to edit various things about it.
 //-----------------------------------------------------------------------------
-void TextWindow::ScreenHoverConstraint(int link, uint32_t v) {
-    if(!SS.GW.showConstraints) return;
-
-    hConstraint hc = { v };
+void TextWindow::ScreenHoverGroupWorkplane(int link, uint32_t v) {
     SS.GW.hover.Clear();
-    SS.GW.hover.constraint = hc;
+    hGroup hg = { v };
+    SS.GW.hover.entity = hg.entity(0);
+    SS.GW.hover.emphasized = true;
+}
+void TextWindow::ScreenHoverEntity(int link, uint32_t v) {
+    SS.GW.hover.Clear();
+    hEntity he = { v };
+    SS.GW.hover.entity = he;
     SS.GW.hover.emphasized = true;
 }
 void TextWindow::ScreenHoverRequest(int link, uint32_t v) {
@@ -181,10 +186,19 @@ void TextWindow::ScreenHoverRequest(int link, uint32_t v) {
     SS.GW.hover.entity = hr.entity(0);
     SS.GW.hover.emphasized = true;
 }
-void TextWindow::ScreenSelectConstraint(int link, uint32_t v) {
+void TextWindow::ScreenHoverConstraint(int link, uint32_t v) {
+    if(!SS.GW.showConstraints) return;
+
+    hConstraint hc = { v };
+    SS.GW.hover.Clear();
+    SS.GW.hover.constraint = hc;
+    SS.GW.hover.emphasized = true;
+}
+void TextWindow::ScreenSelectEntity(int link, uint32_t v) {
     SS.GW.ClearSelection();
     GraphicsWindow::Selection sel = {};
-    sel.constraint.v = v;
+    hEntity he = { v };
+    sel.entity = he;
     SS.GW.selection.Add(&sel);
 }
 void TextWindow::ScreenSelectRequest(int link, uint32_t v) {
@@ -192,6 +206,12 @@ void TextWindow::ScreenSelectRequest(int link, uint32_t v) {
     GraphicsWindow::Selection sel = {};
     hRequest hr = { v };
     sel.entity = hr.entity(0);
+    SS.GW.selection.Add(&sel);
+}
+void TextWindow::ScreenSelectConstraint(int link, uint32_t v) {
+    SS.GW.ClearSelection();
+    GraphicsWindow::Selection sel = {};
+    sel.constraint.v = v;
     SS.GW.selection.Add(&sel);
 }
 
@@ -556,6 +576,11 @@ void TextWindow::ShowGroupSolveInfo() {
             c->h.v, (&TextWindow::ScreenSelectConstraint),
             (&TextWindow::ScreenHoverConstraint),
             c->DescriptionString().c_str());
+    }
+
+    if(g->solved.timeout) {
+        Printf(true,  "%FxSome items in list have been ommitted%Fd");
+        Printf(false,  "%Fxbecause the operation timed out.%Fd");
     }
 
     Printf(true,  "It may be possible to fix the problem ");

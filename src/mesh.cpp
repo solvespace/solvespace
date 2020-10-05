@@ -971,9 +971,15 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how, bool coplanarIs
 
             switch(how) {
                 case EdgeKind::NAKED_OR_SELF_INTER:
+                    // there should be one anti-parllel edge
                     if(info.count != 1) {
-                        sel->AddEdge(a, b, auxA);
-                        if(leaky) *leaky = true;
+                        // but there may be multiple parallel coincident edges
+                        SKdNode::EdgeOnInfo parallelInfo = {};
+                        FindEdgeOn(b, a, -cnt, coplanarIsInter, &parallelInfo);
+                        if (info.count != parallelInfo.count) {
+                            sel->AddEdge(a, b, auxA);
+                            if(leaky) *leaky = true;
+                        }
                     }
                     if(info.intersectsMesh) {
                         sel->AddEdge(a, b, auxA);

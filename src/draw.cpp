@@ -353,18 +353,34 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
     return sel;
 }
 
+// This uses the same logic as hovering and static entity selection
+// but ignores points known not to be draggable
 GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToDrag() {
     Selection sel = {};
-    for(const Hover &hov : hoverList) {
-        if(hov.selection.entity.v == 0) continue;
-        if(!hov.selection.entity.isFromRequest()) continue;
-        sel = hov.selection;
-        break;
-    }
-    if(!sel.IsEmpty()) {
+    if(hoverList.IsEmpty())
         return sel;
+
+    Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
+    int bestOrder = -1;
+    int bestZIndex = 0;
+    for(const Hover &hov : hoverList) {
+        hGroup hg = {};
+        if(hov.selection.entity.v != 0) {
+            Entity *e = SK.GetEntity(hov.selection.entity);
+            if (!e->CanBeDragged()) continue;
+            hg = e->group;
+        } else if(hov.selection.constraint.v != 0) {
+            hg = SK.GetConstraint(hov.selection.constraint)->group;
+        }
+
+        Group *g = SK.GetGroup(hg);
+        if(g->order > activeGroup->order) continue;
+        if(bestOrder != -1 && (bestOrder >= g->order || bestZIndex > hov.zIndex)) continue;
+        bestOrder  = g->order;
+        bestZIndex = hov.zIndex;
+        sel = hov.selection;
     }
-    return ChooseFromHoverToSelect();
+    return sel;
 }
 
 void GraphicsWindow::HitTestMakeSelection(Point2d mp) {

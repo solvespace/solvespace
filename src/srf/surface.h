@@ -332,6 +332,7 @@ public:
     bool PointIntersectingLine(Vector p0, Vector p1, double *u, double *v) const;
     Vector ClosestPointOnThisAndSurface(SSurface *srf2, Vector p);
     void PointOnSurfaces(SSurface *s1, SSurface *s2, double *u, double *v);
+    void PointOnCurve(const SBezier *curve, double *up, double *vp);
     Vector PointAt(double u, double v) const;
     Vector PointAt(Point2d puv) const;
     void TangentsAt(double u, double v, Vector *tu, Vector *tv) const;

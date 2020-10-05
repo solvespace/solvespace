@@ -27,19 +27,22 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
     SBezier sbrev = *sb;
     sbrev.Reverse();
     bool backwards = false;
-    for(se = into->curve.First(); se; se = into->curve.NextAfter(se)) {
-        if(se->isExact) {
-            if(sb->Equals(&(se->exact))) {
-                existing = se;
-                break;
-            }
-            if(sbrev.Equals(&(se->exact))) {
-                existing = se;
-                backwards = true;
-                break;
+#pragma omp critical(into)
+    {
+        for(se = into->curve.First(); se; se = into->curve.NextAfter(se)) {
+            if(se->isExact) {
+                if(sb->Equals(&(se->exact))) {
+                    existing = se;
+                    break;
+                }
+                if(sbrev.Equals(&(se->exact))) {
+                    existing = se;
+                    backwards = true;
+                    break;
+                }
             }
         }
-    }
+    }// end omp critical
     if(existing) {
         SCurvePt *v;
         for(v = existing->pts.First(); v; v = existing->pts.NextAfter(v)) {
@@ -101,7 +104,10 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
              "Unexpected zero-length edge");
 
     split.source = SCurve::Source::INTERSECTION;
-    into->curve.AddAndAssignId(&split);
+#pragma omp critical(into)
+    {
+        into->curve.AddAndAssignId(&split);
+    }
 }
 
 void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
@@ -341,7 +347,11 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                     Vector p = si->p;
                     double u, v;
                     srfB->ClosestPointTo(p, &u, &v);
-                    srfB->PointOnSurfaces(srfA, other, &u, &v);
+                    if(sc->isExact) {
+                        srfB->PointOnCurve(&(sc->exact), &u, &v);
+                    } else {
+                        srfB->PointOnSurfaces(srfA, other, &u, &v);
+                    }
                     p = srfB->PointAt(u, v);
                     if(!spl.ContainsPoint(p)) {
                         SPoint sp;
@@ -452,7 +462,10 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             // And now we split and insert the curve
             SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, b);
             sc.Clear();
-            into->curve.AddAndAssignId(&split);
+#pragma omp critical(into)
+            {
+                into->curve.AddAndAssignId(&split);
+            }
         }
         spl.Clear();
     }

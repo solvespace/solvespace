@@ -717,13 +717,16 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
         ptMin.y -= s*SS.exportMargin.bottom;
         ptMax.y += s*SS.exportMargin.top;
     } else {
-        ptMin.x = -(s*SS.exportCanvas.dx);
-        ptMin.y = -(s*SS.exportCanvas.dy);
+        ptMin.x = (s*SS.exportCanvas.dx);
+        ptMin.y = (s*SS.exportCanvas.dy);
         ptMax.x = ptMin.x + (s*SS.exportCanvas.width);
         ptMax.y = ptMin.y + (s*SS.exportCanvas.height);
     }
 
     StartFile();
+    if(SS.exportBackgroundColor) {
+        Background(SS.backgroundColor);
+    }
     if(sm && SS.exportShadedTriangles) {
         for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
             Triangle(tr);

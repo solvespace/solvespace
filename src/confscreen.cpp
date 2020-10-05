@@ -94,6 +94,10 @@ void TextWindow::ScreenChangeFixExportColors(int link, uint32_t v) {
     SS.fixExportColors = !SS.fixExportColors;
 }
 
+void TextWindow::ScreenChangeExportBackgroundColor(int link, uint32_t v) {
+    SS.exportBackgroundColor = !SS.exportBackgroundColor;
+}
+
 void TextWindow::ScreenChangeBackFaces(int link, uint32_t v) {
     SS.drawBackFaces = !SS.drawBackFaces;
     SS.GW.Invalidate(/*clearPersistent=*/true);
@@ -200,6 +204,11 @@ void TextWindow::ScreenChangeAutosaveInterval(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::AUTOSAVE_INTERVAL;
 }
 
+void TextWindow::ScreenChangeFindConstraintTimeout(int link, uint32_t v) {
+    SS.TW.ShowEditControl(3, std::to_string(SS.timeoutRedundantConstr));
+    SS.TW.edit.meaning = Edit::FIND_CONSTRAINT_TIMEOUT;
+}
+
 void TextWindow::ShowConfiguration() {
     int i;
     Printf(true, "%Ft user color (r, g, b)");
@@ -299,6 +308,9 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "  %Fd%f%Ll%s  fix white exported lines%E",
         &ScreenChangeFixExportColors,
         SS.fixExportColors ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%s  export background color%E",
+        &ScreenChangeExportBackgroundColor,
+        SS.exportBackgroundColor ? CHECK_TRUE : CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "%Ft export canvas size:  "
@@ -364,6 +376,10 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "%Ft autosave interval (in minutes)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
         SS.autosaveInterval, &ScreenChangeAutosaveInterval);
+    Printf(false, "");
+    Printf(false, "%Ft redundant constraint timeout (in ms)%E");
+    Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
+        SS.timeoutRedundantConstr, &ScreenChangeFindConstraintTimeout);
 
     if(canvas) {
         const char *gl_vendor, *gl_renderer, *gl_version;
@@ -532,6 +548,17 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
                 }
             } else {
                 Error(_("Bad format: specify interval in integral minutes"));
+            }
+            break;
+        }
+        case Edit::FIND_CONSTRAINT_TIMEOUT: {
+            int timeout = atoi(s.c_str());
+            if(timeout) {
+                if(timeout >= 1) {
+                    SS.timeoutRedundantConstr = timeout;
+                } else {
+                    SS.timeoutRedundantConstr = 1000;
+                }
             }
             break;
         }

@@ -85,6 +85,11 @@ std::vector<FileFilter> SolveSpaceModelFileFilters = {
     { CN_("file-type", "SolveSpace models"), { "slvs" } },
 };
 
+std::vector<FileFilter> SolveSpaceLinkFileFilters = {
+    { CN_("file-type", "SolveSpace models"), { "slvs" } },
+    { CN_("file-type", "IDF circuit board"), { "emn" } },
+};
+
 std::vector<FileFilter> RasterFileFilters = {
     { CN_("file-type", "PNG image"), { "png" } },
 };
