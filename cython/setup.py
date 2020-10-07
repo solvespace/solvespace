@@ -9,7 +9,7 @@ __email__ = "pyslvs@gmail.com"
 
 import sys
 from os import walk
-from os.path import dirname, isdir, join, abspath
+from os.path import dirname, isdir, join
 import re
 import codecs
 from setuptools import setup, Extension, find_packages
@@ -26,7 +26,7 @@ extlib_path = join(m_path, 'extlib')
 mimalloc_path = join(extlib_path, 'mimalloc')
 mimalloc_include_path = join(mimalloc_path, 'include')
 mimalloc_src_path = join(mimalloc_path, 'src')
-build_dir = join(abspath(dirname(__file__)), 'build')
+build_dir = 'build'
 
 
 def write(doc, *parts):
@@ -167,6 +167,7 @@ class Build(build_ext):
             extra_postargs=args,
             include_dirs=[mimalloc_include_path, mimalloc_src_path]
         )
+        dir_util.mkpath(build_dir)
         self.compiler.create_static_lib(objects, 'mimalloc', target_lang='c',
                                         output_dir=build_dir)
         super(Build, self).build_extensions()

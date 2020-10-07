@@ -60,7 +60,6 @@ jobs:
     - &linux
       stage: deploy
       os: linux
-      sudo: required
       dist: bionic
       language: python
       python: "3.6"
