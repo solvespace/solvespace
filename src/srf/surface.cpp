@@ -984,6 +984,10 @@ void SShell::MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0) {
 
                 double vm = (ff.Minus(of)).Dot(v);
                 v = v.ScaledBy(vm);
+                if(vm <  0) { // happens when we revolve with negative theta
+                    of = of.Minus(v);
+                    v = v.ScaledBy(-1);
+                }
 
                 srf->degm = 1;
                 srf->degn = 1;
