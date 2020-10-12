@@ -340,6 +340,19 @@ void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) const {
            den_u = 0,
            den_v = 0;
 
+    // we don't want zero-length tangents when control points are coincident.
+    if(0 == u) {
+        u += 0.000000001;
+    } else if(1 == u) {
+        u -= 0.000000001;
+    }
+
+    if(0 == v) {
+        v += 0.000000001;
+    } else if(1 == v) {
+        v -= 0.000000001;
+    }
+
     int i, j;
     for(i = 0; i <= degm; i++) {
         for(j = 0; j <= degn; j++) {
@@ -371,9 +384,13 @@ Vector SSurface::NormalAt(Point2d puv) const {
 }
 
 Vector SSurface::NormalAt(double u, double v) const {
-    Vector tu, tv;
+    Vector tu, tv, n;
     TangentsAt(u, v, &tu, &tv);
-    return tu.Cross(tv);
+    n = tu.Cross(tv);
+    if(EXACT(n.Magnitude() == 0)) {
+        dbp("Zero surface normal u,v = %lf, %lf", u, v);    
+    }
+    return n;
 }
 
 void SSurface::ClosestPointTo(Vector p, Point2d *puv, bool mustConverge) {
