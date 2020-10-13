@@ -340,9 +340,64 @@ void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) const {
            den_u = 0,
            den_v = 0;
 
-    int i, j;
-    for(i = 0; i <= degm; i++) {
-        for(j = 0; j <= degn; j++) {
+    // Check if we are trying to calculate a tengent "along" a degenerate (zero length)
+    // edge of a NURBS patch. In this case move the `u` or `v` parameter "inward" a bit.
+    if(EXACT(0.0 == u)) {
+        bool shift_inward = true;
+        // For the edge to be degenerate all control points along it have to be the same.
+        for(int i = 0; i < degn; i++) { // not <= we use i+1 in the body of the lopp
+            if (!(ctrl[0][i].EqualsExactly(ctrl[0][i + 1]))) {
+                shift_inward = false;
+                break;
+            }
+        }
+        if(true == shift_inward) {
+            u += LENGTH_EPS;
+        }
+    } else if(EXACT(1.0 == u)) {
+        bool shift_inward = true;
+        // For the edge to be degenerate all control points along it have to be the same.
+        for(int i = 0; i < degn; i++) { // not <= we use i+1 in the body of the lopp
+            if(!(ctrl[degm][i].EqualsExactly(ctrl[degm][i + 1]))) {
+                shift_inward = false;
+                break;
+            }
+        }
+        if(true == shift_inward) {
+            u -= LENGTH_EPS;
+        }
+    }
+
+    if(EXACT(0.0 == v)) {
+        bool shift_inward = true;
+        // For the edge to be degenerate all control points along it have to be the same.
+        for(int i = 0; i < degm; i++) { // not <= we use i+1 in the body of the lopp
+            if(!(ctrl[i][0].EqualsExactly(ctrl[i + 1][0]))) {
+                shift_inward = false;
+                break;
+            }
+        }
+        if(true == shift_inward) {
+            v += LENGTH_EPS;
+            dbp("NURBS patch pinched along 'u' at v=0 how did you do this?");
+        }
+    } else if(EXACT(1.0 == v)) {
+        bool shift_inward = true;
+        // For the edge to be degenerate all control points along it have to be the same.
+        for(int i = 0; i < degm; i++) {         // not <= we use i+1 in the body of the lopp
+            if(!(ctrl[i][degn].EqualsExactly(ctrl[i + 1][degn]))) {
+                shift_inward = false;
+                break;
+            }
+        }
+        if(true == shift_inward) {
+            v -= LENGTH_EPS;
+            dbp("NURBS patch pinched along 'u' at v=1 how did you do this?");
+        }
+    }
+
+    for(int i = 0; i <= degm; i++) {
+        for(int j = 0; j <= degn; j++) {
             double Bi  = Bernstein(i, degm, u),
                    Bj  = Bernstein(j, degn, v),
                    Bip = BernsteinDerivative(i, degm, u),
