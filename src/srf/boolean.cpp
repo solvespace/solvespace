@@ -20,6 +20,32 @@ void SShell::MakeFromIntersectionOf(SShell *a, SShell *b) {
     MakeFromBoolean(a, b, SSurface::CombineAs::INTERSECTION);
 }
 
+// We will be inserting existing verticies into curves to split them
+// todo: this is only using the ends of exact curves, and it is only
+// using them to split existing curves, not new intersections.
+// It resolves some issues but we could do better. We will need to
+// reorder things so the surface intersection curves exist prior to
+// splitting any curves at all in order to have their verticies too.
+// Better still would be to get curve/surface intersection to work
+// more reliably at the edges - maybe do curve/curve tests as part
+// of the curve-surface intersection test.
+static void FindVertsOnCurve(List<SInter> *l, const SCurve *curve, SShell *sh) {
+    for(auto sc : sh->curve) {
+        if(!sc.isExact) continue;
+        for(int i=0; i<2; i++) {
+            Vector pt = sc.exact.ctrl[ i==0 ? 0 : sc.exact.deg ];
+            double t;
+            curve->exact.ClosestPointTo(pt, &t, /*must converge=*/ false);
+            double d = pt.Minus(curve->exact.PointAt(t)).Magnitude();
+            if((t>LENGTH_EPS) && (t<(1.0-LENGTH_EPS)) && (d < LENGTH_EPS)) {
+                SInter inter;
+                inter.p = pt;
+                l->Add(&inter);
+            }
+        }
+    }
+}
+
 //-----------------------------------------------------------------------------
 // Take our original pwl curve. Wherever an edge intersects a surface within
 // either agnstA or agnstB, split the piecewise linear element. Then refine
@@ -35,12 +61,19 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
     ret = *this;
     ret.pts = {};
 
+    // First find any vertex that lies on our curve.
+    List<SInter> vertpts = {};
+    if(agnstA)
+        FindVertsOnCurve(&vertpts, this, agnstA);
+    if(agnstB)
+        FindVertsOnCurve(&vertpts, this, agnstB);
+
     const SCurvePt *p = pts.First();
     ssassert(p != NULL, "Cannot split an empty curve");
     SCurvePt prev = *p;
     ret.pts.Add(p);
     p = pts.NextAfter(p);
-
+            
     for(; p; p = pts.NextAfter(p)) {
         List<SInter> il = {};
 
@@ -100,12 +133,22 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
                 pi->p = (pi->srf)->PointAt(puv);
             }
             il.RemoveTagged();
+        }
+        // Now add any vertex that is on this segment
+        const Vector lineStart     = prev.p;
+        const Vector lineDirection = (p->p).Minus(prev.p);
+        for(auto vtx : vertpts) {
+            double t = (vtx.p.Minus(lineStart)).DivProjected(lineDirection);
+            if((0.0 < t) && (t < 1.0)) {
+                il.Add(&vtx);
+            }
+        }
+        if(!il.IsEmpty()) {
+            SInter *pi;
 
             // And now sort them in order along the line. Note that we must
             // do that after refining, in case the refining would make two
             // points switch places.
-            const Vector lineStart     = prev.p;
-            const Vector lineDirection = (p->p).Minus(prev.p);
             std::sort(il.begin(), il.end(), [&](const SInter &a, const SInter &b) {
                 double ta = (a.p.Minus(lineStart)).DivProjected(lineDirection);
                 double tb = (b.p.Minus(lineStart)).DivProjected(lineDirection);
@@ -133,6 +176,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
         ret.pts.Add(p);
         prev = *p;
     }
+    vertpts.Clear();
     return ret;
 }
 
