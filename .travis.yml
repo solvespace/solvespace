@@ -12,6 +12,11 @@ jobs:
       dist: bionic
       install: ./.travis/install-debian.sh
       script: ./.travis/build-debian.sh
+    - stage: test
+      name: "Windows Visual Studio 2017"
+      os: windows
+      install: ./.travis/install-windows.sh
+      script: ./.travis/build-windows.sh
     - stage: deploy
       name: "OSX"
       os: osx
