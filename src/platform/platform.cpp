@@ -401,7 +401,7 @@ FILE *OpenFile(const Platform::Path &filename, const char *mode) {
     ssassert(filename.raw.length() == strlen(filename.raw.c_str()),
              "Unexpected null byte in middle of a path");
 #if defined(WIN32)
-    return _wfopen(Widen(filename.Expand().raw).c_str(), Widen(mode).c_str());
+    return _wfopen(Widen(filename.Expand(/*fromCurrentDirectory=*/true).raw).c_str(), Widen(mode).c_str());
 #else
     return fopen(filename.raw.c_str(), mode);
 #endif
