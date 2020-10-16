@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
             dbp("Only the first file passed on command line will be opened.");
         }
 
-        SS.Load(Platform::Path::From(args.back()).Expand(/*fromCurrentDirectory=*/true));
+        SS.Load(Platform::Path::From(args.back()));
     }
 
     Platform::RunGui();
