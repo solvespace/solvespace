@@ -305,9 +305,16 @@ void GraphicsWindow::GroupSelection() {
 
 Camera GraphicsWindow::GetCamera() const {
     Camera camera = {};
-    window->GetContentSize(&camera.width, &camera.height);
-    camera.pixelRatio = window->GetDevicePixelRatio();
-    camera.gridFit    = (window->GetDevicePixelRatio() == 1);
+    if(window) {
+        window->GetContentSize(&camera.width, &camera.height);
+        camera.pixelRatio = window->GetDevicePixelRatio();
+        camera.gridFit    = (window->GetDevicePixelRatio() == 1);
+    } else {    // solvespace-cli
+        camera.width = 297.0;   // A4? Whatever...
+        camera.height = 210.0;
+        camera.pixelRatio = 1.0;
+        camera.gridFit    = camera.pixelRatio == 1.0;
+    }
     camera.offset     = offset;
     camera.projUp     = projUp;
     camera.projRight  = projRight;
