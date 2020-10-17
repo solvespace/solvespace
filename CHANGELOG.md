@@ -5,6 +5,7 @@ Changelog
 ---
 
 New sketch features:
+  * New intersection boolean operation for solid models.
   * New groups, revolution and helical extrusion.
   * Extrude, lathe, translate and rotate groups can use the "assembly"
     boolean operation, to increase performance.
@@ -46,6 +47,7 @@ New constraint features:
     with a value.
 
 New export/import features:
+  * Link IDF circuit boards in an assembly (.emn files)
   * Three.js: allow configuring projection for exported model, and initially
     use the current viewport projection.
   * Wavefront OBJ: a material file is exported alongside the model, containing
@@ -80,6 +82,9 @@ New measurement/analysis features:
     workplane is displayed.
 
 Other new features:
+  * Added ExportBackgroundColor in configuration for EPS, PDF, and SVG files.
+  * Improvements to the text window for selected entities and constraints.
+  * Ambient light source added in text window to allow flat shaded renderings.
   * New command-line interface, for batch exporting and more.
   * The graphical interface now supports HiDPI screens on every OS.
   * New option to lock Z axis to be always vertical, like in SketchUp.
@@ -101,8 +106,17 @@ Other new features:
   * The numpad decimal separator key is bound to "." regardless of locale.
   * On Windows, full-screen mode is implemented.
   * On Linux, native file chooser dialog can be used.
+  * New edit menu items "Line Styles", "View Projection" and "Configuration"
+    that are shortcuts to the respective configuration screens.
+  * New cmake build options using -DENABLE_OPENMP=yes and -DENABLE_LTO=yes
+    to enable support for multi-threading and link-time optimization.
 
 Bugs fixed:
+  * Fixed broken --view options for command line thumbnail image creation.
+  * Some errors in Triangulation of surfaces.
+  * Some NURNS boolean operations that failed particularly on surfaces
+    created with Lathe, Revolve, or Helix.
+  * Segfault in Remove Spline Point context menu.
   * A point in 3d constrained to any line whose length is free no longer
     causes the line length to collapse.
   * Curve-line constraints (in 3d), parallel constraints (in 3d), and
@@ -120,6 +134,9 @@ Bugs fixed:
     them, such that their constraints are retained.
   * When linking a sketch file, missing custom styles are now imported from
     the linked file.
+  * 3Dconnexion SpaceMouse should now work (on Windows and macOS X).
+  * Improved NURBS boolean operations on curved surfaces in some cases.
+  * Show only usable fonts in the font selector.
 
 2.x
 ---

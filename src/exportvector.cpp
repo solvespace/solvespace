@@ -551,6 +551,9 @@ void DxfFileWriter::StartFile() {
     paths.clear();
 }
 
+void DxfFileWriter::Background(RgbaColor color) {
+}
+
 void DxfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
@@ -694,6 +697,35 @@ void EpsFileWriter::StartFile() {
             (int)ceil(MmToPts(ptMax.y - ptMin.y)),
             MmToPts(ptMax.x - ptMin.x),
             MmToPts(ptMax.y - ptMin.y));
+}
+
+void EpsFileWriter::Background(RgbaColor color) {
+    double width  = ptMax.x - ptMin.x;
+    double height = ptMax.y - ptMin.y;
+
+    fprintf(f,
+"%.3f %.3f %.3f setrgbcolor\r\n"
+"newpath\r\n"
+"    %.3f %.3f moveto\r\n"
+"    %.3f %.3f lineto\r\n"
+"    %.3f %.3f lineto\r\n"
+"    %.3f %.3f lineto\r\n"
+"    closepath\r\n"
+"gsave fill grestore\r\n",
+            color.redF(), color.greenF(), color.blueF(),
+            MmToPts(0),     MmToPts(0),
+            MmToPts(width), MmToPts(0),
+            MmToPts(width), MmToPts(height),
+            MmToPts(0),     MmToPts(height));
+
+    // same issue with cracks, stroke it to avoid them
+    double sw = max(width, height) / 1000;
+    fprintf(f,
+"1 setlinejoin\r\n"
+"1 setlinecap\r\n"
+"%.3f setlinewidth\r\n"
+"gsave stroke grestore\r\n",
+            MmToPts(sw));
 }
 
 void EpsFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
@@ -926,6 +958,30 @@ void PdfFileWriter::FinishAndCloseFile() {
 
 }
 
+void PdfFileWriter::Background(RgbaColor color) {
+    double width  = ptMax.x - ptMin.x;
+    double height = ptMax.y - ptMin.y;
+    double sw     = max(width, height) / 1000;
+
+    fprintf(f,
+"1 J 1 j\r\n"
+"%.3f %.3f %.3f RG\r\n"
+"%.3f %.3f %.3f rg\r\n"
+"%.3f w\r\n"
+"%.3f %.3f m\r\n"
+"%.3f %.3f l\r\n"
+"%.3f %.3f l\r\n"
+"%.3f %.3f l\r\n"
+"b\r\n",
+            color.redF(), color.greenF(), color.blueF(),
+            color.redF(), color.greenF(), color.blueF(),
+            MmToPts(sw),
+            MmToPts(0),     MmToPts(0),
+            MmToPts(width), MmToPts(0),
+            MmToPts(width), MmToPts(height),
+            MmToPts(0),     MmToPts(height));
+}
+
 void PdfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
@@ -1051,6 +1107,16 @@ void SvgFileWriter::StartFile() {
     fprintf(f, "]]></style>\r\n");
 }
 
+void SvgFileWriter::Background(RgbaColor color) {
+    fprintf(f,
+"<style><![CDATA[\r\n"
+"svg {\r\n"
+"background-color:#%02x%02x%02x;\r\n"
+"}\r\n"
+"]]></style>\r\n",
+        color.red, color.green, color.blue);
+}
+
 void SvgFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
@@ -1146,6 +1212,9 @@ void HpglFileWriter::StartFile() {
     fprintf(f, "SP1;\r\n");
 }
 
+void HpglFileWriter::Background(RgbaColor color) {
+}
+
 void HpglFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                                bool filled, RgbaColor fillRgb, hStyle hs)
 {
@@ -1186,6 +1255,8 @@ void GCodeFileWriter::StartFile() {
 void GCodeFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                                 bool filled, RgbaColor fillRgb, hStyle hs)
 {
+}
+void GCodeFileWriter::Background(RgbaColor color) {
 }
 void GCodeFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
                                  bool filled, RgbaColor fillRgb, hStyle hs)
@@ -1246,6 +1317,9 @@ void Step2dFileWriter::StartFile() {
     sfw = {};
     sfw.f = f;
     sfw.WriteHeader();
+}
+
+void Step2dFileWriter::Background(RgbaColor color) {
 }
 
 void Step2dFileWriter::Triangle(STriangle *tr) {

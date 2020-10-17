@@ -74,6 +74,12 @@ const MenuEntry Menu[] = {
 { 1, N_("Select &Edge Chain"),          Command::SELECT_CHAIN,     C|'e',   KN, mEdit  },
 { 1, N_("Select &All"),                 Command::SELECT_ALL,       C|'a',   KN, mEdit  },
 { 1, N_("&Unselect All"),               Command::UNSELECT_ALL,     '\x1b',  KN, mEdit  },
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("&Line Styles..."),             Command::EDIT_LINE_STYLES, 0,       KN, mEdit  },
+{ 1, N_("&View Projection..."),         Command::VIEW_PROJECTION,  0,       KN, mEdit  },
+#ifndef __APPLE__
+{ 1, N_("Con&figuration..."),           Command::CONFIGURATION,    0,       KN, mEdit  },
+#endif
 
 { 0, N_("&View"),                       Command::NONE,             0,       KN, mView  },
 { 1, N_("Zoom &In"),                    Command::ZOOM_IN,          '+',     KN, mView  },
@@ -948,9 +954,17 @@ void GraphicsWindow::ForceTextWindowShown() {
 }
 
 void GraphicsWindow::DeleteTaggedRequests() {
+    Request *r;
+    // Delete any requests that were affected by this deletion.
+    for(r = SK.request.First(); r; r = SK.request.NextAfter(r)) {
+        if(r->workplane == Entity::FREE_IN_3D) continue;
+        if(!r->workplane.isFromRequest()) continue;
+        Request *wrkpl = SK.GetRequest(r->workplane.request());
+        if(wrkpl->tag)
+            r->tag = 1;
+    }
     // Rewrite any point-coincident constraints that were affected by this
     // deletion.
-    Request *r;
     for(r = SK.request.First(); r; r = SK.request.NextAfter(r)) {
         if(!r->tag) continue;
         FixConstraintsForRequestBeingDeleted(r->h);
@@ -1183,6 +1197,22 @@ void GraphicsWindow::MenuEdit(Command id) {
             SS.ScheduleShowTW();
             break;
 
+        case Command::EDIT_LINE_STYLES:
+            SS.TW.GoToScreen(TextWindow::Screen::LIST_OF_STYLES);
+            SS.GW.ForceTextWindowShown();
+            SS.ScheduleShowTW();
+            break;
+        case Command::VIEW_PROJECTION:
+            SS.TW.GoToScreen(TextWindow::Screen::EDIT_VIEW);
+            SS.GW.ForceTextWindowShown();
+            SS.ScheduleShowTW();
+            break;
+        case Command::CONFIGURATION:
+            SS.TW.GoToScreen(TextWindow::Screen::CONFIGURATION);
+            SS.GW.ForceTextWindowShown();
+            SS.ScheduleShowTW();
+            break;
+
         default: ssassert(false, "Unexpected menu ID");
     }
 }
@@ -1197,6 +1227,8 @@ void GraphicsWindow::MenuRequest(Command id) {
             if(SS.GW.gs.n == 1 && SS.GW.gs.workplanes == 1) {
                 // A user-selected workplane
                 g->activeWorkplane = SS.GW.gs.entity[0];
+                SS.GW.EnsureValidActives();
+                SS.ScheduleShowTW();
             } else if(g->type == Group::Type::DRAWING_WORKPLANE) {
                 // The group's default workplane
                 g->activeWorkplane = g->h.entity(0);
@@ -1211,6 +1243,8 @@ void GraphicsWindow::MenuRequest(Command id) {
                         "not have a default workplane. Try selecting a "
                         "workplane, or activating a sketch-in-new-workplane "
                         "group."));
+                //update checkboxes in the menus
+                SS.GW.EnsureValidActives();
             }
             break;
         }

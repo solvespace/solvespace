@@ -189,6 +189,8 @@ public:
     struct {
         SolveResult         how;
         int                 dof;
+        int                 findToFixTimeout;
+        bool                timeout;
         List<hConstraint>   remove;
     } solved;
 
@@ -239,7 +241,8 @@ public:
     enum class CombineAs : uint32_t {
         UNION           = 0,
         DIFFERENCE      = 1,
-        ASSEMBLE        = 2
+        ASSEMBLE        = 2,
+        INTERSECTION    = 3
     };
     CombineAs meshCombine;
 
@@ -279,11 +282,13 @@ public:
         REMAP_LATHE_END    = 1007,
         REMAP_PT_TO_ARC    = 1008,
         REMAP_PT_TO_NORMAL = 1009,
+        REMAP_LATHE_ARC_CENTER = 1010,
     };
     hEntity Remap(hEntity in, int copyNumber);
     void MakeExtrusionLines(EntityList *el, hEntity in);
-    void MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis, int ai);
+    void MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis);
     void MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in, Vector axis);
+    void MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt, int ai, int af);
     void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
     void CopyEntity(EntityList *el,
                     Entity *ep, int timesApplied, int remap,
@@ -405,6 +410,8 @@ public:
         FACE_N_ROT_TRANS       =  5002,
         FACE_N_TRANS           =  5003,
         FACE_N_ROT_AA          =  5004,
+        FACE_ROT_NORMAL_PT     =  5005,
+        FACE_N_ROT_AXIS_TRANS  =  5006,
 
         WORKPLANE              = 10000,
         LINE_SEGMENT           = 11000,
@@ -561,6 +568,7 @@ public:
 
     bool IsStylable() const;
     bool IsVisible() const;
+    bool CanBeDragged() const;
 
     enum class DrawAs { DEFAULT, OVERLAY, HIDDEN, HOVERED, SELECTED };
     void Draw(DrawAs how, Canvas *canvas);
@@ -699,6 +707,7 @@ public:
     }
 
     bool HasLabel() const;
+    bool IsProjectible() const;
 
     void Generate(IdList<Param, hParam> *param);
 

@@ -646,14 +646,16 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     // for testing - hard code the axial distance, and number of sections.
     // distance will need to be parameters in the future.
     double dist  = distf - dists;
-    int sections = fabs(anglef - angles) / (PI / 2) + 1;
+    int sections = (int)(fabs(anglef - angles) / (PI / 2) + 1);
     double wedge = (anglef - angles) / sections;
+    int startMapping = Group::REMAP_LATHE_START, endMapping = Group::REMAP_LATHE_END;
 
     if(CheckNormalAxisRelationship(sbls, pt, axis, anglef-angles, distf-dists)) {
         swap(angles, anglef);
         swap(dists, distf);
         dist  = -dist;
         wedge = -wedge;
+        swap(startMapping, endMapping);
     }
 
     // Define a coordinate system to contain the original sketch, and get
@@ -674,14 +676,23 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     // So we can now generate the end caps of the extrusion within
     // a translated and rotated (and maybe mirrored) version of that csys.
     SSurface s0, s1;
-    s0       = SSurface::FromPlane(orig.RotatedAbout(pt, axis, angles).Plus(axis.ScaledBy(dists)),
+    s0 = SSurface::FromPlane(orig.RotatedAbout(pt, axis, angles).Plus(axis.ScaledBy(dists)),
                              u.RotatedAbout(axis, angles), v.RotatedAbout(axis, angles));
     s0.color = color;
-    s1       = SSurface::FromPlane(
+
+    hEntity face0 = group->Remap(Entity::NO_ENTITY, startMapping);
+    s0.face = face0.v;
+
+    s1 = SSurface::FromPlane(
         orig.Plus(u).RotatedAbout(pt, axis, anglef).Plus(axis.ScaledBy(distf)),
         u.ScaledBy(-1).RotatedAbout(axis, anglef), v.RotatedAbout(axis, anglef));
-    s1.color      = color;
-    hSSurface hs0 = surface.AddAndAssignId(&s0), hs1 = surface.AddAndAssignId(&s1);
+    s1.color = color;
+
+    hEntity face1 = group->Remap(Entity::NO_ENTITY, endMapping);
+    s1.face = face1.v;
+
+    hSSurface hs0 = surface.AddAndAssignId(&s0);
+    hSSurface hs1 = surface.AddAndAssignId(&s1);
 
     // Now we actually build and trim the swept surfaces. One loop at a time.
     for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
@@ -723,6 +734,15 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
 
             sb = &(sbl->l[i]);
 
+            // we will need the grid t-values for this entire row of surfaces
+            List<double> t_values;
+            t_values = {};
+            if (revs[0].v) { 
+                double ps = 0.0;
+                t_values.Add(&ps);
+                (surface.FindById(revs[0]))->MakeTriangulationGridInto(
+                        &t_values, 0.0, 1.0, true, 0);
+            }
             // we generate one more curve than we did surfaces
             for(j = 0; j <= sections; j++) {
                 SCurve sc;
@@ -737,9 +757,16 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                     sc         = {};
                     sc.isExact = true;
                     sc.exact   = sb->TransformedBy(ts, qs, 1.0);
-                    (sc.exact).MakePwlInto(&(sc.pts));
+                    // make the PWL for the curve based on t value list
+                    for(int x = 0; x < t_values.n; x++) {
+                        SCurvePt scpt;
+                        scpt.tag    = 0;
+                        scpt.p      = sc.exact.PointAt(t_values[x]);
+                        scpt.vertex = (x == 0) || (x == (t_values.n - 1));
+                        sc.pts.Add(&scpt);
+                    }
 
-                    // the surfaces already exist so trim with this curve
+                    // the surfaces already exists so trim with this curve
                     if(j < sections) {
                         sc.surfA = revs[j];
                     } else {
@@ -751,6 +778,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                     } else {
                         sc.surfB = hs0; // staring cap
                     }
+
                     hSCurve hcb = curve.AddAndAssignId(&sc);
 
                     STrimBy stb;
@@ -784,7 +812,9 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                     sc.isExact = true;
                     sc.exact   = SBezier::From(ss->ctrl[0][0], ss->ctrl[0][1], ss->ctrl[0][2]);
                     sc.exact.weight[1] = ss->weight[0][1];
-                    (sc.exact).MakePwlInto(&(sc.pts));
+                    double max_dt = 0.5;
+                    if (sc.exact.deg > 1) max_dt = 0.125;
+                    (sc.exact).MakePwlInto(&(sc.pts), 0.0, max_dt);
                     sc.surfA = revs[j];
                     sc.surfB = revsp[j];
 
@@ -797,6 +827,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                     (surface.FindById(sc.surfB))->trim.Add(&stb);
                 }
             }
+            t_values.Clear();
         }
 
         hsl.Clear();
@@ -1041,9 +1072,14 @@ void SShell::MakeSectionEdgesInto(Vector n, double d, SEdgeList *sel, SBezierLis
 }
 
 void SShell::TriangulateInto(SMesh *sm) {
-    SSurface *s;
-    for(s = surface.First(); s; s = surface.NextAfter(s)) {
-        s->TriangulateInto(this, sm);
+#pragma omp parallel for
+    for(int i=0; i<surface.n; i++) {
+        SSurface *s = &surface[i];
+        SMesh m;
+        s->TriangulateInto(this, &m);
+        #pragma omp critical
+        sm->MakeFromCopyOf(&m);
+        m.Clear();
     }
 }
 

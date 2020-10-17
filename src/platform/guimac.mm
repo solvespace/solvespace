@@ -458,13 +458,25 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     }
 }
 
+- (void)mouseMotionEvent:(NSEvent *)nsEvent withButton:(Platform::MouseEvent::Button)button {
+    using Platform::MouseEvent;
+
+    MouseEvent event = [self convertMouseEvent:nsEvent];
+    event.type   = MouseEvent::Type::MOTION;
+    event.button = button;
+
+    if(receiver->onMouseEvent) {
+        receiver->onMouseEvent(event);
+    }
+}
+
 - (void)mouseMoved:(NSEvent *)nsEvent {
     [self mouseMotionEvent:nsEvent];
     [super mouseMoved:nsEvent];
 }
 
 - (void)mouseDragged:(NSEvent *)nsEvent {
-    [self mouseMotionEvent:nsEvent];
+    [self mouseMotionEvent:nsEvent withButton:Platform::MouseEvent::Button::LEFT];
 }
 
 - (void)otherMouseDragged:(NSEvent *)nsEvent {
@@ -1441,7 +1453,15 @@ namespace Platform {
 
 static SSApplicationDelegate *ssDelegate;
 
-void InitGui(int argc, char **argv) {
+std::vector<std::string> InitGui(int argc, char **argv) {
+    std::vector<std::string> args = InitCli(argc, argv);
+    if(args.size() >= 2 && args[1].find("-psn_") == 0) {
+        // For unknown reasons, Finder passes a Carbon PSN (Process Serial Number) argument
+        // when a freshly downloaded application is run for the first time. Remove it so
+        // that it isn't interpreted as a filename.
+        args.erase(args.begin() + 1);
+    }
+
     ssDelegate = [[SSApplicationDelegate alloc] init];
     NSApplication.sharedApplication.delegate = ssDelegate;
 
@@ -1454,6 +1474,8 @@ void InitGui(int argc, char **argv) {
     if(languages.count == 0) {
         SolveSpace::SetLocale("en_US");
     }
+
+    return args;
 }
 
 void RunGui() {

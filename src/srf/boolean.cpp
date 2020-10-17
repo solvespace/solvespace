@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
-// Top-level functions to compute the Boolean union or difference between
-// two shells of rational polynomial surfaces.
+// Top-level functions to compute the Boolean union, difference or intersection
+// between two shells of rational polynomial surfaces.
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
@@ -14,6 +14,10 @@ void SShell::MakeFromUnionOf(SShell *a, SShell *b) {
 
 void SShell::MakeFromDifferenceOf(SShell *a, SShell *b) {
     MakeFromBoolean(a, b, SSurface::CombineAs::DIFFERENCE);
+}
+
+void SShell::MakeFromIntersectionOf(SShell *a, SShell *b) {
+    MakeFromBoolean(a, b, SSurface::CombineAs::INTERSECTION);
 }
 
 //-----------------------------------------------------------------------------
@@ -84,8 +88,15 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
                     }
                 }
 
-                // We're keeping the intersection, so actually refine it.
-                (pi->srf)->PointOnSurfaces(srfA, srfB, &(puv.x), &(puv.y));
+                // We're keeping the intersection, so actually refine it. Finding the intersection
+                // to within EPS is important to match the ends of different chopped trim curves.
+                // The general 3-surface intersection fails to refine for trims where surfaces
+                // are tangent at the curve, but those trims are usually exact, so…
+                if(isExact) {
+                    (pi->srf)->PointOnCurve(&exact, &(puv.x), &(puv.y));
+                } else {
+                    (pi->srf)->PointOnSurfaces(srfA, srfB, &(puv.x), &(puv.y));
+                }
                 pi->p = (pi->srf)->PointAt(puv);
             }
             il.RemoveTagged();
@@ -209,6 +220,13 @@ static bool KeepRegion(SSurface::CombineAs type, bool opA, SShell::Class shell, 
         case SSurface::CombineAs::DIFFERENCE:
             if(opA) {
                 return outSide;
+            } else {
+                return inShell || inSame;
+            }
+
+        case SSurface::CombineAs::INTERSECTION:
+            if(opA) {
+                return inShell;
             } else {
                 return inShell || inSame;
             }
@@ -368,11 +386,17 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
            enxyz = (ab.Cross(*surfn)).WithMagnitude(SS.ChordTolMm());
     // And based on that, compute the edge's inner normal in uv space. This
     // vector is perpendicular to the edge in xyz, but not necessarily in uv.
-    Vector tu, tv;
+    Vector tu, tv, tx, ty;
     TangentsAt(muv.x, muv.y, &tu, &tv);
+    Vector n = tu.Cross(tv);
+    // since tu and tv may not be orthogonal, use y in place of v, x in place of u.
+    // |y| = |v|sin(theta) where theta is the angle between tu and tv.
+    ty = n.Cross(tu).ScaledBy(1.0/tu.MagSquared());
+    tx = tv.Cross(n).ScaledBy(1.0/tv.MagSquared());
+
     Point2d enuv;
-    enuv.x = enxyz.Dot(tu) / tu.MagSquared();
-    enuv.y = enxyz.Dot(tv) / tv.MagSquared();
+    enuv.x = enxyz.Dot(tx) / tx.MagSquared();
+    enuv.y = enxyz.Dot(ty) / ty.MagSquared();
 
     // Compute the inner and outer normals of this edge (within the srf),
     // in xyz space. These are not necessarily antiparallel, if the
@@ -392,7 +416,8 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
 SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                                        SShell *sha, SShell *shb,
                                        SShell *into,
-                                       SSurface::CombineAs type)
+                                       SSurface::CombineAs type,
+                                       int dbg_index)
 {
     bool opA = (parent == sha);
     SShell *agnst = opA ? shb : sha;
@@ -429,46 +454,48 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     SEdgeList inter = {};
 
     SSurface *ss;
-    for(ss = agnst->surface.First(); ss; ss = agnst->surface.NextAfter(ss)) {
-        SCurve *sc;
-        for(sc = into->curve.First(); sc; sc = into->curve.NextAfter(sc)) {
-            if(sc->source != SCurve::Source::INTERSECTION) continue;
-            if(opA) {
-                if(sc->surfA != h || sc->surfB != ss->h) continue;
-            } else {
-                if(sc->surfB != h || sc->surfA != ss->h) continue;
-            }
+    SCurve *sc;
+    for(sc = into->curve.First(); sc; sc = into->curve.NextAfter(sc)) {
+        if(sc->source != SCurve::Source::INTERSECTION) continue;
+        if(opA) {
+            if(sc->surfA != h) continue;
+            ss = shb->surface.FindById(sc->surfB);
+        } else {
+            if(sc->surfB != h) continue;
+            ss = sha->surface.FindById(sc->surfA);
+        }
+        int i;
+        for(i = 1; i < sc->pts.n; i++) {
+            Vector a = sc->pts[i-1].p,
+                   b = sc->pts[i].p;
 
-            int i;
-            for(i = 1; i < sc->pts.n; i++) {
-                Vector a = sc->pts[i-1].p,
-                       b = sc->pts[i].p;
+            Point2d auv, buv;
+            ss->ClosestPointTo(a, &(auv.x), &(auv.y));
+            ss->ClosestPointTo(b, &(buv.x), &(buv.y));
 
-                Point2d auv, buv;
-                ss->ClosestPointTo(a, &(auv.x), &(auv.y));
-                ss->ClosestPointTo(b, &(buv.x), &(buv.y));
+            SBspUv::Class c = (ss->bsp) ? ss->bsp->ClassifyEdge(auv, buv, ss) : SBspUv::Class::OUTSIDE;
+            if(c != SBspUv::Class::OUTSIDE) {
+                Vector ta = Vector::From(0, 0, 0);
+                Vector tb = Vector::From(0, 0, 0);
+                ret.ClosestPointTo(a, &(ta.x), &(ta.y));
+                ret.ClosestPointTo(b, &(tb.x), &(tb.y));
 
-                SBspUv::Class c = (ss->bsp) ? ss->bsp->ClassifyEdge(auv, buv, ss) : SBspUv::Class::OUTSIDE;
-                if(c != SBspUv::Class::OUTSIDE) {
-                    Vector ta = Vector::From(0, 0, 0);
-                    Vector tb = Vector::From(0, 0, 0);
-                    ret.ClosestPointTo(a, &(ta.x), &(ta.y));
-                    ret.ClosestPointTo(b, &(tb.x), &(tb.y));
+                Vector tn = ret.NormalAt(ta.x, ta.y);
+                Vector sn = ss->NormalAt(auv.x, auv.y);
 
-                    Vector tn = ret.NormalAt(ta.x, ta.y);
-                    Vector sn = ss->NormalAt(auv.x, auv.y);
-
-                    // We are subtracting the portion of our surface that
-                    // lies in the shell, so the in-plane edge normal should
-                    // point opposite to the surface normal.
-                    bool bkwds = true;
-                    if((tn.Cross(b.Minus(a))).Dot(sn) < 0) bkwds = !bkwds;
-                    if(type == SSurface::CombineAs::DIFFERENCE && !opA) bkwds = !bkwds;
-                    if(bkwds) {
-                        inter.AddEdge(tb, ta, sc->h.v, 1);
-                    } else {
-                        inter.AddEdge(ta, tb, sc->h.v, 0);
-                    }
+                // We are subtracting the portion of our surface that
+                // lies in the shell, so the in-plane edge normal should
+                // point opposite to the surface normal.
+                bool bkwds = true;
+                if((tn.Cross(b.Minus(a))).Dot(sn) < 0) bkwds = !bkwds;
+                if((type == SSurface::CombineAs::DIFFERENCE && !opA) ||
+                   (type == SSurface::CombineAs::INTERSECTION)) { // Invert all newly created edges for intersection
+                    bkwds = !bkwds;
+                }
+                if(bkwds) {
+                    inter.AddEdge(tb, ta, sc->h.v, 1);
+                } else {
+                    inter.AddEdge(ta, tb, sc->h.v, 0);
                 }
             }
         }
@@ -573,16 +600,18 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     // we can get duplicate edges if our surface intersects the other shell
     // at an edge, so that both surfaces intersect coincident (and both
     // generate an intersection edge).
-    final.CullExtraneousEdges();
+    final.CullExtraneousEdges(/*both=*/true);
 
     // Use our reassembled edges to trim the new surface.
     ret.TrimFromEdgeList(&final, /*asUv=*/true);
 
     SPolygon poly = {};
     final.l.ClearTags();
-    if(!final.AssemblePolygon(&poly, NULL, /*keepDir=*/true)) {
+    if(!final.AssemblePolygon(&poly, NULL, /*keepDir=*/true))
+#pragma omp critical
+    {
         into->booleanFailed = true;
-        dbp("failed: I=%d, avoid=%d", I, choosing.l.n);
+        dbp("failed: I=%d, avoid=%d", I+dbg_index, choosing.l.n);
         DEBUGEDGELIST(&final, &ret);
     }
     poly.Clear();
@@ -595,18 +624,26 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 }
 
 void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSurface::CombineAs type) {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        SSurface ssn;
-        ssn = ss->MakeCopyTrimAgainst(this, sha, shb, into, type);
-        ss->newH = into->surface.AddAndAssignId(&ssn);
-        I++;
+    std::vector <SSurface> ssn(surface.n);
+#pragma omp parallel for
+    for (int i = 0; i < surface.n; i++)
+    {
+        SSurface *ss = &surface[i];
+        ssn[i] = ss->MakeCopyTrimAgainst(this, sha, shb, into, type, i);
     }
+
+    for (int i = 0; i < surface.n; i++)
+    {
+        surface[i].newH = into->surface.AddAndAssignId(&ssn[i]);
+    }
+    I += surface.n;
 }
 
 void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
-    SSurface *sa;
-    for(sa = surface.First(); sa; sa = surface.NextAfter(sa)) {
+#pragma omp parallel for
+    for(int i = 0; i< surface.n; i++) {
+        SSurface *sa = &surface[i];
+
         SSurface *sb;
         for(sb = agnst->surface.First(); sb; sb = agnst->surface.NextAfter(sb)){
             // Intersect every surface from our shell against every surface
@@ -744,9 +781,9 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type) {
 // All of the BSP routines that we use to perform and accelerate polygon ops.
 //-----------------------------------------------------------------------------
 void SShell::MakeClassifyingBsps(SShell *useCurvesFrom) {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        ss->MakeClassifyingBsp(this, useCurvesFrom);
+#pragma omp parallel for
+    for(int i = 0; i<surface.n; i++) {
+        surface[i].MakeClassifyingBsp(this, useCurvesFrom);
     }
 }
 
@@ -849,14 +886,14 @@ void SBspUv::InsertEdge(Point2d ea, Point2d eb, SSurface *srf) {
         m->more = more;
         more = m;
     } else if(fabs(dea) < LENGTH_EPS) {
-        // Point A lies on this lie, but point B does not
+        // Point A lies on this line, but point B does not
         if(deb > 0) {
             pos = InsertOrCreateEdge(pos, ea, eb, srf);
         } else {
             neg = InsertOrCreateEdge(neg, ea, eb, srf);
         }
     } else if(fabs(deb) < LENGTH_EPS) {
-        // Point B lies on this lie, but point A does not
+        // Point B lies on this line, but point A does not
         if(dea > 0) {
             pos = InsertOrCreateEdge(pos, ea, eb, srf);
         } else {

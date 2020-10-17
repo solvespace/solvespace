@@ -23,9 +23,11 @@ namespace Platform {
 
 
 #ifdef TEST_BUILD_ON_WINDOWS
-static char BUILD_PATH_SEP = '\\';
+static const char *VALID_BUILD_PATH_SEPS = "/\\";
+static char BUILD_PATH_SEP               = '\\';
 #else
-static char BUILD_PATH_SEP = '/';
+static const char *VALID_BUILD_PATH_SEPS = "/";
+static char BUILD_PATH_SEP               = '/';
 #endif
 
 static std::string BuildRoot() {
@@ -33,7 +35,7 @@ static std::string BuildRoot() {
     if(!rootDir.empty()) return rootDir;
 
     rootDir = __FILE__;
-    rootDir.erase(rootDir.rfind(BUILD_PATH_SEP) + 1);
+    rootDir.erase(rootDir.find_last_of(VALID_BUILD_PATH_SEPS) + 1);
     return rootDir;
 }
 
@@ -156,7 +158,7 @@ Platform::Path Test::Helper::GetAssetPath(std::string testFile, std::string asse
         assetName.insert(assetName.rfind('.'), "." + mangle);
     }
     testFile.erase(0, BuildRoot().size());
-    testFile.erase(testFile.rfind(BUILD_PATH_SEP) + 1);
+    testFile.erase(testFile.find_last_of(VALID_BUILD_PATH_SEPS) + 1);
     return HostRoot().Join(Platform::Path::FromPortable(testFile + assetName));
 }
 
@@ -333,7 +335,7 @@ int Test::Case::Register(Test::Case testCase) {
 }
 
 int main(int argc, char **argv) {
-    std::vector<std::string> args = InitPlatform(argc, argv);
+    std::vector<std::string> args = Platform::InitCli(argc, argv);
 
     std::regex filter(".*");
     if(args.size() == 1) {
@@ -354,7 +356,7 @@ int main(int argc, char **argv) {
     for(Test::Case &testCase : *testCasesPtr) {
         std::string testCaseName = testCase.fileName;
         testCaseName.erase(0, BuildRoot().size());
-        testCaseName.erase(testCaseName.rfind(BUILD_PATH_SEP));
+        testCaseName.erase(testCaseName.find_last_of(VALID_BUILD_PATH_SEPS));
         testCaseName += BUILD_PATH_SEP + testCase.caseName;
 
         std::smatch filterMatch;

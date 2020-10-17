@@ -12,10 +12,6 @@
 /* What OpenGL version do we use? */
 #define HAVE_OPENGL @OPENGL@
 
-/* Do we have backtrace() function, and if yes, in which library? */
-#cmakedefine HAVE_BACKTRACE
-#define BACKTRACE_HEADER @BACKTRACE_HEADER@
-
 /* If we use GTK, can we use the native file chooser? */
 #cmakedefine HAVE_GTK_FILECHOOSERNATIVE
 

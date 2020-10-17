@@ -105,6 +105,9 @@ enum class Command : uint32_t {
     ROTATE_90,
     UNSELECT_ALL,
     REGEN_ALL,
+    EDIT_LINE_STYLES,
+    VIEW_PROJECTION,
+    CONFIGURATION,
     // Request
     SEL_WORKPLANE,
     FREE_IN_3D,
@@ -312,6 +315,8 @@ public:
         G_CODE_FEED           = 114,
         G_CODE_PLUNGE_FEED    = 115,
         AUTOSAVE_INTERVAL     = 116,
+        LIGHT_AMBIENT         = 117,
+        FIND_CONSTRAINT_TIMEOUT = 118,
         // For TTF text
         TTF_TEXT              = 300,
         // For the step dimension screen
@@ -393,6 +398,7 @@ public:
     static void ScreenUnselectAll(int link, uint32_t v);
 
     // when we're describing a constraint
+    static void ScreenConstraintToggleReference(int link, uint32_t v);
     static void ScreenConstraintShowAsRadius(int link, uint32_t v);
 
     // and the rest from the stuff in textscreens.cpp
@@ -403,9 +409,12 @@ public:
     static void ScreenShowGroupsSpecial(int link, uint32_t v);
     static void ScreenDeleteGroup(int link, uint32_t v);
 
-    static void ScreenHoverConstraint(int link, uint32_t v);
+    static void ScreenHoverGroupWorkplane(int link, uint32_t v);
     static void ScreenHoverRequest(int link, uint32_t v);
+    static void ScreenHoverEntity(int link, uint32_t v);
+    static void ScreenHoverConstraint(int link, uint32_t v);
     static void ScreenSelectRequest(int link, uint32_t v);
+    static void ScreenSelectEntity(int link, uint32_t v);
     static void ScreenSelectConstraint(int link, uint32_t v);
 
     static void ScreenChangeGroupOption(int link, uint32_t v);
@@ -426,6 +435,7 @@ public:
     static void ScreenGoToWebsite(int link, uint32_t v);
 
     static void ScreenChangeFixExportColors(int link, uint32_t v);
+    static void ScreenChangeExportBackgroundColor(int link, uint32_t v);
     static void ScreenChangeBackFaces(int link, uint32_t v);
     static void ScreenChangeShowContourAreas(int link, uint32_t v);
     static void ScreenChangeCheckClosedContour(int link, uint32_t v);
@@ -464,6 +474,7 @@ public:
     static void ScreenChangeGroupScale(int link, uint32_t v);
     static void ScreenChangeLightDirection(int link, uint32_t v);
     static void ScreenChangeLightIntensity(int link, uint32_t v);
+    static void ScreenChangeLightAmbient(int link, uint32_t v);
     static void ScreenChangeColor(int link, uint32_t v);
     static void ScreenChangeChordTolerance(int link, uint32_t v);
     static void ScreenChangeMaxSegments(int link, uint32_t v);
@@ -478,6 +489,7 @@ public:
     static void ScreenChangeExportOffset(int link, uint32_t v);
     static void ScreenChangeGCodeParameter(int link, uint32_t v);
     static void ScreenChangeAutosaveInterval(int link, uint32_t v);
+    static void ScreenChangeFindConstraintTimeout(int link, uint32_t v);
     static void ScreenChangeStyleName(int link, uint32_t v);
     static void ScreenChangeStyleMetric(int link, uint32_t v);
     static void ScreenChangeStyleTextAngle(int link, uint32_t v);

@@ -27,19 +27,22 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
     SBezier sbrev = *sb;
     sbrev.Reverse();
     bool backwards = false;
-    for(se = into->curve.First(); se; se = into->curve.NextAfter(se)) {
-        if(se->isExact) {
-            if(sb->Equals(&(se->exact))) {
-                existing = se;
-                break;
-            }
-            if(sbrev.Equals(&(se->exact))) {
-                existing = se;
-                backwards = true;
-                break;
+#pragma omp critical(into)
+    {
+        for(se = into->curve.First(); se; se = into->curve.NextAfter(se)) {
+            if(se->isExact) {
+                if(sb->Equals(&(se->exact))) {
+                    existing = se;
+                    break;
+                }
+                if(sbrev.Equals(&(se->exact))) {
+                    existing = se;
+                    backwards = true;
+                    break;
+                }
             }
         }
-    }
+    }// end omp critical
     if(existing) {
         SCurvePt *v;
         for(v = existing->pts.First(); v; v = existing->pts.NextAfter(v)) {
@@ -101,7 +104,10 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
              "Unexpected zero-length edge");
 
     split.source = SCurve::Source::INTERSECTION;
-    into->curve.AddAndAssignId(&split);
+#pragma omp critical(into)
+    {
+        into->curve.AddAndAssignId(&split);
+    }
 }
 
 void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
@@ -307,6 +313,38 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         inters.Clear();
         lv.Clear();
     } else {
+        if((degm == 1 && degn == 1) || (b->degm == 1 && b->degn == 1)) {
+            // we should only be here if just one surface is a plane because the
+            // plane-plane case was already handled above. Need to check the other
+            // nonplanar surface for trim curves that lie in the plane and are not
+            // already trimming both surfaces. This happens when we cut a Lathe shell
+            // on one of the seams for example.
+            // This also seems necessary to merge some coincident surfaces.
+            SSurface *splane, *sext;
+            SShell *shext;
+            if(degm == 1 && degn == 1) { // this and other checks assume coplanar ctrl pts.
+                splane = this;
+                sext = b;
+                shext = agnstB;
+            } else {
+                splane = b;
+                sext = this;
+                shext = agnstA;
+            }
+            SCurve *sc;
+            for(sc = shext->curve.First(); sc; sc = shext->curve.NextAfter(sc)) {
+                if(sc->source == SCurve::Source::INTERSECTION) continue;
+                if(!sc->isExact) continue;
+                if((sc->surfA != sext->h) && (sc->surfB != sext->h)) continue;
+                // we have a curve belonging to the curved surface and not the plane.
+                // does it lie completely in the plane?
+                if(splane->ContainsPlaneCurve(sc)) {
+                    SBezier bezier = sc->exact;
+                    AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
+                }
+            }
+        }
+
         // Try intersecting the surfaces numerically, by a marching algorithm.
         // First, we find all the intersections between a surface and the
         // boundary of the other surface.
@@ -341,7 +379,11 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                     Vector p = si->p;
                     double u, v;
                     srfB->ClosestPointTo(p, &u, &v);
-                    srfB->PointOnSurfaces(srfA, other, &u, &v);
+                    if(sc->isExact) {
+                        srfB->PointOnCurve(&(sc->exact), &u, &v);
+                    } else {
+                        srfB->PointOnSurfaces(srfA, other, &u, &v);
+                    }
                     p = srfB->PointAt(u, v);
                     if(!spl.ContainsPoint(p)) {
                         SPoint sp;
@@ -452,7 +494,10 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             // And now we split and insert the curve
             SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, b);
             sc.Clear();
-            into->curve.AddAndAssignId(&split);
+#pragma omp critical(into)
+            {
+                into->curve.AddAndAssignId(&split);
+            }
         }
         spl.Clear();
     }
@@ -489,6 +534,24 @@ bool SSurface::CoincidentWithPlane(Vector n, double d) const {
     if(fabs(n.Dot(ctrl[1][0]) - d) > LENGTH_EPS) return false;
     if(fabs(n.Dot(ctrl[1][1]) - d) > LENGTH_EPS) return false;
 
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+// Does a planar surface contain a curve? Does the curve lie completely in plane?
+//-----------------------------------------------------------------------------
+bool SSurface::ContainsPlaneCurve(SCurve *sc) const {
+    if(degm != 1 || degn != 1) return false;
+    if(!sc->isExact) return false; // we don't handle those (yet?)
+    
+    Vector p = ctrl[0][0];
+    Vector n = NormalAt(0, 0).WithMagnitude(1);
+    double d = n.Dot(p);
+
+    // check all control points on the curve
+    for(int i=0; i<= sc->exact.deg; i++) {
+        if(fabs(n.Dot(sc->exact.ctrl[i]) - d) > LENGTH_EPS) return false;
+    }
     return true;
 }
 

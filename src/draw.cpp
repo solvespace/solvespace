@@ -305,9 +305,16 @@ void GraphicsWindow::GroupSelection() {
 
 Camera GraphicsWindow::GetCamera() const {
     Camera camera = {};
-    window->GetContentSize(&camera.width, &camera.height);
-    camera.pixelRatio = window->GetDevicePixelRatio();
-    camera.gridFit    = (window->GetDevicePixelRatio() == 1);
+    if(window) {
+        window->GetContentSize(&camera.width, &camera.height);
+        camera.pixelRatio = window->GetDevicePixelRatio();
+        camera.gridFit    = (window->GetDevicePixelRatio() == 1);
+    } else {    // solvespace-cli
+        camera.width = 297.0;   // A4? Whatever...
+        camera.height = 210.0;
+        camera.pixelRatio = 1.0;
+        camera.gridFit    = camera.pixelRatio == 1.0;
+    }
     camera.offset     = offset;
     camera.projUp     = projUp;
     camera.projRight  = projRight;
@@ -353,18 +360,34 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
     return sel;
 }
 
+// This uses the same logic as hovering and static entity selection
+// but ignores points known not to be draggable
 GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToDrag() {
     Selection sel = {};
-    for(const Hover &hov : hoverList) {
-        if(hov.selection.entity.v == 0) continue;
-        if(!hov.selection.entity.isFromRequest()) continue;
-        sel = hov.selection;
-        break;
-    }
-    if(!sel.IsEmpty()) {
+    if(hoverList.IsEmpty())
         return sel;
+
+    Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
+    int bestOrder = -1;
+    int bestZIndex = 0;
+    for(const Hover &hov : hoverList) {
+        hGroup hg = {};
+        if(hov.selection.entity.v != 0) {
+            Entity *e = SK.GetEntity(hov.selection.entity);
+            if (!e->CanBeDragged()) continue;
+            hg = e->group;
+        } else if(hov.selection.constraint.v != 0) {
+            hg = SK.GetConstraint(hov.selection.constraint)->group;
+        }
+
+        Group *g = SK.GetGroup(hg);
+        if(g->order > activeGroup->order) continue;
+        if(bestOrder != -1 && (bestOrder >= g->order || bestZIndex > hov.zIndex)) continue;
+        bestOrder  = g->order;
+        bestZIndex = hov.zIndex;
+        sel = hov.selection;
     }
-    return ChooseFromHoverToSelect();
+    return sel;
 }
 
 void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
@@ -769,9 +792,13 @@ void GraphicsWindow::Draw(Canvas *canvas) {
         const double size = 10.0;
         const int subdiv = 16;
         double h = Style::DefaultTextHeight() / camera.scale;
-        canvas->DrawVectorText(ssprintf("%.3f, %.3f, %.3f", p.x, p.y, p.z), h,
+        std::string s =
+            SS.MmToStringSI(p.x) + ", " +
+            SS.MmToStringSI(p.y) + ", " +
+            SS.MmToStringSI(p.z);
+        canvas->DrawVectorText(s.c_str(), h,
                                p.Plus(u.ScaledBy((size + 5.0)/scale)).Minus(v.ScaledBy(h / 2.0)),
-                               u, v,hcsDatum);
+                               u, v, hcsDatum);
         u = u.WithMagnitude(size / scale);
         v = v.WithMagnitude(size / scale);
 
@@ -841,17 +868,15 @@ void GraphicsWindow::Paint() {
         ForceTextWindowShown();
     }
 
-    auto renderStartTime = std::chrono::high_resolution_clock::now();
-
     canvas->SetLighting(lighting);
     canvas->SetCamera(camera);
     canvas->StartFrame();
+
+    // Draw the 3d objects.
     Draw(canvas.get());
     canvas->FlushFrame();
 
-    auto renderEndTime = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> renderTime = renderEndTime - renderStartTime;
-
+    // Draw the 2d UI overlay.
     camera.LoadIdentity();
     camera.offset.x = -(double)camera.width  / 2.0;
     camera.offset.y = -(double)camera.height / 2.0;
@@ -887,19 +912,6 @@ void GraphicsWindow::Paint() {
         canvas->SetCamera(camera);
         ToolbarDraw(&uiCanvas);
     }
-
-    // Also display an fps counter.
-    RgbaColor renderTimeColor;
-    if(renderTime.count() > 16.67) {
-        // We aim for a steady 60fps; draw the counter in red when we're slower.
-        renderTimeColor = { 255, 0, 0, 255 };
-    } else {
-        renderTimeColor = { 255, 255, 255, 255 };
-    }
-    uiCanvas.DrawBitmapText(ssprintf("rendered in %ld ms (%ld 1/s)",
-                                     (long)renderTime.count(),
-                                     (long)(1000 / std::max(0.1, renderTime.count()))),
-                            5, 5, renderTimeColor);
 
     canvas->FlushFrame();
     canvas->FinishFrame();

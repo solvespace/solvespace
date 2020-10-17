@@ -9,6 +9,21 @@ static std::string ToUpper(std::string str) {
     return str;
 }
 
+static Quaternion NormalFromExtPoint(Vector extPoint) {
+    // DXF arbitrary axis algorithm for transforming a Z-vector into a rotated
+    // coordinate system
+    Vector ax, ay;
+    Vector az = extPoint.WithMagnitude(1.0);
+
+    if ((fabs(az.x) < 1/64.) && (fabs(az.y) < 1/64.)) {
+        ax = Vector::From(0, 1, 0).Cross(az).WithMagnitude(1.0);
+    } else {
+        ax = Vector::From(0, 0, 1).Cross(az).WithMagnitude(1.0);
+    }
+    ay = az.Cross(ax).WithMagnitude(1.0);
+    return Quaternion::From(ax, ay);
+}
+
 class DxfImport : public DRW_Interface {
 public:
     Vector blockX;
@@ -516,12 +531,41 @@ public:
         return hr.entity(0);
     }
 
-    hEntity createCircle(const Vector &c, double r, hStyle style) {
+    hEntity createWorkplane(const Vector &p, const Quaternion &q) {
+        hRequest hr = SS.GW.AddRequest(Request::Type::WORKPLANE, /*rememberForUndo=*/false);
+        SK.GetEntity(hr.entity(1))->PointForceTo(p);
+        processPoint(hr.entity(1));
+        SK.GetEntity(hr.entity(32))->NormalForceTo(q);
+        return hr.entity(0);
+    }
+
+    hEntity findOrCreateWorkplane(const Vector &p, const Quaternion &q) {
+        Vector z = q.RotationN();
+        for(auto &r : SK.request) {
+            if((r.type == Request::Type::WORKPLANE) && (r.group == SS.GW.activeGroup)) {
+                Vector wp = SK.GetEntity(r.h.entity(1))->PointGetNum();
+                Vector wz = SK.GetEntity(r.h.entity(32))->NormalN();
+
+                if ((p.DistanceToPlane(wz, wp) < LENGTH_EPS) && z.Equals(wz)) {
+                   return r.h.entity(0);
+                }
+            }
+        }
+
+        return createWorkplane(p, q);
+    }
+
+    static void activateWorkplane(hEntity he) {
+        Group *g = SK.GetGroup(SS.GW.activeGroup);
+        g->activeWorkplane = he;
+    }
+
+    hEntity createCircle(const Vector &c, const Quaternion &q, double r, hStyle style) {
         hRequest hr = SS.GW.AddRequest(Request::Type::CIRCLE, /*rememberForUndo=*/false);
         SK.GetEntity(hr.entity(1))->PointForceTo(c);
         processPoint(hr.entity(1));
+        SK.GetEntity(hr.entity(32))->NormalForceTo(q);
         SK.GetEntity(hr.entity(64))->DistanceForceTo(r);
-
         configureRequest(hr, style);
         return hr.entity(0);
     }
@@ -560,13 +604,25 @@ public:
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Arc>(data)) return;
 
-        hRequest hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false);
         double r = data.radious;
         double sa = data.staangle;
         double ea = data.endangle;
-        Vector c = Vector::From(data.basePoint.x, data.basePoint.y, data.basePoint.z);
-        Vector rvs = Vector::From(r * cos(sa), r * sin(sa), data.basePoint.z).Plus(c);
-        Vector rve = Vector::From(r * cos(ea), r * sin(ea), data.basePoint.z).Plus(c);
+        Vector c = toVector(data.basePoint);
+        Vector nz = toVector(data.extPoint);
+        Quaternion q = NormalFromExtPoint(nz);
+
+        bool planar = q.RotationN().Equals(Vector::From(0, 0, 1));
+        bool onPlane = c.z < LENGTH_EPS;
+
+        hEntity oldWorkplane = SS.GW.ActiveWorkplane();
+        if (!planar || !onPlane) {
+            activateWorkplane(findOrCreateWorkplane(c, q));
+        }
+
+        hRequest hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false);
+        Vector u = q.RotationU(), v = q.RotationV();
+        Vector rvs = c.Plus(u.ScaledBy(r * cos(sa))).Plus(v.ScaledBy(r * sin(sa)));
+        Vector rve = c.Plus(u.ScaledBy(r * cos(ea))).Plus(v.ScaledBy(r * sin(ea)));
 
         if(data.extPoint.z == -1.0) {
             c.x = -c.x;
@@ -584,13 +640,16 @@ public:
         processPoint(hr.entity(2));
         processPoint(hr.entity(3));
         configureRequest(hr, styleFor(&data));
+        activateWorkplane(oldWorkplane);
     }
 
     void addCircle(const DRW_Circle &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Circle>(data)) return;
 
-        createCircle(toVector(data.basePoint), data.radious, styleFor(&data));
+        Vector nz = toVector(data.extPoint);
+        Quaternion normal = NormalFromExtPoint(nz);
+        createCircle(toVector(data.basePoint), normal, data.radious, styleFor(&data));
     }
 
     void addLWPolyline(const DRW_LWPolyline &data)  override {
@@ -835,9 +894,9 @@ public:
         }
     }
 
-    hConstraint createDiametric(Vector cp, double r, Vector tp, double actual,
-                                bool asRadius = false) {
-        hEntity he = createCircle(cp, r, invisibleStyle());
+    hConstraint createDiametric(Vector cp, Quaternion q, double r, Vector tp,
+                                double actual, bool asRadius = false) {
+        hEntity he = createCircle(cp, q, r, invisibleStyle());
 
         hConstraint hc = Constraint::Constrain(
             Constraint::Type::DIAMETER,
@@ -869,7 +928,9 @@ public:
             actual = data->getActualMeasurement();
         }
 
-        createDiametric(cp, cp.Minus(dp).Magnitude(), tp, actual, /*asRadius=*/true);
+        Vector nz = toVector(data->getExtrusion());
+        Quaternion q = NormalFromExtPoint(nz);
+        createDiametric(cp, q, cp.Minus(dp).Magnitude(), tp, actual, /*asRadius=*/true);
     }
 
     void addDimDiametric(const DRW_DimDiametric *data) override {
@@ -886,7 +947,9 @@ public:
             actual = data->getActualMeasurement();
         }
 
-        createDiametric(cp, cp.Minus(dp1).Magnitude(), tp, actual, /*asRadius=*/false);
+        Vector nz = toVector(data->getExtrusion());
+        Quaternion q = NormalFromExtPoint(nz);
+        createDiametric(cp, q, cp.Minus(dp1).Magnitude(), tp, actual, /*asRadius=*/false);
     }
 
     void addDimAngular3P(const DRW_DimAngular3p *data) override {
@@ -972,11 +1035,13 @@ public:
     void addArc(const DRW_Arc &data) override {
         if(data.space != DRW::ModelSpace) return;
         checkCoord(data.basePoint);
+        checkExt(data.extPoint);
     }
 
     void addCircle(const DRW_Circle &data) override {
         if(data.space != DRW::ModelSpace) return;
         checkCoord(data.basePoint);
+        checkExt(data.extPoint);
     }
 
     void addPolyline(const DRW_Polyline &data) override {
@@ -1041,6 +1106,7 @@ public:
         checkCoord(data->getCenterPoint());
         checkCoord(data->getDiameterPoint());
         checkCoord(data->getTextPoint());
+        checkExt(data->getExtrusion());
     }
 
     void addDimDiametric(const DRW_DimDiametric *data) override {
@@ -1048,6 +1114,7 @@ public:
         checkCoord(data->getDiameter1Point());
         checkCoord(data->getDiameter2Point());
         checkCoord(data->getTextPoint());
+        checkExt(data->getExtrusion());
     }
 
     void addDimAngular3P(const DRW_DimAngular3p *data) override {
@@ -1063,6 +1130,12 @@ public:
 
     void checkCoord(const DRW_Coord &coord) {
         if(fabs(coord.z) > LENGTH_EPS) {
+            is3d = true;
+        }
+    }
+
+    void checkExt(const DRW_Coord &coord) {
+        if ((fabs(coord.x) > 1/64.) || (fabs(coord.y) > 1/64.)) {
             is3d = true;
         }
     }
@@ -1112,14 +1185,14 @@ ImportDwgDxf(const Platform::Path &filename,
 void ImportDxf(const Platform::Path &filename) {
     ImportDwgDxf(filename, [](const std::string &data, DRW_Interface *intf) {
         std::stringstream stream(data);
-        return dxfRW().read(stream, intf, /*ext=*/false);
+        return dxfRW().read(stream, intf, /*ext=*/true);
     });
 }
 
 void ImportDwg(const Platform::Path &filename) {
     ImportDwgDxf(filename, [](const std::string &data, DRW_Interface *intf) {
         std::stringstream stream(data);
-        return dwgR().read(stream, intf, /*ext=*/false);
+        return dwgR().read(stream, intf, /*ext=*/true);
     });
 }
 

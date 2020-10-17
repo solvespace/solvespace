@@ -6,11 +6,6 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR})
 
-set(HAVE_BACKTRACE ${Backtrace_FOUND})
-if(HAVE_BACKTRACE)
-    set(BACKTRACE_HEADER <${Backtrace_HEADER}>)
-endif()
-
 set(HAVE_SPACEWARE ${SPACEWARE_FOUND})
 
 if(NOT WIN32 OR APPLE)
@@ -25,14 +20,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 # platform utilities
-
-if(WIN32)
-    set(util_SOURCES
-        platform/utilwin.cpp)
-else()
-    set(util_SOURCES
-        platform/utilunix.cpp)
-endif()
 
 if(APPLE)
     set(util_LIBRARIES
@@ -67,7 +54,11 @@ target_include_directories(slvs
     PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 target_link_libraries(slvs
-    ${util_LIBRARIES})
+    ${util_LIBRARIES}
+    mimalloc-static)
+
+add_dependencies(slvs
+    mimalloc-static)
 
 set_target_properties(slvs PROPERTIES
     PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/slvs.h
@@ -89,7 +80,8 @@ include_directories(
     ${PNG_PNG_INCLUDE_DIR}
     ${FREETYPE_INCLUDE_DIRS}
     ${CAIRO_INCLUDE_DIRS}
-    ${Q3D_INCLUDE_DIR})
+    ${Q3D_INCLUDE_DIR}
+    ${MIMALLOC_INCLUDE_DIR})
 
 if(Backtrace_FOUND)
     include_directories(
@@ -183,6 +175,7 @@ set(solvespace_core_SOURCES
     group.cpp
     groupmesh.cpp
     importdxf.cpp
+    importidf.cpp
     mesh.cpp
     modify.cpp
     mouse.cpp
@@ -221,15 +214,18 @@ add_library(solvespace-core STATIC
     ${solvespace_core_SOURCES})
 
 add_dependencies(solvespace-core
-    q3d_header)
+    q3d_header
+    mimalloc-static)
 
 target_link_libraries(solvespace-core
+    ${OpenMP_CXX_LIBRARIES}
     dxfrw
     ${util_LIBRARIES}
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
     ${FREETYPE_LIBRARY}
-    flatbuffers)
+    flatbuffers
+    mimalloc-static)
 
 if(Backtrace_FOUND)
     target_link_libraries(solvespace-core
@@ -340,7 +336,7 @@ if(ENABLE_GUI)
 
     if(MSVC)
         set_target_properties(solvespace PROPERTIES
-            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF /STACK:33554432")
+            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
     elseif(APPLE)
         set_target_properties(solvespace PROPERTIES
             OUTPUT_NAME SolveSpace)

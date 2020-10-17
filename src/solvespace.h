@@ -7,16 +7,16 @@
 #ifndef SOLVESPACE_H
 #define SOLVESPACE_H
 
-#include <ctype.h>
-#include <limits.h>
-#include <math.h>
-#include <setjmp.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cctype>
+#include <climits>
+#include <cmath>
+#include <csetjmp>
+#include <cstdarg>
+#include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <algorithm>
 #include <chrono>
 #include <functional>
@@ -71,19 +71,19 @@ typedef struct _cairo_surface cairo_surface_t;
     } while(0)
 #endif
 
-#ifndef isnan
-#   define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
-#endif
+#define dbp SolveSpace::Platform::DebugPrint
+#define DBPTRI(tri) \
+    dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
+        CO((tri).a), CO((tri).b), CO((tri).c))
 
 namespace SolveSpace {
 
 using std::min;
 using std::max;
 using std::swap;
+using std::fabs;
 
-#if defined(__GNUC__)
-__attribute__((noreturn))
-#endif
+[[noreturn]]
 void AssertFailure(const char *file, unsigned line, const char *function,
                    const char *condition, const char *message);
 
@@ -91,6 +91,10 @@ void AssertFailure(const char *file, unsigned line, const char *function,
 __attribute__((__format__ (__printf__, 1, 2)))
 #endif
 std::string ssprintf(const char *fmt, ...);
+
+inline bool IsReasonable(double x) {
+    return std::isnan(x) || x > 1e11 || x < -1e11;
+}
 
 inline int WRAP(int v, int n) {
     // Clamp it to the range [0, n)
@@ -111,53 +115,25 @@ inline double WRAP_SYMMETRIC(double v, double n) {
     return v;
 }
 
-// Why is this faster than the library function?
-inline double ffabs(double v) { return (v > 0) ? v : (-v); }
-
 #define CO(v) (v).x, (v).y, (v).z
 
-#define ANGLE_COS_EPS   (1e-6)
-#define LENGTH_EPS      (1e-6)
-#define VERY_POSITIVE   (1e10)
-#define VERY_NEGATIVE   (-1e10)
+static constexpr double ANGLE_COS_EPS =  1e-6;
+static constexpr double LENGTH_EPS    =  1e-6;
+static constexpr double VERY_POSITIVE =  1e10;
+static constexpr double VERY_NEGATIVE = -1e10;
 
-inline double Random(double vmax) {
-    return (vmax*rand()) / RAND_MAX;
-}
+#include "platform/platform.h"
+#include "platform/gui.h"
+#include "resource.h"
+
+using Platform::AllocTemporary;
+using Platform::FreeAllTemporary;
 
 class Expr;
 class ExprVector;
 class ExprQuaternion;
 class RgbaColor;
 enum class Command : uint32_t;
-
-//================
-// From the platform-specific code.
-
-#include "platform/platform.h"
-#include "platform/gui.h"
-
-const size_t MAX_RECENT = 8;
-
-#define AUTOSAVE_EXT "slvs~"
-
-void dbp(const char *str, ...);
-#define DBPTRI(tri) \
-    dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
-        CO((tri).a), CO((tri).b), CO((tri).c))
-
-std::vector<std::string> InitPlatform(int argc, char **argv);
-
-void *AllocTemporary(size_t n);
-void FreeAllTemporary();
-void *MemAlloc(size_t n);
-void MemFree(void *p);
-void vl(); // debug function to validate heaps
-
-// End of platform-specific functions
-//================
-
-#include "resource.h"
 
 enum class Unit : uint32_t {
     MM = 0,
@@ -292,7 +268,8 @@ public:
     void EvalJacobian();
 
     void WriteEquationsExceptFor(hConstraint hc, Group *g);
-    void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bool forceDofCheck);
+    void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad,
+                                        bool forceDofCheck);
     void SolveBySubstitution();
 
     bool IsDragged(hParam p);
@@ -363,6 +340,7 @@ public:
     virtual void Bezier(SBezier *sb) = 0;
     virtual void Triangle(STriangle *tr) = 0;
     virtual bool OutputConstraints(IdList<Constraint,hConstraint> *) { return false; }
+    virtual void Background(RgbaColor color) = 0;
     virtual void StartFile() = 0;
     virtual void FinishAndCloseFile() = 0;
     virtual bool HasCanvasSize() const = 0;
@@ -387,6 +365,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return false; }
@@ -404,6 +383,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return true; }
@@ -422,6 +402,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return true; }
@@ -438,6 +419,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return true; }
@@ -452,6 +434,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return false; }
@@ -465,6 +448,7 @@ class Step2dFileWriter : public VectorFileWriter {
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return false; }
@@ -479,6 +463,7 @@ public:
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
     void Bezier(SBezier *sb) override;
+    void Background(RgbaColor color) override;
     void StartFile() override;
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return false; }
@@ -578,11 +563,13 @@ public:
     int      maxSegments;
     double   exportChordTol;
     int      exportMaxSegments;
+    int      timeoutRedundantConstr; //milliseconds
     double   cameraTangent;
     double   gridSpacing;
     double   exportScale;
     double   exportOffset;
     bool     fixExportColors;
+    bool     exportBackgroundColor;
     bool     drawBackFaces;
     bool     showContourAreas;
     bool     checkClosedContour;
@@ -675,7 +662,9 @@ public:
     static void MenuFile(Command id);
     void Autosave();
     void RemoveAutosave();
-    static const size_t MAX_RECENT = 8;
+    static constexpr size_t MAX_RECENT = 8;
+    static constexpr const char *SKETCH_EXT = "slvs";
+    static constexpr const char *BACKUP_EXT = "slvs~";
     std::vector<Platform::Path> recentFiles;
     bool Load(const Platform::Path &filename);
     bool GetFilenameAndSave(bool saveAs);
@@ -689,6 +678,8 @@ public:
     bool LoadFromFile(const Platform::Path &filename, bool canCancel = false);
     void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
+                              SMesh *m, SShell *sh);
+    bool LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
     bool ReloadAllLinked(const Platform::Path &filename, bool canCancel = false);
     // And the various export options
@@ -810,8 +801,8 @@ public:
     // where it puts zero-initialized global data in the binary (~30M of zeroes)
     // in release builds.
     SolveSpaceUI()
-        : pTW(new TextWindow({})), TW(*pTW),
-          pSys(new System({})), sys(*pSys) {}
+        : pTW(new TextWindow()), TW(*pTW),
+          pSys(new System()), sys(*pSys) {}
 
     ~SolveSpaceUI() {
         delete pTW;
@@ -821,6 +812,7 @@ public:
 
 void ImportDxf(const Platform::Path &file);
 void ImportDwg(const Platform::Path &file);
+bool LinkIDF(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh);
 
 extern SolveSpaceUI SS;
 extern Sketch SK;

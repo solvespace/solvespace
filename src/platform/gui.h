@@ -7,6 +7,8 @@
 #ifndef SOLVESPACE_GUI_H
 #define SOLVESPACE_GUI_H
 
+class RgbaColor;
+
 namespace Platform {
 
 //-----------------------------------------------------------------------------
@@ -99,9 +101,7 @@ std::string AcceleratorDescription(const KeyboardEvent &accel);
 //-----------------------------------------------------------------------------
 
 // Handling fatal errors.
-#if defined(__GNUC__)
-__attribute__((noreturn))
-#endif
+[[noreturn]]
 void FatalError(const std::string &message);
 
 // A native settings store.
@@ -329,6 +329,8 @@ struct FileFilter {
 
 // SolveSpace's native file format
 extern std::vector<FileFilter> SolveSpaceModelFileFilters;
+// SolveSpace's linkable file formats
+extern std::vector<FileFilter> SolveSpaceLinkFileFilters;
 // Raster image
 extern std::vector<FileFilter> RasterFileFilters;
 // Triangle mesh
@@ -377,7 +379,7 @@ FileDialogRef CreateSaveFileDialog(WindowRef parentWindow);
 std::vector<Platform::Path> GetFontFiles();
 void OpenInBrowser(const std::string &url);
 
-void InitGui(int argc, char **argv);
+std::vector<std::string> InitGui(int argc, char **argv);
 void RunGui();
 void ExitGui();
 void ClearGui();

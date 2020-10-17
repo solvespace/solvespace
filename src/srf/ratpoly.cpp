@@ -13,84 +13,31 @@
 // and convergence should be fast by now.
 #define RATPOLY_EPS (LENGTH_EPS/(1e2))
 
-double SolveSpace::Bernstein(int k, int deg, double t)
+static double Bernstein(int k, int deg, double t)
 {
-    if(k > deg || k < 0) return 0;
+// indexed by [degree][k][exponent]
+    static const double bernstein_coeff[4][4][4] = {
+    { { 1.0,0.0,0.0,0.0 },  { 1.0,0.0,0.0,0.0 }, { 1.0,0.0,0.0,0.0 }, { 1.0,0.0,0.0,0.0 } },
+    { { 1.0,-1.0,0.0,0.0 }, { 0.0,1.0,0.0,0.0 }, { 0.0,0.0,0.0,0.0 }, { 0.0,0.0,0.0,0.0 } },
+    { { 1.0,-2.0,1.0,0.0 }, { 0.0,2.0,-2.0,0.0 },{ 0.0,0.0,1.0,0.0 }, { 0.0,0.0,0.0,0.0 } },
+    { { 1.0,-3.0,3.0,-1.0 },{ 0.0,3.0,-6.0,3.0 },{ 0.0,0.0,3.0,-3.0}, { 0.0,0.0,0.0,1.0 } } };
 
-    switch(deg) {
-        case 0:
-            return 1;
-
-        case 1:
-            if(k == 0) {
-                return (1 - t);
-            } else if(k == 1) {
-                return t;
-            }
-            break;
-
-        case 2:
-            if(k == 0) {
-                return (1 - t)*(1 - t);
-            } else if(k == 1) {
-                return 2*(1 - t)*t;
-            } else if(k == 2) {
-                return t*t;
-            }
-            break;
-
-        case 3:
-            if(k == 0) {
-                return (1 - t)*(1 - t)*(1 - t);
-            } else if(k == 1) {
-                return 3*(1 - t)*(1 - t)*t;
-            } else if(k == 2) {
-                return 3*(1 - t)*t*t;
-            } else if(k == 3) {
-                return t*t*t;
-            }
-            break;
-    }
-    ssassert(false, "Unexpected degree of spline");
+    const double *c;
+    c = bernstein_coeff[deg][k];
+    return (((c[3]*t+c[2])*t)+c[1])*t+c[0];
 }
 
-double SolveSpace::BernsteinDerivative(int k, int deg, double t)
+static double BernsteinDerivative(int k, int deg, double t)
 {
-    switch(deg) {
-        case 0:
-            return 0;
+    static const double bernstein_derivative_coeff[4][4][3] = {
+    { { 0.0,0.0,0.0 },  { 0.0,0.0,0.0 }, { 0.0,0.0,0.0 }, { 0.0,0.0,0.0 } },
+    { { -1.0,0.0,0.0 }, { 1.0,0.0,0.0 }, { 0.0,0.0,0.0 }, { 0.0,0.0,0.0 } },
+    { { -2.0,2.0,0.0 }, { 2.0,-4.0,0.0 },{ 0.0,2.0,0.0 }, { 0.0,0.0,0.0 } },
+    { { -3.0,6.0,-3.0 },{ 3.0,-12.0,9.0 },{ 0.0,6.0,-9.0}, { 0.0,0.0,3.0 } } };
 
-        case 1:
-            if(k == 0) {
-                return -1;
-            } else if(k == 1) {
-                return 1;
-            }
-            break;
-
-        case 2:
-            if(k == 0) {
-                return -2 + 2*t;
-            } else if(k == 1) {
-                return 2 - 4*t;
-            } else if(k == 2) {
-                return 2*t;
-            }
-            break;
-
-        case 3:
-            if(k == 0) {
-                return -3 + 6*t - 3*t*t;
-            } else if(k == 1) {
-                return 3 - 12*t + 9*t*t;
-            } else if(k == 2) {
-                return 6*t - 9*t*t;
-            } else if(k == 3) {
-                return 3*t*t;
-            }
-            break;
-    }
-    ssassert(false, "Unexpected degree of spline");
+    const double *c;
+    c = bernstein_derivative_coeff[deg][k];
+    return ((c[2]*t)+c[1])*t+c[0];
 }
 
 Vector SBezier::PointAt(double t) const {
@@ -226,18 +173,18 @@ void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) const {
     }
 }
 
-void SBezier::MakePwlInto(SEdgeList *sel, double chordTol) const {
+void SBezier::MakePwlInto(SEdgeList *sel, double chordTol, double max_dt) const {
     List<Vector> lv = {};
-    MakePwlInto(&lv, chordTol);
+    MakePwlInto(&lv, chordTol, max_dt);
     int i;
     for(i = 1; i < lv.n; i++) {
         sel->AddEdge(lv[i-1], lv[i]);
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) const {
+void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol, double max_dt) const {
     List<Vector> lv = {};
-    MakePwlInto(&lv, chordTol);
+    MakePwlInto(&lv, chordTol, max_dt);
     int i;
     for(i = 0; i < lv.n; i++) {
         SCurvePt scpt;
@@ -248,32 +195,42 @@ void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) const {
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(SContour *sc, double chordTol) const {
+void SBezier::MakePwlInto(SContour *sc, double chordTol, double max_dt) const {
     List<Vector> lv = {};
-    MakePwlInto(&lv, chordTol);
+    MakePwlInto(&lv, chordTol, max_dt);
     int i;
     for(i = 0; i < lv.n; i++) {
         sc->AddPoint(lv[i]);
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(List<Vector> *l, double chordTol) const {
+//--------------------------------------------------------------------------------------
+// all variants of MakePwlInto come here. Split a rational Bezier into Piecewise Linear
+// segments that don't deviate from the actual curve by more than the chordTol distance.
+// max_dt allows to force curves to be split into spans of no more than a certain
+// length based on t-parameter. RemoveShortSegments() may delete points when dt <= 0.1
+//--------------------------------------------------------------------------------------
+void SBezier::MakePwlInto(List<Vector> *l, double chordTol, double max_dt) const {
     if(EXACT(chordTol == 0)) {
         // Use the default chord tolerance.
         chordTol = SS.ChordTolMm();
     }
+    // Never do fewer than three intermediate points for curves; people seem to get
+    // unhappy when their circles turn into squares, but maybe less
+    // unhappy with octagons. Now 16-gons.
+    if (EXACT(max_dt == 0.0)) {
+        max_dt = (deg == 1) ? 1.0 : 0.25;
+    }
     l->Add(&(ctrl[0]));
-    if(deg == 1) {
+    // don't split first degee (lines) unless asked to by the caller via max_dt
+    if((deg == 1) && (max_dt >= 1.0)) {
         l->Add(&(ctrl[1]));
     } else {
-        // Never do fewer than one intermediate point; people seem to get
-        // unhappy when their circles turn into squares, but maybe less
-        // unhappy with octagons.
-        MakePwlInitialWorker(l, 0.0, 0.5, chordTol);
-        MakePwlInitialWorker(l, 0.5, 1.0, chordTol);
+        MakePwlInitialWorker(l, 0.0, 0.5, chordTol, max_dt);
+        MakePwlInitialWorker(l, 0.5, 1.0, chordTol, max_dt);
     }
 }
-void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol) const
+void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol, double max_dt) const
 {
     Vector pa = PointAt(ta);
     Vector pb = PointAt(tb);
@@ -282,16 +239,16 @@ void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordT
     double d = pm.DistanceToLine(pa, pb.Minus(pa));
 
     double step = 1.0/SS.GetMaxSegments();
-    if((tb - ta) < step || d < chordTol) {
+    if(((tb - ta) < step || d < chordTol) && ((tb-ta) <= max_dt) ) {
         // A previous call has already added the beginning of our interval.
         l->Add(&pb);
     } else {
         double tm = (ta + tb) / 2;
-        MakePwlWorker(l, ta, tm, chordTol);
-        MakePwlWorker(l, tm, tb, chordTol);
+        MakePwlWorker(l, ta, tm, chordTol, max_dt);
+        MakePwlWorker(l, tm, tb, chordTol, max_dt);
     }
 }
-void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol) const
+void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol, double max_dt) const
 {
     Vector pa = PointAt(ta);
     Vector pb = PointAt(tb);
@@ -312,13 +269,13 @@ void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double
                 });
 
     double step = 1.0/SS.GetMaxSegments();
-    if((tb - ta) < step || d < chordTol) {
+    if( ((tb - ta) < step || d < chordTol) && ((tb-ta) <= max_dt) ) {
         // A previous call has already added the beginning of our interval.
         l->Add(&pb);
     } else {
         double tm = (ta + tb) / 2;
-        MakePwlWorker(l, ta, tm, chordTol);
-        MakePwlWorker(l, tm, tb, chordTol);
+        MakePwlWorker(l, ta, tm, chordTol, max_dt);
+        MakePwlWorker(l, tm, tb, chordTol, max_dt);
     }
 }
 
@@ -439,9 +396,14 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
                bu   = (ctrl[1][0]).Minus(orig),
                bv   = (ctrl[0][1]).Minus(orig);
         if((ctrl[1][1]).Equals(orig.Plus(bu).Plus(bv))) {
+
+            Vector n = bu.Cross(bv);
+            Vector ty = n.Cross(bu).ScaledBy(1.0/bu.MagSquared());
+            Vector tx = bv.Cross(n).ScaledBy(1.0/bv.MagSquared());
+
             Vector dp = p.Minus(orig);
-            *u = dp.Dot(bu) / bu.MagSquared();
-            *v = dp.Dot(bv) / bv.MagSquared();
+            *u = dp.Dot(bu) / tx.MagSquared();
+            *v = dp.Dot(bv) / ty.MagSquared();
             return;
         }
     }
@@ -484,7 +446,16 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
     }
 
     // If we failed to converge, then at least don't return NaN.
-    if(isnan(*u) || isnan(*v)) {
+    if(mustConverge) {
+// This is expected not to converge when the target point is not on the surface but nearby.
+// let's not pollute the output window for normal use.
+//        Vector p0 = PointAt(*u, *v);
+//        dbp("didn't converge");
+//        dbp("have %.3f %.3f %.3f", CO(p0));
+//        dbp("want %.3f %.3f %.3f", CO(p));
+//        dbp("distance = %g", (p.Minus(p0)).Magnitude());
+    }
+    if(IsReasonable(*u) || IsReasonable(*v)) {
         *u = *v = 0;
     }
 }
@@ -501,31 +472,37 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool mustConve
             }
         }
 
-        Vector tu, tv;
+        Vector tu, tv, tx, ty;
         TangentsAt(*u, *v, &tu, &tv);
+        Vector n = tu.Cross(tv);
+        // since tu and tv may not be orthogonal, use y in place of v.
+        // |y| = |v|sin(theta) where theta is the angle between tu and tv.
+        ty = n.Cross(tu).ScaledBy(1.0/tu.MagSquared());
+        tx = tv.Cross(n).ScaledBy(1.0/tv.MagSquared());
 
         // Project the point into a plane through p0, with basis tu, tv; a
         // second-order thing would converge faster but needs second
         // derivatives.
         Vector dp = p.Minus(p0);
-        double du = dp.Dot(tu), dv = dp.Dot(tv);
-        *u += du / (tu.MagSquared());
-        *v += dv / (tv.MagSquared());
+        double du = dp.Dot(tx),
+               dv = dp.Dot(ty);
+        *u += du / (tx.MagSquared());
+        *v += dv / (ty.MagSquared());
+
+        if (*u < 0.0) *u = 0.0;
+        else if (*u > 1.0) *u = 1.0;
+        if (*v < 0.0) *v = 0.0;
+        else if (*v > 1.0) *v = 1.0;
+
     }
 
-    if(mustConverge) {
-        dbp("didn't converge");
-        dbp("have %.3f %.3f %.3f", CO(p0));
-        dbp("want %.3f %.3f %.3f", CO(p));
-        dbp("distance = %g", (p.Minus(p0)).Magnitude());
-    }
     return false;
 }
 
 bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v) const
 {
     int i;
-    for(i = 0; i < 15; i++) {
+    for(i = 0; i < 20; i++) {
         Vector pi, p, tu, tv;
         p = PointAt(*u, *v);
         TangentsAt(*u, *v, &tu, &tv);
@@ -535,18 +512,25 @@ bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
 
         bool parallel;
         pi = Vector::AtIntersectionOfPlaneAndLine(n, d, p0, p1, &parallel);
-        if(parallel) break;
+        if(parallel) {
+            dbp("parallel (surface intersecting line)");
+            break;
+        }
 
         // Check for convergence
         if(pi.Equals(p, RATPOLY_EPS)) return true;
 
+        n = tu.Cross(tv);
+        Vector ty = n.Cross(tu).ScaledBy(1.0/tu.MagSquared());
+        Vector tx = tv.Cross(n).ScaledBy(1.0/tv.MagSquared());
+
         // Adjust our guess and iterate
         Vector dp = pi.Minus(p);
-        double du = dp.Dot(tu), dv = dp.Dot(tv);
-        *u += du / (tu.MagSquared());
-        *v += dv / (tv.MagSquared());
+        double du = dp.Dot(tx), dv = dp.Dot(ty);
+        *u += du / tx.MagSquared();
+        *v += dv / ty.MagSquared();
     }
-//    dbp("didn't converge (surface intersecting line)");
+    dbp("didn't converge (surface intersecting line)");
     return false;
 }
 
@@ -582,10 +566,14 @@ Vector SSurface::ClosestPointOnThisAndSurface(SSurface *srf2, Vector p) {
 
         // Adjust our guess and iterate
         for(j = 0; j < 2; j++) {
+            Vector n = tu[j].Cross(tv[j]);
+            Vector ty = n.Cross(tu[j]).ScaledBy(1.0/tu[j].MagSquared());
+            Vector tx = tv[j].Cross(n).ScaledBy(1.0/tv[j].MagSquared());
+
             Vector dc = pc.Minus(cp[j]);
-            double du = dc.Dot(tu[j]), dv = dc.Dot(tv[j]);
-            puv[j].x += du / ((tu[j]).MagSquared());
-            puv[j].y += dv / ((tv[j]).MagSquared());
+            double du = dc.Dot(tx), dv = dc.Dot(ty);
+            puv[j].x += du / tx.MagSquared();
+            puv[j].y += dv / ty.MagSquared();
         }
     }
     if(i >= 10) {
@@ -634,15 +622,78 @@ void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2, double *up, double *v
         Vector pi = Vector::AtIntersectionOfPlanes(n[0], d[0],
                                                    n[1], d[1],
                                                    n[2], d[2], &parallel);
-        if(parallel) break;
+
+        if(parallel) { // lets try something else for parallel planes
+            pi = p[0].Plus(p[1]).Plus(p[2]).ScaledBy(1.0/3.0);
+        }
 
         for(j = 0; j < 3; j++) {
+            Vector n = tu[j].Cross(tv[j]);
+            Vector ty = n.Cross(tu[j]).ScaledBy(1.0/tu[j].MagSquared());
+            Vector tx = tv[j].Cross(n).ScaledBy(1.0/tv[j].MagSquared());
+
             Vector dp = pi.Minus(p[j]);
-            double du = dp.Dot(tu[j]), dv = dp.Dot(tv[j]);
-            u[j] += du / (tu[j]).MagSquared();
-            v[j] += dv / (tv[j]).MagSquared();
+            double du = dp.Dot(tx), dv = dp.Dot(ty);
+
+            u[j] += du / tx.MagSquared();
+            v[j] += dv / ty.MagSquared();
         }
     }
     dbp("didn't converge (three surfaces intersecting)");
+}
+
+void SSurface::PointOnCurve(const SBezier *curve, double *up, double *vp)
+{
+    Vector tu,tv,n;
+    double u = *up, v = *vp;
+    Vector ps = PointAt(u, v);
+    // Get initial guesses for t on the curve
+    double tCurve = 0.5;
+    curve->ClosestPointTo(ps, &tCurve, /*mustConverge=*/false);
+    if(tCurve < 0.0) tCurve = 0.0;
+    if(tCurve > 1.0) tCurve = 1.0;
+
+    for(int i = 0; i < 30; i++) {
+        // Approximate the surface by a plane
+        Vector ps = PointAt(u, v);
+        TangentsAt(u, v, &tu, &tv);
+        n = tu.Cross(tv).WithMagnitude(1);
+
+        // point on curve and tangent line direction
+        Vector pc = curve->PointAt(tCurve);
+        Vector tc = curve->TangentAt(tCurve);
+
+        if(ps.Equals(pc, RATPOLY_EPS)) {
+            *up = u;
+            *vp = v;
+            return;
+        }
+
+        //pi is where the curve tangent line intersects the surface tangent plane
+        Vector pi;
+        double d = tc.Dot(n);
+        if (fabs(d) < 1e-10) { // parallel line and plane, guess the average rather than fail
+            pi = pc.Plus(ps).ScaledBy(0.5);
+        } else {
+            pi = pc.Minus(tc.ScaledBy(pc.Minus(ps).Dot(n)/d));
+        }
+
+        // project the point onto the tangent plane and line
+        {
+            Vector n = tu.Cross(tv);
+            Vector ty = n.Cross(tu).ScaledBy(1.0/tu.MagSquared());
+            Vector tx = tv.Cross(n).ScaledBy(1.0/tv.MagSquared());
+
+            Vector dp = pi.Minus(ps);
+            double du = dp.Dot(tx), dv = dp.Dot(ty);
+
+            u += du / tx.MagSquared();
+            v += dv / ty.MagSquared();
+        }
+        tCurve += pi.Minus(pc).Dot(tc) / tc.MagSquared();
+        if(tCurve < 0.0) tCurve = 0.0;
+        if(tCurve > 1.0) tCurve = 1.0;
+    }
+    dbp("didn't converge (surface and curve intersecting)");
 }
 

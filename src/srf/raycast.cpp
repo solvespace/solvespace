@@ -130,39 +130,38 @@ void SSurface::SplitInHalf(bool byU, SSurface *sa, SSurface *sb) {
     sa->degn = sb->degn = degn;
 
     // by de Casteljau's algorithm in a projective space; so we must work
-    // on points (w*x, w*y, w*z, w)
-    WeightControlPoints();
+    // on points (w*x, w*y, w*z, w) so create a temporary copy
+    SSurface st;
+    st = *this;
+    st.WeightControlPoints();
 
     switch(byU ? degm : degn) {
         case 1:
-            sa->CopyRowOrCol (byU, 0, this, 0);
-            sb->CopyRowOrCol (byU, 1, this, 1);
+            sa->CopyRowOrCol (byU, 0, &st, 0);
+            sb->CopyRowOrCol (byU, 1, &st, 1);
 
-            sa->BlendRowOrCol(byU, 1, this, 0, this, 1);
-            sb->BlendRowOrCol(byU, 0, this, 0, this, 1);
+            sa->BlendRowOrCol(byU, 1, &st, 0, &st, 1);
+            sb->BlendRowOrCol(byU, 0, &st, 0, &st, 1);
             break;
 
         case 2:
-            sa->CopyRowOrCol (byU, 0, this, 0);
-            sb->CopyRowOrCol (byU, 2, this, 2);
+            sa->CopyRowOrCol (byU, 0, &st, 0);
+            sb->CopyRowOrCol (byU, 2, &st, 2);
 
-            sa->BlendRowOrCol(byU, 1, this, 0, this, 1);
-            sb->BlendRowOrCol(byU, 1, this, 1, this, 2);
+            sa->BlendRowOrCol(byU, 1, &st, 0, &st, 1);
+            sb->BlendRowOrCol(byU, 1, &st, 1, &st, 2);
 
             sa->BlendRowOrCol(byU, 2, sa,   1, sb,   1);
             sb->BlendRowOrCol(byU, 0, sa,   1, sb,   1);
             break;
 
         case 3: {
-            SSurface st;
-            st.degm = degm; st.degn = degn;
+            sa->CopyRowOrCol (byU, 0, &st, 0);
+            sb->CopyRowOrCol (byU, 3, &st, 3);
 
-            sa->CopyRowOrCol (byU, 0, this, 0);
-            sb->CopyRowOrCol (byU, 3, this, 3);
-
-            sa->BlendRowOrCol(byU, 1, this, 0, this, 1);
-            sb->BlendRowOrCol(byU, 2, this, 2, this, 3);
-            st. BlendRowOrCol(byU, 0, this, 1, this, 2); // scratch var
+            sa->BlendRowOrCol(byU, 1, &st, 0, &st, 1);
+            sb->BlendRowOrCol(byU, 2, &st, 2, &st, 3);
+            st. BlendRowOrCol(byU, 0, &st, 1, &st, 2); // use row/col 0 as scratch
 
             sa->BlendRowOrCol(byU, 2, sa,   1, &st,  0);
             sb->BlendRowOrCol(byU, 1, sb,   2, &st,  0);
@@ -177,7 +176,6 @@ void SSurface::SplitInHalf(bool byU, SSurface *sa, SSurface *sb) {
 
     sa->UnWeightControlPoints();
     sb->UnWeightControlPoints();
-    UnWeightControlPoints();
 }
 
 //-----------------------------------------------------------------------------
@@ -421,14 +419,17 @@ SShell::Class SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
 // using the closest intersection point. If the ray hits a surface on edge,
 // then just reattempt in a different random direction.
 //-----------------------------------------------------------------------------
+
+// table of vectors in 6 arbitrary directions covering 4 of the 8 octants.
+// use overlapping sets of 3 to reduce memory usage.
+static const double Random[8] = {1.278, 5.0103, 9.427, -2.331, 7.13, 2.954, 5.034, -4.777};
+ 
 bool SShell::ClassifyEdge(Class *indir, Class *outdir,
                           Vector ea, Vector eb,
                           Vector p,
                           Vector edge_n_in, Vector edge_n_out, Vector surf_n)
 {
     List<SInter> l = {};
-
-    srand(0);
 
     // First, check for edge-on-edge
     int edge_inters = 0;
@@ -551,7 +552,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         // Cast a ray in a random direction (two-sided so that we test if
         // the point lies on a surface, but use only one side for in/out
         // testing)
-        Vector ray = Vector::From(Random(1), Random(1), Random(1));
+        Vector ray = Vector::From(Random[cnt], Random[cnt+1], Random[cnt+2]);
 
         AllPointsIntersecting(
             p.Minus(ray), p.Plus(ray), &l,
@@ -600,7 +601,8 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         // then our ray always lies on edge, and that's okay. Otherwise
         // try again in a different random direction.
         if(!onEdge) break;
-        if(cnt++ > 5) {
+        cnt++;
+        if(cnt > 5) {
             dbp("can't find a ray that doesn't hit on edge!");
             dbp("on edge = %d, edge_inters = %d", onEdge, edge_inters);
             SS.nakedEdges.AddEdge(ea, eb);

@@ -4,13 +4,14 @@
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
 
-#ifndef __RESOURCE_H
-#define __RESOURCE_H
+#ifndef SOLVESPACE_RESOURCE_H
+#define SOLVESPACE_RESOURCE_H
 
 class Camera;
 class Point2d;
 class Pixmap;
 class Vector;
+class RgbaColor;
 
 std::string LoadString(const std::string &name);
 std::string LoadStringFromGzip(const std::string &name);

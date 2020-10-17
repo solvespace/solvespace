@@ -216,31 +216,31 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
     // Not using range-for because we're using the index inside the loop.
     for(i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder[i]);
+        hGroup hg = SK.groupOrder[i];
 
         // The group may depend on entities or other groups, to define its
         // workplane geometry or for its operands. Those must already exist
         // in a previous group, so check them before generating.
-        if(PruneGroups(g->h))
+        if(PruneGroups(hg))
             goto pruned;
 
         for(auto &req : SK.request) {
             Request *r = &req;
-            if(r->group != g->h) continue;
+            if(r->group != hg) continue;
 
             r->Generate(&(SK.entity), &(SK.param));
         }
         for(auto &con : SK.constraint) {
             Constraint *c = &con;
-            if(c->group != g->h) continue;
+            if(c->group != hg) continue;
 
             c->Generate(&(SK.param));
         }
-        g->Generate(&(SK.entity), &(SK.param));
+        SK.GetGroup(hg)->Generate(&(SK.entity), &(SK.param));
 
         // The requests and constraints depend on stuff in this or the
         // previous group, so check them after generating.
-        if(PruneRequests(g->h) || PruneConstraints(g->h))
+        if(PruneRequests(hg) || PruneConstraints(hg))
             goto pruned;
 
         // Use the previous values for params that we've seen before, as
@@ -256,8 +256,9 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
             }
         }
 
-        if(g->h == Group::HGROUP_REFERENCES) {
+        if(hg == Group::HGROUP_REFERENCES) {
             ForceReferences();
+            Group *g = SK.GetGroup(hg);
             g->solved.how = SolveResult::OKAY;
             g->clean = true;
         } else {
@@ -265,8 +266,9 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
             if(i >= first && i <= last) {
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
+                Group *g = SK.GetGroup(hg);
                 if(genForBBox) {
-                    SolveGroupAndReport(g->h, andFindFree);
+                    SolveGroupAndReport(hg, andFindFree);
                     g->GenerateLoops();
                 } else {
                     g->GenerateShellAndMesh();
@@ -531,6 +533,7 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     WriteEqSystemForGroup(hg);
     Group *g = SK.GetGroup(hg);
     g->solved.remove.Clear();
+    g->solved.findToFixTimeout = SS.timeoutRedundantConstr;
     SolveResult how = sys.Solve(g, NULL,
                                    &(g->solved.dof),
                                    &(g->solved.remove),
