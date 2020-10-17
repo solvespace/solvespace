@@ -332,7 +332,7 @@ Vector SSurface::PointAt(double u, double v) const {
     return num;
 }
 
-void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) const {
+void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv, bool retry) const {
     Vector num   = Vector::From(0, 0, 0),
            num_u = Vector::From(0, 0, 0),
            num_v = Vector::From(0, 0, 0);
@@ -364,6 +364,12 @@ void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) const {
 
     *tv = ((num_v.ScaledBy(den)).Minus(num.ScaledBy(den_v)));
     *tv = tv->ScaledBy(1.0/(den*den));
+    
+    // Tangent is zero at sungularities like the north pole. Move away a bit and retry. 
+    if(tv->Equals(Vector::From(0,0,0)) && retry)
+        TangentsAt(u+(0.5-u)*0.00001, v, tu, tv, false);
+    if(tu->Equals(Vector::From(0,0,0)) && retry)
+        TangentsAt(u, v+(0.5-v)*0.00001, tu, tv, false);
 }
 
 Vector SSurface::NormalAt(Point2d puv) const {
