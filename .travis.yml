@@ -7,6 +7,36 @@ jobs:
       name: Snap arm64
   include:
     - stage: test
+      name: macOS
+      os: osx
+      osx_image: xcode11.2
+      install: "./.travis/install-macos.sh"
+      script: "./.travis/build-macos.sh"
+      deploy:
+        provider: releases
+        api_key:
+          secure: 3PAqaWQTsHKKuItoZnIm7KJkCE/IHjrGtQMvdjabmVr9F/X3nuRYCdhvlSwU6z1N/UIiUso5jDc/qYOxbBnDfXiu2HihW9USaPLLrQoMQHxqAr62Hks1ESMo/rCrYPdqzFBdEbkuP6GqwxXyUDhnvDwXzmqSzhcotEUwiuRnvcTnlf29WT4D0Gz8gEwIkkiMN9msH8mabvd5SkmaBFd+Z7elXn6DpTxZSHRhX8QCW7681pdq424H4qbArIB+I9ccHbS+Cbh8kKBcd/hNX1tFK4SdaUYyywonrWhgPHZzZ8oj0dRGvY19+ZnTJisQmUjiJQDglUeJ+p5RIcUHOnUjM/Io/jWdA78W9Vn0gpjX5F2iBfm0UcSyXwf9dXDFnm9pOCnFjJ1Cv4wxWlRvUXcQxv9hb00cyHYEhzPJRmNUu/DF45caOHYvLADwd0d3UPrfblXpjTPxpDxHHl3QuXQLeERiGsZOg5N6kg0coUO0p60JDdDHrxjiLXDsD8Oe9FMxIfZd6y+hfsQWLFSDyWqod+F4rmROsRdsJaAC8EliRCxBp/jLY8/ntFLAKCwRP57z46wXWe65yOENOErSDZvbrPZbNOm7whX4GsTozfE1dy+3lcsOq+jth3LbyQHuDRNW2/oKtWfOeQ1H+8W+WP1GRpyIOHzClSgMe/k3n7E60Ls=
+        skip_cleanup: true
+        file: build/bin/SolveSpace.dmg
+        on:
+          repo: vespakoen/solvespace
+          tags: true
+    - stage: deploy
+      name: macOS
+      os: osx
+      osx_image: xcode11.2
+      install: "./.travis/install-macos.sh"
+      script: "./.travis/build-macos.sh && ./.travis/sign-macos.sh"
+      deploy:
+        provider: releases
+        api_key:
+          secure: 3PAqaWQTsHKKuItoZnIm7KJkCE/IHjrGtQMvdjabmVr9F/X3nuRYCdhvlSwU6z1N/UIiUso5jDc/qYOxbBnDfXiu2HihW9USaPLLrQoMQHxqAr62Hks1ESMo/rCrYPdqzFBdEbkuP6GqwxXyUDhnvDwXzmqSzhcotEUwiuRnvcTnlf29WT4D0Gz8gEwIkkiMN9msH8mabvd5SkmaBFd+Z7elXn6DpTxZSHRhX8QCW7681pdq424H4qbArIB+I9ccHbS+Cbh8kKBcd/hNX1tFK4SdaUYyywonrWhgPHZzZ8oj0dRGvY19+ZnTJisQmUjiJQDglUeJ+p5RIcUHOnUjM/Io/jWdA78W9Vn0gpjX5F2iBfm0UcSyXwf9dXDFnm9pOCnFjJ1Cv4wxWlRvUXcQxv9hb00cyHYEhzPJRmNUu/DF45caOHYvLADwd0d3UPrfblXpjTPxpDxHHl3QuXQLeERiGsZOg5N6kg0coUO0p60JDdDHrxjiLXDsD8Oe9FMxIfZd6y+hfsQWLFSDyWqod+F4rmROsRdsJaAC8EliRCxBp/jLY8/ntFLAKCwRP57z46wXWe65yOENOErSDZvbrPZbNOm7whX4GsTozfE1dy+3lcsOq+jth3LbyQHuDRNW2/oKtWfOeQ1H+8W+WP1GRpyIOHzClSgMe/k3n7E60Ls=
+        skip_cleanup: true
+        file: build/bin/SolveSpace.dmg
+        on:
+          repo: vespakoen/solvespace
+          tags: true
+    - stage: test
       name: "Debian"
       os: linux
       dist: bionic
@@ -40,9 +70,9 @@ jobs:
       arch: amd64
       dist: bionic
       addons:
-          snaps:
-            - name: snapcraft
-              confinement: classic
+        snaps:
+          - name: snapcraft
+            confinement: classic
       script: ./.travis/build-snap.sh
       deploy:
         - provider: script
