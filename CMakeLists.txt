@@ -22,6 +22,10 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
    "${CMAKE_SOURCE_DIR}/cmake/cxx_flag_overrides.cmake")
 
+if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
+
 # project
 
 # NOTE TO PACKAGERS: The embedded git commit hash is critical for rapid bug triage when the builds
@@ -69,7 +73,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 # common compiler flags
-
 include(CheckCXXCompilerFlag)
 
 set(FILE_PREFIX_MAP "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
@@ -107,10 +110,6 @@ if(ENABLE_OPENMP)
     if(OpenMP_FOUND)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     endif()
-endif()
-
-if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
