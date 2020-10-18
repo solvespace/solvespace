@@ -241,7 +241,6 @@ static void MakeBeziersForArcs(SBezierList *sbl, Vector center, Vector pa, Vecto
     if(angle == 360.0) {
         thetaa = 0;
         thetab = 2*PI;
-        dtheta = 2*PI;
     } else {
         Point2d c2  = center.Project2d(u, v);
         Point2d pa2 = (pa.Project2d(u, v)).Minus(c2);
@@ -249,8 +248,9 @@ static void MakeBeziersForArcs(SBezierList *sbl, Vector center, Vector pa, Vecto
 
         thetaa = atan2(pa2.y, pa2.x);
         thetab = atan2(pb2.y, pb2.x);
-        dtheta = thetab - thetaa;
     }
+    dtheta = angle * PI/180;
+    
     int i, n;
     if(dtheta > (3*PI/2 + 0.01)) {
         n = 4;
