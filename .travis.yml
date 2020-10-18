@@ -15,11 +15,11 @@ jobs:
       deploy:
         provider: releases
         api_key:
-          secure: 3PAqaWQTsHKKuItoZnIm7KJkCE/IHjrGtQMvdjabmVr9F/X3nuRYCdhvlSwU6z1N/UIiUso5jDc/qYOxbBnDfXiu2HihW9USaPLLrQoMQHxqAr62Hks1ESMo/rCrYPdqzFBdEbkuP6GqwxXyUDhnvDwXzmqSzhcotEUwiuRnvcTnlf29WT4D0Gz8gEwIkkiMN9msH8mabvd5SkmaBFd+Z7elXn6DpTxZSHRhX8QCW7681pdq424H4qbArIB+I9ccHbS+Cbh8kKBcd/hNX1tFK4SdaUYyywonrWhgPHZzZ8oj0dRGvY19+ZnTJisQmUjiJQDglUeJ+p5RIcUHOnUjM/Io/jWdA78W9Vn0gpjX5F2iBfm0UcSyXwf9dXDFnm9pOCnFjJ1Cv4wxWlRvUXcQxv9hb00cyHYEhzPJRmNUu/DF45caOHYvLADwd0d3UPrfblXpjTPxpDxHHl3QuXQLeERiGsZOg5N6kg0coUO0p60JDdDHrxjiLXDsD8Oe9FMxIfZd6y+hfsQWLFSDyWqod+F4rmROsRdsJaAC8EliRCxBp/jLY8/ntFLAKCwRP57z46wXWe65yOENOErSDZvbrPZbNOm7whX4GsTozfE1dy+3lcsOq+jth3LbyQHuDRNW2/oKtWfOeQ1H+8W+WP1GRpyIOHzClSgMe/k3n7E60Ls=
+          secure: dDlkIawHcODlW9B/20/cQCtzeoocvs0hKuNngRKXKqzXLWTRq33oq/B7+39tAixWbmv6exTpijiKrRNFiSCW5Z4iwHLwaRD4XJznxw63e/Hus/dxg2Tvqx7XFpkCz8mT1Z+gZQE5YxAngeZPpI/sZbZtF1UO3yH5eLeeokZ15p26ZskQUPoYuzrTgTzYL3XfpG3F+20rNBawH1ycsCTVD/08/n31d2m3CrKAsbW7er92ek6w4fzKr7NW8WeXjrPJETVpw5fQg1Od3pRGW8dPQaJcvKQEogMp8Mm0ETYd0qigg89/giBz7QwOgmAWQ4dH+DfZH4Ojl//127QztBolMvyDMQBykWrtJoGcij05sT6K2IJr2FHeUBO12MAEdjiVvhQj3DtTzjPiZAHHDBSLWxLKWWhlhHE4pq7g1MQhqXkaAHI2BLNzwLmaowbMT0bECf9yfz6xx18h6XPQFX44oOktraobVALFlyHqeKa8zdcUt22LF6uAL1m5dxL0tny3eXCIPE4UH/RZgua/cHV9G3cUvKQa/QnFSLRhvWVSbGB+7YsHouBJcsUOOW1gmd5442XuC7mpppccRldh+GSxUk6TBJRAx7TeQ0ybDUaoco9MUqp2twv3KreR2+8Q12PDaAhfQVNEGdF3wTm1sShImjCN4VN3eSLlBEbve1QRQXM=
         skip_cleanup: true
         file: build/bin/SolveSpace.dmg
         on:
-          repo: vespakoen/solvespace
+          repo: solvespace/solvespace
           tags: true
     - stage: deploy
       name: macOS
@@ -30,11 +30,11 @@ jobs:
       deploy:
         provider: releases
         api_key:
-          secure: 3PAqaWQTsHKKuItoZnIm7KJkCE/IHjrGtQMvdjabmVr9F/X3nuRYCdhvlSwU6z1N/UIiUso5jDc/qYOxbBnDfXiu2HihW9USaPLLrQoMQHxqAr62Hks1ESMo/rCrYPdqzFBdEbkuP6GqwxXyUDhnvDwXzmqSzhcotEUwiuRnvcTnlf29WT4D0Gz8gEwIkkiMN9msH8mabvd5SkmaBFd+Z7elXn6DpTxZSHRhX8QCW7681pdq424H4qbArIB+I9ccHbS+Cbh8kKBcd/hNX1tFK4SdaUYyywonrWhgPHZzZ8oj0dRGvY19+ZnTJisQmUjiJQDglUeJ+p5RIcUHOnUjM/Io/jWdA78W9Vn0gpjX5F2iBfm0UcSyXwf9dXDFnm9pOCnFjJ1Cv4wxWlRvUXcQxv9hb00cyHYEhzPJRmNUu/DF45caOHYvLADwd0d3UPrfblXpjTPxpDxHHl3QuXQLeERiGsZOg5N6kg0coUO0p60JDdDHrxjiLXDsD8Oe9FMxIfZd6y+hfsQWLFSDyWqod+F4rmROsRdsJaAC8EliRCxBp/jLY8/ntFLAKCwRP57z46wXWe65yOENOErSDZvbrPZbNOm7whX4GsTozfE1dy+3lcsOq+jth3LbyQHuDRNW2/oKtWfOeQ1H+8W+WP1GRpyIOHzClSgMe/k3n7E60Ls=
+          secure: dDlkIawHcODlW9B/20/cQCtzeoocvs0hKuNngRKXKqzXLWTRq33oq/B7+39tAixWbmv6exTpijiKrRNFiSCW5Z4iwHLwaRD4XJznxw63e/Hus/dxg2Tvqx7XFpkCz8mT1Z+gZQE5YxAngeZPpI/sZbZtF1UO3yH5eLeeokZ15p26ZskQUPoYuzrTgTzYL3XfpG3F+20rNBawH1ycsCTVD/08/n31d2m3CrKAsbW7er92ek6w4fzKr7NW8WeXjrPJETVpw5fQg1Od3pRGW8dPQaJcvKQEogMp8Mm0ETYd0qigg89/giBz7QwOgmAWQ4dH+DfZH4Ojl//127QztBolMvyDMQBykWrtJoGcij05sT6K2IJr2FHeUBO12MAEdjiVvhQj3DtTzjPiZAHHDBSLWxLKWWhlhHE4pq7g1MQhqXkaAHI2BLNzwLmaowbMT0bECf9yfz6xx18h6XPQFX44oOktraobVALFlyHqeKa8zdcUt22LF6uAL1m5dxL0tny3eXCIPE4UH/RZgua/cHV9G3cUvKQa/QnFSLRhvWVSbGB+7YsHouBJcsUOOW1gmd5442XuC7mpppccRldh+GSxUk6TBJRAx7TeQ0ybDUaoco9MUqp2twv3KreR2+8Q12PDaAhfQVNEGdF3wTm1sShImjCN4VN3eSLlBEbve1QRQXM=
         skip_cleanup: true
         file: build/bin/SolveSpace.dmg
         on:
-          repo: vespakoen/solvespace
+          repo: solvespace/solvespace
           tags: true
     - stage: test
       name: "Debian"
@@ -47,22 +47,6 @@ jobs:
       os: windows
       install: ./.travis/install-windows.sh
       script: ./.travis/build-windows.sh
-    - stage: deploy
-      name: "OSX"
-      os: osx
-      osx_image: xcode8.3
-      install: ./.travis/install-macos.sh
-      # the awk command is a workaround for https://github.com/travis-ci/travis-ci/issues/4704.
-      script: ./.travis/build-macos.sh | awk '/.{0,32}/ {print $0}'
-      deploy:
-        provider: releases
-        api_key:
-          secure: dDlkIawHcODlW9B/20/cQCtzeoocvs0hKuNngRKXKqzXLWTRq33oq/B7+39tAixWbmv6exTpijiKrRNFiSCW5Z4iwHLwaRD4XJznxw63e/Hus/dxg2Tvqx7XFpkCz8mT1Z+gZQE5YxAngeZPpI/sZbZtF1UO3yH5eLeeokZ15p26ZskQUPoYuzrTgTzYL3XfpG3F+20rNBawH1ycsCTVD/08/n31d2m3CrKAsbW7er92ek6w4fzKr7NW8WeXjrPJETVpw5fQg1Od3pRGW8dPQaJcvKQEogMp8Mm0ETYd0qigg89/giBz7QwOgmAWQ4dH+DfZH4Ojl//127QztBolMvyDMQBykWrtJoGcij05sT6K2IJr2FHeUBO12MAEdjiVvhQj3DtTzjPiZAHHDBSLWxLKWWhlhHE4pq7g1MQhqXkaAHI2BLNzwLmaowbMT0bECf9yfz6xx18h6XPQFX44oOktraobVALFlyHqeKa8zdcUt22LF6uAL1m5dxL0tny3eXCIPE4UH/RZgua/cHV9G3cUvKQa/QnFSLRhvWVSbGB+7YsHouBJcsUOOW1gmd5442XuC7mpppccRldh+GSxUk6TBJRAx7TeQ0ybDUaoco9MUqp2twv3KreR2+8Q12PDaAhfQVNEGdF3wTm1sShImjCN4VN3eSLlBEbve1QRQXM=
-        skip_cleanup: true
-        file: build/SolveSpace.dmg
-        on:
-          repo: solvespace/solvespace
-          tags: true
     - &deploy-snap
       stage: deploy
       name: Snap amd64
