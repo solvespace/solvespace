@@ -2,7 +2,7 @@
 
 cd build
 
-app="bin/SolveSpace.app"
+# app="bin/SolveSpace.app"
 dmg="bin/SolveSpace.dmg"
 bundle_id="com.solvespace.solvespace"
 
@@ -23,17 +23,13 @@ security set-key-partition-list -S apple-tool:,apple: -s -k secret build.keychai
 # check if all is good
 security find-identity -v
 
-# sign the .app
-codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${app}"
-
-# create the .dmg from the signed .app
-hdiutil create -srcfolder "${app}" "${dmg}"
-
 # sign the .dmg
-codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f "${dmg}"
+codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${dmg}"
 
 # notarize and store request uuid in variable
 notarize_uuid=$(xcrun altool --notarize-app --primary-bundle-id "${bundle_id}" --username "${MACOS_APPSTORE_USERNAME}" --password "${MACOS_APPSTORE_APP_PASSWORD}" --file "${dmg}" 2>&1 | grep RequestUUID | awk '{print $3'})
+
+echo $notarize_uuid
 
 # wait a bit so we don't get errors during checking
 sleep 5
