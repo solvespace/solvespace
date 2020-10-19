@@ -2,7 +2,7 @@
 
 cd build
 
-# app="bin/SolveSpace.app"
+app="bin/SolveSpace.app"
 dmg="bin/SolveSpace.dmg"
 bundle_id="com.solvespace.solvespace"
 
@@ -18,10 +18,15 @@ security unlock-keychain -p secret build.keychain
 security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PASSWORD -T /usr/bin/codesign
 
 security set-key-partition-list -S apple-tool:,apple: -s -k secret build.keychain
-#security set-keychain-settings -t 3600 -u build.keychain
 
 # check if all is good
 security find-identity -v
+
+# sign the .app
+codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${app}"
+
+# create the .dmg from the signed .app
+hdiutil create -srcfolder "${app}" "${dmg}"
 
 # sign the .dmg
 codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${dmg}"
