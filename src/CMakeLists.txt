@@ -410,14 +410,4 @@ if(APPLE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:solvespace-cli> ${bundle_bin}
         COMMENT "Bundling executable solvespace-cli"
         VERBATIM)
-
-    add_custom_command(OUTPUT ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
-        COMMAND ${CMAKE_COMMAND} -E remove ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
-        COMMAND hdiutil create -srcfolder ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app
-                ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
-        DEPENDS solvespace
-        COMMENT "Building ${bundle}.dmg"
-        VERBATIM)
-    add_custom_target(${bundle}-dmg ALL
-        DEPENDS ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg)
 endif()
