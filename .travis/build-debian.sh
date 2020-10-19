@@ -7,5 +7,5 @@ cd build
 cmake .. \
   -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
   -DENABLE_SANITIZERS=ON
-make VERBOSE=1
+make -j$(nproc) VERBOSE=1
 make test_solvespace
