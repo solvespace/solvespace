@@ -67,4 +67,6 @@ jobs:
             tags: true
     - <<: *deploy-snap
       name: Snap arm64
-      arch: arm64
+      arch: arm64-graviton2
+      group: edge
+      virt: lxd
