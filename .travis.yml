@@ -31,11 +31,11 @@ jobs:
           repo: solvespace/solvespace
           tags: true
     - stage: test
-      name: "Debian"
+      name: "Ubuntu 18.04"
       os: linux
       dist: bionic
-      install: .travis/install-debian.sh
-      script: .travis/build-debian.sh
+      install: .travis/install-ubuntu.sh
+      script: .travis/build-ubuntu.sh
     - stage: test
       name: "Windows Visual Studio 2017"
       os: windows
