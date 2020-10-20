@@ -371,6 +371,7 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 
 - (id)initWithFrame:(NSRect)frameRect {
     NSOpenGLPixelFormatAttribute attrs[] = {
+        NSOpenGLPFADoubleBuffer,
         NSOpenGLPFAColorSize, 24,
         NSOpenGLPFADepthSize, 24,
         0
