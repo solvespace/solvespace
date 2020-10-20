@@ -1,3 +1,5 @@
+os: linux
+dist: xenial
 language: c
 git:
   submodules: false
@@ -7,23 +9,23 @@ jobs:
       name: Snap arm64
   include:
     - stage: test
-      name: macOS
+      name: macOS test
       os: osx
       osx_image: xcode12.2
-      install: "./.travis/install-macos.sh"
-      script: "./.travis/build-macos.sh"
+      install: ".travis/install-macos.sh"
+      script: ".travis/build-macos.sh"
     - stage: deploy
       if: tag IS present
-      name: macOS
+      name: macOS deploy
       os: osx
       osx_image: xcode12.2
-      install: "./.travis/install-macos.sh"
-      script: "./.travis/build-macos.sh && ./.travis/sign-macos.sh"
+      install: ".travis/install-macos.sh"
+      script: ".travis/build-macos.sh && .travis/sign-macos.sh"
       deploy:
         provider: releases
-        api_key:
+        token:
           secure: dDlkIawHcODlW9B/20/cQCtzeoocvs0hKuNngRKXKqzXLWTRq33oq/B7+39tAixWbmv6exTpijiKrRNFiSCW5Z4iwHLwaRD4XJznxw63e/Hus/dxg2Tvqx7XFpkCz8mT1Z+gZQE5YxAngeZPpI/sZbZtF1UO3yH5eLeeokZ15p26ZskQUPoYuzrTgTzYL3XfpG3F+20rNBawH1ycsCTVD/08/n31d2m3CrKAsbW7er92ek6w4fzKr7NW8WeXjrPJETVpw5fQg1Od3pRGW8dPQaJcvKQEogMp8Mm0ETYd0qigg89/giBz7QwOgmAWQ4dH+DfZH4Ojl//127QztBolMvyDMQBykWrtJoGcij05sT6K2IJr2FHeUBO12MAEdjiVvhQj3DtTzjPiZAHHDBSLWxLKWWhlhHE4pq7g1MQhqXkaAHI2BLNzwLmaowbMT0bECf9yfz6xx18h6XPQFX44oOktraobVALFlyHqeKa8zdcUt22LF6uAL1m5dxL0tny3eXCIPE4UH/RZgua/cHV9G3cUvKQa/QnFSLRhvWVSbGB+7YsHouBJcsUOOW1gmd5442XuC7mpppccRldh+GSxUk6TBJRAx7TeQ0ybDUaoco9MUqp2twv3KreR2+8Q12PDaAhfQVNEGdF3wTm1sShImjCN4VN3eSLlBEbve1QRQXM=
-        skip_cleanup: true
+        cleanup: false
         file: build/bin/SolveSpace.dmg
         on:
           repo: solvespace/solvespace
@@ -32,13 +34,13 @@ jobs:
       name: "Debian"
       os: linux
       dist: bionic
-      install: ./.travis/install-debian.sh
-      script: ./.travis/build-debian.sh
+      install: .travis/install-debian.sh
+      script: .travis/build-debian.sh
     - stage: test
       name: "Windows Visual Studio 2017"
       os: windows
-      install: ./.travis/install-windows.sh
-      script: ./.travis/build-windows.sh
+      install: .travis/install-windows.sh
+      script: .travis/build-windows.sh
     - &deploy-snap
       stage: deploy
       name: Snap amd64
@@ -49,17 +51,17 @@ jobs:
         snaps:
           - name: snapcraft
             confinement: classic
-      script: ./.travis/build-snap.sh
+      script: .travis/build-snap.sh
       deploy:
         - provider: script
-          script: sudo ./.travis/deploy-snap.sh edge
-          skip_cleanup: true
+          script: sudo .travis/deploy-snap.sh edge
+          cleanup: false
           on:
             branch: master
             tags: false
         - provider: script
-          script: sudo ./.travis/deploy-snap.sh edge,beta
-          skip_cleanup: true
+          script: sudo .travis/deploy-snap.sh edge,beta
+          cleanup: false
           on:
             branch: master
             tags: true

@@ -16,7 +16,7 @@ if [ "$CI" = "true" ]; then
     security unlock-keychain -p secret build.keychain
 
     # import the key
-    security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PASSWORD -T /usr/bin/codesign
+    security import certificate.p12 -k build.keychain -P "${MACOS_CERTIFICATE_PASSWORD}" -T /usr/bin/codesign
 
     security set-key-partition-list -S apple-tool:,apple: -s -k secret build.keychain
 
