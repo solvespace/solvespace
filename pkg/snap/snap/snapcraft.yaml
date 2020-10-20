@@ -51,6 +51,8 @@ parts:
       - -DCMAKE_BUILD_TYPE=Release
       - -DENABLE_TESTS=OFF
       - -DSNAP=ON
+      - -DENABLE_OPENMP=ON
+      - -DENABLE_LTO=ON
     build-packages:
       - zlib1g-dev
       - libpng-dev
