@@ -6,21 +6,23 @@ app="bin/SolveSpace.app"
 dmg="bin/SolveSpace.dmg"
 bundle_id="com.solvespace.solvespace"
 
-# get the signing certificate (this is the Developer ID:Application: Your Name, exported to a p12 file, then converted to base64, e.g.: cat ~/Desktop/certificate.p12 | base64 | pbcopy)
-echo $MACOS_CERTIFICATE_P12 | base64 --decode > certificate.p12
+if [ "$CI" = "true" ]; then
+    # get the signing certificate (this is the Developer ID:Application: Your Name, exported to a p12 file, then converted to base64, e.g.: cat ~/Desktop/certificate.p12 | base64 | pbcopy)
+    echo $MACOS_CERTIFICATE_P12 | base64 --decode > certificate.p12
 
-# create a keychain
-security create-keychain -p secret build.keychain
-security default-keychain -s build.keychain
-security unlock-keychain -p secret build.keychain
+    # create a keychain
+    security create-keychain -p secret build.keychain
+    security default-keychain -s build.keychain
+    security unlock-keychain -p secret build.keychain
 
-# import the key
-security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PASSWORD -T /usr/bin/codesign
+    # import the key
+    security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PASSWORD -T /usr/bin/codesign
 
-security set-key-partition-list -S apple-tool:,apple: -s -k secret build.keychain
+    security set-key-partition-list -S apple-tool:,apple: -s -k secret build.keychain
 
-# check if all is good
-security find-identity -v
+    # check if all is good
+    security find-identity -v
+fi
 
 # sign the .app
 codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${app}"

@@ -513,7 +513,7 @@ public:
     GraphicsWindow              GW;
 
     // The state for undo/redo
-    typedef struct {
+    typedef struct UndoState {
         IdList<Group,hGroup>            group;
         List<hGroup>                    groupOrder;
         IdList<Request,hRequest>        request;

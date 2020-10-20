@@ -13,3 +13,4 @@
 /debian/libslvs1-dev/
 /obj-*/
 /*.slvs
+.vscode/
