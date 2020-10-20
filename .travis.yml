@@ -3,6 +3,10 @@ dist: xenial
 language: c
 git:
   submodules: false
+stages:
+  - test
+  - name: deploy
+    if: (NOT type IN (pull_request)) AND (branch = master)
 jobs:
   allow_failures:
     - stage: deploy
