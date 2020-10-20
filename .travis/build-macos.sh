@@ -21,5 +21,5 @@ cmake \
     -DCMAKE_BUILD_TYPE=$BUILD_TYPE .. \
     -DENABLE_OPENMP=ON
 
-cmake --build . --config $BUILD_TYPE
+cmake --build . --config $BUILD_TYPE -- -j$(nproc)
 make -j$(nproc) test_solvespace
