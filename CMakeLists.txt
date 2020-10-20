@@ -11,6 +11,11 @@ cmake_minimum_required(VERSION 3.7.2 FATAL_ERROR)
 if(NOT CMAKE_VERSION VERSION_LESS 3.11.0)
     cmake_policy(VERSION 3.11.0)
 endif()
+if(NOT CMAKE_VERSION VERSION_LESS 3.9)
+    # LTO/IPO with non-Intel compilers on Linux requires policy CMP0069 to be set to NEW.
+    # Set it explicitly until cmake_minimum_required is raised to >= 3.9.
+    cmake_policy(SET CMP0069 NEW)
+endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
     "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_STANDARD 11)
@@ -102,6 +107,8 @@ if(CMAKE_SYSTEM_PROCESSOR STREQUAL "i686" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "X8
 endif()
 
 if(ENABLE_LTO)
+    include(CheckIPOSupported)
+    check_ipo_supported()
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
