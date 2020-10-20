@@ -9,8 +9,8 @@ mkdir build
 cd build
 cmake .. -G "Visual Studio 15 2017 Win64" -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
-MSBuild.exe "src/solvespace.vcxproj"
-MSBuild.exe "src/solvespace-cli.vcxproj"
-MSBuild.exe "test/solvespace-testsuite.vcxproj"
+MSBuild.exe "src/solvespace.vcxproj" -maxcpucount
+MSBuild.exe "src/solvespace-cli.vcxproj" -maxcpucount
+MSBuild.exe "test/solvespace-testsuite.vcxproj" -maxcpucount
 
 bin/$BUILD_TYPE/solvespace-testsuite.exe

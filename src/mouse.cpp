@@ -624,24 +624,24 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
         if(gs.withEndpoints > 0) {
             menu->AddItem(_("Select Edge Chain"),
-                          [this]() { MenuEdit(Command::SELECT_CHAIN); });
+                []() { MenuEdit(Command::SELECT_CHAIN); });
         }
         if(gs.constraints == 1 && gs.n == 0) {
             Constraint *c = SK.GetConstraint(gs.constraint[0]);
             if(c->HasLabel() && c->type != Constraint::Type::COMMENT) {
                 menu->AddItem(_("Toggle Reference Dimension"),
-                              []() { Constraint::MenuConstrain(Command::REFERENCE); });
+                    []() { Constraint::MenuConstrain(Command::REFERENCE); });
             }
             if(c->type == Constraint::Type::ANGLE ||
-               c->type == Constraint::Type::EQUAL_ANGLE)
+                c->type == Constraint::Type::EQUAL_ANGLE)
             {
                 menu->AddItem(_("Other Supplementary Angle"),
-                              []() { Constraint::MenuConstrain(Command::OTHER_ANGLE); });
+                    []() { Constraint::MenuConstrain(Command::OTHER_ANGLE); });
             }
         }
         if(gs.constraintLabels > 0 || gs.points > 0) {
             menu->AddItem(_("Snap to Grid"),
-                          [this]() { MenuEdit(Command::SNAP_TO_GRID); });
+                []() { MenuEdit(Command::SNAP_TO_GRID); });
         }
 
         if(gs.points == 1 && gs.point[0].isFromRequest()) {
@@ -714,7 +714,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
         if(gs.entities == gs.n) {
             menu->AddItem(_("Toggle Construction"),
-                          [this]() { MenuRequest(Command::CONSTRUCTION); });
+                []() { MenuRequest(Command::CONSTRUCTION); });
         }
 
         if(gs.points == 1) {
@@ -748,28 +748,28 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         menu->AddSeparator();
         if(LockedInWorkplane()) {
             menu->AddItem(_("Cut"),
-                          [this]() { MenuClipboard(Command::CUT); });
+                []() { MenuClipboard(Command::CUT); });
             menu->AddItem(_("Copy"),
-                          [this]() { MenuClipboard(Command::COPY); });
+                []() { MenuClipboard(Command::COPY); });
         }
     } else {
         menu->AddItem(_("Select All"),
-                      [this]() { MenuEdit(Command::SELECT_ALL); });
+            []() { MenuEdit(Command::SELECT_ALL); });
     }
 
     if((!SS.clipboard.r.IsEmpty() || !SS.clipboard.c.IsEmpty()) && LockedInWorkplane()) {
         menu->AddItem(_("Paste"),
-                      [this]() { MenuClipboard(Command::PASTE); });
+            []() { MenuClipboard(Command::PASTE); });
         menu->AddItem(_("Paste Transformed..."),
-                      [this]() { MenuClipboard(Command::PASTE_TRANSFORM); });
+            []() { MenuClipboard(Command::PASTE_TRANSFORM); });
     }
 
     if(itemsSelected) {
         menu->AddItem(_("Delete"),
-                      [this]() { MenuClipboard(Command::DELETE); });
+            []() { MenuClipboard(Command::DELETE); });
         menu->AddSeparator();
         menu->AddItem(_("Unselect All"),
-                      [this]() { MenuEdit(Command::UNSELECT_ALL); });
+            []() { MenuEdit(Command::UNSELECT_ALL); });
     }
     // If only one item is selected, then it must be the one that we just
     // selected from the hovered item; in which case unselect all and hovered
@@ -785,7 +785,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     if(itemsSelected) {
         menu->AddSeparator();
         menu->AddItem(_("Zoom to Fit"),
-                      [this]() { MenuView(Command::ZOOM_TO_FIT); });
+            []() { MenuView(Command::ZOOM_TO_FIT); });
     }
 
     menu->PopUp();
