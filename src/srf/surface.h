@@ -219,6 +219,7 @@ public:
     SSurface *GetSurfaceB(SShell *a, SShell *b) const;
 
     void Clear();
+    void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const;
 };
 
 // A segment of a curve by which a surface is trimmed: indicates which curve,
