@@ -20,18 +20,36 @@ void SShell::MakeFromIntersectionOf(SShell *a, SShell *b) {
     MakeFromBoolean(a, b, SSurface::CombineAs::INTERSECTION);
 }
 
-// We will be inserting existing verticies into curves to split them
-// todo: this is only using the ends of exact curves, and it is only
-// using them to split existing curves, not new intersections.
-// It resolves some issues but we could do better. We will need to
-// reorder things so the surface intersection curves exist prior to
-// splitting any curves at all in order to have their verticies too.
-// Better still would be to get curve/surface intersection to work
-// more reliably at the edges - maybe do curve/curve tests as part
-// of the curve-surface intersection test.
+void SCurve::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const {
+    *ptMax = {VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE};
+    *ptMin = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
+
+    for(int i = 0; i <= exact.deg; i++) {
+        exact.ctrl[i].MakeMaxMin(ptMax, ptMin);
+    }
+}
+
+// We will be inserting other curve verticies into our curves to split them.
+// This is helpful when curved surfaces become tangent along a trim and the
+// usual tests for curve-surface intersection don't split the curve at a vertex.
+// This is faster than the previous version that split at surface corners and
+// handles more buggy cases. It's not clear this is the best way but it works ok.
 static void FindVertsOnCurve(List<SInter> *l, const SCurve *curve, SShell *sh) {
+
+    Vector amax, amin;
+    curve->GetAxisAlignedBounding(&amax, &amin);
+
     for(auto sc : sh->curve) {
         if(!sc.isExact) continue;
+        
+        Vector cmax, cmin;
+        sc.GetAxisAlignedBounding(&cmax, &cmin);
+
+        if(Vector::BoundingBoxesDisjoint(amax, amin, cmax, cmin)) {
+            // They cannot possibly intersect, no curves to generate
+            continue;
+        }
+        
         for(int i=0; i<2; i++) {
             Vector pt = sc.exact.ctrl[ i==0 ? 0 : sc.exact.deg ];
             double t;
@@ -63,11 +81,13 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
 
     // First find any vertex that lies on our curve.
     List<SInter> vertpts = {};
-    if(agnstA)
-        FindVertsOnCurve(&vertpts, this, agnstA);
-    if(agnstB)
-        FindVertsOnCurve(&vertpts, this, agnstB);
-
+    if(isExact) {
+        if(agnstA)
+            FindVertsOnCurve(&vertpts, this, agnstA);
+        if(agnstB)
+            FindVertsOnCurve(&vertpts, this, agnstB);
+    }
+    
     const SCurvePt *p = pts.First();
     ssassert(p != NULL, "Cannot split an empty curve");
     SCurvePt prev = *p;
