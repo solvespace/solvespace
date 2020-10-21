@@ -428,12 +428,6 @@ Quaternion Quaternion::Mirror() const {
 }
 
 
-Vector Vector::From(double x, double y, double z) {
-    Vector v;
-    v.x = x; v.y = y; v.z = z;
-    return v;
-}
-
 Vector Vector::From(hParam x, hParam y, hParam z) {
     Vector v;
     v.x = SK.GetParam(x)->val;
@@ -446,50 +440,6 @@ bool Vector::EqualsExactly(Vector v) const {
     return EXACT(x == v.x &&
                  y == v.y &&
                  z == v.z);
-}
-
-Vector Vector::Plus(Vector b) const {
-    Vector r;
-
-    r.x = x + b.x;
-    r.y = y + b.y;
-    r.z = z + b.z;
-
-    return r;
-}
-
-Vector Vector::Minus(Vector b) const {
-    Vector r;
-
-    r.x = x - b.x;
-    r.y = y - b.y;
-    r.z = z - b.z;
-
-    return r;
-}
-
-Vector Vector::Negated() const {
-    Vector r;
-
-    r.x = -x;
-    r.y = -y;
-    r.z = -z;
-
-    return r;
-}
-
-Vector Vector::Cross(Vector b) const {
-    Vector r;
-
-    r.x = -(z*b.y) + (y*b.z);
-    r.y =  (z*b.x) - (x*b.z);
-    r.z = -(y*b.x) + (x*b.y);
-
-    return r;
-}
-
-double Vector::Dot(Vector b) const {
-    return (x*b.x + y*b.y + z*b.z);
 }
 
 double Vector::DirectionCosineWith(Vector b) const {
@@ -629,24 +579,6 @@ Vector Vector::ClosestPointOnLine(Vector p0, Vector dp) const {
     return this->Plus(n.WithMagnitude(d));
 }
 
-double Vector::MagSquared() const {
-    return x*x + y*y + z*z;
-}
-
-double Vector::Magnitude() const {
-    return sqrt(x*x + y*y + z*z);
-}
-
-Vector Vector::ScaledBy(double v) const {
-    Vector r;
-
-    r.x = x * v;
-    r.y = y * v;
-    r.z = z * v;
-
-    return r;
-}
-
 Vector Vector::WithMagnitude(double v) const {
     double m = Magnitude();
     if(EXACT(m == 0)) {
@@ -727,16 +659,6 @@ Vector Vector::ClampWithin(double minv, double maxv) const {
     if(ret.z > maxv) ret.z = maxv;
 
     return ret;
-}
-
-void Vector::MakeMaxMin(Vector *maxv, Vector *minv) const {
-    maxv->x = max(maxv->x, x);
-    maxv->y = max(maxv->y, y);
-    maxv->z = max(maxv->z, z);
-
-    minv->x = min(minv->x, x);
-    minv->y = min(minv->y, y);
-    minv->z = min(minv->z, z);
 }
 
 bool Vector::OutsideAndNotOn(Vector maxv, Vector minv) const {
