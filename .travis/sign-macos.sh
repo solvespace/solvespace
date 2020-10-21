@@ -39,7 +39,7 @@ notarize_uuid=$(xcrun altool --notarize-app --primary-bundle-id "${bundle_id}" -
 echo $notarize_uuid
 
 # wait a bit so we don't get errors during checking
-sleep 5
+sleep 10
 
 success=0
 for (( ; ; ))
