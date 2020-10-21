@@ -11,7 +11,7 @@ export LDFLAGS="-L${LLVM_PREFIX}/lib -Wl,-rpath,${LLVM_PREFIX}/lib" \
 export CFLAGS="-I${LLVM_PREFIX}/include"
 export CPPFLAGS="-I${LLVM_PREFIX}/include"
 
-if echo $TRAVIS_TAG | grep ^v; then
+if [ "$1" == "release" ]; then
     BUILD_TYPE=RelWithDebInfo
     cmake \
         -DCMAKE_OSX_DEPLOYMENT_TARGET="${OSX_TARGET}" \
