@@ -181,16 +181,19 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
 }
 
 void SShell::CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into) {
-    SCurve *sc;
-    for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
+#pragma omp parallel for
+    for(int i=0; i<curve.n; i++) {
+        SCurve *sc = &curve[i];
         SCurve scn = sc->MakeCopySplitAgainst(agnst, NULL,
                                 surface.FindById(sc->surfA),
                                 surface.FindById(sc->surfB));
         scn.source = opA ? SCurve::Source::A : SCurve::Source::B;
-
-        hSCurve hsc = into->curve.AddAndAssignId(&scn);
-        // And note the new ID so that we can rewrite the trims appropriately
-        sc->newH = hsc;
+#pragma omp critical
+        {
+            hSCurve hsc = into->curve.AddAndAssignId(&scn);
+            // And note the new ID so that we can rewrite the trims appropriately
+            sc->newH = hsc;
+        }
     }
 }
 
