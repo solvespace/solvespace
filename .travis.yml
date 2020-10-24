@@ -3,20 +3,20 @@ dist: xenial
 language: c
 git:
   submodules: false
+stages:
+  - test
+  - name: deploy
+    if: (NOT type IN (pull_request)) AND (branch = master)
 jobs:
-  allow_failures:
-    - stage: deploy
-      name: Snap arm64
   include:
     - stage: test
-      name: macOS test
+      name: macOS
       os: osx
       osx_image: xcode12.2
       install: ".travis/install-macos.sh"
       script: ".travis/build-macos.sh"
     - stage: deploy
-      name: macOS deploy
-      if: (NOT type IN (pull_request)) AND (branch = master)
+      name: macOS
       os: osx
       osx_image: xcode12.2
       install: ".travis/install-macos.sh"
@@ -33,24 +33,25 @@ jobs:
         skip_cleanup: true
         prerelease: true
         overwrite: true
+        edge: true
         name: ${TRAVIS_TAG:-edge}
-        body: $TRAVIS_COMMIT_MESSAGE
+        release_notes: $TRAVIS_COMMIT_MESSAGE
         file: build/bin/SolveSpace.dmg
         on:
           repo: solvespace/solvespace
     - stage: test
-      name: "Debian"
+      name: "Ubuntu"
       os: linux
       dist: bionic
-      install: .travis/install-debian.sh
-      script: .travis/build-debian.sh
+      install: .travis/install-ubuntu.sh
+      script: .travis/build-ubuntu.sh
     - stage: test
-      name: "Windows Visual Studio 2017 test"
+      name: "Windows"
       os: windows
       install: .travis/install-windows.sh
       script: .travis/build-windows.sh
     - stage: deploy
-      name: "Windows Visual Studio 2017 deploy"
+      name: "Windows"
       os: windows
       install: .travis/install-windows.sh
       script: .travis/build-windows.sh release
@@ -64,12 +65,35 @@ jobs:
         token:
           secure: dDlkIawHcODlW9B/20/cQCtzeoocvs0hKuNngRKXKqzXLWTRq33oq/B7+39tAixWbmv6exTpijiKrRNFiSCW5Z4iwHLwaRD4XJznxw63e/Hus/dxg2Tvqx7XFpkCz8mT1Z+gZQE5YxAngeZPpI/sZbZtF1UO3yH5eLeeokZ15p26ZskQUPoYuzrTgTzYL3XfpG3F+20rNBawH1ycsCTVD/08/n31d2m3CrKAsbW7er92ek6w4fzKr7NW8WeXjrPJETVpw5fQg1Od3pRGW8dPQaJcvKQEogMp8Mm0ETYd0qigg89/giBz7QwOgmAWQ4dH+DfZH4Ojl//127QztBolMvyDMQBykWrtJoGcij05sT6K2IJr2FHeUBO12MAEdjiVvhQj3DtTzjPiZAHHDBSLWxLKWWhlhHE4pq7g1MQhqXkaAHI2BLNzwLmaowbMT0bECf9yfz6xx18h6XPQFX44oOktraobVALFlyHqeKa8zdcUt22LF6uAL1m5dxL0tny3eXCIPE4UH/RZgua/cHV9G3cUvKQa/QnFSLRhvWVSbGB+7YsHouBJcsUOOW1gmd5442XuC7mpppccRldh+GSxUk6TBJRAx7TeQ0ybDUaoco9MUqp2twv3KreR2+8Q12PDaAhfQVNEGdF3wTm1sShImjCN4VN3eSLlBEbve1QRQXM=
         skip_cleanup: true
-        draft: true
         prerelease: true
         overwrite: true
+        edge: true
         name: ${TRAVIS_TAG:-edge}
-        body: $TRAVIS_COMMIT_MESSAGE
+        release_notes: $TRAVIS_COMMIT_MESSAGE
         file: build/bin/RelWithDebInfo/solvespace.exe
+        on:
+          repo: solvespace/solvespace
+    - stage: deploy
+      name: "Windows with OpenMP"
+      os: windows
+      install: .travis/install-windows.sh
+      script: .travis/build-windows.sh release openmp
+      before_deploy:
+        - git config --local user.name "solvespace-cd"
+        - git config --local user.email "no-reply@solvespace.com"
+        - export TRAVIS_TAG=${TRAVIS_TAG:-edge}
+        - git tag $TRAVIS_TAG
+      deploy:
+        provider: releases
+        token:
+          secure: dDlkIawHcODlW9B/20/cQCtzeoocvs0hKuNngRKXKqzXLWTRq33oq/B7+39tAixWbmv6exTpijiKrRNFiSCW5Z4iwHLwaRD4XJznxw63e/Hus/dxg2Tvqx7XFpkCz8mT1Z+gZQE5YxAngeZPpI/sZbZtF1UO3yH5eLeeokZ15p26ZskQUPoYuzrTgTzYL3XfpG3F+20rNBawH1ycsCTVD/08/n31d2m3CrKAsbW7er92ek6w4fzKr7NW8WeXjrPJETVpw5fQg1Od3pRGW8dPQaJcvKQEogMp8Mm0ETYd0qigg89/giBz7QwOgmAWQ4dH+DfZH4Ojl//127QztBolMvyDMQBykWrtJoGcij05sT6K2IJr2FHeUBO12MAEdjiVvhQj3DtTzjPiZAHHDBSLWxLKWWhlhHE4pq7g1MQhqXkaAHI2BLNzwLmaowbMT0bECf9yfz6xx18h6XPQFX44oOktraobVALFlyHqeKa8zdcUt22LF6uAL1m5dxL0tny3eXCIPE4UH/RZgua/cHV9G3cUvKQa/QnFSLRhvWVSbGB+7YsHouBJcsUOOW1gmd5442XuC7mpppccRldh+GSxUk6TBJRAx7TeQ0ybDUaoco9MUqp2twv3KreR2+8Q12PDaAhfQVNEGdF3wTm1sShImjCN4VN3eSLlBEbve1QRQXM=
+        skip_cleanup: true
+        prerelease: true
+        overwrite: true
+        edge: true
+        name: ${TRAVIS_TAG:-edge}
+        release_notes: $TRAVIS_COMMIT_MESSAGE
+        file: build/bin/RelWithDebInfo/solvespace-openmp.exe
         on:
           repo: solvespace/solvespace
     - &deploy-snap
@@ -98,4 +122,6 @@ jobs:
             tags: true
     - <<: *deploy-snap
       name: Snap arm64
-      arch: arm64
+      arch: arm64-graviton2
+      group: edge
+      virt: lxd

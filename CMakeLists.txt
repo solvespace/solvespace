@@ -170,7 +170,11 @@ if(ENABLE_SANITIZERS)
     endif()
 
     string(REPLACE ";" "," SANITIZE_OPTIONS "${SANITIZE_OPTIONS}")
-    set(SANITIZE_FLAGS "-O1;-fsanitize=${SANITIZE_OPTIONS};-fno-sanitize-recover=address,undefined")
+    if (NOT APPLE)
+        set(SANITIZE_FLAGS "-O1;-fsanitize=${SANITIZE_OPTIONS};-fno-sanitize-recover=address,undefined")
+    else()
+        set(SANITIZE_FLAGS "-O1;-fsanitize=${SANITIZE_OPTIONS}")
+    endif()
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         list(APPEND SANITIZE_FLAGS -fno-omit-frame-pointer -fno-optimize-sibling-calls)
