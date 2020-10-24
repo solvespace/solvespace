@@ -26,10 +26,6 @@ if(APPLE)
         ${APPKIT_LIBRARY})
 endif()
 
-# sanitizers for all code in src and below
-
-add_compile_options(${SANITIZE_FLAGS})
-
 # libslvs
 
 set(libslvs_SOURCES
@@ -59,8 +55,7 @@ target_include_directories(slvs
 
 target_link_libraries(slvs
     ${util_LIBRARIES}
-    mimalloc-static
-    ${SANITIZE_FLAGS})
+    mimalloc-static)
 
 add_dependencies(slvs
     mimalloc-static)
@@ -230,8 +225,7 @@ target_link_libraries(solvespace-core
     ${PNG_LIBRARY}
     ${FREETYPE_LIBRARY}
     flatbuffers
-    mimalloc-static
-    ${SANITIZE_FLAGS})
+    mimalloc-static)
 
 if(Backtrace_FOUND)
     target_link_libraries(solvespace-core
@@ -338,8 +332,7 @@ if(ENABLE_GUI)
         solvespace-core
         ${OPENGL_LIBRARIES}
         ${platform_LIBRARIES}
-        ${COVERAGE_LIBRARY}
-        ${SANITIZE_FLAGS})
+        ${COVERAGE_LIBRARY})
 
     if(MSVC)
         set_target_properties(solvespace PROPERTIES
@@ -368,8 +361,7 @@ target_include_directories(solvespace-headless
 
 target_link_libraries(solvespace-headless
     solvespace-core
-    ${CAIRO_LIBRARIES}
-    ${SANITIZE_FLAGS})
+    ${CAIRO_LIBRARIES})
 
 target_compile_options(solvespace-headless
     PRIVATE ${COVERAGE_FLAGS})
@@ -383,8 +375,7 @@ if(ENABLE_CLI)
 
     target_link_libraries(solvespace-cli
         solvespace-core
-        solvespace-headless
-        ${SANITIZE_FLAGS})
+        solvespace-headless)
 
     add_dependencies(solvespace-cli
         resources)

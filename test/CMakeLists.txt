@@ -11,8 +11,6 @@ if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
     add_definitions(-DTEST_BUILD_ON_WINDOWS)
 endif()
 
-add_compile_options(${SANITIZE_FLAGS})
-
 # test suite
 
 set(testsuite_SOURCES
@@ -76,8 +74,7 @@ add_executable(solvespace-testsuite
 
 target_link_libraries(solvespace-testsuite
     solvespace-headless
-    ${COVERAGE_LIBRARY}
-    ${SANITIZE_FLAGS})
+    ${COVERAGE_LIBRARY})
 
 add_dependencies(solvespace-testsuite
     resources)
@@ -135,8 +132,7 @@ add_executable(solvespace-debugtool
 
 target_link_libraries(solvespace-debugtool
     solvespace-core
-    solvespace-headless
-    ${SANITIZE_FLAGS})
+    solvespace-headless)
 
 add_dependencies(solvespace-debugtool
     resources)
