@@ -170,19 +170,23 @@ if(ENABLE_SANITIZERS)
     endif()
 
     string(REPLACE ";" "," SANITIZE_OPTIONS "${SANITIZE_OPTIONS}")
+
     if (NOT APPLE)
-        set(SANITIZE_FLAGS "-O1;-fsanitize=${SANITIZE_OPTIONS};-fno-sanitize-recover=address,undefined")
+        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS} -fno-sanitize-recover=address,undefined")
     else()
-        set(SANITIZE_FLAGS "-O1;-fsanitize=${SANITIZE_OPTIONS}")
+        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS}")
     endif()
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        list(APPEND SANITIZE_FLAGS -fno-omit-frame-pointer -fno-optimize-sibling-calls)
+        set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-omit-frame-pointer -fno-optimize-sibling-calls")
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        list(APPEND SANITIZE_FLAGS -fuse-ld=gold)
+        set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fuse-ld=gold")
     else()
         message(FATAL_ERROR "Sanitizers are only available when using GCC or Clang")
     endif()
+
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZE_FLAGS}")
 endif()
 
 # common dependencies
