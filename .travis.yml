@@ -3,6 +3,7 @@ dist: xenial
 language: c
 git:
   submodules: false
+if: tag != edge
 stages:
   - test
   - name: deploy
