@@ -46,7 +46,7 @@ for (( ; ; ))
 do
     echo "Checking progress..."
     progress=$(xcrun altool --notarization-info "${notarize_uuid}" -u "${MACOS_APPSTORE_USERNAME}" -p "${MACOS_APPSTORE_APP_PASSWORD}" 2>&1)
-    echo "${progress}"
+    # echo "${progress}"
  
     if [ $? -ne 0 ] || [[  "${progress}" =~ "Invalid" ]] ; then
         echo "Error with notarization. Exiting"
