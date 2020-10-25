@@ -63,4 +63,4 @@ do
 done
 
 # staple
-xcrun stapler staple $app
+xcrun stapler staple "${dmg}"
