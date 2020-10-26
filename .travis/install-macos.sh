@@ -1,4 +1,4 @@
 #!/bin/sh -xe
 
-brew install llvm@9
+brew install libomp
 git submodule update --init

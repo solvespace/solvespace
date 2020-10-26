@@ -404,10 +404,15 @@ endif()
 if(APPLE)
     set(bundle     SolveSpace)
     set(bundle_bin ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app/Contents/MacOS)
-
+    set(bundle_resources ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app/Contents/Resources/lib)
+    execute_process(
+        COMMAND mkdir -p ${bundle_resources}
+        COMMAND cp -p /usr/local/opt/libomp/lib/libomp.dylib ${bundle_resources}/libomp.dylib
+    )
     add_custom_command(TARGET solvespace POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${bundle_bin}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:solvespace-cli> ${bundle_bin}
+        COMMAND install_name_tool -change /usr/local/opt/libomp/lib/libomp.dylib "@executable_path/../Resources/lib/libomp.dylib" ${bundle_bin}/${bundle}
         COMMENT "Bundling executable solvespace-cli"
         VERBATIM)
 endif()

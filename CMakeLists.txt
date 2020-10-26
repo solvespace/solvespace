@@ -115,27 +115,11 @@ if(ENABLE_LTO)
 endif()
 
 if(ENABLE_OPENMP)
-    if(APPLE)
-        # OpenMP does not work with the default Apple llvm/clang++
-        # Install a more recent version using Homebrew (version 11.0.0 which is the next available tag on homebrew at this time crashed):
-        # "brew install llvm@9"
-        # and set the right compiler flags using:
-        # LLVM_PREFIX=$(brew --prefix llvm@9)
-        # export CC="${LLVM_PREFIX}/bin/clang"
-        # export CXX="${CC}++"
-        # export LDFLAGS="-L${LLVM_PREFIX}/lib -Wl,-rpath,${LLVM_PREFIX}/lib" \
-        # export CFLAGS="-I${LLVM_PREFIX}/include"
-        # export CPPFLAGS="-I${LLVM_PREFIX}/include"
-        set(OpenMP_CXX_FLAGS "-fopenmp=libomp")
+    find_package( OpenMP REQUIRED )
+    include(FindOpenMP)
+    if(OPENMP_FOUND)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
         message(STATUS "found OpenMP, compiling with flags: " ${OpenMP_CXX_FLAGS} )
-    else()
-        find_package( OpenMP REQUIRED )
-        include(FindOpenMP)
-        if(OPENMP_FOUND)
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-            message(STATUS "found OpenMP, compiling with flags: " ${OpenMP_CXX_FLAGS} )
-        endif()
     endif()
 endif()
 
