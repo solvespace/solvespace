@@ -2,6 +2,7 @@
 
 cd build
 
+openmp="bin/SolveSpace.app/Contents/Resources/lib/libomp.dylib"
 app="bin/SolveSpace.app"
 dmg="bin/SolveSpace.dmg"
 bundle_id="com.solvespace.solvespace"
@@ -23,6 +24,9 @@ if [ "$CI" = "true" ]; then
     # check if all is good
     security find-identity -v
 fi
+
+# sign openmp
+codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${openmp}"
 
 # sign the .app
 codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${app}"
