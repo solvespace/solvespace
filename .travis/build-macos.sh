@@ -4,12 +4,6 @@ mkdir build || true
 cd build
 
 OSX_TARGET="10.9"
-LLVM_PREFIX=$(brew --prefix llvm@9)
-export CC="${LLVM_PREFIX}/bin/clang"
-export CXX="${CC}++"
-export LDFLAGS="-L${LLVM_PREFIX}/lib -Wl,-rpath,${LLVM_PREFIX}/lib" \
-export CFLAGS="-I${LLVM_PREFIX}/include"
-export CPPFLAGS="-I${LLVM_PREFIX}/include"
 
 if [ "$1" = "release" ]; then
     BUILD_TYPE=RelWithDebInfo
