@@ -252,8 +252,8 @@ void TextWindow::Init() {
                     MouseLeave();
                     return true;
                 } else if(event.type == MouseEvent::Type::SCROLL_VERT) {
-                    window->SetScrollbarPosition(window->GetScrollbarPosition() -
-                                                 LINE_HEIGHT / 2 * event.scrollDelta);
+                    ScrollbarEvent(window->GetScrollbarPosition() -
+                                           LINE_HEIGHT / 2 * event.scrollDelta);
                 }
                 return false;
             };
@@ -1130,7 +1130,7 @@ void TextWindow::MouseLeave() {
 
 void TextWindow::ScrollbarEvent(double newPos) {
     if(window->IsEditorVisible()) {
-        window->SetScrollbarPosition(scrollPos);
+        // An edit field is active. Do not move the scrollbar.
         return;
     }
 
@@ -1140,6 +1140,7 @@ void TextWindow::ScrollbarEvent(double newPos) {
 
     if(newPos != scrollPos) {
         scrollPos = (int)newPos;
+        window->SetScrollbarPosition(scrollPos);
         window->Invalidate();
     }
 }
