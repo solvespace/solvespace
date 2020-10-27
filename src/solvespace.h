@@ -530,7 +530,7 @@ public:
             style.Clear();
         }
     } UndoState;
-    enum { MAX_UNDO = 16 };
+    enum { MAX_UNDO = 100 };
     typedef struct {
         UndoState   d[MAX_UNDO];
         int         cnt;
