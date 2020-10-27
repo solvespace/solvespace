@@ -507,9 +507,9 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
     Vector n = sbls->normal.ScaledBy(-1);
     Vector u = n.Normal(0), v = n.Normal(1);
     Vector orig = sbls->point;
-    double umax = 1e-10, umin = 1e10;
+    double umax = VERY_NEGATIVE, umin = VERY_POSITIVE;
     sbls->GetBoundingProjd(u, orig, &umin, &umax);
-    double vmax = 1e-10, vmin = 1e10;
+    double vmax = VERY_NEGATIVE, vmin = VERY_POSITIVE;
     sbls->GetBoundingProjd(v, orig, &vmin, &vmax);
     // and now fix things up so that all u and v lie between 0 and 1
     orig = orig.Plus(u.ScaledBy(umin));
@@ -663,9 +663,9 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     Vector n = sbls->normal.ScaledBy(-1);
     Vector u = n.Normal(0), v = n.Normal(1);
     Vector orig = sbls->point;
-    double umax = 1e-10, umin = 1e10;
+    double umax = VERY_NEGATIVE, umin = VERY_POSITIVE;
     sbls->GetBoundingProjd(u, orig, &umin, &umax);
-    double vmax = 1e-10, vmin = 1e10;
+    double vmax = VERY_NEGATIVE, vmin = VERY_POSITIVE;
     sbls->GetBoundingProjd(v, orig, &vmin, &vmax);
     // and now fix things up so that all u and v lie between 0 and 1
     orig = orig.Plus(u.ScaledBy(umin));
