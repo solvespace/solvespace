@@ -1,5 +1,8 @@
 SolveSpace
 ==========
+[![Build Status](https://travis-ci.com/solvespace/solvespace.svg?branch=master)](https://travis-ci.com/solvespace/solvespace)
+[![solvespace](https://snapcraft.io/solvespace/badge.svg)](https://snapcraft.io/solvespace)
+[![solvespace](https://snapcraft.io/solvespace/trending.svg?name=0)](https://snapcraft.io/solvespace)
 
 This repository contains the source code of [SolveSpace][], a parametric
 2d/3d CAD.
