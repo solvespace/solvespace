@@ -331,6 +331,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 sext = this;
                 shext = agnstA;
             }
+            bool foundExact = false;
             SCurve *sc;
             for(sc = shext->curve.First(); sc; sc = shext->curve.NextAfter(sc)) {
                 if(sc->source == SCurve::Source::INTERSECTION) continue;
@@ -341,8 +342,14 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 if(splane->ContainsPlaneCurve(sc)) {
                     SBezier bezier = sc->exact;
                     AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
+                    foundExact = true;
                 }
             }
+            // if we found at lest one of these we don't want to do the numerical
+            // intersection as well. Sometimes it will also find the same curve but
+            // with different PWLs and the polygon will fail to assemble.
+            if(foundExact)
+                return;
         }
 
         // Try intersecting the surfaces numerically, by a marching algorithm.
