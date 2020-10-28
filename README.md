@@ -1,3 +1,5 @@
+<img src="https://avatars1.githubusercontent.com/u/18541596?s=55&v=4" width="55" height="55" alt="SolveSpace Logo" align="left">
+
 SolveSpace
 ==========
 [![Build Status](https://travis-ci.com/solvespace/solvespace.svg?branch=master)](https://travis-ci.com/solvespace/solvespace)
