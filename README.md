@@ -1,4 +1,4 @@
-<img src="https://avatars1.githubusercontent.com/u/18541596?s=55&v=4" width="55" height="55" alt="SolveSpace Logo" align="left">
+<img src="https://avatars1.githubusercontent.com/u/18541596?s=70&v=4" width="70" height="70" alt="SolveSpace Logo" align="left">
 
 SolveSpace
 ==========
