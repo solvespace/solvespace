@@ -352,7 +352,7 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
 
         Group *g = SK.GetGroup(hg);
         if(g->order > activeGroup->order) continue;
-        if(bestOrder != -1 && (bestOrder >= g->order || bestZIndex > hov.zIndex)) continue;
+        if(bestOrder != -1 && (bestOrder > g->order || bestZIndex > hov.zIndex)) continue;
         bestOrder  = g->order;
         bestZIndex = hov.zIndex;
         sel = hov.selection;
@@ -382,7 +382,7 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToDrag() {
 
         Group *g = SK.GetGroup(hg);
         if(g->order > activeGroup->order) continue;
-        if(bestOrder != -1 && (bestOrder >= g->order || bestZIndex > hov.zIndex)) continue;
+        if(bestOrder != -1 && (bestOrder > g->order || bestZIndex > hov.zIndex)) continue;
         bestOrder  = g->order;
         bestZIndex = hov.zIndex;
         sel = hov.selection;
