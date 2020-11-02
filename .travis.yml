@@ -6,10 +6,17 @@ git:
 if: tag != edge
 stages:
   - test
+  - name: clean
+    if: (NOT type IN (pull_request)) AND (branch = master)
   - name: deploy
     if: (NOT type IN (pull_request)) AND (branch = master)
 jobs:
   include:
+    - stage: clean
+      name: Remove Github Release
+      os: linux
+      dist: bionic
+      script: .travis/remove-edge.sh
     - stage: test
       name: macOS
       os: osx
