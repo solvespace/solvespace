@@ -89,6 +89,8 @@ jobs:
       python: "3.7"
     - <<: *linux
       python: "3.8"
+    - <<: *linux
+      python: "3.9"
     - &osx
       stage: deploy
       os: osx
@@ -119,6 +121,8 @@ jobs:
       env: PYTHON=3.7.0
     - <<: *osx
       env: PYTHON=3.8.0
+    - <<: *osx
+      env: PYTHON=3.9.0
 before_cache:
   - rm -rf $HOME/.cache/pip/log
 cache:
