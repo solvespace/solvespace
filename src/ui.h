@@ -179,7 +179,7 @@ public:
     enum {
         MAX_COLS = 100,
         MIN_COLS = 45,
-        MAX_ROWS = 2000
+        MAX_ROWS = 4000
     };
 
     typedef struct {

@@ -338,11 +338,22 @@ void TextWindow::ClearScreen() {
     rows = 0;
 }
 
+// This message was addded when someone had too many fonts for the text window
+// Scrolling seemed to be broken, but was actaully at the MAX_ROWS.
+static const char* endString = "    **** End of Text Screen ****";
+
 void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     if(!canvas) return;
 
     if(rows >= MAX_ROWS) return;
 
+    if(rows >= MAX_ROWS-2 && (fmt != endString)) {
+        // twice due to some half-row issues on resizing
+        Printf(halfLine, endString);
+        Printf(halfLine, endString);
+        return;
+    }
+    
     va_list vl;
     va_start(vl, fmt);
 
