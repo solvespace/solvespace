@@ -80,7 +80,6 @@ include_directories(
     ${PNG_PNG_INCLUDE_DIR}
     ${FREETYPE_INCLUDE_DIRS}
     ${CAIRO_INCLUDE_DIRS}
-    ${Q3D_INCLUDE_DIR}
     ${MIMALLOC_INCLUDE_DIR})
 
 if(Backtrace_FOUND)
@@ -214,7 +213,6 @@ add_library(solvespace-core STATIC
     ${solvespace_core_SOURCES})
 
 add_dependencies(solvespace-core
-    q3d_header
     mimalloc-static)
 
 target_link_libraries(solvespace-core
@@ -224,7 +222,6 @@ target_link_libraries(solvespace-core
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
     ${FREETYPE_LIBRARY}
-    flatbuffers
     mimalloc-static)
 
 if(Backtrace_FOUND)

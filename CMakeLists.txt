@@ -182,17 +182,6 @@ endif()
 message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
 
-message(STATUS "Using in-tree flatbuffers")
-set(FLATBUFFERS_BUILD_FLATLIB ON CACHE BOOL "")
-set(FLATBUFFERS_BUILD_FLATC ON CACHE BOOL "")
-set(FLATBUFFERS_BUILD_FLATHASH OFF CACHE BOOL "")
-set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
-add_subdirectory(extlib/flatbuffers EXCLUDE_FROM_ALL)
-
-message(STATUS "Using in-tree q3d")
-add_subdirectory(extlib/q3d)
-set(Q3D_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/q3d)
-
 message(STATUS "Using in-tree mimalloc")
 set(MI_OVERRIDE OFF CACHE BOOL "")
 set(MI_BUILD_SHARED OFF CACHE BOOL "")
