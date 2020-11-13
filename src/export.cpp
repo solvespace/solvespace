@@ -843,8 +843,6 @@ void SolveSpaceUI::ExportMeshTo(const Platform::Path &filename) {
         ExportMeshAsObjTo(f, fMtl, m);
 
         fclose(fMtl);
-    } else if(filename.HasExtension("q3do")) {
-        ExportMeshAsQ3doTo(f, m);
     } else if(filename.HasExtension("js") ||
               filename.HasExtension("html")) {
         SOutlineList *e = &(SK.GetGroup(SS.GW.activeGroup)->displayOutlines);
@@ -896,54 +894,6 @@ void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
         fputc(0, f);
         fputc(0, f);
     }
-}
-
-//-----------------------------------------------------------------------------
-// Export the mesh as a Q3DO (https://github.com/q3k/q3d) file.
-//-----------------------------------------------------------------------------
-
-#include "q3d_object_generated.h"
-void SolveSpaceUI::ExportMeshAsQ3doTo(FILE *f, SMesh *sm) {
-    flatbuffers::FlatBufferBuilder builder(1024);
-    double s = SS.exportScale;
-
-    // Create a material for every colour used, keep note of triangles belonging to color/material.
-    std::map<RgbaColor, flatbuffers::Offset<q3d::Material>, RgbaColorCompare> materials;
-    std::map<RgbaColor, std::vector<flatbuffers::Offset<q3d::Triangle>>, RgbaColorCompare> materialTriangles;
-    for (const STriangle &t : sm->l) {
-        auto color = t.meta.color;
-        if (materials.find(color) == materials.end()) {
-            auto name = builder.CreateString(ssprintf("Color #%02x%02x%02x%02x", color.red, color.green, color.blue, color.alpha));
-            auto co = q3d::CreateColor(builder, color.red, color.green, color.blue, color.alpha);
-            auto mo = q3d::CreateMaterial(builder, name, co);
-            materials.emplace(color, mo);
-        }
-
-        Vector faceNormal = t.Normal();
-        auto a = q3d::Vector3((float)(t.a.x/s), (float)(t.a.y/s), (float)(t.a.z/s));
-        auto b = q3d::Vector3((float)(t.b.x/s), (float)(t.b.y/s), (float)(t.b.z/s));
-        auto c = q3d::Vector3((float)(t.c.x/s), (float)(t.c.y/s), (float)(t.c.z/s));
-        auto fn = q3d::Vector3((float)faceNormal.x, (float)faceNormal.y, (float)faceNormal.x);
-        auto n1 = q3d::Vector3((float)t.normals[0].x, (float)t.normals[0].y, (float)t.normals[0].z);
-        auto n2 = q3d::Vector3((float)t.normals[1].x, (float)t.normals[1].y, (float)t.normals[1].z);
-        auto n3 = q3d::Vector3((float)t.normals[2].x, (float)t.normals[2].y, (float)t.normals[2].z);
-        auto tri = q3d::CreateTriangle(builder, &a, &b, &c, &fn, &n1, &n2, &n3);
-        materialTriangles[color].push_back(tri);
-    }
-
-    // Build all meshes sorted by material.
-    std::vector<flatbuffers::Offset<q3d::Mesh>> meshes;
-    for (auto &it : materials) {
-        auto &mato = it.second;
-        auto to = builder.CreateVector(materialTriangles[it.first]);
-        auto mo = q3d::CreateMesh(builder, to, mato);
-        meshes.push_back(mo);
-    }
-
-    auto mo = builder.CreateVector(meshes);
-    auto o = q3d::CreateObject(builder, mo);
-    q3d::FinishObjectBuffer(builder, o);
-    fwrite(builder.GetBufferPointer(), builder.GetSize(), 1, f);
 }
 
 //-----------------------------------------------------------------------------
