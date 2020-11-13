@@ -88,7 +88,7 @@ Before building, check out the project and the necessary submodules:
 
     git clone https://github.com/solvespace/solvespace
     cd solvespace
-    git submodule update --init extlib/libdxfrw extlib/flatbuffers extlib/q3d extlib/mimalloc
+    git submodule update --init extlib/libdxfrw extlib/mimalloc
 
 After that, build SolveSpace as following:
 
@@ -108,7 +108,7 @@ Ubuntu will require 20.04 or above. Cross-compiling with WSL is also confirmed t
 
 You will need the usual build tools, CMake, a Windows cross-compiler, and flatc. On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
-    apt-get install git build-essential cmake mingw-w64 libflatbuffers-dev
+    apt-get install git build-essential cmake mingw-w64
 
 Before building, check out the project and the necessary submodules:
 
@@ -182,7 +182,7 @@ Before building, check out the project and the necessary submodules:
 
     git clone https://github.com/solvespace/solvespace
     cd solvespace
-    git submodule update --init extlib/libdxfrw extlib/flatbuffers extlib/q3d extlib/mimalloc
+    git submodule update --init extlib/libdxfrw extlib/mimalloc
 
 After that, build SolveSpace as following:
 
