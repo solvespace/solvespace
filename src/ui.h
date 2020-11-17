@@ -727,6 +727,7 @@ public:
     public:
         int         zIndex;
         double      distance;
+        double      depth;
         Selection   selection;
     };
 
