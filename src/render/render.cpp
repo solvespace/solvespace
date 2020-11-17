@@ -343,9 +343,10 @@ void UiCanvas::DrawBitmapText(const std::string &str, int x, int y, RgbaColor co
 // A canvas that performs picking against drawn geometry.
 //-----------------------------------------------------------------------------
 
-void ObjectPicker::DoCompare(double distance, int zIndex, int comparePosition) {
+void ObjectPicker::DoCompare(double depth, double distance, int zIndex, int comparePosition) {
     if(distance > selRadius) return;
     if((zIndex == maxZIndex && distance < minDistance) || (zIndex > maxZIndex)) {
+        minDepth    = depth;
         minDistance = distance;
         maxZIndex   = zIndex;
         position    = comparePosition;
@@ -372,10 +373,10 @@ void ObjectPicker::DoQuad(const Vector &a, const Vector &b, const Vector &c, con
 
     bool insideQuad = (minNegative == VERY_NEGATIVE || maxPositive == VERY_POSITIVE);
     if(insideQuad) {
-        DoCompare(0.0, zIndex, comparePosition);
+        DoCompare(0, 0.0, zIndex, comparePosition);
     } else {
         double distance = std::min(fabs(minNegative), fabs(maxPositive));
-        DoCompare(distance, zIndex, comparePosition);
+        DoCompare(0, distance, zIndex, comparePosition);
     }
 }
 
@@ -384,7 +385,8 @@ void ObjectPicker::DrawLine(const Vector &a, const Vector &b, hStroke hcs) {
     Point2d ap = camera.ProjectPoint(a);
     Point2d bp = camera.ProjectPoint(b);
     double distance = point.DistanceToLine(ap, bp.Minus(ap), /*asSegment=*/true);
-    DoCompare(distance - stroke->width / 2.0, stroke->zIndex);
+    double depth = 0.5 * (camera.ProjectPoint3(a).z + camera.ProjectPoint3(b).z) ;
+    DoCompare(depth, distance - stroke->width / 2.0, stroke->zIndex);
 }
 
 void ObjectPicker::DrawEdges(const SEdgeList &el, hStroke hcs) {
@@ -393,7 +395,8 @@ void ObjectPicker::DrawEdges(const SEdgeList &el, hStroke hcs) {
         Point2d ap = camera.ProjectPoint(e.a);
         Point2d bp = camera.ProjectPoint(e.b);
         double distance = point.DistanceToLine(ap, bp.Minus(ap), /*asSegment=*/true);
-        DoCompare(distance - stroke->width / 2.0, stroke->zIndex, e.auxB);
+        double depth = 0.5 * (camera.ProjectPoint3(e.a).z + camera.ProjectPoint3(e.b).z) ;
+        DoCompare(depth, distance - stroke->width / 2.0, stroke->zIndex, e.auxB);
     }
 }
 
@@ -423,7 +426,8 @@ void ObjectPicker::DrawQuad(const Vector &a, const Vector &b, const Vector &c, c
 void ObjectPicker::DrawPoint(const Vector &o, Canvas::hStroke hcs) {
     Stroke *stroke = strokes.FindById(hcs);
     double distance = point.DistanceTo(camera.ProjectPoint(o)) - stroke->width / 2;
-    DoCompare(distance, stroke->zIndex);
+    double depth = camera.ProjectPoint3(o).z;
+    DoCompare(depth, distance, stroke->zIndex);
 }
 
 void ObjectPicker::DrawPolygon(const SPolygon &p, hFill hcf) {
@@ -445,6 +449,7 @@ void ObjectPicker::DrawPixmap(std::shared_ptr<const Pixmap> pm,
 }
 
 bool ObjectPicker::Pick(const std::function<void()> &drawFn) {
+    minDepth = VERY_POSITIVE;
     minDistance = VERY_POSITIVE;
     maxZIndex = INT_MIN;
 
