@@ -9,7 +9,7 @@ stages:
   - name: clean
     if: (NOT type IN (pull_request)) AND (branch = master)
   - name: deploy
-    if: (NOT type IN (pull_request)) AND (branch = master)
+    if: (NOT type IN (pull_request)) AND (branch = master OR tag IS present)
 jobs:
   include:
     - stage: clean
@@ -29,11 +29,7 @@ jobs:
       osx_image: xcode12.2
       install: ".travis/install-macos.sh"
       script: ".travis/build-macos.sh release && .travis/sign-macos.sh"
-      before_deploy:
-        - git config --local user.name "solvespace-cd"
-        - git config --local user.email "no-reply@solvespace.com"
-        - export TRAVIS_TAG=${TRAVIS_TAG:-edge}
-        - git tag --force $TRAVIS_TAG
+      before_deploy: source .travis/tag-edge.sh
       deploy:
         provider: releases
         skip_cleanup: true
@@ -59,11 +55,7 @@ jobs:
       os: windows
       install: .travis/install-windows.sh
       script: .travis/build-windows.sh release
-      before_deploy:
-        - git config --local user.name "solvespace-cd"
-        - git config --local user.email "no-reply@solvespace.com"
-        - export TRAVIS_TAG=${TRAVIS_TAG:-edge}
-        - git tag --force $TRAVIS_TAG
+      before_deploy: source .travis/tag-edge.sh
       deploy:
         provider: releases
         skip_cleanup: true
@@ -78,11 +70,7 @@ jobs:
       os: windows
       install: .travis/install-windows.sh
       script: .travis/build-windows.sh release openmp
-      before_deploy:
-        - git config --local user.name "solvespace-cd"
-        - git config --local user.email "no-reply@solvespace.com"
-        - export TRAVIS_TAG=${TRAVIS_TAG:-edge}
-        - git tag --force $TRAVIS_TAG
+      before_deploy: source .travis/tag-edge.sh
       deploy:
         provider: releases
         skip_cleanup: true
