@@ -91,18 +91,20 @@ jobs:
       name: Snap amd64
       os: linux
       arch: amd64
-      dist: bionic
+      dist: focal
       addons:
         snaps:
           - name: snapcraft
             confinement: classic
+          - name: lxd
+      install: .travis/install-snap.sh
       script: .travis/build-snap.sh
       deploy:
         - provider: script
-          script: sudo .travis/deploy-snap.sh edge
+          script: .travis/deploy-snap.sh edge
           skip_cleanup: true
         - provider: script
-          script: sudo .travis/deploy-snap.sh edge,beta
+          script: .travis/deploy-snap.sh edge,beta
           skip_cleanup: true
           on:
             tags: true
@@ -110,4 +112,4 @@ jobs:
       name: Snap arm64
       arch: arm64-graviton2
       group: edge
-      virt: lxd
+      virt: vm
