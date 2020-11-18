@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2020-09-21 09:28+0200\n"
+"POT-Creation-Date: 2020-11-17 20:50-0500\n"
 "PO-Revision-Date: 2017-04-21 10:29+0700\n"
 "Last-Translator: evilspirit@evilspirit.org\n"
 "Language-Team: EvilSpirit\n"
@@ -615,18 +615,18 @@ msgstr ""
 "Некоторые данные из этого файла не распознаны. Возможно, файл поврежден или "
 "создан в более новой версии программы"
 
-#: file.cpp:849
+#: file.cpp:859
 msgctxt "title"
 msgid "Missing File"
 msgstr "Файл Отсутствует"
 
-#: file.cpp:850
+#: file.cpp:860
 #, c-format
 msgctxt "dialog"
 msgid "The linked file “%s” is not present."
 msgstr ""
 
-#: file.cpp:852
+#: file.cpp:862
 msgctxt "dialog"
 msgid ""
 "Do you want to locate it manually?\n"
@@ -638,17 +638,17 @@ msgstr ""
 "Если вы ответите \"Нет\", то вся геометрия, которая зависит от "
 "отсутствующего файла будет удалена."
 
-#: file.cpp:855
+#: file.cpp:865
 msgctxt "button"
 msgid "&Yes"
 msgstr "Да"
 
-#: file.cpp:857
+#: file.cpp:867
 msgctxt "button"
 msgid "&No"
 msgstr "Нет"
 
-#: file.cpp:859
+#: file.cpp:869
 msgctxt "button"
 msgid "&Cancel"
 msgstr "Отменить"
@@ -1366,19 +1366,19 @@ msgstr "линейный-массив"
 msgid "(unnamed)"
 msgstr "(без имени)"
 
-#: groupmesh.cpp:689
+#: groupmesh.cpp:708
 msgid "not closed contour, or not all same style!"
 msgstr "незамкнутый контур или несовпадение стилей!"
 
-#: groupmesh.cpp:702
+#: groupmesh.cpp:721
 msgid "points not all coplanar!"
 msgstr "не все точки лежат в одной плоскости!"
 
-#: groupmesh.cpp:704
+#: groupmesh.cpp:723
 msgid "contour is self-intersecting!"
 msgstr "контур имеет самопересечения!"
 
-#: groupmesh.cpp:706
+#: groupmesh.cpp:725
 msgid "zero-length edge!"
 msgstr "вырожденный отрезок!"
 
@@ -1581,102 +1581,107 @@ msgstr ""
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "КОММЕНТАРИЙ -- ДВОЙНОЙ ЩЕЛЧОК ДЛЯ РЕДАКТИРОВАНИЯ"
 
-#: platform/gui.cpp:85
+#: platform/gui.cpp:85 platform/gui.cpp:89
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "проекты SolveSpace"
 
-#: platform/gui.cpp:89
+#: platform/gui.cpp:90
+msgctxt "file-type"
+msgid "IDF circuit board"
+msgstr ""
+
+#: platform/gui.cpp:94
 msgctxt "file-type"
 msgid "PNG image"
 msgstr "PNG изображение"
 
-#: platform/gui.cpp:93
+#: platform/gui.cpp:98
 msgctxt "file-type"
 msgid "STL mesh"
 msgstr "STL полигональная сетка"
 
-#: platform/gui.cpp:94
+#: platform/gui.cpp:99
 msgctxt "file-type"
 msgid "Wavefront OBJ mesh"
 msgstr "Wavefront OBJ полигональная сетка"
 
-#: platform/gui.cpp:95
+#: platform/gui.cpp:100
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, with viewer"
 msgstr "Three.js-совместимая полигональная сетка с просмторщиком"
 
-#: platform/gui.cpp:96
+#: platform/gui.cpp:101
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, mesh only"
 msgstr "Three.js-совместимая полигональная сетка"
 
-#: platform/gui.cpp:97
+#: platform/gui.cpp:102
 msgctxt "file-type"
 msgid "Q3D Object file"
 msgstr ""
 
-#: platform/gui.cpp:98
+#: platform/gui.cpp:103
 msgctxt "file-type"
 msgid "VRML text file"
 msgstr ""
 
-#: platform/gui.cpp:102 platform/gui.cpp:109 platform/gui.cpp:116
+#: platform/gui.cpp:107 platform/gui.cpp:114 platform/gui.cpp:121
 msgctxt "file-type"
 msgid "STEP file"
 msgstr "STEP файл"
 
-#: platform/gui.cpp:106
+#: platform/gui.cpp:111
 msgctxt "file-type"
 msgid "PDF file"
 msgstr "PDF документ"
 
-#: platform/gui.cpp:107
+#: platform/gui.cpp:112
 msgctxt "file-type"
 msgid "Encapsulated PostScript"
 msgstr "Encapsulated PostScript"
 
-#: platform/gui.cpp:108
+#: platform/gui.cpp:113
 msgctxt "file-type"
 msgid "Scalable Vector Graphics"
 msgstr "SVG изображение"
 
-#: platform/gui.cpp:110 platform/gui.cpp:117
+#: platform/gui.cpp:115 platform/gui.cpp:122
 msgctxt "file-type"
 msgid "DXF file (AutoCAD 2007)"
 msgstr "DXF файл (AutoCAD 2007)"
 
-#: platform/gui.cpp:111
+#: platform/gui.cpp:116
 msgctxt "file-type"
 msgid "HPGL file"
 msgstr "HPGL файл"
 
-#: platform/gui.cpp:112
+#: platform/gui.cpp:117
 msgctxt "file-type"
 msgid "G Code"
 msgstr "G Code"
 
-#: platform/gui.cpp:121
+#: platform/gui.cpp:126
 msgctxt "file-type"
 msgid "AutoCAD DXF and DWG files"
 msgstr "AutoCAD DXF и DWG файлы"
 
-#: platform/gui.cpp:125
+#: platform/gui.cpp:130
 msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "CSV файлы (значения, разделенные запятой)"
 
-#: platform/guigtk.cpp:1317 platform/guimac.mm:1347 platform/guiwin.cpp:1608
+#: platform/guigtk.cpp:1317 platform/guimac.mm:1360 platform/guiwin.cpp:1608
 msgid "untitled"
 msgstr "без имени"
 
-#: platform/guigtk.cpp:1328 platform/guigtk.cpp:1361 platform/guimac.mm:1305
+#: platform/guigtk.cpp:1328 platform/guigtk.cpp:1361 platform/guimac.mm:1318
 #: platform/guiwin.cpp:1555
 msgctxt "title"
 msgid "Save File"
 msgstr "Сохранить Файл"
 
-#: platform/guigtk.cpp:1329 platform/guigtk.cpp:1362 platform/guimac.mm:1288
+#: platform/guigtk.cpp:1329 platform/guigtk.cpp:1362 platform/guimac.mm:1301
 #: platform/guiwin.cpp:1557
 msgctxt "title"
 msgid "Open File"
@@ -1696,16 +1701,6 @@ msgstr "Сохранить"
 msgctxt "button"
 msgid "_Open"
 msgstr ""
-
-#: solvespace.cpp:557
-msgctxt "title"
-msgid "(new sketch)"
-msgstr "(новый проект)"
-
-#: solvespace.cpp:564
-msgctxt "title"
-msgid "Property Browser"
-msgstr "Браузер"
 
 #: style.cpp:166
 msgid ""
@@ -1889,6 +1884,14 @@ msgstr "Масштабный коэффициент не может быть н�
 #: view.cpp:90 view.cpp:99
 msgid "Bad format: specify x, y, z"
 msgstr "Неверный формат: введите данные как x, y, z"
+
+#~ msgctxt "title"
+#~ msgid "(new sketch)"
+#~ msgstr "(новый проект)"
+
+#~ msgctxt "title"
+#~ msgid "Property Browser"
+#~ msgstr "Браузер"
 
 #~ msgid "Specify between 0 and 8 digits after the decimal."
 #~ msgstr "Введите число от 0 до 8."
