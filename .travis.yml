@@ -39,6 +39,8 @@ jobs:
         name: ${TRAVIS_TAG:-edge}
         release_notes: $TRAVIS_COMMIT_MESSAGE
         file: build/bin/SolveSpace.dmg
+        on:
+          all_branches: true
     - stage: test
       name: "Ubuntu"
       os: linux
@@ -65,6 +67,8 @@ jobs:
         name: ${TRAVIS_TAG:-edge}
         release_notes: $TRAVIS_COMMIT_MESSAGE
         file: build/bin/RelWithDebInfo/solvespace.exe
+        on:
+          all_branches: true
     - stage: deploy
       name: "Windows with OpenMP"
       os: windows
@@ -80,6 +84,8 @@ jobs:
         name: ${TRAVIS_TAG:-edge}
         release_notes: $TRAVIS_COMMIT_MESSAGE
         file: build/bin/RelWithDebInfo/solvespace-openmp.exe
+        on:
+          all_branches: true
     - &deploy-snap
       stage: deploy
       name: Snap amd64
@@ -95,14 +101,10 @@ jobs:
         - provider: script
           script: sudo .travis/deploy-snap.sh edge
           skip_cleanup: true
-          on:
-            branch: master
-            tags: false
         - provider: script
           script: sudo .travis/deploy-snap.sh edge,beta
           skip_cleanup: true
           on:
-            branch: master
             tags: true
     - <<: *deploy-snap
       name: Snap arm64
