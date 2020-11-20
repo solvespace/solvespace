@@ -2,7 +2,7 @@
 
 SolveSpace
 ==========
-[![Build Status](https://travis-ci.com/solvespace/solvespace.svg?branch=master)](https://travis-ci.com/solvespace/solvespace)
+[![Build Status](https://github.com/solvespace/solvespace/workflows/CD/badge.svg)](https://github.com/solvespace/solvespace/actions)
 [![solvespace](https://snapcraft.io/solvespace/badge.svg)](https://snapcraft.io/solvespace)
 [![solvespace](https://snapcraft.io/solvespace/trending.svg?name=0)](https://snapcraft.io/solvespace)
 
