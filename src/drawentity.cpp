@@ -472,13 +472,13 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
 
     int zIndex;
     if(IsPoint()) {
-        zIndex = 5;
+        zIndex = 6;
     } else if(how == DrawAs::HIDDEN) {
         zIndex = 2;
     } else if(group != SS.GW.activeGroup) {
         zIndex = 3;
     } else {
-        zIndex = 4;
+        zIndex = 5;
     }
 
     hStyle hs;
@@ -488,6 +488,9 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         hs.v = Style::NORMALS;
     } else {
         hs = Style::ForEntity(h);
+        if (hs.v == Style::CONSTRUCTION) {
+            zIndex = 4;
+        }
     }
 
     Canvas::Stroke stroke = Style::Stroke(hs);
