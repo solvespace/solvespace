@@ -341,13 +341,39 @@ static const char *DimToString(int dim) {
         default: ssassert(false, "Unexpected dimension");
     }
 }
-static std::pair<int, std::string> SelectSIPrefixMm(int deg) {
-         if(deg >=  3) return {  3, "km" };
-    else if(deg >=  0) return {  0, "m"  };
-    else if(deg >= -2) return { -2, "cm" };
-    else if(deg >= -3) return { -3, "mm" };
-    else if(deg >= -6) return { -6, "µm" };
-    else               return { -9, "nm" };
+static std::pair<int, std::string> SelectSIPrefixMm(int ord, int dim) {
+// decide what units to use depending on the order of magnitude of the
+// measure in meters and the dimmension (1,2,3 lenear, area, volume)
+    switch(dim) {
+        case 0:
+        case 1:
+                 if(ord >=  3) return {  3, "km" };
+            else if(ord >=  0) return {  0, "m"  };
+            else if(ord >= -2) return { -2, "cm" };
+            else if(ord >= -3) return { -3, "mm" };
+            else if(ord >= -6) return { -6, "µm" };
+            else               return { -9, "nm" };
+            break;
+        case 2:
+                 if(ord >=  5) return {  3, "km" };
+            else if(ord >=  0) return {  0, "m"  };
+            else if(ord >= -2) return { -2, "cm" };
+            else if(ord >= -6) return { -3, "mm" };
+            else if(ord >= -13) return { -6, "µm" };
+            else               return { -9, "nm" };
+            break;
+        case 3:
+                 if(ord >=  7) return {  3, "km" };
+            else if(ord >=  0) return {  0, "m"  };
+            else if(ord >= -5) return { -2, "cm" };
+            else if(ord >= -11) return { -3, "mm" };
+            else                return { -6, "µm" };
+            break;
+        default:
+            dbp ("dimensions over 3 not supported");
+            break;
+    }        
+    return {0, "m"};
 }
 static std::pair<int, std::string> SelectSIPrefixInch(int deg) {
          if(deg >=  0) return {  0, "in"  };
@@ -363,14 +389,14 @@ std::string SolveSpaceUI::MmToStringSI(double v, int dim) {
     }
 
     v /= pow((viewUnits == Unit::INCHES) ? 25.4 : 1000, dim);
-    int vdeg = (int)((log10(fabs(v))) / dim);
+    int vdeg = (int)(log10(fabs(v)));
     std::string unit;
     if(fabs(v) > 0.0) {
         int sdeg = 0;
         std::tie(sdeg, unit) =
             (viewUnits == Unit::INCHES)
-            ? SelectSIPrefixInch(vdeg)
-            : SelectSIPrefixMm(vdeg);
+            ? SelectSIPrefixInch(vdeg/dim)
+            : SelectSIPrefixMm(vdeg, dim);
         v /= pow(10.0, sdeg * dim);
     }
     int pdeg = (int)ceil(log10(fabs(v) + 1e-10));
