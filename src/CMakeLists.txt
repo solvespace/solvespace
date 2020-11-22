@@ -238,7 +238,8 @@ if(HAVE_GETTEXT)
     set(inputs
         ${solvespace_core_SOURCES}
         ${solvespace_core_HEADERS}
-        ${every_platform_SOURCES})
+        ${every_platform_SOURCES}
+        ${solvespace_core_gl_SOURCES})
 
     set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/../res/messages.po)
 
