@@ -907,8 +907,8 @@ public:
                         // Make the mousewheel work according to which window the mouse is
                         // over, not according to which window is active.
                         POINT pt;
-                        pt.x = LOWORD(lParam);
-                        pt.y = HIWORD(lParam);
+                        pt.x = GET_X_LPARAM(lParam);
+                        pt.y = GET_Y_LPARAM(lParam);
                         HWND hWindowUnderMouse;
                         sscheck(hWindowUnderMouse = WindowFromPoint(pt));
                         if(hWindowUnderMouse && hWindowUnderMouse != h) {
@@ -916,6 +916,13 @@ public:
                             consumed = true;
                             break;
                         }
+
+                        // Convert the mouse coordinates from screen to client area so that
+                        // scroll wheel zooming remains centered irrespective of the window
+                        // position.
+                        ScreenToClient(hWindowUnderMouse, &pt);
+                        event.x = pt.x / pixelRatio;
+                        event.y = pt.y / pixelRatio;
 
                         event.type = MouseEvent::Type::SCROLL_VERT;
                         event.scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? 1 : -1;
