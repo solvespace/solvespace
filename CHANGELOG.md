@@ -113,6 +113,7 @@ Other new features:
     that are shortcuts to the respective configuration screens.
   * New cmake build options using -DENABLE_OPENMP=yes and -DENABLE_LTO=yes
     to enable support for multi-threading and link-time optimization.
+  * "Shift+Scroll" for ten times finer zoom.
 
 Bugs fixed:
   * Fixed broken --view options for command line thumbnail image creation.

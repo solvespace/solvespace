@@ -554,7 +554,9 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 
     MouseEvent event = [self convertMouseEvent:nsEvent];
     event.type = MouseEvent::Type::SCROLL_VERT;
-    event.scrollDelta = [nsEvent deltaY];
+
+    bool isPrecise = [nsEvent hasPreciseScrollingDeltas];
+    event.scrollDelta = [nsEvent scrollingDeltaY] / (isPrecise ? 50 : 5);
 
     if(receiver->onMouseEvent) {
         receiver->onMouseEvent(event);
@@ -975,9 +977,6 @@ public:
         if(GetScrollbarPosition() == pos)
             return;
         [nsScroller setDoubleValue:(pos / (ssView.scrollerMax - ssView.scrollerMin))];
-        if(onScrollbarAdjusted) {
-            onScrollbarAdjusted(pos);
-        }
     }
 
     void Invalidate() override {

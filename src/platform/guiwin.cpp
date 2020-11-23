@@ -925,7 +925,7 @@ public:
                         event.y = pt.y / pixelRatio;
 
                         event.type = MouseEvent::Type::SCROLL_VERT;
-                        event.scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? 1 : -1;
+                        event.scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
                         break;
 
                     case WM_MOUSELEAVE:
