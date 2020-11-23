@@ -825,7 +825,7 @@ public:
     void MouseLeftDoubleClick(double x, double y);
     void MouseMiddleOrRightDown(double x, double y);
     void MouseRightUp(double x, double y);
-    void MouseScroll(double x, double y, int delta);
+    void MouseScroll(double x, double y, double delta);
     void MouseLeave();
     bool KeyboardEvent(Platform::KeyboardEvent event);
     void EditControlDone(const std::string &s);

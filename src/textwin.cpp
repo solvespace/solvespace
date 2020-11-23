@@ -252,8 +252,18 @@ void TextWindow::Init() {
                     MouseLeave();
                     return true;
                 } else if(event.type == MouseEvent::Type::SCROLL_VERT) {
-                    ScrollbarEvent(window->GetScrollbarPosition() -
-                                           LINE_HEIGHT / 2 * event.scrollDelta);
+                    if (event.scrollDelta == 0) {
+                        return true;
+                    }
+                    if (abs(event.scrollDelta) < 0.2) {
+                        if (event.scrollDelta > 0) {
+                            event.scrollDelta = 0.2;
+                        } else {
+                            event.scrollDelta = -0.2;
+                        }
+                    }
+                    double offset = LINE_HEIGHT / 2 * event.scrollDelta;
+                    ScrollbarEvent(window->GetScrollbarPosition() - offset);
                 }
                 return false;
             };
@@ -1148,7 +1158,6 @@ void TextWindow::ScrollbarEvent(double newPos) {
     int bottom = top[rows-1] + 2;
     newPos = min((int)newPos, bottom - halfRows);
     newPos = max((int)newPos, 0);
-
     if(newPos != scrollPos) {
         scrollPos = (int)newPos;
         window->SetScrollbarPosition(scrollPos);

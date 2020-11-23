@@ -472,7 +472,7 @@ protected:
     }
 
     bool process_pointer_event(MouseEvent::Type type, double x, double y,
-                               guint state, guint button = 0, int scroll_delta = 0) {
+                               guint state, guint button = 0, double scroll_delta = 0) {
         MouseEvent event = {};
         event.type = type;
         event.x = x;
@@ -536,7 +536,7 @@ protected:
     }
 
     bool on_scroll_event(GdkEventScroll *gdk_event) override {
-        int delta;
+        double delta;
         if(gdk_event->delta_y < 0 || gdk_event->direction == GDK_SCROLL_UP) {
             delta = 1;
         } else if(gdk_event->delta_y > 0 || gdk_event->direction == GDK_SCROLL_DOWN) {
