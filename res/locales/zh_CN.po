@@ -2,12 +2,12 @@
 # Copyright (C) 2020 the PACKAGE authors
 # This file is distributed under the same license as the SolveSpace package.
 # <lomatus@163.com>, 2020.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2020-11-22 18:09+0200\n"
+"POT-Creation-Date: 2020-11-23 07:36+0100\n"
 "PO-Revision-Date: 2020-09-28 12:42+0800\n"
 "Last-Translator: lomatus@163.com\n"
 "Language-Team: none\n"
@@ -606,7 +606,7 @@ msgctxt "button"
 msgid "&No"
 msgstr "否(&N)"
 
-#: file.cpp:869 solvespace.cpp:537
+#: file.cpp:869 solvespace.cpp:563
 msgctxt "button"
 msgid "&Cancel"
 msgstr "取消(&C)"
@@ -1475,7 +1475,7 @@ msgstr "无法在三维空间内绘制图片，可使用 草图->在工作面 �
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "新备注 - 双击编辑"
 
-#: platform/gui.cpp:85 platform/gui.cpp:89 solvespace.cpp:479
+#: platform/gui.cpp:85 platform/gui.cpp:89 solvespace.cpp:505
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "SolveSpace模型"
@@ -1560,18 +1560,18 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "逗号分隔数据"
 
-#: platform/guigtk.cpp:1317 platform/guimac.mm:1360 platform/guiwin.cpp:1621
+#: platform/guigtk.cpp:1317 platform/guimac.mm:1360 platform/guiwin.cpp:1615
 msgid "untitled"
 msgstr "未命名"
 
 #: platform/guigtk.cpp:1328 platform/guigtk.cpp:1361 platform/guimac.mm:1318
-#: platform/guiwin.cpp:1568
+#: platform/guiwin.cpp:1562
 msgctxt "title"
 msgid "Save File"
 msgstr "保存文件"
 
 #: platform/guigtk.cpp:1329 platform/guigtk.cpp:1362 platform/guimac.mm:1301
-#: platform/guiwin.cpp:1570
+#: platform/guiwin.cpp:1564
 msgctxt "title"
 msgid "Open File"
 msgstr "打开文件"
@@ -1616,74 +1616,74 @@ msgctxt "button"
 msgid "Do&n't Load"
 msgstr ""
 
-#: solvespace.cpp:525
+#: solvespace.cpp:551
 msgctxt "title"
 msgid "Modified File"
 msgstr ""
 
-#: solvespace.cpp:527
+#: solvespace.cpp:553
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
 msgstr ""
 
-#: solvespace.cpp:530
+#: solvespace.cpp:556
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
 msgstr ""
 
-#: solvespace.cpp:533
+#: solvespace.cpp:559
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
 msgstr ""
 
-#: solvespace.cpp:534
+#: solvespace.cpp:560
 msgctxt "button"
 msgid "&Save"
 msgstr ""
 
-#: solvespace.cpp:536
+#: solvespace.cpp:562
 msgctxt "button"
 msgid "Do&n't Save"
 msgstr ""
 
-#: solvespace.cpp:557
+#: solvespace.cpp:583
 msgctxt "title"
 msgid "(new sketch)"
 msgstr ""
 
-#: solvespace.cpp:564
+#: solvespace.cpp:590
 msgctxt "title"
 msgid "Property Browser"
 msgstr ""
 
-#: solvespace.cpp:624
+#: solvespace.cpp:650
 msgid ""
 "Constraints are currently shown, and will be exported in the toolpath. This "
 "is probably not what you want; hide them by clicking the link at the top of "
 "the text window."
 msgstr ""
 
-#: solvespace.cpp:692
+#: solvespace.cpp:718
 #, c-format
 msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
 "dwg."
 msgstr ""
 
-#: solvespace.cpp:740
+#: solvespace.cpp:766
 msgid "Constraint must have a label, and must not be a reference dimension."
 msgstr ""
 
-#: solvespace.cpp:744
+#: solvespace.cpp:770
 msgid "Bad selection for step dimension; select a constraint."
 msgstr ""
 
-#: solvespace.cpp:768
+#: solvespace.cpp:794
 msgid "The assembly does not interfere, good."
 msgstr ""
 
-#: solvespace.cpp:784
+#: solvespace.cpp:810
 #, c-format
 msgid ""
 "The volume of the solid model is:\n"
@@ -1691,7 +1691,7 @@ msgid ""
 "    %s"
 msgstr ""
 
-#: solvespace.cpp:793
+#: solvespace.cpp:819
 #, c-format
 msgid ""
 "\n"
@@ -1700,7 +1700,7 @@ msgid ""
 "    %s"
 msgstr ""
 
-#: solvespace.cpp:798
+#: solvespace.cpp:824
 msgid ""
 "\n"
 "\n"
@@ -1708,7 +1708,7 @@ msgid ""
 "This introduces error, typically of around 1%."
 msgstr ""
 
-#: solvespace.cpp:813
+#: solvespace.cpp:839
 #, c-format
 msgid ""
 "The surface area of the selected faces is:\n"
@@ -1719,13 +1719,13 @@ msgid ""
 "This introduces error, typically of around 1%%."
 msgstr ""
 
-#: solvespace.cpp:822
+#: solvespace.cpp:848
 msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
 msgstr ""
 
-#: solvespace.cpp:834
+#: solvespace.cpp:860
 #, c-format
 msgid ""
 "The area of the region sketched in this group is:\n"
@@ -1736,7 +1736,7 @@ msgid ""
 "This introduces error, typically of around 1%%."
 msgstr ""
 
-#: solvespace.cpp:854
+#: solvespace.cpp:880
 #, c-format
 msgid ""
 "The total length of the selected entities is:\n"
@@ -1747,36 +1747,36 @@ msgid ""
 "This introduces error, typically of around 1%%."
 msgstr ""
 
-#: solvespace.cpp:860
+#: solvespace.cpp:886
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
 msgstr ""
 
-#: solvespace.cpp:876
+#: solvespace.cpp:902
 msgid "Bad selection for trace; select a single point."
 msgstr ""
 
-#: solvespace.cpp:899
+#: solvespace.cpp:925
 #, c-format
 msgid "Couldn't write to '%s'"
 msgstr ""
 
-#: solvespace.cpp:929
+#: solvespace.cpp:955
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
 msgstr ""
 
-#: solvespace.cpp:930
+#: solvespace.cpp:956
 msgid "The mesh is not self-intersecting (okay, valid)."
 msgstr ""
 
-#: solvespace.cpp:932
+#: solvespace.cpp:958
 msgid "The mesh has naked edges (NOT okay, invalid)."
 msgstr ""
 
-#: solvespace.cpp:933
+#: solvespace.cpp:959
 msgid "The mesh is watertight (okay, valid)."
 msgstr ""
 
-#: solvespace.cpp:936
+#: solvespace.cpp:962
 #, c-format
 msgid ""
 "\n"
@@ -1784,7 +1784,7 @@ msgid ""
 "The model contains %d triangles, from %d surfaces."
 msgstr ""
 
-#: solvespace.cpp:940
+#: solvespace.cpp:966
 #, c-format
 msgid ""
 "%s\n"
@@ -1794,7 +1794,7 @@ msgid ""
 "Zero problematic edges, good.%s"
 msgstr ""
 
-#: solvespace.cpp:943
+#: solvespace.cpp:969
 #, c-format
 msgid ""
 "%s\n"
@@ -1804,7 +1804,7 @@ msgid ""
 "%d problematic edges, bad.%s"
 msgstr ""
 
-#: solvespace.cpp:956
+#: solvespace.cpp:982
 #, c-format
 msgid ""
 "This is SolveSpace version %s.\n"

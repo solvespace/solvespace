@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2020-11-22 18:09+0200\n"
+"POT-Creation-Date: 2020-11-23 11:23+0200\n"
 "PO-Revision-Date: 2018-07-19 06:55+0000\n"
 "Last-Translator: Reini Urban <rurban@cpan.org>\n"
 "Language-Team: none\n"
@@ -660,7 +660,7 @@ msgctxt "button"
 msgid "&No"
 msgstr "&Nein"
 
-#: file.cpp:869 solvespace.cpp:537
+#: file.cpp:869 solvespace.cpp:563
 msgctxt "button"
 msgid "&Cancel"
 msgstr "&Abbrechen"
@@ -1320,7 +1320,7 @@ msgstr ""
 #: group.cpp:217
 msgctxt "group-name"
 msgid "revolve"
-msgstr ""
+msgstr "Revolve"
 
 #: group.cpp:222
 msgid "Helix operation can only be applied to planar sketches."
@@ -1334,11 +1334,17 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"Ungültige Auswahl für eine neue Helix Gruppe. Diese Gruppe kann erzeugt "
+"werden mit:\n"
+"\n"
+"    * einem Punkt und einem Liniensegment oder Normale (gedreht um eine "
+"Achse parallel zu Linie / Normale, durch Punkt)\n"
+"    * einem Liniensegment (gedreht um Liniensegment)\n"
 
 #: group.cpp:245
 msgctxt "group-name"
 msgid "helix"
-msgstr ""
+msgstr "Helix"
 
 #: group.cpp:258
 msgid ""
@@ -1349,12 +1355,12 @@ msgid ""
 "    * a point and a line or a normal (rotate about an axis through the "
 "point, and parallel to line / normal)\n"
 msgstr ""
-"Ungültige Auswahl für neue Rotation Diese Gruppe kann erstellt werden mit:\n"
+"Ungültige Auswahl für neue Rotation. Diese Gruppe kann erstellt werden mit:\n"
 "\n"
-"    * einem Punkt in vorgegebener Arbeitsebene (in der Ebene um den Punkt "
-"drehen)\n"
-"    * einem Punkt und einer Linie oder einer Normale (um eine Achse durch "
-"den Punkt drehen,  parallel zur Linie / Normale)\n"
+"    * einem Punkt in vorgegebener Arbeitsebene (gedreht in der Ebene um den "
+"Punkt)\n"
+"    * einem Punkt und einer Linie oder einer Normale (gedreht um eine Achse "
+"durch den Punkt, parallel zur Linie / Normale)\n"
 
 #: group.cpp:271
 msgctxt "group-name"
@@ -1592,7 +1598,7 @@ msgstr ""
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "NEUER KOMMENTAR -- DOPPELKLICKEN ZUM BEARBEITEN"
 
-#: platform/gui.cpp:85 platform/gui.cpp:89 solvespace.cpp:479
+#: platform/gui.cpp:85 platform/gui.cpp:89 solvespace.cpp:505
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "SolveSpace-Modelle"
@@ -1600,7 +1606,7 @@ msgstr "SolveSpace-Modelle"
 #: platform/gui.cpp:90
 msgctxt "file-type"
 msgid "IDF circuit board"
-msgstr ""
+msgstr "IDF Leiterplatte"
 
 #: platform/gui.cpp:94
 msgctxt "file-type"
@@ -1677,18 +1683,18 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "Werte durch Komma getrennt (CSV)"
 
-#: platform/guigtk.cpp:1317 platform/guimac.mm:1360 platform/guiwin.cpp:1621
+#: platform/guigtk.cpp:1317 platform/guimac.mm:1360 platform/guiwin.cpp:1615
 msgid "untitled"
 msgstr "unbenannt"
 
 #: platform/guigtk.cpp:1328 platform/guigtk.cpp:1361 platform/guimac.mm:1318
-#: platform/guiwin.cpp:1568
+#: platform/guiwin.cpp:1562
 msgctxt "title"
 msgid "Save File"
 msgstr "Datei speichern"
 
 #: platform/guigtk.cpp:1329 platform/guigtk.cpp:1362 platform/guimac.mm:1301
-#: platform/guiwin.cpp:1570
+#: platform/guiwin.cpp:1564
 msgctxt "title"
 msgid "Open File"
 msgstr "Datei öffnen"
@@ -1706,110 +1712,122 @@ msgstr "_Speichern"
 #: platform/guigtk.cpp:1334 platform/guigtk.cpp:1367
 msgctxt "button"
 msgid "_Open"
-msgstr ""
+msgstr "_Öffnen"
 
 #: solvespace.cpp:169
 msgctxt "title"
 msgid "Autosave Available"
-msgstr "Automatische Speicherdatei verfügbar"
+msgstr "Automatische Sicherungsdatei verfügbar"
 
 #: solvespace.cpp:170
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
-msgstr ""
+msgstr "Eine automatische Sicherung ist für diese Skizze verfügbar."
 
 #: solvespace.cpp:171
 msgctxt "dialog"
 msgid "Do you want to load the autosave file instead?"
-msgstr ""
+msgstr "Wollen Sie die automatische Sicherungsdatei stattdessen laden?"
 
 #: solvespace.cpp:172
 msgctxt "button"
 msgid "&Load autosave"
-msgstr ""
+msgstr "AutoDatei &öffnen"
 
 #: solvespace.cpp:174
 msgctxt "button"
 msgid "Do&n't Load"
-msgstr ""
+msgstr "&Nicht laden"
 
-#: solvespace.cpp:525
+#: solvespace.cpp:551
 msgctxt "title"
 msgid "Modified File"
 msgstr "Geänderte Datei"
 
-#: solvespace.cpp:527
+#: solvespace.cpp:553
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
-msgstr ""
+msgstr "Wollen Sie die Änderungen an der Skizze “%s” sichern?"
 
-#: solvespace.cpp:530
+#: solvespace.cpp:556
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
-msgstr ""
+msgstr "Wollen Sie die Änderungen an der Skizze sichern?"
 
-#: solvespace.cpp:533
+#: solvespace.cpp:559
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
-msgstr ""
+msgstr "Ihre Änderungen werden verworfen, wenn sie nicht abgespeichert werden."
 
-#: solvespace.cpp:534
+#: solvespace.cpp:560
 msgctxt "button"
 msgid "&Save"
-msgstr ""
+msgstr "&Sichern"
 
-#: solvespace.cpp:536
+#: solvespace.cpp:562
 msgctxt "button"
 msgid "Do&n't Save"
-msgstr ""
+msgstr "&Verwerfen"
 
 # solvespace.cpp:557
-#: solvespace.cpp:557
+#: solvespace.cpp:583
 msgctxt "title"
 msgid "(new sketch)"
 msgstr "(Neue Skizze)"
 
-#: solvespace.cpp:564
+#: solvespace.cpp:590
 msgctxt "title"
 msgid "Property Browser"
 msgstr "Attribut-Browser"
 
-#: solvespace.cpp:624
+#: solvespace.cpp:650
 msgid ""
 "Constraints are currently shown, and will be exported in the toolpath. This "
 "is probably not what you want; hide them by clicking the link at the top of "
 "the text window."
 msgstr ""
+"Einschränkungen sind momentan sichtbar und werden exportiert. Das wollen Sie "
+"wahrscheinlich nicht. Verstecken Sie sie in dem auf den Link oben im "
+"Textfenster klicken."
 
-#: solvespace.cpp:692
+#: solvespace.cpp:718
 #, c-format
 msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
 "dwg."
 msgstr ""
+"Kann den Dateityp der Datei '%s' nicht auf Grund der Dateierweiterung "
+"erkennen. Versuchen Sie .dxf oder .dwg."
 
-#: solvespace.cpp:740
+#: solvespace.cpp:766
 msgid "Constraint must have a label, and must not be a reference dimension."
 msgstr ""
+"Die Einschränkung muss einen Namen haben, und darf keine "
+"Referenzdimensionierung sein."
 
-#: solvespace.cpp:744
+#: solvespace.cpp:770
 msgid "Bad selection for step dimension; select a constraint."
 msgstr ""
+"Falsche Auswahl für die Schrittdimensionierung. Wählen Sie eine "
+"Einschränkung."
 
-#: solvespace.cpp:768
+#: solvespace.cpp:794
 msgid "The assembly does not interfere, good."
-msgstr ""
+msgstr "Der Zusammenbau funktioniert, gut."
 
-#: solvespace.cpp:784
+#: solvespace.cpp:810
 #, c-format
 msgid ""
 "The volume of the solid model is:\n"
 "\n"
 "    %s"
 msgstr ""
+"Das Volumen des Modell ist:\n"
+"\n"
+"    %s"
 
-#: solvespace.cpp:793
+#: solvespace.cpp:819
 #, c-format
 msgid ""
 "\n"
@@ -1817,16 +1835,24 @@ msgid ""
 "\n"
 "    %s"
 msgstr ""
+"\n"
+"Das Volumen des Netz der aktiven Gruppe ist:\n"
+"\n"
+"    %s"
 
-#: solvespace.cpp:798
+#: solvespace.cpp:824
 msgid ""
 "\n"
 "\n"
 "Curved surfaces have been approximated as triangles.\n"
 "This introduces error, typically of around 1%."
 msgstr ""
+"\n"
+"\n"
+"Gekrümmte Flächen wurden als Dreiecksnetz angenähert.\n"
+"Das verursacht Fehler, typischerweise um 1%."
 
-#: solvespace.cpp:813
+#: solvespace.cpp:839
 #, c-format
 msgid ""
 "The surface area of the selected faces is:\n"
@@ -1836,14 +1862,22 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"Die Fläche der ausgewählten Flächen ist:\n"
+"\n"
+"    %s\n"
+"\n"
+"Kurven wurden als gerade Linienstücke angenähert.\n"
+"Das verursacht Fehler, typischerweise um 1%%."
 
-#: solvespace.cpp:822
+#: solvespace.cpp:848
 msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
 msgstr ""
+"Diese Gruppe beinhaltet keine korrekt geschlossene 2D Fläche. Sie ist offen, "
+"nicht koplanar, oder überschneidet sich selbst."
 
-#: solvespace.cpp:834
+#: solvespace.cpp:860
 #, c-format
 msgid ""
 "The area of the region sketched in this group is:\n"
@@ -1853,8 +1887,14 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"Die Summe der Flächen in dieser Gruppe ist:\n"
+"\n"
+"    %s\n"
+"\n"
+"Kurven wurden als gerade Linienstücke angenähert.\n"
+"Das verursacht Fehler, typischerweise um 1%%."
 
-#: solvespace.cpp:854
+#: solvespace.cpp:880
 #, c-format
 msgid ""
 "The total length of the selected entities is:\n"
@@ -1864,45 +1904,54 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"Die Gesamtlänge der ausgwählten Elemente ist:\n"
+"\n"
+"    %s\n"
+"\n"
+"Kurven wurden als gerade Linienstücke angenähert.\n"
+"Das verursacht Fehler, typischerweise um 1%%."
 
-#: solvespace.cpp:860
+#: solvespace.cpp:886
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
-msgstr ""
+msgstr "Falsche Auswahl für Umfang. Wähle Liniensegmente, Bögen und Kurven."
 
-#: solvespace.cpp:876
+#: solvespace.cpp:902
 msgid "Bad selection for trace; select a single point."
-msgstr ""
+msgstr "Falsche Auswahl für Punkt nachzeichnen. Wähle einen einzelnen Punkt."
 
-#: solvespace.cpp:899
+#: solvespace.cpp:925
 #, c-format
 msgid "Couldn't write to '%s'"
-msgstr ""
+msgstr "Konnte '%s' nicht schreiben"
 
-#: solvespace.cpp:929
+#: solvespace.cpp:955
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
-msgstr ""
+msgstr "Das Netz schneidet sich selbst: Falsch, ungültig."
 
-#: solvespace.cpp:930
+#: solvespace.cpp:956
 msgid "The mesh is not self-intersecting (okay, valid)."
-msgstr ""
+msgstr "Das Netz schneidet sich nicht: Gut, gültig."
 
-#: solvespace.cpp:932
+#: solvespace.cpp:958
 msgid "The mesh has naked edges (NOT okay, invalid)."
-msgstr ""
+msgstr "Das Netz hat lose Kanten: Falsch, ungültig."
 
-#: solvespace.cpp:933
+#: solvespace.cpp:959
 msgid "The mesh is watertight (okay, valid)."
-msgstr ""
+msgstr "Das Netz hat keine lose Kanten: Gut, gültig."
 
-#: solvespace.cpp:936
+#: solvespace.cpp:962
 #, c-format
 msgid ""
 "\n"
 "\n"
 "The model contains %d triangles, from %d surfaces."
 msgstr ""
+"\n"
+"\n"
+"Das Modell hat %d Dreiecke, von %d Flächen."
 
-#: solvespace.cpp:940
+#: solvespace.cpp:966
 #, c-format
 msgid ""
 "%s\n"
@@ -1911,8 +1960,13 @@ msgid ""
 "\n"
 "Zero problematic edges, good.%s"
 msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"Keine problematischen Kanten, gut.%s"
 
-#: solvespace.cpp:943
+#: solvespace.cpp:969
 #, c-format
 msgid ""
 "%s\n"
@@ -1921,8 +1975,13 @@ msgid ""
 "\n"
 "%d problematic edges, bad.%s"
 msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"%d problematische Kanten, schlecht.%s"
 
-#: solvespace.cpp:956
+#: solvespace.cpp:982
 #, c-format
 msgid ""
 "This is SolveSpace version %s.\n"
@@ -1938,6 +1997,19 @@ msgid ""
 "\n"
 "© 2008-%d Jonathan Westhues and other authors.\n"
 msgstr ""
+"Das ist SolveSpace version %s.\n"
+"\n"
+"Für mehr Information siehe http://solvespace.com/\n"
+"\n"
+"SolveSpace ist freie Software: Sie steht Ihnen frei sie zu ändern\n"
+"und/oder zu vervielfältigen unter der Auflage der GNU\n"
+"General Public License (GPL) Version 3 oder späterer Versionen.\n"
+"\n"
+"Es besteht keinerlei Gewährleistung und Haftung für das Programm, soweit "
+"dies gesetzlich zulässig ist.\n"
+"Für Details siehe http://gnu.org/licenses/\n"
+"\n"
+"© 2008-%d Jonathan Westhues und andere.\n"
 
 #: style.cpp:166
 msgid ""
