@@ -27,6 +27,8 @@ New sketch features:
   * "Split Curves at Intersection" can now split curves at point lying on curve,
     not just at intersection of two curves.
   * Property browser now shows amount of degrees of freedom in group list.
+    It also shows a yellow "err" if the sketch has problems (e.g. self
+    intersecting) that would propagate in subsequent groups.
 
 New constraint features:
   * When dragging an arc or rectangle point, it will be automatically
