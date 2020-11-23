@@ -17,6 +17,12 @@ std::string Narrow(const std::wstring &s);
 std::wstring Widen(const std::string &s);
 #endif
 
+#if defined(_WIN32)
+    const std::string embeddedFont = "res://fonts/BitstreamVeraSans-Roman-builtin.ttf";
+#else   // Linux and macOS
+    const std::string embeddedFont = "BitstreamVeraSans-Roman-builtin.ttf";
+#endif
+
 // A filesystem path, respecting the conventions of the current platform.
 // Transformation functions return an empty path on error.
 class Path {

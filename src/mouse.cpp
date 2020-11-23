@@ -1117,7 +1117,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     AddToPending(hr);
                     Request *r = SK.GetRequest(hr);
                     r->str = "Abc";
-                    r->font = "BitstreamVeraSans-Roman-builtin.ttf";
+                    r->font = Platform::embeddedFont;
 
                     for(int i = 1; i <= 4; i++) {
                         SK.GetEntity(hr.entity(i))->PointForceTo(v);
