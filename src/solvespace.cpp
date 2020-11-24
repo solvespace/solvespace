@@ -77,7 +77,7 @@ void SolveSpaceUI::Init() {
     // Use turntable mouse navigation
     turntableNav = settings->ThawBool("TurntableNav", false);
     // Immediately edit dimension
-    immediatelyEditDimension = settings->ThawBool("ImmediatelyEditDimension", false);
+    immediatelyEditDimension = settings->ThawBool("ImmediatelyEditDimension", true);
     // Check that contours are closed and not self-intersecting
     checkClosedContour = settings->ThawBool("CheckClosedContour", true);
     // Enable automatic constrains for lines
