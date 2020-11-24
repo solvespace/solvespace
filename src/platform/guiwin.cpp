@@ -1342,7 +1342,7 @@ public:
         si.nMin   = (UINT)(min * SCROLLBAR_UNIT);
         si.nMax   = (UINT)(max * SCROLLBAR_UNIT);
         si.nPage  = (UINT)(pageSize * SCROLLBAR_UNIT);
-        sscheck(SetScrollInfo(hWindow, SB_VERT, &si, /*redraw=*/TRUE));
+        SetScrollInfo(hWindow, SB_VERT, &si, /*redraw=*/TRUE);  // Returns scrollbar position
     }
 
     double GetScrollbarPosition() override {
@@ -1366,7 +1366,7 @@ public:
             return;
 
         si.nPos   = (int)(pos * SCROLLBAR_UNIT);
-        sscheck(SetScrollInfo(hWindow, SB_VERT, &si, /*redraw=*/TRUE));
+        SetScrollInfo(hWindow, SB_VERT, &si, /*redraw=*/TRUE); // Returns scrollbar position
 
         // Windows won't synthesize a WM_VSCROLL for us here.
         if(onScrollbarAdjusted) {
