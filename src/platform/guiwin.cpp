@@ -183,7 +183,7 @@ public:
 
     HKEY GetKey() {
         if(hKey == NULL) {
-            sscheck(RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\SolveSpace", 0, NULL, 0,
+            sscheck(ERROR_SUCCESS == RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\SolveSpace", 0, NULL, 0,
                                     KEY_ALL_ACCESS, NULL, &hKey, NULL));
         }
         return hKey;
@@ -191,12 +191,12 @@ public:
 
     ~SettingsImplWin32() {
         if(hKey != NULL) {
-            sscheck(RegCloseKey(hKey));
+            sscheck(ERROR_SUCCESS == RegCloseKey(hKey));
         }
     }
 
     void FreezeInt(const std::string &key, uint32_t value) {
-        sscheck(RegSetValueExW(GetKey(), &Widen(key)[0], 0,
+        sscheck(ERROR_SUCCESS == RegSetValueExW(GetKey(), &Widen(key)[0], 0,
                                REG_DWORD, (const BYTE *)&value, sizeof(value)));
     }
 
@@ -212,7 +212,7 @@ public:
     }
 
     void FreezeFloat(const std::string &key, double value) {
-        sscheck(RegSetValueExW(GetKey(), &Widen(key)[0], 0,
+        sscheck(ERROR_SUCCESS == RegSetValueExW(GetKey(), &Widen(key)[0], 0,
                                REG_QWORD, (const BYTE *)&value, sizeof(value)));
     }
 
@@ -231,7 +231,7 @@ public:
         ssassert(value.length() == strlen(value.c_str()),
                  "illegal null byte in middle of a string setting");
         std::wstring valueW = Widen(value);
-        sscheck(RegSetValueExW(GetKey(), &Widen(key)[0], 0,
+        sscheck(ERROR_SUCCESS == RegSetValueExW(GetKey(), &Widen(key)[0], 0,
                                REG_SZ, (const BYTE *)&valueW[0], (valueW.length() + 1) * 2));
     }
 
@@ -242,7 +242,7 @@ public:
         if(result == ERROR_SUCCESS && type == REG_SZ) {
             std::wstring valueW;
             valueW.resize(length / 2 - 1);
-            sscheck(RegQueryValueExW(GetKey(), &Widen(key)[0], 0,
+            sscheck(ERROR_SUCCESS == RegQueryValueExW(GetKey(), &Widen(key)[0], 0,
                                      &type, (BYTE *)&valueW[0], &length));
             return Narrow(valueW);
         }
@@ -1101,12 +1101,12 @@ public:
 
     bool IsVisible() override {
         BOOL isVisible;
-        sscheck(isVisible = IsWindowVisible(hWindow));
+        isVisible = IsWindowVisible(hWindow);
         return isVisible == TRUE;
     }
 
     void SetVisible(bool visible) override {
-        sscheck(ShowWindow(hWindow, visible ? SW_SHOW : SW_HIDE));
+        ShowWindow(hWindow, visible ? SW_SHOW : SW_HIDE);
     }
 
     void Focus() override {
@@ -1274,7 +1274,7 @@ public:
 
     bool IsEditorVisible() override {
         BOOL visible;
-        sscheck(visible = IsWindowVisible(hEditor));
+        visible = IsWindowVisible(hEditor);
         return visible == TRUE;
     }
 
@@ -1316,7 +1316,7 @@ public:
 
         sscheck(MoveWindow(hEditor, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top,
                            /*bRepaint=*/true));
-        sscheck(ShowWindow(hEditor, SW_SHOW));
+        ShowWindow(hEditor, SW_SHOW);
         if(!textW.empty()) {
             sscheck(SendMessageW(hEditor, WM_SETTEXT, 0, (LPARAM)textW.c_str()));
             sscheck(SendMessageW(hEditor, EM_SETSEL, 0, textW.length()));
@@ -1327,7 +1327,7 @@ public:
     void HideEditor() override {
         if(!IsEditorVisible()) return;
 
-        sscheck(ShowWindow(hEditor, SW_HIDE));
+        ShowWindow(hEditor, SW_HIDE);
     }
 
     void SetScrollbarVisible(bool visible) override {
