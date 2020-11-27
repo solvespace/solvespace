@@ -227,7 +227,6 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             MakeSelected(hr.entity(j));
         }
     }
-
     Constraint *cc;
     for(cc = SS.clipboard.c.First(); cc; cc = SS.clipboard.c.NextAfter(cc)) {
         Constraint c = {};
@@ -257,7 +256,17 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             case Constraint::Type::DIAMETER:
                 c.valA *= fabs(scale);
                 break;
-
+            case Constraint::Type::HORIZONTAL:
+            case Constraint::Type::VERTICAL:
+                // When rotating 90 or 270 degrees, swap the vertical / horizontal constaints
+                if (theta == PI/2 || theta == PI*1.5) {
+                    if(c.type == Constraint::Type::HORIZONTAL) {
+                        c.type = Constraint::Type::VERTICAL;
+                    } else {
+                        c.type = Constraint::Type::HORIZONTAL;
+                    }
+                }
+                break;
             default:
                 break;
         }
