@@ -245,6 +245,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         c.reference = cc->reference;
         c.disp = cc->disp;
         c.comment = cc->comment;
+        bool removeConstraint = false;
         switch(c.type) {
             case Constraint::Type::COMMENT:
                 c.disp.offset = c.disp.offset.Plus(trans);
@@ -259,21 +260,25 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             case Constraint::Type::HORIZONTAL:
             case Constraint::Type::VERTICAL:
                 // When rotating 90 or 270 degrees, swap the vertical / horizontal constaints
-                if (theta == PI/2 || theta == PI*1.5) {
+                dbp("Remainder: %f", fmod(theta + (PI / 2), PI));
+                if (fmod(theta + (PI/2), PI) == 0) {
                     if(c.type == Constraint::Type::HORIZONTAL) {
                         c.type = Constraint::Type::VERTICAL;
                     } else {
                         c.type = Constraint::Type::HORIZONTAL;
                     }
+                } else if (fmod(theta, PI/2) != 0) {
+                    removeConstraint = true;
                 }
                 break;
             default:
                 break;
         }
-
-        hConstraint hc = Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
-        if(c.type == Constraint::Type::COMMENT) {
-            MakeSelected(hc);
+        if (!removeConstraint) {
+            hConstraint hc = Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
+            if(c.type == Constraint::Type::COMMENT) {
+                MakeSelected(hc);
+            }
         }
     }
 }
