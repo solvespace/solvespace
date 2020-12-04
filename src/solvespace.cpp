@@ -904,6 +904,9 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             break;
 
         case Command::STOP_TRACING: {
+            if (SS.traced.point == Entity::NO_ENTITY) {
+                break;
+            }
             Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
             dialog->AddFilters(Platform::CsvFileFilters);
             dialog->ThawChoices(settings, "Trace");
