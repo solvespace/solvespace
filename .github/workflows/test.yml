@@ -1,6 +1,9 @@
 name: Test
 
 on:
+  pull_request:
+    branches:
+      - master
   push:
     branches-ignore:
       - master
@@ -9,9 +12,9 @@ on:
 
 jobs:
   test_ubuntu:
-      runs-on: ubuntu-18.04
-      name: Test Ubuntu
-      steps:
+    runs-on: ubuntu-18.04
+    name: Test Ubuntu
+    steps:
       - uses: actions/checkout@v2
       - name: Install Dependencies
         run: .github/scripts/install-ubuntu.sh
@@ -22,20 +25,48 @@ jobs:
     runs-on: windows-2019
     name: Test Windows
     steps:
-    - uses: actions/checkout@v2
-    - name: Install Dependencies
-      run: .github/scripts/install-windows.sh
-      shell: bash
-    - name: Build & Test
-      run: .github/scripts/build-windows.sh
-      shell: bash
+      - uses: actions/checkout@v2
+      - name: Install Dependencies
+        run: .github/scripts/install-windows.sh
+        shell: bash
+      - name: Build & Test
+        run: .github/scripts/build-windows.sh
+        shell: bash
 
   test_macos:
     runs-on: macos-latest
     name: Test macOS
     steps:
-    - uses: actions/checkout@v2
-    - name: Install Dependencies
-      run: .github/scripts/install-macos.sh
-    - name: Build & Test
-      run: .github/scripts/build-macos.sh
+      - uses: actions/checkout@v2
+      - name: Install Dependencies
+        run: .github/scripts/install-macos.sh
+      - name: Build & Test
+        run: .github/scripts/build-macos.sh
+
+  benchmark:
+    runs-on: ubuntu-18.04
+    name: Benchmark Ubuntu
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Dependencies
+        run: .github/scripts/install-ubuntu.sh
+      - name: Build & Test
+        run: .github/scripts/build-ubuntu.sh release
+      - name: Run bechmark
+        id: benchmark
+        run: |
+          BENCHMARKS="$(echo "test/benchmarks/8040.slvs" && \
+            build/bin/solvespace-benchmark load test/benchmarks/8040.slvs && \
+            echo "test/benchmarks/8040-profile.slvs" && \
+            build/bin/solvespace-benchmark load test/benchmarks/8040-profile.slvs \
+          )"
+          BENCHMARKS="$(echo $BENCHMARKS | python -c 'import json,sys; print(json.dumps(sys.stdin.read()))')"
+          echo "::set-output name=benchmarks::$BENCHMARKS"
+      - uses: LouisBrunner/checks-action@v1.1.1
+        if: always()
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          name: Benchmark Results
+          conclusion: ${{ job.status }}
+          output: |
+            {"summary": "Benchmark Results", "text_description": ${{steps.benchmark.outputs.benchmarks}}}
