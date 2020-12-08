@@ -1,8 +1,5 @@
 #!/bin/sh -xe
 
-MSBUILD_PATH="c:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin"
-export PATH=$MSBUILD_PATH:$PATH
-
 mkdir build
 cd build
 
@@ -14,7 +11,7 @@ if [ "$1" = "release" ]; then
     fi
     BUILD_TYPE=RelWithDebInfo
     cmake \
-        -G "Visual Studio 15 2017" \
+        -G "Visual Studio 16 2019" \
         -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
         -DENABLE_OPENMP="${ENABLE_OPENMP}" \
         -DENABLE_LTO=ON \
@@ -23,7 +20,7 @@ if [ "$1" = "release" ]; then
 else
     BUILD_TYPE=Debug
     cmake \
-        -G "Visual Studio 15 2017" \
+        -G "Visual Studio 16 2019" \
         -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
         -DENABLE_OPENMP="ON" \
         -DCMAKE_GENERATOR_PLATFORM="Win32" \
