@@ -1247,7 +1247,7 @@ public:
     }
 
     void SuggestFilename(Platform::Path path) override {
-        SetFilename(path.WithExtension(""));  // TODO
+        gtkChooser->set_current_name(path.FileStem()+"."+GetExtension());
     }
 
     void AddFilter(std::string name, std::vector<std::string> extensions) override {
