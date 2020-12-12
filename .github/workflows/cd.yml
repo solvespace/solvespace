@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - macos-arm64
   release:
     types:
       - created
@@ -32,17 +33,27 @@ jobs:
       shell: bash
 
   test_macos:
-    runs-on: macos-latest
+    runs-on: macos-10.15
     name: Test macOS
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
       run: .github/scripts/install-macos.sh
     - name: Build & Test
-      run: .github/scripts/build-macos.sh
+      run: .github/scripts/build-macos.sh debug
+
+  test_macos_arm:
+    runs-on: macos-11.0
+    name: Test macOS
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: .github/scripts/install-macos.sh
+    - name: Build & Test
+      run: .github/scripts/build-macos.sh debug silicon
 
   build_release_windows:
-    needs: [test_ubuntu, test_windows, test_macos]
+    needs: [test_ubuntu, test_windows, test_macos, test_macos_arm]
     name: Build Release Windows
     runs-on: windows-2019
     steps:
@@ -60,7 +71,7 @@ jobs:
           path: build/bin/RelWithDebInfo/solvespace.exe
   
   build_release_windows_openmp:
-    needs: [test_ubuntu, test_windows, test_macos]
+    needs: [test_ubuntu, test_windows, test_macos, test_macos_arm]
     name: Build Release Windows (OpenMP)
     runs-on: windows-2019
     steps:
@@ -78,15 +89,15 @@ jobs:
           path: build/bin/RelWithDebInfo/solvespace-openmp.exe
 
   build_release_macos:
-    needs: [test_ubuntu, test_windows, test_macos]
+    needs: [test_ubuntu, test_windows, test_macos, test_macos_arm]
     name: Build Release macOS
-    runs-on: macos-latest
+    runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
       run: .github/scripts/install-macos.sh
     - name: Build & Test
-      run: .github/scripts/build-macos.sh release
+      run: .github/scripts/build-macos.sh release && .github/scripts/build-macos.sh release silicon
     - name: Sign Build
       run: .github/scripts/sign-macos.sh
       env:
@@ -102,7 +113,7 @@ jobs:
         path: build/bin/SolveSpace.dmg
         
   deploy_snap_amd64:
-    needs: [test_ubuntu, test_windows, test_macos]
+    needs: [test_ubuntu, test_windows, test_macos, test_macos_arm]
     name: Deploy AMD64 Snap
     runs-on: ubuntu-latest
     steps:
@@ -130,7 +141,7 @@ jobs:
         release: edge,beta
     
   deploy_snap_arm64:
-    needs: [test_ubuntu, test_windows, test_macos]
+    needs: [test_ubuntu, test_windows, test_macos, test_macos_arm]
     name: Deploy ARM64 Snap
     runs-on: ubuntu-latest
     steps:

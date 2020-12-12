@@ -21,6 +21,7 @@ else
     BUILD_TYPE=Debug
     cmake \
         -G "Visual Studio 16 2019" \
+        -DCMAKE_VERBOSE_MAKEFILE="ON" \
         -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
         -DENABLE_OPENMP="ON" \
         -DCMAKE_GENERATOR_PLATFORM="Win32" \

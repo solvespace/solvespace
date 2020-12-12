@@ -4,16 +4,16 @@
 	ignore = dirty
 [submodule "extlib/libpng"]
 	path = extlib/libpng
-	url = https://github.com/glennrp/libpng
+	url = https://github.com/vespakoen/libpng
 [submodule "extlib/freetype"]
 	path = extlib/freetype
-	url = https://git.savannah.nongnu.org/r/freetype/freetype2.git/
+	url = https://github.com/vespakoen/freetype2.git
 [submodule "extlib/libdxfrw"]
 	path = extlib/libdxfrw
 	url = https://github.com/solvespace/libdxfrw.git
 [submodule "extlib/pixman"]
 	path = extlib/pixman
-	url = https://github.com/solvespace/pixman
+	url = https://github.com/vespakoen/pixman
 [submodule "extlib/cairo"]
 	path = extlib/cairo
 	url = https://github.com/solvespace/cairo
@@ -22,4 +22,7 @@
 	url = https://github.com/solvespace/angle
 [submodule "extlib/mimalloc"]
 	path = extlib/mimalloc
-	url = https://github.com/microsoft/mimalloc
+	url = https://github.com/vespakoen/mimalloc
+[submodule "extlib/openmp"]
+	path = extlib/openmp
+	url = https://github.com/vespakoen/openmp.git
