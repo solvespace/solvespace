@@ -31,7 +31,7 @@
 #include <vector>
 
 #define EIGEN_NO_DEBUG
-#include "SparseCore"
+#include <Eigen/SparseCore>
 
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including

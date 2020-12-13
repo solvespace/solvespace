@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-#include <SparseQR>
+#include <Eigen/SparseQR>
 
 // The solver will converge all unknowns to within this tolerance. This must
 // always be much less than LENGTH_EPS, and in practice should be much less.
