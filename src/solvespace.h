@@ -30,6 +30,7 @@
 #include <unordered_set>
 #include <vector>
 
+#undef Success
 #define EIGEN_NO_DEBUG
 #include <Eigen/SparseCore>
 
