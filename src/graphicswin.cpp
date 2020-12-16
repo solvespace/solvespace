@@ -1175,10 +1175,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             }
             // Regenerate, with these points marked as dragged so that they
             // get placed as close as possible to our snap grid.
-            SS.GW.ClearPending();
-
             SS.GW.ClearSelection();
-            SS.GW.Invalidate();
             break;
         }
 
