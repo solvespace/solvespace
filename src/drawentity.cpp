@@ -64,7 +64,7 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
         Vector proj = SS.GW.ProjectPoint3(PointGetNum());
         screenBBox = BBox::From(proj, proj);
     } else if(IsNormal()) {
-        Vector proj = SK.GetEntity(point[0])->PointGetNum();
+        Vector proj = SS.GW.ProjectPoint3(SK.GetEntity(point[0])->PointGetNum());
         screenBBox = BBox::From(proj, proj);
     } else if(!sbl->l.IsEmpty()) {
         Vector first = SS.GW.ProjectPoint3(sbl->l[0].ctrl[0]);
