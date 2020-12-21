@@ -207,8 +207,8 @@ void GraphicsWindow::MakeSelected(Selection *stog) {
 //-----------------------------------------------------------------------------
 void GraphicsWindow::SelectByMarquee() {
     Point2d marqueePoint = ProjectPoint(orig.marqueePoint);
-    BBox marqueeBBox = BBox::From(Vector::From(marqueePoint.x, marqueePoint.y, -1),
-                                  Vector::From(orig.mouse.x,   orig.mouse.y,    1));
+    BBox marqueeBBox = BBox::From(Vector::From(marqueePoint.x, marqueePoint.y, VERY_NEGATIVE),
+                                  Vector::From(orig.mouse.x,   orig.mouse.y,   VERY_POSITIVE));
 
     Entity *e;
     for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
