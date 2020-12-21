@@ -70,7 +70,7 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
         Vector first = SS.GW.ProjectPoint3(sbl->l[0].ctrl[0]);
         screenBBox = BBox::From(first, first);
         for(auto &sb : sbl->l) {
-            for(int i = 0; i < sb.deg; ++i) { screenBBox.Include(SS.GW.ProjectPoint3(sb.ctrl[i])); }
+            for(int i = 0; i <= sb.deg; ++i) { screenBBox.Include(SS.GW.ProjectPoint3(sb.ctrl[i])); }
         }
     } else
         ssassert(false, "Expected entity to be a point or have beziers");
