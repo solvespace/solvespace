@@ -569,7 +569,8 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
             if(!SS.GW.showShaded) {
                 fillFront.layer = Canvas::Layer::DEPTH_ONLY;
             }
-            if(type == Type::DRAWING_3D || type == Type::DRAWING_WORKPLANE) {
+            if((type == Type::DRAWING_3D || type == Type::DRAWING_WORKPLANE)
+               && SS.GW.dimSolidModel) {
                 fillFront.color = Style::Color(Style::DIM_SOLID);
             }
             Canvas::hFill hcfFront = canvas->GetFill(fillFront);

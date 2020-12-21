@@ -1018,6 +1018,7 @@ void SolveSpaceUI::Clear() {
     GW.openRecentMenu = NULL;
     GW.linkRecentMenu = NULL;
     GW.showGridMenuItem = NULL;
+    GW.dimSolidModelMenuItem = NULL;
     GW.perspectiveProjMenuItem = NULL;
     GW.showToolbarMenuItem = NULL;
     GW.showTextWndMenuItem = NULL;
