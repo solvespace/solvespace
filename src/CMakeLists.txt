@@ -80,7 +80,10 @@ include_directories(
     ${PNG_PNG_INCLUDE_DIR}
     ${FREETYPE_INCLUDE_DIRS}
     ${CAIRO_INCLUDE_DIRS}
-    ${MIMALLOC_INCLUDE_DIR})
+    ${MIMALLOC_INCLUDE_DIR}
+    # OpenMP_CXX_INCLUDE_DIRS should be last in this list, for macOS compatibility
+    # see https://github.com/solvespace/solvespace/pull/869
+    ${OpenMP_CXX_INCLUDE_DIRS})
 
 if(Backtrace_FOUND)
     include_directories(
