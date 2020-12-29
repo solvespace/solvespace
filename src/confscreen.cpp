@@ -5,6 +5,9 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
 
 void TextWindow::ScreenChangeLightDirection(int link, uint32_t v) {
     SS.TW.ShowEditControl(8, ssprintf("%.2f, %.2f, %.2f", CO(SS.lightDir[v])));
@@ -389,6 +392,11 @@ void TextWindow::ShowConfiguration() {
         Printf(false, " %Ft   renderer %E%s", gl_renderer);
         Printf(false, " %Ft   version  %E%s", gl_version);
     }
+
+    #if defined(_OPENMP)
+        Printf(false, " %FtOpenMP enabled");
+        Printf(false, " %Ft   threads  %E%d", omp_get_max_threads());
+    #endif
 }
 
 bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
