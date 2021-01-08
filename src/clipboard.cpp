@@ -257,18 +257,27 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
                 c.valA *= fabs(scale);
                 break;
             case Constraint::Type::ARC_LINE_TANGENT: {
-                Constraint::ConstrainArcLineTangent(&c, SK.GetEntity(c.entityB),
-                                                    SK.GetEntity(c.entityA));
+                Entity *line = SK.GetEntity(c.entityB),
+                       *arc  = SK.GetEntity(c.entityA);
+                if(line->type == Entity::Type::ARC_OF_CIRCLE) {
+                    swap(line, arc);
+                }
+                Constraint::ConstrainArcLineTangent(&c, line, arc);
                 break;
             }
             case Constraint::Type::CUBIC_LINE_TANGENT: {
-                Constraint::ConstrainCubicLineTangent(&c, SK.GetEntity(c.entityB),
-                                                      SK.GetEntity(c.entityA));
+                Entity *line  = SK.GetEntity(c.entityB),
+                       *cubic = SK.GetEntity(c.entityA);
+                if(line->type == Entity::Type::CUBIC) {
+                    swap(line, cubic);
+                }
+                Constraint::ConstrainCubicLineTangent(&c, line, cubic);
                 break;
             }
             case Constraint::Type::CURVE_CURVE_TANGENT: {
-                Constraint::ConstrainCurveCurveTangent(&c, SK.GetEntity(c.entityA),
-                                                       SK.GetEntity(c.entityB));
+                Entity *eA = SK.GetEntity(c.entityA),
+                       *eB = SK.GetEntity(c.entityB);
+                Constraint::ConstrainCurveCurveTangent(&c, eA, eB);
                 break;
             }
             case Constraint::Type::HORIZONTAL:
