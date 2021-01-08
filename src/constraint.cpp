@@ -128,15 +128,10 @@ hConstraint Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
 }
 
 void Constraint::ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc) {
-    if(line->type == Entity::Type::ARC_OF_CIRCLE) {
-        swap(line, arc);
-    }
-
     Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
            l1 = SK.GetEntity(line->point[1])->PointGetNum();
     Vector a1 = SK.GetEntity(arc->point[1])->PointGetNum(),
            a2 = SK.GetEntity(arc->point[2])->PointGetNum();
-
     if(l0.Equals(a1) || l1.Equals(a1)) {
         c->other = false;
     } else if(l0.Equals(a2) || l1.Equals(a2)) {
@@ -150,10 +145,6 @@ void Constraint::ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *ar
 }
 
 void Constraint::ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic) {
-    if(line->type == Entity::Type::CUBIC) {
-        swap(line, cubic);
-    }
-
     Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
            l1 = SK.GetEntity(line->point[1])->PointGetNum();
     Vector as = cubic->CubicGetStartNum(),
@@ -688,6 +679,9 @@ void Constraint::MenuConstrain(Command id) {
             } else if(gs.lineSegments == 1 && gs.arcs == 1 && gs.n == 2) {
                 Entity *line = SK.GetEntity(gs.entity[0]),
                        *arc  = SK.GetEntity(gs.entity[1]);
+                if(line->type == Entity::Type::ARC_OF_CIRCLE) {
+                    swap(line, arc);
+                }
                 ConstrainArcLineTangent(&c, line, arc);
                 c.type = Type::ARC_LINE_TANGENT;
                 c.entityA = arc->h;
@@ -695,6 +689,9 @@ void Constraint::MenuConstrain(Command id) {
             } else if(gs.lineSegments == 1 && gs.cubics == 1 && gs.n == 2) {
                 Entity *line  = SK.GetEntity(gs.entity[0]),
                        *cubic = SK.GetEntity(gs.entity[1]);
+                if(line->type == Entity::Type::CUBIC) {
+                    swap(line, cubic);
+                }
                 ConstrainCubicLineTangent(&c, line, cubic);
                 c.type = Type::CUBIC_LINE_TANGENT;
                 c.entityA = cubic->h;
