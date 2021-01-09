@@ -331,7 +331,13 @@ const char *SolveSpaceUI::UnitName() {
 
 std::string SolveSpaceUI::MmToString(double v) {
     v /= MmPerUnit();
-    return ssprintf("%.*f", UnitDigitsAfterDecimal(), v);
+    int digits = UnitDigitsAfterDecimal();
+    double minimum = 0.5 * pow(10,-digits);
+    while ((v < minimum) && (v > LENGTH_EPS)) {
+        digits++;
+        minimum *= 0.1;
+    }
+    return ssprintf("%.*f", digits, v);
 }
 static const char *DimToString(int dim) {
     switch(dim) {
