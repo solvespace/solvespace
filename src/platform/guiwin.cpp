@@ -1450,7 +1450,10 @@ public:
     void SetType(Type type) override {
         switch(type) {
             case Type::INFORMATION:
-                style = MB_ICONINFORMATION;
+                style         = MB_USERICON; // Avoid beep
+                mbp.hInstance = GetModuleHandle(NULL);
+                mbp.lpszIcon  = MAKEINTRESOURCE(4000);  // Use SolveSpace icon
+                // mbp.lpszIcon = IDI_INFORMATION;
                 break;
 
             case Type::QUESTION:
@@ -1462,7 +1465,10 @@ public:
                 break;
 
             case Type::ERROR:
-                style = MB_ICONERROR;
+                style         = MB_USERICON; // Avoid beep
+                mbp.hInstance = GetModuleHandle(NULL);
+                mbp.lpszIcon  = MAKEINTRESOURCE(4000); // Use SolveSpace icon
+                // mbp.lpszIcon = IDI_ERROR;
                 break;
         }
     }
