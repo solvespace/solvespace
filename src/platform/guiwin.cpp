@@ -734,6 +734,11 @@ public:
                         event.type   = SixDofEvent::Type::RELEASE;
                         event.button = SixDofEvent::Button::FIT;
                     }
+                } else {
+                    return 0;
+                }
+                if(window->onSixDofEvent) {
+                    window->onSixDofEvent(event);
                 }
                 return 0;
             }
