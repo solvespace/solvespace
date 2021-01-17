@@ -2,12 +2,12 @@
 # Copyright (C) 2017 the SolveSpace authors
 # This file is distributed under the same license as the SolveSpace package.
 # Automatically generated, 2017.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-01-17 15:23+0100\n"
+"POT-Creation-Date: 2021-01-17 19:54+0200\n"
 "PO-Revision-Date: 2017-01-05 10:30+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -807,8 +807,8 @@ msgid "Show Snap &Grid"
 msgstr "Show Snap &Grid"
 
 #: graphicswin.cpp:95
-msgid "Dim Solid for Sketch Groups"
-msgstr "Dim Solid for Sketch Groups"
+msgid "Darken Inactive Solids"
+msgstr "Darken Inactive Solids"
 
 #: graphicswin.cpp:96
 msgid "Use &Perspective Projection"
