@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-01-15 14:51-0600\n"
+"POT-Creation-Date: 2021-01-17 15:23+0100\n"
 "PO-Revision-Date: 2017-04-21 10:29+0700\n"
 "Last-Translator: evilspirit@evilspirit.org\n"
 "Language-Team: EvilSpirit\n"
@@ -1670,18 +1670,18 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "CSV файлы (значения, разделенные запятой)"
 
-#: platform/guigtk.cpp:1321 platform/guimac.mm:1363 platform/guiwin.cpp:1625
+#: platform/guigtk.cpp:1321 platform/guimac.mm:1363 platform/guiwin.cpp:1630
 msgid "untitled"
 msgstr "без имени"
 
 #: platform/guigtk.cpp:1332 platform/guigtk.cpp:1365 platform/guimac.mm:1321
-#: platform/guiwin.cpp:1568
+#: platform/guiwin.cpp:1573
 msgctxt "title"
 msgid "Save File"
 msgstr "Сохранить Файл"
 
 #: platform/guigtk.cpp:1333 platform/guigtk.cpp:1366 platform/guimac.mm:1304
-#: platform/guiwin.cpp:1570
+#: platform/guiwin.cpp:1575
 msgctxt "title"
 msgid "Open File"
 msgstr "Открыть Файл"
