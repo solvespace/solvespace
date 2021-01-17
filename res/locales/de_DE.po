@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-01-15 14:51-0600\n"
+"POT-Creation-Date: 2021-01-17 15:23+0100\n"
 "PO-Revision-Date: 2018-07-19 06:55+0000\n"
 "Last-Translator: Reini Urban <rurban@cpan.org>\n"
 "Language-Team: none\n"
@@ -827,7 +827,7 @@ msgstr "Arbeitsraster anzeigen"
 
 #: graphicswin.cpp:95
 msgid "Dim Solid for Sketch Groups"
-msgstr ""
+msgstr "Feste Farbe für Festkörper in Skizzen Gruppen"
 
 #: graphicswin.cpp:96
 msgid "Use &Perspective Projection"
@@ -1263,7 +1263,7 @@ msgid ""
 "lines)\n"
 "    * a workplane (copy of the workplane)\n"
 msgstr ""
-"Ungültige Auswahl für Skizze in neuer Arbeitsebene Diese Gruppe kann "
+"Ungültige Auswahl für Skizze in neuer Arbeitsebene. Diese Gruppe kann "
 "erstellt werden mit:\n"
 "\n"
 "    * einem Punkt (durch den Punkt, orthogonal zu den Koordinatenachsen)\n"
@@ -1286,7 +1286,7 @@ msgstr "Extrusion"
 
 #: group.cpp:168
 msgid "Lathe operation can only be applied to planar sketches."
-msgstr ""
+msgstr "Rotieren kann nur mit planaren Skizzen ausgeführt werden."
 
 #: group.cpp:179
 msgid ""
@@ -1296,7 +1296,7 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
-"Ungültige Auswahl für neue Gruppe mit Drehquerschnitt Diese Gruppe kann "
+"Ungültige Auswahl für neue Gruppe mit Drehquerschnitt. Diese Gruppe kann "
 "erstellt werden mit:\n"
 "\n"
 "    * einem Punkt und einem Liniensegment oder einer Normale (Drehung um "
@@ -1310,7 +1310,7 @@ msgstr "Drehung"
 
 #: group.cpp:194
 msgid "Revolve operation can only be applied to planar sketches."
-msgstr ""
+msgstr "Revolve kann nur mit planaren Skizzen ausgeführt werden."
 
 #: group.cpp:205
 msgid ""
@@ -1328,7 +1328,7 @@ msgstr "Revolve"
 
 #: group.cpp:222
 msgid "Helix operation can only be applied to planar sketches."
-msgstr ""
+msgstr "Helix kann nur mit planaren Skizzen ausgeführt werden."
 
 #: group.cpp:233
 msgid ""
@@ -1687,18 +1687,18 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "Werte durch Komma getrennt (CSV)"
 
-#: platform/guigtk.cpp:1321 platform/guimac.mm:1363 platform/guiwin.cpp:1625
+#: platform/guigtk.cpp:1321 platform/guimac.mm:1363 platform/guiwin.cpp:1630
 msgid "untitled"
 msgstr "unbenannt"
 
 #: platform/guigtk.cpp:1332 platform/guigtk.cpp:1365 platform/guimac.mm:1321
-#: platform/guiwin.cpp:1568
+#: platform/guiwin.cpp:1573
 msgctxt "title"
 msgid "Save File"
 msgstr "Datei speichern"
 
 #: platform/guigtk.cpp:1333 platform/guigtk.cpp:1366 platform/guimac.mm:1304
-#: platform/guiwin.cpp:1570
+#: platform/guiwin.cpp:1575
 msgctxt "title"
 msgid "Open File"
 msgstr "Datei öffnen"
@@ -2150,11 +2150,11 @@ msgstr "Neue Gruppe mit rotierter aktiver Skizze"
 
 #: toolbar.cpp:72
 msgid "New group helix from active sketch"
-msgstr ""
+msgstr "Neue Gruppe Helix von aktiver Skizze"
 
 #: toolbar.cpp:74
 msgid "New group revolve active sketch"
-msgstr ""
+msgstr "Neue Gruppe mit gedrehter aktiver Skizze"
 
 #: toolbar.cpp:76
 msgid "New group step and repeat rotating"
