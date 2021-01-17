@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-01-17 15:23+0100\n"
+"POT-Creation-Date: 2021-01-17 19:54+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -672,7 +672,7 @@ msgid "Show Snap &Grid"
 msgstr ""
 
 #: graphicswin.cpp:95
-msgid "Dim Solid for Sketch Groups"
+msgid "Darken Inactive Solids"
 msgstr ""
 
 #: graphicswin.cpp:96
