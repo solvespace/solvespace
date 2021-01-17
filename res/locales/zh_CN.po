@@ -2,12 +2,12 @@
 # Copyright (C) 2020 the PACKAGE authors
 # This file is distributed under the same license as the SolveSpace package.
 # <lomatus@163.com>, 2020.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-01-17 15:23+0100\n"
+"POT-Creation-Date: 2021-01-17 19:54+0200\n"
 "PO-Revision-Date: 2020-09-28 12:42+0800\n"
 "Last-Translator: lomatus@163.com\n"
 "Language-Team: none\n"
@@ -772,7 +772,7 @@ msgid "Show Snap &Grid"
 msgstr "显示捕捉轴线 (&G)"
 
 #: graphicswin.cpp:95
-msgid "Dim Solid for Sketch Groups"
+msgid "Darken Inactive Solids"
 msgstr ""
 
 #: graphicswin.cpp:96
