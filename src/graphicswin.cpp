@@ -92,7 +92,7 @@ const MenuEntry Menu[] = {
 { 1, N_("&Center View At Point"),       Command::CENTER_VIEW,      F|4,     KN, mView  },
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Show Snap &Grid"),             Command::SHOW_GRID,        '>',     KC, mView  },
-{ 1, N_("Dim Solid for Sketch Groups"), Command::DIM_SOLID_MODEL,  0,       KC, mView  },
+{ 1, N_("Darken Inactive Solids"),      Command::DIM_SOLID_MODEL,  0,       KC, mView  },
 { 1, N_("Use &Perspective Projection"), Command::PERSPECTIVE_PROJ, '`',     KC, mView  },
 { 1, N_("Dimension &Units"),            Command::NONE,             0,       KN, NULL  },
 { 2, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       KR, mView },
