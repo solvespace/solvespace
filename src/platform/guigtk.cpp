@@ -1295,13 +1295,16 @@ public:
         }
     }
 
+//TODO: This is not getting called when the extension selection is changed.
     void FilterChanged() {
         std::string extension = GetExtension();
         if(extension.empty())
             return;
 
         Platform::Path path = GetFilename();
-        SetCurrentName(path.WithExtension(extension).FileName());
+        if(gtkChooser->get_action() != GTK_FILE_CHOOSER_ACTION_OPEN) {
+            SetCurrentName(path.WithExtension(extension).FileName());
+        }
     }
 
     void FreezeChoices(SettingsRef settings, const std::string &key) override {
