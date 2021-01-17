@@ -827,7 +827,7 @@ msgstr "Arbeitsraster anzeigen"
 
 #: graphicswin.cpp:95
 msgid "Darken Inactive Solids"
-msgstr "Feste Farbe für Festkörper in Skizzen Gruppen"
+msgstr "Dunklere inaktive Festkörper"
 
 #: graphicswin.cpp:96
 msgid "Use &Perspective Projection"
@@ -1116,7 +1116,7 @@ msgstr "(keine vorhergehenden Dateien)"
 #: graphicswin.cpp:363
 #, c-format
 msgid "File '%s' does not exist."
-msgstr ""
+msgstr "Datei '%s' existiert nicht."
 
 #: graphicswin.cpp:725
 msgid "No workplane is active, so the grid will not appear."
@@ -1320,6 +1320,12 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"Ungültige Auswahl für eine neue Revolve Gruppe. Diese Gruppe kann erzeugt "
+"werden mit:\n"
+"\n"
+"    * einem Punkt und einem Liniensegment oder Normale (gedreht um eine "
+"Achse parallel zu Linie / Normale, durch Punkt)\n"
+"    * einem Liniensegment (gedreht um Liniensegment)\n"
 
 #: group.cpp:217
 msgctxt "group-name"
