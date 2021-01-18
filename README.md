@@ -94,13 +94,15 @@ After that, build SolveSpace as following:
 
     mkdir build
     cd build
-    cmake .. -DCMAKE_BUILD_TYPE=Release
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_OPENMP=ON
     make
     sudo make install
 
+Link Time Optimization is supported by adding -DENABLE_LTO=ON to cmake at the
+expense of longer build time.
+
 The graphical interface is built as `build/bin/solvespace`, and the command-line interface
-is built as `build/bin/solvespace-cli`. It is possible to build only the command-line interface
-by passing the `-DENABLE_GUI=OFF` flag to the cmake invocation.
+is built as `build/bin/solvespace-cli`. It is possible to build only the command-line interface by passing the `-DENABLE_GUI=OFF` flag to the cmake invocation.
 
 ### Building for Windows
 
@@ -154,8 +156,11 @@ After that, build SolveSpace as following:
 
     mkdir build
     cd build
-    cmake .. -DCMAKE_BUILD_TYPE=Release
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_OPENMP=ON
     make
+
+Link Time Optimization is supported by adding -DENABLE_LTO=ON to cmake at the
+expense of longer build time.
 
 Alternatively, generate an XCode project, open it, and build the "Release" scheme:
 
