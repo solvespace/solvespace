@@ -470,9 +470,9 @@ solvespace = function(obj, params) {
         changeBasis.makeBasis(camera.right, camera.up, n);
 
         for (var i = 0; i < 2; i++) {
-            var newLightPos = changeBasis.applyToVector3Array(
-                [obj.lights.d[i].direction[0], obj.lights.d[i].direction[1],
-                    obj.lights.d[i].direction[2]]);
+            var newLightPos = new THREE.Vector3(obj.lights.d[i].direction[0],
+                obj.lights.d[i].direction[1],
+                obj.lights.d[i].direction[2]).applyMatrix4(changeBasis);
             directionalLightArray[i].position.set(newLightPos[0],
                 newLightPos[1], newLightPos[2]);
         }
@@ -515,7 +515,7 @@ solvespace = function(obj, params) {
         }
 
         geometry.computeBoundingSphere();
-        return new THREE.Mesh(geometry, new THREE.MultiMaterial(materialList));
+        return new THREE.Mesh(geometry, materialList);
     }
 
     function createEdges(meshObj) {

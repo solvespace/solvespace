@@ -284,7 +284,7 @@ add_resources(
     shaders/edge.frag
     shaders/edge.vert
     shaders/outline.vert
-    threejs/three-r76.js.gz
+    threejs/three-r111.min.js.gz
     threejs/hammer-2.0.8.js.gz
     threejs/SolveSpaceControls.js)
 
