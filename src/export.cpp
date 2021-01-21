@@ -956,13 +956,16 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
     SPointList spl = {};
     STriangle *tr;
     Vector bndl, bndh;
+
+    const std::string THREE_FN("three-r111.min.js");
+
     const char htmlbegin[] = R"(
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8"></meta>
     <title>Three.js Solvespace Mesh</title>
-    <script id="three-r76.js">%s</script>
+    <script id="%s">%s</script>
     <script id="hammer-2.0.8.js">%s</script>
     <script id="SolveSpaceControls.js">%s</script>
     <style type="text/css">
@@ -1014,8 +1017,8 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
 
     if(filename.HasExtension("html")) {
         fprintf(f, htmlbegin,
-                LoadStringFromGzip("threejs/three-r76.js.gz").c_str(),
-                LoadStringFromGzip("threejs/hammer-2.0.8.js.gz").c_str(),
+                THREE_FN.c_str(),
+                LoadStringFromGzip("threejs/" + THREE_FN + ".gz").c_str(),
                 LoadString("threejs/SolveSpaceControls.js").c_str());
     }
 
