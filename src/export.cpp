@@ -958,6 +958,8 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
     Vector bndl, bndh;
 
     const std::string THREE_FN("three-r111.min.js");
+    const std::string HAMMER_FN("hammer-2.0.8.js");
+    const std::string CONTROLS_FN("SolveSpaceControls.js");
 
     const char htmlbegin[] = R"(
 <!DOCTYPE html>
@@ -966,8 +968,8 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
     <meta charset="utf-8"></meta>
     <title>Three.js Solvespace Mesh</title>
     <script id="%s">%s</script>
-    <script id="hammer-2.0.8.js">%s</script>
-    <script id="SolveSpaceControls.js">%s</script>
+    <script id="%s">%s</script>
+    <script id="%s">%s</script>
     <style type="text/css">
     body { margin: 0; overflow: hidden; }
     </style>
@@ -1019,7 +1021,10 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
         fprintf(f, htmlbegin,
                 THREE_FN.c_str(),
                 LoadStringFromGzip("threejs/" + THREE_FN + ".gz").c_str(),
-                LoadString("threejs/SolveSpaceControls.js").c_str());
+                HAMMER_FN.c_str(),
+                LoadStringFromGzip("threejs/" + HAMMER_FN + ".gz").c_str(),
+                CONTROLS_FN.c_str(),
+                LoadString("threejs/" + CONTROLS_FN).c_str());
     }
 
     fprintf(f, "var solvespace_model_%s = {\n"
