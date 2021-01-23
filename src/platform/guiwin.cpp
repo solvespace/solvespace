@@ -513,6 +513,7 @@ public:
     HWND hTooltip = NULL;
     HWND hEditor  = NULL;
     WNDPROC editorWndProc = NULL;
+    LONG lastMoveTime = 0;
 
 #if HAVE_OPENGL == 1
     HGLRC hGlRc = NULL;
@@ -937,6 +938,14 @@ public:
                         event.type = MouseEvent::Type::LEAVE;
                         break;
                     case WM_MOUSEMOVE: {
+                        // rate limit mouse move messages to no faster than one per 20ms
+                        LONG mt = GetMessageTime();
+                        if(mt - window->lastMoveTime > 20) {
+                            window->lastMoveTime = mt;
+                        } else {
+                            consumed = true;
+                        }
+
                         event.type = MouseEvent::Type::MOTION;
 
                         if(wParam & MK_LBUTTON) {
