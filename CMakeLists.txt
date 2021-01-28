@@ -49,7 +49,7 @@ set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
 set(ENABLE_CLI        ON CACHE BOOL
     "Whether the command line interface is enabled")
-set(ENABLE_TESTS      ON  CACHE BOOL
+set(ENABLE_TESTS      ON CACHE BOOL
     "Whether the test suite will be built and run")
 set(ENABLE_COVERAGE   OFF CACHE BOOL
     "Whether code coverage information will be collected")
@@ -57,8 +57,12 @@ set(ENABLE_SANITIZERS OFF CACHE BOOL
     "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
 set(ENABLE_OPENMP     OFF CACHE BOOL
     "Whether geometric operations will be parallelized using OpenMP")
-set(ENABLE_LTO     OFF CACHE BOOL
+set(ENABLE_LTO        OFF CACHE BOOL
     "Whether interprocedural (global) optimizations are enabled")
+set(ENABLE_BENCH      ON CACHE BOOL
+    "Whether to build the benchmarks")
+set(ENABLE_DEMO       ON CACHE BOOL
+    "Whether to build the C solver demo")
 
 set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
@@ -386,12 +390,18 @@ endif()
 
 add_subdirectory(res)
 add_subdirectory(src)
-add_subdirectory(exposed)
+if(ENABLE_DEMO)
+    add_subdirectory(exposed)
+endif()
 if(ENABLE_TESTS)
     add_subdirectory(test)
 endif()
-if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    add_subdirectory(bench)
+if(ENABLE_BENCH)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message(WARNING "Benchmarks disabled in debug builds.")
+    else()
+        add_subdirectory(bench)
+    endif()
 else()
-    message(STATUS "Benchmarking disabled in debug builds.")
+    message(STATUS "Benchmarks disabled")
 endif()
