@@ -305,7 +305,6 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             HitTestMakeSelection(mp);
             SS.MarkGroupDirtyByEntity(pending.point);
             orig.mouse = mp;
-            Invalidate();
             break;
 
         case Pending::DRAGGING_POINTS:
