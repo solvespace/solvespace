@@ -61,7 +61,7 @@ using namespace SolveSpace;
 
 int main(int argc, char** argv) {
     std::vector<std::string> args = Platform::InitCli(argc, argv);
-    if(args.size() > 2) {
+    if(args.size() > 2 || args[1][0] == '-') {
 #if defined(WIN32)
         // Windows requires setting up the standard IO handles for RunCommand
         // This didn't work from WinMain on mingw
