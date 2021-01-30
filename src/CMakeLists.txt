@@ -157,6 +157,7 @@ set(solvespace_core_HEADERS
 set(solvespace_core_SOURCES
     bsp.cpp
     clipboard.cpp
+    commandline.cpp
     confscreen.cpp
     constraint.cpp
     constrainteq.cpp
@@ -196,6 +197,7 @@ set(solvespace_core_SOURCES
     platform/gui.cpp
     render/render.cpp
     render/render2d.cpp
+    render/rendercairo.cpp
     srf/boolean.cpp
     srf/curve.cpp
     srf/merge.cpp
@@ -329,6 +331,7 @@ if(ENABLE_GUI)
 
     target_link_libraries(solvespace
         solvespace-core
+        ${CAIRO_LIBRARIES}
         ${OPENGL_LIBRARIES}
         ${platform_LIBRARIES}
         ${COVERAGE_LIBRARY})
@@ -345,8 +348,7 @@ endif()
 # solvespace headless library
 
 set(headless_SOURCES
-    platform/guinone.cpp
-    render/rendercairo.cpp)
+    platform/guinone.cpp)
 
 add_library(solvespace-headless STATIC EXCLUDE_FROM_ALL
     ${solvespace_core_gl_SOURCES}

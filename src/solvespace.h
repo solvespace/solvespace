@@ -809,6 +809,10 @@ public:
     }
 };
 
+// Command line processing
+void ShowUsage(const std::string &cmd);
+bool RunCommand(const std::vector<std::string> args);
+
 void ImportDxf(const Platform::Path &file);
 void ImportDwg(const Platform::Path &file);
 bool LinkIDF(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh);

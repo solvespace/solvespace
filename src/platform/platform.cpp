@@ -628,7 +628,16 @@ std::vector<std::string> InitCli(int argc, char **argv) {
 #if !defined(WIN32)
 
 std::vector<std::string> InitCli(int argc, char **argv) {
-    return {&argv[0], &argv[argc]};
+    std::vector<std::string> args = {&argv[0], &argv[argc]};
+#if defined(__APPLE__)
+    if(args.size() >= 2 && args[1].find("-psn_") == 0) {
+        // For unknown reasons, Finder passes a Carbon PSN (Process Serial Number) argument
+        // when a freshly downloaded application is run for the first time. Remove it so
+        // that it isn't interpreted as a filename.
+        args.erase(args.begin() + 1);
+    }
+#endif
+    return args;
 }
 
 #endif
