@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-01-17 19:54+0200\n"
+"POT-Creation-Date: 2021-02-01 15:45+0200\n"
 "PO-Revision-Date: 2018-07-14 06:12+0000\n"
 "Last-Translator: whitequark <whitequark@whitequark.org>\n"
 "Language-Team: none\n"
@@ -616,7 +616,11 @@ msgctxt "group-name"
 msgid "#references"
 msgstr "#références"
 
-#: file.cpp:549
+#: file.cpp:552
+msgid "The file is empty. It may be corrupt."
+msgstr ""
+
+#: file.cpp:557
 msgid ""
 "Unrecognized data in file. This file may be corrupt, or from a newer version "
 "of the program."
@@ -624,18 +628,18 @@ msgstr ""
 "Données non reconnues dans le fichier. Ce fichier peut être corrompu ou "
 "depuis une version plus récente du programme."
 
-#: file.cpp:859
+#: file.cpp:867
 msgctxt "title"
 msgid "Missing File"
 msgstr "Fichier manquant"
 
-#: file.cpp:860
+#: file.cpp:868
 #, c-format
 msgctxt "dialog"
 msgid "The linked file “%s” is not present."
 msgstr ""
 
-#: file.cpp:862
+#: file.cpp:870
 msgctxt "dialog"
 msgid ""
 "Do you want to locate it manually?\n"
@@ -644,17 +648,17 @@ msgid ""
 "permanently removed."
 msgstr ""
 
-#: file.cpp:865
+#: file.cpp:873
 msgctxt "button"
 msgid "&Yes"
 msgstr ""
 
-#: file.cpp:867
+#: file.cpp:875
 msgctxt "button"
 msgid "&No"
 msgstr ""
 
-#: file.cpp:869 solvespace.cpp:569
+#: file.cpp:877 solvespace.cpp:569
 msgctxt "button"
 msgid "&Cancel"
 msgstr ""
@@ -1422,104 +1426,104 @@ msgstr ""
 msgid "Can't split; no intersection found."
 msgstr "Impossible de diviser; pas d'intersection trouvée."
 
-#: mouse.cpp:560
+#: mouse.cpp:559
 msgid "Assign to Style"
 msgstr "Appliquer au style"
 
-#: mouse.cpp:576
+#: mouse.cpp:575
 msgid "No Style"
 msgstr "Pas de style"
 
-#: mouse.cpp:579
+#: mouse.cpp:578
 msgid "Newly Created Custom Style..."
 msgstr "Style personnalisé nouvellement créé ..."
 
-#: mouse.cpp:586
+#: mouse.cpp:585
 msgid "Group Info"
 msgstr "Info Groupe"
 
-#: mouse.cpp:606
+#: mouse.cpp:605
 msgid "Style Info"
 msgstr "Info Style"
 
-#: mouse.cpp:626
+#: mouse.cpp:625
 msgid "Select Edge Chain"
 msgstr "Sélection Chaîne d'arêtes"
 
-#: mouse.cpp:632
+#: mouse.cpp:631
 msgid "Toggle Reference Dimension"
 msgstr "Basculer cote maîtresse / cote indicative"
 
-#: mouse.cpp:638
+#: mouse.cpp:637
 msgid "Other Supplementary Angle"
 msgstr "Autre angle supplémentaire"
 
-#: mouse.cpp:643
+#: mouse.cpp:642
 msgid "Snap to Grid"
 msgstr "Accrocher à la grille"
 
-#: mouse.cpp:652
+#: mouse.cpp:651
 msgid "Remove Spline Point"
 msgstr "Effacer le point de la Spline"
 
-#: mouse.cpp:687
+#: mouse.cpp:686
 msgid "Add Spline Point"
 msgstr "Ajouter un point à la Spline"
 
-#: mouse.cpp:691
+#: mouse.cpp:690
 msgid "Cannot add spline point: maximum number of points reached."
 msgstr ""
 "Impossible d'ajouter le point spline: nombre maximum de points atteints."
 
-#: mouse.cpp:716
+#: mouse.cpp:715
 msgid "Toggle Construction"
 msgstr "Basculer en mode \"construction\"."
 
-#: mouse.cpp:731
+#: mouse.cpp:730
 msgid "Delete Point-Coincident Constraint"
 msgstr "Effacer la contraint Point-Coïncident"
 
-#: mouse.cpp:750
+#: mouse.cpp:749
 msgid "Cut"
 msgstr "Couper"
 
-#: mouse.cpp:752
+#: mouse.cpp:751
 msgid "Copy"
 msgstr "Copier"
 
-#: mouse.cpp:756
+#: mouse.cpp:755
 msgid "Select All"
 msgstr "Sélectionner tout"
 
-#: mouse.cpp:761
+#: mouse.cpp:760
 msgid "Paste"
 msgstr "Coller"
 
-#: mouse.cpp:763
+#: mouse.cpp:762
 msgid "Paste Transformed..."
 msgstr "Coller transformé..."
 
-#: mouse.cpp:768
+#: mouse.cpp:767
 msgid "Delete"
 msgstr "Effacer"
 
-#: mouse.cpp:771
+#: mouse.cpp:770
 msgid "Unselect All"
 msgstr "Désélectionner tout"
 
-#: mouse.cpp:778
+#: mouse.cpp:777
 msgid "Unselect Hovered"
 msgstr "Désélectionner survolé"
 
-#: mouse.cpp:787
+#: mouse.cpp:786
 msgid "Zoom to Fit"
 msgstr "Zoom pour ajuster"
 
-#: mouse.cpp:989 mouse.cpp:1276
+#: mouse.cpp:988 mouse.cpp:1275
 msgid "click next point of line, or press Esc"
 msgstr "cliquez pou le prochain point de ligne or appuyez sur Esc"
 
-#: mouse.cpp:995
+#: mouse.cpp:994
 msgid ""
 "Can't draw rectangle in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1527,15 +1531,15 @@ msgstr ""
 "Impossible de dessiner un rectangle en 3d; D'abord, activez un plan de "
 "travail avec \"Dessin -> Dans plan de travail\"."
 
-#: mouse.cpp:1029
+#: mouse.cpp:1028
 msgid "click to place other corner of rectangle"
 msgstr "cliquez pour placer un autre coin de rectangle"
 
-#: mouse.cpp:1049
+#: mouse.cpp:1048
 msgid "click to set radius"
 msgstr "cliquez pour ajuster le rayon"
 
-#: mouse.cpp:1054
+#: mouse.cpp:1053
 msgid ""
 "Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1543,22 +1547,22 @@ msgstr ""
 "Ne peut pas dessiner l'arc en 3d; D'abord, activez un plan de travail avec "
 "\"Dessin -> Dans plan de travail\"."
 
-#: mouse.cpp:1073
+#: mouse.cpp:1072
 msgid "click to place point"
 msgstr "cliquez pour placer un point"
 
-#: mouse.cpp:1089
+#: mouse.cpp:1088
 msgid "click next point of cubic, or press Esc"
 msgstr "cliquez le prochain point cubique ou appuyez sur Esc"
 
-#: mouse.cpp:1094
+#: mouse.cpp:1093
 msgid ""
 "Sketching in a workplane already; sketch in 3d before creating new workplane."
 msgstr ""
 "Vous dessinez déjà dans un plan de travail; Sélectionner \"Dessiner en 3d\" "
 "avant de créer un nouveau plan de travail."
 
-#: mouse.cpp:1110
+#: mouse.cpp:1109
 msgid ""
 "Can't draw text in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1566,11 +1570,11 @@ msgstr ""
 "Impossible de dessiner du texte en 3d; D'abord, activer un plan de travail "
 "avec \"Dessin -> Dans plan de travail\"."
 
-#: mouse.cpp:1127
+#: mouse.cpp:1126
 msgid "click to place bottom right of text"
 msgstr ""
 
-#: mouse.cpp:1133
+#: mouse.cpp:1132
 msgid ""
 "Can't draw image in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1578,7 +1582,7 @@ msgstr ""
 "Impossible de dessiner l'image en 3d; D'abord, activez un plan de travail "
 "avec \"Dessin -> Dans plan de travail\"."
 
-#: mouse.cpp:1160
+#: mouse.cpp:1159
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "NOUVEAU COMMENTAIRE - DOUBLE-CLIQUE POUR EDITER"
 
@@ -1667,33 +1671,33 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr ""
 
-#: platform/guigtk.cpp:1321 platform/guimac.mm:1363 platform/guiwin.cpp:1630
+#: platform/guigtk.cpp:1324 platform/guimac.mm:1363 platform/guiwin.cpp:1639
 msgid "untitled"
 msgstr "sans nom"
 
-#: platform/guigtk.cpp:1332 platform/guigtk.cpp:1365 platform/guimac.mm:1321
-#: platform/guiwin.cpp:1573
+#: platform/guigtk.cpp:1335 platform/guigtk.cpp:1368 platform/guimac.mm:1321
+#: platform/guiwin.cpp:1582
 msgctxt "title"
 msgid "Save File"
 msgstr "Sauver fichier"
 
-#: platform/guigtk.cpp:1333 platform/guigtk.cpp:1366 platform/guimac.mm:1304
-#: platform/guiwin.cpp:1575
+#: platform/guigtk.cpp:1336 platform/guigtk.cpp:1369 platform/guimac.mm:1304
+#: platform/guiwin.cpp:1584
 msgctxt "title"
 msgid "Open File"
 msgstr "Ouvrir Fichier"
 
-#: platform/guigtk.cpp:1336 platform/guigtk.cpp:1372
+#: platform/guigtk.cpp:1339 platform/guigtk.cpp:1375
 msgctxt "button"
 msgid "_Cancel"
 msgstr "_Annuler"
 
-#: platform/guigtk.cpp:1337 platform/guigtk.cpp:1370
+#: platform/guigtk.cpp:1340 platform/guigtk.cpp:1373
 msgctxt "button"
 msgid "_Save"
 msgstr "_Sauver"
 
-#: platform/guigtk.cpp:1338 platform/guigtk.cpp:1371
+#: platform/guigtk.cpp:1341 platform/guigtk.cpp:1374
 msgctxt "button"
 msgid "_Open"
 msgstr ""

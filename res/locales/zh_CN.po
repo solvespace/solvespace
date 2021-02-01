@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-01-17 19:54+0200\n"
+"POT-Creation-Date: 2021-02-01 15:45+0200\n"
 "PO-Revision-Date: 2020-09-28 12:42+0800\n"
 "Last-Translator: lomatus@163.com\n"
 "Language-Team: none\n"
@@ -570,24 +570,28 @@ msgctxt "group-name"
 msgid "#references"
 msgstr "#参考"
 
-#: file.cpp:549
+#: file.cpp:552
+msgid "The file is empty. It may be corrupt."
+msgstr ""
+
+#: file.cpp:557
 msgid ""
 "Unrecognized data in file. This file may be corrupt, or from a newer version "
 "of the program."
 msgstr "未识别文件内数据。该文件可能损坏，或使用新版本应用程序尝试打开。"
 
-#: file.cpp:859
+#: file.cpp:867
 msgctxt "title"
 msgid "Missing File"
 msgstr "文件丢失"
 
-#: file.cpp:860
+#: file.cpp:868
 #, c-format
 msgctxt "dialog"
 msgid "The linked file “%s” is not present."
 msgstr "连接的文件不存在：\"%s\"。"
 
-#: file.cpp:862
+#: file.cpp:870
 msgctxt "dialog"
 msgid ""
 "Do you want to locate it manually?\n"
@@ -596,17 +600,17 @@ msgid ""
 "permanently removed."
 msgstr "您是否想手工查找？如果是，所有基于该丢失文件的几何对象将会被全部删除."
 
-#: file.cpp:865
+#: file.cpp:873
 msgctxt "button"
 msgid "&Yes"
 msgstr "是(&Y)"
 
-#: file.cpp:867
+#: file.cpp:875
 msgctxt "button"
 msgid "&No"
 msgstr "否(&N)"
 
-#: file.cpp:869 solvespace.cpp:569
+#: file.cpp:877 solvespace.cpp:569
 msgctxt "button"
 msgid "&Cancel"
 msgstr "取消(&C)"
@@ -1330,152 +1334,152 @@ msgstr ""
 msgid "Can't split; no intersection found."
 msgstr "无法拆分；未发现较差点。"
 
-#: mouse.cpp:560
+#: mouse.cpp:559
 msgid "Assign to Style"
 msgstr "指定样式"
 
-#: mouse.cpp:576
+#: mouse.cpp:575
 msgid "No Style"
 msgstr "无样式"
 
-#: mouse.cpp:579
+#: mouse.cpp:578
 msgid "Newly Created Custom Style..."
 msgstr "新组样式。"
 
-#: mouse.cpp:586
+#: mouse.cpp:585
 msgid "Group Info"
 msgstr "组信息"
 
-#: mouse.cpp:606
+#: mouse.cpp:605
 msgid "Style Info"
 msgstr "样式信息"
 
-#: mouse.cpp:626
+#: mouse.cpp:625
 msgid "Select Edge Chain"
 msgstr "选择边缘链"
 
-#: mouse.cpp:632
+#: mouse.cpp:631
 msgid "Toggle Reference Dimension"
 msgstr "切换参考标注"
 
-#: mouse.cpp:638
+#: mouse.cpp:637
 msgid "Other Supplementary Angle"
 msgstr "其它补充角度"
 
-#: mouse.cpp:643
+#: mouse.cpp:642
 msgid "Snap to Grid"
 msgstr "捕捉至轴网"
 
-#: mouse.cpp:652
+#: mouse.cpp:651
 msgid "Remove Spline Point"
 msgstr "删除样条线的点"
 
-#: mouse.cpp:687
+#: mouse.cpp:686
 msgid "Add Spline Point"
 msgstr "增加样条线的点"
 
-#: mouse.cpp:691
+#: mouse.cpp:690
 msgid "Cannot add spline point: maximum number of points reached."
 msgstr "无法增加样条线点：超过最大限制。"
 
-#: mouse.cpp:716
+#: mouse.cpp:715
 msgid "Toggle Construction"
 msgstr "切换构造"
 
-#: mouse.cpp:731
+#: mouse.cpp:730
 msgid "Delete Point-Coincident Constraint"
 msgstr "删除点一致约束"
 
-#: mouse.cpp:750
+#: mouse.cpp:749
 msgid "Cut"
 msgstr "剪切"
 
-#: mouse.cpp:752
+#: mouse.cpp:751
 msgid "Copy"
 msgstr "复制"
 
-#: mouse.cpp:756
+#: mouse.cpp:755
 msgid "Select All"
 msgstr "全选"
 
-#: mouse.cpp:761
+#: mouse.cpp:760
 msgid "Paste"
 msgstr "粘贴"
 
-#: mouse.cpp:763
+#: mouse.cpp:762
 msgid "Paste Transformed..."
 msgstr "粘贴移动的..."
 
-#: mouse.cpp:768
+#: mouse.cpp:767
 msgid "Delete"
 msgstr "删除"
 
-#: mouse.cpp:771
+#: mouse.cpp:770
 msgid "Unselect All"
 msgstr "取消全选"
 
-#: mouse.cpp:778
+#: mouse.cpp:777
 msgid "Unselect Hovered"
 msgstr "取消覆盖区域的全选"
 
-#: mouse.cpp:787
+#: mouse.cpp:786
 msgid "Zoom to Fit"
 msgstr "自动缩放"
 
-#: mouse.cpp:989 mouse.cpp:1276
+#: mouse.cpp:988 mouse.cpp:1275
 msgid "click next point of line, or press Esc"
 msgstr "点击下一个点或取消(ESC)"
 
-#: mouse.cpp:995
+#: mouse.cpp:994
 msgid ""
 "Can't draw rectangle in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "无法在3D内绘制矩形; 首先，激活工作面，草图->在工作面。"
 
-#: mouse.cpp:1029
+#: mouse.cpp:1028
 msgid "click to place other corner of rectangle"
 msgstr "点击放置其它矩形倒角"
 
-#: mouse.cpp:1049
+#: mouse.cpp:1048
 msgid "click to set radius"
 msgstr "点击设置半径"
 
-#: mouse.cpp:1054
+#: mouse.cpp:1053
 msgid ""
 "Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "无法在3D空间内绘制弧线，可使用 草图->在工作面 激活工作面。"
 
-#: mouse.cpp:1073
+#: mouse.cpp:1072
 msgid "click to place point"
 msgstr "点击放置点"
 
-#: mouse.cpp:1089
+#: mouse.cpp:1088
 msgid "click next point of cubic, or press Esc"
 msgstr "点击下一个点或取消(ESC)"
 
-#: mouse.cpp:1094
+#: mouse.cpp:1093
 msgid ""
 "Sketching in a workplane already; sketch in 3d before creating new workplane."
 msgstr "已经在工作面绘制；在新建工作面前在三维空间绘制。"
 
-#: mouse.cpp:1110
+#: mouse.cpp:1109
 msgid ""
 "Can't draw text in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "无法在三维空间内绘制文字，可使用 草图->在工作面 激活工作面。"
 
-#: mouse.cpp:1127
+#: mouse.cpp:1126
 msgid "click to place bottom right of text"
 msgstr "点击文字的右下角放置"
 
-#: mouse.cpp:1133
+#: mouse.cpp:1132
 msgid ""
 "Can't draw image in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "无法在三维空间内绘制图片，可使用 草图->在工作面 激活工作面。"
 
-#: mouse.cpp:1160
+#: mouse.cpp:1159
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "新备注 - 双击编辑"
 
@@ -1564,33 +1568,33 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "逗号分隔数据"
 
-#: platform/guigtk.cpp:1321 platform/guimac.mm:1363 platform/guiwin.cpp:1630
+#: platform/guigtk.cpp:1324 platform/guimac.mm:1363 platform/guiwin.cpp:1639
 msgid "untitled"
 msgstr "未命名"
 
-#: platform/guigtk.cpp:1332 platform/guigtk.cpp:1365 platform/guimac.mm:1321
-#: platform/guiwin.cpp:1573
+#: platform/guigtk.cpp:1335 platform/guigtk.cpp:1368 platform/guimac.mm:1321
+#: platform/guiwin.cpp:1582
 msgctxt "title"
 msgid "Save File"
 msgstr "保存文件"
 
-#: platform/guigtk.cpp:1333 platform/guigtk.cpp:1366 platform/guimac.mm:1304
-#: platform/guiwin.cpp:1575
+#: platform/guigtk.cpp:1336 platform/guigtk.cpp:1369 platform/guimac.mm:1304
+#: platform/guiwin.cpp:1584
 msgctxt "title"
 msgid "Open File"
 msgstr "打开文件"
 
-#: platform/guigtk.cpp:1336 platform/guigtk.cpp:1372
+#: platform/guigtk.cpp:1339 platform/guigtk.cpp:1375
 msgctxt "button"
 msgid "_Cancel"
 msgstr "取消_C"
 
-#: platform/guigtk.cpp:1337 platform/guigtk.cpp:1370
+#: platform/guigtk.cpp:1340 platform/guigtk.cpp:1373
 msgctxt "button"
 msgid "_Save"
 msgstr "保存_S"
 
-#: platform/guigtk.cpp:1338 platform/guigtk.cpp:1371
+#: platform/guigtk.cpp:1341 platform/guigtk.cpp:1374
 msgctxt "button"
 msgid "_Open"
 msgstr "打开_O"
