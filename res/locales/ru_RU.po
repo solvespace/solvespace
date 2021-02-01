@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-01-17 19:54+0200\n"
+"POT-Creation-Date: 2021-02-01 15:45+0200\n"
 "PO-Revision-Date: 2021-01-22 18:50+0700\n"
 "Last-Translator: evilspirit@evilspirit.org\n"
 "Language-Team: EvilSpirit\n"
@@ -615,7 +615,11 @@ msgctxt "group-name"
 msgid "#references"
 msgstr "система-координат"
 
-#: file.cpp:549
+#: file.cpp:552
+msgid "The file is empty. It may be corrupt."
+msgstr "Файл пуст. Возможно он поврежден."
+
+#: file.cpp:557
 msgid ""
 "Unrecognized data in file. This file may be corrupt, or from a newer version "
 "of the program."
@@ -623,18 +627,18 @@ msgstr ""
 "Некоторые данные из этого файла не распознаны. Возможно, файл поврежден или "
 "создан в более новой версии программы"
 
-#: file.cpp:859
+#: file.cpp:867
 msgctxt "title"
 msgid "Missing File"
 msgstr "Файл Отсутствует"
 
-#: file.cpp:860
+#: file.cpp:868
 #, c-format
 msgctxt "dialog"
 msgid "The linked file “%s” is not present."
 msgstr "Связанный файл “%s” отсутствует."
 
-#: file.cpp:862
+#: file.cpp:870
 msgctxt "dialog"
 msgid ""
 "Do you want to locate it manually?\n"
@@ -646,17 +650,17 @@ msgstr ""
 "Если вы ответите \"Нет\", то вся геометрия, которая зависит от "
 "отсутствующего файла будет удалена."
 
-#: file.cpp:865
+#: file.cpp:873
 msgctxt "button"
 msgid "&Yes"
 msgstr "Да"
 
-#: file.cpp:867
+#: file.cpp:875
 msgctxt "button"
 msgid "&No"
 msgstr "Нет"
 
-#: file.cpp:869 solvespace.cpp:569
+#: file.cpp:877 solvespace.cpp:569
 msgctxt "button"
 msgid "&Cancel"
 msgstr "Отменить"
@@ -1462,159 +1466,159 @@ msgstr ""
 msgid "Can't split; no intersection found."
 msgstr "Невозможно разделить пересекаемые примитивы: пересечений нет."
 
-#: mouse.cpp:560
+#: mouse.cpp:559
 msgid "Assign to Style"
 msgstr "Применить Стиль"
 
-#: mouse.cpp:576
+#: mouse.cpp:575
 msgid "No Style"
 msgstr "Стиль по Умолчанию"
 
-#: mouse.cpp:579
+#: mouse.cpp:578
 msgid "Newly Created Custom Style..."
 msgstr "Создать Новый Стиль..."
 
-#: mouse.cpp:586
+#: mouse.cpp:585
 msgid "Group Info"
 msgstr "Настройки Группы"
 
-#: mouse.cpp:606
+#: mouse.cpp:605
 msgid "Style Info"
 msgstr "Настройки Стиля"
 
-#: mouse.cpp:626
+#: mouse.cpp:625
 msgid "Select Edge Chain"
 msgstr "Выделить Последовательность Примитивов"
 
-#: mouse.cpp:632
+#: mouse.cpp:631
 msgid "Toggle Reference Dimension"
 msgstr "Переключить Режим Размера Для Справок"
 
-#: mouse.cpp:638
+#: mouse.cpp:637
 msgid "Other Supplementary Angle"
 msgstr "Переключить Смежный Угол"
 
-#: mouse.cpp:643
+#: mouse.cpp:642
 msgid "Snap to Grid"
 msgstr "Привязать к Сетке"
 
-#: mouse.cpp:652
+#: mouse.cpp:651
 msgid "Remove Spline Point"
 msgstr "Удалить Точку Сплайна"
 
-#: mouse.cpp:687
+#: mouse.cpp:686
 msgid "Add Spline Point"
 msgstr "Добавить Точку Сплайна"
 
-#: mouse.cpp:691
+#: mouse.cpp:690
 msgid "Cannot add spline point: maximum number of points reached."
 msgstr ""
 "Невозможно добавить точку сплайна: достигнуто ограничение максимального "
 "количества точек для сплайна."
 
-#: mouse.cpp:716
+#: mouse.cpp:715
 msgid "Toggle Construction"
 msgstr "Переключить Режим 'Дополнительные Построения'."
 
-#: mouse.cpp:731
+#: mouse.cpp:730
 msgid "Delete Point-Coincident Constraint"
 msgstr "Удалить Ограничение Совпадения Точек"
 
-#: mouse.cpp:750
+#: mouse.cpp:749
 msgid "Cut"
 msgstr "Вырезать"
 
-#: mouse.cpp:752
+#: mouse.cpp:751
 msgid "Copy"
 msgstr "Копировать"
 
-#: mouse.cpp:756
+#: mouse.cpp:755
 msgid "Select All"
 msgstr "Выделить Все"
 
-#: mouse.cpp:761
+#: mouse.cpp:760
 msgid "Paste"
 msgstr "Вставить"
 
-#: mouse.cpp:763
+#: mouse.cpp:762
 msgid "Paste Transformed..."
 msgstr "Вставить с Трансформацией..."
 
-#: mouse.cpp:768
+#: mouse.cpp:767
 msgid "Delete"
 msgstr "Удалить"
 
-#: mouse.cpp:771
+#: mouse.cpp:770
 msgid "Unselect All"
 msgstr "Сбросить Выделение"
 
-#: mouse.cpp:778
+#: mouse.cpp:777
 msgid "Unselect Hovered"
 msgstr "Снять Выделение с Выбранного"
 
-#: mouse.cpp:787
+#: mouse.cpp:786
 msgid "Zoom to Fit"
 msgstr "Показать Все"
 
-#: mouse.cpp:989 mouse.cpp:1276
+#: mouse.cpp:988 mouse.cpp:1275
 msgid "click next point of line, or press Esc"
 msgstr "кликните мышью там, где хотите расположить следующую точку"
 
-#: mouse.cpp:995
+#: mouse.cpp:994
 msgid ""
 "Can't draw rectangle in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr ""
 "Невозможно начертить прямоугольник, когда рабочая плоскость не активна."
 
-#: mouse.cpp:1029
+#: mouse.cpp:1028
 msgid "click to place other corner of rectangle"
 msgstr "кликните мышью там, где хотите расположить другой угол прямоугольника"
 
-#: mouse.cpp:1049
+#: mouse.cpp:1048
 msgid "click to set radius"
 msgstr "кликните, чтобы задать радиус"
 
-#: mouse.cpp:1054
+#: mouse.cpp:1053
 msgid ""
 "Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "Невозможно создать дугу, когда нет активной рабочей плоскости."
 
-#: mouse.cpp:1073
+#: mouse.cpp:1072
 msgid "click to place point"
 msgstr "кликните мышью там, где хотите создать точку"
 
-#: mouse.cpp:1089
+#: mouse.cpp:1088
 msgid "click next point of cubic, or press Esc"
 msgstr ""
 "кликните мышью там, где хотите создать следующую точку сплайна или нажмите "
 "Esc для завершения операции."
 
-#: mouse.cpp:1094
+#: mouse.cpp:1093
 msgid ""
 "Sketching in a workplane already; sketch in 3d before creating new workplane."
 msgstr ""
 "Рабочая плоскость уже активна. Перейдите в режим 3d перед созданием новой "
 "рабочей плоскости."
 
-#: mouse.cpp:1110
+#: mouse.cpp:1109
 msgid ""
 "Can't draw text in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "Невозможно создать текст, когда нет активной рабочей плоскости."
 
-#: mouse.cpp:1127
+#: mouse.cpp:1126
 msgid "click to place bottom right of text"
 msgstr "кликните, чтобы расположить правый нижний угол текста"
 
-#: mouse.cpp:1133
+#: mouse.cpp:1132
 msgid ""
 "Can't draw image in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "Невозможно создать изображение. Активируйте рабочую плоскость."
 
-#: mouse.cpp:1160
+#: mouse.cpp:1159
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "КОММЕНТАРИЙ -- ДВОЙНОЙ ЩЕЛЧОК ДЛЯ РЕДАКТИРОВАНИЯ"
 
@@ -1703,33 +1707,33 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "CSV файлы (значения, разделенные запятой)"
 
-#: platform/guigtk.cpp:1321 platform/guimac.mm:1363 platform/guiwin.cpp:1630
+#: platform/guigtk.cpp:1324 platform/guimac.mm:1363 platform/guiwin.cpp:1639
 msgid "untitled"
 msgstr "без имени"
 
-#: platform/guigtk.cpp:1332 platform/guigtk.cpp:1365 platform/guimac.mm:1321
-#: platform/guiwin.cpp:1573
+#: platform/guigtk.cpp:1335 platform/guigtk.cpp:1368 platform/guimac.mm:1321
+#: platform/guiwin.cpp:1582
 msgctxt "title"
 msgid "Save File"
 msgstr "Сохранить Файл"
 
-#: platform/guigtk.cpp:1333 platform/guigtk.cpp:1366 platform/guimac.mm:1304
-#: platform/guiwin.cpp:1575
+#: platform/guigtk.cpp:1336 platform/guigtk.cpp:1369 platform/guimac.mm:1304
+#: platform/guiwin.cpp:1584
 msgctxt "title"
 msgid "Open File"
 msgstr "Открыть Файл"
 
-#: platform/guigtk.cpp:1336 platform/guigtk.cpp:1372
+#: platform/guigtk.cpp:1339 platform/guigtk.cpp:1375
 msgctxt "button"
 msgid "_Cancel"
 msgstr "Отменить"
 
-#: platform/guigtk.cpp:1337 platform/guigtk.cpp:1370
+#: platform/guigtk.cpp:1340 platform/guigtk.cpp:1373
 msgctxt "button"
 msgid "_Save"
 msgstr "Сохранить"
 
-#: platform/guigtk.cpp:1338 platform/guigtk.cpp:1371
+#: platform/guigtk.cpp:1341 platform/guigtk.cpp:1374
 msgctxt "button"
 msgid "_Open"
 msgstr "_Открыть"
