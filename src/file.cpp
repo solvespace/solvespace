@@ -468,6 +468,7 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
 }
 
 bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) {
+    bool fileIsEmpty = true;
     allConsistent = false;
     fileLoadError = false;
 
@@ -485,6 +486,8 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
 
     char line[1024];
     while(fgets(line, (int)sizeof(line), fh)) {
+        fileIsEmpty = false;
+
         char *s = strchr(line, '\n');
         if(s) *s = '\0';
         // We should never get files with \r characters in them, but mailers
@@ -544,6 +547,11 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
     }
 
     fclose(fh);
+
+    if(fileIsEmpty) {
+        Error(_("The file is empty. It may be corrupt."));
+        NewFile();
+    }
 
     if(fileLoadError) {
         Error(_("Unrecognized data in file. This file may be corrupt, or "
