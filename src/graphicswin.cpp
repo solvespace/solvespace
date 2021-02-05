@@ -1304,6 +1304,14 @@ c:
             break;
 
         case Command::CONSTRUCTION: {
+            if(SS.GW.pending.operation == Pending::DRAGGING_NEW_LINE_POINT) {
+                Request* r = SK.GetRequest(SS.GW.pending.request);
+                r->construction = !r->construction;
+                SS.MarkGroupDirty(r->group);
+                SS.ScheduleShowTW();
+                SS.GW.Invalidate();
+                break;
+            }
             SS.GW.GroupSelection();
             if(SS.GW.gs.entities == 0) {
                 Error(_("No entities are selected. Select entities before "
