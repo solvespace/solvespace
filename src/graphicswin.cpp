@@ -1304,6 +1304,20 @@ c:
             break;
 
         case Command::CONSTRUCTION: {
+            // if we are drawing
+            if(SS.GW.pending.operation == Pending::DRAGGING_NEW_POINT ||
+               SS.GW.pending.operation == Pending::DRAGGING_NEW_LINE_POINT ||
+               SS.GW.pending.operation == Pending::DRAGGING_NEW_ARC_POINT ||
+               SS.GW.pending.operation == Pending::DRAGGING_NEW_CUBIC_POINT ||
+               SS.GW.pending.operation == Pending::DRAGGING_NEW_RADIUS) {
+                for(auto &hr : SS.GW.pending.requests) {
+                    Request* r = SK.GetRequest(hr);
+                    r->construction = !(r->construction);
+                    SS.MarkGroupDirty(r->group);
+                }
+                SS.GW.Invalidate();
+                break;
+            }
             SS.GW.GroupSelection();
             if(SS.GW.gs.entities == 0) {
                 Error(_("No entities are selected. Select entities before "
