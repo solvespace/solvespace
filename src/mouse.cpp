@@ -1042,6 +1042,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     ConstrainPointByHovered(hr.entity(1), &mouse);
 
                     ClearSuper();
+                    AddToPending(hr);
 
                     pending.operation = Pending::DRAGGING_NEW_RADIUS;
                     pending.circle = hr.entity(0);
