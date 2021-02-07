@@ -417,8 +417,11 @@ void Constraint::MenuConstrain(Command id) {
                 c.ptA = gs.point[0];
 
                 // If a point is at-midpoint, then no reason to also constrain
-                // it on-line; so auto-remove that.
+                // it on-line; so auto-remove that.  Handle as one undo group.
+                SS.UndoRemember();
                 DeleteAllConstraintsFor(Type::PT_ON_LINE, c.entityA, c.ptA);
+                AddConstraint(&c, /*rememberForUndo=*/false);
+                break;
             } else if(gs.lineSegments == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = Type::AT_MIDPOINT;
                 int i = SK.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
@@ -493,6 +496,7 @@ void Constraint::MenuConstrain(Command id) {
                             "(symmetric about workplane)\n"));
                 return;
             }
+            // We may remove constraints so remember manually
             if(c.entityA == Entity::NO_ENTITY) {
                 // Horizontal / vertical symmetry, implicit symmetry plane
                 // normal to the workplane
@@ -514,10 +518,14 @@ void Constraint::MenuConstrain(Command id) {
                 if(gs.lineSegments == 1) {
                     // If this line segment is already constrained horiz or
                     // vert, then auto-remove that redundant constraint.
+                    // Handle as one undo group.
+                    SS.UndoRemember();
                     DeleteAllConstraintsFor(Type::HORIZONTAL, (gs.entity[0]),
                         Entity::NO_ENTITY);
                     DeleteAllConstraintsFor(Type::VERTICAL, (gs.entity[0]),
                         Entity::NO_ENTITY);
+                    AddConstraint(&c, /*rememberForUndo=*/false);
+                    break;
                 }
             }
             AddConstraint(&c);
