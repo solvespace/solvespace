@@ -47,6 +47,7 @@ void TextWindow::ScreenConstraintToggleReference(int link, uint32_t v) {
     SS.UndoRemember();
     c->reference = !c->reference;
 
+    SS.MarkGroupDirty(c->group);
     SS.ScheduleShowTW();
 }
 
