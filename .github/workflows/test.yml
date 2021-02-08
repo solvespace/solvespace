@@ -34,11 +34,11 @@ jobs:
       shell: bash
 
   test_macos:
-    runs-on: macos-latest
+    runs-on: macos-10.15
     name: Test macOS
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
-      run: .github/scripts/install-macos.sh
+      run: .github/scripts/install-macos.sh ci
     - name: Build & Test
-      run: .github/scripts/build-macos.sh
+      run: .github/scripts/build-macos.sh debug arm64 && .github/scripts/build-macos.sh debug x86_64

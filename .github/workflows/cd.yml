@@ -32,14 +32,14 @@ jobs:
       shell: bash
 
   test_macos:
-    runs-on: macos-latest
+    runs-on: macos-10.15
     name: Test macOS
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
-      run: .github/scripts/install-macos.sh
+      run: .github/scripts/install-macos.sh ci
     - name: Build & Test
-      run: .github/scripts/build-macos.sh
+      run: .github/scripts/build-macos.sh debug arm64 && .github/scripts/build-macos.sh debug x86_64
 
   build_release_windows:
     needs: [test_ubuntu, test_windows, test_macos]
@@ -80,13 +80,13 @@ jobs:
   build_release_macos:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Build Release macOS
-    runs-on: macos-latest
+    runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
-      run: .github/scripts/install-macos.sh
+      run: .github/scripts/install-macos.sh ci
     - name: Build & Test
-      run: .github/scripts/build-macos.sh release
+      run: .github/scripts/build-macos.sh release arm64 && .github/scripts/build-macos.sh release x86_64
     - name: Sign Build
       run: .github/scripts/sign-macos.sh
       env:
@@ -100,7 +100,7 @@ jobs:
       with:
         name: macos
         path: build/bin/SolveSpace.dmg
-        
+
   deploy_snap_amd64:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Deploy AMD64 Snap
@@ -128,7 +128,7 @@ jobs:
         store_login: ${{ secrets.SNAPSTORE_LOGIN }}
         snap: ${{ steps.build.outputs.snap }}
         release: edge,beta
-    
+
   deploy_snap_arm64:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Deploy ARM64 Snap
@@ -160,7 +160,7 @@ jobs:
         store_login: ${{ secrets.SNAPSTORE_LOGIN }}
         snap: ${{ steps.build.outputs.snap }}
         release: edge,beta
-  
+
   update_edge_release:
     name: Update Edge Release
     needs: [build_release_windows, build_release_windows_openmp, build_release_macos]
