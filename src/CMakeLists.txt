@@ -338,7 +338,10 @@ if(ENABLE_GUI)
             LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
     elseif(APPLE)
         set_target_properties(solvespace PROPERTIES
-            OUTPUT_NAME SolveSpace)
+            OUTPUT_NAME SolveSpace
+            XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES"
+            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.solvespace"
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     endif()
 endif()
 
@@ -401,17 +404,30 @@ endif()
 # solvespace macOS package
 
 if(APPLE)
-    set(bundle     SolveSpace)
-    set(bundle_bin ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app/Contents/MacOS)
-    set(bundle_resources ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app/Contents/Resources/lib)
-    execute_process(
-        COMMAND mkdir -p ${bundle_resources}
-        COMMAND cp -p /usr/local/opt/libomp/lib/libomp.dylib ${bundle_resources}/libomp.dylib
-    )
-    add_custom_command(TARGET solvespace POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${bundle_bin}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:solvespace-cli> ${bundle_bin}
-        COMMAND install_name_tool -change /usr/local/opt/libomp/lib/libomp.dylib "@executable_path/../Resources/lib/libomp.dylib" ${bundle_bin}/${bundle}
-        COMMENT "Bundling executable solvespace-cli"
-        VERBATIM)
+    set(LIBOMP_LIB_PATH ${OpenMP_CXX_INCLUDE_DIRS}/../lib/libomp.dylib)
+    set(LIBOMP_LINK_PATH "@executable_path/../Resources/libomp.dylib")
+    set(LIBOMP_LINK_PATH_UTILS "@executable_path/SolveSpace.app/Contents/Resources/libomp.dylib")
+    if(ENABLE_GUI)
+        add_custom_command(TARGET solvespace POST_BUILD
+            COMMAND cp -r ${CMAKE_BINARY_DIR}/Resources $<TARGET_BUNDLE_CONTENT_DIR:solvespace>
+        )
+        if(ENABLE_OPENMP)
+            execute_process(COMMAND install_name_tool -id ${LIBOMP_LINK_PATH} ${LIBOMP_LIB_PATH})
+            message("FROM " ${${LIBOMP_LIB_PATH}} "TO" $<TARGET_BUNDLE_CONTENT_DIR:solvespace>/Resources/libomp.dylib)
+            add_custom_command(TARGET solvespace POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy ${LIBOMP_LIB_PATH} $<TARGET_BUNDLE_CONTENT_DIR:solvespace>/Resources/libomp.dylib
+                COMMAND install_name_tool -change ${LIBOMP_LINK_PATH} ${LIBOMP_LINK_PATH_UTILS} $<TARGET_FILE:solvespace-debugtool>
+            )
+        endif()
+    endif()
+    if(ENABLE_TESTS AND ENABLE_OPENMP)
+        add_custom_command(TARGET solvespace POST_BUILD
+            COMMAND install_name_tool -change ${LIBOMP_LINK_PATH} ${LIBOMP_LINK_PATH_UTILS} $<TARGET_FILE:solvespace-testsuite>)
+    endif()
+    if(ENABLE_CLI)
+        add_custom_command(TARGET solvespace POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:solvespace-cli> $<TARGET_FILE_DIR:solvespace>
+            COMMENT "Bundling executable solvespace-cli"
+            VERBATIM)
+    endif()
 endif()
