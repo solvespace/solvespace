@@ -16,7 +16,7 @@
 +            return ['vcruntime140']
 +        elif 1910 <= int(msc_ver) <= 1916:
 +            return ['vcruntime140']
-+        elif 1920 <= int(msc_ver) <= 1927:
++        elif 1920 <= int(msc_ver) <= 1928:
 +            return ['vcruntime140']
          else:
              raise ValueError("Unknown MS Compiler version %s " % msc_ver)
