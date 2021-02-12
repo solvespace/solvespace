@@ -10,9 +10,7 @@ __email__ = "pyslvs@gmail.com"
 import sys
 from os import walk
 from os.path import dirname, isdir, join
-import re
-import codecs
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from setuptools.command.sdist import sdist
 from distutils import file_util, dir_util
@@ -27,25 +25,6 @@ mimalloc_path = join(extlib_path, 'mimalloc')
 mimalloc_include_path = join(mimalloc_path, 'include')
 mimalloc_src_path = join(mimalloc_path, 'src')
 build_dir = 'build'
-
-
-def write(doc, *parts):
-    with codecs.open(join(*parts), 'w') as f:
-        f.write(doc)
-
-
-def read(*parts):
-    with codecs.open(join(*parts), 'r') as f:
-        return f.read()
-
-
-def find_version(*file_paths):
-    m = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]", read(*file_paths), re.M)
-    if m:
-        return m.group(1)
-    raise RuntimeError("Unable to find version string.")
-
-
 macros = [
     ('M_PI', 'PI'),
     ('_USE_MATH_DEFINES', None),
@@ -90,8 +69,9 @@ mimalloc_sources = [
     join(mimalloc_src_path, 'stats.c'),
     join(mimalloc_src_path, 'random.c'),
     join(mimalloc_src_path, 'os.c'),
+    join(mimalloc_src_path, 'bitmap.c'),
     join(mimalloc_src_path, 'arena.c'),
-    join(mimalloc_src_path, 'region.c'),
+    join(mimalloc_src_path, 'segment-cache.c'),
     join(mimalloc_src_path, 'segment.c'),
     join(mimalloc_src_path, 'page.c'),
     join(mimalloc_src_path, 'alloc.c'),
@@ -139,6 +119,7 @@ def copy_source(dry_run):
 
 
 class Build(build_ext):
+
     def build_extensions(self):
         compiler = self.compiler.compiler_type
         for e in self.extensions:
@@ -178,6 +159,7 @@ class Build(build_ext):
 
 
 class PackSource(sdist):
+
     def run(self):
         copy_source(self.dry_run)
         super(PackSource, self).run()
@@ -187,34 +169,10 @@ class PackSource(sdist):
             dir_util.remove_tree(extlib_path, dry_run=self.dry_run)
 
 
-setup(
-    name="python_solvespace",
-    version=find_version(m_path, '__init__.py'),
-    author=__author__,
-    author_email=__email__,
-    description="Python library of Solvespace.",
-    long_description=read("README.md"),
-    long_description_content_type='text/markdown',
-    url="https://github.com/KmolYuan/solvespace",
-    packages=find_packages(exclude=('test',)),
-    package_data={'': ["*.pyi", "*.pxd"], 'python_solvespace': ['py.typed']},
-    ext_modules=[Extension(
-        "python_solvespace.slvs",
-        sources,
-        language="c++",
-        include_dirs=[include_path, src_path, mimalloc_include_path, mimalloc_src_path]
-    )],
-    cmdclass={'build_ext': Build, 'sdist': PackSource},
-    zip_safe=False,
-    python_requires=">=3.6",
-    install_requires=read('requirements.txt').splitlines(),
-    test_suite='test',
-    classifiers=[
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Cython",
-        "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
-        "Operating System :: OS Independent",
-    ]
-)
+setup(ext_modules=[Extension(
+    "python_solvespace.slvs",
+    sources,
+    language="c++",
+    include_dirs=[include_path, src_path, mimalloc_include_path,
+                  mimalloc_src_path]
+)], cmdclass={'build_ext': Build, 'sdist': PackSource})

@@ -16,8 +16,9 @@ echo compiler=%COMPILER%>> "%DISTUTILS%"
 echo patched file "%DISTUTILS%"
 REM Apply the patch of "cygwinccompiler.py".
 REM Unix "patch" command of Msys.
-patch -N "%PYTHON_DIR%\lib\distutils\cygwinccompiler.py" "%HERE%\cygwinccompiler.diff"
-patch -N "%PYTHON_DIR%\include\pyconfig.h" "%HERE%\pyconfig.diff"
+set patch="C:\Program Files\Git\usr\bin\patch.exe"
+%patch% -N "%PYTHON_DIR%\lib\distutils\cygwinccompiler.py" "%HERE%\cygwinccompiler.diff"
+%patch% -N "%PYTHON_DIR%\include\pyconfig.h" "%HERE%\pyconfig.diff"
 
 REM Copy "vcruntime140.dll" to "libs".
 copy "%PYTHON_DIR%\vcruntime140.dll" "%PYTHON_DIR%\libs"

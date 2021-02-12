@@ -21,7 +21,10 @@ pip install python-solvespace
 Build and install the module:
 
 ```bash
-python setup.py install
+pip install python-solvespace
+# From repository
+git submodule update --init
+pip install -e .
 ```
 
 Run unit tests:
