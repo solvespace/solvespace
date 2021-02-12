@@ -24,10 +24,10 @@ Build and install the module:
 python setup.py install
 ```
 
-Run unit test:
+Run unit tests:
 
 ```bash
-python tests
+python test
 ```
 
 Uninstall the module:

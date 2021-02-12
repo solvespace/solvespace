@@ -801,8 +801,7 @@ cdef class SolverSystem:
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_line_2d() and e2.is_line_2d():
-            self.add_constraint(SLVS_C_EQ_PT_LN_DISTANCES, wp, value, _E_NONE,
-                                _E_NONE, e1, e2)
+            self.add_constraint(SLVS_C_LENGTH_RATIO, wp, value, _E_NONE, _E_NONE, e1, e2)
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
