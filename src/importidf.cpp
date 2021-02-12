@@ -236,21 +236,18 @@ static void MakeBeziersForArcs(SBezierList *sbl, Vector center, Vector pa, Vecto
 
     Vector u = q.RotationU(), v = q.RotationV();
     double r = pa.Minus(center).Magnitude();
-    double thetaa, thetab, dtheta;
+    double theta, dtheta;
     
     if(angle == 360.0) {
-        thetaa = 0;
-        thetab = 2*PI;
-        dtheta = 2*PI;
+        theta = 0;
     } else {
         Point2d c2  = center.Project2d(u, v);
         Point2d pa2 = (pa.Project2d(u, v)).Minus(c2);
-        Point2d pb2 = (pb.Project2d(u, v)).Minus(c2);
 
-        thetaa = atan2(pa2.y, pa2.x);
-        thetab = atan2(pb2.y, pb2.x);
-        dtheta = thetab - thetaa;
+        theta = atan2(pa2.y, pa2.x);
     }
+    dtheta = angle * PI/180;
+    
     int i, n;
     if(dtheta > (3*PI/2 + 0.01)) {
         n = 4;
@@ -266,17 +263,17 @@ static void MakeBeziersForArcs(SBezierList *sbl, Vector center, Vector pa, Vecto
     for(i = 0; i < n; i++) {
         double s, c;
 
-        c = cos(thetaa);
-        s = sin(thetaa);
+        c = cos(theta);
+        s = sin(theta);
         // The start point of the curve, and the tangent vector at
         // that start point.
         Vector p0 = center.Plus(u.ScaledBy( r*c)).Plus(v.ScaledBy(r*s)),
                t0 =             u.ScaledBy(-r*s). Plus(v.ScaledBy(r*c));
 
-        thetaa += dtheta;
+        theta += dtheta;
 
-        c = cos(thetaa);
-        s = sin(thetaa);
+        c = cos(theta);
+        s = sin(theta);
         Vector p2 = center.Plus(u.ScaledBy( r*c)).Plus(v.ScaledBy(r*s)),
                t2 =             u.ScaledBy(-r*s). Plus(v.ScaledBy(r*c));
 
@@ -335,6 +332,7 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     
     double board_thickness = 10.0;
     double scale = 1.0; //mm
+    bool topEntities, bottomEntities;
     
     Quaternion normal = Quaternion::From(Vector::From(1,0,0), Vector::From(0,1,0));
     hEntity hnorm = newNormal(el, &entityCount, normal);
@@ -347,6 +345,7 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     for(std::string line; getline( stream, line ); ) {
         if (line.find(".END_") == 0) {
             section = none;
+            curve = -1;
         }
         switch (section) {
             case none:
@@ -356,6 +355,10 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
                 } else if (line.find(".BOARD_OUTLINE") == 0) {
                     section = board_outline;
                     record_number = 1;
+// no keepouts for now - they should also be shown as construction?
+//                } else if (line.find(".ROUTE_KEEPOUT") == 0) {
+//                    section = routing_keepout;
+//                    record_number = 1;
                 } else if(line.find(".DRILLED_HOLES") == 0) {
                     section = drilled_holes;
                     record_number = 1;
@@ -375,11 +378,23 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
                     }
                 }
                 break;
-                
+            
+            case routing_keepout:   
             case board_outline:
                 if (record_number == 2) {
-                    board_thickness = std::stod(line) * scale;
-                    dbp("IDF board thickness: %lf", board_thickness);
+                    if(section == board_outline) {
+                        topEntities = true;
+                        bottomEntities = true;
+                        board_thickness = std::stod(line) * scale;
+                        dbp("IDF board thickness: %lf", board_thickness);
+                    } else if (section == routing_keepout) {
+                        topEntities = false;
+                        bottomEntities = false;
+                        if(line.find("TOP") == 0 || line.find("BOTH") == 0)
+                            topEntities = true;
+                        if(line.find("BOTTOM") == 0 || line.find("BOTH") == 0)
+                            bottomEntities = true;
+                    }
                 } else { // records 3+ are lines, arcs, and circles
                     std::vector <std::string> values = splitString(line);
                     if(values.size() != 4) continue;
@@ -391,36 +406,43 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
                     Vector pTop = Vector::From(x,y,board_thickness);
                     if(c != curve) { // start a new curve
                         curve = c;
-                        hprev = newPoint(el, &entityCount, point, /*visible=*/false);
-                        hprevTop = newPoint(el, &entityCount, pTop, /*visible=*/false);
+                        if (bottomEntities)
+                            hprev = newPoint(el, &entityCount, point, /*visible=*/false);
+                        if (topEntities)
+                            hprevTop = newPoint(el, &entityCount, pTop, /*visible=*/false);
                         pprev = point;
                         pprevTop = pTop;
                     } else {
-                        // create a bezier for the extrusion
-                        if (ang == 0) {
-                            // straight lines
-                            SBezier sb = SBezier::From(pprev, point);
-                            sbl.l.Add(&sb);
-                        } else if (ang != 360.0) {
-                            // Arcs
-                            Vector c = ArcCenter(pprev, point, ang);
-                            MakeBeziersForArcs(&sbl, c, pprev, point, normal, ang);
-                        } else {
-                            // circles
-                            MakeBeziersForArcs(&sbl, point, pprev, pprev, normal, ang);
+                        if(section == board_outline) {
+                            // create a bezier for the extrusion
+                            if (ang == 0) {
+                                // straight lines
+                                SBezier sb = SBezier::From(pprev, point);
+                                sbl.l.Add(&sb);
+                            } else if (ang != 360.0) {
+                                // Arcs
+                                Vector c = ArcCenter(pprev, point, ang);
+                                MakeBeziersForArcs(&sbl, c, pprev, point, normal, ang);
+                            } else {
+                                // circles
+                                MakeBeziersForArcs(&sbl, point, pprev, pprev, normal, ang);
+                            }
                         }
                         // next create the entities
                         // only curves and points at circle centers will be visible
                         bool vis = (ang == 360.0);
-                        hEntity hp = newPoint(el, &entityCount, point, /*visible=*/vis);
-                        CreateEntity(el, &entityCount, hprev, hp, hnorm, pprev, point, ang);
-                        pprev = point;
-                        hprev = hp;
-                        hp = newPoint(el, &entityCount, pTop, /*visible=*/vis);
-                        CreateEntity(el, &entityCount, hprevTop, hp, hnorm, pprevTop, pTop, ang);
-                        pprevTop = pTop;
-                        hprevTop = hp;
-
+                        if (bottomEntities) {
+                            hEntity hp = newPoint(el, &entityCount, point, /*visible=*/vis);
+                            CreateEntity(el, &entityCount, hprev, hp, hnorm, pprev, point, ang);
+                            pprev = point;
+                            hprev = hp;
+                        }
+                        if (topEntities) {
+                            hEntity hp = newPoint(el, &entityCount, pTop, /*visible=*/vis);
+                            CreateEntity(el, &entityCount, hprevTop, hp, hnorm, pprevTop, pTop, ang);
+                            pprevTop = pTop;
+                            hprevTop = hp;
+                        }
                     }
                 }
                 break;
@@ -428,7 +450,6 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
             case other_outline:
             case routing_outline:
             case placement_outline:
-            case routing_keepout:
             case via_keepout:
             case placement_group:
                 break;

@@ -80,6 +80,7 @@ enum class Command : uint32_t {
     ZOOM_OUT,
     ZOOM_TO_FIT,
     SHOW_GRID,
+    DIM_SOLID_MODEL,
     PERSPECTIVE_PROJ,
     ONTO_WORKPLANE,
     NEAREST_ORTHO,
@@ -179,7 +180,7 @@ public:
     enum {
         MAX_COLS = 100,
         MIN_COLS = 45,
-        MAX_ROWS = 2000
+        MAX_ROWS = 4000
     };
 
     typedef struct {
@@ -532,6 +533,7 @@ public:
     Platform::MenuRef linkRecentMenu;
 
     Platform::MenuItemRef showGridMenuItem;
+    Platform::MenuItemRef dimSolidModelMenuItem;
     Platform::MenuItemRef perspectiveProjMenuItem;
     Platform::MenuItemRef showToolbarMenuItem;
     Platform::MenuItemRef showTextWndMenuItem;
@@ -727,6 +729,7 @@ public:
     public:
         int         zIndex;
         double      distance;
+        double      depth;
         Selection   selection;
     };
 
@@ -802,6 +805,7 @@ public:
     DrawOccludedAs drawOccludedAs;
 
     bool    showSnapGrid;
+    bool    dimSolidModel;
     void DrawSnapGrid(Canvas *canvas);
 
     void AddPointToDraggedList(hEntity hp);
@@ -824,7 +828,7 @@ public:
     void MouseLeftDoubleClick(double x, double y);
     void MouseMiddleOrRightDown(double x, double y);
     void MouseRightUp(double x, double y);
-    void MouseScroll(double x, double y, int delta);
+    void MouseScroll(double x, double y, double delta);
     void MouseLeave();
     bool KeyboardEvent(Platform::KeyboardEvent event);
     void EditControlDone(const std::string &s);

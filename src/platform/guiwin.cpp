@@ -183,7 +183,7 @@ public:
 
     HKEY GetKey() {
         if(hKey == NULL) {
-            sscheck(RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\SolveSpace", 0, NULL, 0,
+            sscheck(ERROR_SUCCESS == RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\SolveSpace", 0, NULL, 0,
                                     KEY_ALL_ACCESS, NULL, &hKey, NULL));
         }
         return hKey;
@@ -191,12 +191,12 @@ public:
 
     ~SettingsImplWin32() {
         if(hKey != NULL) {
-            sscheck(RegCloseKey(hKey));
+            sscheck(ERROR_SUCCESS == RegCloseKey(hKey));
         }
     }
 
     void FreezeInt(const std::string &key, uint32_t value) {
-        sscheck(RegSetValueExW(GetKey(), &Widen(key)[0], 0,
+        sscheck(ERROR_SUCCESS == RegSetValueExW(GetKey(), &Widen(key)[0], 0,
                                REG_DWORD, (const BYTE *)&value, sizeof(value)));
     }
 
@@ -212,7 +212,7 @@ public:
     }
 
     void FreezeFloat(const std::string &key, double value) {
-        sscheck(RegSetValueExW(GetKey(), &Widen(key)[0], 0,
+        sscheck(ERROR_SUCCESS == RegSetValueExW(GetKey(), &Widen(key)[0], 0,
                                REG_QWORD, (const BYTE *)&value, sizeof(value)));
     }
 
@@ -231,7 +231,7 @@ public:
         ssassert(value.length() == strlen(value.c_str()),
                  "illegal null byte in middle of a string setting");
         std::wstring valueW = Widen(value);
-        sscheck(RegSetValueExW(GetKey(), &Widen(key)[0], 0,
+        sscheck(ERROR_SUCCESS == RegSetValueExW(GetKey(), &Widen(key)[0], 0,
                                REG_SZ, (const BYTE *)&valueW[0], (valueW.length() + 1) * 2));
     }
 
@@ -242,7 +242,7 @@ public:
         if(result == ERROR_SUCCESS && type == REG_SZ) {
             std::wstring valueW;
             valueW.resize(length / 2 - 1);
-            sscheck(RegQueryValueExW(GetKey(), &Widen(key)[0], 0,
+            sscheck(ERROR_SUCCESS == RegQueryValueExW(GetKey(), &Widen(key)[0], 0,
                                      &type, (BYTE *)&valueW[0], &length));
             return Narrow(valueW);
         }
@@ -734,6 +734,11 @@ public:
                         event.type   = SixDofEvent::Type::RELEASE;
                         event.button = SixDofEvent::Button::FIT;
                     }
+                } else {
+                    return 0;
+                }
+                if(window->onSixDofEvent) {
+                    window->onSixDofEvent(event);
                 }
                 return 0;
             }
@@ -907,8 +912,8 @@ public:
                         // Make the mousewheel work according to which window the mouse is
                         // over, not according to which window is active.
                         POINT pt;
-                        pt.x = LOWORD(lParam);
-                        pt.y = HIWORD(lParam);
+                        pt.x = GET_X_LPARAM(lParam);
+                        pt.y = GET_Y_LPARAM(lParam);
                         HWND hWindowUnderMouse;
                         sscheck(hWindowUnderMouse = WindowFromPoint(pt));
                         if(hWindowUnderMouse && hWindowUnderMouse != h) {
@@ -917,8 +922,15 @@ public:
                             break;
                         }
 
+                        // Convert the mouse coordinates from screen to client area so that
+                        // scroll wheel zooming remains centered irrespective of the window
+                        // position.
+                        ScreenToClient(hWindowUnderMouse, &pt);
+                        event.x = pt.x / pixelRatio;
+                        event.y = pt.y / pixelRatio;
+
                         event.type = MouseEvent::Type::SCROLL_VERT;
-                        event.scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? 1 : -1;
+                        event.scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
                         break;
 
                     case WM_MOUSELEAVE:
@@ -1094,12 +1106,12 @@ public:
 
     bool IsVisible() override {
         BOOL isVisible;
-        sscheck(isVisible = IsWindowVisible(hWindow));
+        isVisible = IsWindowVisible(hWindow);
         return isVisible == TRUE;
     }
 
     void SetVisible(bool visible) override {
-        sscheck(ShowWindow(hWindow, visible ? SW_SHOW : SW_HIDE));
+        ShowWindow(hWindow, visible ? SW_SHOW : SW_HIDE);
     }
 
     void Focus() override {
@@ -1267,7 +1279,7 @@ public:
 
     bool IsEditorVisible() override {
         BOOL visible;
-        sscheck(visible = IsWindowVisible(hEditor));
+        visible = IsWindowVisible(hEditor);
         return visible == TRUE;
     }
 
@@ -1309,7 +1321,7 @@ public:
 
         sscheck(MoveWindow(hEditor, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top,
                            /*bRepaint=*/true));
-        sscheck(ShowWindow(hEditor, SW_SHOW));
+        ShowWindow(hEditor, SW_SHOW);
         if(!textW.empty()) {
             sscheck(SendMessageW(hEditor, WM_SETTEXT, 0, (LPARAM)textW.c_str()));
             sscheck(SendMessageW(hEditor, EM_SETSEL, 0, textW.length()));
@@ -1320,7 +1332,7 @@ public:
     void HideEditor() override {
         if(!IsEditorVisible()) return;
 
-        sscheck(ShowWindow(hEditor, SW_HIDE));
+        ShowWindow(hEditor, SW_HIDE);
     }
 
     void SetScrollbarVisible(bool visible) override {
@@ -1335,7 +1347,7 @@ public:
         si.nMin   = (UINT)(min * SCROLLBAR_UNIT);
         si.nMax   = (UINT)(max * SCROLLBAR_UNIT);
         si.nPage  = (UINT)(pageSize * SCROLLBAR_UNIT);
-        sscheck(SetScrollInfo(hWindow, SB_VERT, &si, /*redraw=*/TRUE));
+        SetScrollInfo(hWindow, SB_VERT, &si, /*redraw=*/TRUE);  // Returns scrollbar position
     }
 
     double GetScrollbarPosition() override {
@@ -1359,7 +1371,7 @@ public:
             return;
 
         si.nPos   = (int)(pos * SCROLLBAR_UNIT);
-        sscheck(SetScrollInfo(hWindow, SB_VERT, &si, /*redraw=*/TRUE));
+        SetScrollInfo(hWindow, SB_VERT, &si, /*redraw=*/TRUE); // Returns scrollbar position
 
         // Windows won't synthesize a WM_VSCROLL for us here.
         if(onScrollbarAdjusted) {
@@ -1443,7 +1455,10 @@ public:
     void SetType(Type type) override {
         switch(type) {
             case Type::INFORMATION:
-                style = MB_ICONINFORMATION;
+                style         = MB_USERICON; // Avoid beep
+                mbp.hInstance = GetModuleHandle(NULL);
+                mbp.lpszIcon  = MAKEINTRESOURCE(4000);  // Use SolveSpace icon
+                // mbp.lpszIcon = IDI_INFORMATION;
                 break;
 
             case Type::QUESTION:
@@ -1455,7 +1470,10 @@ public:
                 break;
 
             case Type::ERROR:
-                style = MB_ICONERROR;
+                style         = MB_USERICON; // Avoid beep
+                mbp.hInstance = GetModuleHandle(NULL);
+                mbp.lpszIcon  = MAKEINTRESOURCE(4000); // Use SolveSpace icon
+                // mbp.lpszIcon = IDI_ERROR;
                 break;
         }
     }
@@ -1573,6 +1591,10 @@ public:
 
     void SetFilename(Platform::Path path) override {
         wcsncpy(filenameWC, Widen(path.raw).c_str(), sizeof(filenameWC) / sizeof(wchar_t) - 1);
+    }
+
+    void SuggestFilename(Platform::Path path) override {
+        SetFilename(Platform::Path::From(path.FileStem()));
     }
 
     void AddFilter(std::string name, std::vector<std::string> extensions) override {

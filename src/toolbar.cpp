@@ -68,6 +68,10 @@ static ToolIcon Toolbar[] = {
       N_("New group extruding active sketch"),                {} },
     { "lathe",           Command::GROUP_LATHE,
       N_("New group rotating active sketch"),                 {} },
+    { "helix",           Command::GROUP_HELIX,
+      N_("New group helix from active sketch"),               {} },
+    { "revolve",         Command::GROUP_REVOLVE,
+      N_("New group revolve active sketch"),                  {} },
     { "step-rotate",     Command::GROUP_ROT,
       N_("New group step and repeat rotating"),               {} },
     { "step-translate",  Command::GROUP_TRANS,
@@ -153,7 +157,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my, UiCanvas *canvas,
 
     // When changing these values, also change the asReference drawing code in drawentity.cpp.
     int fudge = 8;
-    int h = 34*16 + 3*16 + fudge;
+    int h = 32*18 + 3*16 + fudge;
     int aleft = 0, aright = 66, atop = y+16+fudge/2, abot = y+16-h;
 
     bool withinToolbar =

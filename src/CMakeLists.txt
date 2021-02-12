@@ -80,8 +80,8 @@ include_directories(
     ${PNG_PNG_INCLUDE_DIR}
     ${FREETYPE_INCLUDE_DIRS}
     ${CAIRO_INCLUDE_DIRS}
-    ${Q3D_INCLUDE_DIR}
-    ${MIMALLOC_INCLUDE_DIR})
+    ${MIMALLOC_INCLUDE_DIR}
+    ${OpenMP_CXX_INCLUDE_DIRS})
 
 if(Backtrace_FOUND)
     include_directories(
@@ -214,7 +214,6 @@ add_library(solvespace-core STATIC
     ${solvespace_core_SOURCES})
 
 add_dependencies(solvespace-core
-    q3d_header
     mimalloc-static)
 
 target_link_libraries(solvespace-core
@@ -224,7 +223,6 @@ target_link_libraries(solvespace-core
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
     ${FREETYPE_LIBRARY}
-    flatbuffers
     mimalloc-static)
 
 if(Backtrace_FOUND)
@@ -241,7 +239,8 @@ if(HAVE_GETTEXT)
     set(inputs
         ${solvespace_core_SOURCES}
         ${solvespace_core_HEADERS}
-        ${every_platform_SOURCES})
+        ${every_platform_SOURCES}
+        ${solvespace_core_gl_SOURCES})
 
     set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/../res/messages.po)
 
@@ -404,20 +403,15 @@ endif()
 if(APPLE)
     set(bundle     SolveSpace)
     set(bundle_bin ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app/Contents/MacOS)
-
+    set(bundle_resources ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app/Contents/Resources/lib)
+    execute_process(
+        COMMAND mkdir -p ${bundle_resources}
+        COMMAND cp -p /usr/local/opt/libomp/lib/libomp.dylib ${bundle_resources}/libomp.dylib
+    )
     add_custom_command(TARGET solvespace POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${bundle_bin}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:solvespace-cli> ${bundle_bin}
+        COMMAND install_name_tool -change /usr/local/opt/libomp/lib/libomp.dylib "@executable_path/../Resources/lib/libomp.dylib" ${bundle_bin}/${bundle}
         COMMENT "Bundling executable solvespace-cli"
         VERBATIM)
-
-    add_custom_command(OUTPUT ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
-        COMMAND ${CMAKE_COMMAND} -E remove ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
-        COMMAND hdiutil create -srcfolder ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app
-                ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
-        DEPENDS solvespace
-        COMMENT "Building ${bundle}.dmg"
-        VERBATIM)
-    add_custom_target(${bundle}-dmg ALL
-        DEPENDS ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg)
 endif()

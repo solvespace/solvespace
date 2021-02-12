@@ -213,6 +213,7 @@ add_resources(
     icons/graphics-window/construction.png
     icons/graphics-window/equal.png
     icons/graphics-window/extrude.png
+    icons/graphics-window/helix.png
     icons/graphics-window/horiz.png
     icons/graphics-window/image.png
     icons/graphics-window/in3d.png
@@ -227,6 +228,7 @@ add_resources(
     icons/graphics-window/point.png
     icons/graphics-window/rectangle.png
     icons/graphics-window/ref.png
+    icons/graphics-window/revolve.png
     icons/graphics-window/same-orientation.png
     icons/graphics-window/sketch-in-3d.png
     icons/graphics-window/sketch-in-plane.png
@@ -256,6 +258,7 @@ add_resources(
     locales/fr_FR.po
     locales/uk_UA.po
     locales/ru_RU.po
+    locales/zh_CN.po
     fonts/unifont.hex.gz
     fonts/private/0-check-false.png
     fonts/private/1-check-true.png
@@ -281,7 +284,7 @@ add_resources(
     shaders/edge.frag
     shaders/edge.vert
     shaders/outline.vert
-    threejs/three-r76.js.gz
+    threejs/three-r111.min.js.gz
     threejs/hammer-2.0.8.js.gz
     threejs/SolveSpaceControls.js)
 

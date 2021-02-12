@@ -513,7 +513,7 @@ public:
     GraphicsWindow              GW;
 
     // The state for undo/redo
-    typedef struct {
+    typedef struct UndoState {
         IdList<Group,hGroup>            group;
         List<hGroup>                    groupOrder;
         IdList<Request,hRequest>        request;
@@ -530,7 +530,7 @@ public:
             style.Clear();
         }
     } UndoState;
-    enum { MAX_UNDO = 16 };
+    enum { MAX_UNDO = 100 };
     typedef struct {
         UndoState   d[MAX_UNDO];
         int         cnt;
@@ -686,7 +686,6 @@ public:
     void ExportAsPngTo(const Platform::Path &filename);
     void ExportMeshTo(const Platform::Path &filename);
     void ExportMeshAsStlTo(FILE *f, SMesh *sm);
-    void ExportMeshAsQ3doTo(FILE *f, SMesh *sm);
     void ExportMeshAsObjTo(FILE *fObj, FILE *fMtl, SMesh *sm);
     void ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename,
                                SMesh *sm, SOutlineList *sol);

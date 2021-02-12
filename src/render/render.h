@@ -232,6 +232,7 @@ public:
     double      selRadius   = 0.0;
     // Picking state.
     double      minDistance = 0.0;
+    double      minDepth    = 1e10;
     int         maxZIndex   = 0;
     uint32_t    position    = 0;
 
@@ -257,7 +258,7 @@ public:
                     const Point2d &ta, const Point2d &tb, hFill hcf) override;
     void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) override {}
 
-    void DoCompare(double distance, int zIndex, int comparePosition = 0);
+    void DoCompare(double depth, double distance, int zIndex, int comparePosition = 0);
     void DoQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
                 int zIndex, int comparePosition = 0);
 

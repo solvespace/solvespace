@@ -472,7 +472,7 @@ protected:
     }
 
     bool process_pointer_event(MouseEvent::Type type, double x, double y,
-                               guint state, guint button = 0, int scroll_delta = 0) {
+                               guint state, guint button = 0, double scroll_delta = 0) {
         MouseEvent event = {};
         event.type = type;
         event.x = x;
@@ -536,7 +536,7 @@ protected:
     }
 
     bool on_scroll_event(GdkEventScroll *gdk_event) override {
-        int delta;
+        double delta;
         if(gdk_event->delta_y < 0 || gdk_event->direction == GDK_SCROLL_UP) {
             delta = 1;
         } else if(gdk_event->delta_y > 0 || gdk_event->direction == GDK_SCROLL_DOWN) {
@@ -1246,6 +1246,10 @@ public:
         gtkChooser->set_filename(path.raw);
     }
 
+    void SuggestFilename(Platform::Path path) override {
+        gtkChooser->set_current_name(path.FileStem()+"."+GetExtension());
+    }
+
     void AddFilter(std::string name, std::vector<std::string> extensions) override {
         Glib::RefPtr<Gtk::FileFilter> gtkFilter = Gtk::FileFilter::create();
         Glib::ustring desc;
@@ -1291,13 +1295,16 @@ public:
         }
     }
 
+//TODO: This is not getting called when the extension selection is changed.
     void FilterChanged() {
         std::string extension = GetExtension();
         if(extension.empty())
             return;
 
         Platform::Path path = GetFilename();
-        SetCurrentName(path.WithExtension(extension).FileName());
+        if(gtkChooser->get_action() != GTK_FILE_CHOOSER_ACTION_OPEN) {
+            SetCurrentName(path.WithExtension(extension).FileName());
+        }
     }
 
     void FreezeChoices(SettingsRef settings, const std::string &key) override {

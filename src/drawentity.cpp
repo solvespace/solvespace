@@ -64,13 +64,13 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
         Vector proj = SS.GW.ProjectPoint3(PointGetNum());
         screenBBox = BBox::From(proj, proj);
     } else if(IsNormal()) {
-        Vector proj = SK.GetEntity(point[0])->PointGetNum();
+        Vector proj = SS.GW.ProjectPoint3(SK.GetEntity(point[0])->PointGetNum());
         screenBBox = BBox::From(proj, proj);
     } else if(!sbl->l.IsEmpty()) {
         Vector first = SS.GW.ProjectPoint3(sbl->l[0].ctrl[0]);
         screenBBox = BBox::From(first, first);
         for(auto &sb : sbl->l) {
-            for(int i = 0; i < sb.deg; ++i) { screenBBox.Include(SS.GW.ProjectPoint3(sb.ctrl[i])); }
+            for(int i = 0; i <= sb.deg; ++i) { screenBBox.Include(SS.GW.ProjectPoint3(sb.ctrl[i])); }
         }
     } else
         ssassert(false, "Expected entity to be a point or have beziers");
@@ -315,9 +315,13 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const {
             } else {
                 // The wrapping would work, except when n = 1 and everything
                 // wraps to zero...
-                if(i > 0)     bm.A[i][i - 1] = eq.x;
-                /**/          bm.A[i][i]     = eq.y;
-                if(i < (n-1)) bm.A[i][i + 1] = eq.z;
+                if(i > 0) {
+                    bm.A[i][i - 1] = eq.x;
+                }
+                bm.A[i][i] = eq.y;
+                if(i < (n-1)) {
+                    bm.A[i][i + 1] = eq.z;
+                }
             }
         }
         bm.Solve();
@@ -468,13 +472,13 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
 
     int zIndex;
     if(IsPoint()) {
-        zIndex = 5;
+        zIndex = 6;
     } else if(how == DrawAs::HIDDEN) {
         zIndex = 2;
     } else if(group != SS.GW.activeGroup) {
         zIndex = 3;
     } else {
-        zIndex = 4;
+        zIndex = 5;
     }
 
     hStyle hs;
@@ -484,6 +488,9 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         hs.v = Style::NORMALS;
     } else {
         hs = Style::ForEntity(h);
+        if (hs.v == Style::CONSTRUCTION) {
+            zIndex = 4;
+        }
     }
 
     Canvas::Stroke stroke = Style::Stroke(hs);
@@ -608,7 +615,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                     double w = 60 - camera.width  / 2.0;
                     // Shift the axis to the right if they would overlap with the toolbar.
                     if(SS.showToolbar) {
-                        if(h + 30 > -(34*16 + 3*16 + 8) / 2)
+                        if(h + 30 > -(32*18 + 3*16 + 8) / 2)
                             w += 60;
                     }
                     tail = camera.projRight.ScaledBy(w/s).Plus(

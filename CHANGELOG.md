@@ -27,6 +27,8 @@ New sketch features:
   * "Split Curves at Intersection" can now split curves at point lying on curve,
     not just at intersection of two curves.
   * Property browser now shows amount of degrees of freedom in group list.
+    It also shows a yellow "err" if the sketch has problems (e.g. self
+    intersecting) that would propagate in subsequent groups.
 
 New constraint features:
   * When dragging an arc or rectangle point, it will be automatically
@@ -53,7 +55,8 @@ New export/import features:
   * Wavefront OBJ: a material file is exported alongside the model, containing
     mesh color information.
   * DXF/DWG: 3D DXF files are imported as construction entities, in 3d.
-  * Q3D: [Q3D](https://github.com/q3k/q3d/) triangle meshes can now be
+  * [ADDED 2019-02-25](https://github.com/solvespace/solvespace/pull/384) and [REMOVED 2020-11-13](https://github.com/solvespace/solvespace/issues/795):
+    Q3D: [Q3D](https://github.com/q3k/q3d/) triangle meshes can now be
     exported. This format allows to easily hack on triangle mesh data created
     in SolveSpace, supports colour information and is more space efficient than
     most other formats.
@@ -110,6 +113,7 @@ Other new features:
     that are shortcuts to the respective configuration screens.
   * New cmake build options using -DENABLE_OPENMP=yes and -DENABLE_LTO=yes
     to enable support for multi-threading and link-time optimization.
+  * "Shift+Scroll" for ten times finer zoom.
 
 Bugs fixed:
   * Fixed broken --view options for command line thumbnail image creation.

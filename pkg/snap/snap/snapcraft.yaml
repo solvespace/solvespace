@@ -45,12 +45,14 @@ parts:
       snapcraftctl set-version "$version"
       git describe --exact-match HEAD && grade="stable" || grade="devel"
       snapcraftctl set-grade "$grade"
-      git submodule update --init extlib/libdxfrw extlib/flatbuffers extlib/q3d extlib/mimalloc
+      git submodule update --init extlib/libdxfrw extlib/mimalloc
     configflags:
       - -DCMAKE_INSTALL_PREFIX=/usr
       - -DCMAKE_BUILD_TYPE=Release
       - -DENABLE_TESTS=OFF
       - -DSNAP=ON
+      - -DENABLE_OPENMP=ON
+      - -DENABLE_LTO=ON
     build-packages:
       - zlib1g-dev
       - libpng-dev
