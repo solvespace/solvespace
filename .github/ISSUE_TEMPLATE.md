@@ -1,8 +1,7 @@
 ### System information
 
-SolveSpace version: <!--e.g. 3.0~3dd2fc00; go to Help → About...-->
-
-Operating system: <!--e.g. Debian testing-->
+- **SolveSpace version:** <!--e.g. 3.0~3dd2fc00; go to Help → About...-->
+- **Operating system:** <!--e.g. Debian testing-->
 
 ### Expected behavior
 

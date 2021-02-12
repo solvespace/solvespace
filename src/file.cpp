@@ -468,6 +468,7 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
 }
 
 bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) {
+    bool fileIsEmpty = true;
     allConsistent = false;
     fileLoadError = false;
 
@@ -485,6 +486,8 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
 
     char line[1024];
     while(fgets(line, (int)sizeof(line), fh)) {
+        fileIsEmpty = false;
+
         char *s = strchr(line, '\n');
         if(s) *s = '\0';
         // We should never get files with \r characters in them, but mailers
@@ -544,6 +547,11 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
     }
 
     fclose(fh);
+
+    if(fileIsEmpty) {
+        Error(_("The file is empty. It may be corrupt."));
+        NewFile();
+    }
 
     if(fileLoadError) {
         Error(_("Unrecognized data in file. This file may be corrupt, or "
@@ -904,11 +912,13 @@ try_again:
         } else if(linkMap.count(g.linkFile) == 0) {
             dbp("Missing file for group: %s", g.name.c_str());
             // The file was moved; prompt the user for its new location.
-            switch(LocateImportedFile(g.linkFile.RelativeTo(saveFile), canCancel)) {
+            const auto linkFileRelative = g.linkFile.RelativeTo(saveFile);
+            switch(LocateImportedFile(linkFileRelative, canCancel)) {
                 case Platform::MessageDialog::Response::YES: {
                     Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
                     dialog->AddFilters(Platform::SolveSpaceModelFileFilters);
                     dialog->ThawChoices(settings, "LinkSketch");
+                    dialog->SuggestFilename(linkFileRelative);
                     if(dialog->RunModal()) {
                         dialog->FreezeChoices(settings, "LinkSketch");
                         linkMap[g.linkFile] = dialog->GetFilename();
@@ -985,6 +995,7 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
         Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
         dialog->AddFilters(Platform::RasterFileFilters);
         dialog->ThawChoices(settings, "LinkImage");
+        dialog->SuggestFilename(filename->RelativeTo(saveFile));
         if(dialog->RunModal()) {
             dialog->FreezeChoices(settings, "LinkImage");
             *filename = dialog->GetFilename();

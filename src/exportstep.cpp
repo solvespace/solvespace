@@ -273,9 +273,45 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
         }
 
         fprintf(f, "),#%d,.T.);\n", srfid);
-        fprintf(f, "\n");
         advancedFaces.Add(&advFaceId);
 
+        // Export the surface color and transparency
+        // https://www.cax-if.org/documents/rec_prac_styling_org_v16.pdf sections 4.4.2 4.2.4 etc.
+        // https://tracker.dev.opencascade.org/view.php?id=31550
+        fprintf(f, "#%d=COLOUR_RGB('',%.2f,%.2f,%.2f);\n", ++id, ss->color.redF(),
+                ss->color.greenF(), ss->color.blueF());
+
+/*      // This works in Kisters 3DViewStation but not in KiCAD and Horison EDA,
+        // it seems they do not support transparency so use the more verbose one below
+        fprintf(f, "#%d=SURFACE_STYLE_TRANSPARENT(%.2f);\n", ++id, 1.0 - ss->color.alphaF());
+        ++id;
+        fprintf(f, "#%d=SURFACE_STYLE_RENDERING_WITH_PROPERTIES(.NORMAL_SHADING.,#%d,(#%d));\n",
+                id, id - 2, id - 1);
+        ++id;
+        fprintf(f, "#%d=SURFACE_SIDE_STYLE('',(#%d));\n", id, id - 1);
+*/
+
+        // This works in Horison EDA but is more verbose.
+        ++id;
+        fprintf(f, "#%d=FILL_AREA_STYLE_COLOUR('',#%d);\n", id, id - 1);
+        ++id;
+        fprintf(f, "#%d=FILL_AREA_STYLE('',(#%d));\n", id, id - 1);
+        ++id;
+        fprintf(f, "#%d=SURFACE_STYLE_FILL_AREA(#%d);\n", id, id - 1);
+        fprintf(f, "#%d=SURFACE_STYLE_TRANSPARENT(%.2f);\n", ++id, 1.0 - ss->color.alphaF());
+        ++id;
+        fprintf(f, "#%d=SURFACE_STYLE_RENDERING_WITH_PROPERTIES(.NORMAL_SHADING.,#%d,(#%d));\n", id, id - 5, id - 1);
+        ++id;
+        fprintf(f, "#%d=SURFACE_SIDE_STYLE('',(#%d, #%d));\n", id, id - 3, id - 1);
+
+        ++id;
+        fprintf(f, "#%d=SURFACE_STYLE_USAGE(.BOTH.,#%d);\n", id, id - 1);
+        ++id;
+        fprintf(f, "#%d=PRESENTATION_STYLE_ASSIGNMENT((#%d));\n", id, id - 1);
+        ++id;
+        fprintf(f, "#%d=STYLED_ITEM('',(#%d),#%d);\n", id, id - 1, advFaceId);
+        fprintf(f, "\n");        
+        
         id++;
         listOfLoops.Clear();
     }

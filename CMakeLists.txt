@@ -11,6 +11,11 @@ cmake_minimum_required(VERSION 3.7.2 FATAL_ERROR)
 if(NOT CMAKE_VERSION VERSION_LESS 3.11.0)
     cmake_policy(VERSION 3.11.0)
 endif()
+if(NOT CMAKE_VERSION VERSION_LESS 3.9)
+    # LTO/IPO with non-Intel compilers on Linux requires policy CMP0069 to be set to NEW.
+    # Set it explicitly until cmake_minimum_required is raised to >= 3.9.
+    cmake_policy(SET CMP0069 NEW)
+endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
     "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_STANDARD 11)
@@ -21,6 +26,10 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE
    "${CMAKE_SOURCE_DIR}/cmake/c_flag_overrides.cmake")
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
    "${CMAKE_SOURCE_DIR}/cmake/cxx_flag_overrides.cmake")
+
+if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
 
 # project
 
@@ -48,6 +57,8 @@ set(ENABLE_SANITIZERS OFF CACHE BOOL
     "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
 set(ENABLE_OPENMP     OFF CACHE BOOL
     "Whether geometric operations will be parallelized using OpenMP")
+set(ENABLE_LTO     OFF CACHE BOOL
+    "Whether interprocedural (global) optimizations are enabled")
 
 set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
@@ -69,7 +80,6 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 # common compiler flags
-
 include(CheckCXXCompilerFlag)
 
 set(FILE_PREFIX_MAP "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
@@ -99,18 +109,17 @@ if(CMAKE_SYSTEM_PROCESSOR STREQUAL "i686" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "X8
 endif()
 
 if(ENABLE_LTO)
+    include(CheckIPOSupported)
+    check_ipo_supported()
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 if(ENABLE_OPENMP)
-    include(FindOpenMP)
-    if(OpenMP_FOUND)
+    find_package( OpenMP REQUIRED )
+    if(OPENMP_FOUND)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        message(STATUS "found OpenMP, compiling with flags: " ${OpenMP_CXX_FLAGS} )
     endif()
-endif()
-
-if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -144,8 +153,12 @@ if(ENABLE_SANITIZERS)
     endif()
 
     string(REPLACE ";" "," SANITIZE_OPTIONS "${SANITIZE_OPTIONS}")
-    set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS}")
-    set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-sanitize-recover=address,undefined")
+
+    if (NOT APPLE)
+        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS} -fno-sanitize-recover=address,undefined")
+    else()
+        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS}")
+    endif()
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-omit-frame-pointer -fno-optimize-sibling-calls")
@@ -167,17 +180,6 @@ endif()
 
 message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
-
-message(STATUS "Using in-tree flatbuffers")
-set(FLATBUFFERS_BUILD_FLATLIB ON CACHE BOOL "")
-set(FLATBUFFERS_BUILD_FLATC ON CACHE BOOL "")
-set(FLATBUFFERS_BUILD_FLATHASH OFF CACHE BOOL "")
-set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
-add_subdirectory(extlib/flatbuffers EXCLUDE_FROM_ALL)
-
-message(STATUS "Using in-tree q3d")
-add_subdirectory(extlib/q3d)
-set(Q3D_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/q3d)
 
 message(STATUS "Using in-tree mimalloc")
 set(MI_OVERRIDE OFF CACHE BOOL "")

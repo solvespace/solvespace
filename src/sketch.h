@@ -790,6 +790,9 @@ public:
     static hConstraint TryConstrain(Constraint::Type type, hEntity ptA, hEntity ptB,
                                     hEntity entityA, hEntity entityB = Entity::NO_ENTITY,
                                     bool other = false, bool other2 = false);
+    static void ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc);
+    static void ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic);
+    static void ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB);
 };
 
 class hEquation {

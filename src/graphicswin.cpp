@@ -92,6 +92,7 @@ const MenuEntry Menu[] = {
 { 1, N_("&Center View At Point"),       Command::CENTER_VIEW,      F|4,     KN, mView  },
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Show Snap &Grid"),             Command::SHOW_GRID,        '>',     KC, mView  },
+{ 1, N_("Darken Inactive Solids"),      Command::DIM_SOLID_MODEL,  0,       KC, mView  },
 { 1, N_("Use &Perspective Projection"), Command::PERSPECTIVE_PROJ, '`',     KC, mView  },
 { 1, N_("Dimension &Units"),            Command::NONE,             0,       KN, NULL  },
 { 2, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       KR, mView },
@@ -312,6 +313,8 @@ void GraphicsWindow::PopulateMainMenu() {
 
             if(Menu[i].cmd == Command::SHOW_GRID) {
                 showGridMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::DIM_SOLID_MODEL) {
+                dimSolidModelMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::PERSPECTIVE_PROJ) {
                 perspectiveProjMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::SHOW_TOOLBAR) {
@@ -406,6 +409,7 @@ void GraphicsWindow::Init() {
     showTextWindow = true;
 
     showSnapGrid = false;
+    dimSolidModel = true;
     context.active = false;
     toolbarHovered = Command::NONE;
 
@@ -722,6 +726,12 @@ void GraphicsWindow::MenuView(Command id) {
             }
             break;
 
+        case Command::DIM_SOLID_MODEL:
+            SS.GW.dimSolidModel = !SS.GW.dimSolidModel;
+            SS.GW.EnsureValidActives();
+            SS.GW.Invalidate(/*clearPersistent=*/true);
+            break;
+
         case Command::PERSPECTIVE_PROJ:
             SS.usePerspectiveProj = !SS.usePerspectiveProj;
             SS.GW.EnsureValidActives();
@@ -923,6 +933,7 @@ void GraphicsWindow::EnsureValidActives() {
     showTextWndMenuItem->SetActive(SS.GW.showTextWindow);
 
     showGridMenuItem->SetActive(SS.GW.showSnapGrid);
+    dimSolidModelMenuItem->SetActive(SS.GW.dimSolidModel);
     perspectiveProjMenuItem->SetActive(SS.usePerspectiveProj);
     showToolbarMenuItem->SetActive(SS.showToolbar);
     fullScreenMenuItem->SetActive(SS.GW.window->IsFullScreen());
@@ -1175,10 +1186,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             }
             // Regenerate, with these points marked as dragged so that they
             // get placed as close as possible to our snap grid.
-            SS.GW.ClearPending();
-
             SS.GW.ClearSelection();
-            SS.GW.Invalidate();
             break;
         }
 

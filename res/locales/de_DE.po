@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2020-09-21 09:28+0200\n"
+"POT-Creation-Date: 2021-02-01 15:45+0200\n"
 "PO-Revision-Date: 2018-07-19 06:55+0000\n"
 "Last-Translator: Reini Urban <rurban@cpan.org>\n"
 "Language-Team: none\n"
@@ -17,7 +17,7 @@ msgstr ""
 "X-Generator: Zanata 4.5.0\n"
 "Plural-Forms: nplurals=2; plural=(n != 1)\n"
 
-#: clipboard.cpp:274
+#: clipboard.cpp:310
 msgid ""
 "Cut, paste, and copy work only in a workplane.\n"
 "\n"
@@ -28,27 +28,27 @@ msgstr ""
 "\n"
 "Aktivieren Sie eine mit Skizze -> In Arbeitsebene"
 
-#: clipboard.cpp:291
+#: clipboard.cpp:327
 msgid "Clipboard is empty; nothing to paste."
 msgstr "Zwischenablage ist leer; es gibt nichts einzufügen."
 
-#: clipboard.cpp:338
+#: clipboard.cpp:374
 msgid "Number of copies to paste must be at least one."
 msgstr "Die Anzahl der einzufügenden Kopien muss mind. 1 sein."
 
-#: clipboard.cpp:354 textscreens.cpp:783
+#: clipboard.cpp:390 textscreens.cpp:783
 msgid "Scale cannot be zero."
 msgstr "Maßstab kann nicht Null sein."
 
-#: clipboard.cpp:396
+#: clipboard.cpp:432
 msgid "Select one point to define origin of rotation."
 msgstr "Wählen Sie einen Punkt, um den Drehmittelpunkt zu definieren."
 
-#: clipboard.cpp:408
+#: clipboard.cpp:444
 msgid "Select two points to define translation vector."
 msgstr "Wählen Sie zwei Punkte, um den Verschiebungsvektor zu definieren."
 
-#: clipboard.cpp:418
+#: clipboard.cpp:454
 msgid ""
 "Transformation is identity. So all copies will be exactly on top of each "
 "other."
@@ -56,25 +56,25 @@ msgstr ""
 "Die Transformation ist die Identität. Alle Kopien werden deckungsgleich "
 "übereinanderliegen."
 
-#: clipboard.cpp:422
+#: clipboard.cpp:458
 msgid "Too many items to paste; split this into smaller pastes."
 msgstr ""
 "Zuviele Objekte zum Einfügen; teilen Sie diese in kleinere "
 "Einfügeoperationen auf."
 
-#: clipboard.cpp:427
+#: clipboard.cpp:463
 msgid "No workplane active."
 msgstr "Es ist keine Arbeitsebene aktiv."
 
-#: confscreen.cpp:410
+#: confscreen.cpp:418
 msgid "Bad format: specify coordinates as x, y, z"
 msgstr "Ungültiges Format: geben Sie Koordinaten als x, y, z an"
 
-#: confscreen.cpp:420 style.cpp:659 textscreens.cpp:805
+#: confscreen.cpp:428 style.cpp:659 textscreens.cpp:805
 msgid "Bad format: specify color as r, g, b"
 msgstr "Ungültiges Format: geben Sie Farben als r, g, b an"
 
-#: confscreen.cpp:446
+#: confscreen.cpp:454
 msgid ""
 "The perspective factor will have no effect until you enable View -> Use "
 "Perspective Projection."
@@ -82,25 +82,25 @@ msgstr ""
 "Der Perspektivfaktor wird sich nicht auswirken, bis Sie Ansicht -> "
 "Perspektive Projektion aktivieren."
 
-#: confscreen.cpp:459 confscreen.cpp:469
+#: confscreen.cpp:467 confscreen.cpp:477
 #, c-format
 msgid "Specify between 0 and %d digits after the decimal."
 msgstr "Geben Sie 0 bis %d Ziffern nach dem Dezimalzeichen an."
 
-#: confscreen.cpp:481
+#: confscreen.cpp:489
 msgid "Export scale must not be zero!"
 msgstr "Der Exportmaßstab darf nicht Null sein!"
 
-#: confscreen.cpp:493
+#: confscreen.cpp:501
 msgid "Cutter radius offset must not be negative!"
 msgstr "Der Werkzeugradialabstand darf nicht negativ sein!"
 
-#: confscreen.cpp:547
+#: confscreen.cpp:555
 msgid "Bad value: autosave interval should be positive"
 msgstr ""
 "Ungültiger Wert: Interval für automatisches Speichern muss positiv sein"
 
-#: confscreen.cpp:550
+#: confscreen.cpp:558
 msgid "Bad format: specify interval in integral minutes"
 msgstr "Ungültiges Format: geben Sie das Interval in ganzen Minuten an"
 
@@ -279,7 +279,33 @@ msgctxt "constr-name"
 msgid "comment"
 msgstr "Kommentar"
 
-#: constraint.cpp:171
+#: constraint.cpp:140
+msgid ""
+"The tangent arc and line segment must share an endpoint. Constrain them with "
+"Constrain -> On Point before constraining tangent."
+msgstr ""
+"Die Bogentangente und das Liniensegment müssen einen gemeinsamen Endpunkt "
+"haben. Schränken Sie mit \"Einschränkung / Auf Punkt\" ein, bevor Sie die "
+"Tangente einschränken. -> Sc"
+
+#: constraint.cpp:158
+msgid ""
+"The tangent cubic and line segment must share an endpoint. Constrain them "
+"with Constrain -> On Point before constraining tangent."
+msgstr ""
+"Die Kurventangente und das Liniensegment müssen einen gemeinsamen Endpunkt "
+"haben. Schränken Sie mit \"Einschränkung / Auf Punkt\" ein, bevor Sie die "
+"Tangente einschränken. -> Sc"
+
+#: constraint.cpp:183
+msgid ""
+"The curves must share an endpoint. Constrain them with Constrain -> On Point "
+"before constraining tangent."
+msgstr ""
+"Die Kurven müssen einen gemeinsamen Endpunkt haben. Schränken Sie mit "
+"\"Einschränkung / Auf Punkt\" ein, bevor Sie die Tangente einschränken. -> Sc"
+
+#: constraint.cpp:231
 msgid ""
 "Bad selection for distance / diameter constraint. This constraint can apply "
 "to:\n"
@@ -303,7 +329,7 @@ msgstr ""
 "    * eine Seitenfläche und ein Punkt [minimaler Abstand]\n"
 "    * ein Kreis oder ein Bogen [Durchmesser]\n"
 
-#: constraint.cpp:224
+#: constraint.cpp:284
 msgid ""
 "Bad selection for on point / curve / plane constraint. This constraint can "
 "apply to:\n"
@@ -323,7 +349,7 @@ msgstr ""
 "    * einen Punkt und einen Kreis oder Bogen [Punkt auf Kurve]\n"
 "    * einen Punkt und eine Seitenfläche [Punkt auf Fläche]\n"
 
-#: constraint.cpp:286
+#: constraint.cpp:346
 msgid ""
 "Bad selection for equal length / radius constraint. This constraint can "
 "apply to:\n"
@@ -354,7 +380,7 @@ msgstr ""
 "    * ein Liniensegment und ein Bogen [Länge des Liniensegments gleich "
 "Bogenlänge]\n"
 
-#: constraint.cpp:325
+#: constraint.cpp:385
 msgid ""
 "Bad selection for length ratio constraint. This constraint can apply to:\n"
 "\n"
@@ -365,7 +391,7 @@ msgstr ""
 "\n"
 "    * zwei Liniensegmente\n"
 
-#: constraint.cpp:342
+#: constraint.cpp:402
 msgid ""
 "Bad selection for length difference constraint. This constraint can apply "
 "to:\n"
@@ -377,7 +403,7 @@ msgstr ""
 "\n"
 "    * zwei Liniensegmente\n"
 
-#: constraint.cpp:368
+#: constraint.cpp:428
 msgid ""
 "Bad selection for at midpoint constraint. This constraint can apply to:\n"
 "\n"
@@ -391,7 +417,7 @@ msgstr ""
 "    * ein Liniensegment und eine Arbeitsebene [Mittelpunkt der Linie auf "
 "Ebene]\n"
 
-#: constraint.cpp:426
+#: constraint.cpp:486
 msgid ""
 "Bad selection for symmetric constraint. This constraint can apply to:\n"
 "\n"
@@ -412,7 +438,7 @@ msgstr ""
 "    * eine Arbeitsebene und zwei Punkte oder ein Liniensegment [symmetrisch "
 "zu Arbeitsebene]\n"
 
-#: constraint.cpp:440
+#: constraint.cpp:500
 msgid ""
 "A workplane must be active when constraining symmetric without an explicit "
 "symmetry plane."
@@ -420,7 +446,7 @@ msgstr ""
 "Eine Arbeitsebene muss aktiv sein, um die Symmetrie ohne explizite "
 "Symmetrieebene einzuschränken."
 
-#: constraint.cpp:470
+#: constraint.cpp:530
 msgid ""
 "Activate a workplane (with Sketch -> In Workplane) before applying a "
 "horizontal or vertical constraint."
@@ -428,7 +454,7 @@ msgstr ""
 "Aktivieren Sie eine Arbeitsebene (mit Skizze -> In Arbeitsebene), bevor Sie "
 "horizontal oder vertikal einschränken."
 
-#: constraint.cpp:483
+#: constraint.cpp:543
 msgid ""
 "Bad selection for horizontal / vertical constraint. This constraint can "
 "apply to:\n"
@@ -442,7 +468,7 @@ msgstr ""
 "    * zwei Punkte\n"
 "    * ein Liniensegment\n"
 
-#: constraint.cpp:504
+#: constraint.cpp:564
 msgid ""
 "Bad selection for same orientation constraint. This constraint can apply "
 "to:\n"
@@ -454,15 +480,15 @@ msgstr ""
 "\n"
 "    * zwei Normale\n"
 
-#: constraint.cpp:554
+#: constraint.cpp:614
 msgid "Must select an angle constraint."
 msgstr "Sie müssen einen eingeschränkten Winkel auswählen."
 
-#: constraint.cpp:567
+#: constraint.cpp:627
 msgid "Must select a constraint with associated label."
 msgstr "Sie müssen eine Einschränkung mit zugeordneter Kennzeichnung angeben."
 
-#: constraint.cpp:578
+#: constraint.cpp:638
 msgid ""
 "Bad selection for angle constraint. This constraint can apply to:\n"
 "\n"
@@ -477,38 +503,12 @@ msgstr ""
 "    * ein Liniensegment und eine Normale\n"
 "    * zwei Normale\n"
 
-#: constraint.cpp:635
-msgid ""
-"The tangent arc and line segment must share an endpoint. Constrain them with "
-"Constrain -> On Point before constraining tangent."
-msgstr ""
-"Die Bogentangente und das Liniensegment müssen einen gemeinsamen Endpunkt "
-"haben. Schränken Sie mit \"Einschränkung / Auf Punkt\" ein, bevor Sie die "
-"Tangente einschränken. -> Sc"
-
-#: constraint.cpp:659
-msgid ""
-"The tangent cubic and line segment must share an endpoint. Constrain them "
-"with Constrain -> On Point before constraining tangent."
-msgstr ""
-"Die Kurventangente und das Liniensegment müssen einen gemeinsamen Endpunkt "
-"haben. Schränken Sie mit \"Einschränkung / Auf Punkt\" ein, bevor Sie die "
-"Tangente einschränken. -> Sc"
-
-#: constraint.cpp:669
+#: constraint.cpp:701
 msgid "Curve-curve tangency must apply in workplane."
 msgstr ""
 "Die Kurven-Kurven-Tangente muss in der Arbeitsebene eingeschränkt werden."
 
-#: constraint.cpp:687
-msgid ""
-"The curves must share an endpoint. Constrain them with Constrain -> On Point "
-"before constraining tangent."
-msgstr ""
-"Die Kurven müssen einen gemeinsamen Endpunkt haben. Schränken Sie mit "
-"\"Einschränkung / Auf Punkt\" ein, bevor Sie die Tangente einschränken. -> Sc"
-
-#: constraint.cpp:696
+#: constraint.cpp:711
 msgid ""
 "Bad selection for parallel / tangent constraint. This constraint can apply "
 "to:\n"
@@ -527,7 +527,7 @@ msgstr ""
 "    * zwei Liniensegmente, Bögen oder Beziers mit gemeinsamem Endpunkt "
 "[Tangente]\n"
 
-#: constraint.cpp:714
+#: constraint.cpp:729
 msgid ""
 "Bad selection for perpendicular constraint. This constraint can apply to:\n"
 "\n"
@@ -542,7 +542,7 @@ msgstr ""
 "    * ein Liniensegment und eine Normale\n"
 "    * zwei Normale\n"
 
-#: constraint.cpp:729
+#: constraint.cpp:744
 msgid ""
 "Bad selection for lock point where dragged constraint. This constraint can "
 "apply to:\n"
@@ -554,7 +554,7 @@ msgstr ""
 "\n"
 "    * einen Punkt\n"
 
-#: constraint.cpp:740
+#: constraint.cpp:755
 msgid "click center of comment text"
 msgstr "Klicken Sie auf die Mitte des Kommentartextes"
 
@@ -597,8 +597,7 @@ msgstr "Zickzacklinien wurden mit durchgehenden Linien ersetzt"
 
 #: exportvector.cpp:593
 msgid ""
-"Some aspects of the drawing have no DXF equivalent and "
-"were not exported:\n"
+"Some aspects of the drawing have no DXF equivalent and were not exported:\n"
 msgstr ""
 "Teile der Zeichnung haben keine Entsprechung in DXF und wurden nicht "
 "exportiert:\n"
@@ -620,7 +619,11 @@ msgctxt "group-name"
 msgid "#references"
 msgstr "#Referenzen"
 
-#: file.cpp:549
+#: file.cpp:552
+msgid "The file is empty. It may be corrupt."
+msgstr "Die Datei ist leer. Es kann beschädigt sein."
+
+#: file.cpp:557
 msgid ""
 "Unrecognized data in file. This file may be corrupt, or from a newer version "
 "of the program."
@@ -628,18 +631,18 @@ msgstr ""
 "Nicht erkannte Daten in der Datei. Diese Datei könnte beschädigt sein oder "
 "von einer neueren Version des Programms stammen."
 
-#: file.cpp:849
+#: file.cpp:867
 msgctxt "title"
 msgid "Missing File"
 msgstr "Fehlende Datei"
 
-#: file.cpp:850
+#: file.cpp:868
 #, c-format
 msgctxt "dialog"
 msgid "The linked file “%s” is not present."
 msgstr "Die verlinkte Datei “%s” fehlt."
 
-#: file.cpp:852
+#: file.cpp:870
 msgctxt "dialog"
 msgid ""
 "Do you want to locate it manually?\n"
@@ -648,20 +651,20 @@ msgid ""
 "permanently removed."
 msgstr ""
 "Möchten Sie sie selber auswählen?\n"
-"Falls Sie ablehnen, wird jegliche mit der fehlenden Datei "
-"verknüpfte Geometrie verworfen."
+"Falls Sie ablehnen, wird jegliche mit der fehlenden Datei verknüpfte "
+"Geometrie verworfen."
 
-#: file.cpp:855
+#: file.cpp:873
 msgctxt "button"
 msgid "&Yes"
 msgstr "&Ja"
 
-#: file.cpp:857
+#: file.cpp:875
 msgctxt "button"
 msgid "&No"
 msgstr "&Nein"
 
-#: file.cpp:859
+#: file.cpp:877 solvespace.cpp:569
 msgctxt "button"
 msgid "&Cancel"
 msgstr "&Abbrechen"
@@ -827,300 +830,304 @@ msgid "Show Snap &Grid"
 msgstr "Arbeitsraster anzeigen"
 
 #: graphicswin.cpp:95
+msgid "Darken Inactive Solids"
+msgstr "Dunklere inaktive Festkörper"
+
+#: graphicswin.cpp:96
 msgid "Use &Perspective Projection"
 msgstr "Perspektivische Projektion"
 
-#: graphicswin.cpp:96
+#: graphicswin.cpp:97
 msgid "Dimension &Units"
 msgstr "Maßeinheit"
 
-#: graphicswin.cpp:97
+#: graphicswin.cpp:98
 msgid "Dimensions in &Millimeters"
 msgstr "Maße in Millimeter"
 
-#: graphicswin.cpp:98
+#: graphicswin.cpp:99
 msgid "Dimensions in M&eters"
 msgstr "Masse in M&etern"
 
-#: graphicswin.cpp:99
+#: graphicswin.cpp:100
 msgid "Dimensions in &Inches"
 msgstr "Maße in Zoll"
 
-#: graphicswin.cpp:101
+#: graphicswin.cpp:102
 msgid "Show &Toolbar"
 msgstr "Werkzeugleiste anzeigen"
 
-#: graphicswin.cpp:102
+#: graphicswin.cpp:103
 msgid "Show Property Bro&wser"
 msgstr "Attributbrowser anzeigen"
 
-#: graphicswin.cpp:104
+#: graphicswin.cpp:105
 msgid "&Full Screen"
 msgstr "Vollbildschirm"
 
-#: graphicswin.cpp:106
+#: graphicswin.cpp:107
 msgid "&New Group"
 msgstr "Neue Gruppe"
 
-#: graphicswin.cpp:107
+#: graphicswin.cpp:108
 msgid "Sketch In &3d"
 msgstr "In 3D skizzieren"
 
-#: graphicswin.cpp:108
+#: graphicswin.cpp:109
 msgid "Sketch In New &Workplane"
 msgstr "In neuer Arbeitsebene skizzieren"
 
-#: graphicswin.cpp:110
+#: graphicswin.cpp:111
 msgid "Step &Translating"
 msgstr "Kopieren und verschieben"
 
-#: graphicswin.cpp:111
+#: graphicswin.cpp:112
 msgid "Step &Rotating"
 msgstr "Kopieren und drehen"
 
-#: graphicswin.cpp:113
+#: graphicswin.cpp:114
 msgid "E&xtrude"
 msgstr "E&xtrudieren"
 
-#: graphicswin.cpp:114
+#: graphicswin.cpp:115
 msgid "&Helix"
 msgstr "&Helix"
 
-#: graphicswin.cpp:115
+#: graphicswin.cpp:116
 msgid "&Lathe"
 msgstr "R&otieren"
 
-#: graphicswin.cpp:116
+#: graphicswin.cpp:117
 msgid "Re&volve"
 msgstr "D&rehen"
 
-#: graphicswin.cpp:118
+#: graphicswin.cpp:119
 msgid "Link / Assemble..."
 msgstr "Verknüpfen / Zusammensetzen"
 
-#: graphicswin.cpp:119
+#: graphicswin.cpp:120
 msgid "Link Recent"
 msgstr "Letzte verknüpfen"
 
-#: graphicswin.cpp:121
+#: graphicswin.cpp:122
 msgid "&Sketch"
 msgstr "&Skizze"
 
-#: graphicswin.cpp:122
+#: graphicswin.cpp:123
 msgid "In &Workplane"
 msgstr "In Arbeitsebene"
 
-#: graphicswin.cpp:123
+#: graphicswin.cpp:124
 msgid "Anywhere In &3d"
 msgstr "Im 3D-Raum"
 
-#: graphicswin.cpp:125
+#: graphicswin.cpp:126
 msgid "Datum &Point"
 msgstr "Bezugspunkt"
 
-#: graphicswin.cpp:126
+#: graphicswin.cpp:127
 msgid "&Workplane"
 msgstr "Arbeits&ebene"
 
-#: graphicswin.cpp:128
+#: graphicswin.cpp:129
 msgid "Line &Segment"
 msgstr "&Linie"
 
-#: graphicswin.cpp:129
+#: graphicswin.cpp:130
 msgid "C&onstruction Line Segment"
 msgstr "K&onstruktionslinie"
 
-#: graphicswin.cpp:130
+#: graphicswin.cpp:131
 msgid "&Rectangle"
 msgstr "&Rechteck"
 
-#: graphicswin.cpp:131
+#: graphicswin.cpp:132
 msgid "&Circle"
 msgstr "&Kreis"
 
-#: graphicswin.cpp:132
+#: graphicswin.cpp:133
 msgid "&Arc of a Circle"
 msgstr "Kreisbogen"
 
-#: graphicswin.cpp:133
+#: graphicswin.cpp:134
 msgid "&Bezier Cubic Spline"
 msgstr "Kubischer &Bezier-Spline"
 
-#: graphicswin.cpp:135
+#: graphicswin.cpp:136
 msgid "&Text in TrueType Font"
 msgstr "&Text in Truetype-Font"
 
-#: graphicswin.cpp:136
+#: graphicswin.cpp:137
 msgid "&Image"
 msgstr "B&ild"
 
-#: graphicswin.cpp:138
+#: graphicswin.cpp:139
 msgid "To&ggle Construction"
 msgstr "Konstruktionselement an/aus"
 
-#: graphicswin.cpp:139
+#: graphicswin.cpp:140
 msgid "Tangent &Arc at Point"
 msgstr "Bogentangente an Punkt"
 
-#: graphicswin.cpp:140
+#: graphicswin.cpp:141
 msgid "Split Curves at &Intersection"
 msgstr "Kurven im Schnittpunkt trennen"
 
-#: graphicswin.cpp:142
+#: graphicswin.cpp:143
 msgid "&Constrain"
 msgstr "&Einschränkung"
 
-#: graphicswin.cpp:143
+#: graphicswin.cpp:144
 msgid "&Distance / Diameter"
 msgstr "Abstand / Durchmesser"
 
-#: graphicswin.cpp:144
+#: graphicswin.cpp:145
 msgid "Re&ference Dimension"
 msgstr "Referenzangabe"
 
-#: graphicswin.cpp:145
+#: graphicswin.cpp:146
 msgid "A&ngle"
 msgstr "Winkel"
 
-#: graphicswin.cpp:146
+#: graphicswin.cpp:147
 msgid "Reference An&gle"
 msgstr "Referenzwinkel"
 
-#: graphicswin.cpp:147
+#: graphicswin.cpp:148
 msgid "Other S&upplementary Angle"
 msgstr "Komplementärwinkel"
 
-#: graphicswin.cpp:148
+#: graphicswin.cpp:149
 msgid "Toggle R&eference Dim"
 msgstr "Referenzangabe ein/aus"
 
-#: graphicswin.cpp:150
+#: graphicswin.cpp:151
 msgid "&Horizontal"
 msgstr "Horizontal"
 
-#: graphicswin.cpp:151
+#: graphicswin.cpp:152
 msgid "&Vertical"
 msgstr "&Vertikal"
 
-#: graphicswin.cpp:153
+#: graphicswin.cpp:154
 msgid "&On Point / Curve / Plane"
 msgstr "Auf Punkt / Kurve / Ebene"
 
-#: graphicswin.cpp:154
+#: graphicswin.cpp:155
 msgid "E&qual Length / Radius / Angle"
 msgstr "Gleicher Abstand / Radius / Winkel"
 
-#: graphicswin.cpp:155
+#: graphicswin.cpp:156
 msgid "Length Ra&tio"
 msgstr "Längenverhältnis"
 
-#: graphicswin.cpp:156
+#: graphicswin.cpp:157
 msgid "Length Diff&erence"
 msgstr "Längendifferenz"
 
-#: graphicswin.cpp:157
+#: graphicswin.cpp:158
 msgid "At &Midpoint"
 msgstr "Auf &Mittelpunkt"
 
-#: graphicswin.cpp:158
+#: graphicswin.cpp:159
 msgid "S&ymmetric"
 msgstr "Symmetrisch"
 
-#: graphicswin.cpp:159
+#: graphicswin.cpp:160
 msgid "Para&llel / Tangent"
 msgstr "Paral&llel / Tangente"
 
-#: graphicswin.cpp:160
+#: graphicswin.cpp:161
 msgid "&Perpendicular"
 msgstr "Rechtwinklig"
 
-#: graphicswin.cpp:161
+#: graphicswin.cpp:162
 msgid "Same Orient&ation"
 msgstr "Gleiche Orientierung"
 
-#: graphicswin.cpp:162
+#: graphicswin.cpp:163
 msgid "Lock Point Where &Dragged"
 msgstr "Punkt an Position fixieren"
 
-#: graphicswin.cpp:164
+#: graphicswin.cpp:165
 msgid "Comment"
 msgstr "Kommentar"
 
-#: graphicswin.cpp:166
+#: graphicswin.cpp:167
 msgid "&Analyze"
 msgstr "&Analyse"
 
-#: graphicswin.cpp:167
+#: graphicswin.cpp:168
 msgid "Measure &Volume"
 msgstr "&Volumen bestimmen"
 
-#: graphicswin.cpp:168
+#: graphicswin.cpp:169
 msgid "Measure A&rea"
 msgstr "Fläche bestimmen"
 
-#: graphicswin.cpp:169
+#: graphicswin.cpp:170
 msgid "Measure &Perimeter"
 msgstr "Umfang bestimmen"
 
-#: graphicswin.cpp:170
+#: graphicswin.cpp:171
 msgid "Show &Interfering Parts"
 msgstr "Überlagernde Teile anzeigen"
 
-#: graphicswin.cpp:171
+#: graphicswin.cpp:172
 msgid "Show &Naked Edges"
 msgstr "Freiliegende Kanten anzeigen"
 
-#: graphicswin.cpp:172
+#: graphicswin.cpp:173
 msgid "Show &Center of Mass"
 msgstr "Massenmittelpunkt anzeigen"
 
-#: graphicswin.cpp:174
+#: graphicswin.cpp:175
 msgid "Show &Underconstrained Points"
 msgstr "&Unterbeschränkte Punkte anzeigen"
 
-#: graphicswin.cpp:176
+#: graphicswin.cpp:177
 msgid "&Trace Point"
 msgstr "Punkt nachzeichnen"
 
-#: graphicswin.cpp:177
+#: graphicswin.cpp:178
 msgid "&Stop Tracing..."
 msgstr "Nachzeichnen beenden"
 
-#: graphicswin.cpp:178
+#: graphicswin.cpp:179
 msgid "Step &Dimension..."
 msgstr "Schrittgröße…"
 
-#: graphicswin.cpp:180
+#: graphicswin.cpp:181
 msgid "&Help"
 msgstr "&Hilfe"
 
-#: graphicswin.cpp:181
+#: graphicswin.cpp:182
 msgid "&Language"
 msgstr "Sprache"
 
-#: graphicswin.cpp:182
+#: graphicswin.cpp:183
 msgid "&Website / Manual"
 msgstr "&Website / Anleitung"
 
-#: graphicswin.cpp:184
+#: graphicswin.cpp:185
 msgid "&About"
 msgstr "Über"
 
-#: graphicswin.cpp:352
+#: graphicswin.cpp:355
 msgid "(no recent files)"
 msgstr "(keine vorhergehenden Dateien)"
 
-#: graphicswin.cpp:360
+#: graphicswin.cpp:363
 #, c-format
 msgid "File '%s' does not exist."
-msgstr ""
+msgstr "Datei '%s' existiert nicht."
 
-#: graphicswin.cpp:721
+#: graphicswin.cpp:725
 msgid "No workplane is active, so the grid will not appear."
 msgstr ""
 "Das Raster wird nicht angezeigt, weil keine Arbeitsebene ausgewählt ist."
 
-#: graphicswin.cpp:730
+#: graphicswin.cpp:740
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel "
 "projection.\n"
@@ -1134,20 +1141,20 @@ msgstr ""
 "Ändern Sie den Faktor für die Perspektivprojektion in der "
 "Konfigurationsmaske. Ein typischer Wert ist ca. 0,3."
 
-#: graphicswin.cpp:809
+#: graphicswin.cpp:819
 msgid ""
 "Select a point; this point will become the center of the view on screen."
 msgstr ""
 "Wählen Sie einen Punkt aus; dieser Punkt wird im Mittelpunkt der "
 "Bildschirmansicht sein."
 
-#: graphicswin.cpp:1103
+#: graphicswin.cpp:1114
 msgid "No additional entities share endpoints with the selected entities."
 msgstr ""
 "Die ausgewählten Objekte teilen keine gemeinsamen Endpunkte mit anderen "
 "Objekten."
 
-#: graphicswin.cpp:1121
+#: graphicswin.cpp:1132
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
@@ -1155,7 +1162,7 @@ msgstr ""
 "Für diesen Befehl wählen Sie einen Punkt oder ein anderes Objekt von einem "
 "verknüpften Teil aus, oder aktivieren Sie eine verknüpfte Gruppe."
 
-#: graphicswin.cpp:1144
+#: graphicswin.cpp:1155
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
@@ -1164,7 +1171,7 @@ msgstr ""
 "(mit Skizze -> In Arbeitsebene), um die Ebene für das Gitterraster zu "
 "definieren."
 
-#: graphicswin.cpp:1151
+#: graphicswin.cpp:1162
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
@@ -1173,13 +1180,13 @@ msgstr ""
 "für Punkte, Textkommentare, oder Einschränkungen mit einer Bezeichnung. Um "
 "eine Linie auf das Raster auszurichten, wählen Sie deren Endpunkte aus."
 
-#: graphicswin.cpp:1239
+#: graphicswin.cpp:1247
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr ""
 "Es wurde keine Arbeitsebene ausgewählt. Die Standard-Arbeitsebene für diese "
 "Gruppe wird aktiviert."
 
-#: graphicswin.cpp:1242
+#: graphicswin.cpp:1250
 msgid ""
 "No workplane is selected, and the active group does not have a default "
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
@@ -1189,7 +1196,7 @@ msgstr ""
 "standardmäßige Arbeitsebene. Wählen Sie eine Arbeitsebene aus, oder "
 "erstellen Sie eine Gruppe in einer neuen Arbeitsebene."
 
-#: graphicswin.cpp:1263
+#: graphicswin.cpp:1271
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
@@ -1197,48 +1204,48 @@ msgstr ""
 "Ungültige Auswahl für Bogentangente an Punkt. Wählen Sie einen einzelnen "
 "Punkt. Um die Bogenparameter anzugeben, wählen Sie nichts aus."
 
-#: graphicswin.cpp:1274
+#: graphicswin.cpp:1282
 msgid "click point on arc (draws anti-clockwise)"
 msgstr ""
 "Erstellen Sie einen Punkt auf dem Bogen (zeichnet im Gegenuhrzeigersinn)"
 
-#: graphicswin.cpp:1275
+#: graphicswin.cpp:1283
 msgid "click to place datum point"
 msgstr "Klicken Sie, um einen Bezugspunkt zu platzieren"
 
-#: graphicswin.cpp:1276
+#: graphicswin.cpp:1284
 msgid "click first point of line segment"
 msgstr "Klicken Sie auf den ersten Punkt des Liniensegments"
 
-#: graphicswin.cpp:1278
+#: graphicswin.cpp:1286
 msgid "click first point of construction line segment"
 msgstr "Klicken Sie auf den ersten Punkt der Konstruktionslinie"
 
-#: graphicswin.cpp:1279
+#: graphicswin.cpp:1287
 msgid "click first point of cubic segment"
 msgstr "Klicken Sie auf den ersten Punkt der kubischen Linie"
 
-#: graphicswin.cpp:1280
+#: graphicswin.cpp:1288
 msgid "click center of circle"
 msgstr "Klicken Sie auf den Kreismittelpunkt"
 
-#: graphicswin.cpp:1281
+#: graphicswin.cpp:1289
 msgid "click origin of workplane"
 msgstr "Klicken Sie auf den Ursprungspunkt der Arbeitsebene"
 
-#: graphicswin.cpp:1282
+#: graphicswin.cpp:1290
 msgid "click one corner of rectangle"
 msgstr "Klicken Sie auf eine Ecke des Rechtecks"
 
-#: graphicswin.cpp:1283
+#: graphicswin.cpp:1291
 msgid "click top left of text"
 msgstr "Klicken Sie auf die obere linke Ecke des Texts"
 
-#: graphicswin.cpp:1289
+#: graphicswin.cpp:1297
 msgid "click top left of image"
 msgstr "Klicken Sie auf die obere linke Ecke des Bilds"
 
-#: graphicswin.cpp:1301
+#: graphicswin.cpp:1309
 msgid ""
 "No entities are selected. Select entities before trying to toggle their "
 "construction state."
@@ -1260,7 +1267,7 @@ msgid ""
 "lines)\n"
 "    * a workplane (copy of the workplane)\n"
 msgstr ""
-"Ungültige Auswahl für Skizze in neuer Arbeitsebene Diese Gruppe kann "
+"Ungültige Auswahl für Skizze in neuer Arbeitsebene. Diese Gruppe kann "
 "erstellt werden mit:\n"
 "\n"
 "    * einem Punkt (durch den Punkt, orthogonal zu den Koordinatenachsen)\n"
@@ -1283,7 +1290,7 @@ msgstr "Extrusion"
 
 #: group.cpp:168
 msgid "Lathe operation can only be applied to planar sketches."
-msgstr ""
+msgstr "Rotieren kann nur mit planaren Skizzen ausgeführt werden."
 
 #: group.cpp:179
 msgid ""
@@ -1293,7 +1300,7 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
-"Ungültige Auswahl für neue Gruppe mit Drehquerschnitt Diese Gruppe kann "
+"Ungültige Auswahl für neue Gruppe mit Drehquerschnitt. Diese Gruppe kann "
 "erstellt werden mit:\n"
 "\n"
 "    * einem Punkt und einem Liniensegment oder einer Normale (Drehung um "
@@ -1307,7 +1314,7 @@ msgstr "Drehung"
 
 #: group.cpp:194
 msgid "Revolve operation can only be applied to planar sketches."
-msgstr ""
+msgstr "Revolve kann nur mit planaren Skizzen ausgeführt werden."
 
 #: group.cpp:205
 msgid ""
@@ -1317,15 +1324,21 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"Ungültige Auswahl für eine neue Revolve Gruppe. Diese Gruppe kann erzeugt "
+"werden mit:\n"
+"\n"
+"    * einem Punkt und einem Liniensegment oder Normale (gedreht um eine "
+"Achse parallel zu Linie / Normale, durch Punkt)\n"
+"    * einem Liniensegment (gedreht um Liniensegment)\n"
 
 #: group.cpp:217
 msgctxt "group-name"
 msgid "revolve"
-msgstr ""
+msgstr "Revolve"
 
 #: group.cpp:222
 msgid "Helix operation can only be applied to planar sketches."
-msgstr ""
+msgstr "Helix kann nur mit planaren Skizzen ausgeführt werden."
 
 #: group.cpp:233
 msgid ""
@@ -1335,11 +1348,17 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"Ungültige Auswahl für eine neue Helix Gruppe. Diese Gruppe kann erzeugt "
+"werden mit:\n"
+"\n"
+"    * einem Punkt und einem Liniensegment oder Normale (gedreht um eine "
+"Achse parallel zu Linie / Normale, durch Punkt)\n"
+"    * einem Liniensegment (gedreht um Liniensegment)\n"
 
 #: group.cpp:245
 msgctxt "group-name"
 msgid "helix"
-msgstr ""
+msgstr "Helix"
 
 #: group.cpp:258
 msgid ""
@@ -1350,12 +1369,12 @@ msgid ""
 "    * a point and a line or a normal (rotate about an axis through the "
 "point, and parallel to line / normal)\n"
 msgstr ""
-"Ungültige Auswahl für neue Rotation Diese Gruppe kann erstellt werden mit:\n"
+"Ungültige Auswahl für neue Rotation. Diese Gruppe kann erstellt werden mit:\n"
 "\n"
-"    * einem Punkt in vorgegebener Arbeitsebene (in der Ebene um den Punkt "
-"drehen)\n"
-"    * einem Punkt und einer Linie oder einer Normale (um eine Achse durch "
-"den Punkt drehen,  parallel zur Linie / Normale)\n"
+"    * einem Punkt in vorgegebener Arbeitsebene (gedreht in der Ebene um den "
+"Punkt)\n"
+"    * einem Punkt und einer Linie oder einer Normale (gedreht um eine Achse "
+"durch den Punkt, parallel zur Linie / Normale)\n"
 
 #: group.cpp:271
 msgctxt "group-name"
@@ -1371,19 +1390,19 @@ msgstr "Versetzen"
 msgid "(unnamed)"
 msgstr "unbenannt"
 
-#: groupmesh.cpp:689
+#: groupmesh.cpp:709
 msgid "not closed contour, or not all same style!"
 msgstr "Kontur nicht geschlossen, oder kein einheitlicher Linientyp!"
 
-#: groupmesh.cpp:702
+#: groupmesh.cpp:722
 msgid "points not all coplanar!"
 msgstr "Punkte sind nicht alle koplanar!"
 
-#: groupmesh.cpp:704
+#: groupmesh.cpp:724
 msgid "contour is self-intersecting!"
 msgstr "Kontur überschneidet sich selbst!"
 
-#: groupmesh.cpp:706
+#: groupmesh.cpp:726
 msgid "zero-length edge!"
 msgstr "Kante mit Länge Null!"
 
@@ -1431,105 +1450,105 @@ msgstr ""
 msgid "Can't split; no intersection found."
 msgstr "Trennen nicht möglich; keine Überschneidung gefunden."
 
-#: mouse.cpp:560
+#: mouse.cpp:559
 msgid "Assign to Style"
 msgstr "Linientyp zuordnen"
 
-#: mouse.cpp:576
+#: mouse.cpp:575
 msgid "No Style"
 msgstr "Kein Linientyp"
 
-#: mouse.cpp:579
+#: mouse.cpp:578
 msgid "Newly Created Custom Style..."
 msgstr "Neu erstellter benutzerdefinierter Linientyp…"
 
-#: mouse.cpp:586
+#: mouse.cpp:585
 msgid "Group Info"
 msgstr "Info zu Gruppe"
 
-#: mouse.cpp:606
+#: mouse.cpp:605
 msgid "Style Info"
 msgstr "Info zu Linientyp"
 
-#: mouse.cpp:626
+#: mouse.cpp:625
 msgid "Select Edge Chain"
 msgstr "Kantenverlauf auswählen"
 
-#: mouse.cpp:632
+#: mouse.cpp:631
 msgid "Toggle Reference Dimension"
 msgstr "Von/zu Referenzangabe wechseln"
 
-#: mouse.cpp:638
+#: mouse.cpp:637
 msgid "Other Supplementary Angle"
 msgstr "Anderer Komplementärwinkel"
 
-#: mouse.cpp:643
+#: mouse.cpp:642
 msgid "Snap to Grid"
 msgstr "Auf Raster ausrichten"
 
-#: mouse.cpp:652
+#: mouse.cpp:651
 msgid "Remove Spline Point"
 msgstr "Spline-Punkt löschen"
 
-#: mouse.cpp:687
+#: mouse.cpp:686
 msgid "Add Spline Point"
 msgstr "Spline-Punkt hinzufügen"
 
-#: mouse.cpp:691
+#: mouse.cpp:690
 msgid "Cannot add spline point: maximum number of points reached."
 msgstr ""
 "Spline-Punkt kann nicht hinzugefügt werden: maximale Anzahl der Punkte "
 "erreicht."
 
-#: mouse.cpp:716
+#: mouse.cpp:715
 msgid "Toggle Construction"
 msgstr "Konstruktionselement an/aus"
 
-#: mouse.cpp:731
+#: mouse.cpp:730
 msgid "Delete Point-Coincident Constraint"
 msgstr "Einschränkung \"Punkte deckungsgleich\" löschen"
 
-#: mouse.cpp:750
+#: mouse.cpp:749
 msgid "Cut"
 msgstr "Ausschneiden"
 
-#: mouse.cpp:752
+#: mouse.cpp:751
 msgid "Copy"
 msgstr "Kopieren"
 
-#: mouse.cpp:756
+#: mouse.cpp:755
 msgid "Select All"
 msgstr "Alle auswählen"
 
-#: mouse.cpp:761
+#: mouse.cpp:760
 msgid "Paste"
 msgstr "Einfügen"
 
-#: mouse.cpp:763
+#: mouse.cpp:762
 msgid "Paste Transformed..."
 msgstr "Einfügen und transformieren…"
 
-#: mouse.cpp:768
+#: mouse.cpp:767
 msgid "Delete"
 msgstr "Löschen"
 
-#: mouse.cpp:771
+#: mouse.cpp:770
 msgid "Unselect All"
 msgstr "Alle deselektieren"
 
-#: mouse.cpp:778
+#: mouse.cpp:777
 msgid "Unselect Hovered"
 msgstr "Aktive deselektieren"
 
-#: mouse.cpp:787
+#: mouse.cpp:786
 msgid "Zoom to Fit"
 msgstr "Zoom an Bildschirm anpassen"
 
-#: mouse.cpp:990 mouse.cpp:1277
+#: mouse.cpp:988 mouse.cpp:1275
 msgid "click next point of line, or press Esc"
 msgstr "Klicken Sie auf den nächsten Punkt der Linie, oder drücken Sie Esc"
 
-#: mouse.cpp:996
+#: mouse.cpp:994
 msgid ""
 "Can't draw rectangle in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1537,15 +1556,15 @@ msgstr ""
 "Ein Rechteck kann nicht in 3D erstellt werden. Aktivieren Sie zuerst eine "
 "Arbeitsebene mit \"Skizze -> In Arbeitsebene\"."
 
-#: mouse.cpp:1030
+#: mouse.cpp:1028
 msgid "click to place other corner of rectangle"
 msgstr "Klicken Sie auf die gegenüberliegende Ecke des Rechtecks"
 
-#: mouse.cpp:1050
+#: mouse.cpp:1048
 msgid "click to set radius"
 msgstr "Klicken Sie, um den Radius festzulegen"
 
-#: mouse.cpp:1055
+#: mouse.cpp:1053
 msgid ""
 "Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1553,23 +1572,23 @@ msgstr ""
 "Ein Kreisbogen kann nicht in 3D erstellt werden. Aktivieren Sie zuerst eine "
 "Arbeitsebene mit \"Skizze -> In Arbeitsebene\"."
 
-#: mouse.cpp:1074
+#: mouse.cpp:1072
 msgid "click to place point"
 msgstr "Klicken Sie, um einen Punkt zu platzieren"
 
-#: mouse.cpp:1090
+#: mouse.cpp:1088
 msgid "click next point of cubic, or press Esc"
 msgstr ""
 "Klicken Sie auf den nächsten Punkt der kubischen Linie, oder drücken Sie Esc"
 
-#: mouse.cpp:1095
+#: mouse.cpp:1093
 msgid ""
 "Sketching in a workplane already; sketch in 3d before creating new workplane."
 msgstr ""
 "Eine Arbeitsebene ist bereits aktiv. Skizzieren Sie in 3D, bevor Sie eine "
 "neue Arbeitsebene erstellen."
 
-#: mouse.cpp:1111
+#: mouse.cpp:1109
 msgid ""
 "Can't draw text in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1577,11 +1596,11 @@ msgstr ""
 "Text kann nicht in 3D erstellt werden. Aktivieren Sie zuerst eine "
 "Arbeitsebene mit \"Skizze -> In Arbeitsebene\"."
 
-#: mouse.cpp:1128
+#: mouse.cpp:1126
 msgid "click to place bottom right of text"
 msgstr "Klicken Sie auf die untere rechte Ecke des Texts"
 
-#: mouse.cpp:1134
+#: mouse.cpp:1132
 msgid ""
 "Can't draw image in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1589,135 +1608,422 @@ msgstr ""
 "Das Bild kann nicht in 3D erstellt werden. Aktivieren Sie zuerst eine "
 "Arbeitsebene mit \"Skizze -> In Arbeitsebene\"."
 
-#: mouse.cpp:1161
+#: mouse.cpp:1159
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "NEUER KOMMENTAR -- DOPPELKLICKEN ZUM BEARBEITEN"
 
-#: platform/gui.cpp:85
+#: platform/gui.cpp:85 platform/gui.cpp:89 solvespace.cpp:511
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "SolveSpace-Modelle"
 
-#: platform/gui.cpp:89
+#: platform/gui.cpp:90
+msgctxt "file-type"
+msgid "IDF circuit board"
+msgstr "IDF Leiterplatte"
+
+#: platform/gui.cpp:94
 msgctxt "file-type"
 msgid "PNG image"
 msgstr "PNG-Datei"
 
-#: platform/gui.cpp:93
+#: platform/gui.cpp:98
 msgctxt "file-type"
 msgid "STL mesh"
 msgstr "STL-Netz"
 
-#: platform/gui.cpp:94
+#: platform/gui.cpp:99
 msgctxt "file-type"
 msgid "Wavefront OBJ mesh"
 msgstr "Wavefront OBJ-Netz"
 
-#: platform/gui.cpp:95
+#: platform/gui.cpp:100
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, with viewer"
 msgstr "Three.js-kompatibles Netz, mit Ansicht"
 
-#: platform/gui.cpp:96
+#: platform/gui.cpp:101
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, mesh only"
 msgstr "Three.js-kompatibles Netz, nur Netz"
 
-#: platform/gui.cpp:97
-msgctxt "file-type"
-msgid "Q3D Object file"
-msgstr "Q3D Objektdatei"
-
-#: platform/gui.cpp:98
+#: platform/gui.cpp:102
 msgctxt "file-type"
 msgid "VRML text file"
 msgstr "VRML Textdatei"
 
-#: platform/gui.cpp:102 platform/gui.cpp:109 platform/gui.cpp:116
+#: platform/gui.cpp:106 platform/gui.cpp:113 platform/gui.cpp:120
 msgctxt "file-type"
 msgid "STEP file"
 msgstr "STEP-Datei"
 
-#: platform/gui.cpp:106
+#: platform/gui.cpp:110
 msgctxt "file-type"
 msgid "PDF file"
 msgstr "PDF-Datei"
 
-#: platform/gui.cpp:107
+#: platform/gui.cpp:111
 msgctxt "file-type"
 msgid "Encapsulated PostScript"
 msgstr "Eingebettetes Postscript"
 
-#: platform/gui.cpp:108
+#: platform/gui.cpp:112
 msgctxt "file-type"
 msgid "Scalable Vector Graphics"
 msgstr "Skalierbare Vektorgrafik"
 
-#: platform/gui.cpp:110 platform/gui.cpp:117
+#: platform/gui.cpp:114 platform/gui.cpp:121
 msgctxt "file-type"
 msgid "DXF file (AutoCAD 2007)"
 msgstr "DXF-Datei (AutoCAD 2007)"
 
-#: platform/gui.cpp:111
+#: platform/gui.cpp:115
 msgctxt "file-type"
 msgid "HPGL file"
 msgstr "HPGL-Datei"
 
-#: platform/gui.cpp:112
+#: platform/gui.cpp:116
 msgctxt "file-type"
 msgid "G Code"
 msgstr "G-Code"
 
-#: platform/gui.cpp:121
+#: platform/gui.cpp:125
 msgctxt "file-type"
 msgid "AutoCAD DXF and DWG files"
 msgstr "AutoCAD DXF- und DWG-Dateien"
 
-#: platform/gui.cpp:125
+#: platform/gui.cpp:129
 msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "Werte durch Komma getrennt (CSV)"
 
-#: platform/guigtk.cpp:1317 platform/guimac.mm:1347 platform/guiwin.cpp:1608
+#: platform/guigtk.cpp:1324 platform/guimac.mm:1363 platform/guiwin.cpp:1639
 msgid "untitled"
 msgstr "unbenannt"
 
-#: platform/guigtk.cpp:1328 platform/guigtk.cpp:1361 platform/guimac.mm:1305
-#: platform/guiwin.cpp:1555
+#: platform/guigtk.cpp:1335 platform/guigtk.cpp:1368 platform/guimac.mm:1321
+#: platform/guiwin.cpp:1582
 msgctxt "title"
 msgid "Save File"
 msgstr "Datei speichern"
 
-#: platform/guigtk.cpp:1329 platform/guigtk.cpp:1362 platform/guimac.mm:1288
-#: platform/guiwin.cpp:1557
+#: platform/guigtk.cpp:1336 platform/guigtk.cpp:1369 platform/guimac.mm:1304
+#: platform/guiwin.cpp:1584
 msgctxt "title"
 msgid "Open File"
 msgstr "Datei öffnen"
 
-#: platform/guigtk.cpp:1332 platform/guigtk.cpp:1368
+#: platform/guigtk.cpp:1339 platform/guigtk.cpp:1375
 msgctxt "button"
 msgid "_Cancel"
 msgstr "_Abbrechen"
 
-#: platform/guigtk.cpp:1333 platform/guigtk.cpp:1366
+#: platform/guigtk.cpp:1340 platform/guigtk.cpp:1373
 msgctxt "button"
 msgid "_Save"
 msgstr "_Speichern"
 
-#: platform/guigtk.cpp:1334 platform/guigtk.cpp:1367
+#: platform/guigtk.cpp:1341 platform/guigtk.cpp:1374
 msgctxt "button"
 msgid "_Open"
-msgstr ""
+msgstr "_Öffnen"
+
+#: solvespace.cpp:169
+msgctxt "title"
+msgid "Autosave Available"
+msgstr "Automatische Sicherungsdatei verfügbar"
+
+#: solvespace.cpp:170
+msgctxt "dialog"
+msgid "An autosave file is available for this sketch."
+msgstr "Eine automatische Sicherung ist für diese Skizze verfügbar."
+
+#: solvespace.cpp:171
+msgctxt "dialog"
+msgid "Do you want to load the autosave file instead?"
+msgstr "Wollen Sie die automatische Sicherungsdatei stattdessen laden?"
+
+#: solvespace.cpp:172
+msgctxt "button"
+msgid "&Load autosave"
+msgstr "AutoDatei &öffnen"
+
+#: solvespace.cpp:174
+msgctxt "button"
+msgid "Do&n't Load"
+msgstr "&Nicht laden"
+
+#: solvespace.cpp:557
+msgctxt "title"
+msgid "Modified File"
+msgstr "Geänderte Datei"
+
+#: solvespace.cpp:559
+#, c-format
+msgctxt "dialog"
+msgid "Do you want to save the changes you made to the sketch “%s”?"
+msgstr "Wollen Sie die Änderungen an der Skizze “%s” sichern?"
+
+#: solvespace.cpp:562
+msgctxt "dialog"
+msgid "Do you want to save the changes you made to the new sketch?"
+msgstr "Wollen Sie die Änderungen an der Skizze sichern?"
+
+#: solvespace.cpp:565
+msgctxt "dialog"
+msgid "Your changes will be lost if you don't save them."
+msgstr "Ihre Änderungen werden verworfen, wenn sie nicht abgespeichert werden."
+
+#: solvespace.cpp:566
+msgctxt "button"
+msgid "&Save"
+msgstr "&Sichern"
+
+#: solvespace.cpp:568
+msgctxt "button"
+msgid "Do&n't Save"
+msgstr "&Verwerfen"
 
 # solvespace.cpp:557
+#: solvespace.cpp:589
 msgctxt "title"
 msgid "(new sketch)"
 msgstr "(Neue Skizze)"
 
-#: solvespace.cpp:564
+#: solvespace.cpp:596
 msgctxt "title"
 msgid "Property Browser"
 msgstr "Attribut-Browser"
+
+#: solvespace.cpp:658
+msgid ""
+"Constraints are currently shown, and will be exported in the toolpath. This "
+"is probably not what you want; hide them by clicking the link at the top of "
+"the text window."
+msgstr ""
+"Einschränkungen sind momentan sichtbar und werden exportiert. Das wollen Sie "
+"wahrscheinlich nicht. Verstecken Sie sie in dem auf den Link oben im "
+"Textfenster klicken."
+
+#: solvespace.cpp:730
+#, c-format
+msgid ""
+"Can't identify file type from file extension of filename '%s'; try .dxf or ."
+"dwg."
+msgstr ""
+"Kann den Dateityp der Datei '%s' nicht auf Grund der Dateierweiterung "
+"erkennen. Versuchen Sie .dxf oder .dwg."
+
+#: solvespace.cpp:778
+msgid "Constraint must have a label, and must not be a reference dimension."
+msgstr ""
+"Die Einschränkung muss einen Namen haben, und darf keine "
+"Referenzdimensionierung sein."
+
+#: solvespace.cpp:782
+msgid "Bad selection for step dimension; select a constraint."
+msgstr ""
+"Falsche Auswahl für die Schrittdimensionierung. Wählen Sie eine "
+"Einschränkung."
+
+#: solvespace.cpp:806
+msgid "The assembly does not interfere, good."
+msgstr "Der Zusammenbau funktioniert, gut."
+
+#: solvespace.cpp:822
+#, c-format
+msgid ""
+"The volume of the solid model is:\n"
+"\n"
+"    %s"
+msgstr ""
+"Das Volumen des Modell ist:\n"
+"\n"
+"    %s"
+
+#: solvespace.cpp:831
+#, c-format
+msgid ""
+"\n"
+"The volume of current group mesh is:\n"
+"\n"
+"    %s"
+msgstr ""
+"\n"
+"Das Volumen des Netz der aktiven Gruppe ist:\n"
+"\n"
+"    %s"
+
+#: solvespace.cpp:836
+msgid ""
+"\n"
+"\n"
+"Curved surfaces have been approximated as triangles.\n"
+"This introduces error, typically of around 1%."
+msgstr ""
+"\n"
+"\n"
+"Gekrümmte Flächen wurden als Dreiecksnetz angenähert.\n"
+"Das verursacht Fehler, typischerweise um 1%."
+
+#: solvespace.cpp:851
+#, c-format
+msgid ""
+"The surface area of the selected faces is:\n"
+"\n"
+"    %s\n"
+"\n"
+"Curves have been approximated as piecewise linear.\n"
+"This introduces error, typically of around 1%%."
+msgstr ""
+"Die Fläche der ausgewählten Flächen ist:\n"
+"\n"
+"    %s\n"
+"\n"
+"Kurven wurden als gerade Linienstücke angenähert.\n"
+"Das verursacht Fehler, typischerweise um 1%%."
+
+#: solvespace.cpp:860
+msgid ""
+"This group does not contain a correctly-formed 2d closed area. It is open, "
+"not coplanar, or self-intersecting."
+msgstr ""
+"Diese Gruppe beinhaltet keine korrekt geschlossene 2D Fläche. Sie ist offen, "
+"nicht koplanar, oder überschneidet sich selbst."
+
+#: solvespace.cpp:872
+#, c-format
+msgid ""
+"The area of the region sketched in this group is:\n"
+"\n"
+"    %s\n"
+"\n"
+"Curves have been approximated as piecewise linear.\n"
+"This introduces error, typically of around 1%%."
+msgstr ""
+"Die Summe der Flächen in dieser Gruppe ist:\n"
+"\n"
+"    %s\n"
+"\n"
+"Kurven wurden als gerade Linienstücke angenähert.\n"
+"Das verursacht Fehler, typischerweise um 1%%."
+
+#: solvespace.cpp:892
+#, c-format
+msgid ""
+"The total length of the selected entities is:\n"
+"\n"
+"    %s\n"
+"\n"
+"Curves have been approximated as piecewise linear.\n"
+"This introduces error, typically of around 1%%."
+msgstr ""
+"Die Gesamtlänge der ausgwählten Elemente ist:\n"
+"\n"
+"    %s\n"
+"\n"
+"Kurven wurden als gerade Linienstücke angenähert.\n"
+"Das verursacht Fehler, typischerweise um 1%%."
+
+#: solvespace.cpp:898
+msgid "Bad selection for perimeter; select line segments, arcs, and curves."
+msgstr "Falsche Auswahl für Umfang. Wähle Liniensegmente, Bögen und Kurven."
+
+#: solvespace.cpp:914
+msgid "Bad selection for trace; select a single point."
+msgstr "Falsche Auswahl für Punkt nachzeichnen. Wähle einen einzelnen Punkt."
+
+#: solvespace.cpp:941
+#, c-format
+msgid "Couldn't write to '%s'"
+msgstr "Konnte '%s' nicht schreiben"
+
+#: solvespace.cpp:971
+msgid "The mesh is self-intersecting (NOT okay, invalid)."
+msgstr "Das Netz schneidet sich selbst: Falsch, ungültig."
+
+#: solvespace.cpp:972
+msgid "The mesh is not self-intersecting (okay, valid)."
+msgstr "Das Netz schneidet sich nicht: Gut, gültig."
+
+#: solvespace.cpp:974
+msgid "The mesh has naked edges (NOT okay, invalid)."
+msgstr "Das Netz hat lose Kanten: Falsch, ungültig."
+
+#: solvespace.cpp:975
+msgid "The mesh is watertight (okay, valid)."
+msgstr "Das Netz hat keine lose Kanten: Gut, gültig."
+
+#: solvespace.cpp:978
+#, c-format
+msgid ""
+"\n"
+"\n"
+"The model contains %d triangles, from %d surfaces."
+msgstr ""
+"\n"
+"\n"
+"Das Modell hat %d Dreiecke, von %d Flächen."
+
+#: solvespace.cpp:982
+#, c-format
+msgid ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"Zero problematic edges, good.%s"
+msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"Keine problematischen Kanten, gut.%s"
+
+#: solvespace.cpp:985
+#, c-format
+msgid ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"%d problematic edges, bad.%s"
+msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"%d problematische Kanten, schlecht.%s"
+
+#: solvespace.cpp:998
+#, c-format
+msgid ""
+"This is SolveSpace version %s.\n"
+"\n"
+"For more information, see http://solvespace.com/\n"
+"\n"
+"SolveSpace is free software: you are free to modify\n"
+"and/or redistribute it under the terms of the GNU\n"
+"General Public License (GPL) version 3 or later.\n"
+"\n"
+"There is NO WARRANTY, to the extent permitted by\n"
+"law. For details, visit http://gnu.org/licenses/\n"
+"\n"
+"© 2008-%d Jonathan Westhues and other authors.\n"
+msgstr ""
+"Das ist SolveSpace version %s.\n"
+"\n"
+"Für mehr Information siehe http://solvespace.com/\n"
+"\n"
+"SolveSpace ist freie Software: Sie steht Ihnen frei sie zu ändern\n"
+"und/oder zu vervielfältigen unter der Auflage der GNU\n"
+"General Public License (GPL) Version 3 oder späterer Versionen.\n"
+"\n"
+"Es besteht keinerlei Gewährleistung und Haftung für das Programm, soweit "
+"dies gesetzlich zulässig ist.\n"
+"Für Details siehe http://gnu.org/licenses/\n"
+"\n"
+"© 2008-%d Jonathan Westhues und andere.\n"
 
 #: style.cpp:166
 msgid ""
@@ -1853,31 +2159,39 @@ msgid "New group rotating active sketch"
 msgstr "Neue Gruppe mit rotierter aktiver Skizze"
 
 #: toolbar.cpp:72
+msgid "New group helix from active sketch"
+msgstr "Neue Gruppe Helix von aktiver Skizze"
+
+#: toolbar.cpp:74
+msgid "New group revolve active sketch"
+msgstr "Neue Gruppe mit gedrehter aktiver Skizze"
+
+#: toolbar.cpp:76
 msgid "New group step and repeat rotating"
 msgstr "Neue Gruppe mit kopierter gedrehter Skizze"
 
-#: toolbar.cpp:74
+#: toolbar.cpp:78
 msgid "New group step and repeat translating"
 msgstr "Neue Gruppe mit kopierter versetzter Skizze"
 
-#: toolbar.cpp:76
+#: toolbar.cpp:80
 msgid "New group in new workplane (thru given entities)"
 msgstr ""
 "Neue Gruppe in neuer Arbeitsebene (definiert durch ausgewählte Objekte)"
 
-#: toolbar.cpp:78
+#: toolbar.cpp:82
 msgid "New group in 3d"
 msgstr "Neue Gruppe in 3D"
 
-#: toolbar.cpp:80
+#: toolbar.cpp:84
 msgid "New group linking / assembling file"
 msgstr "Neue Gruppe mit verknüpfter Datei"
 
-#: toolbar.cpp:84
+#: toolbar.cpp:88
 msgid "Nearest isometric view"
 msgstr "Nächste isometrische Ansicht"
 
-#: toolbar.cpp:86
+#: toolbar.cpp:90
 msgid "Align view to active workplane"
 msgstr "Ansicht auf Arbeitsebene ausrichten"
 
@@ -1903,6 +2217,10 @@ msgstr "Der Maßstab kann nicht Null oder negativ sein."
 #: view.cpp:90 view.cpp:99
 msgid "Bad format: specify x, y, z"
 msgstr "Ungültiges Format: geben Sie x, y, z ein"
+
+#~ msgctxt "file-type"
+#~ msgid "Q3D Object file"
+#~ msgstr "Q3D Objektdatei"
 
 #~ msgid "Specify between 0 and 8 digits after the decimal."
 #~ msgstr "Geben Sie 0 bis 8 Ziffern nach dem Dezimalzeichen an."
@@ -1980,10 +2298,6 @@ msgstr "Ungültiges Format: geben Sie x, y, z ein"
 #~ "\n"
 #~ "Möchten Sie die Änderungen speichern?"
 
-#~ msgctxt "title"
-#~ msgid "Modified File"
-#~ msgstr "Geänderte Datei"
-
 #~ msgctxt "button"
 #~ msgid "Do_n't Save"
 #~ msgstr "Nicht speichern"
@@ -1996,10 +2310,6 @@ msgstr "Ungültiges Format: geben Sie x, y, z ein"
 #~ "Eine automatisch gespeicherte Datei ist für dieses Projekt vorhanden.\n"
 #~ "\n"
 #~ "Wollen Sie die automatisch gespeicherte Datei öffnen?"
-
-#~ msgctxt "title"
-#~ msgid "Autosave Available"
-#~ msgstr "Automatische Speicherdatei verfügbar"
 
 #~ msgctxt "button"
 #~ msgid "_Load autosave"
@@ -2016,4 +2326,3 @@ msgstr "Ungültiges Format: geben Sie x, y, z ein"
 #~ msgctxt "button"
 #~ msgid "_No"
 #~ msgstr "_Nein"
-

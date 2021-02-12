@@ -1,0 +1,44 @@
+name: Test
+
+on:
+  pull_request:
+    branches:
+      - master
+  push:
+    branches-ignore:
+      - master
+    tags-ignore:
+      - v*
+
+jobs:
+  test_ubuntu:
+      runs-on: ubuntu-18.04
+      name: Test Ubuntu
+      steps:
+      - uses: actions/checkout@v2
+      - name: Install Dependencies
+        run: .github/scripts/install-ubuntu.sh
+      - name: Build & Test
+        run: .github/scripts/build-ubuntu.sh
+
+  test_windows:
+    runs-on: windows-2019
+    name: Test Windows
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: .github/scripts/install-windows.sh
+      shell: bash
+    - name: Build & Test
+      run: .github/scripts/build-windows.sh
+      shell: bash
+
+  test_macos:
+    runs-on: macos-latest
+    name: Test macOS
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: .github/scripts/install-macos.sh
+    - name: Build & Test
+      run: .github/scripts/build-macos.sh
