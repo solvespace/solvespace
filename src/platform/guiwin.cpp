@@ -142,7 +142,18 @@ static std::string NegateMnemonics(const std::string &label) {
     return newLabel;
 }
 
-static int Clamp(int x, int a, int b) {
+static int Clamp(int x, int a, int b, int brda, int brdb) {
+    // If we are outside of an edge of the monitor
+    // and a "border" is requested "move in" from that edge
+    // by "b/brdX" (the "b" parameter is the resolution)
+    if((x <= a) && (brda)) {
+        a += b / brda;  // yes "b/brda" since b is the size
+    }
+
+    if(((x >= b) && brdb)) {
+        b -= b / brdb;
+    }
+
     return max(a, min(x, b));
 }
 
@@ -1218,11 +1229,14 @@ public:
         sscheck(GetMonitorInfo(MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST), &mi));
 
         // If it somehow ended up off-screen, then put it back.
+        // and make it visible by at least this portion of the scrren
+        const LONG movein = 40;
+
         RECT mrc = mi.rcMonitor;
-        rc.left   = Clamp(rc.left,   mrc.left, mrc.right);
-        rc.right  = Clamp(rc.right,  mrc.left, mrc.right);
-        rc.top    = Clamp(rc.top,    mrc.top,  mrc.bottom);
-        rc.bottom = Clamp(rc.bottom, mrc.top,  mrc.bottom);
+        rc.left   = Clamp(rc.left,   mrc.left, mrc.right, 0, movein);
+        rc.right  = Clamp(rc.right,  mrc.left, mrc.right, movein, 0);
+        rc.top    = Clamp(rc.top,    mrc.top,  mrc.bottom, 0, movein);
+        rc.bottom = Clamp(rc.bottom, mrc.top,  mrc.bottom, movein, 0);
 
         // And make sure the minimum size is respected. (We can freeze a size smaller
         // than minimum size if the DPI changed between runs.)
