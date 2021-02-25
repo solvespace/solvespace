@@ -29,6 +29,8 @@ New sketch features:
   * Property browser now shows amount of degrees of freedom in group list.
     It also shows a yellow "err" if the sketch has problems (e.g. self
     intersecting) that would propagate in subsequent groups.
+  * It is now possible to press "g" to toggle construction on new objects while
+    they are still being drawn.
 
 New constraint features:
   * When dragging an arc or rectangle point, it will be automatically
@@ -47,6 +49,10 @@ New constraint features:
     would have been redundant with other ones.
   * New option to open the constraint editor for newly created constraints
     with a value.
+  * New "redundant constraint timeout (in ms)" option to prevent UI freeze
+    when looking for redundant constraints.
+  * Swap vertical and horizontal constraints when pasting rotated by 90/270
+    degrees.
 
 New export/import features:
   * Link IDF circuit boards in an assembly (.emn files)
@@ -63,12 +69,17 @@ New export/import features:
   * VRML (WRL) triangle meshes can now be exported, useful for e.g. [KiCAD](http://kicad.org).
   * Export 2d section: custom styled entities that lie in the same
     plane as the exported section are included.
+  * Added ExportBackgroundColor in configuration for EPS, PDF, and SVG files.
+  * STEP export includes object colors and transparency.
 
 New rendering features:
   * The "Show/hide hidden lines" button is now a tri-state button that allows
     showing all lines (on top of shaded mesh), stippling occluded lines
     or not drawing them at all.
   * The "Show/hide outlines" button is now independent from "Show/hide edges".
+  * "View | Darken Inactive Solids" added. When turned off and a "sketch in plane"
+    group is active solids form previous groups will not be "darkened" (have the
+    s000d-#def-dim-solid style applied to them).
 
 New measurement/analysis features:
   * New choice for base unit, meters.
@@ -85,7 +96,6 @@ New measurement/analysis features:
     workplane is displayed.
 
 Other new features:
-  * Added ExportBackgroundColor in configuration for EPS, PDF, and SVG files.
   * Improvements to the text window for selected entities and constraints.
   * Ambient light source added in text window to allow flat shaded renderings.
   * New command-line interface, for batch exporting and more.
@@ -114,6 +124,7 @@ Other new features:
   * New cmake build options using -DENABLE_OPENMP=yes and -DENABLE_LTO=yes
     to enable support for multi-threading and link-time optimization.
   * "Shift+Scroll" for ten times finer zoom.
+  * Chinese translation
 
 Bugs fixed:
   * Fixed broken --view options for command line thumbnail image creation.
