@@ -318,8 +318,9 @@ void TextWindow::DescribeSelection() {
         Printf(true,  "   at " PT_AS_STR, COSTR(p0));
         Vector p1 = SK.GetEntity(gs.point[1])->PointGetNum();
         Printf(false, "      " PT_AS_STR, COSTR(p1));
-        double d = (p1.Minus(p0)).Magnitude();
-        Printf(true, "  d = %Fi%s", SS.MmToString(d).c_str());
+        Vector dv = p1.Minus(p0);
+        Printf(true, "  d = %Fi%s", SS.MmToString(dv.Magnitude()).c_str());
+        Printf(false, "  d(x, y, z) = " PT_AS_STR, COSTR(dv));
     } else if(gs.n == 2 && gs.points == 1 && gs.circlesOrArcs == 1) {
         Entity *ec = SK.GetEntity(gs.entity[0]);
         if(ec->type == Entity::Type::CIRCLE) {
