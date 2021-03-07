@@ -150,6 +150,17 @@ void Constraint::ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *
     Vector as = cubic->CubicGetStartNum(),
            af = cubic->CubicGetFinishNum();
 
+    // Look for existing constraint. If found constrain the other two points
+    auto it = std::find_if(SK.constraint.begin(), SK.constraint.end(),
+                           [&](ConstraintBase const &con) {
+                               return (con.type == Constraint::Type::CUBIC_LINE_TANGENT) &&
+                                      ((con.entityA == line->h && con.entityB == cubic->h) ||
+                                       (con.entityB == line->h && con.entityA == cubic->h));
+                           });
+    if(it != SK.constraint.end()) {
+        it->other = !c->other;
+    }
+
     if(l0.Equals(as) || l1.Equals(as)) {
         c->other = false;
     } else if(l0.Equals(af) || l1.Equals(af)) {
@@ -167,6 +178,19 @@ void Constraint::ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *e
            af = eA->EndpointFinish(),
            bs = eB->EndpointStart(),
            bf = eB->EndpointFinish();
+
+    // Look for existing constraint. If found constrain the other two points
+    auto it = std::find_if(SK.constraint.begin(), SK.constraint.end(),
+                           [&](ConstraintBase const &con) {
+                               return (con.type == Constraint::Type::CURVE_CURVE_TANGENT) &&
+                                      ((con.entityA == eA->h && con.entityB == eB->h) ||
+                                       (con.entityA == eB->h && con.entityB == eA->h));
+                           });
+    if(it != SK.constraint.end()) {
+        it->other = !c->other;
+        it->other2 = !c->other2;
+    }
+
     if(as.Equals(bs)) {
         c->other = false;
         c->other2 = false;
