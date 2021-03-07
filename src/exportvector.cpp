@@ -1085,7 +1085,9 @@ void SvgFileWriter::StartFile() {
     fprintf(f, "}\r\n");
 
     auto export_style = [&](hStyle hs) {
+        Style *s = Style::Get(hs);
         RgbaColor strokeRgb = Style::Color(hs, /*forExport=*/true);
+        RgbaColor fillRgb = Style::FillColor(hs, /*forExport=*/true);
         StipplePattern pattern = Style::PatternType(hs);
         double stippleScale = Style::StippleScaleMm(hs);
 
@@ -1100,7 +1102,12 @@ void SvgFileWriter::StartFile() {
         if(!patternStr.empty()) {
             fprintf(f, "stroke-dasharray:%s;\r\n", patternStr.c_str());
         }
-        fprintf(f, "fill:none;\r\n");
+        if(s->filled) {
+            fprintf(f, "fill:#%02x%02x%02x;\r\n", fillRgb.red, fillRgb.green, fillRgb.blue); 
+        }
+        else {
+            fprintf(f, "fill:none;\r\n");
+        }
         fprintf(f, "}\r\n");
     };
 

@@ -883,6 +883,7 @@ public:
         RgbaColor   color;
         double      width;
         int         zIndex;
+        bool        exportable;
     } Default;
     static const Default Defaults[];
 
@@ -890,6 +891,7 @@ public:
     static std::string CnfWidth(const std::string &prefix);
     static std::string CnfTextHeight(const std::string &prefix);
     static std::string CnfPrefixToName(const std::string &prefix);
+    static std::string CnfExportable(const std::string &prefix);
 
     static void CreateAllDefaultStyles();
     static void CreateDefaultStyle(hStyle h);

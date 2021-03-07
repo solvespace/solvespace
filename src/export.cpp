@@ -207,7 +207,6 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
     for(auto &entity : SK.entity) {
         Entity *e = &entity;
         if(!e->IsVisible()) continue;
-        if(e->construction) continue;
 
         if(SS.exportPwlCurves || sm || fabs(SS.exportOffset) > LENGTH_EPS)
         {
