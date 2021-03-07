@@ -160,6 +160,16 @@ void Constraint::ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *
                 "On Point before constraining tangent."));
         return;
     }
+    // Look for existing constraint. If found constrain the other two points
+    auto existing = std::find_if(SK.constraint.begin(), SK.constraint.end(),
+                                 [&](ConstraintBase const &con) {
+                                     return (con.type == Constraint::Type::CUBIC_LINE_TANGENT) &&
+                                            ((con.entityA == line->h && con.entityB == cubic->h) ||
+                                             (con.entityB == line->h && con.entityA == cubic->h));
+                                 });
+    if(existing != SK.constraint.end()) {
+        c->other = !existing->other;
+    }
 }
 
 void Constraint::ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB) {
@@ -184,6 +194,17 @@ void Constraint::ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *e
                 "with Constrain -> On Point before constraining "
                 "tangent."));
         return;
+    }
+    // Look for existing constraint. If found constrain the other two points
+    auto existing = std::find_if(SK.constraint.begin(), SK.constraint.end(),
+                                 [&](ConstraintBase const &con) {
+                                     return (con.type == Constraint::Type::CURVE_CURVE_TANGENT) &&
+                                            ((con.entityA == eA->h && con.entityB == eB->h) ||
+                                             (con.entityA == eB->h && con.entityB == eA->h));
+                                 });
+    if(existing != SK.constraint.end()) {
+        c->other = !existing->other;
+        c->other2 = !existing->other2;
     }
 }
 
