@@ -462,7 +462,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
 
     // Record our style for all of the Beziers that we just created.
     for(; i < sbl->l.n; i++) {
-        sbl->l[i].auxA = style.v;
+        sbl->l[i].auxA = Style::ForEntity(h).v;
     }
 }
 

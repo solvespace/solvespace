@@ -8,22 +8,22 @@
 #include "solvespace.h"
 
 const Style::Default Style::Defaults[] = {
-    { { ACTIVE_GRP },   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, 4 },
-    { { CONSTRUCTION }, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, 0 },
-    { { INACTIVE_GRP }, "InactiveGrp",  RGBf(0.5, 0.3, 0.0), 1.5, 3 },
-    { { DATUM },        "Datum",        RGBf(0.0, 0.8, 0.0), 1.5, 0 },
-    { { SOLID_EDGE },   "SolidEdge",    RGBf(0.8, 0.8, 0.8), 1.0, 2 },
-    { { CONSTRAINT },   "Constraint",   RGBf(1.0, 0.1, 1.0), 1.0, 0 },
-    { { SELECTED },     "Selected",     RGBf(1.0, 0.0, 0.0), 1.5, 0 },
-    { { HOVERED },      "Hovered",      RGBf(1.0, 1.0, 0.0), 1.5, 0 },
-    { { CONTOUR_FILL }, "ContourFill",  RGBf(0.0, 0.1, 0.1), 1.0, 0 },
-    { { NORMALS },      "Normals",      RGBf(0.0, 0.4, 0.4), 1.0, 0 },
-    { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 3.0, 0 },
-    { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, 0 },
-    { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, 0 },
-    { { HIDDEN_EDGE },  "HiddenEdge",   RGBf(0.8, 0.8, 0.8), 1.0, 1 },
-    { { OUTLINE },      "Outline",      RGBf(0.8, 0.8, 0.8), 3.0, 5 },
-    { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0, 0 }
+    { { ACTIVE_GRP },   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, 4, true  },
+    { { CONSTRUCTION }, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, 0, false },
+    { { INACTIVE_GRP }, "InactiveGrp",  RGBf(0.5, 0.3, 0.0), 1.5, 3, true  },
+    { { DATUM },        "Datum",        RGBf(0.0, 0.8, 0.0), 1.5, 0, true  },
+    { { SOLID_EDGE },   "SolidEdge",    RGBf(0.8, 0.8, 0.8), 1.0, 2, true  },
+    { { CONSTRAINT },   "Constraint",   RGBf(1.0, 0.1, 1.0), 1.0, 0, true  },
+    { { SELECTED },     "Selected",     RGBf(1.0, 0.0, 0.0), 1.5, 0, true  },
+    { { HOVERED },      "Hovered",      RGBf(1.0, 1.0, 0.0), 1.5, 0, true  },
+    { { CONTOUR_FILL }, "ContourFill",  RGBf(0.0, 0.1, 0.1), 1.0, 0, true  },
+    { { NORMALS },      "Normals",      RGBf(0.0, 0.4, 0.4), 1.0, 0, true  },
+    { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 3.0, 0, true  },
+    { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, 0, true  },
+    { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, 0, true  },
+    { { HIDDEN_EDGE },  "HiddenEdge",   RGBf(0.8, 0.8, 0.8), 1.0, 1, true  },
+    { { OUTLINE },      "Outline",      RGBf(0.8, 0.8, 0.8), 3.0, 5, true  },
+    { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0, 0, true  }
 };
 
 std::string Style::CnfColor(const std::string &prefix) {
@@ -34,6 +34,9 @@ std::string Style::CnfWidth(const std::string &prefix) {
 }
 std::string Style::CnfTextHeight(const std::string &prefix) {
     return "Style_" + prefix + "_TextHeight";
+}
+std::string Style::CnfExportable(const std::string &prefix) {
+    return "Style_" + prefix + "_Exportable";
 }
 
 std::string Style::CnfPrefixToName(const std::string &prefix) {
@@ -97,7 +100,9 @@ void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
     s->textOrigin    = TextOrigin::NONE;
     s->textAngle     = 0;
     s->visible       = true;
-    s->exportable    = true;
+    s->exportable    = (factory)
+                        ? d->exportable
+                        : settings->ThawBool(CnfExportable(d->cnfPrefix), d->exportable);
     s->filled        = false;
     s->fillColor     = RGBf(0.3, 0.3, 0.3);
     s->stippleType   = (d->h.v == Style::HIDDEN_EDGE) ? StipplePattern::DASH
@@ -121,6 +126,7 @@ void Style::FreezeDefaultStyles(Platform::SettingsRef settings) {
         settings->FreezeColor(CnfColor(d->cnfPrefix), Color(d->h));
         settings->FreezeFloat(CnfWidth(d->cnfPrefix), (float)Width(d->h));
         settings->FreezeFloat(CnfTextHeight(d->cnfPrefix), (float)TextHeight(d->h));
+        settings->FreezeBool(CnfExportable(d->cnfPrefix), Exportable(d->h.v));
     }
 }
 
@@ -850,17 +856,19 @@ void TextWindow::ShowStyleInfo() {
             ((uint32_t)s->textOrigin & (uint32_t)Style::TextOrigin::TOP) ? RADIO_TRUE : RADIO_FALSE);
     }
 
-    if(s->h.v >= Style::FIRST_CUSTOM) {
-        Printf(false, "");
+    Printf(false, "");
 
+    if(s->h.v >= Style::FIRST_CUSTOM) {
         Printf(false, "  %Fd%D%f%Lv%s  show these objects on screen%E",
                 s->h.v, &ScreenChangeStyleYesNo,
                 s->visible ? CHECK_TRUE : CHECK_FALSE);
+    }
 
-        Printf(false, "  %Fd%D%f%Le%s  export these objects%E",
-                s->h.v, &ScreenChangeStyleYesNo,
-                s->exportable ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%D%f%Le%s  export these objects%E",
+            s->h.v, &ScreenChangeStyleYesNo,
+            s->exportable ? CHECK_TRUE : CHECK_FALSE);
 
+    if(s->h.v >= Style::FIRST_CUSTOM) {
         Printf(false, "");
         Printf(false, "To assign lines or curves to this style,");
         Printf(false, "right-click them on the drawing.");
