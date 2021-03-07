@@ -963,16 +963,17 @@ public:
     }
 
     void SetCursor(Cursor cursor) override {
-        Gdk::CursorType gdkCursorType;
+        std::string cursor_name;
         switch(cursor) {
-            case Cursor::POINTER: gdkCursorType = Gdk::ARROW; break;
-            case Cursor::HAND:    gdkCursorType = Gdk::HAND1; break;
+            case Cursor::POINTER: cursor_name = "default"; break;
+            case Cursor::HAND:    cursor_name = "pointer"; break;
             default: ssassert(false, "Unexpected cursor");
         }
 
         auto gdkWindow = gtkWindow.get_gl_widget().get_window();
         if(gdkWindow) {
-            gdkWindow->set_cursor(Gdk::Cursor::create(gdkCursorType));
+            gdkWindow->set_cursor(Gdk::Cursor::create(gdkWindow->get_display(), cursor_name.c_str()));
+//        gdkWindow->get_display()
         }
     }
 
