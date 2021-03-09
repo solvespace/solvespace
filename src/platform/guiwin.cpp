@@ -1095,7 +1095,7 @@ public:
                         return 0;
                     }
                 } else if(wParam == VK_ESCAPE) {
-                    sscheck(SendMessageW(hWindow, msg, wParam, lParam));
+                    window->HideEditor();
                     return 0;
                 }
         }
