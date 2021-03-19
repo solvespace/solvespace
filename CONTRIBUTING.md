@@ -17,8 +17,8 @@ so any savefiles should first be archived.
 Licensing
 ---------------
 
-SolveSpace is licensed under the GPLv3 and any contributions must be made available
-under the terms of that license.
+SolveSpace is licensed under the GPLv3 or later and any contributions
+must be made available under the terms of that license.
 
 Contributing translations
 -------------------------

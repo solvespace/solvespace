@@ -270,15 +270,16 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         return;
     }
 
+    if(pending.operation == Pending::DRAGGING_POINTS && ctrlDown) {
+        SS.extraLine.ptA = UnProjectPoint(orig.mouseOnButtonDown);
+        SS.extraLine.ptB = UnProjectPoint(mp);
+        SS.extraLine.draw = true;
+    }
+
     // We're currently dragging something; so do that. But if we haven't
     // painted since the last time we solved, do nothing, because there's
     // no sense solving a frame and not displaying it.
     if(!havePainted) {
-        if(pending.operation == Pending::DRAGGING_POINTS && ctrlDown) {
-            SS.extraLine.ptA = UnProjectPoint(orig.mouseOnButtonDown);
-            SS.extraLine.ptB = UnProjectPoint(mp);
-            SS.extraLine.draw = true;
-        }
         return;
     }
 
@@ -319,20 +320,16 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                         // Don't start dragging the position about the normal
                         // until we're a little ways out, to get a reasonable
                         // reference pos
-                        orig.mouse = mp;
-                        break;
+                        qt = Quaternion::IDENTITY;
+                    } else {
+                        double theta = atan2(orig.mouse.y-orig.mouseOnButtonDown.y,
+                                             orig.mouse.x-orig.mouseOnButtonDown.x);
+                        theta -= atan2(y-orig.mouseOnButtonDown.y,
+                                       x-orig.mouseOnButtonDown.x);
+
+                        Vector gn = projRight.Cross(projUp);
+                        qt = Quaternion::From(gn, -theta);
                     }
-                    double theta = atan2(orig.mouse.y-orig.mouseOnButtonDown.y,
-                                         orig.mouse.x-orig.mouseOnButtonDown.x);
-                    theta -= atan2(y-orig.mouseOnButtonDown.y,
-                                   x-orig.mouseOnButtonDown.x);
-
-                    Vector gn = projRight.Cross(projUp);
-                    qt = Quaternion::From(gn, -theta);
-
-                    SS.extraLine.draw = true;
-                    SS.extraLine.ptA = UnProjectPoint(orig.mouseOnButtonDown);
-                    SS.extraLine.ptB = UnProjectPoint(mp);
                 } else {
                     double dx = -(x - orig.mouse.x);
                     double dy = -(y - orig.mouse.y);
@@ -340,7 +337,6 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     qt = Quaternion::From(projUp,   -s*dx).Times(
                          Quaternion::From(projRight, s*dy));
                 }
-                orig.mouse = mp;
 
                 // Now apply this rotation to the points being dragged.
                 List<hEntity> *lhe = &(pending.points);
@@ -353,18 +349,18 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                             p = qt.Rotate(p);
                             p = p.Plus(SS.extraLine.ptA);
                             e->PointForceTo(p);
-                            SS.MarkGroupDirtyByEntity(e->h);
+                        } else {
+                            UpdateDraggedPoint(*he, x, y);
                         }
-                        continue;
+                    } else {
+                        Quaternion q = e->PointGetQuaternion();
+                        Vector     p = e->PointGetNum();
+                        q = qt.Times(q);
+                        e->PointForceQuaternionTo(q);
+                        // Let's rotate about the selected point; so fix up the
+                        // translation so that that point didn't move.
+                        e->PointForceTo(p);
                     }
-
-                    Quaternion q = e->PointGetQuaternion();
-                    Vector     p = e->PointGetNum();
-                    q = qt.Times(q);
-                    e->PointForceQuaternionTo(q);
-                    // Let's rotate about the selected point; so fix up the
-                    // translation so that that point didn't move.
-                    e->PointForceTo(p);
                     SS.MarkGroupDirtyByEntity(e->h);
                 }
             } else {
@@ -373,8 +369,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     UpdateDraggedPoint(*he, x, y);
                     SS.MarkGroupDirtyByEntity(*he);
                 }
-                orig.mouse = mp;
             }
+            orig.mouse = mp;
             break;
 
         case Pending::DRAGGING_NEW_CUBIC_POINT: {
@@ -1042,6 +1038,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     ConstrainPointByHovered(hr.entity(1), &mouse);
 
                     ClearSuper();
+                    AddToPending(hr);
 
                     pending.operation = Pending::DRAGGING_NEW_RADIUS;
                     pending.circle = hr.entity(0);

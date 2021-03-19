@@ -207,7 +207,6 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
     for(auto &entity : SK.entity) {
         Entity *e = &entity;
         if(!e->IsVisible()) continue;
-        if(e->construction) continue;
 
         if(SS.exportPwlCurves || sm || fabs(SS.exportOffset) > LENGTH_EPS)
         {
@@ -735,25 +734,22 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
     if(sblss) {
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-            SBezierLoop *sbl;
-            sbl = sbls->l.First();
-            if(!sbl) continue;
-            b = sbl->l.First();
-            if(!b || !Style::Exportable(b->auxA)) continue;
+            for(SBezierLoop *sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+                b = sbl->l.First();
+                if(!b || !Style::Exportable(b->auxA)) continue;
 
-            hStyle hs = { (uint32_t)b->auxA };
-            Style *stl = Style::Get(hs);
-            double lineWidth   = Style::WidthMm(b->auxA)*s;
-            RgbaColor strokeRgb = Style::Color(hs, /*forExport=*/true);
-            RgbaColor fillRgb   = Style::FillColor(hs, /*forExport=*/true);
+                hStyle hs = { (uint32_t)b->auxA };
+                Style *stl = Style::Get(hs);
+                double lineWidth   = Style::WidthMm(b->auxA)*s;
+                RgbaColor strokeRgb = Style::Color(hs, /*forExport=*/true);
+                RgbaColor fillRgb   = Style::FillColor(hs, /*forExport=*/true);
 
-            StartPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs);
-            for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+                StartPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs);
                 for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
                     Bezier(b);
                 }
+                FinishPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs);
             }
-            FinishPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs);
         }
     }
     FinishAndCloseFile();
