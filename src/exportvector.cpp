@@ -1083,17 +1083,18 @@ void SvgFileWriter::StartFile() {
     double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
     fprintf(f, "stroke-width:%f;\r\n", sw);
     fprintf(f, "}\r\n");
-    for(auto &style : SK.style) {
-        Style *s = &style;
 
-        RgbaColor strokeRgb = Style::Color(s->h, /*forExport=*/true);
-        StipplePattern pattern = Style::PatternType(s->h);
-        double stippleScale = Style::StippleScaleMm(s->h);
+    auto export_style = [&](hStyle hs) {
+        Style *s = Style::Get(hs);
+        RgbaColor strokeRgb = Style::Color(hs, /*forExport=*/true);
+        RgbaColor fillRgb = Style::FillColor(hs, /*forExport=*/true);
+        StipplePattern pattern = Style::PatternType(hs);
+        double stippleScale = Style::StippleScaleMm(hs);
 
-        fprintf(f, ".s%x {\r\n", s->h.v);
+        fprintf(f, ".s%x {\r\n", hs.v);
         fprintf(f, "stroke:#%02x%02x%02x;\r\n", strokeRgb.red, strokeRgb.green, strokeRgb.blue);
         // don't know why we have to take a half of the width
-        fprintf(f, "stroke-width:%f;\r\n", Style::WidthMm(s->h.v) / 2.0);
+        fprintf(f, "stroke-width:%f;\r\n", Style::WidthMm(hs.v) / 2.0);
         fprintf(f, "stroke-linecap:round;\r\n");
         fprintf(f, "stroke-linejoin:round;\r\n");
         std::string patternStr = MakeStipplePattern(pattern, stippleScale, ',',
@@ -1101,8 +1102,19 @@ void SvgFileWriter::StartFile() {
         if(!patternStr.empty()) {
             fprintf(f, "stroke-dasharray:%s;\r\n", patternStr.c_str());
         }
-        fprintf(f, "fill:none;\r\n");
+        if(s->filled) {
+            fprintf(f, "fill:#%02x%02x%02x;\r\n", fillRgb.red, fillRgb.green, fillRgb.blue); 
+        }
+        else {
+            fprintf(f, "fill:none;\r\n");
+        }
         fprintf(f, "}\r\n");
+    };
+
+    export_style({Style::NO_STYLE});
+    for(auto &style : SK.style) {
+        Style *s = &style;
+        export_style(s->h);
     }
     fprintf(f, "]]></style>\r\n");
 }

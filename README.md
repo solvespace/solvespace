@@ -259,4 +259,4 @@ and debug SolveSpace.
 License
 -------
 
-SolveSpace is distributed under the terms of the [GPL v3 license](COPYING.txt).
+SolveSpace is distributed under the terms of the [GPL v3](COPYING.txt) or later.

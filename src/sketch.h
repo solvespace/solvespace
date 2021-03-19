@@ -790,9 +790,9 @@ public:
     static hConstraint TryConstrain(Constraint::Type type, hEntity ptA, hEntity ptB,
                                     hEntity entityA, hEntity entityB = Entity::NO_ENTITY,
                                     bool other = false, bool other2 = false);
-    static void ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc);
-    static void ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic);
-    static void ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB);
+    static bool ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc);
+    static bool ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic);
+    static bool ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB);
 };
 
 class hEquation {
@@ -883,6 +883,7 @@ public:
         RgbaColor   color;
         double      width;
         int         zIndex;
+        bool        exportable;
     } Default;
     static const Default Defaults[];
 
@@ -890,6 +891,7 @@ public:
     static std::string CnfWidth(const std::string &prefix);
     static std::string CnfTextHeight(const std::string &prefix);
     static std::string CnfPrefixToName(const std::string &prefix);
+    static std::string CnfExportable(const std::string &prefix);
 
     static void CreateAllDefaultStyles();
     static void CreateDefaultStyle(hStyle h);
