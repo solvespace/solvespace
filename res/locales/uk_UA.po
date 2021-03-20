@@ -1,20 +1,21 @@
 # Ukrainian translations for SolveSpace package.
 # Copyright (C) 2017 the SolveSpace authors
 # This file is distributed under the same license as the SolveSpace package.
-# AppSoft4 <appsoft@ua.fm>, 2017.
+# app4soft <appsoft@ua.fm>, 2021.
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
-"Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
+"Report-Msgid-Bugs-To: https://github.com/solvespace/solvespace/issues\n"
 "POT-Creation-Date: 2021-02-01 15:45+0200\n"
-"PO-Revision-Date: 2017-01-05 10:30+0000\n"
-"Last-Translator: appsoft@ua.fm\n"
-"Language-Team: OpenOrienteeringUkraine\n"
+"PO-Revision-Date: 2021-03-09 23:34+0200\n"
+"Last-Translator: https://github.com/Symbian9\n"
+"Language-Team: app4soft\n"
 "Language: uk_UA\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.4.2\n"
 
 #: clipboard.cpp:310
 msgid ""
@@ -22,26 +23,29 @@ msgid ""
 "\n"
 "Activate one with Sketch -> In Workplane."
 msgstr ""
+"Вирізання, вставка та копіювання працює лише у площині.\n"
+"\n"
+"Активуйте одну через Креслення -> У площині."
 
 #: clipboard.cpp:327
 msgid "Clipboard is empty; nothing to paste."
-msgstr ""
+msgstr "Буфер обміну порожній; немає чого вставляти."
 
 #: clipboard.cpp:374
 msgid "Number of copies to paste must be at least one."
-msgstr ""
+msgstr "Кількість копій для вставки має бути не менше одної."
 
 #: clipboard.cpp:390 textscreens.cpp:783
 msgid "Scale cannot be zero."
-msgstr ""
+msgstr "Масштаб не може бути нульовим."
 
 #: clipboard.cpp:432
 msgid "Select one point to define origin of rotation."
-msgstr ""
+msgstr "Оберіть одну точку для визначення центру обертання."
 
 #: clipboard.cpp:444
 msgid "Select two points to define translation vector."
-msgstr ""
+msgstr "Оберіть дві точки для визначення вектору розміщення."
 
 #: clipboard.cpp:454
 msgid ""
@@ -50,97 +54,102 @@ msgid ""
 msgstr ""
 
 #: clipboard.cpp:458
+#, fuzzy
 msgid "Too many items to paste; split this into smaller pastes."
-msgstr ""
+msgstr "Забагато об'єктів для вставки; рзділіть копіювання на кілька етапів."
 
 #: clipboard.cpp:463
 msgid "No workplane active."
-msgstr ""
+msgstr "Немає активної площини."
 
 #: confscreen.cpp:418
 msgid "Bad format: specify coordinates as x, y, z"
-msgstr ""
+msgstr "Некоректний формат: визначте координати X, Y, Z"
 
 #: confscreen.cpp:428 style.cpp:659 textscreens.cpp:805
 msgid "Bad format: specify color as r, g, b"
-msgstr ""
+msgstr "Некоректний формат: визначте колір як R, G, B"
 
 #: confscreen.cpp:454
+#, fuzzy
 msgid ""
 "The perspective factor will have no effect until you enable View -> Use "
 "Perspective Projection."
 msgstr ""
+"Значення перспективи не матиме ефекту допоки не ввімкнено Вигляд -> "
+"Використовувати Перспективну проєкцію."
 
 #: confscreen.cpp:467 confscreen.cpp:477
 #, c-format
 msgid "Specify between 0 and %d digits after the decimal."
-msgstr ""
+msgstr "Визначте кількість десяткових знаків від 0 до %d."
 
 #: confscreen.cpp:489
 msgid "Export scale must not be zero!"
-msgstr ""
+msgstr "Масштаб експорту не може бути нульовим!"
 
 #: confscreen.cpp:501
 msgid "Cutter radius offset must not be negative!"
-msgstr ""
+msgstr "Радіус відступу різання не може бути від'ємним!"
 
 #: confscreen.cpp:555
 msgid "Bad value: autosave interval should be positive"
-msgstr ""
+msgstr "Некоректне значення: інтервал автозбереження має бути додатнім"
 
 #: confscreen.cpp:558
+#, fuzzy
 msgid "Bad format: specify interval in integral minutes"
-msgstr ""
+msgstr "Некоректний формат: визначте цілим числом інтервал у хвилинах"
 
 #: constraint.cpp:12
 msgctxt "constr-name"
 msgid "pts-coincident"
-msgstr ""
+msgstr "співпадіння-тчк"
 
 #: constraint.cpp:13
 msgctxt "constr-name"
 msgid "pt-pt-distance"
-msgstr ""
+msgstr "відстань-тчк-тчк"
 
 #: constraint.cpp:14
 msgctxt "constr-name"
 msgid "pt-line-distance"
-msgstr ""
+msgstr "відстань-тчк-лінія"
 
 #: constraint.cpp:15
 msgctxt "constr-name"
 msgid "pt-plane-distance"
-msgstr ""
+msgstr "відстань-тчк-площина"
 
 #: constraint.cpp:16
 msgctxt "constr-name"
 msgid "pt-face-distance"
-msgstr ""
+msgstr "відстань-тчк-грань"
 
 #: constraint.cpp:17
 msgctxt "constr-name"
 msgid "proj-pt-pt-distance"
-msgstr ""
+msgstr "проєційна-відстань-тчк-тчк"
 
 #: constraint.cpp:18
 msgctxt "constr-name"
 msgid "pt-in-plane"
-msgstr ""
+msgstr "тчк-у-площині"
 
 #: constraint.cpp:19
 msgctxt "constr-name"
 msgid "pt-on-line"
-msgstr ""
+msgstr "тчк-на-лінії"
 
 #: constraint.cpp:20
 msgctxt "constr-name"
 msgid "pt-on-face"
-msgstr ""
+msgstr "тчк-на-грані"
 
 #: constraint.cpp:21
 msgctxt "constr-name"
 msgid "eq-length"
-msgstr ""
+msgstr "рівні-довжини"
 
 #: constraint.cpp:22
 msgctxt "constr-name"
@@ -150,62 +159,62 @@ msgstr ""
 #: constraint.cpp:23
 msgctxt "constr-name"
 msgid "eq-pt-line-distances"
-msgstr ""
+msgstr "рівна-відстань-тчк-лінія"
 
 #: constraint.cpp:24
 msgctxt "constr-name"
 msgid "length-ratio"
-msgstr ""
+msgstr "пропорція-довжин"
 
 #: constraint.cpp:25
 msgctxt "constr-name"
 msgid "length-difference"
-msgstr ""
+msgstr "різниця-довжин"
 
 #: constraint.cpp:26
 msgctxt "constr-name"
 msgid "symmetric"
-msgstr ""
+msgstr "симетрія"
 
 #: constraint.cpp:27
 msgctxt "constr-name"
 msgid "symmetric-h"
-msgstr ""
+msgstr "симетрія-вертикально"
 
 #: constraint.cpp:28
 msgctxt "constr-name"
 msgid "symmetric-v"
-msgstr ""
+msgstr "симетрія-горизонтально"
 
 #: constraint.cpp:29
 msgctxt "constr-name"
 msgid "symmetric-line"
-msgstr ""
+msgstr "симетрія-відносно-лінії"
 
 #: constraint.cpp:30
 msgctxt "constr-name"
 msgid "at-midpoint"
-msgstr ""
+msgstr "на-середині"
 
 #: constraint.cpp:31
 msgctxt "constr-name"
 msgid "horizontal"
-msgstr ""
+msgstr "горизонталь"
 
 #: constraint.cpp:32
 msgctxt "constr-name"
 msgid "vertical"
-msgstr ""
+msgstr "вертикаль"
 
 #: constraint.cpp:33
 msgctxt "constr-name"
 msgid "diameter"
-msgstr ""
+msgstr "діаметр"
 
 #: constraint.cpp:34
 msgctxt "constr-name"
 msgid "pt-on-circle"
-msgstr ""
+msgstr "тчк-на-колі"
 
 #: constraint.cpp:35
 msgctxt "constr-name"
@@ -215,57 +224,57 @@ msgstr ""
 #: constraint.cpp:36
 msgctxt "constr-name"
 msgid "angle"
-msgstr ""
+msgstr "кут"
 
 #: constraint.cpp:37
 msgctxt "constr-name"
 msgid "parallel"
-msgstr ""
+msgstr "паралель"
 
 #: constraint.cpp:38
 msgctxt "constr-name"
 msgid "arc-line-tangent"
-msgstr ""
+msgstr "дотичні-дуга-лінія"
 
 #: constraint.cpp:39
 msgctxt "constr-name"
 msgid "cubic-line-tangent"
-msgstr ""
+msgstr "дотичні-сплайн-лінія"
 
 #: constraint.cpp:40
 msgctxt "constr-name"
 msgid "curve-curve-tangent"
-msgstr ""
+msgstr "дотичні-крива-крива"
 
 #: constraint.cpp:41
 msgctxt "constr-name"
 msgid "perpendicular"
-msgstr ""
+msgstr "перпендикуляр"
 
 #: constraint.cpp:42
 msgctxt "constr-name"
 msgid "eq-radius"
-msgstr ""
+msgstr "рівнозначні-радіуси"
 
 #: constraint.cpp:43
 msgctxt "constr-name"
 msgid "eq-angle"
-msgstr ""
+msgstr "рівнозначні-кути"
 
 #: constraint.cpp:44
 msgctxt "constr-name"
 msgid "eq-line-len-arc-len"
-msgstr ""
+msgstr "рівнозначні-лінія-дуга"
 
 #: constraint.cpp:45
 msgctxt "constr-name"
 msgid "lock-where-dragged"
-msgstr ""
+msgstr "фіксоване-положення"
 
 #: constraint.cpp:46
 msgctxt "constr-name"
 msgid "comment"
-msgstr ""
+msgstr "коментар"
 
 #: constraint.cpp:140
 msgid ""
@@ -442,7 +451,7 @@ msgstr ""
 
 #: constraint.cpp:755
 msgid "click center of comment text"
-msgstr ""
+msgstr "клікніть в місце де буде центр коментаря"
 
 #: export.cpp:19
 msgid ""
@@ -485,33 +494,35 @@ msgstr ""
 #: file.cpp:44 group.cpp:91
 msgctxt "group-name"
 msgid "sketch-in-plane"
-msgstr ""
+msgstr "креслення-в-площині"
 
 #: file.cpp:62
 msgctxt "group-name"
 msgid "#references"
-msgstr ""
+msgstr "#базові-площини"
 
 #: file.cpp:552
 msgid "The file is empty. It may be corrupt."
-msgstr ""
+msgstr "Файл порожній. Він може бути пошкодженим."
 
 #: file.cpp:557
 msgid ""
 "Unrecognized data in file. This file may be corrupt, or from a newer version "
 "of the program."
 msgstr ""
+"Нерозпізнані дані у файлі. Цей файл може бути пошкодженим або збереженим "
+"новою версією програми."
 
 #: file.cpp:867
 msgctxt "title"
 msgid "Missing File"
-msgstr ""
+msgstr "Втрачений Файл"
 
 #: file.cpp:868
 #, c-format
 msgctxt "dialog"
 msgid "The linked file “%s” is not present."
-msgstr ""
+msgstr "Приєднаний файл “%s” відсутній."
 
 #: file.cpp:870
 msgctxt "dialog"
@@ -525,17 +536,17 @@ msgstr ""
 #: file.cpp:873
 msgctxt "button"
 msgid "&Yes"
-msgstr ""
+msgstr "&Так"
 
 #: file.cpp:875
 msgctxt "button"
 msgid "&No"
-msgstr ""
+msgstr "&Ні"
 
 #: file.cpp:877 solvespace.cpp:569
 msgctxt "button"
 msgid "&Cancel"
-msgstr ""
+msgstr "&Відмінити"
 
 #: graphicswin.cpp:41
 msgid "&File"
@@ -635,7 +646,7 @@ msgstr "Вставити &Трансфмованим..."
 
 #: graphicswin.cpp:72
 msgid "&Delete"
-msgstr "&Delete"
+msgstr "&Видалити"
 
 #: graphicswin.cpp:74
 msgid "Select &Edge Chain"
@@ -651,19 +662,19 @@ msgstr "&Зняти Виділення з Усього"
 
 #: graphicswin.cpp:78
 msgid "&Line Styles..."
-msgstr ""
+msgstr "Стилі &Ліній..."
 
 #: graphicswin.cpp:79
 msgid "&View Projection..."
-msgstr ""
+msgstr "&Проекція Відображення..."
 
 #: graphicswin.cpp:81
 msgid "Con&figuration..."
-msgstr ""
+msgstr "&Налаштування..."
 
 #: graphicswin.cpp:84
 msgid "&View"
-msgstr "&View"
+msgstr "&Відображення"
 
 #: graphicswin.cpp:85
 msgid "Zoom &In"
@@ -691,7 +702,7 @@ msgstr "Найближчий &Ізометричний Вигляд"
 
 #: graphicswin.cpp:92
 msgid "&Center View At Point"
-msgstr "&Центрувати Вигляд На Точці"
+msgstr "&Центрувати Вигляд на Точці"
 
 #: graphicswin.cpp:94
 msgid "Show Snap &Grid"
@@ -699,7 +710,7 @@ msgstr "Показати &Сітку Прикріплення"
 
 #: graphicswin.cpp:95
 msgid "Darken Inactive Solids"
-msgstr ""
+msgstr "Затінювати Неактивні Тіла"
 
 #: graphicswin.cpp:96
 msgid "Use &Perspective Projection"
@@ -707,19 +718,19 @@ msgstr "Використовувати &Перспективну Проекці�
 
 #: graphicswin.cpp:97
 msgid "Dimension &Units"
-msgstr ""
+msgstr "Розмірні &Одиниці"
 
 #: graphicswin.cpp:98
 msgid "Dimensions in &Millimeters"
-msgstr "Розміри в &Міліметрах"
+msgstr "Розміри у &Міліметрах"
 
 #: graphicswin.cpp:99
 msgid "Dimensions in M&eters"
-msgstr ""
+msgstr "Розміри у &Метрах"
 
 #: graphicswin.cpp:100
 msgid "Dimensions in &Inches"
-msgstr "Розміри в &Дюймах"
+msgstr "Розміри у &Дюймах"
 
 #: graphicswin.cpp:102
 msgid "Show &Toolbar"
@@ -739,11 +750,11 @@ msgstr "&Нова Група"
 
 #: graphicswin.cpp:108
 msgid "Sketch In &3d"
-msgstr "Креслення В &3d"
+msgstr "Креслення в &3D"
 
 #: graphicswin.cpp:109
 msgid "Sketch In New &Workplane"
-msgstr "Креслення В Новій Робочій &Площині"
+msgstr "Креслення в Новій &Площині"
 
 #: graphicswin.cpp:111
 msgid "Step &Translating"
@@ -759,7 +770,7 @@ msgstr "Ви&давити"
 
 #: graphicswin.cpp:115
 msgid "&Helix"
-msgstr ""
+msgstr "&Спіраль"
 
 #: graphicswin.cpp:116
 msgid "&Lathe"
@@ -767,13 +778,15 @@ msgstr "&Виточити"
 
 #: graphicswin.cpp:117
 msgid "Re&volve"
-msgstr ""
+msgstr "&Обертати"
 
 #: graphicswin.cpp:119
+#, fuzzy
 msgid "Link / Assemble..."
 msgstr "Приєднати / Монтувати..."
 
 #: graphicswin.cpp:120
+#, fuzzy
 msgid "Link Recent"
 msgstr "Приєднати Недавні"
 
@@ -783,11 +796,11 @@ msgstr "&Креслення"
 
 #: graphicswin.cpp:123
 msgid "In &Workplane"
-msgstr "В Робочій &Площині"
+msgstr "У Робочій &Площині"
 
 #: graphicswin.cpp:124
 msgid "Anywhere In &3d"
-msgstr "Будь-де В &3d"
+msgstr "Будь-де В &3D"
 
 #: graphicswin.cpp:126
 msgid "Datum &Point"
@@ -823,11 +836,11 @@ msgstr "Кубічний Сплайн &Без'є"
 
 #: graphicswin.cpp:136
 msgid "&Text in TrueType Font"
-msgstr "&Текст з TrueType Шрифтом"
+msgstr "&Текст із TrueType Шрифтом"
 
 #: graphicswin.cpp:137
 msgid "&Image"
-msgstr ""
+msgstr "&Зображення"
 
 #: graphicswin.cpp:139
 msgid "To&ggle Construction"
@@ -947,7 +960,7 @@ msgstr "Показати &Приховані Ребра"
 
 #: graphicswin.cpp:173
 msgid "Show &Center of Mass"
-msgstr ""
+msgstr "Показати &Центр Масс"
 
 #: graphicswin.cpp:175
 msgid "Show &Underconstrained Points"
@@ -983,16 +996,16 @@ msgstr "&Про програму"
 
 #: graphicswin.cpp:355
 msgid "(no recent files)"
-msgstr ""
+msgstr "(нємає нещодавніх файлів)"
 
 #: graphicswin.cpp:363
 #, c-format
 msgid "File '%s' does not exist."
-msgstr ""
+msgstr "Файл '%s' відсутній."
 
 #: graphicswin.cpp:725
 msgid "No workplane is active, so the grid will not appear."
-msgstr ""
+msgstr "Відсутня активна площина - сітка не відображатиметься."
 
 #: graphicswin.cpp:740
 msgid ""
@@ -1195,7 +1208,7 @@ msgstr ""
 
 #: group.cpp:400
 msgid "(unnamed)"
-msgstr ""
+msgstr "(безіменне)"
 
 #: groupmesh.cpp:709
 msgid "not closed contour, or not all same style!"
@@ -1211,7 +1224,7 @@ msgstr ""
 
 #: groupmesh.cpp:726
 msgid "zero-length edge!"
-msgstr ""
+msgstr "ребро нульової довжини!"
 
 #: modify.cpp:254
 msgid "Must be sketching in workplane to create tangent arc."
@@ -1234,8 +1247,9 @@ msgid "Couldn't split this entity; lines, circles, or cubics only."
 msgstr ""
 
 #: modify.cpp:624
+#, fuzzy
 msgid "Must be sketching in workplane to split."
-msgstr ""
+msgstr "Має бути накреслений у робочій площині для розділеня."
 
 #: modify.cpp:631
 msgid ""
@@ -1245,7 +1259,7 @@ msgstr ""
 
 #: modify.cpp:736
 msgid "Can't split; no intersection found."
-msgstr ""
+msgstr "Неможливо розділити; відсутній перетин."
 
 #: mouse.cpp:559
 msgid "Assign to Style"
@@ -1394,12 +1408,12 @@ msgstr ""
 
 #: mouse.cpp:1159
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
-msgstr ""
+msgstr "КОМЕНТАР -- ДВІЧІ КЛІКНІТЬ ДЛЯ РЕДАГУВАННЯ"
 
 #: platform/gui.cpp:85 platform/gui.cpp:89 solvespace.cpp:511
 msgctxt "file-type"
 msgid "SolveSpace models"
-msgstr ""
+msgstr "SolveSpace модель"
 
 #: platform/gui.cpp:90
 msgctxt "file-type"
@@ -1409,17 +1423,17 @@ msgstr ""
 #: platform/gui.cpp:94
 msgctxt "file-type"
 msgid "PNG image"
-msgstr ""
+msgstr "PNG зображення"
 
 #: platform/gui.cpp:98
 msgctxt "file-type"
 msgid "STL mesh"
-msgstr ""
+msgstr "STL меш"
 
 #: platform/gui.cpp:99
 msgctxt "file-type"
 msgid "Wavefront OBJ mesh"
-msgstr ""
+msgstr "Wavefront OBJ меш"
 
 #: platform/gui.cpp:100
 msgctxt "file-type"
@@ -1434,17 +1448,17 @@ msgstr ""
 #: platform/gui.cpp:102
 msgctxt "file-type"
 msgid "VRML text file"
-msgstr ""
+msgstr "VRML меш, текстовий формат"
 
 #: platform/gui.cpp:106 platform/gui.cpp:113 platform/gui.cpp:120
 msgctxt "file-type"
 msgid "STEP file"
-msgstr ""
+msgstr "STEP файл"
 
 #: platform/gui.cpp:110
 msgctxt "file-type"
 msgid "PDF file"
-msgstr ""
+msgstr "PDF файл"
 
 #: platform/gui.cpp:111
 msgctxt "file-type"
@@ -1454,93 +1468,93 @@ msgstr ""
 #: platform/gui.cpp:112
 msgctxt "file-type"
 msgid "Scalable Vector Graphics"
-msgstr ""
+msgstr "Scalable Vector Graphics, векторний формат"
 
 #: platform/gui.cpp:114 platform/gui.cpp:121
 msgctxt "file-type"
 msgid "DXF file (AutoCAD 2007)"
-msgstr ""
+msgstr "DXF файл (AutoCAD 2007)"
 
 #: platform/gui.cpp:115
 msgctxt "file-type"
 msgid "HPGL file"
-msgstr ""
+msgstr "HPGL файл"
 
 #: platform/gui.cpp:116
 msgctxt "file-type"
 msgid "G Code"
-msgstr ""
+msgstr "G Code"
 
 #: platform/gui.cpp:125
 msgctxt "file-type"
 msgid "AutoCAD DXF and DWG files"
-msgstr ""
+msgstr "AutoCAD DXF та DWG файли"
 
 #: platform/gui.cpp:129
 msgctxt "file-type"
 msgid "Comma-separated values"
-msgstr ""
+msgstr "Comma-separated values"
 
 #: platform/guigtk.cpp:1324 platform/guimac.mm:1363 platform/guiwin.cpp:1639
 msgid "untitled"
-msgstr ""
+msgstr "без імені"
 
 #: platform/guigtk.cpp:1335 platform/guigtk.cpp:1368 platform/guimac.mm:1321
 #: platform/guiwin.cpp:1582
 msgctxt "title"
 msgid "Save File"
-msgstr ""
+msgstr "Зберегти Файл"
 
 #: platform/guigtk.cpp:1336 platform/guigtk.cpp:1369 platform/guimac.mm:1304
 #: platform/guiwin.cpp:1584
 msgctxt "title"
 msgid "Open File"
-msgstr ""
+msgstr "Відкрити Файл"
 
 #: platform/guigtk.cpp:1339 platform/guigtk.cpp:1375
 msgctxt "button"
 msgid "_Cancel"
-msgstr ""
+msgstr "_Скасувати"
 
 #: platform/guigtk.cpp:1340 platform/guigtk.cpp:1373
 msgctxt "button"
 msgid "_Save"
-msgstr ""
+msgstr "_Зберегти"
 
 #: platform/guigtk.cpp:1341 platform/guigtk.cpp:1374
 msgctxt "button"
 msgid "_Open"
-msgstr ""
+msgstr "_Відкрити"
 
 #: solvespace.cpp:169
 msgctxt "title"
 msgid "Autosave Available"
-msgstr ""
+msgstr "Наявні автозбереження"
 
 #: solvespace.cpp:170
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
-msgstr ""
+msgstr "Наявні автозбереження для цього креслення."
 
 #: solvespace.cpp:171
 msgctxt "dialog"
 msgid "Do you want to load the autosave file instead?"
-msgstr ""
+msgstr "Завантажити файл автозбереження?"
 
 #: solvespace.cpp:172
 msgctxt "button"
 msgid "&Load autosave"
-msgstr ""
+msgstr "&Завантажити автозбереження"
 
 #: solvespace.cpp:174
 msgctxt "button"
 msgid "Do&n't Load"
-msgstr ""
+msgstr "&Не Завантажувати"
 
 #: solvespace.cpp:557
 msgctxt "title"
 msgid "Modified File"
-msgstr ""
+msgstr "Файл Змінено"
 
 #: solvespace.cpp:559
 #, c-format
@@ -1561,22 +1575,22 @@ msgstr ""
 #: solvespace.cpp:566
 msgctxt "button"
 msgid "&Save"
-msgstr ""
+msgstr "&Зберегти"
 
 #: solvespace.cpp:568
 msgctxt "button"
 msgid "Do&n't Save"
-msgstr ""
+msgstr "&Не Зберігати"
 
 #: solvespace.cpp:589
 msgctxt "title"
 msgid "(new sketch)"
-msgstr ""
+msgstr "(нове креслення)"
 
 #: solvespace.cpp:596
 msgctxt "title"
 msgid "Property Browser"
-msgstr ""
+msgstr "Браузер Властивостей"
 
 #: solvespace.cpp:658
 msgid ""
@@ -1605,12 +1619,15 @@ msgid "The assembly does not interfere, good."
 msgstr ""
 
 #: solvespace.cpp:822
-#, c-format
+#, fuzzy, c-format
 msgid ""
 "The volume of the solid model is:\n"
 "\n"
 "    %s"
 msgstr ""
+"Об'єм тіла:\n"
+"\n"
+"    %s"
 
 #: solvespace.cpp:831
 #, c-format
@@ -1679,7 +1696,7 @@ msgstr ""
 #: solvespace.cpp:941
 #, c-format
 msgid "Couldn't write to '%s'"
-msgstr ""
+msgstr "Неможливо записати у '%s'"
 
 #: solvespace.cpp:971
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
@@ -1750,27 +1767,27 @@ msgstr ""
 
 #: style.cpp:665
 msgid "Style name cannot be empty"
-msgstr ""
+msgstr "Стиль не може містити порожнє ім'я"
 
 #: textscreens.cpp:741
 msgid "Can't repeat fewer than 1 time."
-msgstr ""
+msgstr "Не можливо повторити менше 1 разу."
 
 #: textscreens.cpp:745
 msgid "Can't repeat more than 999 times."
-msgstr ""
+msgstr "Не можливо повторити понад 999 разів."
 
 #: textscreens.cpp:770
 msgid "Group name cannot be empty"
-msgstr ""
+msgstr "Група не може містити порожнє ім'я"
 
 #: textscreens.cpp:813
 msgid "Opacity must be between zero and one."
-msgstr ""
+msgstr "Непрозорість має бути між 0 та 1."
 
 #: textscreens.cpp:848
 msgid "Radius cannot be zero or negative."
-msgstr ""
+msgstr "Радіус не може бути нульовим чи від'ємним."
 
 #: toolbar.cpp:18
 msgid "Sketch line segment"
@@ -1794,7 +1811,7 @@ msgstr "Накреслити криві з тексту на TrueType шрифт
 
 #: toolbar.cpp:28
 msgid "Sketch image from a file"
-msgstr ""
+msgstr "Вставити зображення з файлу"
 
 #: toolbar.cpp:30
 msgid "Create tangent arc at selected point"
@@ -1911,25 +1928,25 @@ msgstr "Вирівняти вигляд до активної робочої п�
 #: util.cpp:165
 msgctxt "title"
 msgid "Error"
-msgstr ""
+msgstr "Помилка"
 
 #: util.cpp:165
 msgctxt "title"
 msgid "Message"
-msgstr ""
+msgstr "Повідомлення"
 
 #: util.cpp:170
 msgctxt "button"
 msgid "&OK"
-msgstr ""
+msgstr "&OK"
 
 #: view.cpp:78
 msgid "Scale cannot be zero or negative."
-msgstr ""
+msgstr "Масштаб не може бути нульовим чи від'ємним."
 
 #: view.cpp:90 view.cpp:99
 msgid "Bad format: specify x, y, z"
-msgstr ""
+msgstr "Некоректний формат: визначте X, Y, Z"
 
 #~ msgid "Show Degrees of &Freedom"
 #~ msgstr "Показати Степені &Свободи"
