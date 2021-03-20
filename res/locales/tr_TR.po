@@ -1,0 +1,2192 @@
+# Turkish translations for SolveSpace package.
+# Copyright (C) 2017 the SolveSpace authors
+# This file is distributed under the same license as the SolveSpace package.
+# Automatically generated, 2017.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SolveSpace 3.0\n"
+"Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
+"POT-Creation-Date: 2021-02-01 15:45+0200\n"
+"PO-Revision-Date: 2021-03-09 22:58+0300\n"
+"Last-Translator: Mustafa Halil GÖRENTAŞ <halil.mustafa@gmail.com>\n"
+"Language-Team: app4soft\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.4.2\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+
+#: clipboard.cpp:310
+msgid ""
+"Cut, paste, and copy work only in a workplane.\n"
+"\n"
+"Activate one with Sketch -> In Workplane."
+msgstr ""
+"İşi yalnızca bir çalışma düzleminde kesin, yapıştır ve kopyalayın.\n"
+"\n"
+"Çizim -> Çalışma Düzleminde menüsü ile bir düzlemi etkinleştirin."
+
+#: clipboard.cpp:327
+msgid "Clipboard is empty; nothing to paste."
+msgstr "Pano boş; yapıştırılacak bir şey yok."
+
+#: clipboard.cpp:374
+msgid "Number of copies to paste must be at least one."
+msgstr "Yapıştırılacak kopya sayısı en az bir olmalıdır."
+
+#: clipboard.cpp:390 textscreens.cpp:783
+msgid "Scale cannot be zero."
+msgstr "Ölçek sıfır olamaz."
+
+#: clipboard.cpp:432
+msgid "Select one point to define origin of rotation."
+msgstr "Dönüşün başlangıç noktasını tanımlamak için bir nokta seçin."
+
+#: clipboard.cpp:444
+msgid "Select two points to define translation vector."
+msgstr "Öteleme vektörünü tanımlamak için iki nokta seçin."
+
+#: clipboard.cpp:454
+msgid ""
+"Transformation is identity. So all copies will be exactly on top of each "
+"other."
+msgstr "Dönüşüm özdeştir. Yani tüm kopyalar tam olarak üst üste gelecek."
+
+#: clipboard.cpp:458
+msgid "Too many items to paste; split this into smaller pastes."
+msgstr "Yapıştırılamayacak kadar çok öğe; bunu daha küçük yapıştımalara bölün."
+
+#: clipboard.cpp:463
+msgid "No workplane active."
+msgstr "Etkin Çalışma Düzlemi yok."
+
+#: confscreen.cpp:418
+msgid "Bad format: specify coordinates as x, y, z"
+msgstr "Hatalı biçim: koordinatları x, y, z olarak belirtin"
+
+#: confscreen.cpp:428 style.cpp:659 textscreens.cpp:805
+msgid "Bad format: specify color as r, g, b"
+msgstr "Hatalı biçim: rengi r, g, b olarak belirtin"
+
+#: confscreen.cpp:454
+msgid ""
+"The perspective factor will have no effect until you enable View -> Use "
+"Perspective Projection."
+msgstr ""
+"Görünüm -> Perspektif Projeksiyonu Kullan'ı etkinleştirene kadar perspektif "
+"çarpanının hiçbir etkisi olmayacaktır."
+
+#: confscreen.cpp:467 confscreen.cpp:477
+#, c-format
+msgid "Specify between 0 and %d digits after the decimal."
+msgstr "Ondalık basamak sonra 0 ile %d arasında basamak belirtin."
+
+#: confscreen.cpp:489
+msgid "Export scale must not be zero!"
+msgstr "Dışa aktarma ölçeği sıfır olmamalıdır!"
+
+#: confscreen.cpp:501
+msgid "Cutter radius offset must not be negative!"
+msgstr "Kesici yarıçap ofseti negatif olmamalıdır!"
+
+#: confscreen.cpp:555
+msgid "Bad value: autosave interval should be positive"
+msgstr "Hatalı değer: otomatik kaydetme süresi pozitif olmalıdır"
+
+#: confscreen.cpp:558
+msgid "Bad format: specify interval in integral minutes"
+msgstr "Hatalı biçim: süre aralığını dakika cinsinden belirtin"
+
+#: constraint.cpp:12
+msgctxt "constr-name"
+msgid "pts-coincident"
+msgstr "nktlar-kesişen"
+
+#: constraint.cpp:13
+msgctxt "constr-name"
+msgid "pt-pt-distance"
+msgstr "nkt-nkt-mesafe"
+
+#: constraint.cpp:14
+msgctxt "constr-name"
+msgid "pt-line-distance"
+msgstr "nkt-çizgi-mesafesi"
+
+#: constraint.cpp:15
+msgctxt "constr-name"
+msgid "pt-plane-distance"
+msgstr "nkt-düzlem-mesafesi"
+
+#: constraint.cpp:16
+msgctxt "constr-name"
+msgid "pt-face-distance"
+msgstr "nkt-yüzey-mesafesi"
+
+#: constraint.cpp:17
+msgctxt "constr-name"
+msgid "proj-pt-pt-distance"
+msgstr "proj-nkt-nkt-mesafesi"
+
+#: constraint.cpp:18
+msgctxt "constr-name"
+msgid "pt-in-plane"
+msgstr "düzlemde-nkt"
+
+#: constraint.cpp:19
+msgctxt "constr-name"
+msgid "pt-on-line"
+msgstr "nkt-çizgide"
+
+#: constraint.cpp:20
+msgctxt "constr-name"
+msgid "pt-on-face"
+msgstr "yüzeyde-nkt"
+
+#: constraint.cpp:21
+msgctxt "constr-name"
+msgid "eq-length"
+msgstr "eş-uzunluk"
+
+#: constraint.cpp:22
+msgctxt "constr-name"
+msgid "eq-length-and-pt-ln-dist"
+msgstr "eş-uzunluk-ve-çzg-nkt-mesafesi"
+
+#: constraint.cpp:23
+msgctxt "constr-name"
+msgid "eq-pt-line-distances"
+msgstr "eş-nkt-çizgi-mesafesi"
+
+#: constraint.cpp:24
+msgctxt "constr-name"
+msgid "length-ratio"
+msgstr "uzunluk-oranı"
+
+#: constraint.cpp:25
+msgctxt "constr-name"
+msgid "length-difference"
+msgstr "uzunluk-farkı"
+
+#: constraint.cpp:26
+msgctxt "constr-name"
+msgid "symmetric"
+msgstr "simetrik"
+
+#: constraint.cpp:27
+msgctxt "constr-name"
+msgid "symmetric-h"
+msgstr "simetrik-y"
+
+#: constraint.cpp:28
+msgctxt "constr-name"
+msgid "symmetric-v"
+msgstr "simetrik-d"
+
+#: constraint.cpp:29
+msgctxt "constr-name"
+msgid "symmetric-line"
+msgstr "simetrik-çizgi"
+
+#: constraint.cpp:30
+msgctxt "constr-name"
+msgid "at-midpoint"
+msgstr "orta noktada"
+
+#: constraint.cpp:31
+msgctxt "constr-name"
+msgid "horizontal"
+msgstr "yatay"
+
+#: constraint.cpp:32
+msgctxt "constr-name"
+msgid "vertical"
+msgstr "dikey"
+
+#: constraint.cpp:33
+msgctxt "constr-name"
+msgid "diameter"
+msgstr "çap"
+
+#: constraint.cpp:34
+msgctxt "constr-name"
+msgid "pt-on-circle"
+msgstr "nkt-çemberde"
+
+#: constraint.cpp:35
+msgctxt "constr-name"
+msgid "same-orientation"
+msgstr "aynı-yön"
+
+#: constraint.cpp:36
+msgctxt "constr-name"
+msgid "angle"
+msgstr "açı"
+
+#: constraint.cpp:37
+msgctxt "constr-name"
+msgid "parallel"
+msgstr "paralel"
+
+#: constraint.cpp:38
+msgctxt "constr-name"
+msgid "arc-line-tangent"
+msgstr "yay-çizgi-teğet"
+
+#: constraint.cpp:39
+msgctxt "constr-name"
+msgid "cubic-line-tangent"
+msgstr "kubik-çizgi-teğet"
+
+#: constraint.cpp:40
+msgctxt "constr-name"
+msgid "curve-curve-tangent"
+msgstr "eğri-eğri-teğet"
+
+#: constraint.cpp:41
+msgctxt "constr-name"
+msgid "perpendicular"
+msgstr "dik"
+
+#: constraint.cpp:42
+msgctxt "constr-name"
+msgid "eq-radius"
+msgstr "eş-yarıçap"
+
+#: constraint.cpp:43
+msgctxt "constr-name"
+msgid "eq-angle"
+msgstr "eş-açı"
+
+#: constraint.cpp:44
+msgctxt "constr-name"
+msgid "eq-line-len-arc-len"
+msgstr "eş-çizgi-uzn-yay-uzn"
+
+#: constraint.cpp:45
+msgctxt "constr-name"
+msgid "lock-where-dragged"
+msgstr "sürüklendiği-yerde-kilitli"
+
+#: constraint.cpp:46
+msgctxt "constr-name"
+msgid "comment"
+msgstr "yorum"
+
+#: constraint.cpp:140
+msgid ""
+"The tangent arc and line segment must share an endpoint. Constrain them with "
+"Constrain -> On Point before constraining tangent."
+msgstr ""
+"Teğet, yay ve çizgi parçası bir uç noktayı paylaşmalıdır. Teğeti "
+"sınırlandırmadan önce bunları Sınırlandır -> Noktada ile sınırlandırın."
+
+#: constraint.cpp:158
+msgid ""
+"The tangent cubic and line segment must share an endpoint. Constrain them "
+"with Constrain -> On Point before constraining tangent."
+msgstr ""
+"Teğet kübik ve çizgi parçası bir uç noktayı paylaşmalıdır. Teğeti "
+"sınırlandırmadan önce onları Sınırlandır -> Noktada ile sınırlandırın."
+
+#: constraint.cpp:183
+msgid ""
+"The curves must share an endpoint. Constrain them with Constrain -> On Point "
+"before constraining tangent."
+msgstr ""
+"Eğriler bir uç noktayı paylaşmalıdır. Teğeti sınırlandırmadan önce onları "
+"Sınırlandır -> Noktada ile sınırlandırın."
+
+#: constraint.cpp:231
+msgid ""
+"Bad selection for distance / diameter constraint. This constraint can apply "
+"to:\n"
+"\n"
+"    * two points (distance between points)\n"
+"    * a line segment (length)\n"
+"    * two points and a line segment or normal (projected distance)\n"
+"    * a workplane and a point (minimum distance)\n"
+"    * a line segment and a point (minimum distance)\n"
+"    * a plane face and a point (minimum distance)\n"
+"    * a circle or an arc (diameter)\n"
+msgstr ""
+"Mesafe / çap sınırlandırması için hatalı seçim. Bu sınırlandırma şunlara "
+"uygulanabilir:\n"
+"\n"
+"     * iki nokta (noktalar arasındaki mesafe)\n"
+"     * bir çizgi parçası (uzunluk)\n"
+"     * iki nokta ve bir çizgi parçası veya normal (öngörülen mesafe)\n"
+"     * bir çalışma düzlemi ve bir nokta (minimum mesafe)\n"
+"     * bir çizgi parçası ve bir nokta (minimum mesafe)\n"
+"     * bir düzlem yüzeyi ve bir nokta (minimum mesafe)\n"
+"     * bir daire veya yay (çap)\n"
+
+#: constraint.cpp:284
+msgid ""
+"Bad selection for on point / curve / plane constraint. This constraint can "
+"apply to:\n"
+"\n"
+"    * two points (points coincident)\n"
+"    * a point and a workplane (point in plane)\n"
+"    * a point and a line segment (point on line)\n"
+"    * a point and a circle or arc (point on curve)\n"
+"    * a point and a plane face (point on face)\n"
+msgstr ""
+"Nokta / eğri / düzlem sınırlandırması için hatalı seçim. Bu sınırlandırma "
+"şunlara uygulanabilir:\n"
+"\n"
+"     * iki nokta (çakışan noktalar)\n"
+"     * bir nokta ve bir çalışma düzlemi (düzlemdeki nokta)\n"
+"     * bir nokta ve bir çizgi parçası (çizgi üzerinde nokta)\n"
+"     * bir nokta ve bir daire veya yay (eğri üzerinde nokta)\n"
+"     * bir nokta ve bir düzlem yüzeyi (yüzeyin üzerine gelin)\n"
+
+#: constraint.cpp:346
+msgid ""
+"Bad selection for equal length / radius constraint. This constraint can "
+"apply to:\n"
+"\n"
+"    * two line segments (equal length)\n"
+"    * two line segments and two points (equal point-line distances)\n"
+"    * a line segment and two points (equal point-line distances)\n"
+"    * a line segment, and a point and line segment (point-line distance "
+"equals length)\n"
+"    * four line segments or normals (equal angle between A,B and C,D)\n"
+"    * three line segments or normals (equal angle between A,B and B,C)\n"
+"    * two circles or arcs (equal radius)\n"
+"    * a line segment and an arc (line segment length equals arc length)\n"
+msgstr ""
+"Eşit uzunluk / yarıçap sınırlandırması için hatalı seçim. Bu sınırlandırma "
+"şunlara uygulanabilir:\n"
+"\n"
+"     * iki çizgi parçası (eşit uzunluk)\n"
+"     * iki çizgi parçası ve iki nokta (eşit nokta-çizgi mesafeleri)\n"
+"     * bir çizgi parçası ve iki nokta (eşit nokta-çizgi mesafeleri)\n"
+"     * bir çizgi parçası ve bir nokta ve çizgi parçası (nokta-çizgi mesafesi "
+"uzunluğa eşittir)\n"
+"     * dört çizgi parçası veya normal (A, B ve C, D arasında eşit açı)\n"
+"     * üç çizgi parçası veya normal (A, B ve B, C arasında eşit açı)\n"
+"     * iki daire veya yay (eşit yarıçap)\n"
+"     * bir çizgi parçası ve bir yay (çizgi parçası uzunluğu yay uzunluğuna "
+"eşittir)\n"
+
+#: constraint.cpp:385
+msgid ""
+"Bad selection for length ratio constraint. This constraint can apply to:\n"
+"\n"
+"    * two line segments\n"
+msgstr ""
+"Uzunluk oranı sınırlandırması için hatalı seçim. Bu sınırlandırma şunlara "
+"uygulanabilir:\n"
+"\n"
+"     * iki çizgi parçası\n"
+
+#: constraint.cpp:402
+msgid ""
+"Bad selection for length difference constraint. This constraint can apply "
+"to:\n"
+"\n"
+"    * two line segments\n"
+msgstr ""
+"Uzunluk farkı sınırlandırması için hatalı seçim. Bu sınırlandırma şunlara "
+"uygulanabilir:\n"
+"\n"
+"     * iki çizgi parçası\n"
+
+#: constraint.cpp:428
+msgid ""
+"Bad selection for at midpoint constraint. This constraint can apply to:\n"
+"\n"
+"    * a line segment and a point (point at midpoint)\n"
+"    * a line segment and a workplane (line's midpoint on plane)\n"
+msgstr ""
+"Orta nokta sınırlandırması için hatalı seçim. Bu sınırlandırma şunlara "
+"uygulanabilir:\n"
+"\n"
+"     * bir çizgi parçası ve bir nokta (orta noktayı işaret edin)\n"
+"     * bir çizgi parçası ve bir çalışma düzlemi (düzlemdeki çizginin orta "
+"noktası)\n"
+
+#: constraint.cpp:486
+msgid ""
+"Bad selection for symmetric constraint. This constraint can apply to:\n"
+"\n"
+"    * two points or a line segment (symmetric about workplane's coordinate "
+"axis)\n"
+"    * line segment, and two points or a line segment (symmetric about line "
+"segment)\n"
+"    * workplane, and two points or a line segment (symmetric about "
+"workplane)\n"
+msgstr ""
+"Simetrik sınırlandırması için hatalı seçim. Bu sınırlandırma şunlara "
+"uygulanabilir:\n"
+"\n"
+"     * iki nokta veya bir çizgi parçası (çalışma düzleminin koordinat ekseni "
+"etrafında simetrik)\n"
+"     * çizgi parçası ve iki nokta veya bir çizgi parçası (çizgi parçası "
+"etrafında simetrik)\n"
+"     * çalışma düzlemi ve iki nokta veya bir çizgi parçası (çalışma düzlemi "
+"etrafında simetrik)\n"
+
+#: constraint.cpp:500
+msgid ""
+"A workplane must be active when constraining symmetric without an explicit "
+"symmetry plane."
+msgstr ""
+"Açık bir simetri düzlemi olmadan simetriyi sınırlandırırken bir çalışma "
+"düzlemi etkin olmalıdır."
+
+#: constraint.cpp:530
+msgid ""
+"Activate a workplane (with Sketch -> In Workplane) before applying a "
+"horizontal or vertical constraint."
+msgstr ""
+"Yatay veya dikey bir sınırlandırma uygulamadan önce bir çalışma düzlemini "
+"(Çizim -> Çalışma Düzleminde menüsü) etkinleştirin."
+
+#: constraint.cpp:543
+msgid ""
+"Bad selection for horizontal / vertical constraint. This constraint can "
+"apply to:\n"
+"\n"
+"    * two points\n"
+"    * a line segment\n"
+msgstr ""
+"Yatay / dikey sınırlandırma için hatalı seçim. Bu sınırlandırma şunlara "
+"uygulanabilir:\n"
+"\n"
+"     * iki nokta\n"
+"     * bir çizgi parçası\n"
+
+#: constraint.cpp:564
+msgid ""
+"Bad selection for same orientation constraint. This constraint can apply "
+"to:\n"
+"\n"
+"    * two normals\n"
+msgstr ""
+"Aynı yön sınırlandırması için hatalı seçim. Bu sınırlandırma şunlara "
+"uygulanabilir:\n"
+"\n"
+"     * iki normal\n"
+
+#: constraint.cpp:614
+msgid "Must select an angle constraint."
+msgstr "Bir açı sınırlaması seçilmelidir."
+
+#: constraint.cpp:627
+msgid "Must select a constraint with associated label."
+msgstr "İlişkili etikete sahip bir sınırlama seçilmelidir."
+
+#: constraint.cpp:638
+msgid ""
+"Bad selection for angle constraint. This constraint can apply to:\n"
+"\n"
+"    * two line segments\n"
+"    * a line segment and a normal\n"
+"    * two normals\n"
+msgstr ""
+"Açı sınırlaması için hatalı seçim. Bu sınırlandırma şunlara uygulanabilir:\n"
+"\n"
+"     * iki çizgi parçası\n"
+"     * bir çizgi parçası ve normal\n"
+"     * iki normal\n"
+
+#: constraint.cpp:701
+msgid "Curve-curve tangency must apply in workplane."
+msgstr "Eğri-eğri teğetliği çalışma düzlemine uygulanmalıdır."
+
+#: constraint.cpp:711
+msgid ""
+"Bad selection for parallel / tangent constraint. This constraint can apply "
+"to:\n"
+"\n"
+"    * two line segments (parallel)\n"
+"    * a line segment and a normal (parallel)\n"
+"    * two normals (parallel)\n"
+"    * two line segments, arcs, or beziers, that share an endpoint (tangent)\n"
+msgstr ""
+"Paralel / teğet sınırlaması için hatalı seçim. Bu sınırlandırma şunlara "
+"uygulanabilir:\n"
+"\n"
+"     * iki çizgi parçası (paralel)\n"
+"     * bir çizgi parçası ve normal (paralel)\n"
+"     * iki normal (paralel)\n"
+"     * bir uç noktayı paylaşan(teğet) iki çizgi parçası, yay veya "
+"bezier'ler\n"
+
+#: constraint.cpp:729
+msgid ""
+"Bad selection for perpendicular constraint. This constraint can apply to:\n"
+"\n"
+"    * two line segments\n"
+"    * a line segment and a normal\n"
+"    * two normals\n"
+msgstr ""
+"Dikey sınırlama için hatalı seçim. Bu sınırlandırma şunlara uygulanabilir:\n"
+"\n"
+"     * iki çizgi parçası\n"
+"     * bir çizgi parçası ve normal\n"
+"     * iki normal\n"
+
+#: constraint.cpp:744
+msgid ""
+"Bad selection for lock point where dragged constraint. This constraint can "
+"apply to:\n"
+"\n"
+"    * a point\n"
+msgstr ""
+"Sürüklendiği yerde noktayı sınırlandırmak için hatalı seçim. Bu "
+"sınırlandırma şunlara uygulanabilir:\n"
+"\n"
+"* bir nokta\n"
+
+#: constraint.cpp:755
+msgid "click center of comment text"
+msgstr "yorum metninin merkezine tıklayın"
+
+#: export.cpp:19
+msgid ""
+"No solid model present; draw one with extrudes and revolves, or use Export "
+"2d View to export bare lines and curves."
+msgstr ""
+"Katı model yok; katılama ve döndürme komutları ile bir model çizin veya açık "
+"çizgileri ve eğrileri dışa vermek için Görüntüyü 2d olarak Dışa Aktar'ı "
+"kullanın."
+
+#: export.cpp:61
+msgid ""
+"Bad selection for export section. Please select:\n"
+"\n"
+"    * nothing, with an active workplane (workplane is section plane)\n"
+"    * a face (section plane through face)\n"
+"    * a point and two line segments (plane through point and parallel to "
+"lines)\n"
+msgstr ""
+"Kesiti Dışa Aktarmak için hatalı seçim. Lütfen şunlardan birini seçin:\n"
+"\n"
+"    * aktif bir çalışma düzleminde iken hiçbir şey seçmeyin (çalışma "
+"düzlemi, kesit düzlemidir)\n"
+"    * bir yüzey (yüzeyden kesit düzlemi)\n"
+"    * bir nokta ve iki çizgi parçası (nokta boyunca düzlem ve çizgilere "
+"paralel)\n"
+
+#: export.cpp:822
+msgid "Active group mesh is empty; nothing to export."
+msgstr "Etkin Mesh grubu boş; dışa aktarılacak bir şey yok."
+
+#: exportvector.cpp:337
+msgid "freehand lines were replaced with continuous lines"
+msgstr "serbest çizgiler, sürekli çizgilerle değiştirildi"
+
+#: exportvector.cpp:339
+msgid "zigzag lines were replaced with continuous lines"
+msgstr "zikzak çizgiler sürekli çizgilerle değiştirildi"
+
+#: exportvector.cpp:593
+msgid ""
+"Some aspects of the drawing have no DXF equivalent and were not exported:\n"
+msgstr "Çizimin bazı yönlerinin DXF eşdeğeri yoktur ve dışa aktarılmamıştır:\n"
+
+#: exportvector.cpp:839
+msgid ""
+"PDF page size exceeds 200 by 200 inches; many viewers may reject this file."
+msgstr ""
+"PDF sayfa boyutu 200 x 200 inç'i aşıyor; birçok görüntüleyici bu dosyayı "
+"reddedebilir."
+
+#: file.cpp:44 group.cpp:91
+msgctxt "group-name"
+msgid "sketch-in-plane"
+msgstr "düzlemde çizim"
+
+#: file.cpp:62
+msgctxt "group-name"
+msgid "#references"
+msgstr "#referanslar"
+
+#: file.cpp:552
+msgid "The file is empty. It may be corrupt."
+msgstr "Dosya boş. Bozuk olabilir."
+
+#: file.cpp:557
+msgid ""
+"Unrecognized data in file. This file may be corrupt, or from a newer version "
+"of the program."
+msgstr ""
+"Dosyada veriler tanınmadı. Bu dosya bozuk veya programın daha yeni bir "
+"sürümü ile oluşturulmuş olabilir."
+
+#: file.cpp:867
+msgctxt "title"
+msgid "Missing File"
+msgstr "Eksik Dosya"
+
+#: file.cpp:868
+#, c-format
+msgctxt "dialog"
+msgid "The linked file “%s” is not present."
+msgstr "\"%s\" bağlantılı dosya yok."
+
+#: file.cpp:870
+msgctxt "dialog"
+msgid ""
+"Do you want to locate it manually?\n"
+"\n"
+"If you decline, any geometry that depends on the missing file will be "
+"permanently removed."
+msgstr ""
+"Yerini manuel olarak mı bulmak istiyorsunuz?\n"
+"\n"
+"Reddederseniz, eksik dosyaya bağlı olan geometri kalıcı olarak "
+"kaldırılacaktır."
+
+#: file.cpp:873
+msgctxt "button"
+msgid "&Yes"
+msgstr "&Evet"
+
+#: file.cpp:875
+msgctxt "button"
+msgid "&No"
+msgstr "&Hayır"
+
+#: file.cpp:877 solvespace.cpp:569
+msgctxt "button"
+msgid "&Cancel"
+msgstr "&İptal"
+
+#: graphicswin.cpp:41
+msgid "&File"
+msgstr "&Dosya"
+
+#: graphicswin.cpp:42
+msgid "&New"
+msgstr "&Yeni"
+
+#: graphicswin.cpp:43
+msgid "&Open..."
+msgstr "&Aç..."
+
+#: graphicswin.cpp:44
+msgid "Open &Recent"
+msgstr "&Son Erişilenden Aç"
+
+#: graphicswin.cpp:45
+msgid "&Save"
+msgstr "&Kaydet"
+
+#: graphicswin.cpp:46
+msgid "Save &As..."
+msgstr "&Farklı kaydet..."
+
+#: graphicswin.cpp:48
+msgid "Export &Image..."
+msgstr "&Resim olarak dışa aktar..."
+
+#: graphicswin.cpp:49
+msgid "Export 2d &View..."
+msgstr "&Görüntüyü 2d olarak dışa aktar..."
+
+#: graphicswin.cpp:50
+msgid "Export 2d &Section..."
+msgstr "&Kesiti 2d olarak dışa aktar..."
+
+#: graphicswin.cpp:51
+msgid "Export 3d &Wireframe..."
+msgstr "3d &TelKafes olarak dışa aktar..."
+
+#: graphicswin.cpp:52
+msgid "Export Triangle &Mesh..."
+msgstr "&Üçgensel Mesh olarak dışa aktar..."
+
+#: graphicswin.cpp:53
+msgid "Export &Surfaces..."
+msgstr "Y&üzeyleri dışa aktar..."
+
+#: graphicswin.cpp:54
+msgid "Im&port..."
+msgstr "&İçe Aktar..."
+
+#: graphicswin.cpp:57
+msgid "E&xit"
+msgstr "&Çıkış"
+
+#: graphicswin.cpp:60
+msgid "&Edit"
+msgstr "D&üzen"
+
+#: graphicswin.cpp:61
+msgid "&Undo"
+msgstr "&Geri al"
+
+#: graphicswin.cpp:62
+msgid "&Redo"
+msgstr "&Yinele"
+
+#: graphicswin.cpp:63
+msgid "Re&generate All"
+msgstr "Tümünü Yeniden &Oluştur"
+
+#: graphicswin.cpp:65
+msgid "Snap Selection to &Grid"
+msgstr "Seçimi &Izgaraya Tuttur"
+
+#: graphicswin.cpp:66
+msgid "Rotate Imported &90°"
+msgstr "İçe Aktarılanları &90° Döndür"
+
+#: graphicswin.cpp:68
+msgid "Cu&t"
+msgstr "&Kes"
+
+#: graphicswin.cpp:69
+msgid "&Copy"
+msgstr "K&opyala"
+
+#: graphicswin.cpp:70
+msgid "&Paste"
+msgstr "Y&apıştır"
+
+#: graphicswin.cpp:71
+msgid "Paste &Transformed..."
+msgstr "&Dönüştürerek Yapıştır..."
+
+#: graphicswin.cpp:72
+msgid "&Delete"
+msgstr "&Sil"
+
+#: graphicswin.cpp:74
+msgid "Select &Edge Chain"
+msgstr "Kenar &Zincirini Seçin"
+
+#: graphicswin.cpp:75
+msgid "Select &All"
+msgstr "&Tümünü Seç"
+
+#: graphicswin.cpp:76
+msgid "&Unselect All"
+msgstr "Tüm Seçimi &Kaldır"
+
+#: graphicswin.cpp:78
+msgid "&Line Styles..."
+msgstr "&Çizgi Biçimi..."
+
+#: graphicswin.cpp:79
+msgid "&View Projection..."
+msgstr "&Projeksiyonu Görüntüle..."
+
+#: graphicswin.cpp:81
+msgid "Con&figuration..."
+msgstr "Y&apılandır..."
+
+#: graphicswin.cpp:84
+msgid "&View"
+msgstr "&Görünüm"
+
+#: graphicswin.cpp:85
+msgid "Zoom &In"
+msgstr "&Yakınlaş"
+
+#: graphicswin.cpp:86
+msgid "Zoom &Out"
+msgstr "&Uzaklaş"
+
+#: graphicswin.cpp:87
+msgid "Zoom To &Fit"
+msgstr "&Sığacak Şekilde Yakınlaş"
+
+#: graphicswin.cpp:89
+msgid "Align View to &Workplane"
+msgstr "Görünümü &Çalışma Düzlemine Hizala"
+
+#: graphicswin.cpp:90
+msgid "Nearest &Ortho View"
+msgstr "En Yakın &Orto Görünüm"
+
+#: graphicswin.cpp:91
+msgid "Nearest &Isometric View"
+msgstr "En Yakın &İzometrik Görünüm"
+
+#: graphicswin.cpp:92
+msgid "&Center View At Point"
+msgstr "&Noktayı Merkezde Görüntüle"
+
+#: graphicswin.cpp:94
+msgid "Show Snap &Grid"
+msgstr "&Izgarayı Göster"
+
+#: graphicswin.cpp:95
+msgid "Darken Inactive Solids"
+msgstr "Aktif Olmayan Katıları &Koyulaştır"
+
+#: graphicswin.cpp:96
+msgid "Use &Perspective Projection"
+msgstr "&Perspektif Projeksiyonu Kullanın"
+
+#: graphicswin.cpp:97
+msgid "Dimension &Units"
+msgstr "Ölçü &Birimleri"
+
+#: graphicswin.cpp:98
+msgid "Dimensions in &Millimeters"
+msgstr "&Milimetre cinsinden ölçü"
+
+#: graphicswin.cpp:99
+msgid "Dimensions in M&eters"
+msgstr "M&etre cinsinden ölçü"
+
+#: graphicswin.cpp:100
+msgid "Dimensions in &Inches"
+msgstr "&İnç cinsinden ölçü"
+
+#: graphicswin.cpp:102
+msgid "Show &Toolbar"
+msgstr "&Araç Çubuğunu Göster"
+
+#: graphicswin.cpp:103
+msgid "Show Property Bro&wser"
+msgstr "&Özellik Tarayıcısını Göster"
+
+#: graphicswin.cpp:105
+msgid "&Full Screen"
+msgstr "&Tam Ekran"
+
+#: graphicswin.cpp:107
+msgid "&New Group"
+msgstr "Yeni &Grup"
+
+#: graphicswin.cpp:108
+msgid "Sketch In &3d"
+msgstr "&3d'de Çizim Yap"
+
+#: graphicswin.cpp:109
+msgid "Sketch In New &Workplane"
+msgstr "&Yeni Çalışma Düzleminde Çizim Yap"
+
+#: graphicswin.cpp:111
+msgid "Step &Translating"
+msgstr "Adım &Ötele"
+
+#: graphicswin.cpp:112
+msgid "Step &Rotating"
+msgstr "Adım &Döndür"
+
+#: graphicswin.cpp:114
+msgid "E&xtrude"
+msgstr "&Katıla"
+
+#: graphicswin.cpp:115
+msgid "&Helix"
+msgstr "&Helis"
+
+#: graphicswin.cpp:116
+msgid "&Lathe"
+msgstr "&Çark"
+
+#: graphicswin.cpp:117
+msgid "Re&volve"
+msgstr "Dö&ndür"
+
+#: graphicswin.cpp:119
+msgid "Link / Assemble..."
+msgstr "Bağla / Montajla..."
+
+#: graphicswin.cpp:120
+msgid "Link Recent"
+msgstr "Son Erişilenden Bağla"
+
+#: graphicswin.cpp:122
+msgid "&Sketch"
+msgstr "&Çizim"
+
+#: graphicswin.cpp:123
+msgid "In &Workplane"
+msgstr "Ç&alışma Düzleminde"
+
+#: graphicswin.cpp:124
+msgid "Anywhere In &3d"
+msgstr "&3d'de Herhangi Bir Yerde"
+
+#: graphicswin.cpp:126
+msgid "Datum &Point"
+msgstr "Referasn &Noktası"
+
+#: graphicswin.cpp:127
+msgid "&Workplane"
+msgstr "Ça&lışma Düzlemi"
+
+#: graphicswin.cpp:129
+msgid "Line &Segment"
+msgstr "Çizgi &Parçası"
+
+#: graphicswin.cpp:130
+msgid "C&onstruction Line Segment"
+msgstr "&Yapı Çizgisi Parçası"
+
+#: graphicswin.cpp:131
+msgid "&Rectangle"
+msgstr "&Dikdörtgen"
+
+#: graphicswin.cpp:132
+msgid "&Circle"
+msgstr "&Çember"
+
+#: graphicswin.cpp:133
+msgid "&Arc of a Circle"
+msgstr "Çember &Yayı"
+
+#: graphicswin.cpp:134
+msgid "&Bezier Cubic Spline"
+msgstr "Bezier Kübik &Eğri"
+
+#: graphicswin.cpp:136
+msgid "&Text in TrueType Font"
+msgstr "TrueType Yazı Tipinde &Metin"
+
+#: graphicswin.cpp:137
+msgid "&Image"
+msgstr "&Resim"
+
+#: graphicswin.cpp:139
+msgid "To&ggle Construction"
+msgstr "Yap&ıyı Değiştir"
+
+#: graphicswin.cpp:140
+msgid "Tangent &Arc at Point"
+msgstr "Noktada &Teğet Yay"
+
+#: graphicswin.cpp:141
+msgid "Split Curves at &Intersection"
+msgstr "Kesişim yerinde Eğrileri &Böl"
+
+#: graphicswin.cpp:143
+msgid "&Constrain"
+msgstr "&Sınırlandır"
+
+#: graphicswin.cpp:144
+msgid "&Distance / Diameter"
+msgstr "&Mesafe / Çap"
+
+#: graphicswin.cpp:145
+msgid "Re&ference Dimension"
+msgstr "&Referans Ölçü"
+
+#: graphicswin.cpp:146
+msgid "A&ngle"
+msgstr "&Açı"
+
+#: graphicswin.cpp:147
+msgid "Reference An&gle"
+msgstr "Referans A&çı"
+
+#: graphicswin.cpp:148
+msgid "Other S&upplementary Angle"
+msgstr "Diğer &Bütünler Açı"
+
+#: graphicswin.cpp:149
+msgid "Toggle R&eference Dim"
+msgstr "Ölçüyü Re&ferans Yap / Yapma"
+
+#: graphicswin.cpp:151
+msgid "&Horizontal"
+msgstr "&Yatay"
+
+#: graphicswin.cpp:152
+msgid "&Vertical"
+msgstr "&Dikey"
+
+#: graphicswin.cpp:154
+msgid "&On Point / Curve / Plane"
+msgstr "&Noktada / Eğride / Düzlemde"
+
+#: graphicswin.cpp:155
+msgid "E&qual Length / Radius / Angle"
+msgstr "&Eşit Uzunluk / Yarıçap / Açı"
+
+#: graphicswin.cpp:156
+msgid "Length Ra&tio"
+msgstr "&Uzunluk Oranı"
+
+#: graphicswin.cpp:157
+msgid "Length Diff&erence"
+msgstr "U&zunluk Farkı"
+
+#: graphicswin.cpp:158
+msgid "At &Midpoint"
+msgstr "&Orta Noktada"
+
+#: graphicswin.cpp:159
+msgid "S&ymmetric"
+msgstr "&Simetrik"
+
+#: graphicswin.cpp:160
+msgid "Para&llel / Tangent"
+msgstr "&Paralel / Teğet"
+
+#: graphicswin.cpp:161
+msgid "&Perpendicular"
+msgstr "D&ik"
+
+#: graphicswin.cpp:162
+msgid "Same Orient&ation"
+msgstr "Aynı &Yön"
+
+#: graphicswin.cpp:163
+msgid "Lock Point Where &Dragged"
+msgstr "Sürüklendiği Yerde Noktayı &Kilitle"
+
+#: graphicswin.cpp:165
+msgid "Comment"
+msgstr "Y&orum"
+
+#: graphicswin.cpp:167
+msgid "&Analyze"
+msgstr "&Analiz Et"
+
+#: graphicswin.cpp:168
+msgid "Measure &Volume"
+msgstr "&Hacmi Ölçün"
+
+#: graphicswin.cpp:169
+msgid "Measure A&rea"
+msgstr "&Alanı Ölçün"
+
+#: graphicswin.cpp:170
+msgid "Measure &Perimeter"
+msgstr "&Çevre Uzunluğunu Ölçün"
+
+#: graphicswin.cpp:171
+msgid "Show &Interfering Parts"
+msgstr "&Engelleyen Parçaları Göster"
+
+#: graphicswin.cpp:172
+msgid "Show &Naked Edges"
+msgstr "A&çık Kenarları Göster"
+
+#: graphicswin.cpp:173
+msgid "Show &Center of Mass"
+msgstr "&Kütle Merkezini Göster"
+
+#: graphicswin.cpp:175
+msgid "Show &Underconstrained Points"
+msgstr "&Sınırlanmamış Noktaları Göster"
+
+#: graphicswin.cpp:177
+msgid "&Trace Point"
+msgstr "&Noktayı İzle"
+
+#: graphicswin.cpp:178
+msgid "&Stop Tracing..."
+msgstr "&İzlemeyi &Durdur..."
+
+#: graphicswin.cpp:179
+msgid "Step &Dimension..."
+msgstr "Adım &Ölçüsü..."
+
+#: graphicswin.cpp:181
+msgid "&Help"
+msgstr "&Yardım"
+
+#: graphicswin.cpp:182
+msgid "&Language"
+msgstr "&Dil"
+
+#: graphicswin.cpp:183
+msgid "&Website / Manual"
+msgstr "&Web sitesi / Kılavuz"
+
+#: graphicswin.cpp:185
+msgid "&About"
+msgstr "&Hakkında"
+
+#: graphicswin.cpp:355
+msgid "(no recent files)"
+msgstr "(yeni dosyalar yok)"
+
+#: graphicswin.cpp:363
+#, c-format
+msgid "File '%s' does not exist."
+msgstr "'%s' dosyası mevcut değil."
+
+#: graphicswin.cpp:725
+msgid "No workplane is active, so the grid will not appear."
+msgstr "Etkin çalışma düzlemi yok, bu nedenle ızgara görünmeyecektir."
+
+#: graphicswin.cpp:740
+msgid ""
+"The perspective factor is set to zero, so the view will always be a parallel "
+"projection.\n"
+"\n"
+"For a perspective projection, modify the perspective factor in the "
+"configuration screen. A value around 0.3 is typical."
+msgstr ""
+"Perspektif çarpanı sıfıra ayarlanmıştır, bu nedenle görünüm her zaman "
+"paralel bir projeksiyon olacaktır.\n"
+"\n"
+"Perspektif bir projeksiyon için, konfigürasyon ekranındaki perspektif "
+"çarpanını değiştirin. 0,3 civarında bir değer tipiktir."
+
+#: graphicswin.cpp:819
+msgid ""
+"Select a point; this point will become the center of the view on screen."
+msgstr ""
+"Bir nokta seçin; bu nokta ekrandaki görüntünün merkezi haline gelecektir."
+
+#: graphicswin.cpp:1114
+msgid "No additional entities share endpoints with the selected entities."
+msgstr "Hiçbir ek öğe, seçili öğeler ile uç noktaları paylaşmaz."
+
+#: graphicswin.cpp:1132
+msgid ""
+"To use this command, select a point or other entity from an linked part, or "
+"make a link group the active group."
+msgstr ""
+"Bu komutu kullanmak için, bağlantılı bir parçadan bir nokta veya başka bir "
+"öğe seçin veya bir bağlantı grubunu etkin grup haline getirin."
+
+#: graphicswin.cpp:1155
+msgid ""
+"No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
+"to define the plane for the snap grid."
+msgstr ""
+"Etkin çalışma düzlemi yok. Tutturma ızgarasının düzlemini tanımlamak için "
+"bir çalışma düzlemini (Çizim -> Çalışma Düzleminde menüsü ile) etkinleştirin."
+
+#: graphicswin.cpp:1162
+msgid ""
+"Can't snap these items to grid; select points, text comments, or constraints "
+"with a label. To snap a line, select its endpoints."
+msgstr ""
+"Bu öğeleri ızgaraya tutturamazsınız; noktaları, metin yorumlarını veya "
+"sınırlamaları bir etiketle seçin. Bir çizgiyi tutturmak için uç noktalarını "
+"seçin."
+
+#: graphicswin.cpp:1247
+msgid "No workplane selected. Activating default workplane for this group."
+msgstr ""
+"Çalışma düzlemi seçilmedi. Bu grup için varsayılan çalışma düzlemi "
+"etkinleştiriliyor."
+
+#: graphicswin.cpp:1250
+msgid ""
+"No workplane is selected, and the active group does not have a default "
+"workplane. Try selecting a workplane, or activating a sketch-in-new-"
+"workplane group."
+msgstr ""
+"Hiçbir çalışma düzlemi seçilmemiştir ve aktif grubun varsayılan bir çalışma "
+"düzlemi yoktur. Bir çalışma düzlemi seçmeyi veya yeni çalışma düzleminde "
+"çizim grubunu etkinleştirmeyi deneyin."
+
+#: graphicswin.cpp:1271
+msgid ""
+"Bad selection for tangent arc at point. Select a single point, or select "
+"nothing to set up arc parameters."
+msgstr ""
+"Noktada teğet yay oluşturmak için hatalı seçim. Tek bir nokta seçin veya yay "
+"parametrelerini ayarlamak için hiçbir şey seçmeyin."
+
+#: graphicswin.cpp:1282
+msgid "click point on arc (draws anti-clockwise)"
+msgstr "yayın ilk noktası için tıklayın (saat yönünün tersine çizilir)"
+
+#: graphicswin.cpp:1283
+msgid "click to place datum point"
+msgstr "referans noktasını yerleştirmek için tıklayın"
+
+#: graphicswin.cpp:1284
+msgid "click first point of line segment"
+msgstr "çizgi parçasının ilk noktası için tıklayın"
+
+#: graphicswin.cpp:1286
+msgid "click first point of construction line segment"
+msgstr "yapı çizgisinin ilk noktası için tıklayın"
+
+#: graphicswin.cpp:1287
+msgid "click first point of cubic segment"
+msgstr "kübik segmentin ilk noktası için tıklayın"
+
+#: graphicswin.cpp:1288
+msgid "click center of circle"
+msgstr "çemberin merkezi için tıklayın"
+
+#: graphicswin.cpp:1289
+msgid "click origin of workplane"
+msgstr "çalışma düzleminin merkezi için tıklayın"
+
+#: graphicswin.cpp:1290
+msgid "click one corner of rectangle"
+msgstr "dikdörtgenin bir köşesi için tıklayın"
+
+#: graphicswin.cpp:1291
+msgid "click top left of text"
+msgstr "metnin sol üst köşesi için tıklayın"
+
+#: graphicswin.cpp:1297
+msgid "click top left of image"
+msgstr "resmin sol üst köşesi için tıklayın"
+
+#: graphicswin.cpp:1309
+msgid ""
+"No entities are selected. Select entities before trying to toggle their "
+"construction state."
+msgstr ""
+"Hiçbir öğe seçilmedi. Yapı durumlarını geçiş yapmaya çalışmadan önce öğeleri "
+"seçin."
+
+#: group.cpp:86
+msgctxt "group-name"
+msgid "sketch-in-3d"
+msgstr "3d-içinde-çizim"
+
+#: group.cpp:142
+msgid ""
+"Bad selection for new sketch in workplane. This group can be created with:\n"
+"\n"
+"    * a point (through the point, orthogonal to coordinate axes)\n"
+"    * a point and two line segments (through the point, parallel to the "
+"lines)\n"
+"    * a workplane (copy of the workplane)\n"
+msgstr ""
+"Çalışma düzleminde yeni taslak çizmek için hatalı seçim. Bu grup şunlarla "
+"oluşturulabilir:\n"
+"\n"
+"     * bir nokta (nokta boyunca, eksenleri koordine etmek için ortogonal)\n"
+"     * bir nokta ve iki çizgi parçası (noktadan, çizgilere paralel)\n"
+"     * bir çalışma düzlemi (çalışma düzleminin kopyası)\n"
+
+#: group.cpp:154
+msgid ""
+"Activate a workplane (Sketch -> In Workplane) before extruding. The sketch "
+"will be extruded normal to the workplane."
+msgstr ""
+"Katılama işleminden önce bir çalışma düzlemini etkinleştirin (Çizim -> "
+"Çalışma Düzleminde menüsü). Çizim, çalışma düzlemine dik olarak "
+"katılanacaktır."
+
+#: group.cpp:163
+msgctxt "group-name"
+msgid "extrude"
+msgstr "katıla"
+
+#: group.cpp:168
+msgid "Lathe operation can only be applied to planar sketches."
+msgstr "Çark işlemi yalnızca düzlemsel çizimlere uygulanabilir."
+
+#: group.cpp:179
+msgid ""
+"Bad selection for new lathe group. This group can be created with:\n"
+"\n"
+"    * a point and a line segment or normal (revolved about an axis parallel "
+"to line / normal, through point)\n"
+"    * a line segment (revolved about line segment)\n"
+msgstr ""
+"Yeni çark grubu için hatalı seçim. Bu grup şu şekilde oluşturulabilir:\n"
+"\n"
+"   * bir nokta ve bir çizgi parçası veya normal (çizgiye / normale paralel "
+"bir eksen etrafında, nokta boyunca döndürülür )\n"
+"   * bir çizgi parçası (çizgi parçası etrafında döndürülür)\n"
+
+#: group.cpp:189
+msgctxt "group-name"
+msgid "lathe"
+msgstr "çark"
+
+#: group.cpp:194
+msgid "Revolve operation can only be applied to planar sketches."
+msgstr "Döndürme işlemi yalnızca düzlemsel çizimlere uygulanabilir."
+
+#: group.cpp:205
+msgid ""
+"Bad selection for new revolve group. This group can be created with:\n"
+"\n"
+"    * a point and a line segment or normal (revolved about an axis parallel "
+"to line / normal, through point)\n"
+"    * a line segment (revolved about line segment)\n"
+msgstr ""
+"Yeni döndürme grup için hatalı seçim. Bu grup şunlarla oluşturulabilir:\n"
+"\n"
+"    * bir nokta ve bir çizgi parçası veya normal (çizgiye / normale paralel, "
+"noktadan geçen bir eksen etrafında döndürülür)\n"
+"    * bir çizgi parçası (çizgi parçası etrafında döndürülür)\n"
+
+#: group.cpp:217
+msgctxt "group-name"
+msgid "revolve"
+msgstr "döndür"
+
+#: group.cpp:222
+msgid "Helix operation can only be applied to planar sketches."
+msgstr "Helis işlemi yalnızca düzlemsel çizimlere uygulanabilir."
+
+#: group.cpp:233
+msgid ""
+"Bad selection for new helix group. This group can be created with:\n"
+"\n"
+"    * a point and a line segment or normal (revolved about an axis parallel "
+"to line / normal, through point)\n"
+"    * a line segment (revolved about line segment)\n"
+msgstr ""
+"Yeni helis grubu için hatalı seçim. Bu grup şunlarla oluşturulabilir:\n"
+"\n"
+"    * bir nokta ve bir çizgi parçası veya normal (çizgiye / normale paralel, "
+"noktadan geçen bir eksen etrafında döndürülür)\n"
+"    * bir çizgi parçası (çizgi parçası etrafında döndürülür)\n"
+
+#: group.cpp:245
+msgctxt "group-name"
+msgid "helix"
+msgstr "helis"
+
+#: group.cpp:258
+msgid ""
+"Bad selection for new rotation. This group can be created with:\n"
+"\n"
+"    * a point, while locked in workplane (rotate in plane, about that "
+"point)\n"
+"    * a point and a line or a normal (rotate about an axis through the "
+"point, and parallel to line / normal)\n"
+msgstr ""
+"Yeni çevirme için hatalı seçim. Bu grup şunlarla oluşturulabilir:\n"
+"\n"
+"    * çalışma düzleminde bir nokta, kilitli olduğu sürece (düzlemde o nokta "
+"etrafında çevirin)\n"
+"    * bir nokta ve bir çizgi veya bir normal (nokta boyunca bir eksen "
+"etrafında ve çizgiye / normale paralel çevirin)\n"
+
+#: group.cpp:271
+msgctxt "group-name"
+msgid "rotate"
+msgstr "çevir"
+
+#: group.cpp:282
+msgctxt "group-name"
+msgid "translate"
+msgstr "ötele"
+
+#: group.cpp:400
+msgid "(unnamed)"
+msgstr "(isimsiz)"
+
+#: groupmesh.cpp:709
+msgid "not closed contour, or not all same style!"
+msgstr "kapalı olmayan kontur veya tümü aynı biçimde değil!"
+
+#: groupmesh.cpp:722
+msgid "points not all coplanar!"
+msgstr "noktaların hepsi aynı düzlemde değil!"
+
+#: groupmesh.cpp:724
+msgid "contour is self-intersecting!"
+msgstr "kontur kendisiyle kesişiyor!"
+
+#: groupmesh.cpp:726
+msgid "zero-length edge!"
+msgstr "sıfır-uzunlukta kenar!"
+
+#: modify.cpp:254
+msgid "Must be sketching in workplane to create tangent arc."
+msgstr "Teğet yay oluşturmak için çalışma düzleminde çizim yapılmalıdır."
+
+#: modify.cpp:301
+msgid ""
+"To create a tangent arc, select a point where two non-construction lines or "
+"circles in this group and workplane join."
+msgstr ""
+"Bir teğet yay oluşturmak için, bu gruptaki iki yapı-dışı çizginin veya "
+"dairenin ve çalışma düzleminin birleştiği bir nokta seçin."
+
+#: modify.cpp:388
+msgid ""
+"Couldn't round this corner. Try a smaller radius, or try creating the "
+"desired geometry by hand with tangency constraints."
+msgstr ""
+"Bu köşe yuvarlatılamadı. Daha küçük bir yarıçap deneyin veya teğet "
+"sınırlamaları ile istenen geometriyi elle oluşturmayı deneyin."
+
+#: modify.cpp:597
+msgid "Couldn't split this entity; lines, circles, or cubics only."
+msgstr "Bu öğeler bölünemedi; yalnızca çizgiler, çemberler veya küpler."
+
+#: modify.cpp:624
+msgid "Must be sketching in workplane to split."
+msgstr "Bölmek için çalışma düzleminde çizim olmalı."
+
+#: modify.cpp:631
+msgid ""
+"Select two entities that intersect each other (e.g. two lines/circles/arcs "
+"or a line/circle/arc and a point)."
+msgstr ""
+"Birbiriyle kesişen iki öğe seçin (örneğin iki çizgi / çember / yay veya bir "
+"çizgi / çember / yay ve bir nokta)."
+
+#: modify.cpp:736
+msgid "Can't split; no intersection found."
+msgstr "Bölünemez; kesişim bulunamadı."
+
+#: mouse.cpp:559
+msgid "Assign to Style"
+msgstr "Biçime Ata"
+
+#: mouse.cpp:575
+msgid "No Style"
+msgstr "Biçim Yok"
+
+#: mouse.cpp:578
+msgid "Newly Created Custom Style..."
+msgstr "Yeni Oluşturulan Özel Biçim ..."
+
+#: mouse.cpp:585
+msgid "Group Info"
+msgstr "Grup Bilgisi"
+
+#: mouse.cpp:605
+msgid "Style Info"
+msgstr "Biçim Bİlgisi"
+
+#: mouse.cpp:625
+msgid "Select Edge Chain"
+msgstr "Kenar Zinciri Seçin"
+
+#: mouse.cpp:631
+msgid "Toggle Reference Dimension"
+msgstr "Ölçü Referansını Değiştir"
+
+#: mouse.cpp:637
+msgid "Other Supplementary Angle"
+msgstr "Diğer Bütünler Açı"
+
+#: mouse.cpp:642
+msgid "Snap to Grid"
+msgstr "Izgaraya Tuttur"
+
+#: mouse.cpp:651
+msgid "Remove Spline Point"
+msgstr "Eğri Noktasını Sil"
+
+#: mouse.cpp:686
+msgid "Add Spline Point"
+msgstr "Eğri Noktası Ekle"
+
+#: mouse.cpp:690
+msgid "Cannot add spline point: maximum number of points reached."
+msgstr "Eğri noktası eklenemiyor: en fazla nokta sayısına ulaşıldı."
+
+#: mouse.cpp:715
+msgid "Toggle Construction"
+msgstr "Yapıyı değiştir"
+
+#: mouse.cpp:730
+msgid "Delete Point-Coincident Constraint"
+msgstr "Çakışan-Nokta Sınırlamasını Sil"
+
+#: mouse.cpp:749
+msgid "Cut"
+msgstr "Kes"
+
+#: mouse.cpp:751
+msgid "Copy"
+msgstr "Kopyala"
+
+#: mouse.cpp:755
+msgid "Select All"
+msgstr "Tümünü Seç"
+
+#: mouse.cpp:760
+msgid "Paste"
+msgstr "Yapıştır"
+
+#: mouse.cpp:762
+msgid "Paste Transformed..."
+msgstr "Dönüştürerek Yapıştır..."
+
+#: mouse.cpp:767
+msgid "Delete"
+msgstr "Sil"
+
+#: mouse.cpp:770
+msgid "Unselect All"
+msgstr "Tüm Seçimi Kaldır"
+
+#: mouse.cpp:777
+msgid "Unselect Hovered"
+msgstr "Fareyle Üzerine Gelinen Seçimi Kaldır"
+
+#: mouse.cpp:786
+msgid "Zoom to Fit"
+msgstr "Sığdırmak için Yakınlaştır"
+
+#: mouse.cpp:988 mouse.cpp:1275
+msgid "click next point of line, or press Esc"
+msgstr "çizginin sonraki noktası için tıklayın veya Esc tuşuna basın"
+
+#: mouse.cpp:994
+msgid ""
+"Can't draw rectangle in 3d; first, activate a workplane with Sketch -> In "
+"Workplane."
+msgstr ""
+"3d'de dikdörtgen çizilemez; önce Çizim -> Çalışma Düzleminde menüsü ile bir "
+"çalışma düzlemini etkinleştirin."
+
+#: mouse.cpp:1028
+msgid "click to place other corner of rectangle"
+msgstr "dikdörtgenin diğer köşesini yerleştirmek için tıklayın"
+
+#: mouse.cpp:1048
+msgid "click to set radius"
+msgstr "yarıçapı ayarlamak için tıklayın"
+
+#: mouse.cpp:1053
+msgid ""
+"Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
+"Workplane."
+msgstr ""
+"3d'de yay çizemez; önce Çizim -> Çalışma Düzleminde menüsü ile bir çalışma "
+"düzlemini etkinleştirin."
+
+#: mouse.cpp:1072
+msgid "click to place point"
+msgstr "noktayı yerleştirmek için tıklayın"
+
+#: mouse.cpp:1088
+msgid "click next point of cubic, or press Esc"
+msgstr "sonraki kübik noktayı tıklayın veya Esc tuşuna basın"
+
+#: mouse.cpp:1093
+msgid ""
+"Sketching in a workplane already; sketch in 3d before creating new workplane."
+msgstr ""
+"Zaten bir çalışma düzleminde çizim yapılıyor; 3d'de çizim yapmadan önce yeni "
+"çalışma düzlemi oluşturun."
+
+#: mouse.cpp:1109
+msgid ""
+"Can't draw text in 3d; first, activate a workplane with Sketch -> In "
+"Workplane."
+msgstr ""
+"3d'de metin yazılamaz; önce Çizim -> Çalışma Düzleminde menüsü ile bir "
+"çalışma düzlemini etkinleştirin."
+
+#: mouse.cpp:1126
+msgid "click to place bottom right of text"
+msgstr "metnin sağ alt konumunu yerleştirmek için tıklayın"
+
+#: mouse.cpp:1132
+msgid ""
+"Can't draw image in 3d; first, activate a workplane with Sketch -> In "
+"Workplane."
+msgstr ""
+"3d'de resim eklenemez; önce Çizim -> Çalışma Düzleminde menüsü ile bir "
+"çalışma düzlemini etkinleştirin."
+
+#: mouse.cpp:1159
+msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
+msgstr "YENİ YORUM - DÜZENLEMEK İÇİN ÇİFT TIKLAYIN"
+
+#: platform/gui.cpp:85 platform/gui.cpp:89 solvespace.cpp:511
+msgctxt "file-type"
+msgid "SolveSpace models"
+msgstr "SolveSpace Modelleri"
+
+#: platform/gui.cpp:90
+msgctxt "file-type"
+msgid "IDF circuit board"
+msgstr "IDF devre kartı"
+
+#: platform/gui.cpp:94
+msgctxt "file-type"
+msgid "PNG image"
+msgstr "PNG Resmi"
+
+#: platform/gui.cpp:98
+msgctxt "file-type"
+msgid "STL mesh"
+msgstr "STL mesh"
+
+#: platform/gui.cpp:99
+msgctxt "file-type"
+msgid "Wavefront OBJ mesh"
+msgstr "Wavefront OBJ mesh"
+
+#: platform/gui.cpp:100
+msgctxt "file-type"
+msgid "Three.js-compatible mesh, with viewer"
+msgstr "Görüntüleyicili, Three.js-uyumlu mesh"
+
+#: platform/gui.cpp:101
+msgctxt "file-type"
+msgid "Three.js-compatible mesh, mesh only"
+msgstr "Three.js-uyumlu mesh, yalnızca mesh"
+
+#: platform/gui.cpp:102
+msgctxt "file-type"
+msgid "VRML text file"
+msgstr "VRML metin dosyası"
+
+#: platform/gui.cpp:106 platform/gui.cpp:113 platform/gui.cpp:120
+msgctxt "file-type"
+msgid "STEP file"
+msgstr "STEP dosyası"
+
+#: platform/gui.cpp:110
+msgctxt "file-type"
+msgid "PDF file"
+msgstr "PDF dosyası"
+
+#: platform/gui.cpp:111
+msgctxt "file-type"
+msgid "Encapsulated PostScript"
+msgstr "Kapsüllenmiş PostScript"
+
+#: platform/gui.cpp:112
+msgctxt "file-type"
+msgid "Scalable Vector Graphics"
+msgstr "Ölçeklenebilir Vektör Grafikleri (SVG)"
+
+#: platform/gui.cpp:114 platform/gui.cpp:121
+msgctxt "file-type"
+msgid "DXF file (AutoCAD 2007)"
+msgstr "DXF dosyası (AutoCAD 2007)"
+
+#: platform/gui.cpp:115
+msgctxt "file-type"
+msgid "HPGL file"
+msgstr "HPGL dosyası"
+
+#: platform/gui.cpp:116
+msgctxt "file-type"
+msgid "G Code"
+msgstr "G Kodu"
+
+#: platform/gui.cpp:125
+msgctxt "file-type"
+msgid "AutoCAD DXF and DWG files"
+msgstr "AutoCAD DXF ve DWG dosyaları"
+
+#: platform/gui.cpp:129
+msgctxt "file-type"
+msgid "Comma-separated values"
+msgstr "Virgülle ayrılmış değerler (CSV)"
+
+#: platform/guigtk.cpp:1324 platform/guimac.mm:1363 platform/guiwin.cpp:1639
+msgid "untitled"
+msgstr "isimsiz"
+
+#: platform/guigtk.cpp:1335 platform/guigtk.cpp:1368 platform/guimac.mm:1321
+#: platform/guiwin.cpp:1582
+msgctxt "title"
+msgid "Save File"
+msgstr "Dosyayı Kaydet"
+
+#: platform/guigtk.cpp:1336 platform/guigtk.cpp:1369 platform/guimac.mm:1304
+#: platform/guiwin.cpp:1584
+msgctxt "title"
+msgid "Open File"
+msgstr "Dosyayı Aç"
+
+#: platform/guigtk.cpp:1339 platform/guigtk.cpp:1375
+msgctxt "button"
+msgid "_Cancel"
+msgstr "_İptal"
+
+#: platform/guigtk.cpp:1340 platform/guigtk.cpp:1373
+msgctxt "button"
+msgid "_Save"
+msgstr "_Kaydet"
+
+#: platform/guigtk.cpp:1341 platform/guigtk.cpp:1374
+msgctxt "button"
+msgid "_Open"
+msgstr "_Aç"
+
+#: solvespace.cpp:169
+msgctxt "title"
+msgid "Autosave Available"
+msgstr "Otomatik Kaydetme Kullanılabilir"
+
+#: solvespace.cpp:170
+msgctxt "dialog"
+msgid "An autosave file is available for this sketch."
+msgstr "Bu çizim için otomatik kaydetme dosyası kullanılabilir."
+
+#: solvespace.cpp:171
+msgctxt "dialog"
+msgid "Do you want to load the autosave file instead?"
+msgstr "Bunun yerine otomatik kaydetme dosyasını yüklemek istiyor musunuz?"
+
+#: solvespace.cpp:172
+msgctxt "button"
+msgid "&Load autosave"
+msgstr "&Otomatik kaydetmeyi yükle"
+
+#: solvespace.cpp:174
+msgctxt "button"
+msgid "Do&n't Load"
+msgstr "&Yükleme"
+
+#: solvespace.cpp:557
+msgctxt "title"
+msgid "Modified File"
+msgstr "Değiştirilen Dosya"
+
+#: solvespace.cpp:559
+#, c-format
+msgctxt "dialog"
+msgid "Do you want to save the changes you made to the sketch “%s”?"
+msgstr "\"%s\" çiziminde yaptığınız değişiklikleri kaydetmek istiyor musunuz?"
+
+#: solvespace.cpp:562
+msgctxt "dialog"
+msgid "Do you want to save the changes you made to the new sketch?"
+msgstr "Yeni çizimde yaptığınız değişiklikleri kaydetmek istiyor musunuz?"
+
+#: solvespace.cpp:565
+msgctxt "dialog"
+msgid "Your changes will be lost if you don't save them."
+msgstr "Bunları kaydetmezseniz değişiklikleriniz kaybolur."
+
+#: solvespace.cpp:566
+msgctxt "button"
+msgid "&Save"
+msgstr "&Kaydet"
+
+#: solvespace.cpp:568
+msgctxt "button"
+msgid "Do&n't Save"
+msgstr "K&aydetme"
+
+#: solvespace.cpp:589
+msgctxt "title"
+msgid "(new sketch)"
+msgstr "(yeni çizim)"
+
+#: solvespace.cpp:596
+msgctxt "title"
+msgid "Property Browser"
+msgstr "Özellik Tarayıcısı"
+
+#: solvespace.cpp:658
+msgid ""
+"Constraints are currently shown, and will be exported in the toolpath. This "
+"is probably not what you want; hide them by clicking the link at the top of "
+"the text window."
+msgstr ""
+"Sınırlamalar şu anda gösterilmektedir ve takım yolunda dışa aktarılacaktır. "
+"Muhtemelen istediğiniz bu değil; metin penceresinin üst kısmındaki "
+"bağlantıya tıklayarak bunları gizleyin."
+
+#: solvespace.cpp:730
+#, c-format
+msgid ""
+"Can't identify file type from file extension of filename '%s'; try .dxf or ."
+"dwg."
+msgstr ""
+"Dosya türü '%s' dosya uzantısından tanımlanamıyor; .dxf veya .dwg'yi deneyin."
+
+#: solvespace.cpp:778
+msgid "Constraint must have a label, and must not be a reference dimension."
+msgstr "Sınırlamanın bir etiketi olmalı ve bir referans ölçüsü olmamalıdır."
+
+#: solvespace.cpp:782
+msgid "Bad selection for step dimension; select a constraint."
+msgstr ""
+"Adım ölçüsü için hatalı seçim; bir nokta boyunca, eksenleri koordine etmek "
+"için ortogonal seçin."
+
+#: solvespace.cpp:806
+msgid "The assembly does not interfere, good."
+msgstr "Montaj engel değil, iyi."
+
+#: solvespace.cpp:822
+#, c-format
+msgid ""
+"The volume of the solid model is:\n"
+"\n"
+"    %s"
+msgstr ""
+"Katı modelin hacmi:\n"
+"\n"
+"     % s"
+
+#: solvespace.cpp:831
+#, c-format
+msgid ""
+"\n"
+"The volume of current group mesh is:\n"
+"\n"
+"    %s"
+msgstr ""
+"\n"
+"Mevcut mesh grubunun hacmi:\n"
+"\n"
+"    %s"
+
+#: solvespace.cpp:836
+msgid ""
+"\n"
+"\n"
+"Curved surfaces have been approximated as triangles.\n"
+"This introduces error, typically of around 1%."
+msgstr ""
+"\n"
+"\n"
+"Eğri yüzeyler, üçgenler olarak yaklaştırılmıştır.\n"
+"Bu, tipik olarak yaklaşık 1% hataya neden olur."
+
+#: solvespace.cpp:851
+#, c-format
+msgid ""
+"The surface area of the selected faces is:\n"
+"\n"
+"    %s\n"
+"\n"
+"Curves have been approximated as piecewise linear.\n"
+"This introduces error, typically of around 1%%."
+msgstr ""
+"Seçilen yüzlerin yüzey alanı:\n"
+"\n"
+"    %s\n"
+"\n"
+"Eğriler, parçalı doğrusal olarak yaklaştırıldı.\n"
+"Bu, tipik olarak yaklaşık 1%% hataya neden olur."
+
+#: solvespace.cpp:860
+msgid ""
+"This group does not contain a correctly-formed 2d closed area. It is open, "
+"not coplanar, or self-intersecting."
+msgstr ""
+"Bu grup, doğru biçimlendirilmiş 2d kapalı alan içermiyor. Açık, eş düzlemli "
+"değil veya kendisiyle kesişiyor."
+
+#: solvespace.cpp:872
+#, c-format
+msgid ""
+"The area of the region sketched in this group is:\n"
+"\n"
+"    %s\n"
+"\n"
+"Curves have been approximated as piecewise linear.\n"
+"This introduces error, typically of around 1%%."
+msgstr ""
+"Bu grupta çizilen bölgenin alanı:\n"
+"\n"
+"    %s\n"
+"\n"
+"Eğriler, parçalı doğrusal olarak yaklaştırıldı.\n"
+"Bu, tipik olarak yaklaşık 1%% hataya neden olur."
+
+#: solvespace.cpp:892
+#, c-format
+msgid ""
+"The total length of the selected entities is:\n"
+"\n"
+"    %s\n"
+"\n"
+"Curves have been approximated as piecewise linear.\n"
+"This introduces error, typically of around 1%%."
+msgstr ""
+"Seçilen öğelerin toplam uzunluğu:\n"
+"\n"
+"    %s\n"
+"\n"
+"Eğriler, parçalı doğrusal olarak yaklaştırıldı.\n"
+"Bu, tipik olarak yaklaşık 1%% hataya neden olur."
+
+#: solvespace.cpp:898
+msgid "Bad selection for perimeter; select line segments, arcs, and curves."
+msgstr ""
+"Çevre uzunluğu için hatalı seçim; çizgi parçalarını, yayları ve eğrileri "
+"seçin."
+
+#: solvespace.cpp:914
+msgid "Bad selection for trace; select a single point."
+msgstr "İzleme için hatalı seçim; tek bir nokta seçin."
+
+#: solvespace.cpp:941
+#, c-format
+msgid "Couldn't write to '%s'"
+msgstr "\"%s\" ye yazılamadı"
+
+#: solvespace.cpp:971
+msgid "The mesh is self-intersecting (NOT okay, invalid)."
+msgstr "Mesh kendisiyle kesişiyor (TAMAM değil, geçersiz)."
+
+#: solvespace.cpp:972
+msgid "The mesh is not self-intersecting (okay, valid)."
+msgstr "Mesh kendi kendine kesişmiyor (tamam, geçerli)."
+
+#: solvespace.cpp:974
+msgid "The mesh has naked edges (NOT okay, invalid)."
+msgstr "Mesh'in açık kenarları var (tamam DEĞİL, geçersiz)."
+
+#: solvespace.cpp:975
+msgid "The mesh is watertight (okay, valid)."
+msgstr "Mesh çok sıkı (tamam, geçerli)"
+
+#: solvespace.cpp:978
+#, c-format
+msgid ""
+"\n"
+"\n"
+"The model contains %d triangles, from %d surfaces."
+msgstr ""
+"\n"
+"\n"
+"Model, %d yüzeylerden %d üçgen içerir."
+
+#: solvespace.cpp:982
+#, c-format
+msgid ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"Zero problematic edges, good.%s"
+msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"Sıfır sorunlu kenar, iyi.%s"
+
+#: solvespace.cpp:985
+#, c-format
+msgid ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"%d problematic edges, bad.%s"
+msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"%d sorunlu kenar, kötü.%s"
+
+#: solvespace.cpp:998
+#, c-format
+msgid ""
+"This is SolveSpace version %s.\n"
+"\n"
+"For more information, see http://solvespace.com/\n"
+"\n"
+"SolveSpace is free software: you are free to modify\n"
+"and/or redistribute it under the terms of the GNU\n"
+"General Public License (GPL) version 3 or later.\n"
+"\n"
+"There is NO WARRANTY, to the extent permitted by\n"
+"law. For details, visit http://gnu.org/licenses/\n"
+"\n"
+"© 2008-%d Jonathan Westhues and other authors.\n"
+msgstr ""
+"Bu SolveSpace'in %s sürümüdür.\n"
+"\n"
+"Daha fazla bilgi için, http://solvespace.com/ bkz.\n"
+"\n"
+"SolveSpace ücretsiz bir yazılımdır: GNU Genel Kamu \n"
+"Lisansı (GPL) sürüm 3 veya daha sonraki hükümler altında \n"
+"onu değiştirmekte ve / veya yeniden dağıtmakta özgürsünüz.\n"
+"\n"
+"Yasaların izin verdiği ölçüde GARANTİ YOKTUR. \n"
+"Ayrıntılar için http://gnu.org/licenses/ adresini ziyaret edin.\n"
+"\n"
+"© 2008-% d Jonathan Westhues ve diğer yazarlar.\n"
+
+#: style.cpp:166
+msgid ""
+"Can't assign style to an entity that's derived from another entity; try "
+"assigning a style to this entity's parent."
+msgstr ""
+"Başka bir öğeden türetilen bir öğeye biçim atayamazsınız; bu öğenin üst "
+"öğesine bir biçim atamayı deneyin."
+
+#: style.cpp:665
+msgid "Style name cannot be empty"
+msgstr "Biçim adı boş olamaz"
+
+#: textscreens.cpp:741
+msgid "Can't repeat fewer than 1 time."
+msgstr "1 defadan az tekrar edilemez."
+
+#: textscreens.cpp:745
+msgid "Can't repeat more than 999 times."
+msgstr "999 defadan fazla tekrar edilemez."
+
+#: textscreens.cpp:770
+msgid "Group name cannot be empty"
+msgstr "Grup adı boş olamaz"
+
+#: textscreens.cpp:813
+msgid "Opacity must be between zero and one."
+msgstr "Şeffaflık değeri sıfır ile bir arasında olmalıdır."
+
+#: textscreens.cpp:848
+msgid "Radius cannot be zero or negative."
+msgstr "Yarıçap sıfır veya negatif değer olamaz."
+
+#: toolbar.cpp:18
+msgid "Sketch line segment"
+msgstr "Çizgi parçası ile taslak çizin"
+
+#: toolbar.cpp:20
+msgid "Sketch rectangle"
+msgstr "Dikdörtgen çizin"
+
+#: toolbar.cpp:22
+msgid "Sketch circle"
+msgstr "Çember çizin"
+
+#: toolbar.cpp:24
+msgid "Sketch arc of a circle"
+msgstr "Bir çember yayı çizin"
+
+#: toolbar.cpp:26
+msgid "Sketch curves from text in a TrueType font"
+msgstr "TrueType yazı tipindeki metinden eğriler çizin"
+
+#: toolbar.cpp:28
+msgid "Sketch image from a file"
+msgstr "Bir dosyadan resim ekleyin"
+
+#: toolbar.cpp:30
+msgid "Create tangent arc at selected point"
+msgstr "Seçilen noktada teğet yay oluşturun"
+
+#: toolbar.cpp:32
+msgid "Sketch cubic Bezier spline"
+msgstr "Kübik Bezier Eğri Çizin"
+
+#: toolbar.cpp:34
+msgid "Sketch datum point"
+msgstr "Referans Nokta Ekleyin"
+
+#: toolbar.cpp:36
+msgid "Toggle construction"
+msgstr "Yapıyı değiştirin"
+
+#: toolbar.cpp:38
+msgid "Split lines / curves where they intersect"
+msgstr "Çizgileri / eğrileri kesiştikleri yerde bölün"
+
+#: toolbar.cpp:42
+msgid "Constrain distance / diameter / length"
+msgstr "Mesafeyi / çapı / uzunluğu sınırlandırın"
+
+#: toolbar.cpp:44
+msgid "Constrain angle"
+msgstr "Açıyı sınırlandırın"
+
+#: toolbar.cpp:46
+msgid "Constrain to be horizontal"
+msgstr "Yatay olarak sınırlandırın"
+
+#: toolbar.cpp:48
+msgid "Constrain to be vertical"
+msgstr "Dikey olarak sınırlandırın"
+
+#: toolbar.cpp:50
+msgid "Constrain to be parallel or tangent"
+msgstr "Paralel veya teğet olarak sınırlandırın"
+
+#: toolbar.cpp:52
+msgid "Constrain to be perpendicular"
+msgstr "Dik olarak sınırlandırın"
+
+#: toolbar.cpp:54
+msgid "Constrain point on line / curve / plane / point"
+msgstr "Noktayı çizgi / eğri / düzlem / nokta ile çakıştırarak sınırlandırın"
+
+#: toolbar.cpp:56
+msgid "Constrain symmetric"
+msgstr "Simetrik olarak sınırlandırın"
+
+#: toolbar.cpp:58
+msgid "Constrain equal length / radius / angle"
+msgstr "Eşit uzunluk / yarıçap / açı olarak sınırlandırın"
+
+#: toolbar.cpp:60
+msgid "Constrain normals in same orientation"
+msgstr "Normalleri aynı yönde sınırlandırın"
+
+#: toolbar.cpp:62
+msgid "Other supplementary angle"
+msgstr "Diğer bütünler açı"
+
+#: toolbar.cpp:64
+msgid "Toggle reference dimension"
+msgstr "Ölçüyü Referans Yap / Yapma"
+
+#: toolbar.cpp:68
+msgid "New group extruding active sketch"
+msgstr "Etkin çizimi katılayarak yeni grup oluşturun"
+
+#: toolbar.cpp:70
+msgid "New group rotating active sketch"
+msgstr "Etkin çizimi döndürerek yeni grup oluşturun"
+
+#: toolbar.cpp:72
+msgid "New group helix from active sketch"
+msgstr "Etkin çizimden sarmal yeni grup oluştur"
+
+#: toolbar.cpp:74
+msgid "New group revolve active sketch"
+msgstr "Etkin çizimi döndürülür yeni grup oluşturun"
+
+#: toolbar.cpp:76
+msgid "New group step and repeat rotating"
+msgstr "Adımlayarak ve tekrarlayarak yeni dönüş grup oluşturun"
+
+#: toolbar.cpp:78
+msgid "New group step and repeat translating"
+msgstr "Adımlayarak ve tekrarlayarak yeni öteleme grup oluşturun"
+
+#: toolbar.cpp:80
+msgid "New group in new workplane (thru given entities)"
+msgstr ""
+"Yeni çalışma düzleminde yeni grup oluşturun (verilen öğeler aracılığıyla)"
+
+#: toolbar.cpp:82
+msgid "New group in 3d"
+msgstr "3d'de yeni grup oluşturun"
+
+#: toolbar.cpp:84
+msgid "New group linking / assembling file"
+msgstr "Bağlantı / Montaj dosyası ile yeni grup oluşturun"
+
+#: toolbar.cpp:88
+msgid "Nearest isometric view"
+msgstr "En yakın izometrik görünüm"
+
+#: toolbar.cpp:90
+msgid "Align view to active workplane"
+msgstr "Görünümü etkin çalışma düzlemine hizalayın"
+
+#: util.cpp:165
+msgctxt "title"
+msgid "Error"
+msgstr "Hata"
+
+#: util.cpp:165
+msgctxt "title"
+msgid "Message"
+msgstr "Mesaj"
+
+#: util.cpp:170
+msgctxt "button"
+msgid "&OK"
+msgstr "&Tamam"
+
+#: view.cpp:78
+msgid "Scale cannot be zero or negative."
+msgstr "Ölçek sıfır veya negatif olamaz."
+
+#: view.cpp:90 view.cpp:99
+msgid "Bad format: specify x, y, z"
+msgstr "Kötü biçim: x, y, z'yi belirtin"
+
+#~ msgctxt "file-type"
+#~ msgid "Q3D Object file"
+#~ msgstr "Q3D Object file"
