@@ -725,7 +725,7 @@ public:
             if(SiGetEvent(window->hSpaceWare, 0, &sged, &sse) == SI_IS_EVENT) {
                 SixDofEvent event = {};
                 event.shiftDown    = ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0);
-                event.controlDown  = ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0);
+                event.controlDown  = ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0);
                 if(sse.type == SI_MOTION_EVENT) {
                     // The Z axis translation and rotation are both
                     // backwards in the default mapping.
