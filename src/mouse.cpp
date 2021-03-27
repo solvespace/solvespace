@@ -526,11 +526,16 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     }
 
     if(pending.operation == Pending::DRAGGING_NEW_LINE_POINT ||
-       pending.operation == Pending::DRAGGING_NEW_CUBIC_POINT)
+       pending.operation == Pending::DRAGGING_NEW_CUBIC_POINT ||
+       pending.operation == Pending::DRAGGING_NEW_ARC_POINT ||
+       pending.operation == Pending::DRAGGING_NEW_RADIUS ||
+       pending.operation == Pending::DRAGGING_NEW_POINT
+       )
     {
         // Special case; use a right click to stop drawing lines, since
         // a left click would draw another one. This is quicker and more
-        // intuitive than hitting escape. Likewise for new cubic segments.
+        // intuitive than hitting escape. Likewise for other entities
+        // for consistency.
         ClearPending();
         return;
     }
