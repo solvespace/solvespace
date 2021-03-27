@@ -389,6 +389,7 @@ void TextWindow::ScreenShowStyleInfo(int link, uint32_t v) {
 void TextWindow::ScreenLoadFactoryDefaultStyles(int link, uint32_t v) {
     Style::LoadFactoryDefaults();
     SS.TW.GoToScreen(Screen::LIST_OF_STYLES);
+    SS.GW.persistentDirty = true;
 }
 
 void TextWindow::ScreenCreateCustomStyle(int link, uint32_t v) {
