@@ -467,11 +467,17 @@ public:
         // Look to see if we already have something with the same handle value.
         ssassert(FindByIdNoOops(t->h) == nullptr, "Handle isn't unique");
 
-        // Copy-construct at the end of the list.
-        new(&elem[n]) T(*t);
+        // Find out where the added element should be.
+        int pos = LowerBoundIndex(*t);
+
+        // Shift everything from there to the end of the array.
+        new(&elem[n]) T();
+        for (int i = n; i > pos; i--)
+            elem[i] = std::move(elem[i - 1]);
+
+        // Copy-construct at the right place.
+        elem[pos] = T(*t);
         ++n;
-        // The item we just added is trivially sorted, so "merge"
-        std::inplace_merge(begin(), end() - 1, end(), Compare());
     }
 
     T *FindById(H h) {
