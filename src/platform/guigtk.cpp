@@ -34,6 +34,11 @@
 #if defined(HAVE_SPACEWARE)
 #   include <spnav.h>
 #   include <gdk/gdkx.h>
+#   if GTK_CHECK_VERSION(3, 20, 0)
+#       include <gdkmm/seat.h>
+#   else
+#       include <gdkmm/devicemanager.h>
+#   endif
 #endif
 
 #include "solvespace.h"
@@ -1039,15 +1044,7 @@ void Open3DConnexion() {}
 void Close3DConnexion() {}
 
 #if defined(HAVE_SPACEWARE) && defined(GDK_WINDOWING_X11)
-static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, gpointer data) {
-    XEvent *xEvent = (XEvent *)gdkXEvent;
-    WindowImplGtk *window = (WindowImplGtk *)data;
-
-    spnav_event spnavEvent;
-    if(!spnav_x11_event(xEvent, &spnavEvent)) {
-        return GDK_FILTER_CONTINUE;
-    }
-
+static void ProcessSpnavEvent(WindowImplGtk *window, const spnav_event &spnavEvent, bool shiftDown, bool controlDown) {
     switch(spnavEvent.type) {
         case SPNAV_EVENT_MOTION: {
             SixDofEvent event = {};
@@ -1058,8 +1055,8 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, 
             event.rotationX    = (double)spnavEvent.motion.rx *  0.001;
             event.rotationY    = (double)spnavEvent.motion.ry *  0.001;
             event.rotationZ    = (double)spnavEvent.motion.rz * -0.001;
-            event.shiftDown    = xEvent->xmotion.state & ShiftMask;
-            event.controlDown  = xEvent->xmotion.state & ControlMask;
+            event.shiftDown    = shiftDown;
+            event.controlDown  = controlDown;
             if(window->onSixDofEvent) {
                 window->onSixDofEvent(event);
             }
@@ -1075,17 +1072,52 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, 
             }
             switch(spnavEvent.button.bnum) {
                 case 0:  event.button = SixDofEvent::Button::FIT; break;
-                default: return GDK_FILTER_REMOVE;
+                default: return;
             }
-            event.shiftDown   = xEvent->xmotion.state & ShiftMask;
-            event.controlDown = xEvent->xmotion.state & ControlMask;
+            event.shiftDown   = shiftDown;
+            event.controlDown = controlDown;
             if(window->onSixDofEvent) {
                 window->onSixDofEvent(event);
             }
             break;
     }
+}
 
-    return GDK_FILTER_REMOVE;
+static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, gpointer data) {
+    XEvent *xEvent = (XEvent *)gdkXEvent;
+    WindowImplGtk *window = (WindowImplGtk *)data;
+    bool shiftDown   = (xEvent->xmotion.state & ShiftMask)   != 0;
+    bool controlDown = (xEvent->xmotion.state & ControlMask) != 0;
+
+    spnav_event spnavEvent;
+    if(spnav_x11_event(xEvent, &spnavEvent)) {
+        ProcessSpnavEvent(window, spnavEvent, shiftDown, controlDown);
+        return GDK_FILTER_REMOVE;
+    }
+    return GDK_FILTER_CONTINUE;
+}
+
+static gboolean ConsumeSpnavQueue(GIOChannel *, GIOCondition, gpointer data) {
+    WindowImplGtk *window = (WindowImplGtk *)data;
+    Glib::RefPtr<Gdk::Window> gdkWindow = window->gtkWindow.get_window();
+
+    // We don't get modifier state through the socket.
+    int x, y;
+    Gdk::ModifierType mask{};
+#if GTK_CHECK_VERSION(3, 20, 0)
+    Glib::RefPtr<Gdk::Device> device = gdkWindow->get_display()->get_default_seat()->get_pointer();
+#else
+    Glib::RefPtr<Gdk::Device> device = gdkWindow->get_display()->get_device_manager()->get_client_pointer();
+#endif
+    gdkWindow->get_device_position(device, x, y, mask);
+    bool shiftDown   = (mask & Gdk::SHIFT_MASK)   != 0;
+    bool controlDown = (mask & Gdk::CONTROL_MASK) != 0;
+
+    spnav_event spnavEvent;
+    while(spnav_poll_event(&spnavEvent)) {
+        ProcessSpnavEvent(window, spnavEvent, shiftDown, controlDown);
+    }
+    return TRUE;
 }
 
 void Request3DConnexionEventsForWindow(WindowRef window) {
@@ -1093,10 +1125,16 @@ void Request3DConnexionEventsForWindow(WindowRef window) {
         std::static_pointer_cast<WindowImplGtk>(window);
 
     Glib::RefPtr<Gdk::Window> gdkWindow = windowImpl->gtkWindow.get_window();
-    if(GDK_IS_X11_DISPLAY(gdkWindow->get_display()->gobj())) {
+    if(!GDK_IS_X11_DISPLAY(gdkWindow->get_display()->gobj())) {
+        return;
+    }
+
+    if(spnav_x11_open(gdk_x11_get_default_xdisplay(),
+                      gdk_x11_window_get_xid(gdkWindow->gobj())) != -1) {
         gdkWindow->add_filter(GdkSpnavFilter, windowImpl.get());
-        spnav_x11_open(gdk_x11_get_default_xdisplay(),
-                       gdk_x11_window_get_xid(gdkWindow->gobj()));
+    } else if(spnav_open() != -1) {
+        g_io_add_watch(g_io_channel_unix_new(spnav_fd()), G_IO_IN,
+                       ConsumeSpnavQueue, windowImpl.get());
     }
 }
 #else
