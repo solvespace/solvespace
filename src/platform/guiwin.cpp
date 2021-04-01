@@ -1621,16 +1621,16 @@ public:
     }
 
     bool RunModal() override {
-	if(isSaveDialog) {
-	    SetTitle(C_("title", "Save File"));
-	    if(GetFilename().IsEmpty()) {
-		SetFilename(Path::From(_("untitled")));
-	    }
-	    return GetSaveFileNameW(&ofn) == TRUE;
-	} else {
-	    SetTitle(C_("title", "Open File"));
-	    return GetOpenFileNameW(&ofn) == TRUE;
-	}
+        if(isSaveDialog) {
+            SetTitle(C_("title", "Save File"));
+            if(GetFilename().IsEmpty()) {
+                SetFilename(Path::From(_("untitled")));
+            }
+            return GetSaveFileNameW(&ofn) == TRUE;
+        } else {
+            SetTitle(C_("title", "Open File"));
+            return GetOpenFileNameW(&ofn) == TRUE;
+        }
     }
 };
 
