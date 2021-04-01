@@ -1583,11 +1583,6 @@ public:
         ofn.nMaxFile    = sizeof(filenameWC) / sizeof(wchar_t);
         ofn.Flags       = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY |
                           OFN_OVERWRITEPROMPT;
-        if(isSaveDialog) {
-            SetTitle(C_("title", "Save File"));
-        } else {
-            SetTitle(C_("title", "Open File"));
-        }
     }
 
     void SetTitle(std::string title) override {
@@ -1640,13 +1635,14 @@ public:
     }
 
     bool RunModal() override {
-        if(GetFilename().IsEmpty()) {
-            SetFilename(Path::From(_("untitled")));
-        }
-
         if(isSaveDialog) {
+            SetTitle(C_("title", "Save File"));
+            if(GetFilename().IsEmpty()) {
+                SetFilename(Path::From(_("untitled")));
+            }
             return GetSaveFileNameW(&ofn) == TRUE;
         } else {
+            SetTitle(C_("title", "Open File"));
             return GetOpenFileNameW(&ofn) == TRUE;
         }
     }
