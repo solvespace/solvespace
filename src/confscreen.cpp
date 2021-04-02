@@ -236,9 +236,7 @@ void TextWindow::ShowConfiguration() {
             CO(SS.lightDir[i]), i, &ScreenChangeLightDirection,
             SS.lightIntensity[i], i, &ScreenChangeLightIntensity);
     }
-    Printf(false, "%Bp         ambient lighting     "
-                  "%2 %Fl%D%f%Ll[c]%E",
-            (i & 1) ? 'd' : 'a', i,
+    Printf(false, "%Ba         ambient lighting     %2 %Fl%f%Ll[c]%E",
         SS.ambientIntensity, &ScreenChangeLightAmbient);
 
     Printf(false, "");
