@@ -210,16 +210,15 @@ void GraphicsWindow::SelectByMarquee() {
     BBox marqueeBBox = BBox::From(Vector::From(marqueePoint.x, marqueePoint.y, VERY_NEGATIVE),
                                   Vector::From(orig.mouse.x,   orig.mouse.y,   VERY_POSITIVE));
 
-    Entity *e;
-    for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-        if(e->group != SS.GW.activeGroup) continue;
-        if(e->IsFace() || e->IsDistance()) continue;
-        if(!e->IsVisible()) continue;
+    for(Entity &e : SK.entity) {
+        if(e.group != SS.GW.activeGroup) continue;
+        if(e.IsFace() || e.IsDistance()) continue;
+        if(!e.IsVisible()) continue;
 
         bool entityHasBBox;
-        BBox entityBBox = e->GetOrGenerateScreenBBox(&entityHasBBox);
+        BBox entityBBox = e.GetOrGenerateScreenBBox(&entityHasBBox);
         if(entityHasBBox && entityBBox.Overlaps(marqueeBBox)) {
-            MakeSelected(e->h);
+            MakeSelected(e.h);
         }
     }
 }
@@ -412,8 +411,8 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         cached.projRight = projRight;
         cached.projUp = projUp;
         cached.scale = scale;
-        for(Entity *e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-            e->screenBBoxValid = false;
+        for(Entity &e : SK.entity) {
+            e.screenBBoxValid = false;
         }
     }
 
