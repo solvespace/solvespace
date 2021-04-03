@@ -466,14 +466,13 @@ void TextWindow::ShowListOfStyles() {
     Printf(true, "%Ft color  style-name");
 
     bool darkbg = false;
-    Style *s;
-    for(s = SK.style.First(); s; s = SK.style.NextAfter(s)) {
+    for(Style &s : SK.style) {
         Printf(false, "%Bp  %Bz   %Bp   %Fl%Ll%f%D%s%E",
             darkbg ? 'd' : 'a',
-            &s->color,
+            &s.color,
             darkbg ? 'd' : 'a',
-            ScreenShowStyleInfo, s->h.v,
-            s->DescriptionString().c_str());
+            ScreenShowStyleInfo, s.h.v,
+            s.DescriptionString().c_str());
 
         darkbg = !darkbg;
     }

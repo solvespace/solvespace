@@ -965,20 +965,19 @@ void GraphicsWindow::ForceTextWindowShown() {
 }
 
 void GraphicsWindow::DeleteTaggedRequests() {
-    Request *r;
     // Delete any requests that were affected by this deletion.
-    for(r = SK.request.First(); r; r = SK.request.NextAfter(r)) {
-        if(r->workplane == Entity::FREE_IN_3D) continue;
-        if(!r->workplane.isFromRequest()) continue;
-        Request *wrkpl = SK.GetRequest(r->workplane.request());
+    for(Request &r : SK.request) {
+        if(r.workplane == Entity::FREE_IN_3D) continue;
+        if(!r.workplane.isFromRequest()) continue;
+        Request *wrkpl = SK.GetRequest(r.workplane.request());
         if(wrkpl->tag)
-            r->tag = 1;
+            r.tag = 1;
     }
     // Rewrite any point-coincident constraints that were affected by this
     // deletion.
-    for(r = SK.request.First(); r; r = SK.request.NextAfter(r)) {
-        if(!r->tag) continue;
-        FixConstraintsForRequestBeingDeleted(r->h);
+    for(Request &r : SK.request) {
+        if(!r.tag) continue;
+        FixConstraintsForRequestBeingDeleted(r.h);
     }
     // and then delete the tagged requests.
     SK.request.RemoveTagged();
@@ -1042,9 +1041,8 @@ void GraphicsWindow::MenuEdit(Command id) {
             SS.centerOfMass.draw = false;
             // This clears the marks drawn to indicate which points are
             // still free to drag.
-            Param *p;
-            for(p = SK.param.First(); p; p = SK.param.NextAfter(p)) {
-                p->free = false;
+            for(Param &p : SK.param) {
+                p.free = false;
             }
             if(SS.exportMode) {
                 SS.exportMode = false;
@@ -1054,13 +1052,12 @@ void GraphicsWindow::MenuEdit(Command id) {
             break;
 
         case Command::SELECT_ALL: {
-            Entity *e;
-            for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                if(e->group != SS.GW.activeGroup) continue;
-                if(e->IsFace() || e->IsDistance()) continue;
-                if(!e->IsVisible()) continue;
+            for(Entity &e : SK.entity) {
+                if(e.group != SS.GW.activeGroup) continue;
+                if(e.IsFace() || e.IsDistance()) continue;
+                if(!e.IsVisible()) continue;
 
-                SS.GW.MakeSelected(e->h);
+                SS.GW.MakeSelected(e.h);
             }
             SS.GW.Invalidate();
             SS.ScheduleShowTW();
@@ -1068,24 +1065,23 @@ void GraphicsWindow::MenuEdit(Command id) {
         }
 
         case Command::SELECT_CHAIN: {
-            Entity *e;
             int newlySelected = 0;
             bool didSomething;
             do {
                 didSomething = false;
-                for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                    if(e->group != SS.GW.activeGroup) continue;
-                    if(!e->HasEndpoints()) continue;
-                    if(!e->IsVisible()) continue;
+                for(Entity &e : SK.entity) {
+                    if(e.group != SS.GW.activeGroup) continue;
+                    if(!e.HasEndpoints()) continue;
+                    if(!e.IsVisible()) continue;
 
-                    Vector st = e->EndpointStart(),
-                           fi = e->EndpointFinish();
+                    Vector st = e.EndpointStart(),
+                           fi = e.EndpointFinish();
 
                     bool onChain = false, alreadySelected = false;
                     List<Selection> *ls = &(SS.GW.selection);
                     for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
                         if(!s->entity.v) continue;
-                        if(s->entity == e->h) {
+                        if(s->entity == e.h) {
                             alreadySelected = true;
                             continue;
                         }
@@ -1102,7 +1098,7 @@ void GraphicsWindow::MenuEdit(Command id) {
                         }
                     }
                     if(onChain && !alreadySelected) {
-                        SS.GW.MakeSelected(e->h);
+                        SS.GW.MakeSelected(e.h);
                         newlySelected++;
                         didSomething = true;
                     }

@@ -432,7 +432,7 @@ public:
         if(IsEmpty()) {
             return 0;
         } else {
-            return Last()->h.v;
+            return elem[indexes[n-1]].h.v;
         }
     }
 
@@ -505,20 +505,6 @@ public:
             return &*it;
         }
         return nullptr;
-    }
-
-    T *First() {
-        return (IsEmpty()) ? NULL : &(elem[indexes[0]]);
-    }
-    T *Last() {
-        return (IsEmpty()) ? NULL : &(elem[indexes[n-1]]);
-    }
-    T *NextAfter(T *prev) {
-        if(IsEmpty() || !prev) return NULL;
-        auto it = LowerBound(*prev);
-        if(it->h.v != prev->h.v) return nullptr;
-        if(std::distance(begin(), it) == (n - 1)) return nullptr;
-        return &*++it;
     }
 
     T &Get(size_t i) { return elem[indexes[i]]; }
