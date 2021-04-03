@@ -719,11 +719,12 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         if(gs.points == 1) {
             Entity *p = SK.GetEntity(gs.point[0]);
-            Constraint *c;
+            Constraint *c = nullptr;
             IdList<Constraint,hConstraint> *lc = &(SK.constraint);
-            for(c = lc->First(); c; c = lc->NextAfter(c)) {
-                if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-                if(c->ptA == p->h || c->ptB == p->h) {
+            for(Constraint &ci : *lc) {
+                if(ci.type != Constraint::Type::POINTS_COINCIDENT) continue;
+                if(ci.ptA == p->h || ci.ptB == p->h) {
+                    c = &ci;
                     break;
                 }
             }
@@ -733,11 +734,10 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
                     SS.UndoRemember();
                     SK.constraint.ClearTags();
-                    Constraint *c;
-                    for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-                        if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-                        if(c->ptA == p->h || c->ptB == p->h) {
-                            c->tag = 1;
+                    for(Constraint &c : SK.constraint) {
+                        if(c.type != Constraint::Type::POINTS_COINCIDENT) continue;
+                        if(c.ptA == p->h || c.ptB == p->h) {
+                            c.tag = 1;
                         }
                     }
                     SK.constraint.RemoveTagged();
