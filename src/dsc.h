@@ -395,6 +395,29 @@ public:
 
     using Compare = CompareId<T, H>;
 
+    struct Iterator {
+        typedef std::random_access_iterator_tag iterator_category;
+        typedef T value_type;
+        typedef int difference_type;
+        typedef T *pointer;
+        typedef T &reference;
+
+        IdList<T, H> *list;
+        int offset;
+
+        Iterator(IdList<T, H> &list, int offset) : list(&list), offset(offset) {}
+        T &operator*() { return list->elem[list->indexes[offset]]; }
+        T *operator->() { return &list->elem[list->indexes[offset]]; }
+        const T &operator*() const { return list->elem[list->indexes[offset]]; }
+        const T *operator->() const { return &list->elem[list->indexes[offset]]; }
+        Iterator &operator--() { --offset; return *this; }
+        Iterator &operator++() { ++offset; return *this; }
+        Iterator &operator+=(int diff) { offset += diff; return *this; }
+        int operator-(const Iterator &i) const { return offset - i.offset; }
+        bool operator==(const Iterator &i) { return list == i.list && offset == i.offset; }
+        bool operator!=(const Iterator &i) { return list != i.list || offset != i.offset; }
+    };
+
     bool IsEmpty() const {
         return n == 0;
     }
@@ -425,31 +448,18 @@ public:
         return t->h;
     }
 
-    T * LowerBound(T const& t) {
-        if(IsEmpty()) {
-            return nullptr;
-        }
-        auto it = std::lower_bound(begin(), end(), t, Compare());
-        return it;
+    Iterator LowerBound(T const& t) {
+        return std::lower_bound(begin(), end(), t, Compare());
     }
 
-    T * LowerBound(H const& h) {
-        if(IsEmpty()) {
-            return nullptr;
-        }
-        auto it = std::lower_bound(begin(), end(), h, Compare());
-        return it;
+    Iterator LowerBound(H const& h) {
+        return std::lower_bound(begin(), end(), h, Compare());
     }
 
     int LowerBoundIndex(T const& t) {
-        if(IsEmpty()) {
-            return 0;
-        }
-        auto it = LowerBound(t);
-        auto idx = std::distance(begin(), it);
-        auto i = static_cast<int>(idx);
-        return i;
+        return std::distance(begin(), LowerBound(t));
     }
+
     void ReserveMore(int howMuch) {
         if(n + howMuch > elemsAllocated) {
             elemsAllocated = n + howMuch;
@@ -493,55 +503,35 @@ public:
         return t;
     }
 
-    int IndexOf(H h) {
-        if(IsEmpty()) {
-            return -1;
-        }
-        auto it = LowerBound(h);
-        auto idx = std::distance(begin(), it);
-        if (idx < n) {
-            return idx;
-        }
-        return -1;
-    }
-
     T *FindByIdNoOops(H h) {
-        if(IsEmpty()) {
-            return nullptr;
-        }
         auto it = LowerBound(h);
-        if (it == nullptr || it == end()) {
-            return nullptr;
-        }
-        if (it->h.v == h.v) {
-            return it;
+        if(it != end() && it->h.v == h.v) {
+            return &*it;
         }
         return nullptr;
     }
 
     T *First() {
-        return (IsEmpty()) ? NULL : &(elem[0]);
+        return (IsEmpty()) ? NULL : &(elem[indexes[0]]);
     }
     T *Last() {
-        return (IsEmpty()) ? NULL : &(elem[n-1]);
+        return (IsEmpty()) ? NULL : &(elem[indexes[n-1]]);
     }
     T *NextAfter(T *prev) {
         if(IsEmpty() || !prev) return NULL;
-        if(prev - First() == (n - 1)) return NULL;
-        return prev + 1;
+        auto it = LowerBound(*prev);
+        if(it->h.v != prev->h.v) return nullptr;
+        if(std::distance(begin(), it) == (n - 1)) return nullptr;
+        return &*++it;
     }
 
-    T &Get(size_t i) { return elem[i]; }
-    T const &Get(size_t i) const { return elem[i]; }
+    T &Get(size_t i) { return elem[indexes[i]]; }
+    T const &Get(size_t i) const { return elem[indexes[i]]; }
     T &operator[](size_t i) { return Get(i); }
     T const &operator[](size_t i) const { return Get(i); }
 
-    T *begin() { return IsEmpty() ? nullptr : &elem[0]; }
-    T *end() { return IsEmpty() ? nullptr : &elem[0] + n; }
-    const T *begin() const { return IsEmpty() ? nullptr : &elem[0]; }
-    const T *end() const { return IsEmpty() ? nullptr : &elem[0] + n; }
-    const T *cbegin() const { return begin(); }
-    const T *cend() const { return end(); }
+    Iterator begin() { return Iterator(*this, 0); }
+    Iterator end() { return Iterator(*this, n); }
 
     void ClearTags() {
         for(auto &elt : *this) { elt.tag = 0; }
