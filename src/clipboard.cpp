@@ -138,18 +138,17 @@ void GraphicsWindow::CopySelection() {
         }
     }
 
-    Constraint *c;
-    for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-        if(!SS.clipboard.ContainsEntity(c->ptA) ||
-           !SS.clipboard.ContainsEntity(c->ptB) ||
-           !SS.clipboard.ContainsEntity(c->entityA) ||
-           !SS.clipboard.ContainsEntity(c->entityB) ||
-           !SS.clipboard.ContainsEntity(c->entityC) ||
-           !SS.clipboard.ContainsEntity(c->entityD) ||
-           c->type == Constraint::Type::COMMENT) {
+    for(Constraint &c : SK.constraint) {
+        if(!SS.clipboard.ContainsEntity(c.ptA) ||
+           !SS.clipboard.ContainsEntity(c.ptB) ||
+           !SS.clipboard.ContainsEntity(c.entityA) ||
+           !SS.clipboard.ContainsEntity(c.entityB) ||
+           !SS.clipboard.ContainsEntity(c.entityC) ||
+           !SS.clipboard.ContainsEntity(c.entityD) ||
+           c.type == Constraint::Type::COMMENT) {
             continue;
         }
-        SS.clipboard.c.Add(c);
+        SS.clipboard.c.Add(&c);
     }
 }
 

@@ -23,20 +23,20 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
     // Now we have to piecewise linearize the curve. If there's already an
     // identical curve in the shell, then follow that pwl exactly, otherwise
     // calculate from scratch.
-    SCurve split, *existing = NULL, *se;
+    SCurve split, *existing = NULL;
     SBezier sbrev = *sb;
     sbrev.Reverse();
     bool backwards = false;
 #pragma omp critical(into)
     {
-        for(se = into->curve.First(); se; se = into->curve.NextAfter(se)) {
-            if(se->isExact) {
-                if(sb->Equals(&(se->exact))) {
-                    existing = se;
+        for(SCurve &se : into->curve) {
+            if(se.isExact) {
+                if(sb->Equals(&(se.exact))) {
+                    existing = &se;
                     break;
                 }
-                if(sbrev.Equals(&(se->exact))) {
-                    existing = se;
+                if(sbrev.Equals(&(se.exact))) {
+                    existing = &se;
                     backwards = true;
                     break;
                 }
@@ -332,15 +332,14 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 shext = agnstA;
             }
             bool foundExact = false;
-            SCurve *sc;
-            for(sc = shext->curve.First(); sc; sc = shext->curve.NextAfter(sc)) {
-                if(sc->source == SCurve::Source::INTERSECTION) continue;
-                if(!sc->isExact) continue;
-                if((sc->surfA != sext->h) && (sc->surfB != sext->h)) continue;
+            for(SCurve &sc : shext->curve) {
+                if(sc.source == SCurve::Source::INTERSECTION) continue;
+                if(!sc.isExact) continue;
+                if((sc.surfA != sext->h) && (sc.surfB != sext->h)) continue;
                 // we have a curve belonging to the curved surface and not the plane.
                 // does it lie completely in the plane?
-                if(splane->ContainsPlaneCurve(sc)) {
-                    SBezier bezier = sc->exact;
+                if(splane->ContainsPlaneCurve(&sc)) {
+                    SBezier bezier = sc.exact;
                     AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
                     foundExact = true;
                 }
@@ -571,10 +570,9 @@ bool SSurface::ContainsPlaneCurve(SCurve *sc) const {
 void SShell::MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
                                      SEdgeList *el, SShell *useCurvesFrom)
 {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        if(proto->CoincidentWith(ss, sameNormal)) {
-            ss->MakeEdgesInto(this, el, SSurface::MakeAs::XYZ, useCurvesFrom);
+    for(SSurface &ss : surface) {
+        if(proto->CoincidentWith(&ss, sameNormal)) {
+            ss.MakeEdgesInto(this, el, SSurface::MakeAs::XYZ, useCurvesFrom);
         }
     }
 
