@@ -388,6 +388,7 @@ struct CompareId {
 template <class T, class H>
 class IdList {
     T *elem            = nullptr;
+    int *indexes       = nullptr;
     int elemsAllocated = 0;
 public:
     int n = 0;
@@ -417,6 +418,7 @@ public:
         AllocForOneMore();
 
         // Copy-construct at the end of the list.
+        indexes[n] = n;
         new(&elem[n]) T(*t);
         ++n;
 
@@ -451,12 +453,16 @@ public:
     void ReserveMore(int howMuch) {
         if(n + howMuch > elemsAllocated) {
             elemsAllocated = n + howMuch;
+            int *newIndexes = (int *)::operator new[]((size_t)elemsAllocated*sizeof(int));
             T *newElem = (T *)::operator new[]((size_t)elemsAllocated*sizeof(T));
+            memcpy(newIndexes, indexes, sizeof *newIndexes * n);
             for(int i = 0; i < n; i++) {
                 new(&newElem[i]) T(std::move(elem[i]));
                 elem[i].~T();
             }
+            ::operator delete[](indexes);
             ::operator delete[](elem);
+            indexes = newIndexes;
             elem = newElem;
         }
     }
@@ -476,6 +482,7 @@ public:
             elem[i] = std::move(elem[i - 1]);
 
         // Copy-construct at the right place.
+        indexes[n] = n;
         elem[pos] = T(*t);
         ++n;
     }
@@ -575,13 +582,16 @@ public:
     void MoveSelfInto(IdList<T,H> *l) {
         l->Clear();
         std::swap(l->elem, elem);
+        std::swap(l->indexes, indexes);
         std::swap(l->elemsAllocated, elemsAllocated);
         std::swap(l->n, n);
     }
 
     void DeepCopyInto(IdList<T,H> *l) {
         l->Clear();
+        l->indexes = (int *)::operator new[](elemsAllocated * sizeof(indexes[0]));
         l->elem = (T *)::operator new[](elemsAllocated * sizeof(elem[0]));
+        memcpy(l->indexes, indexes, elemsAllocated * sizeof(indexes[0]));
         for(int i = 0; i < n; i++)
             new(&l->elem[i]) T(elem[i]);
         l->elemsAllocated = elemsAllocated;
@@ -593,7 +603,9 @@ public:
             elem[i].Clear();
             elem[i].~T();
         }
+        if(indexes) ::operator delete[](indexes);
         if(elem) ::operator delete[](elem);
+        indexes = NULL;
         elem = NULL;
         elemsAllocated = n = 0;
     }
