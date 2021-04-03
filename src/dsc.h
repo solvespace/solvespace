@@ -483,17 +483,13 @@ public:
         // Look to see if we already have something with the same handle value.
         ssassert(FindByIdNoOops(t->h) == nullptr, "Handle isn't unique");
 
-        // Find out where the added element should be.
+        // Shift indexes to the end of the array, if needed.
         int pos = LowerBoundIndex(*t);
+        memmove(indexes + pos + 1, indexes + pos, sizeof *indexes * (n - pos));
 
-        // Shift everything from there to the end of the array.
-        new(&elem[n]) T();
-        for (int i = n; i > pos; i--)
-            elem[i] = std::move(elem[i - 1]);
-
-        // Copy-construct at the right place.
-        indexes[n] = n;
-        elem[pos] = T(*t);
+        // Copy-construct at the end of the list.
+        indexes[pos] = n;
+        new(&elem[n]) T(*t);
         ++n;
     }
 
@@ -545,23 +541,32 @@ public:
     }
 
     void RemoveTagged() {
-        int src, dest;
-        dest = 0;
-        for(src = 0; src < n; src++) {
-            if(elem[src].tag) {
-                // this item should be deleted
-                elem[src].Clear();
-            } else {
-                if(src != dest) {
-                    elem[dest] = elem[src];
-                }
-                dest++;
+        int newN = n;
+        for(int i = 0; i < newN; ) {
+            if(!elem[indexes[i]].tag) {
+                i++;
+                continue;
             }
+
+            // This item should be deleted.
+            elem[indexes[i]].Clear();
+
+            // If we've made a gap in the elem array, fill it up.
+            if (indexes[i] < --newN) {
+                int fixupIndexOffset = LowerBoundIndex(elem[newN]);
+                ssassert(elem[indexes[fixupIndexOffset]].h.v == elem[newN].h.v, "Corrupt indexes");
+                elem[indexes[i]] = std::move(elem[newN]);
+                indexes[fixupIndexOffset] = indexes[i];
+            }
+
+            // Shift indexes, so that everything is consistent again.
+            memmove(indexes + i, indexes + i + 1, sizeof *indexes * (newN - i));
         }
-        for(int i = dest; i < n; i++)
+        for(int i = newN; i < n; i++)
             elem[i].~T();
-        n = dest;
-        // and elemsAllocated is untouched, because we didn't resize
+
+        n = newN;
+        // elemsAllocated is untouched, because we didn't resize.
     }
     void RemoveById(H h) {
         ClearTags();
