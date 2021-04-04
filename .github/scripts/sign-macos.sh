@@ -16,7 +16,7 @@ lipo \
 
 cd build
 
-openmp="bin/SolveSpace.app/Contents/Resources/lib/libomp.dylib"
+openmp="bin/SolveSpace.app/Contents/Resources/libomp.dylib"
 app="bin/SolveSpace.app"
 dmg="bin/SolveSpace.dmg"
 bundle_id="com.solvespace.solvespace"
