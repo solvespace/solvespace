@@ -68,6 +68,11 @@ void TextWindow::ScreenChangeGridSpacing(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::GRID_SPACING;
 }
 
+void TextWindow::ScreenChangeExplodeDistance(int link, uint32_t v) {
+    SS.TW.ShowEditControl(3, SS.MmToString(SS.explodeDistance, true));
+    SS.TW.edit.meaning = Edit::EXPLODE_DISTANCE;
+}
+
 void TextWindow::ScreenChangeDigitsAfterDecimal(int link, uint32_t v) {
     SS.TW.ShowEditControl(14, ssprintf("%d", SS.UnitDigitsAfterDecimal()));
     SS.TW.edit.meaning = Edit::DIGITS_AFTER_DECIMAL;
@@ -269,6 +274,10 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
         SS.MmToString(SS.gridSpacing).c_str(),
         &ScreenChangeGridSpacing, 0);
+    Printf(false, "%Ft explode distance%E");
+    Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
+        SS.MmToString(SS.explodeDistance).c_str(),
+        &ScreenChangeExplodeDistance, 0);
 
     Printf(false, "");
     Printf(false, "%Ft digits after decimal point to show%E");
@@ -457,6 +466,11 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         case Edit::GRID_SPACING: {
             SS.gridSpacing = (float)min(1e4, max(1e-3, SS.StringToMm(s)));
             SS.GW.Invalidate();
+            break;
+        }
+        case Edit::EXPLODE_DISTANCE: {
+            SS.explodeDistance = min(1e4, max(-1e4, SS.StringToMm(s)));
+            SS.MarkGroupDirty(SS.GW.activeGroup, true);
             break;
         }
         case Edit::DIGITS_AFTER_DECIMAL: {
