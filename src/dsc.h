@@ -541,32 +541,38 @@ public:
     }
 
     void RemoveTagged() {
+        std::vector<int> elem2indexes(n);
+        for(int i = 0; i < n; i++) {
+            elem2indexes[indexes[i]] = i;
+        }
+
         int newN = n;
         for(int i = 0; i < newN; ) {
-            if(!elem[indexes[i]].tag) {
+            if(!elem[i].tag) {
                 i++;
                 continue;
             }
 
             // This item should be deleted.
-            elem[indexes[i]].Clear();
+            elem[i].Clear();
+            indexes[elem2indexes[i]] = -1;
 
             // If we've made a gap in the elem array, fill it up.
-            if (indexes[i] < --newN) {
-                int fixupIndexOffset = LowerBoundIndex(elem[newN]);
-                ssassert(elem[indexes[fixupIndexOffset]].h.v == elem[newN].h.v, "Corrupt indexes");
-                elem[indexes[i]] = std::move(elem[newN]);
-                indexes[fixupIndexOffset] = indexes[i];
+            if(i < --newN) {
+                elem[i] = std::move(elem[newN]);
+                elem2indexes[i] = elem2indexes[newN];
+                indexes[elem2indexes[newN]] = i;
             }
 
-            // Shift indexes, so that everything is consistent again.
-            memmove(indexes + i, indexes + i + 1, sizeof *indexes * (newN - i));
+            elem[newN].~T();
         }
-        for(int i = newN; i < n; i++)
-            elem[i].~T();
 
-        n = newN;
+        // Remove tombstones transferred from tags.
         // elemsAllocated is untouched, because we didn't resize.
+        if(newN != n) {
+            std::remove(indexes, indexes + n, -1);
+            n = newN;
+        }
     }
     void RemoveById(H h) {
         ClearTags();
