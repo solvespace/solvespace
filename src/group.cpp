@@ -1190,3 +1190,6 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
     el->Add(&en);
 }
 
+bool Group::ShouldDrawExploded() const {
+    return SS.explode && h == SS.GW.activeGroup && type == Type::DRAWING_WORKPLANE && !SS.exportMode;
+}
