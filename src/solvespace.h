@@ -609,6 +609,8 @@ public:
     int      afterDecimalDegree;
     bool     useSIPrefixes;
     int      autosaveInterval; // in minutes
+    bool     explode;
+    double   explodeDistance;
 
     std::string MmToString(double v, bool editable=false);
     std::string MmToStringSI(double v, int dim = 0);

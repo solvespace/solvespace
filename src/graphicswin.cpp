@@ -94,6 +94,7 @@ const MenuEntry Menu[] = {
 { 1, N_("Show Snap &Grid"),             Command::SHOW_GRID,        '>',     KC, mView  },
 { 1, N_("Darken Inactive Solids"),      Command::DIM_SOLID_MODEL,  0,       KC, mView  },
 { 1, N_("Use &Perspective Projection"), Command::PERSPECTIVE_PROJ, '`',     KC, mView  },
+{ 1, N_("Show E&xploded View"),         Command::EXPLODE_SKETCH,   '\\',    KC, mView  },
 { 1, N_("Dimension &Units"),            Command::NONE,             0,       KN, NULL  },
 { 2, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       KR, mView },
 { 2, N_("Dimensions in M&eters"),       Command::UNITS_METERS,     0,       KR, mView },
@@ -318,6 +319,8 @@ void GraphicsWindow::PopulateMainMenu() {
                 dimSolidModelMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::PERSPECTIVE_PROJ) {
                 perspectiveProjMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::EXPLODE_SKETCH) {
+                explodeMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::SHOW_TOOLBAR) {
                 showToolbarMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::SHOW_TEXT_WND) {
@@ -753,6 +756,12 @@ void GraphicsWindow::MenuView(Command id) {
             }
             break;
 
+        case Command::EXPLODE_SKETCH:
+            SS.explode = !SS.explode;
+            SS.GW.EnsureValidActives();
+            SS.MarkGroupDirty(SS.GW.activeGroup, true);
+            break;
+
         case Command::ONTO_WORKPLANE:
             if(SS.GW.LockedInWorkplane()) {
                 SS.GW.AnimateOntoWorkplane();
@@ -951,6 +960,7 @@ void GraphicsWindow::EnsureValidActives() {
     showGridMenuItem->SetActive(SS.GW.showSnapGrid);
     dimSolidModelMenuItem->SetActive(SS.GW.dimSolidModel);
     perspectiveProjMenuItem->SetActive(SS.usePerspectiveProj);
+    explodeMenuItem->SetActive(SS.explode);
     showToolbarMenuItem->SetActive(SS.showToolbar);
     fullScreenMenuItem->SetActive(SS.GW.window->IsFullScreen());
 

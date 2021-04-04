@@ -19,6 +19,7 @@ void SolveSpaceUI::Init() {
     Platform::SettingsRef settings = Platform::GetSettings();
 
     SS.tangentArcRadius = 10.0;
+    SS.explodeDistance = 1.0;
 
     // Then, load the registry settings.
     // Default list of colors for the model material
@@ -1070,6 +1071,7 @@ void SolveSpaceUI::Clear() {
     GW.showGridMenuItem = NULL;
     GW.dimSolidModelMenuItem = NULL;
     GW.perspectiveProjMenuItem = NULL;
+    GW.explodeMenuItem = NULL;
     GW.showToolbarMenuItem = NULL;
     GW.showTextWndMenuItem = NULL;
     GW.fullScreenMenuItem = NULL;
