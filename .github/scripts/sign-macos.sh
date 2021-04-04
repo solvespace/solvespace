@@ -2,6 +2,13 @@
 
 lipo \
     -create \
+        build/bin/SolveSpace.app/Contents/Resources/libomp.dylib \
+        build-arm64/bin/SolveSpace.app/Contents/Resources/libomp.dylib \
+    -output \
+        build/bin/SolveSpace.app/Contents/Resources/libomp.dylib
+
+lipo \
+    -create \
         build/bin/SolveSpace.app/Contents/MacOS/SolveSpace \
         build-arm64/bin/SolveSpace.app/Contents/MacOS/SolveSpace \
     -output \
