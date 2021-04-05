@@ -369,11 +369,8 @@ static void PopulateMenuWithPathnames(Platform::MenuRef menu,
 
 void GraphicsWindow::PopulateRecentFiles() {
     PopulateMenuWithPathnames(openRecentMenu, SS.recentFiles, [](const Platform::Path &path) {
-        // OkayToStartNewFile could mutate recentFiles, which will invalidate path (which is a
-        // refererence into the recentFiles vector), so take a copy of it here.
-        Platform::Path pathCopy(path);
         if(!SS.OkayToStartNewFile()) return;
-        SS.Load(pathCopy);
+        SS.Load(path);
     });
 
     PopulateMenuWithPathnames(linkRecentMenu, SS.recentFiles, [](const Platform::Path &path) {
