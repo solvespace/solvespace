@@ -488,7 +488,7 @@ public:
         if(IsEmpty()) {
             return 0;
         } else {
-            return Last()->h.v;
+            return elemstore[elemidx.back()].h.v;
         }
     }
 
@@ -514,9 +514,9 @@ public:
     }
 
     void ReserveMore(int howMuch) {
-        elemstore.reserve(n + howMuch);
-        elemidx.reserve(n + howMuch);
-//        freelist.reserve(n + howMuch);    // PAR@@@@ maybe we should - not much more RAM
+        elemstore.reserve(elemstore.size() + howMuch);
+        elemidx.reserve(elemidx.size() + howMuch);
+        //        freelist.reserve(freelist.size() + howMuch);    // PAR@@@@ maybe we should - not much more RAM
     }
 
     void Add(T *t) {
@@ -556,19 +556,6 @@ public:
         return t;
     }
 
-    int IndexOf(H h) {
-        if(IsEmpty()) {
-            return -1;
-        }
-        auto it  = std::lower_bound(elemidx.begin(), elemidx.end(), h, Compare(this));
-        if(it == elemidx.end()) {
-            return -1;
-        } else {
-            auto idx = std::distance(elemidx.begin(), it);
-            return static_cast<int>(idx);
-        }
-    }
-
     T *FindByIdNoOops(H h) {
         if(IsEmpty()) {
             return nullptr;
@@ -580,28 +567,6 @@ public:
             if(elemstore[*it].h.v != h.v) {
                 return nullptr;
             }
-            return &elemstore[*it];
-        }
-    }
-
-    T *First() {
-        return (IsEmpty()) ? nullptr : &(elemstore[0]);
-    }
-    T *Last() {
-        return (IsEmpty()) ? nullptr : &(elemstore[elemidx.back()]);
-    }
-
-    // Remove this entirely?!? 199 places in the code mostly for loops?
-    T *NextAfter(T *prev) {
-        if(IsEmpty() || !prev) {
-            return nullptr;
-        }
-
-        // PAR@@@@ This is slower than before now. O(log(n)) was O(1)
-        auto it = std::upper_bound(elemidx.begin(), elemidx.end(), prev, Compare(this));
-        if(it == elemidx.end()) {
-            return nullptr;
-        } else {
             return &elemstore[*it];
         }
     }
@@ -674,7 +639,7 @@ public:
             l->elemidx.push_back(it);
         }
 
-        l->n              = n;
+        l->n = n;
     }
 
     void Clear() {
