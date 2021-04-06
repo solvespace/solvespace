@@ -421,21 +421,8 @@ public:
         T &operator*() const noexcept { return *elem; }
         const T *operator->() const noexcept { return elem; }
 
-        T &operator=(const T &e) const noexcept {
-            *elem = e;
-            return *this;
-        }
-        T &operator=(const H h) const noexcept {
-            elem->h = e;
-            return *this;
-        }
-
         bool operator==(const iterator &p) const { return p.position == position; }
-        bool operator<(const iterator &p) const { return position < p.position; }
         bool operator!=(const iterator &p) const { return !operator==(p); }
-        bool operator>(const iterator &p) const { return operator!=(p) && !operator<(p); }
-        bool operator>=(const iterator &p) const { return !operator<(p); }
-        bool operator<=(const iterator &p) const { return !operator>(p); }
 
         iterator &operator++() {
             ++position;
@@ -446,26 +433,20 @@ public:
             }
             return *this;
         }
-        iterator &operator--() {
-            --position;
-            if(0 > position) {
-                elem = nullptr; // PAR@@@@ Remove just debugging
-            } else if(position < list->elemidx.size()) {
-                elem = &(list->elemstore[list->elemidx[position]]);
-            }
-            return *this;
+
+        // Needed for std:find_if of gcc used in entity.cpp GenerateEquations 
+        difference_type operator-(const iterator &rhs) const noexcept {
+            return position - rhs.position;
         }
 
-        iterator(IdList<T, H> *l) : list(l), position(0) {
+        iterator(IdList<T, H> *l) : position(0), list(l) {
             if(list) {
                 if(list->elemstore.size() && list->elemidx.size()) {
                     elem = &(list->elemstore[list->elemidx[position]]);
                 }
             }
         };
-        iterator(const iterator &iter)
-            : list(iter.list), position(iter.position), elem(iter.elem){};
-        iterator(IdList<T, H> *l, int pos) : list(l), position(pos) {
+        iterator(IdList<T, H> *l, int pos) : position(pos), list(l) {
             if(position >= (int)list->elemidx.size()) {
                 elem = nullptr;
             } else if(0 <= position) {
@@ -501,16 +482,6 @@ public:
         ++n;
 
         return t->h;
-    }
-
-    int LowerBoundIndex(T const& t) {
-        if(IsEmpty()) {
-            return 0;
-        }
-        auto it  = std::lower_bound(elemptr.begin(), elemptr.end(), t, Compare(this));
-        auto idx = std::distance(elemidx.begin(), it);
-        auto i = static_cast<int>(idx);
-        return i;
     }
 
     void ReserveMore(int howMuch) {
@@ -572,16 +543,10 @@ public:
     }
 
     T &Get(size_t i) { return elemstore[elemidx[i]]; }
-    T const &Get(size_t i) const { return elemstore[elemidx[i]]; }
     T &operator[](size_t i) { return Get(i); }
-    T const &operator[](size_t i) const { return Get(i); }
 
     iterator begin() { return IsEmpty() ? nullptr : iterator(this); }
     iterator end() { return IsEmpty() ? nullptr : iterator(this, elemidx.size()); }
-    const iterator begin() const { return IsEmpty() ? nullptr : iterator(this); }
-    const iterator end() const { return IsEmpty() ? nullptr : iterator(this, elemidx.size()); }
-    const iterator cbegin() const { return begin(); }
-    const iterator cend() const { return end(); }
 
     void ClearTags() {
         for(auto &elt : *this) { elt.tag = 0; }
