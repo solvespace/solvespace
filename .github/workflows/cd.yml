@@ -9,19 +9,32 @@ on:
       - created
 
 jobs:
+  cancel_previous_runs:
+    runs-on: ubuntu-latest
+    name: Cancel Previous Runs
+    if: github.event_name == 'push'
+    steps:
+    - uses: styfle/cancel-workflow-action@0.8.0
+      with:
+        access_token: ${{ github.token }}
+
   test_ubuntu:
-      runs-on: ubuntu-18.04
-      name: Test Ubuntu
-      steps:
-      - uses: actions/checkout@v2
-      - name: Install Dependencies
-        run: .github/scripts/install-ubuntu.sh
-      - name: Build & Test
-        run: .github/scripts/build-ubuntu.sh
+    needs: [cancel_previous_runs]
+    runs-on: ubuntu-18.04
+    name: Test Ubuntu
+    if: "!cancelled()"
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: .github/scripts/install-ubuntu.sh
+    - name: Build & Test
+      run: .github/scripts/build-ubuntu.sh
 
   test_windows:
+    needs: [cancel_previous_runs]
     runs-on: windows-2019
     name: Test Windows
+    if: "!cancelled()"
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
@@ -32,8 +45,10 @@ jobs:
       shell: bash
 
   test_macos:
+    needs: [cancel_previous_runs]
     runs-on: macos-10.15
     name: Test macOS
+    if: "!cancelled()"
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
@@ -164,26 +179,29 @@ jobs:
   update_edge_release:
     name: Update Edge Release
     needs: [build_release_windows, build_release_windows_openmp, build_release_macos]
-    if: always() && github.event_name == 'push'
+    if: github.event_name == 'push' && !cancelled()
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
     - name: Delete Old Edge Release
-      uses: dev-drprasad/delete-tag-and-release@v0.1.2
+      uses: dev-drprasad/delete-tag-and-release@v0.2.0
       with:
         delete_release: true
         tag_name: edge
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Wait
+      shell: bash
+      run: sleep 60
     - name: Create New Edge Release
       id: create_release
-      uses: actions/create-release@v1
+      uses: softprops/action-gh-release@35d938cf01f60fbe522917c81be1e892074f6ad6
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: edge
-        release_name: Edge
+        name: Edge
         prerelease: true
         draft: false
         body: ${{ github.event.head_commit.message }}
@@ -191,7 +209,7 @@ jobs:
   upload_release_assets:
     name: Upload Release Assets
     needs: [build_release_windows, build_release_windows_openmp, build_release_macos, update_edge_release]
-    if: always()
+    if: "!cancelled()"
     runs-on: ubuntu-latest
     steps:
     - name: Download All Workflow Artifacts
