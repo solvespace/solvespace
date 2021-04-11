@@ -286,7 +286,8 @@ public:
     }
 
     void PopUp() override {
-        [NSMenu popUpContextMenu:nsMenu withEvent:[NSApp currentEvent] forView:nil];
+        NSEvent* event = [NSApp currentEvent];
+        [NSMenu popUpContextMenu:nsMenu withEvent:event forView:event.window.contentView];
     }
 
     void Clear() override {

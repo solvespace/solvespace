@@ -117,6 +117,7 @@ if(WIN32)
         ${SPACEWARE_LIBRARIES})
 elseif(APPLE)
     add_compile_options(
+        -DGL_SILENCE_DEPRECATION
         -fobjc-arc)
 
     list(APPEND platform_SOURCES
