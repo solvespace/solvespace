@@ -10,6 +10,8 @@ void GraphicsWindow::UpdateDraggedPoint(hEntity hp, double mx, double my) {
     Vector pos = p->PointGetNum();
     UpdateDraggedNum(&pos, mx, my);
     p->PointForceTo(pos);
+
+    SS.ScheduleShowTW();
 }
 
 void GraphicsWindow::UpdateDraggedNum(Vector *pos, double mx, double my) {
@@ -188,32 +190,23 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             hEntity dragEntity = ChooseFromHoverToDrag().entity;
             if(dragEntity.v) e = SK.GetEntity(dragEntity);
             if(e && e->type != Entity::Type::WORKPLANE) {
-                Entity *e = SK.GetEntity(dragEntity);
+                if(!hoverWasSelectedOnMousedown) {
+                    // The user clicked an unselected entity, which
+                    // means they're dragging just the hovered thing,
+                    // not the full selection. So clear all the selection
+                    // except that entity.
+                    ClearSelection();
+                    MakeSelected(dragEntity);
+                }
                 if(e->type == Entity::Type::CIRCLE && selection.n <= 1) {
                     // Drag the radius.
-                    ClearSelection();
                     pending.circle = dragEntity;
                     pending.operation = Pending::DRAGGING_RADIUS;
                 } else if(e->IsNormal()) {
-                    ClearSelection();
                     pending.normal = dragEntity;
                     pending.operation = Pending::DRAGGING_NORMAL;
                 } else {
-                    if(!hoverWasSelectedOnMousedown) {
-                        // The user clicked an unselected entity, which
-                        // means they're dragging just the hovered thing,
-                        // not the full selection. So clear all the selection
-                        // except that entity.
-                        ClearSelection();
-                        MakeSelected(e->h);
-                    }
                     StartDraggingBySelection();
-                    if(!hoverWasSelectedOnMousedown) {
-                        // And then clear the selection again, since they
-                        // probably didn't want that selected if they just
-                        // were dragging it.
-                        ClearSelection();
-                    }
                     hover.Clear();
                     pending.operation = Pending::DRAGGING_POINTS;
                 }
@@ -425,6 +418,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             SK.GetEntity(circle->distance)->DistanceForceTo(r);
 
             SS.MarkGroupDirtyByEntity(pending.circle);
+            SS.ScheduleShowTW();
             break;
         }
 
@@ -1306,15 +1300,20 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
 
 void GraphicsWindow::MouseLeftUp(double mx, double my, bool shiftDown, bool ctrlDown) {
     orig.mouseDown = false;
-    hoverWasSelectedOnMousedown = false;
 
     switch(pending.operation) {
         case Pending::DRAGGING_POINTS:
-            SS.extraLine.draw = false;
-            // fall through
         case Pending::DRAGGING_CONSTRAINT:
         case Pending::DRAGGING_NORMAL:
         case Pending::DRAGGING_RADIUS:
+            if(!hoverWasSelectedOnMousedown) {
+                // And then clear the selection again, since they
+                // probably didn't want that selected if they just
+                // were dragging it.
+                ClearSelection();
+            }
+            hoverWasSelectedOnMousedown = false;
+            SS.extraLine.draw = false;
             ClearPending();
             Invalidate();
             break;
