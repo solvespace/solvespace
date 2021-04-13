@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/solvespace/solvespace/issues\n"
 "POT-Creation-Date: 2021-02-01 15:45+0200\n"
-"PO-Revision-Date: 2021-04-13 21:07+0300\n"
+"PO-Revision-Date: 2021-04-13 22:58+0300\n"
 "Last-Translator: https://github.com/Symbian9\n"
 "Language-Team: app4soft\n"
 "Language: uk_UA\n"
@@ -1065,11 +1065,11 @@ msgstr ""
 
 #: graphicswin.cpp:1283
 msgid "click to place datum point"
-msgstr ""
+msgstr "клікніть для встановлення вихідної точки"
 
 #: graphicswin.cpp:1284
 msgid "click first point of line segment"
-msgstr ""
+msgstr "клікніть першу точку прямої лінії"
 
 #: graphicswin.cpp:1286
 msgid "click first point of construction line segment"
@@ -1077,27 +1077,27 @@ msgstr ""
 
 #: graphicswin.cpp:1287
 msgid "click first point of cubic segment"
-msgstr ""
+msgstr "клікніть першу точку кривої"
 
 #: graphicswin.cpp:1288
 msgid "click center of circle"
-msgstr ""
+msgstr "клікніть в місце де буде центр коментаря"
 
 #: graphicswin.cpp:1289
 msgid "click origin of workplane"
-msgstr ""
+msgstr "клікніть в центр відліку площини"
 
 #: graphicswin.cpp:1290
 msgid "click one corner of rectangle"
-msgstr ""
+msgstr "клікніть для встановлення першого кута прямокутника"
 
 #: graphicswin.cpp:1291
 msgid "click top left of text"
-msgstr ""
+msgstr "клікніть для встановлення верхньої лівої межі тексту"
 
 #: graphicswin.cpp:1297
 msgid "click top left of image"
-msgstr ""
+msgstr "клікніть для встановлення верхньої лівої межі зображення"
 
 #: graphicswin.cpp:1309
 msgid ""
@@ -1108,7 +1108,7 @@ msgstr ""
 #: group.cpp:86
 msgctxt "group-name"
 msgid "sketch-in-3d"
-msgstr ""
+msgstr "ескіз-в-3D"
 
 #: group.cpp:142
 msgid ""
@@ -1129,7 +1129,7 @@ msgstr ""
 #: group.cpp:163
 msgctxt "group-name"
 msgid "extrude"
-msgstr ""
+msgstr "видавлювання"
 
 #: group.cpp:168
 msgid "Lathe operation can only be applied to planar sketches."
@@ -1147,7 +1147,7 @@ msgstr ""
 #: group.cpp:189
 msgctxt "group-name"
 msgid "lathe"
-msgstr ""
+msgstr "проточування"
 
 #: group.cpp:194
 msgid "Revolve operation can only be applied to planar sketches."
@@ -1165,7 +1165,7 @@ msgstr ""
 #: group.cpp:217
 msgctxt "group-name"
 msgid "revolve"
-msgstr ""
+msgstr "прокручування"
 
 #: group.cpp:222
 msgid "Helix operation can only be applied to planar sketches."
@@ -1183,7 +1183,7 @@ msgstr ""
 #: group.cpp:245
 msgctxt "group-name"
 msgid "helix"
-msgstr ""
+msgstr "спіраль"
 
 #: group.cpp:258
 msgid ""
@@ -1198,12 +1198,12 @@ msgstr ""
 #: group.cpp:271
 msgctxt "group-name"
 msgid "rotate"
-msgstr ""
+msgstr "крутіння"
 
 #: group.cpp:282
 msgctxt "group-name"
 msgid "translate"
-msgstr ""
+msgstr "перекладання"
 
 #: group.cpp:400
 msgid "(unnamed)"
@@ -1307,6 +1307,7 @@ msgstr "Додати Точку Сплайну"
 #: mouse.cpp:690
 msgid "Cannot add spline point: maximum number of points reached."
 msgstr ""
+"Неможливо додати точку сплайна: перевищено максимальну кількість точок."
 
 #: mouse.cpp:715
 msgid "Toggle Construction"
@@ -1559,17 +1560,17 @@ msgstr "Файл Змінено"
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
-msgstr ""
+msgstr "Чи хочете ви зберегти зміни зроблені вами у ескізі “%s”?"
 
 #: solvespace.cpp:562
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
-msgstr ""
+msgstr "Чи хочете ви зберегти зміни зроблені вами у новому ескізі?"
 
 #: solvespace.cpp:565
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
-msgstr ""
+msgstr "Ваші зміни буде втрачено якщо ви не збережете їх."
 
 #: solvespace.cpp:566
 msgctxt "button"
@@ -1607,24 +1608,24 @@ msgstr ""
 
 #: solvespace.cpp:778
 msgid "Constraint must have a label, and must not be a reference dimension."
-msgstr ""
+msgstr "Обмежувач має містити мітку і бути не відносним розміром."
 
 #: solvespace.cpp:782
 msgid "Bad selection for step dimension; select a constraint."
-msgstr ""
+msgstr "Поганий вибір для крокової зміни розміру; оберіть обмежувач."
 
 #: solvespace.cpp:806
 msgid "The assembly does not interfere, good."
 msgstr ""
 
 #: solvespace.cpp:822
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "The volume of the solid model is:\n"
 "\n"
 "    %s"
 msgstr ""
-"Об'єм тіла:\n"
+"Об'єм твердого тіла становить:\n"
 "\n"
 "    %s"
 
@@ -1636,6 +1637,10 @@ msgid ""
 "\n"
 "    %s"
 msgstr ""
+"\n"
+"Об'єм поточної групи мешу становить:\n"
+"\n"
+"    %s"
 
 #: solvespace.cpp:836
 msgid ""
@@ -1661,6 +1666,8 @@ msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
 msgstr ""
+"Ця група не місить коректно сформованого замкненої 2D площини. Вона "
+"відкрита, не компланарна, або ж самоперетинається."
 
 #: solvespace.cpp:872
 #, c-format
@@ -1672,6 +1679,12 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"Площа заповнення ескізу у цій групі становить:\n"
+"\n"
+"    %s\n"
+"\n"
+"Криві наближено до ламаних ліній.\n"
+"Це вносить похибку, зазвичай близько 1%%."
 
 #: solvespace.cpp:892
 #, c-format
@@ -1683,14 +1696,20 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"Загальна довжина обраних елементів становить:\n"
+"\n"
+"    %s\n"
+"\n"
+"Криві наближено до ламаних ліній.\n"
+"Це вносить похибку, зазвичай близько 1%%."
 
 #: solvespace.cpp:898
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
-msgstr ""
+msgstr "Поганий вибір для периметру; оберіть відрізки, дуги та криві."
 
 #: solvespace.cpp:914
 msgid "Bad selection for trace; select a single point."
-msgstr ""
+msgstr "Поганий вибір для вістежування шляху; оберіть одну точку."
 
 #: solvespace.cpp:941
 #, c-format
@@ -1699,19 +1718,19 @@ msgstr "Неможливо записати у '%s'"
 
 #: solvespace.cpp:971
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
-msgstr ""
+msgstr "Меш самоперетинається (НЕ добре, недійсний)."
 
 #: solvespace.cpp:972
 msgid "The mesh is not self-intersecting (okay, valid)."
-msgstr ""
+msgstr "Меш самоперетинається (добре, дійсний)."
 
 #: solvespace.cpp:974
 msgid "The mesh has naked edges (NOT okay, invalid)."
-msgstr ""
+msgstr "Меш містить оголені ребра (НЕ добре, недійсний)."
 
 #: solvespace.cpp:975
 msgid "The mesh is watertight (okay, valid)."
-msgstr ""
+msgstr "Меш водонепроникний (добре, дійсний)."
 
 #: solvespace.cpp:978
 #, c-format
@@ -1730,6 +1749,11 @@ msgid ""
 "\n"
 "Zero problematic edges, good.%s"
 msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"Відсутні проблемні ребра, добре.%s"
 
 #: solvespace.cpp:985
 #, c-format
@@ -1740,6 +1764,11 @@ msgid ""
 "\n"
 "%d problematic edges, bad.%s"
 msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"%d проблемних ребер, погано.%s"
 
 #: solvespace.cpp:998
 #, c-format
@@ -1757,12 +1786,26 @@ msgid ""
 "\n"
 "© 2008-%d Jonathan Westhues and other authors.\n"
 msgstr ""
+"Це SolveSpace версії %s.\n"
+"\n"
+"Більше інформації на сайті http://solvespace.com/\n"
+"\n"
+"SolveSpace є вільною програмою: ви можете модифікувати\n"
+"та/або розповсюджувати її відповідно до ліцензії GNU\n"
+"General Public License (GPL) версії 3 чи новішої.\n"
+"\n"
+"ВІЧСУТНІ БУДЬ-ЯКІ ГАРАНТІЇ, в межах, доволених\n"
+"законом. Деталі на сайті http://gnu.org/licenses/\n"
+"\n"
+"© 2008-%d Jonathan Westhues та інші автори.\n"
 
 #: style.cpp:166
 msgid ""
 "Can't assign style to an entity that's derived from another entity; try "
 "assigning a style to this entity's parent."
 msgstr ""
+"Неможливо призначити стиль елементу який походить від іншого елемента; "
+"спробуйте призначити стиль батьківському елементу."
 
 #: style.cpp:665
 msgid "Style name cannot be empty"
@@ -1882,19 +1925,19 @@ msgstr "Перемкнути відносність розміру"
 
 #: toolbar.cpp:68
 msgid "New group extruding active sketch"
-msgstr "Нова група екструдування активного креслення"
+msgstr "Нова група екструдування активного ескізу"
 
 #: toolbar.cpp:70
 msgid "New group rotating active sketch"
-msgstr "Нова група обертання актиного креслення"
+msgstr "Нова група обертання актиного ескізу"
 
 #: toolbar.cpp:72
 msgid "New group helix from active sketch"
-msgstr ""
+msgstr "Нова група спіралі з активного ескізу"
 
 #: toolbar.cpp:74
 msgid "New group revolve active sketch"
-msgstr ""
+msgstr "Нова група обертання активного ескізу"
 
 #: toolbar.cpp:76
 msgid "New group step and repeat rotating"
