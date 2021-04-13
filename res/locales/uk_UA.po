@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/solvespace/solvespace/issues\n"
 "POT-Creation-Date: 2021-02-01 15:45+0200\n"
-"PO-Revision-Date: 2021-04-13 22:58+0300\n"
+"PO-Revision-Date: 2021-04-14 00:45+0300\n"
 "Last-Translator: https://github.com/Symbian9\n"
 "Language-Team: app4soft\n"
 "Language: uk_UA\n"
@@ -407,7 +407,7 @@ msgstr "Необхідно обрати кут."
 
 #: constraint.cpp:627
 msgid "Must select a constraint with associated label."
-msgstr ""
+msgstr "Необхідно обрати обмежувач з відповідною міткою."
 
 #: constraint.cpp:638
 msgid ""
@@ -491,6 +491,8 @@ msgstr ""
 msgid ""
 "PDF page size exceeds 200 by 200 inches; many viewers may reject this file."
 msgstr ""
+"Розмір аркуша у PDF перевищує 200×200 дюймів; багато переглядачів можуть не "
+"підтримувати цей файл."
 
 #: file.cpp:44 group.cpp:91
 msgctxt "group-name"
@@ -963,7 +965,7 @@ msgstr "Показати &Центр Масс"
 
 #: graphicswin.cpp:175
 msgid "Show &Underconstrained Points"
-msgstr ""
+msgstr "Показати &Надмірно Обмежені Точки"
 
 #: graphicswin.cpp:177
 msgid "&Trace Point"
@@ -1073,7 +1075,7 @@ msgstr "клікніть першу точку прямої лінії"
 
 #: graphicswin.cpp:1286
 msgid "click first point of construction line segment"
-msgstr ""
+msgstr "клікніть першу точку конструктивної прямої лінії"
 
 #: graphicswin.cpp:1287
 msgid "click first point of cubic segment"
@@ -1169,7 +1171,7 @@ msgstr "прокручування"
 
 #: group.cpp:222
 msgid "Helix operation can only be applied to planar sketches."
-msgstr ""
+msgstr "Спіраль може бути створена лише на основі площинного ескізу."
 
 #: group.cpp:233
 msgid ""
