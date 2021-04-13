@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/solvespace/solvespace/issues\n"
 "POT-Creation-Date: 2021-02-01 15:45+0200\n"
-"PO-Revision-Date: 2021-03-09 23:34+0200\n"
+"PO-Revision-Date: 2021-04-13 21:07+0300\n"
 "Last-Translator: https://github.com/Symbian9\n"
 "Language-Team: app4soft\n"
 "Language: uk_UA\n"
@@ -154,7 +154,7 @@ msgstr "рівні-довжини"
 #: constraint.cpp:22
 msgctxt "constr-name"
 msgid "eq-length-and-pt-ln-dist"
-msgstr ""
+msgstr "рівні-довжина-відстань-тчк-лінія"
 
 #: constraint.cpp:23
 msgctxt "constr-name"
@@ -219,7 +219,7 @@ msgstr "тчк-на-колі"
 #: constraint.cpp:35
 msgctxt "constr-name"
 msgid "same-orientation"
-msgstr ""
+msgstr "співнаправленість"
 
 #: constraint.cpp:36
 msgctxt "constr-name"
@@ -401,8 +401,9 @@ msgid ""
 msgstr ""
 
 #: constraint.cpp:614
+#, fuzzy
 msgid "Must select an angle constraint."
-msgstr ""
+msgstr "Необхідно обрати кут."
 
 #: constraint.cpp:627
 msgid "Must select a constraint with associated label."
@@ -471,7 +472,7 @@ msgstr ""
 
 #: export.cpp:822
 msgid "Active group mesh is empty; nothing to export."
-msgstr ""
+msgstr "Активна група не містить меш; немає чого експортувати."
 
 #: exportvector.cpp:337
 msgid "freehand lines were replaced with continuous lines"
@@ -781,14 +782,12 @@ msgid "Re&volve"
 msgstr "&Обертати"
 
 #: graphicswin.cpp:119
-#, fuzzy
 msgid "Link / Assemble..."
-msgstr "Приєднати / Монтувати..."
+msgstr "Приєднати / Зібрати..."
 
 #: graphicswin.cpp:120
-#, fuzzy
 msgid "Link Recent"
-msgstr "Приєднати Недавні"
+msgstr "Приєднати Нещодавні"
 
 #: graphicswin.cpp:122
 msgid "&Sketch"
@@ -1355,7 +1354,7 @@ msgstr "Умістити на Екрані"
 
 #: mouse.cpp:988 mouse.cpp:1275
 msgid "click next point of line, or press Esc"
-msgstr ""
+msgstr "клікніть наступну точку лінії або натисніть Esc"
 
 #: mouse.cpp:994
 msgid ""
@@ -1365,11 +1364,11 @@ msgstr ""
 
 #: mouse.cpp:1028
 msgid "click to place other corner of rectangle"
-msgstr ""
+msgstr "клікніть для встановлення іншого кута прямокутника"
 
 #: mouse.cpp:1048
 msgid "click to set radius"
-msgstr ""
+msgstr "клікніть для визначення радіусу"
 
 #: mouse.cpp:1053
 msgid ""
@@ -1379,11 +1378,11 @@ msgstr ""
 
 #: mouse.cpp:1072
 msgid "click to place point"
-msgstr ""
+msgstr "клікніть для встановлення точки"
 
 #: mouse.cpp:1088
 msgid "click next point of cubic, or press Esc"
-msgstr ""
+msgstr "клікніть наступну точку кривої або натисніть Esc"
 
 #: mouse.cpp:1093
 msgid ""
@@ -1398,7 +1397,7 @@ msgstr ""
 
 #: mouse.cpp:1126
 msgid "click to place bottom right of text"
-msgstr ""
+msgstr "клікніть для встановлення нижньої правої межі тексту"
 
 #: mouse.cpp:1132
 msgid ""
@@ -1418,7 +1417,7 @@ msgstr "SolveSpace модель"
 #: platform/gui.cpp:90
 msgctxt "file-type"
 msgid "IDF circuit board"
-msgstr ""
+msgstr "IDF друкована плата"
 
 #: platform/gui.cpp:94
 msgctxt "file-type"
@@ -1438,12 +1437,12 @@ msgstr "Wavefront OBJ меш"
 #: platform/gui.cpp:100
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, with viewer"
-msgstr ""
+msgstr "Three.js-сумісний меш, з переглядачем"
 
 #: platform/gui.cpp:101
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, mesh only"
-msgstr ""
+msgstr "Three.js-сумісний меш, лише меш"
 
 #: platform/gui.cpp:102
 msgctxt "file-type"
@@ -1463,7 +1462,7 @@ msgstr "PDF файл"
 #: platform/gui.cpp:111
 msgctxt "file-type"
 msgid "Encapsulated PostScript"
-msgstr ""
+msgstr "Encapsulated PostScript"
 
 #: platform/gui.cpp:112
 msgctxt "file-type"
@@ -1911,7 +1910,7 @@ msgstr "Нова група в новій площині (через обран�
 
 #: toolbar.cpp:82
 msgid "New group in 3d"
-msgstr "Нова група в 3d"
+msgstr "Нова група в 3D"
 
 #: toolbar.cpp:84
 msgid "New group linking / assembling file"
