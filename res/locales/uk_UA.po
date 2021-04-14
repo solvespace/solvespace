@@ -7,7 +7,7 @@ msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: https://github.com/solvespace/solvespace/issues\n"
 "POT-Creation-Date: 2021-02-01 15:45+0200\n"
-"PO-Revision-Date: 2021-04-14 00:45+0300\n"
+"PO-Revision-Date: 2021-04-14 01:42+0300\n"
 "Last-Translator: https://github.com/Symbian9\n"
 "Language-Team: app4soft\n"
 "Language: uk_UA\n"
@@ -459,6 +459,9 @@ msgid ""
 "No solid model present; draw one with extrudes and revolves, or use Export "
 "2d View to export bare lines and curves."
 msgstr ""
+"Вісутня об'ємна модель; створіть одну з допомогою екструдування та "
+"виточування або скористайтеся функцією \"Експортувати 2D Вигляд\" для "
+"еспорту лише ліній та кривих."
 
 #: export.cpp:61
 msgid ""
@@ -486,6 +489,8 @@ msgstr ""
 msgid ""
 "Some aspects of the drawing have no DXF equivalent and were not exported:\n"
 msgstr ""
+"Деякі аспекти креслення на мають відповідників у форматі DXF і не будуть "
+"експортовані:\n"
 
 #: exportvector.cpp:839
 msgid ""
@@ -581,15 +586,15 @@ msgstr "Експортувати &Зображення..."
 
 #: graphicswin.cpp:49
 msgid "Export 2d &View..."
-msgstr "Експортувати 2d &Вигляд..."
+msgstr "Експортувати 2D &Вигляд..."
 
 #: graphicswin.cpp:50
 msgid "Export 2d &Section..."
-msgstr "Експортувати 2d &Секцію..."
+msgstr "Експортувати 2D &Секцію..."
 
 #: graphicswin.cpp:51
 msgid "Export 3d &Wireframe..."
-msgstr "Експортувати 3d &Скелет..."
+msgstr "Експортувати 3D &Скелет..."
 
 #: graphicswin.cpp:52
 msgid "Export Triangle &Mesh..."
@@ -753,11 +758,11 @@ msgstr "&Нова Група"
 
 #: graphicswin.cpp:108
 msgid "Sketch In &3d"
-msgstr "Креслення в &3D"
+msgstr "Креслення у &3D"
 
 #: graphicswin.cpp:109
 msgid "Sketch In New &Workplane"
-msgstr "Креслення в Новій &Площині"
+msgstr "Креслення у Новій &Площині"
 
 #: graphicswin.cpp:111
 msgid "Step &Translating"
@@ -801,7 +806,7 @@ msgstr "У Робочій &Площині"
 
 #: graphicswin.cpp:124
 msgid "Anywhere In &3d"
-msgstr "Будь-де В &3D"
+msgstr "Будь-де в &3D"
 
 #: graphicswin.cpp:126
 msgid "Datum &Point"
@@ -1127,6 +1132,8 @@ msgid ""
 "Activate a workplane (Sketch -> In Workplane) before extruding. The sketch "
 "will be extruded normal to the workplane."
 msgstr ""
+"Активуйте робочу площину ( Ескіз -> У Площині) перед екструдуванням. Ескіз "
+"буде екструдовано перпендикулярно до робочої площини."
 
 #: group.cpp:163
 msgctxt "group-name"
@@ -1213,7 +1220,7 @@ msgstr "(безіменне)"
 
 #: groupmesh.cpp:709
 msgid "not closed contour, or not all same style!"
-msgstr ""
+msgstr "не замкнений контур або не все в єдиному стилі!"
 
 #: groupmesh.cpp:722
 msgid "points not all coplanar!"
@@ -1221,7 +1228,7 @@ msgstr ""
 
 #: groupmesh.cpp:724
 msgid "contour is self-intersecting!"
-msgstr ""
+msgstr "контур самоперетинається!"
 
 #: groupmesh.cpp:726
 msgid "zero-length edge!"
