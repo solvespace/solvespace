@@ -222,6 +222,10 @@ public:
             }
             return false;
         };
+        // Note: asan warnings about new-delete-type-mismatch are false positives here:
+        // https://gitlab.gnome.org/GNOME/gtkmm/-/issues/65
+        // Pass new_delete_type_mismatch=0 to ASAN_OPTIONS to disable those warnings.
+        // Unfortunately they won't go away until upgrading to gtkmm4
         _connection = Glib::signal_timeout().connect(handler, milliseconds);
     }
 };
