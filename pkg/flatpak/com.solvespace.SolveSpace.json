@@ -1,16 +1,14 @@
 {
+    "$schema": "https://raw.githubusercontent.com/TingPing/flatpak-manifest-schema/master/flatpak-manifest.schema",
     "app-id": "com.solvespace.SolveSpace",
     "runtime": "org.freedesktop.Platform",
     "runtime-version": "20.08",
     "sdk": "org.freedesktop.Sdk",
     "finish-args": [
-        /* Access to display server and OpenGL */
         "--share=ipc",
         "--socket=fallback-x11",
         "--socket=wayland",
-        "--device=dri",
-        /* Access to save files */
-        "--filesystem=home"
+        "--device=dri"
     ],
     "cleanup": [
         "/include",
@@ -25,7 +23,6 @@
         "/share/man",
         "/share/doc",
         "/share/aclocal",
-        /* mm-common junk */
         "/bin/mm-common-prepare",
         "/share/mm-common"
     ],
@@ -56,7 +53,6 @@
         },
         {
             "name": "glibmm",
-            "config-opts": [],
             "buildsystem": "meson",
             "sources": [
                 {
@@ -74,7 +70,7 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "http://ftp.gnome.org/pub/GNOME/sources/cairomm/1.12/cairomm-1.12.0.tar.xz",
+                    "url": "https://ftp.gnome.org/pub/GNOME/sources/cairomm/1.12/cairomm-1.12.0.tar.xz",
                     "sha256": "a54ada8394a86182525c0762e6f50db6b9212a2109280d13ec6a0b29bfd1afe6"
                 }
             ]
@@ -87,7 +83,7 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "http://ftp.gnome.org/pub/GNOME/sources/pangomm/2.40/pangomm-2.40.2.tar.xz",
+                    "url": "https://ftp.gnome.org/pub/GNOME/sources/pangomm/2.40/pangomm-2.40.2.tar.xz",
                     "sha256": "0a97aa72513db9088ca3034af923484108746dba146e98ed76842cf858322d05"
                 }
             ]
@@ -107,7 +103,6 @@
         },
         {
             "name": "gtkmm",
-            "config-opts": [],
             "buildsystem": "meson",
             "sources": [
                 {
@@ -121,13 +116,12 @@
             "name": "libjson-c",
             "sources": [
                 {
-                    /* 0.15-nodoc doesn't build */
                     "type": "archive",
                     "url": "https://s3.amazonaws.com/json-c_releases/releases/json-c-0.13.1-nodoc.tar.gz",
                     "sha256": "94a26340c0785fcff4f46ff38609cf84ebcd670df0c8efd75d039cc951d80132"
                 }
             ],
-            "buildsystem": "cmake",
+            "buildsystem": "cmake-ninja",
             "builddir": true
         },
         {
@@ -138,7 +132,7 @@
                     "path": "../.."
                 }
             ],
-            "buildsystem": "cmake",
+            "buildsystem": "cmake-ninja",
             "builddir": true,
             "config-opts": [
                 "-DFLATPAK=ON",
