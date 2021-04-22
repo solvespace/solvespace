@@ -31,6 +31,7 @@ New sketch features:
     intersecting) that would propagate in subsequent groups.
   * It is now possible to press "g" to toggle construction on new objects while
     they are still being drawn.
+  * Allow right click to end sketching of all entities.
 
 New constraint features:
   * When dragging an arc or rectangle point, it will be automatically
@@ -71,6 +72,7 @@ New export/import features:
     plane as the exported section are included.
   * Added ExportBackgroundColor in configuration for EPS, PDF, and SVG files.
   * STEP export includes object colors and transparency.
+  * Default "line styles" have a new "export these objects" option.
 
 New rendering features:
   * The "Show/hide hidden lines" button is now a tri-state button that allows
@@ -124,7 +126,7 @@ Other new features:
   * New cmake build options using -DENABLE_OPENMP=yes and -DENABLE_LTO=yes
     to enable support for multi-threading and link-time optimization.
   * "Shift+Scroll" for ten times finer zoom.
-  * Chinese translation
+  * Translations: Chinese, French, German, Russian, Turkish, Ukrainian.
 
 Bugs fixed:
   * Fixed broken --view options for command line thumbnail image creation.
