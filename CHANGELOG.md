@@ -103,7 +103,8 @@ Other new features:
 * Ambient light source added in text window to allow flat shaded renderings.
 * New command-line interface, for batch exporting and more.
 * The graphical interface now supports HiDPI screens on every OS.
-* New option to lock Z axis to be always vertical, like in SketchUp.
+* New option to lock Z axis to be always vertical when rotating the view,
+  a.k.a. "turntable navigation".
 * New button to hide all construction entities.
 * New link to match the on-screen size of the sketch with its actual size,
   "view → set to full scale".
