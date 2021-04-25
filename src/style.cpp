@@ -114,7 +114,8 @@ void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
     s->stippleType   = (factory)
                         ? d->stippleType
                         : Style::StipplePatternFromString(
-                            settings->ThawString(CnfStippleType(d->cnfPrefix), ""));
+                            settings->ThawString(CnfStippleType(d->cnfPrefix),
+                            StipplePatternName(d->stippleType)));
     s->stippleScale  = (factory)
                         ? 15.0
                         : settings->ThawFloat(CnfStippleScale(d->cnfPrefix), 15.0);
@@ -397,7 +398,11 @@ StipplePattern Style::PatternType(hStyle hs) {
 
 std::string Style::StipplePatternName(hStyle hs) {
     Style *s = Get(hs);
-    switch(s->stippleType) {
+    return StipplePatternName(s->stippleType);
+}
+
+std::string Style::StipplePatternName(StipplePattern stippleType) {
+    switch(stippleType) {
         case StipplePattern::CONTINUOUS:   return "Continuous";
         case StipplePattern::SHORT_DASH:   return "ShortDash";
         case StipplePattern::DASH:         return "Dash";
@@ -411,7 +416,6 @@ std::string Style::StipplePatternName(hStyle hs) {
 
     return "CONTINUOUS";
 }
-
 
 double Style::StippleScale(hStyle hs) {
     Style *s = Get(hs);
