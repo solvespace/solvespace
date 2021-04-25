@@ -924,6 +924,7 @@ public:
     static double StippleScale(hStyle hs);
     static double StippleScaleMm(hStyle hs);
     static std::string StipplePatternName(hStyle hs);
+    static std::string StipplePatternName(StipplePattern stippleType);
     static StipplePattern StipplePatternFromString(std::string name);
 
     std::string DescriptionString() const;
