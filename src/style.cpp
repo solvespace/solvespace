@@ -414,7 +414,7 @@ std::string Style::StipplePatternName(StipplePattern stippleType) {
         case StipplePattern::ZIGZAG:       return "ZigZag";
     }
 
-    return "CONTINUOUS";
+    return "Continuous";
 }
 
 double Style::StippleScale(hStyle hs) {
