@@ -428,6 +428,13 @@ msgstr ""
 msgid "click center of comment text"
 msgstr ""
 
+#: constraint.cpp:783
+msgid "Bad selection for comment constraint. This constraint can apply to:\n"
+"\n"
+"    * a point\n"
+"    * no selection (free comment)\n"
+msgstr ""
+
 #: export.cpp:19
 msgid ""
 "No solid model present; draw one with extrudes and revolves, or use Export 2d View to export bare "

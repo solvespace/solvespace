@@ -767,10 +767,25 @@ void Constraint::MenuConstrain(Command id) {
             break;
 
         case Command::COMMENT:
-            SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
-            SS.GW.pending.command = Command::COMMENT;
-            SS.GW.pending.description = _("click center of comment text");
-            SS.ScheduleShowTW();
+            if(gs.n == 0) {
+                SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
+                SS.GW.pending.command = Command::COMMENT;
+                SS.GW.pending.description = _("click center of comment text");
+                SS.ScheduleShowTW();
+            } else if(gs.points == 1 && gs.n == 1) {
+                c.type = Type::COMMENT;
+                c.ptA = gs.point[0];
+                c.group       = SS.GW.activeGroup;
+                c.workplane   = SS.GW.ActiveWorkplane();
+                c.comment     = _("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
+                AddConstraint(&c);
+            } else {
+                Error(_("Bad selection for comment constraint. "
+                        "This constraint can apply to:\n\n"
+                        "    * a point\n"
+                        "    * no selection (free comment)\n"));
+                return;
+            }
             break;
 
         default: ssassert(false, "Unexpected menu ID");
