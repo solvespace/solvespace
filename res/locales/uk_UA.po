@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
-"Report-Msgid-Bugs-To: https://github.com/solvespace/solvespace/issues\n"
-"POT-Creation-Date: 2021-02-01 15:45+0200\n"
+"Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
+"POT-Creation-Date: 2021-05-10 16:29+0300\n"
 "PO-Revision-Date: 2021-04-14 01:42+0300\n"
 "Last-Translator: https://github.com/Symbian9\n"
 "Language-Team: app4soft\n"
@@ -62,15 +62,15 @@ msgstr "Забагато об'єктів для вставки; рзділіть
 msgid "No workplane active."
 msgstr "Немає активної площини."
 
-#: confscreen.cpp:418
+#: confscreen.cpp:416
 msgid "Bad format: specify coordinates as x, y, z"
 msgstr "Некоректний формат: визначте координати X, Y, Z"
 
-#: confscreen.cpp:428 style.cpp:659 textscreens.cpp:805
+#: confscreen.cpp:426 style.cpp:730 textscreens.cpp:805
 msgid "Bad format: specify color as r, g, b"
 msgstr "Некоректний формат: визначте колір як R, G, B"
 
-#: confscreen.cpp:454
+#: confscreen.cpp:452
 #, fuzzy
 msgid ""
 "The perspective factor will have no effect until you enable View -> Use "
@@ -79,24 +79,24 @@ msgstr ""
 "Значення перспективи не матиме ефекту допоки не ввімкнено Вигляд -> "
 "Використовувати Перспективну проєкцію."
 
-#: confscreen.cpp:467 confscreen.cpp:477
+#: confscreen.cpp:465 confscreen.cpp:475
 #, c-format
 msgid "Specify between 0 and %d digits after the decimal."
 msgstr "Визначте кількість десяткових знаків від 0 до %d."
 
-#: confscreen.cpp:489
+#: confscreen.cpp:487
 msgid "Export scale must not be zero!"
 msgstr "Масштаб експорту не може бути нульовим!"
 
-#: confscreen.cpp:501
+#: confscreen.cpp:499
 msgid "Cutter radius offset must not be negative!"
 msgstr "Радіус відступу різання не може бути від'ємним!"
 
-#: confscreen.cpp:555
+#: confscreen.cpp:553
 msgid "Bad value: autosave interval should be positive"
 msgstr "Некоректне значення: інтервал автозбереження має бути додатнім"
 
-#: confscreen.cpp:558
+#: confscreen.cpp:556
 #, fuzzy
 msgid "Bad format: specify interval in integral minutes"
 msgstr "Некоректний формат: визначте цілим числом інтервал у хвилинах"
@@ -282,19 +282,19 @@ msgid ""
 "Constrain -> On Point before constraining tangent."
 msgstr ""
 
-#: constraint.cpp:158
+#: constraint.cpp:159
 msgid ""
 "The tangent cubic and line segment must share an endpoint. Constrain them "
 "with Constrain -> On Point before constraining tangent."
 msgstr ""
 
-#: constraint.cpp:183
+#: constraint.cpp:185
 msgid ""
 "The curves must share an endpoint. Constrain them with Constrain -> On Point "
 "before constraining tangent."
 msgstr ""
 
-#: constraint.cpp:231
+#: constraint.cpp:234
 msgid ""
 "Bad selection for distance / diameter constraint. This constraint can apply "
 "to:\n"
@@ -308,7 +308,7 @@ msgid ""
 "    * a circle or an arc (diameter)\n"
 msgstr ""
 
-#: constraint.cpp:284
+#: constraint.cpp:287
 msgid ""
 "Bad selection for on point / curve / plane constraint. This constraint can "
 "apply to:\n"
@@ -320,7 +320,7 @@ msgid ""
 "    * a point and a plane face (point on face)\n"
 msgstr ""
 
-#: constraint.cpp:346
+#: constraint.cpp:349
 msgid ""
 "Bad selection for equal length / radius constraint. This constraint can "
 "apply to:\n"
@@ -336,14 +336,14 @@ msgid ""
 "    * a line segment and an arc (line segment length equals arc length)\n"
 msgstr ""
 
-#: constraint.cpp:385
+#: constraint.cpp:388
 msgid ""
 "Bad selection for length ratio constraint. This constraint can apply to:\n"
 "\n"
 "    * two line segments\n"
 msgstr ""
 
-#: constraint.cpp:402
+#: constraint.cpp:405
 msgid ""
 "Bad selection for length difference constraint. This constraint can apply "
 "to:\n"
@@ -351,7 +351,7 @@ msgid ""
 "    * two line segments\n"
 msgstr ""
 
-#: constraint.cpp:428
+#: constraint.cpp:434
 msgid ""
 "Bad selection for at midpoint constraint. This constraint can apply to:\n"
 "\n"
@@ -359,7 +359,7 @@ msgid ""
 "    * a line segment and a workplane (line's midpoint on plane)\n"
 msgstr ""
 
-#: constraint.cpp:486
+#: constraint.cpp:492
 msgid ""
 "Bad selection for symmetric constraint. This constraint can apply to:\n"
 "\n"
@@ -371,19 +371,19 @@ msgid ""
 "workplane)\n"
 msgstr ""
 
-#: constraint.cpp:500
+#: constraint.cpp:507
 msgid ""
 "A workplane must be active when constraining symmetric without an explicit "
 "symmetry plane."
 msgstr ""
 
-#: constraint.cpp:530
+#: constraint.cpp:541
 msgid ""
 "Activate a workplane (with Sketch -> In Workplane) before applying a "
 "horizontal or vertical constraint."
 msgstr ""
 
-#: constraint.cpp:543
+#: constraint.cpp:554
 msgid ""
 "Bad selection for horizontal / vertical constraint. This constraint can "
 "apply to:\n"
@@ -392,7 +392,7 @@ msgid ""
 "    * a line segment\n"
 msgstr ""
 
-#: constraint.cpp:564
+#: constraint.cpp:575
 msgid ""
 "Bad selection for same orientation constraint. This constraint can apply "
 "to:\n"
@@ -400,16 +400,16 @@ msgid ""
 "    * two normals\n"
 msgstr ""
 
-#: constraint.cpp:614
+#: constraint.cpp:625
 #, fuzzy
 msgid "Must select an angle constraint."
 msgstr "Необхідно обрати кут."
 
-#: constraint.cpp:627
+#: constraint.cpp:638
 msgid "Must select a constraint with associated label."
 msgstr "Необхідно обрати обмежувач з відповідною міткою."
 
-#: constraint.cpp:638
+#: constraint.cpp:649
 msgid ""
 "Bad selection for angle constraint. This constraint can apply to:\n"
 "\n"
@@ -418,11 +418,11 @@ msgid ""
 "    * two normals\n"
 msgstr ""
 
-#: constraint.cpp:701
+#: constraint.cpp:716
 msgid "Curve-curve tangency must apply in workplane."
 msgstr ""
 
-#: constraint.cpp:711
+#: constraint.cpp:728
 msgid ""
 "Bad selection for parallel / tangent constraint. This constraint can apply "
 "to:\n"
@@ -433,7 +433,7 @@ msgid ""
 "    * two line segments, arcs, or beziers, that share an endpoint (tangent)\n"
 msgstr ""
 
-#: constraint.cpp:729
+#: constraint.cpp:746
 msgid ""
 "Bad selection for perpendicular constraint. This constraint can apply to:\n"
 "\n"
@@ -442,7 +442,7 @@ msgid ""
 "    * two normals\n"
 msgstr ""
 
-#: constraint.cpp:744
+#: constraint.cpp:761
 msgid ""
 "Bad selection for lock point where dragged constraint. This constraint can "
 "apply to:\n"
@@ -450,9 +450,21 @@ msgid ""
 "    * a point\n"
 msgstr ""
 
-#: constraint.cpp:755
+#: constraint.cpp:773
 msgid "click center of comment text"
 msgstr "клікніть в місце де буде центр коментаря"
+
+#: constraint.cpp:780 mouse.cpp:1155
+msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
+msgstr "КОМЕНТАР -- ДВІЧІ КЛІКНІТЬ ДЛЯ РЕДАГУВАННЯ"
+
+#: constraint.cpp:783
+msgid ""
+"Bad selection for comment constraint. This constraint can apply to:\n"
+"\n"
+"    * a point\n"
+"    * no selection (free comment)\n"
+msgstr ""
 
 #: export.cpp:19
 msgid ""
@@ -473,7 +485,7 @@ msgid ""
 "lines)\n"
 msgstr ""
 
-#: export.cpp:822
+#: export.cpp:818
 msgid "Active group mesh is empty; nothing to export."
 msgstr "Активна група не містить меш; немає чого експортувати."
 
@@ -1009,11 +1021,11 @@ msgstr "(нємає нещодавніх файлів)"
 msgid "File '%s' does not exist."
 msgstr "Файл '%s' відсутній."
 
-#: graphicswin.cpp:725
+#: graphicswin.cpp:728
 msgid "No workplane is active, so the grid will not appear."
 msgstr "Відсутня активна площина - сітка не відображатиметься."
 
-#: graphicswin.cpp:740
+#: graphicswin.cpp:743
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel "
 "projection.\n"
@@ -1022,91 +1034,91 @@ msgid ""
 "configuration screen. A value around 0.3 is typical."
 msgstr ""
 
-#: graphicswin.cpp:819
+#: graphicswin.cpp:822
 msgid ""
 "Select a point; this point will become the center of the view on screen."
 msgstr ""
 
-#: graphicswin.cpp:1114
+#: graphicswin.cpp:1117
 msgid "No additional entities share endpoints with the selected entities."
 msgstr ""
 
-#: graphicswin.cpp:1132
+#: graphicswin.cpp:1135
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
 msgstr ""
 
-#: graphicswin.cpp:1155
+#: graphicswin.cpp:1158
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
 msgstr ""
 
-#: graphicswin.cpp:1162
+#: graphicswin.cpp:1165
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
 msgstr ""
 
-#: graphicswin.cpp:1247
+#: graphicswin.cpp:1250
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr ""
 
-#: graphicswin.cpp:1250
+#: graphicswin.cpp:1253
 msgid ""
 "No workplane is selected, and the active group does not have a default "
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
 "workplane group."
 msgstr ""
 
-#: graphicswin.cpp:1271
+#: graphicswin.cpp:1274
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
 msgstr ""
 
-#: graphicswin.cpp:1282
+#: graphicswin.cpp:1285
 msgid "click point on arc (draws anti-clockwise)"
 msgstr ""
 
-#: graphicswin.cpp:1283
+#: graphicswin.cpp:1286
 msgid "click to place datum point"
 msgstr "клікніть для встановлення вихідної точки"
 
-#: graphicswin.cpp:1284
+#: graphicswin.cpp:1287
 msgid "click first point of line segment"
 msgstr "клікніть першу точку прямої лінії"
 
-#: graphicswin.cpp:1286
+#: graphicswin.cpp:1289
 msgid "click first point of construction line segment"
 msgstr "клікніть першу точку конструктивної прямої лінії"
 
-#: graphicswin.cpp:1287
+#: graphicswin.cpp:1290
 msgid "click first point of cubic segment"
 msgstr "клікніть першу точку кривої"
 
-#: graphicswin.cpp:1288
+#: graphicswin.cpp:1291
 msgid "click center of circle"
 msgstr "клікніть в місце де буде центр коментаря"
 
-#: graphicswin.cpp:1289
+#: graphicswin.cpp:1292
 msgid "click origin of workplane"
 msgstr "клікніть в центр відліку площини"
 
-#: graphicswin.cpp:1290
+#: graphicswin.cpp:1293
 msgid "click one corner of rectangle"
 msgstr "клікніть для встановлення першого кута прямокутника"
 
-#: graphicswin.cpp:1291
+#: graphicswin.cpp:1294
 msgid "click top left of text"
 msgstr "клікніть для встановлення верхньої лівої межі тексту"
 
-#: graphicswin.cpp:1297
+#: graphicswin.cpp:1300
 msgid "click top left of image"
 msgstr "клікніть для встановлення верхньої лівої межі зображення"
 
-#: graphicswin.cpp:1309
+#: graphicswin.cpp:1326
 msgid ""
 "No entities are selected. Select entities before trying to toggle their "
 "construction state."
@@ -1269,155 +1281,151 @@ msgstr ""
 msgid "Can't split; no intersection found."
 msgstr "Неможливо розділити; відсутній перетин."
 
-#: mouse.cpp:559
+#: mouse.cpp:554
 msgid "Assign to Style"
 msgstr "Встановити Стиль"
 
-#: mouse.cpp:575
+#: mouse.cpp:570
 msgid "No Style"
 msgstr "Без Стилю"
 
-#: mouse.cpp:578
+#: mouse.cpp:573
 msgid "Newly Created Custom Style..."
 msgstr "Створити Користувацький Стиль..."
 
-#: mouse.cpp:585
+#: mouse.cpp:580
 msgid "Group Info"
 msgstr "Параметри Групи"
 
-#: mouse.cpp:605
+#: mouse.cpp:600
 msgid "Style Info"
 msgstr "Параметри Стилю"
 
-#: mouse.cpp:625
+#: mouse.cpp:620
 msgid "Select Edge Chain"
 msgstr "Виділити Ланцюг Ребер"
 
-#: mouse.cpp:631
+#: mouse.cpp:626
 msgid "Toggle Reference Dimension"
 msgstr "Перемкнути Відносність Розміру"
 
-#: mouse.cpp:637
+#: mouse.cpp:632
 msgid "Other Supplementary Angle"
 msgstr "Інший Суміжний Кут"
 
-#: mouse.cpp:642
+#: mouse.cpp:637
 msgid "Snap to Grid"
 msgstr "Прикріпити до Сітки"
 
-#: mouse.cpp:651
+#: mouse.cpp:646
 msgid "Remove Spline Point"
 msgstr "Видалити Точку Сплайну"
 
-#: mouse.cpp:686
+#: mouse.cpp:681
 msgid "Add Spline Point"
 msgstr "Додати Точку Сплайну"
 
-#: mouse.cpp:690
+#: mouse.cpp:685
 msgid "Cannot add spline point: maximum number of points reached."
 msgstr ""
 "Неможливо додати точку сплайна: перевищено максимальну кількість точок."
 
-#: mouse.cpp:715
+#: mouse.cpp:710
 msgid "Toggle Construction"
 msgstr "Пермкнути Конструктивність"
 
-#: mouse.cpp:730
+#: mouse.cpp:725
 msgid "Delete Point-Coincident Constraint"
 msgstr "Роз'єднати З'єднання Точок"
 
-#: mouse.cpp:749
+#: mouse.cpp:744
 msgid "Cut"
 msgstr "Вирізати"
 
-#: mouse.cpp:751
+#: mouse.cpp:746
 msgid "Copy"
 msgstr "Копіювати"
 
-#: mouse.cpp:755
+#: mouse.cpp:750
 msgid "Select All"
 msgstr "Виділити Усе"
 
-#: mouse.cpp:760
+#: mouse.cpp:755
 msgid "Paste"
 msgstr "Вставити"
 
-#: mouse.cpp:762
+#: mouse.cpp:757
 msgid "Paste Transformed..."
 msgstr "Вставити Трансформованим..."
 
-#: mouse.cpp:767
+#: mouse.cpp:762
 msgid "Delete"
 msgstr "Видалити"
 
-#: mouse.cpp:770
+#: mouse.cpp:765
 msgid "Unselect All"
 msgstr "Зняти Виділення з Усього"
 
-#: mouse.cpp:777
+#: mouse.cpp:772
 msgid "Unselect Hovered"
 msgstr "Зняти Виділення з Наведеного"
 
-#: mouse.cpp:786
+#: mouse.cpp:781
 msgid "Zoom to Fit"
 msgstr "Умістити на Екрані"
 
-#: mouse.cpp:988 mouse.cpp:1275
+#: mouse.cpp:983 mouse.cpp:1271
 msgid "click next point of line, or press Esc"
 msgstr "клікніть наступну точку лінії або натисніть Esc"
 
-#: mouse.cpp:994
+#: mouse.cpp:989
 msgid ""
 "Can't draw rectangle in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr ""
 
-#: mouse.cpp:1028
+#: mouse.cpp:1023
 msgid "click to place other corner of rectangle"
 msgstr "клікніть для встановлення іншого кута прямокутника"
 
-#: mouse.cpp:1048
+#: mouse.cpp:1044
 msgid "click to set radius"
 msgstr "клікніть для визначення радіусу"
 
-#: mouse.cpp:1053
+#: mouse.cpp:1049
 msgid ""
 "Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr ""
 
-#: mouse.cpp:1072
+#: mouse.cpp:1068
 msgid "click to place point"
 msgstr "клікніть для встановлення точки"
 
-#: mouse.cpp:1088
+#: mouse.cpp:1084
 msgid "click next point of cubic, or press Esc"
 msgstr "клікніть наступну точку кривої або натисніть Esc"
 
-#: mouse.cpp:1093
+#: mouse.cpp:1089
 msgid ""
 "Sketching in a workplane already; sketch in 3d before creating new workplane."
 msgstr ""
 
-#: mouse.cpp:1109
+#: mouse.cpp:1105
 msgid ""
 "Can't draw text in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr ""
 
-#: mouse.cpp:1126
+#: mouse.cpp:1122
 msgid "click to place bottom right of text"
 msgstr "клікніть для встановлення нижньої правої межі тексту"
 
-#: mouse.cpp:1132
+#: mouse.cpp:1128
 msgid ""
 "Can't draw image in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr ""
-
-#: mouse.cpp:1159
-msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
-msgstr "КОМЕНТАР -- ДВІЧІ КЛІКНІТЬ ДЛЯ РЕДАГУВАННЯ"
 
 #: platform/gui.cpp:85 platform/gui.cpp:89 solvespace.cpp:511
 msgctxt "file-type"
@@ -1504,33 +1512,33 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "Comma-separated values"
 
-#: platform/guigtk.cpp:1324 platform/guimac.mm:1363 platform/guiwin.cpp:1639
+#: platform/guigtk.cpp:1367 platform/guimac.mm:1363 platform/guiwin.cpp:1641
 msgid "untitled"
 msgstr "без імені"
 
-#: platform/guigtk.cpp:1335 platform/guigtk.cpp:1368 platform/guimac.mm:1321
-#: platform/guiwin.cpp:1582
+#: platform/guigtk.cpp:1378 platform/guigtk.cpp:1411 platform/guimac.mm:1321
+#: platform/guiwin.cpp:1639
 msgctxt "title"
 msgid "Save File"
 msgstr "Зберегти Файл"
 
-#: platform/guigtk.cpp:1336 platform/guigtk.cpp:1369 platform/guimac.mm:1304
-#: platform/guiwin.cpp:1584
+#: platform/guigtk.cpp:1379 platform/guigtk.cpp:1412 platform/guimac.mm:1304
+#: platform/guiwin.cpp:1645
 msgctxt "title"
 msgid "Open File"
 msgstr "Відкрити Файл"
 
-#: platform/guigtk.cpp:1339 platform/guigtk.cpp:1375
+#: platform/guigtk.cpp:1382 platform/guigtk.cpp:1418
 msgctxt "button"
 msgid "_Cancel"
 msgstr "_Скасувати"
 
-#: platform/guigtk.cpp:1340 platform/guigtk.cpp:1373
+#: platform/guigtk.cpp:1383 platform/guigtk.cpp:1416
 msgctxt "button"
 msgid "_Save"
 msgstr "_Зберегти"
 
-#: platform/guigtk.cpp:1341 platform/guigtk.cpp:1374
+#: platform/guigtk.cpp:1384 platform/guigtk.cpp:1417
 msgctxt "button"
 msgid "_Open"
 msgstr "_Відкрити"
@@ -1808,7 +1816,7 @@ msgstr ""
 "\n"
 "© 2008-%d Jonathan Westhues та інші автори.\n"
 
-#: style.cpp:166
+#: style.cpp:185
 msgid ""
 "Can't assign style to an entity that's derived from another entity; try "
 "assigning a style to this entity's parent."
@@ -1816,7 +1824,7 @@ msgstr ""
 "Неможливо призначити стиль елементу який походить від іншого елемента; "
 "спробуйте призначити стиль батьківському елементу."
 
-#: style.cpp:665
+#: style.cpp:736
 msgid "Style name cannot be empty"
 msgstr "Стиль не може містити порожнє ім'я"
 
