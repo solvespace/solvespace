@@ -1189,8 +1189,13 @@ s:
                 }
                 hcs = canvas->GetStroke(stroke);
             }
-            DoLabel(canvas, hcs, disp.offset, labelPos, u, v);
-            if(refs) refs->push_back(disp.offset);
+            Vector ref = disp.offset;
+            if(ptA.v) {
+                Vector a = SK.GetEntity(ptA)->PointGetNum();
+                ref = a.Plus(disp.offset);
+            }
+            DoLabel(canvas, hcs, ref, labelPos, u, v);
+            if(refs) refs->push_back(ref);
             return;
         }
     }
