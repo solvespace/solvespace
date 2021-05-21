@@ -199,7 +199,7 @@ else()
             RENAME      solvespace.svg)
         install(FILES freedesktop/solvespace-scalable.svg
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/mimetypes
-            RENAME      application.x-solvespace.svg)
+            RENAME      application-x-solvespace.svg)
 
         foreach(SIZE 16x16 24x24 32x32 48x48)
             install(FILES freedesktop/solvespace-${SIZE}.png
@@ -207,7 +207,7 @@ else()
                 RENAME      solvespace.png)
             install(FILES freedesktop/solvespace-${SIZE}.png
                 DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/mimetypes
-                RENAME      application.x-solvespace.png)
+                RENAME      application-x-solvespace.png)
         endforeach()
     endif()
 endif()
