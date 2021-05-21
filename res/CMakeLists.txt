@@ -209,11 +209,6 @@ else()
                 DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/mimetypes
                 RENAME      application.x-solvespace.png)
         endforeach()
-
-        foreach(SIZE 16x16 24x24 32x32 48x48)
-            install(FILES freedesktop/solvespace-${SIZE}.xpm
-                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pixmaps)
-        endforeach()
     endif()
 endif()
 
