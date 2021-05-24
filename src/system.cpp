@@ -405,17 +405,17 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
 
-    int i;
     bool rankOk;
 
 /*
+    int x;
     dbp("%d equations", eq.n);
-    for(i = 0; i < eq.n; i++) {
-        dbp("  %.3f = %s = 0", eq[i].e->Eval(), eq[i].e->Print());
+    for(x = 0; x < eq.n; x++) {
+        dbp("  %.3f = %s = 0", eq[x].e->Eval(), eq[x].e->Print());
     }
     dbp("%d parameters", param.n);
-    for(i = 0; i < param.n; i++) {
-        dbp("   param %08x at %.3f", param[i].h.v, param[i].val);
+    for(x = 0; x < param.n; x++) {
+        dbp("   param %08x at %.3f", param[x].h.v, param[x].val);
     } */
 
     // All params and equations are assigned to group zero.
@@ -495,7 +495,7 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
 
 didnt_converge:
     SK.constraint.ClearTags();
-    for(i = 0; i < mat.eq.size(); i++) {
+    for(size_t i = 0; i < mat.eq.size(); i++) {
         if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE || IsReasonable(mat.B.num[i])) {
             // This constraint is unsatisfied.
             if(!mat.eq[i]->h.isFromConstraint()) continue;
