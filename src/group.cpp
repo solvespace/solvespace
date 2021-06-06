@@ -138,12 +138,26 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
                         g.predef.q = wrkplg->predef.q;
                     } else ssassert(false, "Unexpected workplane subtype");
                 }
+            } else if(gs.anyNormals == 1 && gs.points == 1 && gs.n == 2) {
+                g.subtype = Subtype::WORKPLANE_BY_POINT_ORTHO;
+                Vector direction = SK.GetEntity(gs.anyNormal[0])->VectorGetNum();
+                g.predef.q       = Quaternion::From(direction, 0);
+                g.predef.origin  = gs.point[0];
+            } else if(gs.faces == 1 && gs.points == 1 && gs.n == 2) {
+                g.subtype = Subtype::WORKPLANE_BY_POINT_ORTHO;
+                Vector direction = SK.GetEntity(gs.face[0])->FaceGetNormalNum();
+                g.predef.q       = Quaternion::From(direction, 0);
+                g.predef.origin  = gs.point[0];
             } else {
                 Error(_("Bad selection for new sketch in workplane. This "
                         "group can be created with:\n\n"
                         "    * a point (through the point, orthogonal to coordinate axes)\n"
                         "    * a point and two line segments (through the point, "
-                               "parallel to the lines)\n"
+                        "parallel to the lines)\n"
+                        "    * a point and a normal (through the point, "
+                        "orthogonal to the normal)\n"
+                        "    * a point and a face (through the point, "
+                        "parallel to the face)\n"
                         "    * a workplane (copy of the workplane)\n"));
                 return;
             }
