@@ -139,15 +139,13 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
                     } else ssassert(false, "Unexpected workplane subtype");
                 }
             } else if(gs.anyNormals == 1 && gs.points == 1 && gs.n == 2) {
-                g.subtype = Subtype::WORKPLANE_BY_POINT_ORTHO;
-                Vector direction = SK.GetEntity(gs.anyNormal[0])->VectorGetNum();
-                g.predef.q       = Quaternion::From(direction, 0);
-                g.predef.origin  = gs.point[0];
-            } else if(gs.faces == 1 && gs.points == 1 && gs.n == 2) {
-                g.subtype = Subtype::WORKPLANE_BY_POINT_ORTHO;
-                Vector direction = SK.GetEntity(gs.face[0])->FaceGetNormalNum();
-                g.predef.q       = Quaternion::From(direction, 0);
-                g.predef.origin  = gs.point[0];
+                g.subtype       = Subtype::WORKPLANE_BY_POINT_NORMAL;
+                g.predef.q      = SK.GetEntity(gs.anyNormal[0])->NormalGetNum();
+                g.predef.origin = gs.point[0];
+            //} else if(gs.faces == 1 && gs.points == 1 && gs.n == 2) {
+            //    g.subtype = Subtype::WORKPLANE_BY_POINT_FACE;
+            //    g.predef.q      = SK.GetEntity(gs.face[0])->NormalGetNum();
+            //    g.predef.origin = gs.point[0];
             } else {
                 Error(_("Bad selection for new sketch in workplane. This "
                         "group can be created with:\n\n"
@@ -156,8 +154,8 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
                         "parallel to the lines)\n"
                         "    * a point and a normal (through the point, "
                         "orthogonal to the normal)\n"
-                        "    * a point and a face (through the point, "
-                        "parallel to the face)\n"
+                        /*"    * a point and a face (through the point, "
+                        "parallel to the face)\n"*/
                         "    * a workplane (copy of the workplane)\n"));
                 return;
             }
@@ -454,7 +452,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 if(predef.negateU) u = u.ScaledBy(-1);
                 if(predef.negateV) v = v.ScaledBy(-1);
                 q = Quaternion::From(u, v);
-            } else if(subtype == Subtype::WORKPLANE_BY_POINT_ORTHO) {
+            } else if(subtype == Subtype::WORKPLANE_BY_POINT_ORTHO || subtype == Subtype::WORKPLANE_BY_POINT_NORMAL /*|| subtype == Subtype::WORKPLANE_BY_POINT_FACE*/) {
                 // Already given, numerically.
                 q = predef.q;
             } else ssassert(false, "Unexpected workplane subtype");
@@ -462,6 +460,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             Entity normal = {};
             normal.type = Entity::Type::NORMAL_N_COPY;
             normal.numNormal = q;
+
             normal.point[0] = h.entity(2);
             normal.group = h;
             normal.h = h.entity(1);
