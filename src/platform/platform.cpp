@@ -321,15 +321,16 @@ static std::string FilesystemNormalize(const std::string &str) {
     std::transform(strW.begin(), strW.end(), strW.begin(), towlower);
     return Narrow(strW);
 #elif defined(__APPLE__)
-    CFMutableStringRef cfStr =
-        CFStringCreateMutableCopy(NULL, 0,
-            CFStringCreateWithBytesNoCopy(NULL, (const UInt8*)str.data(), str.size(),
-                kCFStringEncodingUTF8, /*isExternalRepresentation=*/false, kCFAllocatorNull));
-    CFStringLowercase(cfStr, NULL);
+    CFStringRef cfStr = CFStringCreateWithBytesNoCopy(NULL, (const UInt8*)str.data(), str.size(),
+                kCFStringEncodingUTF8, /*isExternalRepresentation=*/false, kCFAllocatorNull);
+    CFMutableStringRef cfmStr = CFStringCreateMutableCopy(NULL, 0, cfStr);
+    CFStringLowercase(cfmStr, NULL);
     std::string normalizedStr;
-    normalizedStr.resize(CFStringGetMaximumSizeOfFileSystemRepresentation(cfStr));
-    CFStringGetFileSystemRepresentation(cfStr, &normalizedStr[0], normalizedStr.size());
+    normalizedStr.resize(CFStringGetMaximumSizeOfFileSystemRepresentation(cfmStr));
+    CFStringGetFileSystemRepresentation(cfmStr, &normalizedStr[0], normalizedStr.size());
     normalizedStr.erase(normalizedStr.find('\0'));
+    CFRelease(cfmStr);
+    CFRelease(cfStr);
     return normalizedStr;
 #else
     return str;
