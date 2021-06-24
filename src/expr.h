@@ -73,6 +73,7 @@ public:
     void ParamsUsedList(List<hParam> *list) const;
     bool DependsOn(hParam p) const;
     static bool Tol(double a, double b);
+    bool IsZeroConst() const;
     Expr *FoldConstants();
     void Substitute(hParam oldh, hParam newh);
 

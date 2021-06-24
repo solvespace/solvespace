@@ -430,6 +430,11 @@ bool Expr::DependsOn(hParam p) const {
 bool Expr::Tol(double a, double b) {
     return fabs(a - b) < 0.001;
 }
+
+bool Expr::IsZeroConst() const {
+    return op == Op::CONSTANT && EXACT(v == 0.0);
+}
+
 Expr *Expr::FoldConstants() {
     Expr *n = AllocExpr();
     *n = *this;
