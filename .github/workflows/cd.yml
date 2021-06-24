@@ -69,7 +69,7 @@ jobs:
         with:
           name: windows
           path: build/bin/RelWithDebInfo/solvespace.exe
-  
+
   build_release_windows_openmp:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Build Release Windows (OpenMP)
