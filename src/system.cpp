@@ -58,6 +58,7 @@ void System::WriteJacobian(int tag) {
             if(pd->IsZeroConst()) continue;
             mat.A.sym->insert(i, j->second) = pd;
         }
+        paramsUsed.Clear();
         mat.B.sym.push_back(f);
     }
 }
