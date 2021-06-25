@@ -764,7 +764,11 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                     SS.TW.stepDim.isDistance =
                         (c->type != Constraint::Type::ANGLE) &&
                         (c->type != Constraint::Type::LENGTH_RATIO) &&
-                        (c->type != Constraint::Type::LENGTH_DIFFERENCE);
+                        (c->type != Constraint::Type::ARC_ARC_LEN_RATIO) &&
+                        (c->type != Constraint::Type::ARC_LINE_LEN_RATIO) &&
+                        (c->type != Constraint::Type::LENGTH_DIFFERENCE) &&
+                        (c->type != Constraint::Type::ARC_ARC_DIFFERENCE) &&
+                        (c->type != Constraint::Type::ARC_LINE_DIFFERENCE) ;
                     SS.TW.shown.constraint = c->h;
                     SS.TW.shown.screen = TextWindow::Screen::STEP_DIMENSION;
 

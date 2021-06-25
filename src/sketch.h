@@ -673,7 +673,10 @@ public:
         CURVE_CURVE_TANGENT    = 125,
         EQUAL_RADIUS           = 130,
         WHERE_DRAGGED          = 200,
-
+        ARC_ARC_LEN_RATIO      = 210,
+        ARC_LINE_LEN_RATIO     = 211,
+        ARC_ARC_DIFFERENCE     = 212,
+        ARC_LINE_DIFFERENCE    = 213,
         COMMENT                = 1000
     };
 
