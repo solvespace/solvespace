@@ -1373,7 +1373,7 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
                 value /= 2;
 
             // Try showing value with default number of digits after decimal first.
-            if(c->type == Constraint::Type::LENGTH_RATIO) {
+            if(c->type == Constraint::Type::LENGTH_RATIO || c->type == Constraint::Type::ARC_ARC_LEN_RATIO || c->type == Constraint::Type::ARC_LINE_LEN_RATIO) {
                 editValue = ssprintf("%.3f", value);
             } else if(c->type == Constraint::Type::ANGLE) {
                 editValue = SS.DegreeToString(value);
@@ -1434,7 +1434,9 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
             case Constraint::Type::PT_LINE_DISTANCE:
             case Constraint::Type::PT_FACE_DISTANCE:
             case Constraint::Type::PT_PLANE_DISTANCE:
-            case Constraint::Type::LENGTH_DIFFERENCE: {
+            case Constraint::Type::LENGTH_DIFFERENCE:
+            case Constraint::Type::ARC_ARC_DIFFERENCE:
+            case Constraint::Type::ARC_LINE_DIFFERENCE: {
                 // The sign is not displayed to the user, but this is a signed
                 // distance internally. To flip the sign, the user enters a
                 // negative distance.
@@ -1448,6 +1450,8 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
             }
             case Constraint::Type::ANGLE:
             case Constraint::Type::LENGTH_RATIO:
+            case Constraint::Type::ARC_ARC_LEN_RATIO:
+            case Constraint::Type::ARC_LINE_LEN_RATIO:
                 // These don't get the units conversion for distance, and
                 // they're always positive
                 c->valA = fabs(e->Eval());
