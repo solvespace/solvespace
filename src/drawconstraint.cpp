@@ -12,7 +12,7 @@ std::string Constraint::Label() const {
     std::string result;
     if(type == Type::ANGLE) {
         result = SS.DegreeToString(valA) + "°";
-    } else if(type == Type::LENGTH_RATIO) {
+    } else if(type == Type::LENGTH_RATIO || type == Type::ARC_ARC_LEN_RATIO || type == Type::ARC_LINE_LEN_RATIO) {
         result = ssprintf("%.3f:1", valA);
     } else if(type == Type::COMMENT) {
         result = comment;
@@ -1000,7 +1000,43 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
             }
             return;
         }
+        case Type::ARC_ARC_LEN_RATIO:
+        case Type::ARC_ARC_DIFFERENCE: {
+            Entity *circle = SK.GetEntity(entityA);
+            Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
+            Quaternion q = SK.GetEntity(circle->normal)->NormalGetNum();
+            Vector n = q.RotationN().WithMagnitude(1);
+            double r = circle->CircleGetRadiusNum();
 
+            Vector ref2;
+            DoEqualRadiusTicks(canvas, hcs, entityA, &ref2);
+            DoEqualRadiusTicks(canvas, hcs, entityB, &ref2);
+            
+            Vector ref = center.Plus(disp.offset);
+            // Force the label into the same plane as the circle.
+            ref = ref.Minus(n.ScaledBy(n.Dot(ref) - n.Dot(center)));
+            if(refs) refs->push_back(ref);
+            Vector topLeft;
+            DoLabel(canvas, hcs, ref, &topLeft, gr, gu);
+            if(labelPos) *labelPos = topLeft;
+            return;
+        }
+        case Type::ARC_LINE_LEN_RATIO:
+        case Type::ARC_LINE_DIFFERENCE: {
+            Vector a, b = Vector::From(0, 0, 0);
+            Vector ref;
+            Entity *e = SK.GetEntity(entityA);
+            a = SK.GetEntity(e->point[0])->PointGetNum();
+            b = SK.GetEntity(e->point[1])->PointGetNum();
+            DoEqualLenTicks(canvas, hcs, a, b, gn, &ref);
+            if(refs) refs->push_back(ref);
+            DoEqualRadiusTicks(canvas, hcs, entityB, &ref);
+            if(refs) refs->push_back(ref);
+            ref = ((a.Plus(b)).ScaledBy(0.5)).Plus(disp.offset);
+            DoLabel(canvas, hcs, ref, labelPos, gr, gu);
+            return;
+        }
+        
         case Type::EQ_LEN_PT_LINE_D: {
             Entity *forLen = SK.GetEntity(entityA);
             Vector a = SK.GetEntity(forLen->point[0])->PointGetNum(),
@@ -1243,7 +1279,11 @@ bool Constraint::HasLabel() const {
         case Type::PT_FACE_DISTANCE:
         case Type::PROJ_PT_DISTANCE:
         case Type::LENGTH_RATIO:
+        case Type::ARC_ARC_LEN_RATIO:
+        case Type::ARC_LINE_LEN_RATIO:
         case Type::LENGTH_DIFFERENCE:
+        case Type::ARC_ARC_DIFFERENCE:
+        case Type::ARC_LINE_DIFFERENCE:
         case Type::DIAMETER:
         case Type::ANGLE:
             return true;
