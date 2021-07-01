@@ -1,6 +1,27 @@
 Changelog
 =========
 
+3.x  - since the 3.0 release, only available in edge builds
+---
+
+New Constraints:
+
+* Arc-length ratio and difference.
+* Arc & line lenfth ratio and difference.
+
+Sketching:
+
+* Allow a point and normal to define sketch-in-new-workplane
+* update property browser live while dragging the sketch
+
+MISC:
+
+* When linking ciruit boards (IDF .emn files) show keepout regions as construction entites.
+
+Performance:
+
+* more changes to the ID list implementation
+
 3.0
 ---
 
