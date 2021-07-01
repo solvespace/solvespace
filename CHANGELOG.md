@@ -6,21 +6,21 @@ Changelog
 
 New Constraints:
 
-* Arc-length ratio and difference.
-* Arc & line lenfth ratio and difference.
+* Arcs length ratio and difference.
+* Arc & Line length ratio and difference.
 
 Sketching:
 
-* Allow a point and normal to define sketch-in-new-workplane
-* update property browser live while dragging the sketch
+* Allow use of Point & Normal to define "sketch-in-new-workplane".
+* Update "Property Browser" live while dragging the sketch.
 
 MISC:
 
-* When linking ciruit boards (IDF .emn files) show keepout regions as construction entites.
+* When linking circuit boards (IDF .emn files) show keepout regions as construction entites.
 
 Performance:
 
-* more changes to the ID list implementation
+* More changes to the ID list implementation.
 
 3.0
 ---
