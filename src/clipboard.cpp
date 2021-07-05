@@ -281,7 +281,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             }
             case Constraint::Type::HORIZONTAL:
             case Constraint::Type::VERTICAL:
-                // When rotating 90 or 270 degrees, swap the vertical / horizontal constaints
+                // When rotating 90 or 270 degrees, swap the vertical / horizontal constraints
                 if (EXACT(fmod(theta + (PI/2), PI) == 0)) {
                     if(c.type == Constraint::Type::HORIZONTAL) {
                         c.type = Constraint::Type::VERTICAL;

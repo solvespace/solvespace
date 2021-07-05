@@ -579,7 +579,7 @@ void TextWindow::ShowGroupSolveInfo() {
     }
 
     if(g->solved.timeout) {
-        Printf(true,  "%FxSome items in list have been ommitted%Fd");
+        Printf(true,  "%FxSome items in list have been omitted%Fd");
         Printf(false,  "%Fxbecause the operation timed out.%Fd");
     }
 
