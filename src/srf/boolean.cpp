@@ -29,7 +29,7 @@ void SCurve::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const {
     }
 }
 
-// We will be inserting other curve verticies into our curves to split them.
+// We will be inserting other curve vertices into our curves to split them.
 // This is helpful when curved surfaces become tangent along a trim and the
 // usual tests for curve-surface intersection don't split the curve at a vertex.
 // This is faster than the previous version that split at surface corners and
@@ -796,7 +796,7 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type) {
     b->MakeClassifyingBsps(NULL);
 
     // Copy over all the original curves, splitting them so that a
-    // piecwise linear segment never crosses a surface from the other
+    // piecewise linear segment never crosses a surface from the other
     // shell.
     a->CopyCurvesSplitAgainst(/*opA=*/true,  b, this);
     b->CopyCurvesSplitAgainst(/*opA=*/false, a, this);

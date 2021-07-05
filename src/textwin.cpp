@@ -348,8 +348,8 @@ void TextWindow::ClearScreen() {
     rows = 0;
 }
 
-// This message was addded when someone had too many fonts for the text window
-// Scrolling seemed to be broken, but was actaully at the MAX_ROWS.
+// This message was added when someone had too many fonts for the text window
+// Scrolling seemed to be broken, but was actually at the MAX_ROWS.
 static const char* endString = "    **** End of Text Screen ****";
 
 void TextWindow::Printf(bool halfLine, const char *fmt, ...) {

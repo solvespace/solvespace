@@ -9,25 +9,25 @@ by pointers from the entity (font, extra points, etc...)
 
 Entities in a sketch are kept in a global array (IdList) referenced by a unique
 Id (handle) and can be looked up by Id in log(n) time via binary search. In
-order to use binary seach the array must be kept in order sorted by Id. One
+order to use binary search the array must be kept in order sorted by Id. One
 problem is that insertion takes O(n) time because half the list (on average)
 must be shifted to make room for a new item.
 
-The IdList class is a template and is used for more than entites.
+The IdList class is a template and is used for more than entities.
 
 EntityMap:
 ==========
 Another important structure is the EntityMap and EntityKey defined in sketch.h
 This is what allows SovleSpace to update groups when earlier groups in the
 sketch are changed. If a rectangle is extruded to a box and items are
-constrained to entites on that box, the user can go back to the sketch and
-modify it. Entites can be added, modified an even deleted. So long as the
-entites that are later used to build upon are kept the later extrude group will
+constrained to entities on that box, the user can go back to the sketch and
+modify it. Entities can be added, modified an even deleted. So long as the
+entities that are later used to build upon are kept the later extrude group will
 pick up the changes from the 2D sketch and anything build on it will remain.
 
 The way this works is that each group has a member called remap, which is one of
 these maps. This is where my understanding is fuzzy. At the end of Group.cpp is
-a function called Group::CopyEntity() which is used to make new sketch entites
+a function called Group::CopyEntity() which is used to make new sketch entities
 when a group is created. These are generally copies of entities in the previous
 group, but there are exceptions. A point will be used to generate a line when
 extruding a 2D sketch. A point will also be "copied" to a circle for a Lathe
@@ -35,7 +35,7 @@ group. For this reason, the entity key is derived by combining its previous key
 with something often called the CopyNumber or just remap (unfortunate).
 
 When a group is regenerated (the first time, or after a previous one is
-modified) entites are copied from the old group to the new one. For Step
+modified) entities are copied from the old group to the new one. For Step
 Translating and Rotating there may be many copies, and the copy number is
 literally N for the Nth copy except for the last one which gets an enum - it is
 common to constrain the last item, so it gets a large unique number so that
@@ -45,5 +45,5 @@ Remap that was created the same way. This is how constructions are preserved
 across underlying changes.
 
 There are some hard limits used in the hash table for the remap mechanism which
-limit the number of entites in a group (but not the global sketch).
+limit the number of entities in a group (but not the global sketch).
 

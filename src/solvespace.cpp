@@ -349,7 +349,7 @@ static const char *DimToString(int dim) {
 }
 static std::pair<int, std::string> SelectSIPrefixMm(int ord, int dim) {
 // decide what units to use depending on the order of magnitude of the
-// measure in meters and the dimmension (1,2,3 lenear, area, volume)
+// measure in meters and the dimension (1,2,3 lenear, area, volume)
     switch(dim) {
         case 0:
         case 1:
