@@ -16,7 +16,7 @@ Sketching:
 
 MISC:
 
-* When linking circuit boards (IDF .emn files) show keepout regions as construction entites.
+* When linking circuit boards (IDF .emn files) show keepout regions as construction entities.
 
 Performance:
 
