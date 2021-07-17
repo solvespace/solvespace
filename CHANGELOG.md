@@ -4,10 +4,11 @@ Changelog
 3.x  - since the 3.0 release, only available in edge builds
 ---
 
-New Constraints:
+Constraints:
 
 * Arcs length ratio and difference.
 * Arc & Line length ratio and difference.
+* Allow comments to be associated with point entities.
 
 Sketching:
 
