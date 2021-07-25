@@ -813,6 +813,12 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         AddEq(l, (EC(axis.z))->Minus(EP(6)), 5);
 #undef EC
 #undef EP
+        if(type == Type::HELIX) {
+            if(valB != 0.0) {
+                AddEq(l, Expr::From(h.param(7))->Times(Expr::From(PI))->
+                Minus(Expr::From(h.param(3))->Times(Expr::From(valB))), 6);
+            }
+        }
     } else if(type == Type::EXTRUDE) {
         if(predef.entityB != Entity::FREE_IN_3D) {
             // The extrusion path is locked along a line, normal to the

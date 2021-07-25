@@ -299,6 +299,23 @@ void TextWindow::ScreenChangeGroupScale(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::GROUP_SCALE;
     SS.TW.edit.group.v = v;
 }
+void TextWindow::ScreenChangeHelixPitch(int link, uint32_t v) {
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+    double pitch = g->valB/SS.MmPerUnit();
+    SS.TW.ShowEditControl(3, ssprintf("%.8f", pitch));
+    SS.TW.edit.meaning = Edit::HELIX_PITCH;
+    SS.TW.edit.group.v = v;
+}
+void TextWindow::ScreenChangePitchOption(int link, uint32_t v) {
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+    if(g->valB == 0.0) {
+        g->valB = SK.GetParam(g->h.param(7))->val * PI /
+              (SK.GetParam(g->h.param(3))->val);
+    } else {
+        g->valB = 0.0;
+    }
+    SS.GW.Invalidate();
+}
 void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
     SS.UndoRemember();
 
@@ -397,6 +414,26 @@ void TextWindow::ShowGroupInfo() {
         Printf(true, "???");
     }
     Printf(false, "");
+
+    if(g->type == Group::Type::HELIX) {
+        Printf(false, "%Ft pitch - length per turn%E");
+
+        if (fabs(g->valB) != 0.0) {
+            Printf(false, "  %Ba %# %Fl%Ll%f%D[change]%E",
+            g->valB / SS.MmPerUnit(),
+            &TextWindow::ScreenChangeHelixPitch, g->h.v);
+        } else {
+            Printf(false, "  %Ba %# %E",
+              SK.GetParam(g->h.param(7))->val * PI /
+              ( (SK.GetParam(g->h.param(3))->val) * SS.MmPerUnit() ),
+              &TextWindow::ScreenChangeHelixPitch, g->h.v);
+        }
+        Printf(false, "   %Fd%f%LP%s  fixed",
+            &TextWindow::ScreenChangePitchOption,
+            g->valB != 0 ? CHECK_TRUE : CHECK_FALSE);
+
+        Printf(false, ""); // blank line    
+    }
 
     if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
        g->type == Group::Type::REVOLVE || g->type == Group::Type::LINKED ||
@@ -786,6 +823,15 @@ void TextWindow::EditControlDone(std::string s) {
                     g->scale = ev;
                     SS.MarkGroupDirty(g->h);
                 }
+            }
+            break;
+
+        case Edit::HELIX_PITCH:  // stored in valB
+            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
+                double ev = e->Eval();
+                Group *g = SK.GetGroup(edit.group);
+                g->valB = ev * SS.MmPerUnit();
+                SS.MarkGroupDirty(g->h);
             }
             break;
 
