@@ -342,7 +342,9 @@ public:
         VIEW_PROJ_RIGHT       = 702,
         VIEW_PROJ_UP          = 703,
         // For tangent arc
-        TANGENT_ARC_RADIUS    = 800
+        TANGENT_ARC_RADIUS    = 800,
+        // For helix pitch
+        HELIX_PITCH           = 802
     };
     struct {
         bool        showAgain;
@@ -473,6 +475,8 @@ public:
     static void ScreenChangeExprA(int link, uint32_t v);
     static void ScreenChangeGroupName(int link, uint32_t v);
     static void ScreenChangeGroupScale(int link, uint32_t v);
+    static void ScreenChangeHelixPitch(int link, uint32_t v);
+    static void ScreenChangePitchOption(int link, uint32_t v);
     static void ScreenChangeLightDirection(int link, uint32_t v);
     static void ScreenChangeLightIntensity(int link, uint32_t v);
     static void ScreenChangeLightAmbient(int link, uint32_t v);
