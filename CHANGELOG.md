@@ -12,11 +12,13 @@ Constraints:
 
 Sketching:
 
+* Added an optional "pitch" parameter to helix extrusions (in the text window)
 * Allow use of Point & Normal to define "sketch-in-new-workplane".
 * Update "Property Browser" live while dragging the sketch.
 
 MISC:
 
+* Added the ability to Link STL files.
 * When linking circuit boards (IDF .emn files) show keepout regions as construction entities.
 
 Performance:
