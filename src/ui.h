@@ -798,6 +798,8 @@ public:
     bool    showEdges;
     bool    showOutlines;
     bool    showFaces;
+    bool    showFacesDrawing;
+    bool    showFacesNonDrawing;
     bool    showMesh;
     void ToggleBool(bool *v);
 

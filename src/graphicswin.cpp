@@ -407,6 +407,8 @@ void GraphicsWindow::Init() {
     showEdges = true;
     showMesh = false;
     showOutlines = false;
+    showFacesDrawing = false;
+    showFacesNonDrawing = true;
     drawOccludedAs = DrawOccludedAs::INVISIBLE;
 
     showTextWindow = true;
@@ -1364,6 +1366,14 @@ void GraphicsWindow::ToggleBool(bool *v) {
     Group *g = SK.GetGroup(SS.GW.activeGroup);
     if(*v && (g->displayOutlines.l.IsEmpty() && (v == &showEdges || v == &showOutlines))) {
         SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
+    }
+
+    if(v == &showFaces) {
+        if(g->type == Group::Type::DRAWING_WORKPLANE || g->type == Group::Type::DRAWING_3D) {
+            showFacesDrawing = showFaces;
+        } else {
+            showFacesNonDrawing = showFaces;
+        }
     }
 
     Invalidate(/*clearPersistent=*/true);

@@ -416,11 +416,10 @@ std::string Group::DescriptionString() {
 }
 
 void Group::Activate() {
-    if(type == Type::EXTRUDE || type == Type::LINKED || type == Type::LATHE ||
-       type == Type::REVOLVE || type == Type::HELIX || type == Type::TRANSLATE || type == Type::ROTATE) {
-        SS.GW.showFaces = true;
+    if(type == Type::DRAWING_WORKPLANE || type == Type::DRAWING_3D) {
+        SS.GW.showFaces = SS.GW.showFacesDrawing;
     } else {
-        SS.GW.showFaces = false;
+        SS.GW.showFaces = SS.GW.showFacesNonDrawing;
     }
     SS.MarkGroupDirty(h); // for good measure; shouldn't be needed
     SS.ScheduleShowTW();
