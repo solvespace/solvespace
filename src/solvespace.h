@@ -36,7 +36,7 @@
 
 #define EIGEN_NO_DEBUG
 #undef Success
-#include "Eigen/SparseCore"
+#include <Eigen/SparseCore>
 
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including
@@ -245,14 +245,16 @@ public:
         // We're solving AX = B
         int m, n;
         struct {
-            Eigen::SparseMatrix<Expr*>  *sym;
-            Eigen::SparseMatrix<double> *num;
+            // This only observes the Expr - does not own them!
+            std::unique_ptr<Eigen::SparseMatrix<Expr *>> sym;
+            std::unique_ptr<Eigen::SparseMatrix<double>> num;
         } A;
 
         Eigen::VectorXd scale;
         Eigen::VectorXd X;
 
         struct {
+            // This only observes the Expr - does not own them!
             std::vector<Expr *> sym;
             Eigen::VectorXd     num;
         } B;
