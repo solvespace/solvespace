@@ -98,6 +98,7 @@ const MenuEntry Menu[] = {
 { 2, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       KR, mView },
 { 2, N_("Dimensions in M&eters"),       Command::UNITS_METERS,     0,       KR, mView },
 { 2, N_("Dimensions in &Inches"),       Command::UNITS_INCHES,     0,       KR, mView },
+{ 2, N_("Dimensions in &Feet and Inches"), Command::UNITS_FEET_INCHES, 0,   KR, mView },
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Show &Toolbar"),               Command::SHOW_TOOLBAR,     0,       KC, mView  },
 { 1, N_("Show Property Bro&wser"),      Command::SHOW_TEXT_WND,    '\t',    KC, mView  },
@@ -329,6 +330,8 @@ void GraphicsWindow::PopulateMainMenu() {
                 unitsMetersMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::UNITS_INCHES) {
                 unitsInchesMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::UNITS_FEET_INCHES) {
+                unitsFeetInchesMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::SEL_WORKPLANE) {
                 inWorkplaneMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::FREE_IN_3D) {
@@ -843,6 +846,12 @@ void GraphicsWindow::MenuView(Command id) {
             SS.GW.EnsureValidActives();
             break;
 
+        case Command::UNITS_FEET_INCHES:
+            SS.viewUnits = Unit::FEET_INCHES;
+            SS.ScheduleShowTW();
+            SS.GW.EnsureValidActives();
+            break;
+
         case Command::UNITS_MM:
             SS.viewUnits = Unit::MM;
             SS.ScheduleShowTW();
@@ -925,6 +934,7 @@ void GraphicsWindow::EnsureValidActives() {
         case Unit::MM:
         case Unit::METERS:
         case Unit::INCHES:
+        case Unit::FEET_INCHES:
             break;
         default:
             SS.viewUnits = Unit::MM;
@@ -933,6 +943,7 @@ void GraphicsWindow::EnsureValidActives() {
     unitsMmMenuItem->SetActive(SS.viewUnits == Unit::MM);
     unitsMetersMenuItem->SetActive(SS.viewUnits == Unit::METERS);
     unitsInchesMenuItem->SetActive(SS.viewUnits == Unit::INCHES);
+    unitsFeetInchesMenuItem->SetActive(SS.viewUnits == Unit::FEET_INCHES);
 
     if(SS.TW.window) SS.TW.window->SetVisible(SS.GW.showTextWindow);
     showTextWndMenuItem->SetActive(SS.GW.showTextWindow);
