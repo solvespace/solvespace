@@ -1378,7 +1378,7 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
             } else if(c->type == Constraint::Type::ANGLE) {
                 editValue = SS.DegreeToString(value);
             } else {
-                editValue = SS.MmToString(value);
+                editValue = SS.MmToString(value, true);
                 value /= SS.MmPerUnit();
             }
             // If that's not enough to represent it exactly, show the value with as many

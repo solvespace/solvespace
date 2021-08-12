@@ -89,6 +89,7 @@ enum class Command : uint32_t {
     SHOW_TOOLBAR,
     SHOW_TEXT_WND,
     UNITS_INCHES,
+    UNITS_FEET_INCHES,
     UNITS_MM,
     UNITS_METERS,
     FULL_SCREEN,
@@ -546,6 +547,7 @@ public:
     Platform::MenuItemRef unitsMmMenuItem;
     Platform::MenuItemRef unitsMetersMenuItem;
     Platform::MenuItemRef unitsInchesMenuItem;
+    Platform::MenuItemRef unitsFeetInchesMenuItem;
 
     Platform::MenuItemRef inWorkplaneMenuItem;
     Platform::MenuItemRef in3dMenuItem;

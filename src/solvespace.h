@@ -138,7 +138,8 @@ enum class Command : uint32_t;
 enum class Unit : uint32_t {
     MM = 0,
     INCHES,
-    METERS
+    METERS,
+    FEET_INCHES
 };
 
 template<class Key, class T>
@@ -609,7 +610,7 @@ public:
     bool     useSIPrefixes;
     int      autosaveInterval; // in minutes
 
-    std::string MmToString(double v);
+    std::string MmToString(double v, bool editable=false);
     std::string MmToStringSI(double v, int dim = 0);
     std::string DegreeToString(double v);
     double ExprToMm(Expr *e);
