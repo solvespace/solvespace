@@ -333,32 +333,45 @@ const char *SolveSpaceUI::UnitName() {
 
 std::string SolveSpaceUI::MmToString(double v, bool editable) {
     v /= MmPerUnit();
-    int feet = 0;
     // The syntax 2' 6" for feet and inches is not something we can (currently)
     // parse back from a string so if editable is true, we treat FEET_INCHES the
     // same as INCHES and just return the unadorned decimal number of inches.
     if(viewUnits == Unit::FEET_INCHES && !editable) {
-        // v is in inches at this point
-        feet = (int)(v / 12.0);
-        v = v - (feet * 12.0);
-        // v is now the remainder in inches
+        // Now convert v from inches to 64'ths of an inch, to make rounding easier.
+        v = floor((v + (1.0 / 128.0)) * 64.0);
+        int feet = (int)(v / (12.0 * 64.0));
+        v = v - (feet * 12.0 * 64.0);
+        // v is now the feet-less remainder in 1/64 inches
+        int inches = (int)(v / 64.0);
+        int numerator = (int)(v - ((double)inches * 64.0));
+        int denominator = 64;
+        // Divide down to smallest denominator where the numerator is still a whole number
+        while ((numerator != 0) && ((numerator & 1) == 0)) {
+            numerator /= 2;
+            denominator /= 2;
+        }
+        std::ostringstream str;
+        if(feet != 0) {
+            str << feet << "' ";
+        }
+        // For something like 0.5, show 1/2" rather than 0 1/2"
+        if(!(feet == 0 && inches == 0 && numerator != 0)) {
+            str << inches;
+        }
+        if(numerator != 0) {
+            str << " " << numerator << "/" << denominator;
+        }
+        str << "\"";
+        return str.str();
     }
+
     int digits = UnitDigitsAfterDecimal();
     double minimum = 0.5 * pow(10,-digits);
-    while ((feet == 0) && (v < minimum) && (v > LENGTH_EPS)) {
+    while ((v < minimum) && (v > LENGTH_EPS)) {
         digits++;
         minimum *= 0.1;
     }
-
-    if(viewUnits == Unit::FEET_INCHES && !editable) {
-        if(feet != 0) {
-            return ssprintf("%d' %.*f\"", feet, digits, v);
-        } else {
-            return ssprintf("%.*f\"", digits, v);
-        }
-    } else {
-        return ssprintf("%.*f", digits, v);
-    }
+    return ssprintf("%.*f", digits, v);
 }
 static const char *DimToString(int dim) {
     switch(dim) {
