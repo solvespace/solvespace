@@ -51,9 +51,9 @@ void TextWindow::ScreenChangeViewToFullScale(int link, uint32_t v) {
 void TextWindow::ScreenChangeViewOrigin(int link, uint32_t v) {
     std::string edit_value =
         ssprintf("%s, %s, %s",
-            SS.MmToString(-SS.GW.offset.x).c_str(),
-            SS.MmToString(-SS.GW.offset.y).c_str(),
-            SS.MmToString(-SS.GW.offset.z).c_str());
+            SS.MmToString(-SS.GW.offset.x, true).c_str(),
+            SS.MmToString(-SS.GW.offset.y, true).c_str(),
+            SS.MmToString(-SS.GW.offset.z, true).c_str());
 
     SS.TW.edit.meaning = Edit::VIEW_ORIGIN;
     SS.TW.ShowEditControl(3, edit_value);

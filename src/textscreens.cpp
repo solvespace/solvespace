@@ -640,7 +640,7 @@ void TextWindow::ScreenStepDimFinish(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::STEP_DIM_FINISH;
     std::string edit_value;
     if(SS.TW.stepDim.isDistance) {
-        edit_value = SS.MmToString(SS.TW.stepDim.finish);
+        edit_value = SS.MmToString(SS.TW.stepDim.finish, true);
     } else {
         edit_value = ssprintf("%.3f", SS.TW.stepDim.finish);
     }
@@ -727,7 +727,7 @@ void TextWindow::ScreenChangeTangentArc(int link, uint32_t v) {
     switch(link) {
         case 'r': {
             SS.TW.edit.meaning = Edit::TANGENT_ARC_RADIUS;
-            SS.TW.ShowEditControl(3, SS.MmToString(SS.tangentArcRadius));
+            SS.TW.ShowEditControl(3, SS.MmToString(SS.tangentArcRadius, true));
             break;
         }
 
