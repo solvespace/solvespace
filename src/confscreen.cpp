@@ -64,7 +64,7 @@ void TextWindow::ScreenChangeCameraTangent(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeGridSpacing(int link, uint32_t v) {
-    SS.TW.ShowEditControl(3, SS.MmToString(SS.gridSpacing));
+    SS.TW.ShowEditControl(3, SS.MmToString(SS.gridSpacing, true));
     SS.TW.edit.meaning = Edit::GRID_SPACING;
 }
 
@@ -89,7 +89,7 @@ void TextWindow::ScreenChangeExportScale(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeExportOffset(int link, uint32_t v) {
-    SS.TW.ShowEditControl(3, SS.MmToString(SS.exportOffset));
+    SS.TW.ShowEditControl(3, SS.MmToString(SS.exportOffset, true));
     SS.TW.edit.meaning = Edit::EXPORT_OFFSET;
 }
 
@@ -171,7 +171,7 @@ void TextWindow::ScreenChangeCanvasSize(int link, uint32_t v) {
     }
     int col = 13;
     if(v < 10) col = 11;
-    SS.TW.ShowEditControl(col, SS.MmToString(d));
+    SS.TW.ShowEditControl(col, SS.MmToString(d, true));
     SS.TW.edit.meaning = Edit::CANVAS_SIZE;
     SS.TW.edit.i = v;
 }
@@ -181,7 +181,7 @@ void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
     switch(link) {
         case 'd':
             SS.TW.edit.meaning = Edit::G_CODE_DEPTH;
-            buf += SS.MmToString(SS.gCode.depth);
+            buf += SS.MmToString(SS.gCode.depth, true);
             break;
 
         case 's':
@@ -191,12 +191,12 @@ void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
 
         case 'F':
             SS.TW.edit.meaning = Edit::G_CODE_FEED;
-            buf += SS.MmToString(SS.gCode.feed);
+            buf += SS.MmToString(SS.gCode.feed, true);
             break;
 
         case 'P':
             SS.TW.edit.meaning = Edit::G_CODE_PLUNGE_FEED;
-            buf += SS.MmToString(SS.gCode.plungeFeed);
+            buf += SS.MmToString(SS.gCode.plungeFeed, true);
             break;
     }
     SS.TW.ShowEditControl(14, buf);

@@ -563,7 +563,7 @@ void TextWindow::ScreenChangeStyleMetric(int link, uint32_t v) {
     if(units == Style::UnitsAs::PIXELS) {
         edit_value = ssprintf("%.2f", val);
     } else {
-        edit_value = SS.MmToString(val);
+        edit_value = SS.MmToString(val, true);
     }
     SS.TW.ShowEditControl(col, edit_value);
     SS.TW.edit.style = hs;
