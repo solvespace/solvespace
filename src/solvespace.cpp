@@ -352,7 +352,7 @@ std::string SolveSpaceUI::MmToString(double v, bool editable) {
         }
         std::ostringstream str;
         if(feet != 0) {
-            str << feet << "' ";
+            str << feet << "'-";
         }
         // For something like 0.5, show 1/2" rather than 0 1/2"
         if(!(feet == 0 && inches == 0 && numerator != 0)) {
