@@ -1006,7 +1006,6 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
             Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
             Quaternion q = SK.GetEntity(circle->normal)->NormalGetNum();
             Vector n = q.RotationN().WithMagnitude(1);
-            double r = circle->CircleGetRadiusNum();
 
             Vector ref2;
             DoEqualRadiusTicks(canvas, hcs, entityA, &ref2);
