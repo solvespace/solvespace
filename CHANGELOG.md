@@ -12,6 +12,8 @@ Constraints:
 
 Sketching:
 
+* Added Feet-Inches as a unit of measure. Inputs are still in inches.
+  But the display shows feet, inches, and fraction of an inch.
 * Added an optional "pitch" parameter to helix extrusions (in the text window)
 * Allow use of Point & Normal to define "sketch-in-new-workplane".
 * Update "Property Browser" live while dragging the sketch.
