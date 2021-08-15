@@ -25,6 +25,11 @@ if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
+if (APPLE)
+    # Docs say this must be set before the first project() call
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "macOS minimum supported version")
+endif()
+
 # project
 
 # NOTE TO PACKAGERS: The embedded git commit hash is critical for rapid bug triage when the builds
