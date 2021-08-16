@@ -366,6 +366,10 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 {
     NSTrackingArea     *trackingArea;
     NSTextField        *editor;
+    double             magnificationGestureCurrentZ;
+    double             rotationGestureCurrent;
+    Point2d            trackpadPositionShift;
+    bool               inTrackpadScrollGesture;
 }
 
 @synthesize acceptsFirstResponder;
@@ -388,6 +392,15 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
         editor.bezeled = NO;
         editor.target = self;
         editor.action = @selector(didEdit:);
+
+        inTrackpadScrollGesture = false;
+        NSGestureRecognizer *mag = [[NSMagnificationGestureRecognizer alloc] initWithTarget:self
+            action:@selector(magnifyGesture:)];
+        [self addGestureRecognizer:mag];
+
+        NSRotationGestureRecognizer* rot = [[NSRotationGestureRecognizer alloc] initWithTarget:self
+            action:@selector(rotateGesture:)];
+        [self addGestureRecognizer:rot];
     }
     return self;
 }
@@ -428,9 +441,9 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 - (Platform::MouseEvent)convertMouseEvent:(NSEvent *)nsEvent {
     Platform::MouseEvent event = {};
 
-    NSPoint nsPoint = [self convertPoint:nsEvent.locationInWindow fromView:self];
+    NSPoint nsPoint = [self convertPoint:nsEvent.locationInWindow fromView:nil];
     event.x = nsPoint.x;
-    event.y = self.bounds.size.height - nsPoint.y;
+    event.y = nsPoint.y;
 
     NSUInteger nsFlags = [nsEvent modifierFlags];
     if(nsFlags & NSEventModifierFlagShift)   event.shiftDown   = true;
@@ -554,14 +567,54 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     using Platform::MouseEvent;
 
     MouseEvent event = [self convertMouseEvent:nsEvent];
+    if(nsEvent.subtype == NSEventSubtypeTabletPoint) {
+        // This is how Cocoa represents 2 finger trackpad drag gestures, rather than going via
+        // NSPanGestureRecognizer which is how you might expect this to work... We complicate this
+        // further by also handling shift-two-finger-drag to mean rotate. Fortunately we're using
+        // shift in the same way as right-mouse-button MouseEvent does (to converts a pan to a
+        // rotate) so we get the rotate support for free. It's a bit ugly having to fake mouse
+        // events and track the deviation from the actual mouse cursor with trackpadPositionShift,
+        // but in lieu of an event API that allows us to request a rotate/pan with relative
+        // coordinates, it's the best we can do.
+        event.button = MouseEvent::Button::RIGHT;
+        if(nsEvent.scrollingDeltaX == 0 && nsEvent.scrollingDeltaY == 0) {
+            // Cocoa represents the point where the user lifts their fingers off (and any inertial
+            // scrolling has finished) by an event with scrollingDeltaX and scrollingDeltaY both 0.
+            // Sometimes you also get a zero scroll at the start of a two-finger-rotate (probably
+            // reflecting the internal implementation of that being a cancelled possible pan
+            // gesture), which is why this conditional is structured the way it is.
+            if(inTrackpadScrollGesture) {
+                event.x += trackpadPositionShift.x;
+                event.y += trackpadPositionShift.y;
+                event.type = MouseEvent::Type::RELEASE;
+                receiver->onMouseEvent(event);
+                inTrackpadScrollGesture = false;
+                trackpadPositionShift = Point2d::From(0, 0);
+            }
+            return;
+        } else if(!inTrackpadScrollGesture) {
+            inTrackpadScrollGesture = true;
+            trackpadPositionShift = Point2d::From(0, 0);
+            event.type = MouseEvent::Type::PRESS;
+            receiver->onMouseEvent(event);
+            // And drop through
+        }
+
+        trackpadPositionShift.x += nsEvent.scrollingDeltaX;
+        trackpadPositionShift.y += nsEvent.scrollingDeltaY;
+        event.type = MouseEvent::Type::MOTION;
+        event.x += trackpadPositionShift.x;
+        event.y += trackpadPositionShift.y;
+        receiver->onMouseEvent(event);
+        return;
+    }
+
     event.type = MouseEvent::Type::SCROLL_VERT;
 
     bool isPrecise = [nsEvent hasPreciseScrollingDeltas];
     event.scrollDelta = [nsEvent scrollingDeltaY] / (isPrecise ? 50 : 5);
 
-    if(receiver->onMouseEvent) {
-        receiver->onMouseEvent(event);
-    }
+    receiver->onMouseEvent(event);
 }
 
 - (void)mouseExited:(NSEvent *)nsEvent {
@@ -637,6 +690,50 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     }
 
     [super keyUp:nsEvent];
+}
+
+- (void)magnifyGesture:(NSMagnificationGestureRecognizer *)gesture {
+    // The onSixDofEvent API doesn't allow us to specify the scaling's origin, so for expediency
+    // we fake out a scrollwheel MouseEvent with a suitably-scaled scrollDelta with a bit of
+    // absolute-to-relative positioning conversion tracked using magnificationGestureCurrentZ.
+
+    if(gesture.state == NSGestureRecognizerStateBegan) {
+        magnificationGestureCurrentZ = 0.0;
+    }
+
+    // Magic number to make gesture.magnification align roughly with what scrollDelta expects
+    constexpr double kScale = 10.0;
+    double z = ((double)gesture.magnification * kScale);
+    double zdelta = z - magnificationGestureCurrentZ;
+    magnificationGestureCurrentZ = z;
+
+    using Platform::MouseEvent;
+    MouseEvent event = {};
+    event.type = MouseEvent::Type::SCROLL_VERT;
+    NSPoint nsPoint = [gesture locationInView:self];
+    event.x = nsPoint.x;
+    event.y = nsPoint.y;
+    event.scrollDelta = zdelta;
+    if(receiver->onMouseEvent) {
+        receiver->onMouseEvent(event);
+    }
+}
+
+- (void)rotateGesture:(NSRotationGestureRecognizer *)gesture {
+    if(gesture.state == NSGestureRecognizerStateBegan) {
+        rotationGestureCurrent = 0.0;
+    }
+    double rotation = gesture.rotation;
+    double rotationDelta = rotation - rotationGestureCurrent;
+    rotationGestureCurrent = rotation;
+
+    using Platform::SixDofEvent;
+    SixDofEvent event = {};
+    event.type = SixDofEvent::Type::MOTION;
+    event.rotationZ = rotationDelta;
+    if(receiver->onSixDofEvent) {
+        receiver->onSixDofEvent(event);
+    }
 }
 
 @synthesize editing;
