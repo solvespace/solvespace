@@ -1,10 +1,12 @@
 #!/bin/sh -xe
 
 if [ "$1" = "ci" ]; then
-    curl -L https://bintray.com/homebrew/bottles/download_file?file_path=libomp-11.0.1.arm64_big_sur.bottle.tar.gz --output /tmp/libomp-arm64.tar.gz
+    armloc=$(brew fetch --bottle-tag=arm64_big_sur libomp | grep -i downloaded | grep tar.gz | cut -f2 -d:)
+    x64loc=$(brew fetch --bottle-tag=big_sur libomp | grep -i downloaded | grep tar.gz | cut -f2 -d:)
+    cp $armloc /tmp/libomp-arm64.tar.gz
     mkdir /tmp/libomp-arm64 || true
     tar -xzvf /tmp/libomp-arm64.tar.gz -C /tmp/libomp-arm64
-    curl -L https://bintray.com/homebrew/bottles/download_file?file_path=libomp-11.0.1.big_sur.bottle.tar.gz --output /tmp/libomp-x86_64.tar.gz
+    cp $x64loc /tmp/libomp-x86_64.tar.gz
     mkdir /tmp/libomp-x86_64 || true
     tar -xzvf /tmp/libomp-x86_64.tar.gz -C /tmp/libomp-x86_64
 else
