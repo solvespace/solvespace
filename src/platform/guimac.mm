@@ -359,7 +359,9 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 - (void)didEdit:(NSString *)text;
 
 @property double scrollerMin;
-@property double scrollerMax;
+@property double scrollerSize;
+@property double pageSize;
+
 @end
 
 @implementation SSView
@@ -800,11 +802,27 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 }
 
 @synthesize scrollerMin;
-@synthesize scrollerMax;
+@synthesize scrollerSize;
+@synthesize pageSize;
 
 - (void)didScroll:(NSScroller *)sender {
+    double pos;
+    switch(sender.hitPart) {
+        case NSScrollerKnob:
+        case NSScrollerKnobSlot:
+            pos = receiver->GetScrollbarPosition();
+            break;
+        case NSScrollerDecrementPage:
+            pos = receiver->GetScrollbarPosition() - pageSize;
+            break;
+        case NSScrollerIncrementPage:
+            pos = receiver->GetScrollbarPosition() + pageSize;
+            break;
+        default:
+            return;
+    }
+
     if(receiver->onScrollbarAdjusted) {
-        double pos = scrollerMin + [sender doubleValue] * (scrollerMax - scrollerMin);
         receiver->onScrollbarAdjusted(pos);
     }
 }
@@ -1064,21 +1082,22 @@ public:
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
         ssView.scrollerMin = min;
-        ssView.scrollerMax = max - pageSize;
-        [nsScroller setKnobProportion:(pageSize / (ssView.scrollerMax - ssView.scrollerMin))];
+        ssView.scrollerSize = max + 1 - min;
+        ssView.pageSize = pageSize;
+        nsScroller.knobProportion = pageSize / ssView.scrollerSize;
+        nsScroller.hidden = pageSize >= ssView.scrollerSize;
     }
 
     double GetScrollbarPosition() override {
+        // Platform::Window scrollbar positions are in the range [min, max+1 - pageSize] inclusive,
+        // and Cocoa scrollbars are from 0.0 to 1.0 inclusive, so we have to apply some scaling and
+        // transforming. (scrollerSize is max+1-min, see ConfigureScrollbar above)
         return ssView.scrollerMin +
-            [nsScroller doubleValue] * (ssView.scrollerMax - ssView.scrollerMin);
+            nsScroller.doubleValue * (ssView.scrollerSize - ssView.pageSize);
     }
 
     void SetScrollbarPosition(double pos) override {
-        if(pos > ssView.scrollerMax)
-            pos = ssView.scrollerMax;
-        if(GetScrollbarPosition() == pos)
-            return;
-        [nsScroller setDoubleValue:(pos / (ssView.scrollerMax - ssView.scrollerMin))];
+        nsScroller.doubleValue = (pos - ssView.scrollerMin) / ( ssView.scrollerSize - ssView.pageSize);
     }
 
     void Invalidate() override {
