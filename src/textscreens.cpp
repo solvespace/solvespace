@@ -129,7 +129,7 @@ void TextWindow::ShowListOfGroups() {
                "%Ft%s%Fb%D%f%Ll%s%E "
                "%Fb%s%D%f%Ll%s%E  "
                "%Fp%D%f%s%Ll%s%E "
-               "%Fl%Ll%D%f%s",
+               "%Fp%Ll%D%f%s",
                // Alternate between light and dark backgrounds, for readability
                backgroundParity ? 'd' : 'a',
                // Link that activates the group
@@ -146,6 +146,7 @@ void TextWindow::ShowListOfGroups() {
                ok ? ((warn && SS.checkClosedContour) ? "err" : sdof) : "",
                ok ? "" : "ERR",
                // Link to a screen that gives more details on the group
+               g->suppress ? 'g' : 'l',
                g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
 
         if(active) afterActive = true;
