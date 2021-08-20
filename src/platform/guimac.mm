@@ -370,11 +370,12 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     double             rotationGestureCurrent;
     Point2d            trackpadPositionShift;
     bool               inTrackpadScrollGesture;
+    Platform::Window::Kind kind;
 }
 
 @synthesize acceptsFirstResponder;
 
-- (id)initWithFrame:(NSRect)frameRect {
+- (id)initWithKind:(Platform::Window::Kind)aKind {
     NSOpenGLPixelFormatAttribute attrs[] = {
         NSOpenGLPFADoubleBuffer,
         NSOpenGLPFAColorSize, 24,
@@ -382,7 +383,7 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
         0
     };
     NSOpenGLPixelFormat *pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
-    if(self = [super initWithFrame:frameRect pixelFormat:pixelFormat]) {
+    if(self = [super initWithFrame:NSMakeRect(0, 0, 0, 0) pixelFormat:pixelFormat]) {
         self.wantsBestResolutionOpenGLSurface = YES;
         self.wantsLayer = YES;
         editor = [[NSTextField alloc] init];
@@ -394,13 +395,16 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
         editor.action = @selector(didEdit:);
 
         inTrackpadScrollGesture = false;
-        NSGestureRecognizer *mag = [[NSMagnificationGestureRecognizer alloc] initWithTarget:self
-            action:@selector(magnifyGesture:)];
-        [self addGestureRecognizer:mag];
+        kind = aKind;
+        if(kind == Platform::Window::Kind::TOPLEVEL) {
+            NSGestureRecognizer *mag = [[NSMagnificationGestureRecognizer alloc] initWithTarget:self
+                action:@selector(magnifyGesture:)];
+            [self addGestureRecognizer:mag];
 
-        NSRotationGestureRecognizer* rot = [[NSRotationGestureRecognizer alloc] initWithTarget:self
-            action:@selector(rotateGesture:)];
-        [self addGestureRecognizer:rot];
+            NSRotationGestureRecognizer* rot = [[NSRotationGestureRecognizer alloc] initWithTarget:self
+                action:@selector(rotateGesture:)];
+            [self addGestureRecognizer:rot];
+        }
     }
     return self;
 }
@@ -567,7 +571,7 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     using Platform::MouseEvent;
 
     MouseEvent event = [self convertMouseEvent:nsEvent];
-    if(nsEvent.subtype == NSEventSubtypeTabletPoint) {
+    if(nsEvent.subtype == NSEventSubtypeTabletPoint && kind == Platform::Window::Kind::TOPLEVEL) {
         // This is how Cocoa represents 2 finger trackpad drag gestures, rather than going via
         // NSPanGestureRecognizer which is how you might expect this to work... We complicate this
         // further by also handling shift-two-finger-drag to mean rotate. Fortunately we're using
@@ -867,7 +871,7 @@ public:
     NSString         *nsToolTip;
 
     WindowImplCocoa(Window::Kind kind, std::shared_ptr<WindowImplCocoa> parentWindow) {
-        ssView = [[SSView alloc] init];
+        ssView = [[SSView alloc] initWithKind:kind];
         ssView.translatesAutoresizingMaskIntoConstraints = NO;
         ssView.receiver = this;
 
