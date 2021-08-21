@@ -203,7 +203,7 @@ const TextWindow::Color TextWindow::fgColors[] = {
     { 'r', RGBi(  0,   0,   0) },  // Reverse   : black
     { 'x', RGBi(255,  20,  20) },  // Error     : red
     { 'i', RGBi(  0, 255, 255) },  // Info      : cyan
-    { 'g', RGBi(160, 160, 160) },
+    { 'g', RGBi(128, 128, 128) },  // Disabled  : gray
     { 'b', RGBi(200, 200, 200) },
     { 0,   RGBi(  0,   0,   0) }
 };
