@@ -10,6 +10,8 @@
 
 #define MIN_POINT_DISTANCE 0.001
 
+typedef std::map<long int, std::map<long int, std::map<long int, long int>>> indexMap;
+
 // we will check for duplicate verticies and keep all their normals
 class vertex {
 public:
@@ -29,21 +31,22 @@ static bool isEdgeVertex(vertex &v) {
     }
     return result;
 }
-// This function has poor performance, used inside a loop it is O(n**2)
-static void addUnique(std::vector<vertex> &lv, Vector &p, Vector &n) {
-    unsigned int i;
-    for(i=0; i<lv.size(); i++) {
-        if(lv[i].p.Equals(p, MIN_POINT_DISTANCE)) {
-            break;
-        }
-    }
-    if(i==lv.size()) {
+
+static void addUnique(std::vector<vertex> &lv, Vector &p, Vector &n, indexMap &indices) {
+    // Each point lives in toleranced sized cube, only one per cube
+    float cx = (int)(p.x / MIN_POINT_DISTANCE);
+    float cy = (int)(p.y / MIN_POINT_DISTANCE);
+    float cz = (int)(p.z / MIN_POINT_DISTANCE);
+
+    if(indices[cx][cy][cz] == 0){
         vertex v;
         v.p = p;
+        v.normal.push_back(n);
         lv.push_back(v);
+        indices[cx][cy][cz] = lv.size()-1;
+    }else{
+        lv[indices[cx][cy][cz]].normal.push_back(n);
     }
-    // we could improve a little by only storing unique normals
-    lv[i].normal.push_back(n);
 };
 
 // Make a new point - type doesn't matter since we will make a copy later
@@ -118,6 +121,7 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     //add the STL origin as an entity
     addVertex(el, Vector::From(0.0, 0.0, 0.0));
     
+	indexMap indices;
     std::vector<vertex> verts = {};
     
     for(uint32_t i = 0; i<n; i++) {
@@ -167,9 +171,9 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
 
         m->AddTriangle(&tr);
         Vector normal = tr.Normal().WithMagnitude(1.0);
-        addUnique(verts, tr.a, normal);
-        addUnique(verts, tr.b, normal);
-        addUnique(verts, tr.c, normal);
+        addUnique(verts, tr.a, normal, indices);
+        addUnique(verts, tr.b, normal, indices);
+        addUnique(verts, tr.c, normal, indices);
     }
     SK.GetGroup(SS.GW.activeGroup)->forceToMesh = true;
     dbp("%d verticies", verts.size());
