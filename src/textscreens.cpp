@@ -123,13 +123,18 @@ void TextWindow::ShowListOfGroups() {
               sprintf(sdof, "%-3d", dof);
             }
         }
+        std::string suffix;
+        if(g->forceToMesh) {
+            suffix = " (∆)";
+        }
+
         bool ref = (g->h == Group::HGROUP_REFERENCES);
         Printf(false,
                "%Bp%Fd "
                "%Ft%s%Fb%D%f%Ll%s%E "
                "%Fb%s%D%f%Ll%s%E  "
                "%Fp%D%f%s%Ll%s%E "
-               "%Fp%Ll%D%f%s",
+               "%Fp%Ll%D%f%s%E%s",
                // Alternate between light and dark backgrounds, for readability
                backgroundParity ? 'd' : 'a',
                // Link that activates the group
@@ -147,7 +152,8 @@ void TextWindow::ShowListOfGroups() {
                ok ? "" : "ERR",
                // Link to a screen that gives more details on the group
                g->suppress ? 'g' : 'l',
-               g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
+               g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str(),
+               suffix.c_str());
 
         if(active) afterActive = true;
         backgroundParity = !backgroundParity;
