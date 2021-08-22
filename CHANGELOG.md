@@ -12,6 +12,9 @@ Constraints:
 
 Sketching:
 
+* Gray the group name in the text window for groups with suppressed solid model.
+* Add "exploded view" to sketches via "\\" key. Shows sketch elements separated
+  by a configurable distance perpendicular to the sketch plane.
 * Added Feet-Inches as a unit of measure. Inputs are still in inches.
   But the display shows feet, inches, and fraction of an inch.
 * Added an optional "pitch" parameter to helix extrusions (in the text window)
