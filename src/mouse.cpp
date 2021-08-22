@@ -103,7 +103,10 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         shiftDown = !shiftDown;
     }
 
-    if(SS.showToolbar) {
+    // Not passing right-button and middle-button drags to the toolbar avoids
+    // some cosmetic issues with trackpad pans/rotates implemented with
+    // simulated right-button drag events causing spurious hover events.
+    if(SS.showToolbar && !middleDown) {
         if(ToolbarMouseMoved((int)x, (int)y)) {
             hover.Clear();
             return;
