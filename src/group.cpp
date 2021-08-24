@@ -404,7 +404,11 @@ bool Group::IsForcedToMeshBySource() const {
 }
 
 bool Group::IsForcedToMesh() const {
-    return forceToMesh || IsForcedToMeshBySource();
+    return forceToMesh || IsTriangleMeshAssembly() || IsForcedToMeshBySource();
+}
+
+bool Group::IsTriangleMeshAssembly() const {
+    return type == Type::LINKED && linkFile.Extension() == "stl";
 }
 
 std::string Group::DescriptionString() {

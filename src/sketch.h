@@ -269,6 +269,7 @@ public:
     void Generate(EntityList *entity, ParamList *param);
     bool IsSolvedOkay();
     void TransformImportedBy(Vector t, Quaternion q);
+    bool IsTriangleMeshAssembly() const;
     bool IsForcedToMeshBySource() const;
     bool IsForcedToMesh() const;
     // When a request generates entities from entities, and the source
