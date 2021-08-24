@@ -171,7 +171,6 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
         addUnique(verts, tr.b, normal);
         addUnique(verts, tr.c, normal);
     }
-    SK.GetGroup(SS.GW.activeGroup)->forceToMesh = true;
     dbp("%d verticies", verts.size());
 
     BBox box = {};

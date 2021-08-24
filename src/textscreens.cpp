@@ -124,7 +124,7 @@ void TextWindow::ShowListOfGroups() {
             }
         }
         std::string suffix;
-        if(g->forceToMesh) {
+        if(g->forceToMesh || g->IsTriangleMeshAssembly()) {
             suffix = " (∆)";
         }
 
@@ -495,7 +495,7 @@ void TextWindow::ShowGroupInfo() {
         &TextWindow::ScreenChangeGroupOption,
         g->visible ? CHECK_TRUE : CHECK_FALSE);
 
-    if(!g->IsForcedToMeshBySource()) {
+    if(!g->IsForcedToMeshBySource() && !g->IsTriangleMeshAssembly()) {
         Printf(false, " %f%Lf%Fd%s  force NURBS surfaces to triangle mesh",
             &TextWindow::ScreenChangeGroupOption,
             g->forceToMesh ? CHECK_TRUE : CHECK_FALSE);
