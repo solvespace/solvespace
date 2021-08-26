@@ -583,6 +583,9 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
         // but in lieu of an event API that allows us to request a rotate/pan with relative
         // coordinates, it's the best we can do.
         event.button = MouseEvent::Button::RIGHT;
+        // Make sure control (actually cmd) isn't passed through, ctrl-right-click-drag has special
+        // meaning as rotate which we don't want to inadvertently trigger.
+        event.controlDown = false;
         if(nsEvent.scrollingDeltaX == 0 && nsEvent.scrollingDeltaY == 0) {
             // Cocoa represents the point where the user lifts their fingers off (and any inertial
             // scrolling has finished) by an event with scrollingDeltaX and scrollingDeltaY both 0.
