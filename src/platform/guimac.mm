@@ -1427,9 +1427,22 @@ void OpenInBrowser(const std::string &url) {
 - (IBAction)preferences:(id)sender;
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename;
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender;
+
+@property BOOL exiting;
+
 @end
 
 @implementation SSApplicationDelegate
+
+@synthesize exiting;
+
+- (id)init {
+    if (self = [super init]) {
+        self.exiting = false;
+    }
+    return self;
+}
+
 - (IBAction)preferences:(id)sender {
     if (!SS.GW.showTextWindow) {
         SolveSpace::SS.GW.MenuView(SolveSpace::Command::SHOW_TEXT_WND);
@@ -1444,12 +1457,27 @@ void OpenInBrowser(const std::string &url) {
 }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
-    [[[NSApp mainWindow] delegate] windowShouldClose:[NSApp mainWindow]];
-    return NSTerminateCancel;
+    if(!SS.unsaved) {
+        return NSTerminateNow;
+    } else {
+        [self performSelectorOnMainThread:@selector(applicationTerminatePrompt) withObject:nil
+            waitUntilDone:NO modes:@[NSDefaultRunLoopMode, NSModalPanelRunLoopMode]];
+        return NSTerminateLater;
+    }
+}
+
+- (void)applicationWillTerminate:(NSNotification *)notification {
+    if(!exiting) {
+        // Prevent the Platform::ExitGui() call from SolveSpaceUI::Exit()
+        // triggering another terminate
+        exiting = true;
+        // Now let SS save settings etc
+        SS.Exit();
+    }
 }
 
 - (void)applicationTerminatePrompt {
-    SolveSpace::SS.MenuFile(SolveSpace::Command::EXIT);
+    [NSApp replyToApplicationShouldTerminate:SS.OkayToStartNewFile()];
 }
 @end
 
@@ -1488,8 +1516,10 @@ void RunGui() {
 }
 
 void ExitGui() {
-    [NSApp setDelegate:nil];
-    [NSApp terminate:nil];
+    if(!ssDelegate.exiting) {
+        ssDelegate.exiting = true;
+        [NSApp terminate:nil];
+    }
 }
 
 void ClearGui() {}
