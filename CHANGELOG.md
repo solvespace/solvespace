@@ -12,7 +12,7 @@ Constraints:
 
 Sketching:
 
-* Gray the group name in the text window for groups with suppressed solid model.
+* Support for pan, zoom and rotate trackpad gestures on macOS
 * Add "exploded view" to sketches via "\\" key. Shows sketch elements separated
   by a configurable distance perpendicular to the sketch plane.
 * Added Feet-Inches as a unit of measure. Inputs are still in inches.
@@ -23,6 +23,8 @@ Sketching:
 
 MISC:
 
+* Add a "∆" suffix to groups which have "force to triangle mesh" ticked
+* Gray the group name in the text window for groups with suppressed solid model.
 * Added the ability to Link STL files.
 * When linking circuit boards (IDF .emn files) show keepout regions as construction entities.
 
