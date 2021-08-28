@@ -1621,6 +1621,14 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     ssDelegate = [[SSApplicationDelegate alloc] init];
     NSApplication.sharedApplication.delegate = ssDelegate;
 
+    // Setting this prevents "Show Tab Bar" and "Show All Tabs" items from being
+    // automagically added to the View menu
+    NSWindow.allowsAutomaticWindowTabbing = NO;
+
+    // And this prevents the duplicate "Enter Full Screen" menu item, see
+    // https://stackoverflow.com/questions/52154977/how-to-get-rid-of-enter-full-screen-menu-item
+    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"NSFullScreenMenuItemEverywhere"];
+
     [NSBundle.mainBundle loadNibNamed:@"MainMenu" owner:nil topLevelObjects:nil];
 
     NSArray *languages = NSLocale.preferredLanguages;
