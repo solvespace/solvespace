@@ -9,24 +9,6 @@
 #include <omp.h>
 #endif
 
-void TextWindow::ScreenChangeLightDirection(int link, uint32_t v) {
-    SS.TW.ShowEditControl(8, ssprintf("%.2f, %.2f, %.2f", CO(SS.lightDir[v])));
-    SS.TW.edit.meaning = Edit::LIGHT_DIRECTION;
-    SS.TW.edit.i = v;
-}
-
-void TextWindow::ScreenChangeLightIntensity(int link, uint32_t v) {
-    SS.TW.ShowEditControl(31, ssprintf("%.2f", SS.lightIntensity[v]));
-    SS.TW.edit.meaning = Edit::LIGHT_INTENSITY;
-    SS.TW.edit.i = v;
-}
-
-void TextWindow::ScreenChangeLightAmbient(int link, uint32_t v) {
-    SS.TW.ShowEditControl(31, ssprintf("%.2f", SS.ambientIntensity));
-    SS.TW.edit.meaning = Edit::LIGHT_AMBIENT;
-    SS.TW.edit.i = 0;
-}
-
 void TextWindow::ScreenChangeColor(int link, uint32_t v) {
     SS.TW.ShowEditControlWithColorPicker(13, SS.modelColor[v]);
 
@@ -58,19 +40,9 @@ void TextWindow::ScreenChangeExportMaxSegments(int link, uint32_t v) {
     SS.TW.edit.i = 1;
 }
 
-void TextWindow::ScreenChangeCameraTangent(int link, uint32_t v) {
-    SS.TW.ShowEditControl(3, ssprintf("%.3f", 1000*SS.cameraTangent));
-    SS.TW.edit.meaning = Edit::CAMERA_TANGENT;
-}
-
 void TextWindow::ScreenChangeGridSpacing(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, SS.MmToString(SS.gridSpacing, true));
     SS.TW.edit.meaning = Edit::GRID_SPACING;
-}
-
-void TextWindow::ScreenChangeExplodeDistance(int link, uint32_t v) {
-    SS.TW.ShowEditControl(3, SS.MmToString(SS.explodeDistance, true));
-    SS.TW.edit.meaning = Edit::EXPLODE_DISTANCE;
 }
 
 void TextWindow::ScreenChangeDigitsAfterDecimal(int link, uint32_t v) {
@@ -233,18 +205,6 @@ void TextWindow::ShowConfiguration() {
     }
 
     Printf(false, "");
-    Printf(false, "%Ft light direction               intensity");
-    for(i = 0; i < 2; i++) {
-        Printf(false, "%Bp   #%d  (%2,%2,%2)%Fl%D%f%Ll[c]%E "
-                      "%2 %Fl%D%f%Ll[c]%E",
-            (i & 1) ? 'd' : 'a', i,
-            CO(SS.lightDir[i]), i, &ScreenChangeLightDirection,
-            SS.lightIntensity[i], i, &ScreenChangeLightIntensity);
-    }
-    Printf(false, "%Ba         ambient lighting     %2 %Fl%f%Ll[c]%E",
-        SS.ambientIntensity, &ScreenChangeLightAmbient);
-
-    Printf(false, "");
     Printf(false, "%Ft chord tolerance (in percents)%E");
     Printf(false, "%Ba   %@ %% %Fl%Ll%f%D[change]%E; %@ mm, %d triangles",
         SS.chordTol,
@@ -265,19 +225,10 @@ void TextWindow::ShowConfiguration() {
         SS.exportMaxSegments,
         &ScreenChangeExportMaxSegments);
 
-    Printf(false, "");
-    Printf(false, "%Ft perspective factor (0 for parallel)%E");
-    Printf(false, "%Ba   %# %Fl%Ll%f%D[change]%E",
-        SS.cameraTangent*1000,
-        &ScreenChangeCameraTangent, 0);
     Printf(false, "%Ft snap grid spacing%E");
     Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
         SS.MmToString(SS.gridSpacing).c_str(),
         &ScreenChangeGridSpacing, 0);
-    Printf(false, "%Ft explode distance%E");
-    Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
-        SS.MmToString(SS.explodeDistance).c_str(),
-        &ScreenChangeExplodeDistance, 0);
 
     Printf(false, "");
     Printf(false, "%Ft digits after decimal point to show%E");
