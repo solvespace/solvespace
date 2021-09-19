@@ -182,8 +182,10 @@ void Group::GenerateForMirror(T *source, T *outs, Group::CombineAs forWhat) {
     original = {};
     transd = {};
     combined = {};
-    original.MakeFromCopyOf(source);
-    original.RemapFaces(this, 0);
+    if(subtype == Subtype::TWO_SIDED) {
+        original.MakeFromCopyOf(source);
+        original.RemapFaces(this, 0);
+    }
     Vector axis = Vector::From(h.param(0), h.param(1), h.param(2));
     transd.MakeFromTransformationOf(source,
         axis.ScaledBy(SK.GetParam(h.param(3))->val * 2),

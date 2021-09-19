@@ -361,7 +361,7 @@ void TextWindow::ShowGroupInfo() {
         Printf(true, " %Ftlathe plane sketch");
     } else if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::ROTATE ||
               g->type == Group::Type::TRANSLATE || g->type == Group::Type::REVOLVE ||
-              g->type == Group::Type::HELIX) {
+              g->type == Group::Type::HELIX || g->type == Group::Type::MIRROR) {
         if(g->type == Group::Type::EXTRUDE) {
             s = "extrude plane sketch";
         } else if(g->type == Group::Type::TRANSLATE) {
@@ -372,6 +372,8 @@ void TextWindow::ShowGroupInfo() {
             s = "rotate original sketch";
         } else if(g->type == Group::Type::REVOLVE) {
             s = "revolve original sketch";
+        } else if(g->type == Group::Type::MIRROR) {
+            s = "mirror single or include original";
         }
         Printf(true, " %Ft%s%E", s);
 

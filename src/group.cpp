@@ -176,7 +176,12 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             break;
 
         case Command::GROUP_MIRROR:
-            g.predef.entityB = SS.GW.ActiveWorkplane();
+            g.subtype = Subtype::TWO_SIDED;
+            if(SS.GW.LockedInWorkplane()) {
+                g.opA = SS.GW.activeGroup;
+                g.predef.entityB = SS.GW.ActiveWorkplane();
+                g.activeWorkplane = SS.GW.ActiveWorkplane();
+            }
 /*
             // If entities are selected we will constrain the mirror plane to them later
             if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
@@ -565,10 +570,12 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 hEntity he = e->h;
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
-                CopyEntity(entity, SK.GetEntity(he), 0, 0,
-                    h.param(0), h.param(1), h.param(2),
-                    h.param(3), NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    CopyAs::NUMERIC);
+                if (subtype == Group::Subtype::TWO_SIDED) {
+                    CopyEntity(entity, SK.GetEntity(he), 0, 0,
+                        h.param(0), h.param(1), h.param(2),
+                        h.param(3), NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                        CopyAs::NUMERIC);
+                }
                 CopyEntity(entity, SK.GetEntity(he), 1, 1,
                     h.param(0), h.param(1), h.param(2),
                     h.param(3), NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
