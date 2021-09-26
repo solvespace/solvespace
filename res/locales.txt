@@ -2,7 +2,7 @@
 # and human-readable names for every culture supported by SolveSpace.
 de-DE,0407,Deutsch
 en-US,0409,English (US)
-es-AR,11274,Castellano (Argentina)
+es-AR,2C0A,Español (Argentina)
 fr-FR,040C,Français
 ru-RU,0419,Русский
 tr-TR,041F,Türkçe
