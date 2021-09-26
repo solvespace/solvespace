@@ -266,6 +266,7 @@ add_resources(
     locales/en_US.po
     locales/fr_FR.po
     locales/uk_UA.po
+    locales/es_AR.po
     locales/tr_TR.po
     locales/ru_RU.po
     locales/zh_CN.po
