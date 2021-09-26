@@ -46,7 +46,7 @@ POINT_N_ROT_TRANS: Rotates a point via quaternion param[3],param[4],param[5],par
 
 POINT_N_COPY:      A non-transformed copy of a point - numeric copy?
 
-POINT_N_ROT_AA:    A point rotated arount point param[0],param[1],param[2] Where the
+POINT_N_ROT_AA:    A point rotated around point param[0],param[1],param[2] Where the
                    angle is given by param[3]*timesApplied (times 2?) and the axis
                    of rotation defined by param[4],param[5],param[6]
 
@@ -130,7 +130,7 @@ the entity itself.
 The ForceTo() functions are shortcuts for using the solver. They are passed the
 desired location of a point (or orientation of a normal...) and have the opportunity
 to back-calculate what the group parameters should be to place it there. This is
-used for mouse dragging of copied entites. It is notable that the constraints will
+used for mouse dragging of copied entities. It is notable that the constraints will
 still be applied afterward, but this is a good shortcut.
 
 When creating a new entity transformation, the first thing to do is define the

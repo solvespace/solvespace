@@ -138,7 +138,8 @@ enum class Command : uint32_t;
 enum class Unit : uint32_t {
     MM = 0,
     INCHES,
-    METERS
+    METERS,
+    FEET_INCHES
 };
 
 template<class Key, class T>
@@ -608,8 +609,10 @@ public:
     int      afterDecimalDegree;
     bool     useSIPrefixes;
     int      autosaveInterval; // in minutes
+    bool     explode;
+    double   explodeDistance;
 
-    std::string MmToString(double v);
+    std::string MmToString(double v, bool editable=false);
     std::string MmToStringSI(double v, int dim = 0);
     std::string DegreeToString(double v);
     double ExprToMm(Expr *e);
@@ -812,6 +815,7 @@ public:
 void ImportDxf(const Platform::Path &file);
 void ImportDwg(const Platform::Path &file);
 bool LinkIDF(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh);
+bool LinkStl(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh);
 
 extern SolveSpaceUI SS;
 extern Sketch SK;

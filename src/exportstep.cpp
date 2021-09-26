@@ -353,22 +353,21 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
 
     advancedFaces = {};
 
-    SSurface *ss;
-    for(ss = shell->surface.First(); ss; ss = shell->surface.NextAfter(ss)) {
-        if(ss->trim.IsEmpty())
+    for(SSurface &ss : shell->surface) {
+        if(ss.trim.IsEmpty())
             continue;
 
         // Get all of the loops of Beziers that trim our surface (with each
         // Bezier split so that we use the section as t goes from 0 to 1), and
         // the piecewise linearization of those loops in xyz space.
         SBezierList sbl = {};
-        ss->MakeSectionEdgesInto(shell, NULL, &sbl);
+        ss.MakeSectionEdgesInto(shell, NULL, &sbl);
 
         // Apply the export scale factor.
-        ss->ScaleSelfBy(1.0/SS.exportScale);
+        ss.ScaleSelfBy(1.0/SS.exportScale);
         sbl.ScaleSelfBy(1.0/SS.exportScale);
 
-        ExportSurface(ss, &sbl);
+        ExportSurface(&ss, &sbl);
 
         sbl.Clear();
     }

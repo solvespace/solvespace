@@ -114,7 +114,8 @@ void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
     s->stippleType   = (factory)
                         ? d->stippleType
                         : Style::StipplePatternFromString(
-                            settings->ThawString(CnfStippleType(d->cnfPrefix), ""));
+                            settings->ThawString(CnfStippleType(d->cnfPrefix),
+                            StipplePatternName(d->stippleType)));
     s->stippleScale  = (factory)
                         ? 15.0
                         : settings->ThawFloat(CnfStippleScale(d->cnfPrefix), 15.0);
@@ -397,7 +398,11 @@ StipplePattern Style::PatternType(hStyle hs) {
 
 std::string Style::StipplePatternName(hStyle hs) {
     Style *s = Get(hs);
-    switch(s->stippleType) {
+    return StipplePatternName(s->stippleType);
+}
+
+std::string Style::StipplePatternName(StipplePattern stippleType) {
+    switch(stippleType) {
         case StipplePattern::CONTINUOUS:   return "Continuous";
         case StipplePattern::SHORT_DASH:   return "ShortDash";
         case StipplePattern::DASH:         return "Dash";
@@ -409,9 +414,8 @@ std::string Style::StipplePatternName(hStyle hs) {
         case StipplePattern::ZIGZAG:       return "ZigZag";
     }
 
-    return "CONTINUOUS";
+    return "Continuous";
 }
-
 
 double Style::StippleScale(hStyle hs) {
     Style *s = Get(hs);
@@ -466,14 +470,13 @@ void TextWindow::ShowListOfStyles() {
     Printf(true, "%Ft color  style-name");
 
     bool darkbg = false;
-    Style *s;
-    for(s = SK.style.First(); s; s = SK.style.NextAfter(s)) {
+    for(Style &s : SK.style) {
         Printf(false, "%Bp  %Bz   %Bp   %Fl%Ll%f%D%s%E",
             darkbg ? 'd' : 'a',
-            &s->color,
+            &s.color,
             darkbg ? 'd' : 'a',
-            ScreenShowStyleInfo, s->h.v,
-            s->DescriptionString().c_str());
+            ScreenShowStyleInfo, s.h.v,
+            s.DescriptionString().c_str());
 
         darkbg = !darkbg;
     }
@@ -560,7 +563,7 @@ void TextWindow::ScreenChangeStyleMetric(int link, uint32_t v) {
     if(units == Style::UnitsAs::PIXELS) {
         edit_value = ssprintf("%.2f", val);
     } else {
-        edit_value = SS.MmToString(val);
+        edit_value = SS.MmToString(val, true);
     }
     SS.TW.ShowEditControl(col, edit_value);
     SS.TW.edit.style = hs;

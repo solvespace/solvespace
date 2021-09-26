@@ -198,6 +198,9 @@ public:
         // For drawings in 2d
         WORKPLANE_BY_POINT_ORTHO   = 6000,
         WORKPLANE_BY_LINE_SEGMENTS = 6001,
+        WORKPLANE_BY_POINT_NORMAL  = 6002,
+        //WORKPLANE_BY_POINT_FACE    = 6003,
+        //WORKPLANE_BY_FACE          = 6004,
         // For extrudes, translates, and rotates
         ONE_SIDED                  = 7000,
         TWO_SIDED                  = 7001
@@ -266,6 +269,7 @@ public:
     void Generate(EntityList *entity, ParamList *param);
     bool IsSolvedOkay();
     void TransformImportedBy(Vector t, Quaternion q);
+    bool IsTriangleMeshAssembly() const;
     bool IsForcedToMeshBySource() const;
     bool IsForcedToMesh() const;
     // When a request generates entities from entities, and the source
@@ -323,6 +327,7 @@ public:
     void DrawPolyError(Canvas *canvas);
     void DrawFilledPaths(Canvas *canvas);
     void DrawContourAreaLabels(Canvas *canvas);
+    bool ShouldDrawExploded() const;
 
     SPolygon GetPolygon();
 
@@ -368,6 +373,7 @@ public:
     std::string font;
     Platform::Path file;
     double      aspectRatio;
+    int groupRequestIndex;
 
     static hParam AddParam(ParamList *param, hParam hp);
     void Generate(EntityList *entity, ParamList *param);
@@ -591,6 +597,10 @@ public:
         beziers.l.Clear();
         edges.l.Clear();
     }
+
+    bool ShouldDrawExploded() const;
+    Vector ExplodeOffset() const;
+    Vector PointGetDrawNum() const;
 };
 
 class EntReqTable {
@@ -673,7 +683,10 @@ public:
         CURVE_CURVE_TANGENT    = 125,
         EQUAL_RADIUS           = 130,
         WHERE_DRAGGED          = 200,
-
+        ARC_ARC_LEN_RATIO      = 210,
+        ARC_LINE_LEN_RATIO     = 211,
+        ARC_ARC_DIFFERENCE     = 212,
+        ARC_LINE_DIFFERENCE    = 213,
         COMMENT                = 1000
     };
 
@@ -757,7 +770,7 @@ public:
                       Vector p0, Vector p1, Vector pt, double salient);
     void DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
                        Vector a0, Vector da, Vector b0, Vector db,
-                       Vector offset, Vector *ref, bool trim);
+                       Vector offset, Vector *ref, bool trim, Vector explodeOffset);
     void DoArrow(Canvas *canvas, Canvas::hStroke hcs,
                  Vector p, Vector dir, Vector n, double width, double angle, double da);
     void DoLineWithArrows(Canvas *canvas, Canvas::hStroke hcs,
@@ -778,6 +791,8 @@ public:
                             hEntity he, Vector *refp);
 
     std::string DescriptionString() const;
+
+    bool ShouldDrawExploded() const;
 
     static hConstraint AddConstraint(Constraint *c, bool rememberForUndo = true);
     static void MenuConstrain(Command id);
@@ -924,6 +939,7 @@ public:
     static double StippleScale(hStyle hs);
     static double StippleScaleMm(hStyle hs);
     static std::string StipplePatternName(hStyle hs);
+    static std::string StipplePatternName(StipplePattern stippleType);
     static StipplePattern StipplePatternFromString(std::string name);
 
     std::string DescriptionString() const;

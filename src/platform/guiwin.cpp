@@ -1229,7 +1229,7 @@ public:
         sscheck(GetMonitorInfo(MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST), &mi));
 
         // If it somehow ended up off-screen, then put it back.
-        // and make it visible by at least this portion of the scrren
+        // and make it visible by at least this portion of the screen
         const LONG movein = 40;
 
         RECT mrc = mi.rcMonitor;

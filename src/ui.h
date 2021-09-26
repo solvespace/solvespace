@@ -82,6 +82,7 @@ enum class Command : uint32_t {
     SHOW_GRID,
     DIM_SOLID_MODEL,
     PERSPECTIVE_PROJ,
+    EXPLODE_SKETCH,
     ONTO_WORKPLANE,
     NEAREST_ORTHO,
     NEAREST_ISO,
@@ -89,6 +90,7 @@ enum class Command : uint32_t {
     SHOW_TOOLBAR,
     SHOW_TEXT_WND,
     UNITS_INCHES,
+    UNITS_FEET_INCHES,
     UNITS_MM,
     UNITS_METERS,
     FULL_SCREEN,
@@ -318,6 +320,7 @@ public:
         AUTOSAVE_INTERVAL     = 116,
         LIGHT_AMBIENT         = 117,
         FIND_CONSTRAINT_TIMEOUT = 118,
+        EXPLODE_DISTANCE      = 119,
         // For TTF text
         TTF_TEXT              = 300,
         // For the step dimension screen
@@ -342,7 +345,9 @@ public:
         VIEW_PROJ_RIGHT       = 702,
         VIEW_PROJ_UP          = 703,
         // For tangent arc
-        TANGENT_ARC_RADIUS    = 800
+        TANGENT_ARC_RADIUS    = 800,
+        // For helix pitch
+        HELIX_PITCH           = 802
     };
     struct {
         bool        showAgain;
@@ -473,6 +478,8 @@ public:
     static void ScreenChangeExprA(int link, uint32_t v);
     static void ScreenChangeGroupName(int link, uint32_t v);
     static void ScreenChangeGroupScale(int link, uint32_t v);
+    static void ScreenChangeHelixPitch(int link, uint32_t v);
+    static void ScreenChangePitchOption(int link, uint32_t v);
     static void ScreenChangeLightDirection(int link, uint32_t v);
     static void ScreenChangeLightIntensity(int link, uint32_t v);
     static void ScreenChangeLightAmbient(int link, uint32_t v);
@@ -483,6 +490,7 @@ public:
     static void ScreenChangeExportMaxSegments(int link, uint32_t v);
     static void ScreenChangeCameraTangent(int link, uint32_t v);
     static void ScreenChangeGridSpacing(int link, uint32_t v);
+    static void ScreenChangeExplodeDistance(int link, uint32_t v);
     static void ScreenChangeDigitsAfterDecimal(int link, uint32_t v);
     static void ScreenChangeDigitsAfterDecimalDegree(int link, uint32_t v);
     static void ScreenChangeUseSIPrefixes(int link, uint32_t v);
@@ -535,6 +543,7 @@ public:
     Platform::MenuItemRef showGridMenuItem;
     Platform::MenuItemRef dimSolidModelMenuItem;
     Platform::MenuItemRef perspectiveProjMenuItem;
+    Platform::MenuItemRef explodeMenuItem;
     Platform::MenuItemRef showToolbarMenuItem;
     Platform::MenuItemRef showTextWndMenuItem;
     Platform::MenuItemRef fullScreenMenuItem;
@@ -542,6 +551,7 @@ public:
     Platform::MenuItemRef unitsMmMenuItem;
     Platform::MenuItemRef unitsMetersMenuItem;
     Platform::MenuItemRef unitsInchesMenuItem;
+    Platform::MenuItemRef unitsFeetInchesMenuItem;
 
     Platform::MenuItemRef inWorkplaneMenuItem;
     Platform::MenuItemRef in3dMenuItem;
@@ -798,6 +808,8 @@ public:
     bool    showEdges;
     bool    showOutlines;
     bool    showFaces;
+    bool    showFacesDrawing;
+    bool    showFacesNonDrawing;
     bool    showMesh;
     void ToggleBool(bool *v);
 

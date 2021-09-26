@@ -286,7 +286,8 @@ public:
     }
 
     void PopUp() override {
-        [NSMenu popUpContextMenu:nsMenu withEvent:[NSApp currentEvent] forView:nil];
+        NSEvent* event = [NSApp currentEvent];
+        [NSMenu popUpContextMenu:nsMenu withEvent:event forView:event.window.contentView];
     }
 
     void Clear() override {
@@ -358,18 +359,25 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 - (void)didEdit:(NSString *)text;
 
 @property double scrollerMin;
-@property double scrollerMax;
+@property double scrollerSize;
+@property double pageSize;
+
 @end
 
 @implementation SSView
 {
     NSTrackingArea     *trackingArea;
     NSTextField        *editor;
+    double             magnificationGestureCurrentZ;
+    double             rotationGestureCurrent;
+    Point2d            trackpadPositionShift;
+    bool               inTrackpadScrollGesture;
+    Platform::Window::Kind kind;
 }
 
 @synthesize acceptsFirstResponder;
 
-- (id)initWithFrame:(NSRect)frameRect {
+- (id)initWithKind:(Platform::Window::Kind)aKind {
     NSOpenGLPixelFormatAttribute attrs[] = {
         NSOpenGLPFADoubleBuffer,
         NSOpenGLPFAColorSize, 24,
@@ -377,7 +385,7 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
         0
     };
     NSOpenGLPixelFormat *pixelFormat = [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
-    if(self = [super initWithFrame:frameRect pixelFormat:pixelFormat]) {
+    if(self = [super initWithFrame:NSMakeRect(0, 0, 0, 0) pixelFormat:pixelFormat]) {
         self.wantsBestResolutionOpenGLSurface = YES;
         self.wantsLayer = YES;
         editor = [[NSTextField alloc] init];
@@ -387,6 +395,18 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
         editor.bezeled = NO;
         editor.target = self;
         editor.action = @selector(didEdit:);
+
+        inTrackpadScrollGesture = false;
+        kind = aKind;
+        if(kind == Platform::Window::Kind::TOPLEVEL) {
+            NSGestureRecognizer *mag = [[NSMagnificationGestureRecognizer alloc] initWithTarget:self
+                action:@selector(magnifyGesture:)];
+            [self addGestureRecognizer:mag];
+
+            NSRotationGestureRecognizer* rot = [[NSRotationGestureRecognizer alloc] initWithTarget:self
+                action:@selector(rotateGesture:)];
+            [self addGestureRecognizer:rot];
+        }
     }
     return self;
 }
@@ -427,9 +447,9 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 - (Platform::MouseEvent)convertMouseEvent:(NSEvent *)nsEvent {
     Platform::MouseEvent event = {};
 
-    NSPoint nsPoint = [self convertPoint:nsEvent.locationInWindow fromView:self];
+    NSPoint nsPoint = [self convertPoint:nsEvent.locationInWindow fromView:nil];
     event.x = nsPoint.x;
-    event.y = self.bounds.size.height - nsPoint.y;
+    event.y = nsPoint.y;
 
     NSUInteger nsFlags = [nsEvent modifierFlags];
     if(nsFlags & NSEventModifierFlagShift)   event.shiftDown   = true;
@@ -553,14 +573,57 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     using Platform::MouseEvent;
 
     MouseEvent event = [self convertMouseEvent:nsEvent];
+    if(nsEvent.subtype == NSEventSubtypeTabletPoint && kind == Platform::Window::Kind::TOPLEVEL) {
+        // This is how Cocoa represents 2 finger trackpad drag gestures, rather than going via
+        // NSPanGestureRecognizer which is how you might expect this to work... We complicate this
+        // further by also handling shift-two-finger-drag to mean rotate. Fortunately we're using
+        // shift in the same way as right-mouse-button MouseEvent does (to converts a pan to a
+        // rotate) so we get the rotate support for free. It's a bit ugly having to fake mouse
+        // events and track the deviation from the actual mouse cursor with trackpadPositionShift,
+        // but in lieu of an event API that allows us to request a rotate/pan with relative
+        // coordinates, it's the best we can do.
+        event.button = MouseEvent::Button::RIGHT;
+        // Make sure control (actually cmd) isn't passed through, ctrl-right-click-drag has special
+        // meaning as rotate which we don't want to inadvertently trigger.
+        event.controlDown = false;
+        if(nsEvent.scrollingDeltaX == 0 && nsEvent.scrollingDeltaY == 0) {
+            // Cocoa represents the point where the user lifts their fingers off (and any inertial
+            // scrolling has finished) by an event with scrollingDeltaX and scrollingDeltaY both 0.
+            // Sometimes you also get a zero scroll at the start of a two-finger-rotate (probably
+            // reflecting the internal implementation of that being a cancelled possible pan
+            // gesture), which is why this conditional is structured the way it is.
+            if(inTrackpadScrollGesture) {
+                event.x += trackpadPositionShift.x;
+                event.y += trackpadPositionShift.y;
+                event.type = MouseEvent::Type::RELEASE;
+                receiver->onMouseEvent(event);
+                inTrackpadScrollGesture = false;
+                trackpadPositionShift = Point2d::From(0, 0);
+            }
+            return;
+        } else if(!inTrackpadScrollGesture) {
+            inTrackpadScrollGesture = true;
+            trackpadPositionShift = Point2d::From(0, 0);
+            event.type = MouseEvent::Type::PRESS;
+            receiver->onMouseEvent(event);
+            // And drop through
+        }
+
+        trackpadPositionShift.x += nsEvent.scrollingDeltaX;
+        trackpadPositionShift.y += nsEvent.scrollingDeltaY;
+        event.type = MouseEvent::Type::MOTION;
+        event.x += trackpadPositionShift.x;
+        event.y += trackpadPositionShift.y;
+        receiver->onMouseEvent(event);
+        return;
+    }
+
     event.type = MouseEvent::Type::SCROLL_VERT;
 
     bool isPrecise = [nsEvent hasPreciseScrollingDeltas];
     event.scrollDelta = [nsEvent scrollingDeltaY] / (isPrecise ? 50 : 5);
 
-    if(receiver->onMouseEvent) {
-        receiver->onMouseEvent(event);
-    }
+    receiver->onMouseEvent(event);
 }
 
 - (void)mouseExited:(NSEvent *)nsEvent {
@@ -638,6 +701,50 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     [super keyUp:nsEvent];
 }
 
+- (void)magnifyGesture:(NSMagnificationGestureRecognizer *)gesture {
+    // The onSixDofEvent API doesn't allow us to specify the scaling's origin, so for expediency
+    // we fake out a scrollwheel MouseEvent with a suitably-scaled scrollDelta with a bit of
+    // absolute-to-relative positioning conversion tracked using magnificationGestureCurrentZ.
+
+    if(gesture.state == NSGestureRecognizerStateBegan) {
+        magnificationGestureCurrentZ = 0.0;
+    }
+
+    // Magic number to make gesture.magnification align roughly with what scrollDelta expects
+    constexpr double kScale = 10.0;
+    double z = ((double)gesture.magnification * kScale);
+    double zdelta = z - magnificationGestureCurrentZ;
+    magnificationGestureCurrentZ = z;
+
+    using Platform::MouseEvent;
+    MouseEvent event = {};
+    event.type = MouseEvent::Type::SCROLL_VERT;
+    NSPoint nsPoint = [gesture locationInView:self];
+    event.x = nsPoint.x;
+    event.y = nsPoint.y;
+    event.scrollDelta = zdelta;
+    if(receiver->onMouseEvent) {
+        receiver->onMouseEvent(event);
+    }
+}
+
+- (void)rotateGesture:(NSRotationGestureRecognizer *)gesture {
+    if(gesture.state == NSGestureRecognizerStateBegan) {
+        rotationGestureCurrent = 0.0;
+    }
+    double rotation = gesture.rotation;
+    double rotationDelta = rotation - rotationGestureCurrent;
+    rotationGestureCurrent = rotation;
+
+    using Platform::SixDofEvent;
+    SixDofEvent event = {};
+    event.type = SixDofEvent::Type::MOTION;
+    event.rotationZ = rotationDelta;
+    if(receiver->onSixDofEvent) {
+        receiver->onSixDofEvent(event);
+    }
+}
+
 @synthesize editing;
 
 - (void)startEditing:(NSString *)text at:(NSPoint)origin withHeight:(double)fontHeight
@@ -698,11 +805,27 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 }
 
 @synthesize scrollerMin;
-@synthesize scrollerMax;
+@synthesize scrollerSize;
+@synthesize pageSize;
 
 - (void)didScroll:(NSScroller *)sender {
+    double pos;
+    switch(sender.hitPart) {
+        case NSScrollerKnob:
+        case NSScrollerKnobSlot:
+            pos = receiver->GetScrollbarPosition();
+            break;
+        case NSScrollerDecrementPage:
+            pos = receiver->GetScrollbarPosition() - pageSize;
+            break;
+        case NSScrollerIncrementPage:
+            pos = receiver->GetScrollbarPosition() + pageSize;
+            break;
+        default:
+            return;
+    }
+
     if(receiver->onScrollbarAdjusted) {
-        double pos = scrollerMin + [sender doubleValue] * (scrollerMax - scrollerMin);
         receiver->onScrollbarAdjusted(pos);
     }
 }
@@ -769,7 +892,7 @@ public:
     NSString         *nsToolTip;
 
     WindowImplCocoa(Window::Kind kind, std::shared_ptr<WindowImplCocoa> parentWindow) {
-        ssView = [[SSView alloc] init];
+        ssView = [[SSView alloc] initWithKind:kind];
         ssView.translatesAutoresizingMaskIntoConstraints = NO;
         ssView.receiver = this;
 
@@ -962,21 +1085,22 @@ public:
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
         ssView.scrollerMin = min;
-        ssView.scrollerMax = max - pageSize;
-        [nsScroller setKnobProportion:(pageSize / (ssView.scrollerMax - ssView.scrollerMin))];
+        ssView.scrollerSize = max + 1 - min;
+        ssView.pageSize = pageSize;
+        nsScroller.knobProportion = pageSize / ssView.scrollerSize;
+        nsScroller.hidden = pageSize >= ssView.scrollerSize;
     }
 
     double GetScrollbarPosition() override {
+        // Platform::Window scrollbar positions are in the range [min, max+1 - pageSize] inclusive,
+        // and Cocoa scrollbars are from 0.0 to 1.0 inclusive, so we have to apply some scaling and
+        // transforming. (scrollerSize is max+1-min, see ConfigureScrollbar above)
         return ssView.scrollerMin +
-            [nsScroller doubleValue] * (ssView.scrollerMax - ssView.scrollerMin);
+            nsScroller.doubleValue * (ssView.scrollerSize - ssView.pageSize);
     }
 
     void SetScrollbarPosition(double pos) override {
-        if(pos > ssView.scrollerMax)
-            pos = ssView.scrollerMax;
-        if(GetScrollbarPosition() == pos)
-            return;
-        [nsScroller setDoubleValue:(pos / (ssView.scrollerMax - ssView.scrollerMin))];
+        nsScroller.doubleValue = (pos - ssView.scrollerMin) / ( ssView.scrollerSize - ssView.pageSize);
     }
 
     void Invalidate() override {
@@ -1426,9 +1550,22 @@ void OpenInBrowser(const std::string &url) {
 - (IBAction)preferences:(id)sender;
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename;
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender;
+
+@property BOOL exiting;
+
 @end
 
 @implementation SSApplicationDelegate
+
+@synthesize exiting;
+
+- (id)init {
+    if (self = [super init]) {
+        self.exiting = false;
+    }
+    return self;
+}
+
 - (IBAction)preferences:(id)sender {
     if (!SS.GW.showTextWindow) {
         SolveSpace::SS.GW.MenuView(SolveSpace::Command::SHOW_TEXT_WND);
@@ -1443,12 +1580,27 @@ void OpenInBrowser(const std::string &url) {
 }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
-    [[[NSApp mainWindow] delegate] windowShouldClose:[NSApp mainWindow]];
-    return NSTerminateCancel;
+    if(!SS.unsaved) {
+        return NSTerminateNow;
+    } else {
+        [self performSelectorOnMainThread:@selector(applicationTerminatePrompt) withObject:nil
+            waitUntilDone:NO modes:@[NSDefaultRunLoopMode, NSModalPanelRunLoopMode]];
+        return NSTerminateLater;
+    }
+}
+
+- (void)applicationWillTerminate:(NSNotification *)notification {
+    if(!exiting) {
+        // Prevent the Platform::ExitGui() call from SolveSpaceUI::Exit()
+        // triggering another terminate
+        exiting = true;
+        // Now let SS save settings etc
+        SS.Exit();
+    }
 }
 
 - (void)applicationTerminatePrompt {
-    SolveSpace::SS.MenuFile(SolveSpace::Command::EXIT);
+    [NSApp replyToApplicationShouldTerminate:SS.OkayToStartNewFile()];
 }
 @end
 
@@ -1469,6 +1621,14 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     ssDelegate = [[SSApplicationDelegate alloc] init];
     NSApplication.sharedApplication.delegate = ssDelegate;
 
+    // Setting this prevents "Show Tab Bar" and "Show All Tabs" items from being
+    // automagically added to the View menu
+    NSWindow.allowsAutomaticWindowTabbing = NO;
+
+    // And this prevents the duplicate "Enter Full Screen" menu item, see
+    // https://stackoverflow.com/questions/52154977/how-to-get-rid-of-enter-full-screen-menu-item
+    [[NSUserDefaults standardUserDefaults] setBool:NO forKey:@"NSFullScreenMenuItemEverywhere"];
+
     [NSBundle.mainBundle loadNibNamed:@"MainMenu" owner:nil topLevelObjects:nil];
 
     NSArray *languages = NSLocale.preferredLanguages;
@@ -1487,8 +1647,10 @@ void RunGui() {
 }
 
 void ExitGui() {
-    [NSApp setDelegate:nil];
-    [NSApp terminate:nil];
+    if(!ssDelegate.exiting) {
+        ssDelegate.exiting = true;
+        [NSApp terminate:nil];
+    }
 }
 
 void ClearGui() {}

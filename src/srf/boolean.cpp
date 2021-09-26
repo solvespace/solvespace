@@ -29,7 +29,7 @@ void SCurve::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const {
     }
 }
 
-// We will be inserting other curve verticies into our curves to split them.
+// We will be inserting other curve vertices into our curves to split them.
 // This is helpful when curved surfaces become tangent along a trim and the
 // usual tests for curve-surface intersection don't split the curve at a vertex.
 // This is faster than the previous version that split at surface corners and
@@ -521,20 +521,19 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     SEdgeList inter = {};
 
     SSurface *ss;
-    SCurve *sc;
-    for(sc = into->curve.First(); sc; sc = into->curve.NextAfter(sc)) {
-        if(sc->source != SCurve::Source::INTERSECTION) continue;
+    for(SCurve &sc : into->curve) {
+        if(sc.source != SCurve::Source::INTERSECTION) continue;
         if(opA) {
-            if(sc->surfA != h) continue;
-            ss = shb->surface.FindById(sc->surfB);
+            if(sc.surfA != h) continue;
+            ss = shb->surface.FindById(sc.surfB);
         } else {
-            if(sc->surfB != h) continue;
-            ss = sha->surface.FindById(sc->surfA);
+            if(sc.surfB != h) continue;
+            ss = sha->surface.FindById(sc.surfA);
         }
         int i;
-        for(i = 1; i < sc->pts.n; i++) {
-            Vector a = sc->pts[i-1].p,
-                   b = sc->pts[i].p;
+        for(i = 1; i < sc.pts.n; i++) {
+            Vector a = sc.pts[i-1].p,
+                   b = sc.pts[i].p;
 
             Point2d auv, buv;
             ss->ClosestPointTo(a, &(auv.x), &(auv.y));
@@ -560,9 +559,9 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                     bkwds = !bkwds;
                 }
                 if(bkwds) {
-                    inter.AddEdge(tb, ta, sc->h.v, 1);
+                    inter.AddEdge(tb, ta, sc.h.v, 1);
                 } else {
-                    inter.AddEdge(ta, tb, sc->h.v, 0);
+                    inter.AddEdge(ta, tb, sc.h.v, 0);
                 }
             }
         }
@@ -711,20 +710,18 @@ void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
     for(int i = 0; i< surface.n; i++) {
         SSurface *sa = &surface[i];
 
-        SSurface *sb;
-        for(sb = agnst->surface.First(); sb; sb = agnst->surface.NextAfter(sb)){
+        for(SSurface &sb : agnst->surface){
             // Intersect every surface from our shell against every surface
             // from agnst; this will add zero or more curves to the curve
             // list for into.
-            sa->IntersectAgainst(sb, this, agnst, into);
+            sa->IntersectAgainst(&sb, this, agnst, into);
         }
     }
 }
 
 void SShell::CleanupAfterBoolean() {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        ss->edges.Clear();
+    for(SSurface &ss : surface) {
+        ss.edges.Clear();
     }
 }
 
@@ -734,10 +731,9 @@ void SShell::CleanupAfterBoolean() {
 // by their new IDs.
 //-----------------------------------------------------------------------------
 void SShell::RewriteSurfaceHandlesForCurves(SShell *a, SShell *b) {
-    SCurve *sc;
-    for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
-        sc->surfA = sc->GetSurfaceA(a, b)->newH,
-        sc->surfB = sc->GetSurfaceB(a, b)->newH;
+    for(SCurve &sc : curve) {
+        sc.surfA = sc.GetSurfaceA(a, b)->newH,
+        sc.surfB = sc.GetSurfaceB(a, b)->newH;
     }
 }
 
@@ -759,32 +755,32 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
     // First, copy over all the curves. Note which shell (a or b) each curve
     // came from, but assign it a new ID.
     curve.ReserveMore(a->curve.n + b->curve.n);
-    SCurve *c, cn;
+    SCurve cn;
     for(i = 0; i < 2; i++) {
         ab = (i == 0) ? a : b;
-        for(c = ab->curve.First(); c; c = ab->curve.NextAfter(c)) {
-            cn = SCurve::FromTransformationOf(c, t, q, 1.0);
+        for(SCurve &c : ab->curve) {
+            cn = SCurve::FromTransformationOf(&c, t, q, 1.0);
             cn.source = (i == 0) ? SCurve::Source::A : SCurve::Source::B;
             // surfA and surfB are wrong now, and we can't fix them until
             // we've assigned IDs to the surfaces. So we'll get that later.
-            c->newH = curve.AddAndAssignId(&cn);
+            c.newH = curve.AddAndAssignId(&cn);
         }
     }
 
     // Likewise copy over all the surfaces.
     surface.ReserveMore(a->surface.n + b->surface.n);
-    SSurface *s, sn;
+    SSurface sn;
     for(i = 0; i < 2; i++) {
         ab = (i == 0) ? a : b;
-        for(s = ab->surface.First(); s; s = ab->surface.NextAfter(s)) {
-            sn = SSurface::FromTransformationOf(s, t, q, 1.0, /*includingTrims=*/true);
+        for(SSurface &s : ab->surface) {
+            sn = SSurface::FromTransformationOf(&s, t, q, 1.0, /*includingTrims=*/true);
             // All the trim curve IDs get rewritten; we know the new handles
             // to the curves since we recorded them in the previous step.
             STrimBy *stb;
             for(stb = sn.trim.First(); stb; stb = sn.trim.NextAfter(stb)) {
                 stb->curve = ab->curve.FindById(stb->curve)->newH;
             }
-            s->newH = surface.AddAndAssignId(&sn);
+            s.newH = surface.AddAndAssignId(&sn);
         }
     }
 
@@ -800,7 +796,7 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type) {
     b->MakeClassifyingBsps(NULL);
 
     // Copy over all the original curves, splitting them so that a
-    // piecwise linear segment never crosses a surface from the other
+    // piecewise linear segment never crosses a surface from the other
     // shell.
     a->CopyCurvesSplitAgainst(/*opA=*/true,  b, this);
     b->CopyCurvesSplitAgainst(/*opA=*/false, a, this);
@@ -809,12 +805,11 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type) {
     // the surfaces in B (which is all of the intersection curves).
     a->MakeIntersectionCurvesAgainst(b, this);
 
-    SCurve *sc;
-    for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
-        SSurface *srfA = sc->GetSurfaceA(a, b),
-                       *srfB = sc->GetSurfaceB(a, b);
+    for(SCurve &sc : curve) {
+        SSurface *srfA = sc.GetSurfaceA(a, b),
+                 *srfB = sc.GetSurfaceB(a, b);
 
-        sc->RemoveShortSegments(srfA, srfB);
+        sc.RemoveShortSegments(srfA, srfB);
     }
 
     // And clean up the piecewise linear things we made as a calculation aid
