@@ -4,7 +4,6 @@ de-DE,0407,Deutsch
 en-US,0409,English (US)
 es-AR,2C0A,Español (AR)
 fr-FR,040C,Français
-es-AR,2C0A,español (AR)
 ru-RU,0419,Русский
 tr-TR,041F,Türkçe
 uk-UA,0422,Українська
