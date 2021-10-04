@@ -2,20 +2,21 @@
 # Copyright (C) 2017 the SolveSpace authors
 # This file is distributed under the same license as the SolveSpace package.
 # EvilSpirit <evilspirit@evilspirit.org>, 2017.
+# Olesya Gerasimenko <translation-team@basealt.ru>, 2021.
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
 "POT-Creation-Date: 2021-09-26 16:25-0400\n"
-"PO-Revision-Date: 2021-01-22 18:50+0700\n"
-"Last-Translator: evilspirit@evilspirit.org\n"
-"Language-Team: EvilSpirit\n"
+"PO-Revision-Date: 2021-10-04 15:33+0300\n"
+"Last-Translator: Olesya Gerasimenko <translation-team@basealt.ru>\n"
+"Language-Team: Basealt Translation Team\n"
 "Language: ru_RU\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Lokalize 21.08.1\n"
 
 #: clipboard.cpp:309
 msgid ""
@@ -169,12 +170,12 @@ msgstr "отношение-длин"
 #: constraint.cpp:25
 msgctxt "constr-name"
 msgid "arc-arc-length-ratio"
-msgstr ""
+msgstr "отношение-длин-дуга-дуга"
 
 #: constraint.cpp:26
 msgctxt "constr-name"
 msgid "arc-line-length-ratio"
-msgstr ""
+msgstr "отношение-длин-дуга-отрезок"
 
 #: constraint.cpp:27
 msgctxt "constr-name"
@@ -184,12 +185,12 @@ msgstr "разность-длин"
 #: constraint.cpp:28
 msgctxt "constr-name"
 msgid "arc-arc-len-difference"
-msgstr ""
+msgstr "разность-длин-дуга-дуга"
 
 #: constraint.cpp:29
 msgctxt "constr-name"
 msgid "arc-line-len-difference"
-msgstr ""
+msgstr "разность-длин-дуга-отрезок"
 
 #: constraint.cpp:30
 msgctxt "constr-name"
@@ -404,6 +405,12 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
+"Неправильное выделение для ограничения 'отношение длин'. Ограничение может"
+" принимать в качестве выделения следующие примитивы:\n"
+"\n"
+"    * два отрезка\n"
+"    * две дуги\n"
+"    * дугу и отрезок\n"
 
 #: constraint.cpp:441
 msgid ""
@@ -414,6 +421,12 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
+"Неправильное выделение для ограничения 'разность длин'. Ограничение может"
+" принимать в качестве выделения следующие примитивы:\n"
+"\n"
+"    * два отрезка\n"
+"    * две дуги\n"
+"    * дугу и отрезок\n"
 
 #: constraint.cpp:472
 msgid ""
@@ -485,7 +498,7 @@ msgid ""
 "\n"
 "    * two normals\n"
 msgstr ""
-"Неправильное выделение для ограничения \"идентичная ориентация\".\n"
+"Неправильное выделение для ограничения 'идентичная ориентация'.\n"
 "Ограничение может принимать в качестве выделения следующие примитивы:\n"
 "\n"
 "    * два координатных базиса('нормали')\n"
@@ -562,7 +575,7 @@ msgid ""
 "\n"
 "    * a point\n"
 msgstr ""
-"Неправильное выделение для ограничения 'Фиксация'.\n"
+"Неправильное выделение для ограничения 'фиксация'.\n"
 "Ограничение может принимать в качестве выделения следующие примитивы:\n"
 "\n"
 "    * точку\n"
@@ -803,7 +816,7 @@ msgstr "Стили Линий..."
 
 #: graphicswin.cpp:79
 msgid "&View Projection..."
-msgstr "&View Прое&кция..."
+msgstr "&Проекция вида..."
 
 #: graphicswin.cpp:81
 msgid "Con&figuration..."
@@ -855,7 +868,7 @@ msgstr "Перспективная Прое&кция"
 
 #: graphicswin.cpp:97
 msgid "Show E&xploded View"
-msgstr ""
+msgstr "Показать &Развернутый Вид"
 
 #: graphicswin.cpp:98
 msgid "Dimension &Units"
@@ -875,7 +888,7 @@ msgstr "Размеры в Дю&ймах"
 
 #: graphicswin.cpp:102
 msgid "Dimensions in &Feet and Inches"
-msgstr ""
+msgstr "Размеры в &Футах и дюймах"
 
 #: graphicswin.cpp:104
 msgid "Show &Toolbar"
@@ -1043,11 +1056,11 @@ msgstr "&Равенство Длин / Радиусов / Углов"
 
 #: graphicswin.cpp:158
 msgid "Length / Arc Ra&tio"
-msgstr ""
+msgstr "&Отношение длин (дуга)"
 
 #: graphicswin.cpp:159
 msgid "Length / Arc Diff&erence"
-msgstr ""
+msgstr "Р&азность длин (дуга)"
 
 #: graphicswin.cpp:160
 msgid "At &Midpoint"
@@ -1179,7 +1192,7 @@ msgid ""
 "make a link group the active group."
 msgstr ""
 "Чтобы использовать эту команду, выделите точку или другой примитив, "
-"принадлежащий импортированной детали или активируйте группу импортированной "
+"принадлежащий импортированной детали, или активируйте группу импортированной "
 "детали."
 
 #: graphicswin.cpp:1177
@@ -1294,6 +1307,14 @@ msgid ""
 "    * a point and a normal (through the point, orthogonal to the normal)\n"
 "    * a workplane (copy of the workplane)\n"
 msgstr ""
+"Неправильное выделение для создания эскиза в рабочей плоскости. Группа может"
+" быть создана, используя в качестве выделения следующие "
+"примитивы:\n"
+"\n"
+"    * точку (через точку, ортогонально осям координат)\n"
+"    * точку и два отрезка (через точку, параллельно отрезкам)\n"
+"    * точку и нормаль (через точку, ортогонально нормали)\n"
+"    * рабочую плоскость (копию рабочей плоскости)\n"
 
 #: group.cpp:166
 msgid ""
@@ -1326,7 +1347,7 @@ msgstr ""
 "Группа может быть создана, используя в качестве выделения следующие "
 "примитивы:\n"
 "\n"
-"    * точку и отрезок / координатных базис (нормаль) (тело вращения вокруг "
+"    * точку и отрезок / координатный базис (нормаль) (тело вращения вокруг "
 "оси, проходящей через точку и параллельной отрезку / нормали)\n"
 "    * отрезок (тело вращения вокруг оси, проходящей через отрезок)\n"
 "\n"
@@ -1354,7 +1375,7 @@ msgstr ""
 "Группа может быть создана, используя в качестве выделения следующие "
 "примитивы:\n"
 "\n"
-"    * точку и отрезок / координатных базис (нормаль) (тело вращения вокруг "
+"    * точку и отрезок / координатный базис (нормаль) (тело вращения вокруг "
 "оси, проходящей через точку и параллельной отрезку / нормали)\n"
 "    * отрезок (тело вращения вокруг оси, проходящей через отрезок)\n"
 "\n"
@@ -1407,7 +1428,7 @@ msgstr ""
 "\n"
 "    * точку при активной рабочей плоскости (вращение в плоскости вокруг "
 "выбранной точки)\n"
-"    * точку и отрезок / координатных базис (нормаль) (вращение вокруг оси, "
+"    * точку и отрезок / координатный базис (нормаль) (вращение вокруг оси, "
 "проходящей через точку и параллельной отрезку / нормали)\n"
 "\n"
 
@@ -1646,7 +1667,7 @@ msgstr "проекты SolveSpace"
 #: platform/gui.cpp:89
 msgctxt "file-type"
 msgid "ALL"
-msgstr ""
+msgstr "ВСЕ"
 
 #: platform/gui.cpp:91
 msgctxt "file-type"
@@ -1656,7 +1677,7 @@ msgstr "IDF печатная плата"
 #: platform/gui.cpp:92
 msgctxt "file-type"
 msgid "STL triangle mesh"
-msgstr ""
+msgstr "STL треугольная сетка"
 
 #: platform/gui.cpp:96
 msgctxt "file-type"
@@ -1676,7 +1697,7 @@ msgstr "Wavefront OBJ полигональная сетка"
 #: platform/gui.cpp:102
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, with viewer"
-msgstr "Three.js-совместимая полигональная сетка с просмторщиком"
+msgstr "Three.js-совместимая полигональная сетка с просмотрщиком"
 
 #: platform/gui.cpp:103
 msgctxt "file-type"
@@ -1846,7 +1867,7 @@ msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
 "dwg."
 msgstr ""
-"Неподдерживаемый тип файла '%s'; Поддерживаются файлы с расширением  .dxf и ."
+"Неподдерживаемый тип файла '%s'. Поддерживаются файлы с расширением .dxf и ."
 "dwg."
 
 #: solvespace.cpp:823
@@ -1975,11 +1996,11 @@ msgstr "Невозможно записать в '%s'"
 
 #: solvespace.cpp:1016
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
-msgstr "Полигональная стека содержит самопересечения (это плохо)"
+msgstr "Полигональная сетка содержит самопересечения (это плохо)"
 
 #: solvespace.cpp:1017
 msgid "The mesh is not self-intersecting (okay, valid)."
-msgstr "Полигональная стека не содержит самопересечений (это хорошо)"
+msgstr "Полигональная сетка не содержит самопересечений (это хорошо)"
 
 #: solvespace.cpp:1019
 msgid "The mesh has naked edges (NOT okay, invalid)."
