@@ -105,6 +105,7 @@ void SolveSpaceUI::Init() {
     exportCanvas.dy     = settings->ThawFloat("ExportCanvas_Dy",     5.0);
     // Extra parameters when exporting G code
     gCode.depth         = settings->ThawFloat("GCode_Depth", 10.0);
+    gCode.safeHeight    = settings->ThawFloat("GCode_SafeHeight", 5.0);
     gCode.passes        = settings->ThawInt("GCode_Passes", 1);
     gCode.feed          = settings->ThawFloat("GCode_Feed", 10.0);
     gCode.plungeFeed    = settings->ThawFloat("GCode_PlungeFeed", 10.0);
