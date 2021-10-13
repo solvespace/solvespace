@@ -161,6 +161,11 @@ void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
             buf += SS.MmToString(SS.gCode.depth, true);
             break;
 
+        case 'h':
+            SS.TW.edit.meaning = Edit::G_CODE_SAFE_HEIGHT;
+            buf += SS.MmToString(SS.gCode.safeHeight, true);
+            break;
+
         case 's':
             SS.TW.edit.meaning = Edit::G_CODE_PASSES;
             buf += std::to_string(SS.gCode.passes);
@@ -490,6 +495,11 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         case Edit::G_CODE_DEPTH: {
             Expr *e = Expr::From(s, /*popUpError=*/true);
             if(e) SS.gCode.depth = (float)SS.ExprToMm(e);
+            break;
+        }
+        case Edit::G_CODE_SAFE_HEIGHT: {
+            Expr *e = Expr::From(s, /*popUpError=*/true);
+            if(e) SS.gCode.safeHeight = (float)SS.ExprToMm(e);
             break;
         }
         case Edit::G_CODE_PASSES: {
