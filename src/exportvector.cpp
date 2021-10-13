@@ -1102,7 +1102,7 @@ void SvgFileWriter::StartFile() {
             fprintf(f, "stroke-dasharray:%s;\r\n", patternStr.c_str());
         }
         if(s->filled) {
-            fprintf(f, "fill:#%02x%02x%02x;\r\n", fillRgb.red, fillRgb.green, fillRgb.blue); 
+            fprintf(f, "fill:#%02x%02x%02x;\r\n", fillRgb.red, fillRgb.green, fillRgb.blue);
         }
         else {
             fprintf(f, "fill:none;\r\n");
@@ -1308,9 +1308,9 @@ void GCodeFileWriter::FinishAndCloseFile() {
                         SS.MmToString(pt->p.x).c_str(), SS.MmToString(pt->p.y).c_str(),
                         SS.MmToString(SS.gCode.feed).c_str());
             }
-            // Move up to a clearance plane 5mm above the work.
+            // Move up to a clearance plane above the work.
             fprintf(f, "G00 Z%s\r\n",
-                    SS.MmToString(SS.gCode.depth < 0 ? +5 : -5).c_str());
+                    SS.MmToString(SS.gCode.safeHeight).c_str());
         }
     }
 
