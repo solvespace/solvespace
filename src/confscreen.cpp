@@ -497,6 +497,11 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
             if(e) SS.gCode.depth = (float)SS.ExprToMm(e);
             break;
         }
+        case Edit::G_CODE_SAFE_HEIGHT: {
+            Expr *e = Expr::From(s, /*popUpError=*/true);
+            if(e) SS.gCode.safeHeight = (float)SS.ExprToMm(e);
+            break;
+        }
         case Edit::G_CODE_PASSES: {
             Expr *e = Expr::From(s, /*popUpError=*/true);
             if(e) SS.gCode.passes = (int)(e->Eval());
