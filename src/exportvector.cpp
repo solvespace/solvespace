@@ -1308,9 +1308,9 @@ void GCodeFileWriter::FinishAndCloseFile() {
                         SS.MmToString(pt->p.x).c_str(), SS.MmToString(pt->p.y).c_str(),
                         SS.MmToString(SS.gCode.feed).c_str());
             }
-            // Move up to a clearance plane 5mm above the work.
+            // Move up to a clearance plane above the work.
             fprintf(f, "G00 Z%s\r\n",
-                    SS.MmToString(SS.gCode.depth < 0 ? +5 : -5).c_str());
+                    SS.MmToString(SS.gCode.safeHeight).c_str());
         }
     }
 
