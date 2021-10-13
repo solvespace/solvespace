@@ -598,6 +598,7 @@ public:
     }        exportCanvas;
     struct {
         double  depth;
+        double  safeHeight;
         int     passes;
         double  feed;
         double  plungeFeed;
