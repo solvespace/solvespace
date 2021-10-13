@@ -314,6 +314,7 @@ public:
         EXPORT_OFFSET         = 110,
         CANVAS_SIZE           = 111,
         G_CODE_DEPTH          = 112,
+        G_CODE_SAFE_HEIGHT    = 120,
         G_CODE_PASSES         = 113,
         G_CODE_FEED           = 114,
         G_CODE_PLUNGE_FEED    = 115,
