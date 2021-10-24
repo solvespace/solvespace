@@ -33,6 +33,7 @@
 
 #if defined(HAVE_SPACEWARE)
 #   include <spnav.h>
+#   include <gdk/gdk.h>
 #   if defined(GDK_WINDOWING_X11)
 #       include <gdk/gdkx.h>
 #   endif
