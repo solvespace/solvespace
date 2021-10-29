@@ -176,40 +176,10 @@ jobs:
         snap: ${{ steps.build.outputs.snap }}
         release: edge,beta
 
-  update_edge_release:
-    name: Update Edge Release
-    needs: [build_release_windows, build_release_windows_openmp, build_release_macos]
-    if: github.event_name == 'push' && !cancelled()
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-    - name: Delete Old Edge Release
-      uses: dev-drprasad/delete-tag-and-release@v0.2.0
-      with:
-        delete_release: true
-        tag_name: edge
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Wait
-      shell: bash
-      run: sleep 60
-    - name: Create New Edge Release
-      id: create_release
-      uses: softprops/action-gh-release@35d938cf01f60fbe522917c81be1e892074f6ad6
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: edge
-        name: Edge
-        prerelease: true
-        draft: false
-        body: ${{ github.event.head_commit.message }}
-
   upload_release_assets:
     name: Upload Release Assets
-    needs: [build_release_windows, build_release_windows_openmp, build_release_macos, update_edge_release]
-    if: "!cancelled()"
+    needs: [build_release_windows, build_release_windows_openmp, build_release_macos]
+    if: "!cancelled() && github.event_name == 'release'"
     runs-on: ubuntu-latest
     steps:
     - name: Download All Workflow Artifacts
@@ -217,15 +187,9 @@ jobs:
     - name: Get Release Upload URL
       id: get_upload_url
       env:
-        event_name: ${{ github.event_name }}
         event: ${{ toJson(github.event) }}
-        edge_upload_url: ${{ needs.update_edge_release.outputs.upload_url }}
       run: |
-        if [ "$event_name" = "release" ]; then
-          upload_url=$(echo "$event" | jq -r ".release.upload_url")
-        else
-          upload_url="$edge_upload_url"
-        fi
+        upload_url=$(echo "$event" | jq -r ".release.upload_url")
         echo "::set-output name=upload_url::$upload_url"
         echo "Upload URL: $upload_url"
     - name: Upload solvespace.exe
