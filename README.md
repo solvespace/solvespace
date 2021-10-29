@@ -61,6 +61,20 @@ and cannot guarantee their functionality.
 
 [notesalexp]: https://notesalexp.org/packages/en/source/solvespace/
 
+### Via automated edge builds
+
+> :warning: **Edge builds might be unstable or contain severe bugs!** 
+> They are intended for experienced users to test new features or verify bugfixes.
+
+Cutting edge builds from the latest master commit are available as zip archives from the
+following links:
+
+- [macOS](https://nightly.link/solvespace/solvespace/workflows/cd/master/macos.zip)
+- [Windows](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows.zip)
+- [Windows with OpenMP enabled](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows-openmp.zip)
+
+Extract the downloaded archive and install or execute the contained file as is appropriate for your platform.
+
 ### Via source code
 
 See below.
