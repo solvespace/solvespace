@@ -9,20 +9,23 @@ SolveSpace
 This repository contains the source code of [SolveSpace][], a parametric
 2d/3d CAD.
 
-[solvespace]: http://solvespace.com
+[solvespace]: https://solvespace.com
 
 Community
 ---------
 
 The official SolveSpace [website][sswebsite] has [tutorials][sstutorial],
-[reference manual][ssref] and a [forum][ssforum]; there is also an official
-IRC channel [#solvespace at irc.freenode.net][ssirc].
+[reference manual][ssref] and a [forum][ssforum].
 
-[sswebsite]: http://solvespace.com/
-[ssref]: http://solvespace.com/ref.pl
-[sstutorial]: http://solvespace.com/tutorial.pl
-[ssforum]: http://solvespace.com/forum.pl
-[ssirc]: https://webchat.freenode.net/?channels=solvespace
+There is also [r/SolveSpace][ssreddit] — a fan driven users community on
+Reddit, which is a good place to share your showcases, tutorials and ask
+for help with a general use of SolveSpace app for creating anything.
+
+[sswebsite]: https://solvespace.com/
+[ssref]: https://solvespace.com/ref.pl
+[sstutorial]: https://solvespace.com/tutorial.pl
+[ssforum]: https://solvespace.com/forum.pl
+[ssreddit]: https://reddit.com/r/SolveSpace
 
 Installation
 ------------
