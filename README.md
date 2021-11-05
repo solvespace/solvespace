@@ -18,9 +18,9 @@ The official SolveSpace [website][sswebsite] has [tutorials][sstutorial],
 [reference manual][ssref] and a [forum][ssforum]; there is also an official
 IRC channel [#solvespace at irc.libera.chat][ssirc].
 
-There is also [r/SolveSpace][ssreddit] — a fan driven users community on
-Reddit, which is a good place to share your showcases, tutorials and ask
-for help with a general use of SolveSpace app for creating anything.
+Also check [r/SolveSpace][ssreddit] — a fan driven users community on
+Reddit, which is used for sharing showcases, tutorials and ask for help
+with a general use of SolveSpace app.
 
 [sswebsite]: https://solvespace.com/
 [ssref]: https://solvespace.com/ref.pl
