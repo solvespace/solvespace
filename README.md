@@ -15,7 +15,7 @@ Community
 ---------
 
 The official SolveSpace [website][sswebsite] has [tutorials][sstutorial],
-[reference manual][ssref] and a [forum][ssforum]; ; there is also an official
+[reference manual][ssref] and a [forum][ssforum]; there is also an official
 IRC channel [#solvespace at irc.libera.chat][ssirc].
 
 There is also [r/SolveSpace][ssreddit] — a fan driven users community on
