@@ -909,6 +909,8 @@ try_again:
                     return false;
                 }
             }
+            if(g.IsTriangleMeshAssembly())
+                g.forceToMesh = true;
         } else if(linkMap.count(g.linkFile) == 0) {
             dbp("Missing file for group: %s", g.name.c_str());
             // The file was moved; prompt the user for its new location.
