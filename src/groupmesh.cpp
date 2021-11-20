@@ -182,10 +182,6 @@ void Group::GenerateForMirror(T *source, T *outs, Group::CombineAs forWhat) {
     original = {};
     transd = {};
     combined = {};
-    if(subtype == Subtype::TWO_SIDED) {
-        original.MakeFromCopyOf(source);
-        original.RemapFaces(this, 0);
-    }
     Vector axis = Vector::From(h.param(0), h.param(1), h.param(2));
     transd.MakeFromTransformationOf(source,
         axis.ScaledBy(SK.GetParam(h.param(3))->val * 2),
@@ -194,15 +190,21 @@ void Group::GenerateForMirror(T *source, T *outs, Group::CombineAs forWhat) {
     transd.RemapFaces(this, 1);
 
     // Combine the transformed and original.
-    if (forWhat == CombineAs::ASSEMBLE) {
-        combined.MakeFromAssemblyOf(&original, &transd);
-    } else {
-        combined.MakeFromUnionOf(&original, &transd);
+    if(subtype == Subtype::TWO_SIDED) {
+        original.MakeFromCopyOf(source);
+        original.RemapFaces(this, 0);
+        if (forWhat == CombineAs::ASSEMBLE) {
+            combined.MakeFromAssemblyOf(&original, &transd);
+        } else {
+            combined.MakeFromUnionOf(&original, &transd);
+        }
+        *outs = combined;
     }
-
+    else {
+        *outs = transd;
+    }
     original.Clear();
     transd.Clear();
-    *outs = combined;
 }
 
 template<class T>
@@ -259,7 +261,7 @@ void Group::GenerateShellAndMesh() {
     }
 
     if(type == Type::TRANSLATE || type == Type::ROTATE) {
-        // A step and repeat gets merged against the group's previous group,
+        // A step and repeat gets merged against the source group's previous group,
         // not our own previous group.
         srcg = SK.GetGroup(opA);
 
@@ -420,8 +422,10 @@ void Group::GenerateShellAndMesh() {
     } else if(type == Type::MIRROR && haveSrc) {
         // A mirror gets merged against the group's previous group,
         // not our own previous group.
-        srcg = SK.GetGroup(opA);
-
+        if(subtype != Subtype::ONE_SIDED) {
+            srcg = SK.GetGroup(opA);
+        }
+//        srcg = SK.GetGroup(opA);
         if(!srcg->suppress) {
             if(!IsForcedToMesh()) {
                 GenerateForMirror<SShell>(&(srcg->thisShell), &thisShell, srcg->meshCombine);
