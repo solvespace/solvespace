@@ -35,8 +35,29 @@ void TextWindow::ShowEditView() {
     Printf(false, "%Ba   %Ftout%E   (%3, %3, %3)", CO(n));
     Printf(false, "");
 
-    Printf(false, "The perspective may be changed in the");
-    Printf(false, "configuration screen.");
+    Printf(false, "%Ft perspective factor (0 for parallel)%E");
+    Printf(false, "%Ba   %# %Fl%Ll%f%D[change]%E",
+        SS.cameraTangent*1000,
+        &ScreenChangeCameraTangent, 0);
+
+    Printf(false, "");
+    Printf(false, "%Ft light direction               intensity");
+    for(int i = 0; i < 2; i++) {
+        Printf(false, "%Bp   #%d  (%2,%2,%2)%Fl%D%f%Ll[c]%E "
+                      "%2 %Fl%D%f%Ll[c]%E",
+            (i & 1) ? 'd' : 'a', i,
+            CO(SS.lightDir[i]), i, &ScreenChangeLightDirection,
+            SS.lightIntensity[i], i, &ScreenChangeLightIntensity);
+    }
+    Printf(false, "%Ba         ambient lighting     %2 %Fl%f%Ll[c]%E",
+        SS.ambientIntensity, &ScreenChangeLightAmbient);
+
+    Printf(false, "");
+    Printf(false, "%Ft explode distance%E");
+    Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
+        SS.MmToString(SS.explodeDistance).c_str(),
+        &ScreenChangeExplodeDistance, 0);
+
 }
 
 void TextWindow::ScreenChangeViewScale(int link, uint32_t v) {
@@ -51,9 +72,9 @@ void TextWindow::ScreenChangeViewToFullScale(int link, uint32_t v) {
 void TextWindow::ScreenChangeViewOrigin(int link, uint32_t v) {
     std::string edit_value =
         ssprintf("%s, %s, %s",
-            SS.MmToString(-SS.GW.offset.x).c_str(),
-            SS.MmToString(-SS.GW.offset.y).c_str(),
-            SS.MmToString(-SS.GW.offset.z).c_str());
+            SS.MmToString(-SS.GW.offset.x, true).c_str(),
+            SS.MmToString(-SS.GW.offset.y, true).c_str(),
+            SS.MmToString(-SS.GW.offset.z, true).c_str());
 
     SS.TW.edit.meaning = Edit::VIEW_ORIGIN;
     SS.TW.ShowEditControl(3, edit_value);
@@ -64,6 +85,34 @@ void TextWindow::ScreenChangeViewProjection(int link, uint32_t v) {
         ssprintf("%.3f, %.3f, %.3f", CO(SS.GW.projRight));
     SS.TW.edit.meaning = Edit::VIEW_PROJ_RIGHT;
     SS.TW.ShowEditControl(10, edit_value);
+}
+
+void TextWindow::ScreenChangeLightDirection(int link, uint32_t v) {
+    SS.TW.ShowEditControl(8, ssprintf("%.2f, %.2f, %.2f", CO(SS.lightDir[v])));
+    SS.TW.edit.meaning = Edit::LIGHT_DIRECTION;
+    SS.TW.edit.i = v;
+}
+
+void TextWindow::ScreenChangeLightIntensity(int link, uint32_t v) {
+    SS.TW.ShowEditControl(31, ssprintf("%.2f", SS.lightIntensity[v]));
+    SS.TW.edit.meaning = Edit::LIGHT_INTENSITY;
+    SS.TW.edit.i = v;
+}
+
+void TextWindow::ScreenChangeLightAmbient(int link, uint32_t v) {
+    SS.TW.ShowEditControl(31, ssprintf("%.2f", SS.ambientIntensity));
+    SS.TW.edit.meaning = Edit::LIGHT_AMBIENT;
+    SS.TW.edit.i = 0;
+}
+
+void TextWindow::ScreenChangeCameraTangent(int link, uint32_t v) {
+    SS.TW.ShowEditControl(3, ssprintf("%.3f", 1000*SS.cameraTangent));
+    SS.TW.edit.meaning = Edit::CAMERA_TANGENT;
+}
+
+void TextWindow::ScreenChangeExplodeDistance(int link, uint32_t v) {
+    SS.TW.ShowEditControl(3, SS.MmToString(SS.explodeDistance, true));
+    SS.TW.edit.meaning = Edit::EXPLODE_DISTANCE;
 }
 
 bool TextWindow::EditControlDoneForView(const std::string &s) {

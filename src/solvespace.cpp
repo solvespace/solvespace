@@ -19,6 +19,7 @@ void SolveSpaceUI::Init() {
     Platform::SettingsRef settings = Platform::GetSettings();
 
     SS.tangentArcRadius = 10.0;
+    SS.explodeDistance = 1.0;
 
     // Then, load the registry settings.
     // Default list of colors for the model material
@@ -104,6 +105,7 @@ void SolveSpaceUI::Init() {
     exportCanvas.dy     = settings->ThawFloat("ExportCanvas_Dy",     5.0);
     // Extra parameters when exporting G code
     gCode.depth         = settings->ThawFloat("GCode_Depth", 10.0);
+    gCode.safeHeight    = settings->ThawFloat("GCode_SafeHeight", 5.0);
     gCode.passes        = settings->ThawInt("GCode_Passes", 1);
     gCode.feed          = settings->ThawFloat("GCode_Feed", 10.0);
     gCode.plungeFeed    = settings->ThawFloat("GCode_PlungeFeed", 10.0);
@@ -315,6 +317,7 @@ void SolveSpaceUI::ScheduleAutosave() {
 double SolveSpaceUI::MmPerUnit() {
     switch(viewUnits) {
         case Unit::INCHES: return 25.4;
+        case Unit::FEET_INCHES: return 25.4; // The 'unit' is still inches
         case Unit::METERS: return 1000.0;
         case Unit::MM: return 1.0;
     }
@@ -323,14 +326,47 @@ double SolveSpaceUI::MmPerUnit() {
 const char *SolveSpaceUI::UnitName() {
     switch(viewUnits) {
         case Unit::INCHES: return "in";
+        case Unit::FEET_INCHES: return "in";
         case Unit::METERS: return "m";
         case Unit::MM: return "mm";
     }
     return "";
 }
 
-std::string SolveSpaceUI::MmToString(double v) {
+std::string SolveSpaceUI::MmToString(double v, bool editable) {
     v /= MmPerUnit();
+    // The syntax 2' 6" for feet and inches is not something we can (currently)
+    // parse back from a string so if editable is true, we treat FEET_INCHES the
+    // same as INCHES and just return the unadorned decimal number of inches.
+    if(viewUnits == Unit::FEET_INCHES && !editable) {
+        // Now convert v from inches to 64'ths of an inch, to make rounding easier.
+        v = floor((v + (1.0 / 128.0)) * 64.0);
+        int feet = (int)(v / (12.0 * 64.0));
+        v = v - (feet * 12.0 * 64.0);
+        // v is now the feet-less remainder in 1/64 inches
+        int inches = (int)(v / 64.0);
+        int numerator = (int)(v - ((double)inches * 64.0));
+        int denominator = 64;
+        // Divide down to smallest denominator where the numerator is still a whole number
+        while ((numerator != 0) && ((numerator & 1) == 0)) {
+            numerator /= 2;
+            denominator /= 2;
+        }
+        std::ostringstream str;
+        if(feet != 0) {
+            str << feet << "'-";
+        }
+        // For something like 0.5, show 1/2" rather than 0 1/2"
+        if(!(feet == 0 && inches == 0 && numerator != 0)) {
+            str << inches;
+        }
+        if(numerator != 0) {
+            str << " " << numerator << "/" << denominator;
+        }
+        str << "\"";
+        return str.str();
+    }
+
     int digits = UnitDigitsAfterDecimal();
     double minimum = 0.5 * pow(10,-digits);
     while ((v < minimum) && (v > LENGTH_EPS)) {
@@ -349,7 +385,7 @@ static const char *DimToString(int dim) {
 }
 static std::pair<int, std::string> SelectSIPrefixMm(int ord, int dim) {
 // decide what units to use depending on the order of magnitude of the
-// measure in meters and the dimmension (1,2,3 lenear, area, volume)
+// measure in meters and the dimension (1,2,3 lenear, area, volume)
     switch(dim) {
         case 0:
         case 1:
@@ -378,7 +414,7 @@ static std::pair<int, std::string> SelectSIPrefixMm(int ord, int dim) {
         default:
             dbp ("dimensions over 3 not supported");
             break;
-    }        
+    }
     return {0, "m"};
 }
 static std::pair<int, std::string> SelectSIPrefixInch(int deg) {
@@ -394,16 +430,21 @@ std::string SolveSpaceUI::MmToStringSI(double v, int dim) {
         dim = 1;
     }
 
-    v /= pow((viewUnits == Unit::INCHES) ? 25.4 : 1000, dim);
+    bool inches = (viewUnits == Unit::INCHES) || (viewUnits == Unit::FEET_INCHES);
+    v /= pow(inches ? 25.4 : 1000, dim);
     int vdeg = (int)(log10(fabs(v)));
     std::string unit;
     if(fabs(v) > 0.0) {
         int sdeg = 0;
         std::tie(sdeg, unit) =
-            (viewUnits == Unit::INCHES)
+            inches
             ? SelectSIPrefixInch(vdeg/dim)
             : SelectSIPrefixMm(vdeg, dim);
         v /= pow(10.0, sdeg * dim);
+    }
+    if(viewUnits == Unit::FEET_INCHES && fabs(v) > pow(12.0, dim)) {
+        unit = "ft";
+        v /= pow(12.0, dim);
     }
     int pdeg = (int)ceil(log10(fabs(v) + 1e-10));
     return ssprintf("%.*g%s%s%s", pdeg + UnitDigitsAfterDecimal(), v,
@@ -434,10 +475,11 @@ int SolveSpaceUI::GetMaxSegments() {
     return maxSegments;
 }
 int SolveSpaceUI::UnitDigitsAfterDecimal() {
-    return (viewUnits == Unit::INCHES) ? afterDecimalInch : afterDecimalMm;
+    return (viewUnits == Unit::INCHES || viewUnits == Unit::FEET_INCHES) ?
+           afterDecimalInch : afterDecimalMm;
 }
 void SolveSpaceUI::SetUnitDigitsAfterDecimal(int v) {
-    if(viewUnits == Unit::INCHES) {
+    if(viewUnits == Unit::INCHES || viewUnits == Unit::FEET_INCHES) {
         afterDecimalInch = v;
     } else {
         afterDecimalMm = v;
@@ -764,7 +806,11 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                     SS.TW.stepDim.isDistance =
                         (c->type != Constraint::Type::ANGLE) &&
                         (c->type != Constraint::Type::LENGTH_RATIO) &&
-                        (c->type != Constraint::Type::LENGTH_DIFFERENCE);
+                        (c->type != Constraint::Type::ARC_ARC_LEN_RATIO) &&
+                        (c->type != Constraint::Type::ARC_LINE_LEN_RATIO) &&
+                        (c->type != Constraint::Type::LENGTH_DIFFERENCE) &&
+                        (c->type != Constraint::Type::ARC_ARC_DIFFERENCE) &&
+                        (c->type != Constraint::Type::ARC_LINE_DIFFERENCE) ;
                     SS.TW.shown.constraint = c->h;
                     SS.TW.shown.screen = TextWindow::Screen::STEP_DIMENSION;
 
@@ -1026,12 +1072,14 @@ void SolveSpaceUI::Clear() {
     GW.showGridMenuItem = NULL;
     GW.dimSolidModelMenuItem = NULL;
     GW.perspectiveProjMenuItem = NULL;
+    GW.explodeMenuItem = NULL;
     GW.showToolbarMenuItem = NULL;
     GW.showTextWndMenuItem = NULL;
     GW.fullScreenMenuItem = NULL;
     GW.unitsMmMenuItem = NULL;
     GW.unitsMetersMenuItem = NULL;
     GW.unitsInchesMenuItem = NULL;
+    GW.unitsFeetInchesMenuItem = NULL;
     GW.inWorkplaneMenuItem = NULL;
     GW.in3dMenuItem = NULL;
     GW.undoMenuItem = NULL;

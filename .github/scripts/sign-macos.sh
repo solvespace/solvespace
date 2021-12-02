@@ -1,8 +1,29 @@
 #!/bin/bash -xe
 
+lipo \
+    -create \
+        build/bin/SolveSpace.app/Contents/Resources/libomp.dylib \
+        build-arm64/bin/SolveSpace.app/Contents/Resources/libomp.dylib \
+    -output \
+        build/bin/SolveSpace.app/Contents/Resources/libomp.dylib
+
+lipo \
+    -create \
+        build/bin/SolveSpace.app/Contents/MacOS/SolveSpace \
+        build-arm64/bin/SolveSpace.app/Contents/MacOS/SolveSpace \
+    -output \
+        build/bin/SolveSpace.app/Contents/MacOS/SolveSpace
+
+lipo \
+    -create \
+        build/bin/SolveSpace.app/Contents/MacOS/solvespace-cli \
+        build-arm64/bin/SolveSpace.app/Contents/MacOS/solvespace-cli \
+    -output \
+        build/bin/SolveSpace.app/Contents/MacOS/solvespace-cli
+
 cd build
 
-openmp="bin/SolveSpace.app/Contents/Resources/lib/libomp.dylib"
+openmp="bin/SolveSpace.app/Contents/Resources/libomp.dylib"
 app="bin/SolveSpace.app"
 dmg="bin/SolveSpace.dmg"
 bundle_id="com.solvespace.solvespace"

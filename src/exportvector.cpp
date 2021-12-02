@@ -170,22 +170,21 @@ public:
         }
 
         if(writer->constraint) {
-            Constraint *c;
-            for(c = writer->constraint->First(); c; c = writer->constraint->NextAfter(c)) {
-                if(!writer->NeedToOutput(c)) continue;
-                switch(c->type) {
+            for(Constraint &c : *writer->constraint) {
+                if(!writer->NeedToOutput(&c)) continue;
+                switch(c.type) {
                     case Constraint::Type::PT_PT_DISTANCE: {
-                        Vector ap = SK.GetEntity(c->ptA)->PointGetNum();
-                        Vector bp = SK.GetEntity(c->ptB)->PointGetNum();
-                        Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(c->disp.offset);
+                        Vector ap = SK.GetEntity(c.ptA)->PointGetNum();
+                        Vector bp = SK.GetEntity(c.ptB)->PointGetNum();
+                        Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(c.disp.offset);
                         writeAlignedDimension(xfrm(ap),  xfrm(bp), xfrm(ref),
-                                              xfrm(ref), c->Label(), c->GetStyle(), c->valA);
+                                              xfrm(ref), c.Label(), c.GetStyle(), c.valA);
                         break;
                     }
 
                     case Constraint::Type::PT_LINE_DISTANCE: {
-                        Vector pt = SK.GetEntity(c->ptA)->PointGetNum();
-                        Entity *line = SK.GetEntity(c->entityA);
+                        Vector pt = SK.GetEntity(c.ptA)->PointGetNum();
+                        Entity *line = SK.GetEntity(c.entityA);
                         Vector lA = SK.GetEntity(line->point[0])->PointGetNum();
                         Vector lB = SK.GetEntity(line->point[1])->PointGetNum();
                         Vector dl = lB.Minus(lA);
@@ -194,7 +193,7 @@ public:
 
                         if(pt.Equals(closest)) break;
 
-                        Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(c->disp.offset);
+                        Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(c.disp.offset);
                         Vector refClosest = ref.ClosestPointOnLine(lA, dl);
 
                         double ddl = dl.Dot(dl);
@@ -209,54 +208,54 @@ public:
 
                         Vector xdl = xfrm(lB).Minus(xfrm(lA));
                         writeLinearDimension(xfrm(pt), xfrm(refClosest), xfrm(ref),
-                                             xfrm(ref), c->Label(),
+                                             xfrm(ref), c.Label(),
                                              atan2(xdl.y, xdl.x) / PI * 180.0 + 90.0, 0.0,
-                                             c->GetStyle(), c->valA);
+                                             c.GetStyle(), c.valA);
                         break;
                     }
 
                     case Constraint::Type::DIAMETER: {
-                        Entity *circle = SK.GetEntity(c->entityA);
+                        Entity *circle = SK.GetEntity(c.entityA);
                         Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
                         Quaternion q = SK.GetEntity(circle->normal)->NormalGetNum();
                         Vector n = q.RotationN().WithMagnitude(1);
                         double r = circle->CircleGetRadiusNum();
 
-                        Vector ref = center.Plus(c->disp.offset);
+                        Vector ref = center.Plus(c.disp.offset);
                         // Force the label into the same plane as the circle.
                         ref = ref.Minus(n.ScaledBy(n.Dot(ref) - n.Dot(center)));
 
                         Vector rad = ref.Minus(center).WithMagnitude(r);
-                        if(/*isRadius*/c->other) {
+                        if(/*isRadius*/c.other) {
                             writeRadialDimension(
                                 xfrm(center), xfrm(center.Plus(rad)),
-                                xfrm(ref), c->Label(), c->GetStyle(), c->valA);
+                                xfrm(ref), c.Label(), c.GetStyle(), c.valA);
                         } else {
                             writeDiametricDimension(
                                 xfrm(center.Minus(rad)), xfrm(center.Plus(rad)),
-                                xfrm(ref), c->Label(), c->GetStyle(), c->valA);
+                                xfrm(ref), c.Label(), c.GetStyle(), c.valA);
                         }
                         break;
                     }
 
                     case Constraint::Type::ANGLE: {
-                        Entity *a = SK.GetEntity(c->entityA);
-                        Entity *b = SK.GetEntity(c->entityB);
+                        Entity *a = SK.GetEntity(c.entityA);
+                        Entity *b = SK.GetEntity(c.entityB);
 
                         Vector a0 = a->VectorGetStartPoint();
                         Vector b0 = b->VectorGetStartPoint();
                         Vector da = a->VectorGetNum();
                         Vector db = b->VectorGetNum();
-                        if(/*otherAngle*/c->other) {
+                        if(/*otherAngle*/c.other) {
                             a0 = a0.Plus(da);
                             da = da.ScaledBy(-1);
                         }
 
                         bool skew = false;
-                        Vector ref = c->disp.offset;
+                        Vector ref = c.disp.offset;
                         Vector pi = Vector::AtIntersectionOfLines(a0, a0.Plus(da), b0, b0.Plus(db),
                                                                   &skew);
-                        if(!skew) ref = pi.Plus(c->disp.offset);
+                        if(!skew) ref = pi.Plus(c.disp.offset);
 
                         Vector norm = da.Cross(db);
                         Vector dna = norm.Cross(da).WithMagnitude(1.0);
@@ -277,7 +276,7 @@ public:
                         Vector bisect = da.WithMagnitude(1.0).ScaledBy(cos(thetaf / 2.0)).Plus(
                                         dna.ScaledBy(sin(thetaf / 2.0)));
 
-                        ref = pi.Plus(bisect.WithMagnitude(c->disp.offset.Magnitude()));
+                        ref = pi.Plus(bisect.WithMagnitude(c.disp.offset.Magnitude()));
 
                         // Get lines again to write exact line.
                         a0 = a->VectorGetStartPoint();
@@ -287,15 +286,15 @@ public:
 
                         writeAngularDimension(
                             xfrm(a0), xfrm(a0.Plus(da)), xfrm(b0), xfrm(b0.Plus(db)), xfrm(ref),
-                            xfrm(ref), c->Label(), c->GetStyle(), c->valA);
+                            xfrm(ref), c.Label(), c.GetStyle(), c.valA);
                         break;
                     }
 
                     case Constraint::Type::COMMENT: {
-                        Style *st = SK.style.FindById(c->GetStyle());
-                        writeText(xfrm(c->disp.offset), c->Label(),
-                                  Style::TextHeight(c->GetStyle()) / SS.GW.scale,
-                                  st->textAngle, st->textOrigin, c->GetStyle());
+                        Style *st = SK.style.FindById(c.GetStyle());
+                        writeText(xfrm(c.disp.offset), c.Label(),
+                                  Style::TextHeight(c.GetStyle()) / SS.GW.scale,
+                                  st->textAngle, st->textOrigin, c.GetStyle());
                         break;
                     }
 
@@ -1103,7 +1102,7 @@ void SvgFileWriter::StartFile() {
             fprintf(f, "stroke-dasharray:%s;\r\n", patternStr.c_str());
         }
         if(s->filled) {
-            fprintf(f, "fill:#%02x%02x%02x;\r\n", fillRgb.red, fillRgb.green, fillRgb.blue); 
+            fprintf(f, "fill:#%02x%02x%02x;\r\n", fillRgb.red, fillRgb.green, fillRgb.blue);
         }
         else {
             fprintf(f, "fill:none;\r\n");
@@ -1309,9 +1308,9 @@ void GCodeFileWriter::FinishAndCloseFile() {
                         SS.MmToString(pt->p.x).c_str(), SS.MmToString(pt->p.y).c_str(),
                         SS.MmToString(SS.gCode.feed).c_str());
             }
-            // Move up to a clearance plane 5mm above the work.
+            // Move up to a clearance plane above the work.
             fprintf(f, "G00 Z%s\r\n",
-                    SS.MmToString(SS.gCode.depth < 0 ? +5 : -5).c_str());
+                    SS.MmToString(SS.gCode.safeHeight).c_str());
         }
     }
 

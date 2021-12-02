@@ -58,10 +58,9 @@ void SShell::MergeCoincidentSurfaces() {
 
                 // All the references to this surface get replaced with the
                 // new srf
-                SCurve *sc;
-                for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
-                    if(sc->surfA == sj->h) sc->surfA = si->h;
-                    if(sc->surfB == sj->h) sc->surfB = si->h;
+                for(SCurve &sc : curve) {
+                    if(sc.surfA == sj->h) sc.surfA = si->h;
+                    if(sc.surfB == sj->h) sc.surfB = si->h;
                 }
             }
 
