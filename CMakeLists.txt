@@ -1,4 +1,5 @@
 # cmake configuration
+cmake_minimum_required(VERSION 3.9...3.19)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR
@@ -7,17 +8,10 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
             "    mkdir build && cd build && cmake ..")
 endif()
 
-cmake_minimum_required(VERSION 3.7.2 FATAL_ERROR)
-if(NOT CMAKE_VERSION VERSION_LESS 3.11.0)
-    cmake_policy(VERSION 3.11.0)
-endif()
-if(NOT CMAKE_VERSION VERSION_LESS 3.9)
-    # LTO/IPO with non-Intel compilers on Linux requires policy CMP0069 to be set to NEW.
-    # Set it explicitly until cmake_minimum_required is raised to >= 3.9.
-    cmake_policy(SET CMP0069 NEW)
-endif()
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
     "${CMAKE_SOURCE_DIR}/cmake/")
+
+cmake_policy(SET CMP0048 OLD)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
@@ -27,8 +21,13 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
    "${CMAKE_SOURCE_DIR}/cmake/cxx_flag_overrides.cmake")
 
-if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
+
+if (APPLE)
+    # Docs say this must be set before the first project() call
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "macOS minimum supported version")
 endif()
 
 # project
@@ -40,10 +39,10 @@ include(GetGitCommitHash)
 # and instead uncomment the following, adding the complete git hash of the checkout you are using:
 # set(GIT_COMMIT_HASH 0000000000000000000000000000000000000000)
 
-project(solvespace)
 set(solvespace_VERSION_MAJOR 3)
 set(solvespace_VERSION_MINOR 0)
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
+project(solvespace LANGUAGES C CXX ASM)
 
 set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
@@ -68,10 +67,6 @@ if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/bin>)
 endif()
 
-if(NOT CMAKE_C_COMPILER_ID STREQUAL CMAKE_CXX_COMPILER_ID)
-    message(FATAL_ERROR "C and C++ compilers should be supplied by the same vendor")
-endif()
-
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
         # GCC 4.8/4.9 ship with broken but present <regex>. meh.
@@ -82,11 +77,13 @@ endif()
 # common compiler flags
 include(CheckCXXCompilerFlag)
 
-set(FILE_PREFIX_MAP "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
-check_cxx_compiler_flag("${FILE_PREFIX_MAP}" HAS_FILE_PREFIX_MAP)
-if(HAS_FILE_PREFIX_MAP)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${FILE_PREFIX_MAP}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FILE_PREFIX_MAP}")
+if (NOT APPLE)
+    set(FILE_PREFIX_MAP "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
+    check_cxx_compiler_flag("${FILE_PREFIX_MAP}" HAS_FILE_PREFIX_MAP)
+    if(HAS_FILE_PREFIX_MAP)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${FILE_PREFIX_MAP}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FILE_PREFIX_MAP}")
+    endif()
 endif()
 
 if(MINGW)
@@ -210,6 +207,12 @@ if(WIN32 OR APPLE)
     find_vendored_package(PNG libpng
         SKIP_INSTALL_ALL        ON
         PNG_LIBRARY             png_static
+        PNG_ARM_NEON            "off"
+        PNG_SHARED              OFF
+        PNG_STATIC              ON
+        PNG_EXECUTABLES         OFF
+        PNG_TESTS               OFF
+        PNG_FRAMEWORK           OFF
         PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
     list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
@@ -222,11 +225,14 @@ if(WIN32 OR APPLE)
         FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
 
     message(STATUS "Using in-tree pixman")
-    add_vendored_subdirectory(extlib/pixman)
     set(PIXMAN_FOUND            YES)
     set(PIXMAN_LIBRARY          pixman)
+    set(PIXMAN_BUILD_TESTS      OFF CACHE BOOL "")
+    set(PIXMAN_BUILD_DEMOS      OFF CACHE BOOL "")
+
     set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
     list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
+    add_vendored_subdirectory(extlib/pixman)
 
     message(STATUS "Using in-tree cairo")
     add_vendored_subdirectory(extlib/cairo)
@@ -275,6 +281,7 @@ if(ENABLE_GUI)
     elseif(APPLE)
         find_package(OpenGL REQUIRED)
         find_library(APPKIT_LIBRARY AppKit REQUIRED)
+        set(util_LIBRARIES ${APPKIT_LIBRARY})
     else()
         find_package(OpenGL REQUIRED)
         find_package(SpaceWare)

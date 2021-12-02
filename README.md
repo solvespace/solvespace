@@ -37,16 +37,19 @@ the SolveSpace maintainers for each stable release.
 
 ### Via Snap Store
 
-Builds from master are automatically released to the `edge` channel in the Snap Store. Those packages contain the latest improvements, but receive less testing than release builds.
+Official releases can be installed from the `stable` channel.
 
-Future official releases will appear in the `stable` channel.
+Builds from master are automatically released to the `edge` channel in the Snap Store. Those packages contain the latest improvements, but receive less testing than release builds.
 
 [![Get it from the Snap Store](https://snapcraft.io/static/images/badges/en/snap-store-black.svg)](https://snapcraft.io/solvespace)
 
 Or install from a terminal:
 
 ```
-snap install --edge solvespace
+# for the latest stable release:
+snap install solvespace 
+# for the bleeding edge builds from master:
+snap install solvespace --edge
 ```
 
 ### Via third-party binary packages
@@ -57,6 +60,20 @@ source code. The SolveSpace maintainers do not control the contents of these pac
 and cannot guarantee their functionality.
 
 [notesalexp]: https://notesalexp.org/packages/en/source/solvespace/
+
+### Via automated edge builds
+
+> :warning: **Edge builds might be unstable or contain severe bugs!** 
+> They are intended for experienced users to test new features or verify bugfixes.
+
+Cutting edge builds from the latest master commit are available as zip archives from the
+following links:
+
+- [macOS](https://nightly.link/solvespace/solvespace/workflows/cd/master/macos.zip)
+- [Windows](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows.zip)
+- [Windows with OpenMP enabled](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows-openmp.zip)
+
+Extract the downloaded archive and install or execute the contained file as is appropriate for your platform.
 
 ### Via source code
 

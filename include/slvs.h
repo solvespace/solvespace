@@ -113,6 +113,10 @@ typedef struct {
 #define SLVS_C_WHERE_DRAGGED            100031
 #define SLVS_C_CURVE_CURVE_TANGENT      100032
 #define SLVS_C_LENGTH_DIFFERENCE        100033
+#define SLVS_C_ARC_ARC_LEN_RATIO        100034
+#define SLVS_C_ARC_LINE_LEN_RATIO       100035
+#define SLVS_C_ARC_ARC_DIFFERENCE       100036
+#define SLVS_C_ARC_LINE_DIFFERENCE      100037
 
 typedef struct {
     Slvs_hConstraint    h;

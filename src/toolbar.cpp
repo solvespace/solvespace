@@ -153,11 +153,18 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my, UiCanvas *canvas,
     double width, height;
     window->GetContentSize(&width, &height);
 
-    int x = 17, y = (int)(height - 52);
+    int x = 17, y = (int)(height - 21); // 20 is the menu bar height
 
-    // When changing these values, also change the asReference drawing code in drawentity.cpp.
+    // When changing these values, also change the asReference drawing code in drawentity.cpp
+    // as well as the "window->SetMinContentSize(720, 636);" in graphicswin.cpp
     int fudge = 8;
-    int h = 32*18 + 3*16 + fudge;
+    int h = 32*18 + 3*16 + fudge;   // Toolbar height = 18 icons * 32 pixels + 3 dividers * 16 pixels + fudge
+
+    if(h < y) {
+        // If there is enough vertical space leave up to 32 pixels between the menu bar and the toolbar.
+        y -= ((y - h) < 32) ? y - h : 32;
+    }
+
     int aleft = 0, aright = 66, atop = y+16+fudge/2, abot = y+16-h;
 
     bool withinToolbar =

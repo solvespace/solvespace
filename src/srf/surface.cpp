@@ -1038,35 +1038,31 @@ void SShell::MakeFromTransformationOf(SShell *a,
 {
     booleanFailed = false;
     surface.ReserveMore(a->surface.n);
-    SSurface *s;
-    for(s = a->surface.First(); s; s = a->surface.NextAfter(s)) {
+    for(SSurface &s : a->surface) {
         SSurface n;
-        n = SSurface::FromTransformationOf(s, t, q, scale, /*includingTrims=*/true);
+        n = SSurface::FromTransformationOf(&s, t, q, scale, /*includingTrims=*/true);
         surface.Add(&n); // keeping the old ID
     }
 
     curve.ReserveMore(a->curve.n);
-    SCurve *c;
-    for(c = a->curve.First(); c; c = a->curve.NextAfter(c)) {
+    for(SCurve &c : a->curve) {
         SCurve n;
-        n = SCurve::FromTransformationOf(c, t, q, scale);
+        n = SCurve::FromTransformationOf(&c, t, q, scale);
         curve.Add(&n); // keeping the old ID
     }
 }
 
 void SShell::MakeEdgesInto(SEdgeList *sel) {
-    SSurface *s;
-    for(s = surface.First(); s; s = surface.NextAfter(s)) {
-        s->MakeEdgesInto(this, sel, SSurface::MakeAs::XYZ);
+    for(SSurface &s : surface) {
+        s.MakeEdgesInto(this, sel, SSurface::MakeAs::XYZ);
     }
 }
 
 void SShell::MakeSectionEdgesInto(Vector n, double d, SEdgeList *sel, SBezierList *sbl)
 {
-    SSurface *s;
-    for(s = surface.First(); s; s = surface.NextAfter(s)) {
-        if(s->CoincidentWithPlane(n, d)) {
-            s->MakeSectionEdgesInto(this, sel, sbl);
+    for(SSurface &s : surface) {
+        if(s.CoincidentWithPlane(n, d)) {
+            s.MakeSectionEdgesInto(this, sel, sbl);
         }
     }
 }
@@ -1088,15 +1084,13 @@ bool SShell::IsEmpty() const {
 }
 
 void SShell::Clear() {
-    SSurface *s;
-    for(s = surface.First(); s; s = surface.NextAfter(s)) {
-        s->Clear();
+    for(SSurface &s : surface) {
+        s.Clear();
     }
     surface.Clear();
 
-    SCurve *c;
-    for(c = curve.First(); c; c = curve.NextAfter(c)) {
-        c->Clear();
+    for(SCurve &c : curve) {
+        c.Clear();
     }
     curve.Clear();
 }

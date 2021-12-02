@@ -9,17 +9,27 @@ on:
       - created
 
 jobs:
+  cancel_previous_runs:
+    runs-on: ubuntu-latest
+    name: Cancel Previous Runs
+    steps:
+    - uses: styfle/cancel-workflow-action@0.8.0
+      with:
+        access_token: ${{ github.token }}
+
   test_ubuntu:
-      runs-on: ubuntu-18.04
-      name: Test Ubuntu
-      steps:
-      - uses: actions/checkout@v2
-      - name: Install Dependencies
-        run: .github/scripts/install-ubuntu.sh
-      - name: Build & Test
-        run: .github/scripts/build-ubuntu.sh
+    needs: [cancel_previous_runs]
+    runs-on: ubuntu-18.04
+    name: Test Ubuntu
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Dependencies
+      run: .github/scripts/install-ubuntu.sh
+    - name: Build & Test
+      run: .github/scripts/build-ubuntu.sh
 
   test_windows:
+    needs: [cancel_previous_runs]
     runs-on: windows-2019
     name: Test Windows
     steps:
@@ -32,14 +42,15 @@ jobs:
       shell: bash
 
   test_macos:
-    runs-on: macos-latest
+    needs: [cancel_previous_runs]
+    runs-on: macos-10.15
     name: Test macOS
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
-      run: .github/scripts/install-macos.sh
+      run: .github/scripts/install-macos.sh ci
     - name: Build & Test
-      run: .github/scripts/build-macos.sh
+      run: .github/scripts/build-macos.sh debug arm64 && .github/scripts/build-macos.sh debug x86_64
 
   build_release_windows:
     needs: [test_ubuntu, test_windows, test_macos]
@@ -80,13 +91,13 @@ jobs:
   build_release_macos:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Build Release macOS
-    runs-on: macos-latest
+    runs-on: macos-10.15
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
-      run: .github/scripts/install-macos.sh
+      run: .github/scripts/install-macos.sh ci
     - name: Build & Test
-      run: .github/scripts/build-macos.sh release
+      run: .github/scripts/build-macos.sh release arm64 && .github/scripts/build-macos.sh release x86_64
     - name: Sign Build
       run: .github/scripts/sign-macos.sh
       env:
@@ -100,13 +111,15 @@ jobs:
       with:
         name: macos
         path: build/bin/SolveSpace.dmg
-        
+
   deploy_snap_amd64:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Deploy AMD64 Snap
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Fetch Tags
+      run: git fetch --force --tags
     - name: Set Up Source
       run: rsync --filter=":- .gitignore" -r ./ pkg/snap/solvespace-snap-src
     - name: Build Snap
@@ -128,14 +141,18 @@ jobs:
         store_login: ${{ secrets.SNAPSTORE_LOGIN }}
         snap: ${{ steps.build.outputs.snap }}
         release: edge,beta
-    
+
   deploy_snap_arm64:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Deploy ARM64 Snap
     runs-on: ubuntu-latest
     steps:
     - uses: docker/setup-qemu-action@v1
+      with:
+        image: tonistiigi/binfmt@sha256:df15403e06a03c2f461c1f7938b171fda34a5849eb63a70e2a2109ed5a778bde
     - uses: actions/checkout@v2
+    - name: Fetch Tags
+      run: git fetch --force --tags
     - name: Set Up Source
       run: rsync --filter=":- .gitignore" -r ./ pkg/snap/solvespace-snap-src
     - name: Build Snap
@@ -158,38 +175,11 @@ jobs:
         store_login: ${{ secrets.SNAPSTORE_LOGIN }}
         snap: ${{ steps.build.outputs.snap }}
         release: edge,beta
-  
-  update_edge_release:
-    name: Update Edge Release
-    needs: [build_release_windows, build_release_windows_openmp, build_release_macos]
-    if: always() && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    outputs:
-      upload_url: ${{ steps.create_release.outputs.upload_url }}
-    steps:
-    - name: Delete Old Edge Release
-      uses: dev-drprasad/delete-tag-and-release@v0.1.2
-      with:
-        delete_release: true
-        tag_name: edge
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    - name: Create New Edge Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: edge
-        release_name: Edge
-        prerelease: true
-        draft: false
-        body: ${{ github.event.head_commit.message }}
 
   upload_release_assets:
     name: Upload Release Assets
-    needs: [build_release_windows, build_release_windows_openmp, build_release_macos, update_edge_release]
-    if: always()
+    needs: [build_release_windows, build_release_windows_openmp, build_release_macos]
+    if: "!cancelled() && github.event_name == 'release'"
     runs-on: ubuntu-latest
     steps:
     - name: Download All Workflow Artifacts
@@ -197,15 +187,9 @@ jobs:
     - name: Get Release Upload URL
       id: get_upload_url
       env:
-        event_name: ${{ github.event_name }}
         event: ${{ toJson(github.event) }}
-        edge_upload_url: ${{ needs.update_edge_release.outputs.upload_url }}
       run: |
-        if [ "$event_name" = "release" ]; then
-          upload_url=$(echo "$event" | jq -r ".release.upload_url")
-        else
-          upload_url="$edge_upload_url"
-        fi
+        upload_url=$(echo "$event" | jq -r ".release.upload_url")
         echo "::set-output name=upload_url::$upload_url"
         echo "Upload URL: $upload_url"
     - name: Upload solvespace.exe

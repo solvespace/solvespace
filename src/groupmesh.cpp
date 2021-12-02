@@ -83,13 +83,12 @@ void Group::GenerateLoops() {
 }
 
 void SShell::RemapFaces(Group *g, int remap) {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)){
-        hEntity face = { ss->face };
+    for(SSurface &ss : surface){
+        hEntity face = { ss.face };
         if(face == Entity::NO_ENTITY) continue;
 
         face = g->Remap(face, remap);
-        ss->face = face.v;
+        ss.face = face.v;
     }
 }
 
@@ -292,13 +291,12 @@ void Group::GenerateShellAndMesh() {
                 // So these are the sides
                 if(ss->degm != 1 || ss->degn != 1) continue;
 
-                Entity *e;
-                for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                    if(e->group != opA) continue;
-                    if(e->type != Entity::Type::LINE_SEGMENT) continue;
+                for(Entity &e : SK.entity) {
+                    if(e.group != opA) continue;
+                    if(e.type != Entity::Type::LINE_SEGMENT) continue;
 
-                    Vector a = SK.GetEntity(e->point[0])->PointGetNum(),
-                           b = SK.GetEntity(e->point[1])->PointGetNum();
+                    Vector a = SK.GetEntity(e.point[0])->PointGetNum(),
+                           b = SK.GetEntity(e.point[1])->PointGetNum();
                     a = a.Plus(ttop);
                     b = b.Plus(ttop);
                     // Could get taken backwards, so check all cases.
@@ -307,7 +305,7 @@ void Group::GenerateShellAndMesh() {
                        (a.Equals(ss->ctrl[0][1]) && b.Equals(ss->ctrl[1][1])) ||
                        (b.Equals(ss->ctrl[0][1]) && a.Equals(ss->ctrl[1][1])))
                     {
-                        face = Remap(e->h, REMAP_LINE_TO_FACE);
+                        face = Remap(e.h, REMAP_LINE_TO_FACE);
                         ss->face = face.v;
                         break;
                     }
