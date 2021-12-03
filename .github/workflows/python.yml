@@ -55,12 +55,8 @@ jobs:
       - if: startsWith(github.ref, 'refs/tags/py') && matrix.os == 'ubuntu-latest'
         name: release
         working-directory: cython
-        run: |
-          python -m build --sdist
-          python -m twine upload "dist/*.tar.gz" --skip-existing
+        run: python -m twine upload "dist/*.tar.gz" --skip-existing
       - if: startsWith(github.ref, 'refs/tags/py') && matrix.os != 'ubuntu-latest'
         name: release
         working-directory: cython
-        run: |
-          python -m build --wheel
-          python -m twine upload "dist/*.whl" --skip-existing
+        run: python -m twine upload "dist/*.whl" --skip-existing
