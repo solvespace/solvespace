@@ -279,12 +279,25 @@ cdef class SolverSystem:
     class.
     """
 
-    def __cinit__(self):
-        self.g = 0
+    def __cinit__(self, int g = 0, object param_list=None, object entity_list=None, object cons_list=None):
+        self.g = g
         self.sys.params = self.sys.entities = self.sys.constraints = 0
+        if param_list is not None:
+            self.param_list = param_list
+        if entity_list is not None:
+            self.entity_list = entity_list
+        if cons_list is not None:
+            self.cons_list = cons_list
 
     def __dealloc__(self):
         self.free()
+
+    def __reduce__(self):
+        return (self.__class__, (self.g, self.param_list, self.entity_list, self.cons_list))
+
+    def copy(self):
+        """Copy the solver."""
+        return SolverSystem(self.g, self.param_list, self.entity_list, self.cons_list)
 
     cdef inline void copy_to_sys(self) nogil:
         """Copy data from stack into system."""
@@ -293,13 +306,11 @@ cdef class SolverSystem:
         for param in self.param_list:
             self.sys.param[i] = param.second
             i += 1
-
         i = 0
         cdef Slvs_Entity entity
         for entity in self.entity_list:
             self.sys.entity[i] = entity
             i += 1
-
         i = 0
         cdef Slvs_Constraint con
         for con in self.cons_list:
@@ -328,8 +339,9 @@ cdef class SolverSystem:
         self.failed_list.clear()
         self.free()
 
-    cdef inline void failed_collecting(self) nogil:
-        """Collecting the failed constraints."""
+    cdef inline void collect_failed(self) nogil:
+        """Collect the failed constraints."""
+        self.failed_list.clear()
         cdef int i
         for i in range(self.sys.faileds):
             self.failed_list.push_back(self.sys.failed[i])
@@ -408,11 +420,14 @@ cdef class SolverSystem:
         """Start the solving, return the result flag."""
         # Parameters
         self.sys.param = <Slvs_Param *>PyMem_Malloc(self.param_list.size() * sizeof(Slvs_Param))
+        self.sys.params = self.param_list.size()
         # Entities
         self.sys.entity = <Slvs_Entity *>PyMem_Malloc(self.entity_list.size() * sizeof(Slvs_Entity))
+        self.sys.entities = self.entity_list.size()
         # Constraints
         cdef size_t cons_size = self.cons_list.size()
         self.sys.constraint = <Slvs_Constraint *>PyMem_Malloc(cons_size * sizeof(Slvs_Constraint))
+        self.sys.constraints = self.cons_list.size()
         self.sys.failed = <Slvs_hConstraint *>PyMem_Malloc(cons_size * sizeof(Slvs_hConstraint))
         self.sys.faileds = cons_size
 
@@ -422,9 +437,21 @@ cdef class SolverSystem:
         Slvs_Solve(&self.sys, self.g)
         # Failed constraints and free memory.
         self.copy_from_sys()
-        self.failed_collecting()
+        self.collect_failed()
         self.free()
         return self.sys.result
+
+    cpdef size_t param_len(self):
+        """The length of parameter list."""
+        return self.param_list.size()
+
+    cpdef size_t entity_len(self):
+        """The length of parameter list."""
+        return self.entity_list.size()
+
+    cpdef size_t cons_len(self):
+        """The length of parameter list."""
+        return self.cons_list.size()
 
     cpdef Entity create_2d_base(self):
         """Create a 2D system on current group,
@@ -437,15 +464,13 @@ cdef class SolverSystem:
 
     cdef inline Slvs_hParam new_param(self, double val) nogil:
         """Add a parameter."""
-        self.sys.params += 1
-        cdef Slvs_hParam h = <Slvs_hParam>self.sys.params
+        cdef Slvs_hParam h = <Slvs_hParam>self.param_list.size() + 1
         self.param_list[h] = Slvs_MakeParam(h, self.g, val)
         return h
 
     cdef inline Slvs_hEntity eh(self) nogil:
         """Return new entity handle."""
-        self.sys.entities += 1
-        return <Slvs_hEntity>self.sys.entities
+        return <Slvs_hEntity>self.entity_list.size() + 1
 
     cpdef Entity add_point_2d(self, double u, double v, Entity wp):
         """Add a 2D point to specific work plane (`wp`) then return the handle.
@@ -458,10 +483,8 @@ cdef class SolverSystem:
 
         cdef Slvs_hParam u_p = self.new_param(u)
         cdef Slvs_hParam v_p = self.new_param(v)
-        cdef Slvs_Entity e = Slvs_MakePoint2d(self.eh(), self.g, wp.h, u_p, v_p)
-        self.entity_list.push_back(e)
-
-        return Entity.create(&e, 2)
+        self.entity_list.push_back(Slvs_MakePoint2d(self.eh(), self.g, wp.h, u_p, v_p))
+        return Entity.create(&self.entity_list.back(), 2)
 
     cpdef Entity add_point_3d(self, double x, double y, double z):
         """Add a 3D point then return the handle.
@@ -471,10 +494,8 @@ cdef class SolverSystem:
         cdef Slvs_hParam x_p = self.new_param(x)
         cdef Slvs_hParam y_p = self.new_param(y)
         cdef Slvs_hParam z_p = self.new_param(z)
-        cdef Slvs_Entity e = Slvs_MakePoint3d(self.eh(), self.g, x_p, y_p, z_p)
-        self.entity_list.push_back(e)
-
-        return Entity.create(&e, 3)
+        self.entity_list.push_back(Slvs_MakePoint3d(self.eh(), self.g, x_p, y_p, z_p))
+        return Entity.create(&self.entity_list.back(), 3)
 
     cpdef Entity add_normal_2d(self, Entity wp):
         """Add a 2D normal orthogonal to specific work plane (`wp`)
@@ -482,9 +503,9 @@ cdef class SolverSystem:
         """
         if wp is None or not wp.is_work_plane():
             raise TypeError(f"{wp} is not a work plane")
-        cdef Slvs_Entity e = Slvs_MakeNormal2d(self.eh(), self.g, wp.h)
-        self.entity_list.push_back(e)
-        return Entity.create(&e, 0)
+
+        self.entity_list.push_back(Slvs_MakeNormal2d(self.eh(), self.g, wp.h))
+        return Entity.create(&self.entity_list.back(), 0)
 
     cpdef Entity add_normal_3d(self, double qw, double qx, double qy, double qz):
         """Add a 3D normal from quaternion then return the handle.
@@ -651,9 +672,8 @@ cdef class SolverSystem:
             if e is None:
                 raise TypeError(f"{e} is not a entity")
 
-        self.sys.constraints += 1
         cdef Slvs_Constraint c
-        c.h = <Slvs_hConstraint>self.sys.constraints
+        c.h = <Slvs_hConstraint>self.cons_list.size() + 1
         c.group = self.g
         c.type = c_type
         c.wrkpl = wp.h

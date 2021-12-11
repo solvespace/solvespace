@@ -34,10 +34,16 @@ class CoreTest(TestCase):
         sys.distance(p1, p4, 70, wp)
         line1 = sys.add_line_2d(p0, p3, wp)
         sys.angle(line0, line1, 45, wp)
-
         result_flag = sys.solve()
         self.assertEqual(result_flag, ResultFlag.OKAY)
         x, y = sys.params(p2.params)
+        self.assertAlmostEqual(39.54852, x, 4)
+        self.assertAlmostEqual(61.91009, y, 4)
+        # Solver copy test
+        sys_new = sys.copy()
+        result_flag = sys_new.solve()
+        self.assertEqual(result_flag, ResultFlag.OKAY)
+        x, y = sys_new.params(p2.params)
         self.assertAlmostEqual(39.54852, x, 4)
         self.assertAlmostEqual(61.91009, y, 4)
 

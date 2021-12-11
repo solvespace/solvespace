@@ -247,7 +247,7 @@ cdef class SolverSystem:
     cdef void copy_to_sys(self) nogil
     cdef void copy_from_sys(self) nogil
     cpdef void clear(self)
-    cdef void failed_collecting(self) nogil
+    cdef void collect_failed(self) nogil
     cdef void free(self)
     cpdef void set_group(self, size_t g)
     cpdef int group(self)
@@ -257,6 +257,11 @@ cdef class SolverSystem:
     cpdef object constraints(self)
     cpdef list failures(self)
     cpdef int solve(self)
+
+    cpdef size_t param_len(self)
+    cpdef size_t entity_len(self)
+    cpdef size_t cons_len(self)
+
     cpdef Entity create_2d_base(self)
     cdef Slvs_hParam new_param(self, double val) nogil
     cdef Slvs_hEntity eh(self) nogil
