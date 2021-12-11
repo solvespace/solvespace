@@ -95,8 +95,14 @@ class Entity:
 
 class SolverSystem:
 
-    def __init__(self) -> None:
-        """Initialization method. Create a solver system."""
+    def __init__(self, g: int = 0, param_list=None, entity_list=None, cons_list=None) -> None:
+        """Create a solver system.
+
+        The current group, parameters, entities, constraints can be set from an existing solver.
+        """
+        ...
+
+    def __reduce__(self):
         ...
 
     def copy(self) -> SolverSystem:
