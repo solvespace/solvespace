@@ -243,15 +243,12 @@ cdef class SolverSystem:
     cdef vector[Slvs_Constraint] cons_list
     cdef vector[Slvs_hConstraint] failed_list
 
-    cdef void copy_to_sys(self) nogil
-    cdef void copy_from_sys(self) nogil
+    cpdef SolverSystem copy(self)
     cpdef void clear(self)
-    cdef void collect_failed(self) nogil
-    cdef void free(self)
     cpdef void set_group(self, size_t g)
     cpdef int group(self)
     cpdef void set_params(self, Params p, object params)
-    cpdef tuple params(self, Params p)
+    cpdef list params(self, Params p)
     cpdef int dof(self)
     cpdef object constraints(self)
     cpdef list failures(self)

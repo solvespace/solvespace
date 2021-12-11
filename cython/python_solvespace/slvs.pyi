@@ -120,7 +120,7 @@ class SolverSystem:
     def set_params(self, p: Params, params: Sequence[float]) -> None:
         ...
 
-    def params(self, p: Params) -> Tuple[float, ...]:
+    def params(self, p: Params) -> List[float]:
         ...
 
     def dof(self) -> int:

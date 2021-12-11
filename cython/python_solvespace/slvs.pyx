@@ -9,7 +9,6 @@ license: GPLv3+
 email: pyslvs@gmail.com
 """
 
-from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from cpython.object cimport Py_EQ, Py_NE
 from collections import Counter
 
@@ -288,46 +287,12 @@ cdef class SolverSystem:
         if cons_list is not None:
             self.cons_list = cons_list
 
-    def __dealloc__(self):
-        self.free()
-
     def __reduce__(self):
         return (self.__class__, (self.g, self.param_list, self.entity_list, self.cons_list))
 
-    def copy(self):
+    cpdef SolverSystem copy(self):
         """Copy the solver."""
         return SolverSystem(self.g, self.param_list, self.entity_list, self.cons_list)
-
-    cdef inline void copy_to_sys(self) nogil:
-        """Copy data from stack into system."""
-        cdef int i = 0
-        cdef Slvs_Param param
-        for param in self.param_list:
-            self.sys.param[i] = param
-            i += 1
-        i = 0
-        cdef Slvs_Entity entity
-        for entity in self.entity_list:
-            self.sys.entity[i] = entity
-            i += 1
-        i = 0
-        cdef Slvs_Constraint con
-        for con in self.cons_list:
-            self.sys.constraint[i] = con
-            i += 1
-
-    cdef inline void copy_from_sys(self) nogil:
-        """Copy data from system into stack."""
-        self.param_list.clear()
-        self.entity_list.clear()
-        self.cons_list.clear()
-        cdef int i
-        for i in range(self.sys.params):
-            self.param_list.push_back(self.sys.param[i])
-        for i in range(self.sys.entities):
-            self.entity_list.push_back(self.sys.entity[i])
-        for i in range(self.sys.constraints):
-            self.cons_list.push_back(self.sys.constraint[i])
 
     cpdef void clear(self):
         """Clear the system."""
@@ -336,51 +301,30 @@ cdef class SolverSystem:
         self.entity_list.clear()
         self.cons_list.clear()
         self.failed_list.clear()
-        self.free()
-
-    cdef inline void collect_failed(self) nogil:
-        """Collect the failed constraints."""
-        self.failed_list.clear()
-        cdef int i
-        for i in range(self.sys.faileds):
-            self.failed_list.push_back(self.sys.failed[i])
-
-    cdef inline void free(self):
-        PyMem_Free(self.sys.param)
-        PyMem_Free(self.sys.entity)
-        PyMem_Free(self.sys.constraint)
-        PyMem_Free(self.sys.failed)
-        self.sys.param = NULL
-        self.sys.entity = NULL
-        self.sys.constraint = NULL
-        self.sys.failed = NULL
-        self.sys.params = self.sys.entities = self.sys.constraints = 0
 
     cpdef void set_group(self, size_t g):
         """Set the current group (`g`)."""
-        self.g = <Slvs_hGroup>g
+        self.g = g
 
     cpdef int group(self):
         """Return the current group."""
-        return <int>self.g
+        return self.g
 
     cpdef void set_params(self, Params p, object params):
-        """Set the parameters from a [Params] handle (`p`) belong to this
-        system.
+        """Set the parameters from a [Params] handle (`p`) belong to this system.
         The values is come from `params`, length must be equal to the handle.
         """
-        params = tuple(params)
-        cdef int i = p.param_list.size()
-        if i != len(params):
-            raise ValueError(f"number of parameters {len(params)} are not match {i}")
+        params = list(params)
+        if p.param_list.size() != len(params):
+            raise ValueError(f"number of parameters {len(params)} are not match {p.param_list.size()}")
 
-        i = 0
+        cdef int i = 0
         cdef Slvs_hParam h
         for h in p.param_list:
             self.param_list[h - 1].val = params[i]
             i += 1
 
-    cpdef tuple params(self, Params p):
+    cpdef list params(self, Params p):
         """Get the parameters from a [Params] handle (`p`) belong to this
         system.
         The length of tuple is decided by handle.
@@ -389,7 +333,7 @@ cdef class SolverSystem:
         cdef Slvs_hParam h
         for h in p.param_list:
             param_list.append(self.param_list[h - 1].val)
-        return tuple(param_list)
+        return param_list
 
     cpdef int dof(self):
         """Return the degrees of freedom of current group.
@@ -409,35 +353,25 @@ cdef class SolverSystem:
 
     cpdef list failures(self):
         """Return a list of failed constraint numbers."""
-        failed_list = []
-        cdef Slvs_hConstraint error
-        for error in self.failed_list:
-            failed_list.append(<int>error)
-        return failed_list
+        return self.failed_list
 
     cpdef int solve(self):
         """Start the solving, return the result flag."""
         # Parameters
-        self.sys.param = <Slvs_Param *>PyMem_Malloc(self.param_list.size() * sizeof(Slvs_Param))
+        self.sys.param = self.param_list.data()
         self.sys.params = self.param_list.size()
         # Entities
-        self.sys.entity = <Slvs_Entity *>PyMem_Malloc(self.entity_list.size() * sizeof(Slvs_Entity))
+        self.sys.entity = self.entity_list.data()
         self.sys.entities = self.entity_list.size()
         # Constraints
-        cdef size_t cons_size = self.cons_list.size()
-        self.sys.constraint = <Slvs_Constraint *>PyMem_Malloc(cons_size * sizeof(Slvs_Constraint))
+        self.sys.constraint = self.cons_list.data()
         self.sys.constraints = self.cons_list.size()
-        self.sys.failed = <Slvs_hConstraint *>PyMem_Malloc(cons_size * sizeof(Slvs_hConstraint))
-        self.sys.faileds = cons_size
-
-        # Copy to system
-        self.copy_to_sys()
+        # Faileds
+        self.failed_list.reserve(self.cons_list.size())
+        self.sys.failed = self.failed_list.data()
+        self.sys.faileds = self.cons_list.size()
         # Solve
         Slvs_Solve(&self.sys, self.g)
-        # Failed constraints and free memory.
-        self.copy_from_sys()
-        self.collect_failed()
-        self.free()
         return self.sys.result
 
     cpdef size_t param_len(self):
