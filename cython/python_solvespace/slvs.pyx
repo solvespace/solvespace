@@ -11,7 +11,6 @@ email: pyslvs@gmail.com
 
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from cpython.object cimport Py_EQ, Py_NE
-from libcpp.pair cimport pair
 from collections import Counter
 
 
@@ -302,9 +301,9 @@ cdef class SolverSystem:
     cdef inline void copy_to_sys(self) nogil:
         """Copy data from stack into system."""
         cdef int i = 0
-        cdef pair[Slvs_hParam, Slvs_Param] param
+        cdef Slvs_Param param
         for param in self.param_list:
-            self.sys.param[i] = param.second
+            self.sys.param[i] = param
             i += 1
         i = 0
         cdef Slvs_Entity entity
@@ -324,7 +323,7 @@ cdef class SolverSystem:
         self.cons_list.clear()
         cdef int i
         for i in range(self.sys.params):
-            self.param_list[self.sys.param[i].h] = self.sys.param[i]
+            self.param_list.push_back(self.sys.param[i])
         for i in range(self.sys.entities):
             self.entity_list.push_back(self.sys.entity[i])
         for i in range(self.sys.constraints):
@@ -378,7 +377,7 @@ cdef class SolverSystem:
         i = 0
         cdef Slvs_hParam h
         for h in p.param_list:
-            self.param_list[h].val = params[i]
+            self.param_list[h - 1].val = params[i]
             i += 1
 
     cpdef tuple params(self, Params p):
@@ -389,7 +388,7 @@ cdef class SolverSystem:
         param_list = []
         cdef Slvs_hParam h
         for h in p.param_list:
-            param_list.append(self.param_list[h].val)
+            param_list.append(self.param_list[h - 1].val)
         return tuple(param_list)
 
     cpdef int dof(self):
@@ -465,7 +464,7 @@ cdef class SolverSystem:
     cdef inline Slvs_hParam new_param(self, double val) nogil:
         """Add a parameter."""
         cdef Slvs_hParam h = <Slvs_hParam>self.param_list.size() + 1
-        self.param_list[h] = Slvs_MakeParam(h, self.g, val)
+        self.param_list.push_back(Slvs_MakeParam(h, self.g, val))
         return h
 
     cdef inline Slvs_hEntity eh(self) nogil:

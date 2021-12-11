@@ -11,7 +11,6 @@ email: pyslvs@gmail.com
 
 from libc.stdint cimport uint32_t
 from libcpp.vector cimport vector
-from libcpp.map cimport map as cmap
 
 cdef extern from "slvs.h" nogil:
 
@@ -239,7 +238,7 @@ cdef class SolverSystem:
 
     cdef Slvs_hGroup g
     cdef Slvs_System sys
-    cdef cmap[Slvs_hParam, Slvs_Param] param_list
+    cdef vector[Slvs_Param] param_list
     cdef vector[Slvs_Entity] entity_list
     cdef vector[Slvs_Constraint] cons_list
     cdef vector[Slvs_hConstraint] failed_list
