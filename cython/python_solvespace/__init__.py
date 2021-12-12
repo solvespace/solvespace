@@ -35,6 +35,7 @@ __all__ = [
 
 
 class Constraint(IntEnum):
+    """Symbol of the constraint types."""
     # Expose macro of constraint types
     POINTS_COINCIDENT = 100000
     PT_PT_DISTANCE = auto()
@@ -73,6 +74,7 @@ class Constraint(IntEnum):
 
 
 class ResultFlag(IntEnum):
+    """Symbol of the result flags."""
     # Expose macro of result flags
     OKAY = 0
     INCONSISTENT = auto()
