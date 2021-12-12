@@ -37,7 +37,7 @@ else:
    ...
 ```
 
-Solver can also be serialized and copied.
+Solver can also be serialized and copied, but can not modify or undo last step.
 
 ```python
 import pickle
