@@ -105,6 +105,9 @@ class SolverSystem:
     def __reduce__(self):
         ...
 
+    def entity(self, i: int) -> Entity:
+        ...
+
     def copy(self) -> SolverSystem:
         ...
 

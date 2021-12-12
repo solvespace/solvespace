@@ -214,7 +214,7 @@ cdef class Entity:
     cdef readonly Params params
 
     @staticmethod
-    cdef Entity create(Slvs_Entity *e, size_t p_size)
+    cdef Entity create(Slvs_Entity *e)
 
     cpdef bint is_3d(self)
     cpdef bint is_none(self)

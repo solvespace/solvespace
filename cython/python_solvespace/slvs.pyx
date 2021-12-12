@@ -160,13 +160,16 @@ _NAME_OF_CONSTRAINTS = {
 
 cdef class Entity:
 
-    """The handles of entities."""
+    """The handles of entities.
+
+    This handle **should** be dropped after system removed.
+    """
 
     FREE_IN_3D = _E_FREE_IN_3D
     NONE = _E_NONE
 
     @staticmethod
-    cdef Entity create(Slvs_Entity *e, size_t p_size):
+    cdef Entity create(Slvs_Entity *e):
         """Constructor."""
         cdef Entity entity = Entity.__new__(Entity)
         with nogil:
@@ -174,6 +177,17 @@ cdef class Entity:
             entity.h = e.h
             entity.wp = e.wrkpl
             entity.g = e.group
+        cdef size_t p_size
+        if e.type == SLVS_E_DISTANCE:
+            p_size = 1
+        elif e.type == SLVS_E_POINT_IN_2D:
+            p_size = 2
+        elif e.type == SLVS_E_POINT_IN_3D:
+            p_size = 3
+        elif e.type == SLVS_E_NORMAL_IN_3D:
+            p_size = 4
+        else:
+            p_size = 0
         entity.params = Params.create(e.param, p_size)
         return entity
 
@@ -273,11 +287,10 @@ cdef class SolverSystem:
 
     """A solver system of Python-Solvespace.
 
-    The operation of entities and constraints are using the methods of this
-    class.
+    The operation of entities and constraints are using the methods of this class.
     """
 
-    def __cinit__(self, int g = 0, object param_list=None, object entity_list=None, object cons_list=None):
+    def __cinit__(self, int g = 0, param_list=None, entity_list=None, cons_list=None):
         self.g = g
         if param_list is not None:
             self.param_list = param_list
@@ -289,9 +302,21 @@ cdef class SolverSystem:
     def __reduce__(self):
         return (self.__class__, (self.g, self.param_list, self.entity_list, self.cons_list))
 
+    def entity(self, int i) -> Entity:
+        """Generate entity handle, it can only be used with this system.
+
+        Negative index is allowed.
+        """
+        if i < 0:
+            return Entity.create(&self.entity_list[self.entity_list.size() + i])
+        elif i >= self.entity_list.size():
+            raise IndexError(f"index {i} is out of bound {self.entity_list.size()}")
+        else:
+            return Entity.create(&self.entity_list[i])
+
     cpdef SolverSystem copy(self):
         """Copy the solver."""
-        return SolverSystem(self.g, self.param_list, self.entity_list, self.cons_list)
+        return SolverSystem.__new__(SolverSystem, self.g, self.param_list, self.entity_list, self.cons_list)
 
     cpdef void clear(self):
         """Clear the system."""
@@ -419,7 +444,7 @@ cdef class SolverSystem:
         cdef Slvs_hParam u_p = self.new_param(u)
         cdef Slvs_hParam v_p = self.new_param(v)
         self.entity_list.push_back(Slvs_MakePoint2d(self.eh(), self.g, wp.h, u_p, v_p))
-        return Entity.create(&self.entity_list.back(), 2)
+        return Entity.create(&self.entity_list.back())
 
     cpdef Entity add_point_3d(self, double x, double y, double z):
         """Add a 3D point then return the handle.
@@ -430,7 +455,7 @@ cdef class SolverSystem:
         cdef Slvs_hParam y_p = self.new_param(y)
         cdef Slvs_hParam z_p = self.new_param(z)
         self.entity_list.push_back(Slvs_MakePoint3d(self.eh(), self.g, x_p, y_p, z_p))
-        return Entity.create(&self.entity_list.back(), 3)
+        return Entity.create(&self.entity_list.back())
 
     cpdef Entity add_normal_2d(self, Entity wp):
         """Add a 2D normal orthogonal to specific work plane (`wp`)
@@ -440,7 +465,7 @@ cdef class SolverSystem:
             raise TypeError(f"{wp} is not a work plane")
 
         self.entity_list.push_back(Slvs_MakeNormal2d(self.eh(), self.g, wp.h))
-        return Entity.create(&self.entity_list.back(), 0)
+        return Entity.create(&self.entity_list.back())
 
     cpdef Entity add_normal_3d(self, double qw, double qx, double qy, double qz):
         """Add a 3D normal from quaternion then return the handle.
@@ -454,7 +479,7 @@ cdef class SolverSystem:
         cdef Slvs_hParam z_p = self.new_param(qz)
         self.entity_list.push_back(Slvs_MakeNormal3d(
             self.eh(), self.g, w_p, x_p, y_p, z_p))
-        return Entity.create(&self.entity_list.back(), 4)
+        return Entity.create(&self.entity_list.back())
 
     cpdef Entity add_distance(self, double d, Entity wp):
         """Add a distance to specific work plane (`wp`) then return the handle.
@@ -467,7 +492,7 @@ cdef class SolverSystem:
         cdef Slvs_hParam d_p = self.new_param(d)
         self.entity_list.push_back(Slvs_MakeDistance(
             self.eh(), self.g, wp.h, d_p))
-        return Entity.create(&self.entity_list.back(), 1)
+        return Entity.create(&self.entity_list.back())
 
     cpdef Entity add_line_2d(self, Entity p1, Entity p2, Entity wp):
         """Add a 2D line to specific work plane (`wp`) then return the handle.
@@ -483,7 +508,7 @@ cdef class SolverSystem:
 
         self.entity_list.push_back(Slvs_MakeLineSegment(
             self.eh(), self.g, wp.h, p1.h, p2.h))
-        return Entity.create(&self.entity_list.back(), 0)
+        return Entity.create(&self.entity_list.back())
 
     cpdef Entity add_line_3d(self, Entity p1, Entity p2):
         """Add a 3D line then return the handle.
@@ -497,7 +522,7 @@ cdef class SolverSystem:
 
         self.entity_list.push_back(Slvs_MakeLineSegment(
             self.eh(), self.g, SLVS_FREE_IN_3D, p1.h, p2.h))
-        return Entity.create(&self.entity_list.back(), 0)
+        return Entity.create(&self.entity_list.back())
 
     cpdef Entity add_cubic(self, Entity p1, Entity p2, Entity p3, Entity p4, Entity wp):
         """Add a cubic curve to specific work plane (`wp`) then return the
@@ -518,7 +543,7 @@ cdef class SolverSystem:
 
         self.entity_list.push_back(Slvs_MakeCubic(
             self.eh(), self.g, wp.h, p1.h, p2.h, p3.h, p4.h))
-        return Entity.create(&self.entity_list.back(), 0)
+        return Entity.create(&self.entity_list.back())
 
     cpdef Entity add_arc(self, Entity nm, Entity ct, Entity start, Entity end, Entity wp):
         """Add an arc to specific work plane (`wp`) then return the handle.
@@ -538,7 +563,7 @@ cdef class SolverSystem:
             raise TypeError(f"{end} is not a 2d point")
         self.entity_list.push_back(Slvs_MakeArcOfCircle(
             self.eh(), self.g, wp.h, nm.h, ct.h, start.h, end.h))
-        return Entity.create(&self.entity_list.back(), 0)
+        return Entity.create(&self.entity_list.back())
 
     cpdef Entity add_circle(self, Entity nm, Entity ct, Entity radius, Entity wp):
         """Add an circle to specific work plane (`wp`) then return the handle.
@@ -558,7 +583,7 @@ cdef class SolverSystem:
 
         self.entity_list.push_back(Slvs_MakeCircle(self.eh(), self.g, wp.h,
                                                    ct.h, nm.h, radius.h))
-        return Entity.create(&self.entity_list.back(), 0)
+        return Entity.create(&self.entity_list.back())
 
     cpdef Entity add_work_plane(self, Entity origin, Entity nm):
         """Add a work plane then return the handle.
@@ -572,7 +597,7 @@ cdef class SolverSystem:
             raise TypeError(f"{nm} is not a 3d normal")
 
         self.entity_list.push_back(Slvs_MakeWorkplane(self.eh(), self.g, origin.h, nm.h))
-        return Entity.create(&self.entity_list.back(), 0)
+        return Entity.create(&self.entity_list.back())
 
     cpdef void add_constraint(
         self,

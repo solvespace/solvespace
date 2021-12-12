@@ -22,6 +22,8 @@ line0 = sys.add_line_2d(p0, p1, wp)  # Create entity with others
 ...
 line1 = sys.add_line_2d(p0, p3, wp)
 sys.angle(line0, line1, 45, wp)  # Constrain two entities
+line1 = sys.entity(-1)  # Entity handle can be re-generated and negatively indexed
+...
 if sys.solve() == ResultFlag.OKAY:
    # Get the result (unpack from the entity or parameters)
    # x and y are actually float type
@@ -46,6 +48,8 @@ sys_new = sys.copy()
 func, args = sys.__reduce__()
 sys_new = func(*args)
 ```
+
+The entity and parameter handles should have the same lifetime to the solver.
 
 # Install
 
