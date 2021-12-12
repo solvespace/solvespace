@@ -8,6 +8,45 @@ Python library from the solver of SolveSpace, an open source CAD software.
 + [Python API](https://pyslvs-ui.readthedocs.io/en/stable/python-solvespace-api/)
 + [C API](https://github.com/solvespace/solvespace/blob/master/exposed/DOC.txt)
 
+The example extracted from unit test:
+
+```python
+from python_solvespace import SolverSystem, ResultFlag
+
+sys = SolverSystem()
+wp = sys.create_2d_base()  # Workplane (Entity)
+p0 = sys.add_point_2d(0, 0, wp)  # Entity
+sys.dragged(p0, wp)  # Make a constraint with the entity
+...
+line0 = sys.add_line_2d(p0, p1, wp)  # Create entity with others
+...
+line1 = sys.add_line_2d(p0, p3, wp)
+sys.angle(line0, line1, 45, wp)  # Constrain two entities
+if sys.solve() == ResultFlag.OKAY:
+   # Get the result (unpack from the entity or parameters)
+   # x and y are actually float type
+   dof = sys.dof()
+   x, y = sys.params(p2.params)
+   ...
+else:
+   # Error!
+   # Get the list of all constraints
+   failures = sys.failures()
+   ...
+```
+
+Solver can also be serialized and copied.
+
+```python
+import pickle
+print(pickle.dumps(sys))
+
+sys_new = sys.copy()
+# equivalent to
+func, args = sys.__reduce__()
+sys_new = func(*args)
+```
+
 # Install
 
 ```bash
@@ -16,19 +55,24 @@ pip install python-solvespace
 
 # Build and Test (Repository)
 
-Build and install the module:
+First build and install the module from the repo:
 
 ```bash
-pip install python-solvespace
-# From repository
-git submodule update --init
+git submodule update --init extlib/mimalloc
+cd cython
 pip install -e .
 ```
 
-Run unit tests:
+Build the module:
 
 ```bash
-python test
+pip install -e . --no-deps
+```
+
+Run the unit tests:
+
+```bash
+python -m unittest
 ```
 
 Uninstall the module:
@@ -36,6 +80,3 @@ Uninstall the module:
 ```bash
 pip uninstall python-solvespace
 ```
-
-[GNU Make]: https://sourceforge.net/projects/mingw-w64/files/latest/download?source=files
-[Cython]: https://cython.org/
