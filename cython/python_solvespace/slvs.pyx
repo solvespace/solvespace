@@ -279,7 +279,6 @@ cdef class SolverSystem:
 
     def __cinit__(self, int g = 0, object param_list=None, object entity_list=None, object cons_list=None):
         self.g = g
-        self.sys.params = self.sys.entities = self.sys.constraints = 0
         if param_list is not None:
             self.param_list = param_list
         if entity_list is not None:
@@ -296,6 +295,7 @@ cdef class SolverSystem:
 
     cpdef void clear(self):
         """Clear the system."""
+        self.dof_v = 0
         self.g = 0
         self.param_list.clear()
         self.entity_list.clear()
@@ -337,9 +337,9 @@ cdef class SolverSystem:
 
     cpdef int dof(self):
         """Return the degrees of freedom of current group.
-        Only can be called after solving.
+        Only can be called after solved.
         """
-        return self.sys.dof
+        return self.dof_v
 
     cpdef object constraints(self):
         """Return the number of each constraint type.
@@ -357,22 +357,24 @@ cdef class SolverSystem:
 
     cpdef int solve(self):
         """Start the solving, return the result flag."""
+        cdef Slvs_System sys
         # Parameters
-        self.sys.param = self.param_list.data()
-        self.sys.params = self.param_list.size()
+        sys.param = self.param_list.data()
+        sys.params = self.param_list.size()
         # Entities
-        self.sys.entity = self.entity_list.data()
-        self.sys.entities = self.entity_list.size()
+        sys.entity = self.entity_list.data()
+        sys.entities = self.entity_list.size()
         # Constraints
-        self.sys.constraint = self.cons_list.data()
-        self.sys.constraints = self.cons_list.size()
+        sys.constraint = self.cons_list.data()
+        sys.constraints = self.cons_list.size()
         # Faileds
         self.failed_list.reserve(self.cons_list.size())
-        self.sys.failed = self.failed_list.data()
-        self.sys.faileds = self.cons_list.size()
+        sys.failed = self.failed_list.data()
+        sys.faileds = self.cons_list.size()
         # Solve
-        Slvs_Solve(&self.sys, self.g)
-        return self.sys.result
+        Slvs_Solve(&sys, self.g)
+        self.dof_v = sys.dof
+        return sys.result
 
     cpdef size_t param_len(self):
         """The length of parameter list."""

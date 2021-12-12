@@ -236,8 +236,8 @@ cdef class Entity:
 
 cdef class SolverSystem:
 
+    cdef int dof_v
     cdef Slvs_hGroup g
-    cdef Slvs_System sys
     cdef vector[Slvs_Param] param_list
     cdef vector[Slvs_Entity] entity_list
     cdef vector[Slvs_Constraint] cons_list
