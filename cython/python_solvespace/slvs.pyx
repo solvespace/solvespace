@@ -13,6 +13,16 @@ from cpython.object cimport Py_EQ, Py_NE
 from collections import Counter
 
 
+def _create_sys(dof_v, g, param_list, entity_list, cons_list):
+    cdef SolverSystem s = SolverSystem.__new__(SolverSystem)
+    s.dof_v = dof_v
+    s.g = g
+    s.param_list = param_list
+    s.entity_list = entity_list
+    s.cons_list = cons_list
+    return s
+
+
 cpdef tuple quaternion_u(double qw, double qx, double qy, double qz):
     """Input quaternion, return unit vector of U axis.
 
@@ -290,17 +300,11 @@ cdef class SolverSystem:
     The operation of entities and constraints are using the methods of this class.
     """
 
-    def __cinit__(self, int g = 0, param_list=None, entity_list=None, cons_list=None):
-        self.g = g
-        if param_list is not None:
-            self.param_list = param_list
-        if entity_list is not None:
-            self.entity_list = entity_list
-        if cons_list is not None:
-            self.cons_list = cons_list
+    def __cinit__(self):
+        self.g = 0
 
     def __reduce__(self):
-        return (self.__class__, (self.g, self.param_list, self.entity_list, self.cons_list))
+        return (_create_sys, (self.dof_v, self.g, self.param_list, self.entity_list, self.cons_list))
 
     def entity(self, int i) -> Entity:
         """Generate entity handle, it can only be used with this system.
@@ -316,7 +320,7 @@ cdef class SolverSystem:
 
     cpdef SolverSystem copy(self):
         """Copy the solver."""
-        return SolverSystem.__new__(SolverSystem, self.g, self.param_list, self.entity_list, self.cons_list)
+        return _create_sys(self.dof_v, self.g, self.param_list, self.entity_list, self.cons_list)
 
     cpdef void clear(self):
         """Clear the system."""

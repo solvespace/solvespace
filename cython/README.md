@@ -44,9 +44,6 @@ import pickle
 print(pickle.dumps(sys))
 
 sys_new = sys.copy()
-# equivalent to
-func, args = sys.__reduce__()
-sys_new = func(*args)
 ```
 
 The entity and parameter handles should have the same lifetime to the solver.
