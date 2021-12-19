@@ -396,15 +396,14 @@ ExprQuaternion EntityBase::NormalGetExprs() const {
         }
 
        case Type::NORMAL_N_MIRROR: {
-            ExprVector orig = ExprVector::From(numNormal.RotationN());
+            ExprVector orig = ExprVector::From(numNormal.RotationN().WithMagnitude(1.0));
             ExprVector n = ExprVector::From(
-                Expr::From(param[0]), Expr::From(param[1]), Expr::From(param[2]));
+                Expr::From(param[0]),
+                Expr::From(param[1]),
+                Expr::From(param[2]));
             ExprVector cp = orig.Cross(n);
-            Expr *W = cp.Dot(n);
-
-            ExprQuaternion r = ExprQuaternion::From(W,
-                     Expr::From(param[0]), Expr::From(param[1]), Expr::From(param[2]));
-            q = ExprQuaternion::From(numNormal).Times(r);
+            q = ExprQuaternion::From(numNormal).Times(ExprQuaternion::From(
+                n.Dot(orig), cp.x, cp.y, cp.z));
             break;
         }
 
