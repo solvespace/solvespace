@@ -19,32 +19,62 @@ endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
+# solvespace dependencies
+add_library(slvs_deps INTERFACE)
+target_include_directories(slvs_deps INTERFACE SYSTEM
+    ${OPENGL_INCLUDE_DIR}
+    ${ZLIB_INCLUDE_DIR}
+    ${PNG_PNG_INCLUDE_DIR}
+    ${FREETYPE_INCLUDE_DIRS}
+    ${CAIRO_INCLUDE_DIRS}
+    ${MIMALLOC_INCLUDE_DIR})
+target_link_libraries(slvs_deps INTERFACE
+    dxfrw
+    ${ZLIB_LIBRARY}
+    ${PNG_LIBRARY}
+    ${FREETYPE_LIBRARY}
+    ${CAIRO_LIBRARIES}
+    mimalloc-static)
+
+if(Backtrace_FOUND)
+    target_include_directories(slvs_deps INTERFACE SYSTEM
+        ${Backtrace_INCLUDE_DIRS})
+    target_link_libraries(slvs_deps INTERFACE
+        ${Backtrace_LIBRARY})
+endif()
+
+if(SPACEWARE_FOUND)
+    target_include_directories(slvs_deps INTERFACE SYSTEM
+        ${SPACEWARE_INCLUDE_DIR})
+    target_link_libraries(slvs_deps INTERFACE
+        ${SPACEWARE_LIBRARIES})
+endif()
+
+if(ENABLE_OPENMP)
+    target_link_libraries(slvs_deps INTERFACE slvs_openmp)
+endif()
+
+target_compile_options(slvs_deps
+    INTERFACE ${COVERAGE_FLAGS})
+
 # platform utilities
 
 if(APPLE)
-    set(util_LIBRARIES
+    target_link_libraries(slvs_deps INTERFACE
         ${APPKIT_LIBRARY})
 endif()
 
 # libslvs
-
-set(libslvs_SOURCES
+add_library(slvs SHARED
+    solvespace.h
+    platform/platform.h
     util.cpp
     entity.cpp
     expr.cpp
     constraint.cpp
     constrainteq.cpp
     system.cpp
-    platform/platform.cpp)
-
-set(libslvs_HEADERS
-    solvespace.h
-    platform/platform.h)
-
-add_library(slvs SHARED
-    ${libslvs_SOURCES}
-    ${libslvs_HEADERS}
-    ${util_SOURCES}
+    platform/platform.cpp
     lib.cpp)
 
 target_compile_definitions(slvs
@@ -53,12 +83,7 @@ target_compile_definitions(slvs
 target_include_directories(slvs
     PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
-target_link_libraries(slvs
-    ${util_LIBRARIES}
-    mimalloc-static)
-
-add_dependencies(slvs
-    mimalloc-static)
+target_link_libraries(slvs PRIVATE slvs_deps)
 
 set_target_properties(slvs PROPERTIES
     PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/slvs.h
@@ -72,70 +97,6 @@ if(NOT WIN32)
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
-# solvespace dependencies
-
-include_directories(
-    ${OPENGL_INCLUDE_DIR}
-    ${ZLIB_INCLUDE_DIR}
-    ${PNG_PNG_INCLUDE_DIR}
-    ${FREETYPE_INCLUDE_DIRS}
-    ${CAIRO_INCLUDE_DIRS}
-    ${MIMALLOC_INCLUDE_DIR}
-    ${OpenMP_CXX_INCLUDE_DIRS})
-
-if(Backtrace_FOUND)
-    include_directories(
-        ${Backtrace_INCLUDE_DIRS})
-endif()
-
-if(SPACEWARE_FOUND)
-    include_directories(
-        ${SPACEWARE_INCLUDE_DIR})
-endif()
-
-if(OPENGL STREQUAL 3)
-    set(gl_SOURCES
-        render/gl3shader.cpp
-        render/rendergl3.cpp)
-elseif(OPENGL STREQUAL 1)
-    set(gl_SOURCES
-        render/rendergl1.cpp)
-else()
-    message(FATAL_ERROR "Unsupported OpenGL version ${OPENGL}")
-endif()
-
-set(platform_SOURCES
-    ${gl_SOURCES}
-    platform/entrygui.cpp)
-
-if(WIN32)
-    list(APPEND platform_SOURCES
-        platform/guiwin.cpp)
-
-    set(platform_LIBRARIES
-        comctl32
-        ${SPACEWARE_LIBRARIES})
-elseif(APPLE)
-    add_compile_options(
-        -DGL_SILENCE_DEPRECATION
-        -fobjc-arc)
-
-    list(APPEND platform_SOURCES
-        platform/guimac.mm)
-else()
-    list(APPEND platform_SOURCES
-        platform/guigtk.cpp)
-
-    set(platform_LIBRARIES
-        ${SPACEWARE_LIBRARIES})
-
-    foreach(pkg_config_lib GTKMM JSONC FONTCONFIG)
-        include_directories(${${pkg_config_lib}_INCLUDE_DIRS})
-        link_directories(${${pkg_config_lib}_LIBRARY_DIRS})
-        list(APPEND platform_LIBRARIES ${${pkg_config_lib}_LIBRARIES})
-    endforeach()
-endif()
-
 set(every_platform_SOURCES
     platform/guiwin.cpp
     platform/guigtk.cpp
@@ -143,7 +104,10 @@ set(every_platform_SOURCES
 
 # solvespace library
 
-set(solvespace_core_HEADERS
+set(solvespace_core_gl_SOURCES
+    solvespace.cpp)
+
+add_library(solvespace-core STATIC
     dsc.h
     expr.h
     polygon.h
@@ -153,9 +117,7 @@ set(solvespace_core_HEADERS
     platform/platform.h
     render/render.h
     render/gl3shader.h
-    srf/surface.h)
-
-set(solvespace_core_SOURCES
+    srf/surface.h
     bsp.cpp
     clipboard.cpp
     confscreen.cpp
@@ -207,40 +169,14 @@ set(solvespace_core_SOURCES
     srf/surfinter.cpp
     srf/triangulate.cpp)
 
-set(solvespace_core_gl_SOURCES
-    solvespace.cpp)
-
-add_library(solvespace-core STATIC
-    ${util_SOURCES}
-    ${solvespace_core_HEADERS}
-    ${solvespace_core_SOURCES})
-
-add_dependencies(solvespace-core
-    mimalloc-static)
-
-target_link_libraries(solvespace-core
-    ${OpenMP_CXX_LIBRARIES}
-    dxfrw
-    ${util_LIBRARIES}
-    ${ZLIB_LIBRARY}
-    ${PNG_LIBRARY}
-    ${FREETYPE_LIBRARY}
-    mimalloc-static)
-
-if(Backtrace_FOUND)
-    target_link_libraries(solvespace-core
-        ${Backtrace_LIBRARY})
-endif()
-
-target_compile_options(solvespace-core
-    PRIVATE ${COVERAGE_FLAGS})
+target_link_libraries(solvespace-core PUBLIC slvs_deps)
 
 # solvespace translations
 
 if(HAVE_GETTEXT)
+    get_target_property(solvespace_core_SOURCES solvespace-core SOURCES)
     set(inputs
         ${solvespace_core_SOURCES}
-        ${solvespace_core_HEADERS}
         ${every_platform_SOURCES}
         ${solvespace_core_gl_SOURCES})
 
@@ -323,52 +259,82 @@ endif()
 if(ENABLE_GUI)
     add_executable(solvespace WIN32 MACOSX_BUNDLE
         ${solvespace_core_gl_SOURCES}
-        ${platform_SOURCES}
+        platform/entrygui.cpp
         $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
     add_dependencies(solvespace
         resources)
 
     target_link_libraries(solvespace
+        PRIVATE
         solvespace-core
-        ${OPENGL_LIBRARIES}
-        ${platform_LIBRARIES}
-        ${COVERAGE_LIBRARY})
+        ${OPENGL_LIBRARIES})
 
-    if(MSVC)
-        set_target_properties(solvespace PROPERTIES
-            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+    # OpenGL version
+    if(OPENGL STREQUAL 3)
+        target_sources(solvespace PRIVATE
+            render/gl3shader.cpp
+            render/rendergl3.cpp)
+    elseif(OPENGL STREQUAL 1)
+        target_sources(solvespace PRIVATE
+            render/rendergl1.cpp)
+    else()
+        message(FATAL_ERROR "Unsupported OpenGL version ${OPENGL}")
+    endif()
+
+    # Platform-specific
+    if(WIN32)
+        target_sources(solvespace PRIVATE
+            platform/guiwin.cpp)
+
+        target_link_libraries(solvespace PRIVATE comctl32)
     elseif(APPLE)
+        target_compile_options(solvespace PRIVATE -fobjc-arc)
+        target_compile_definitions(solvespace PRIVATE GL_SILENCE_DEPRECATION)
+
+        target_sources(solvespace PRIVATE
+            platform/guimac.mm)
         set_target_properties(solvespace PROPERTIES
             OUTPUT_NAME SolveSpace
             XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES"
             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.solvespace"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    else()
+        target_sources(solvespace PRIVATE
+            platform/guigtk.cpp)
+
+        target_include_directories(solvespace PRIVATE SYSTEM
+            ${GTKMM_INCLUDE_DIRS}
+            ${JSONC_INCLUDE_DIRS}
+            ${FONTCONFIG_INCLUDE_DIRS})
+        target_link_libraries(solvespace PRIVATE
+            ${GTKMM_LIBRARIES}
+            ${JSONC_LIBRARIES}
+            ${FONTCONFIG_LIBRARIES})
+    endif()
+
+    if(MSVC)
+        set_target_properties(solvespace PROPERTIES
+            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
     endif()
 endif()
 
 # solvespace headless library
 
-set(headless_SOURCES
+add_library(solvespace-headless STATIC EXCLUDE_FROM_ALL
+    ${solvespace_core_gl_SOURCES}
     platform/guinone.cpp
     render/rendercairo.cpp)
 
-add_library(solvespace-headless STATIC EXCLUDE_FROM_ALL
-    ${solvespace_core_gl_SOURCES}
-    ${headless_SOURCES})
-
 target_compile_definitions(solvespace-headless
-    PRIVATE -DHEADLESS)
+    PRIVATE HEADLESS)
 
 target_include_directories(solvespace-headless
     INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(solvespace-headless
-    solvespace-core
-    ${CAIRO_LIBRARIES})
-
-target_compile_options(solvespace-headless
-    PRIVATE ${COVERAGE_FLAGS})
+    PRIVATE
+    solvespace-core)
 
 # solvespace command-line executable
 
