@@ -7,11 +7,23 @@
 #ifndef SOLVESPACE_RESOURCE_H
 #define SOLVESPACE_RESOURCE_H
 
+#include <functional>
+#include <map>
+#include <memory>
+#include <stdint.h>
+#include <string>
+#include <vector>
+
+namespace SolveSpace {
+
 class Camera;
 class Point2d;
 class Pixmap;
 class Vector;
 class RgbaColor;
+namespace Platform {
+    class Path;
+} // namespace Platform
 
 std::string LoadString(const std::string &name);
 std::string LoadStringFromGzip(const std::string &name);
@@ -109,4 +121,5 @@ public:
                const std::function<void(Vector, Vector)> &traceEdge, const Camera &camera);
 };
 
+}
 #endif

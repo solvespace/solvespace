@@ -7,6 +7,10 @@
 #ifndef SOLVESPACE_H
 #define SOLVESPACE_H
 
+#include "resource.h"
+#include "platform/platform.h"
+#include "platform/gui.h"
+
 #include <cctype>
 #include <climits>
 #include <cmath>
@@ -122,9 +126,6 @@ static constexpr double LENGTH_EPS    =  1e-6;
 static constexpr double VERY_POSITIVE =  1e10;
 static constexpr double VERY_NEGATIVE = -1e10;
 
-#include "platform/platform.h"
-#include "platform/gui.h"
-#include "resource.h"
 
 using Platform::AllocTemporary;
 using Platform::FreeAllTemporary;
