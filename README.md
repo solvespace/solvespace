@@ -125,7 +125,7 @@ is built as `build/bin/solvespace-cli`. It is possible to build only the command
 
 Ubuntu will require 20.04 or above. Cross-compiling with WSL is also confirmed to work.
 
-You will need the usual build tools, CMake, a Windows cross-compiler, and flatc. On a Debian derivative (e.g. Ubuntu) these can be installed with:
+You will need the usual build tools, CMake, and a Windows cross-compiler. On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
     apt-get install git build-essential cmake mingw-w64
 
@@ -140,8 +140,7 @@ Build 64-bit SolveSpace with the following:
     mkdir build
     cd build
     cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw64.cmake \
-             -DCMAKE_BUILD_TYPE=Release \
-             -DFLATC=$(which flatc)
+             -DCMAKE_BUILD_TYPE=Release
     make
 
 The graphical interface is built as `build/bin/solvespace.exe`, and the command-line interface
