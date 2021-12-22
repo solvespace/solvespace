@@ -11,7 +11,6 @@ endif()
 list(APPEND CMAKE_MODULE_PATH
     "${CMAKE_SOURCE_DIR}/cmake/")
 
-cmake_policy(SET CMP0048 OLD)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
@@ -39,10 +38,10 @@ include(GetGitCommitHash)
 # and instead uncomment the following, adding the complete git hash of the checkout you are using:
 # set(GIT_COMMIT_HASH 0000000000000000000000000000000000000000)
 
-set(solvespace_VERSION_MAJOR 3)
-set(solvespace_VERSION_MINOR 0)
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
-project(solvespace LANGUAGES C CXX ASM)
+project(solvespace
+    VERSION 3.0
+    LANGUAGES C CXX ASM)
 
 set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
