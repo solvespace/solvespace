@@ -7,6 +7,7 @@
 #ifndef SOLVESPACE_PLATFORM_H
 #define SOLVESPACE_PLATFORM_H
 
+namespace SolveSpace {
 namespace Platform {
 
 // UTF-8 ⟷ UTF-16 conversion, for Windows.
@@ -80,6 +81,7 @@ void DebugPrint(const char *fmt, ...);
 void *AllocTemporary(size_t size);
 void FreeAllTemporary();
 
-}
+} // namespace Platform
+} // namespace SolveSpace
 
 #endif
