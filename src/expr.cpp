@@ -400,13 +400,16 @@ Expr *Expr::PartialWrt(hParam p) const {
     ssassert(false, "Unexpected operation");
 }
 
-void Expr::ParamsUsedList(List<hParam> *list) const {
+void Expr::ParamsUsedList(std::vector<hParam> *list) const {
     if(op == Op::PARAM || op == Op::PARAM_PTR) {
+        // leaf: just add ourselves if we aren't already there
         hParam param = (op == Op::PARAM) ? parh : parp->h;
-        for(hParam &p : *list) {
-            if(p.v == param.v) return;
+        if(list->end() != std::find_if(list->begin(), list->end(),
+                                       [=](const hParam &p) { return p.v == param.v; })) {
+            // We found ourselves in the list already, early out.
+            return;
         }
-        list->Add(&param);
+        list->push_back(param);
         return;
     }
 
