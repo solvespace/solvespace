@@ -246,8 +246,8 @@ public:
         int m, n;
         struct {
             // This only observes the Expr - does not own them!
-            std::unique_ptr<Eigen::SparseMatrix<Expr *>> sym;
-            std::unique_ptr<Eigen::SparseMatrix<double>> num;
+            Eigen::SparseMatrix<Expr *> sym;
+            Eigen::SparseMatrix<double> num;
         } A;
 
         Eigen::VectorXd scale;
