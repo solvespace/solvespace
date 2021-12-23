@@ -19,6 +19,7 @@ constexpr size_t LikelyPartialCountPerEq = 10;
 
 namespace {
 struct ParamIdAndIndex {
+    ParamIdAndIndex(hParam param, int i) : paramId(param.v), index(i) {}
     uint32_t paramId;
     int index;
     friend bool operator<(const ParamIdAndIndex &lhs, const ParamIdAndIndex &rhs) {
@@ -29,35 +30,43 @@ struct ParamIdAndIndex {
 class ParamToIndexMap {
 public:
     ParamToIndexMap(int n, const std::vector<hParam> &params) {
-        // paramToIndex_.reserve(n);
+        data_.reserve(n);
 
         for(int j = 0; j < n; j++) {
-            paramToIndex_[params[j].v] = j;
-            dbp("hParam %d, hi nibble: %d, low nibble: %d, index %d", params[j].v, ((params[j].v & 0xff00) >> 16),
-                (params[j].v & 0xff), j);
+            data_.emplace_back(params[j], j);
         }
+        std::sort(data_.begin(), data_.end());
         // for(int j = 0; j < mat.n; j++) {
         //     paramToIndex[mat.param[j].v] = j;
         // }
     }
     // Calls your functor with the parameter and the index.
     template<typename F>
-    void iterateUsedParameters(const std::vector<hParam> &paramsUsed, F&& functor) {
+    void iterateUsedParameters(std::vector<hParam> &paramsUsed, F &&functor) {
+        std::sort(paramsUsed.begin(), paramsUsed.end(),
+                  [](hParam lhs, hParam rhs) { return lhs.v < rhs.v; });
+        auto it      = data_.begin();
+        const auto e = data_.end();
         for(const hParam &p : paramsUsed) {
-            // Find the index of this parameter
-            auto it = paramToIndex_.find(p.v);
-            if(it == paramToIndex_.end())
-                continue;
-            // this is the parameter index
-            const int j = it->second;
-            functor(p, j);
+            // Advance the iterator in our data
+            while(it != e && it->paramId < p.v) {
+                ++it;
+            }
+            if(it == e) {
+                // all done, early
+                return;
+            }
+            if(it->paramId == p.v) {
+                // found this parameter
+                // this is the parameter index
+                const int j = it->paramId;
+                functor(p, j);
+            }
         }
     }
-    // , const std::vector<hParam> &paramsUsed
-private:
-    // private: std::vector<ParamIdAndIndex> data_;
 
-    std::map<uint32_t, int> paramToIndex_;
+private:
+    std::vector<ParamIdAndIndex> data_;
 };
 
 } // namespace
@@ -114,7 +123,6 @@ bool System::WriteJacobian(int tag) {
                     return;
                 mat.A.sym.insert(i, j) = pd;
             });
-        paramsUsed.clear();
         mat.B.sym.push_back(f);
     }
     dbp("Reserved room for %d symbols in B, used %d with %d params used.", mat.eq.size(),
