@@ -17,6 +17,51 @@ const double System::CONVERGE_TOLERANCE = (LENGTH_EPS/(1e2));
 
 constexpr size_t LikelyPartialCountPerEq = 10;
 
+namespace {
+struct ParamIdAndIndex {
+    uint32_t paramId;
+    int index;
+    friend bool operator<(const ParamIdAndIndex &lhs, const ParamIdAndIndex &rhs) {
+        return lhs.paramId < rhs.paramId;
+    }
+};
+
+class ParamToIndexMap {
+public:
+    ParamToIndexMap(int n, const std::vector<hParam> &params) {
+        // paramToIndex_.reserve(n);
+
+        for(int j = 0; j < n; j++) {
+            paramToIndex_[params[j].v] = j;
+            dbp("hParam %d, hi nibble: %d, low nibble: %d, index %d", params[j].v, ((params[j].v & 0xff00) >> 16),
+                (params[j].v & 0xff), j);
+        }
+        // for(int j = 0; j < mat.n; j++) {
+        //     paramToIndex[mat.param[j].v] = j;
+        // }
+    }
+    // Calls your functor with the parameter and the index.
+    template<typename F>
+    void iterateUsedParameters(const std::vector<hParam> &paramsUsed, F&& functor) {
+        for(const hParam &p : paramsUsed) {
+            // Find the index of this parameter
+            auto it = paramToIndex_.find(p.v);
+            if(it == paramToIndex_.end())
+                continue;
+            // this is the parameter index
+            const int j = it->second;
+            functor(p, j);
+        }
+    }
+    // , const std::vector<hParam> &paramsUsed
+private:
+    // private: std::vector<ParamIdAndIndex> data_;
+
+    std::map<uint32_t, int> paramToIndex_;
+};
+
+} // namespace
+
 bool System::WriteJacobian(int tag) {
     // Clear all
     mat.param.clear();
@@ -24,12 +69,14 @@ bool System::WriteJacobian(int tag) {
     mat.A.sym.setZero();
     mat.B.sym.clear();
 
+    // Put handles of selected parameters in a list
     for(Param &p : param) {
         if(p.tag != tag) continue;
         mat.param.push_back(p.h);
     }
     mat.n = mat.param.size();
 
+    // Put pointers to selected equations in a list
     for(Equation &e : eq) {
         if(e.tag != tag) continue;
         mat.eq.push_back(&e);
@@ -39,10 +86,7 @@ bool System::WriteJacobian(int tag) {
     mat.A.sym.reserve(Eigen::VectorXi::Constant(mat.n, LikelyPartialCountPerEq));
 
     // Fill the param id to index map
-    std::map<uint32_t, int> paramToIndex;
-    for(int j = 0; j < mat.n; j++) {
-        paramToIndex[mat.param[j].v] = j;
-    }
+    ParamToIndexMap paramIndexMap{mat.n, mat.param};
 
     if(mat.eq.size() >= MAX_UNKNOWNS) {
         return false;
@@ -58,25 +102,23 @@ bool System::WriteJacobian(int tag) {
         Expr *f = e->e->FoldConstants();
         f = f->DeepCopyWithParamsAsPointers(&param, &(SK.param));
 
+        // Find which params are used in it
         paramsUsed.clear();
         f->ParamsUsedList(&paramsUsed);
 
-        for(hParam &p : paramsUsed) {
-            // Find the index of this parameter
-            auto it = paramToIndex.find(p.v);
-            if(it == paramToIndex.end()) continue;
-            // this is the parameter index
-            const int j = it->second;
-            // compute partial derivative of f
-            Expr *pd = f->PartialWrt(p);
-            pd = pd->FoldConstants();
-            if(pd->IsZeroConst())
-                continue;
-            mat.A.sym.insert(i, j) = pd;
-        }
+        paramIndexMap.iterateUsedParameters(
+            paramsUsed, [&](const hParam &p, int j) { // compute partial derivative of f
+                Expr *pd = f->PartialWrt(p);
+                pd       = pd->FoldConstants();
+                if(pd->IsZeroConst())
+                    return;
+                mat.A.sym.insert(i, j) = pd;
+            });
         paramsUsed.clear();
         mat.B.sym.push_back(f);
     }
+    dbp("Reserved room for %d symbols in B, used %d with %d params used.", mat.eq.size(),
+        mat.B.sym.size(), paramsUsed.size());
     return true;
 }
 
