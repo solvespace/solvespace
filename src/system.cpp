@@ -21,7 +21,7 @@ bool System::WriteJacobian(int tag) {
     // Clear all
     mat.param.clear();
     mat.eq.clear();
-    mat.A.sym.setZero();
+    mat.A.sym.clear();
     mat.B.sym.clear();
 
     for(Param &p : param) {
@@ -35,8 +35,7 @@ bool System::WriteJacobian(int tag) {
         mat.eq.push_back(&e);
     }
     mat.m = mat.eq.size();
-    mat.A.sym.resize(mat.m, mat.n);
-    mat.A.sym.reserve(Eigen::VectorXi::Constant(mat.n, LikelyPartialCountPerEq));
+    mat.A.sym.reserve(mat.n * LikelyPartialCountPerEq);
 
     // Fill the param id to index map
     std::map<uint32_t, int> paramToIndex;
@@ -72,7 +71,7 @@ bool System::WriteJacobian(int tag) {
             pd = pd->FoldConstants();
             if(pd->IsZeroConst())
                 continue;
-            mat.A.sym.insert(i, j) = pd;
+            mat.A.sym.emplace_back((int)i, j, pd);
         }
         paramsUsed.clear();
         mat.B.sym.push_back(f);
@@ -84,16 +83,14 @@ void System::EvalJacobian() {
     using namespace Eigen;
     mat.A.num.setZero();
     mat.A.num.resize(mat.m, mat.n);
-    const int size = mat.A.sym.outerSize();
 
-    for(int k = 0; k < size; k++) {
-        for(SparseMatrix <Expr *>::InnerIterator it(mat.A.sym, k); it; ++it) {
-            double value = it.value()->Eval();
-            if(EXACT(value == 0.0)) continue;
-            mat.A.num.insert(it.row(), it.col()) = value;
-        }
+    std::vector<Eigen::Triplet<double>> values;
+    values.reserve(mat.A.sym.size());
+    for(const auto &exprTriplet : mat.A.sym) {
+        double value = exprTriplet.value()->Eval();
+        values.emplace_back(exprTriplet.row(), exprTriplet.col(), value);
     }
-    mat.A.num.makeCompressed();
+    mat.A.num.setFromTriplets(values.begin(), values.end());
 }
 
 bool System::IsDragged(hParam p) {
@@ -566,7 +563,7 @@ void System::Clear() {
     eq.Clear();
     dragged.Clear();
     mat.A.num.setZero();
-    mat.A.sym.setZero();
+    mat.A.sym.clear();
 }
 
 void System::MarkParamsFree(bool find) {
