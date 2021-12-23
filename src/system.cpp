@@ -63,6 +63,8 @@ bool System::WriteJacobian(int tag) {
             if(j == paramToIndex.end()) continue;
             Expr *pd = f->PartialWrt(p);
             pd = pd->FoldConstants();
+            if(pd->IsZeroConst())
+                continue;
             mat.A.sym[i][j->second] = pd;
         }
         paramsUsed.Clear();
