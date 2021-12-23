@@ -210,18 +210,42 @@ public:
     int scrollPos;      // The scrollbar position, in half-row units
     int halfRows;       // The height of our window, in half-row units
 
-    uint32_t text[MAX_ROWS][MAX_COLS];
-    typedef void LinkFunction(int link, uint32_t v);
+    static inline constexpr uint32_t computeIndex(uint32_t row, uint32_t col) {
+        return row * MAX_COLS + col;
+    }
+    template<typename T>
+    class GridData {
+    public:
+        GridData() : data_(new T[MAX_COLS * MAX_ROWS]) {
+        }
+        void reset() {
+            data_.reset(new T[MAX_COLS * MAX_ROWS]);
+        }
+        const T &operator()(uint32_t row, uint32_t col) const {
+            return data_[computeIndex(row, col)];
+        }
+        T &operator()(uint32_t row, uint32_t col) {
+            return data_[computeIndex(row, col)];
+        }
+
+    private:
+        std::unique_ptr<T[]> data_;
+    };
+
+    GridData<uint32_t> text;
     enum { NOT_A_LINK = 0 };
-    struct {
-        char            fg;
-        char            bg;
-        RgbaColor       bgRgb;
-        int             link;
-        uint32_t        data;
-        LinkFunction   *f;
-        LinkFunction   *h;
-    }       meta[MAX_ROWS][MAX_COLS];
+    typedef void LinkFunction(int link, uint32_t v);
+    struct MetaField {
+        char fg         = 'd';
+        char bg         = 'd';
+        RgbaColor bgRgb = RGBi(0, 0, 0);
+        int link        = NOT_A_LINK;
+        uint32_t data   = 0;
+        LinkFunction *f = nullptr;
+        LinkFunction *h = nullptr;
+    };
+
+    GridData<MetaField> meta;
     int hoveredRow, hoveredCol;
 
     int top[MAX_ROWS]; // in half-line units, or -1 for unused

@@ -283,10 +283,11 @@ void TextWindow::ClearSuper() {
     Platform::WindowRef oldWindow = std::move(window);
     std::shared_ptr<ViewportCanvas> oldCanvas = canvas;
 
-    // Cannot use *this = {} here because TextWindow instances
-    // are 2.4MB long; this causes stack overflows in prologue
+    // Don't put grid-sized arrays directly in this class;
+    // this causes stack overflows in prologue
     // when built with MSVC, even with optimizations.
-    memset(this, 0, sizeof(*this));
+    *this = {};
+    static_assert(sizeof(*this) < 1000*1000, "don't be huge");
 
     // Return old canvas
     window = std::move(oldWindow);
@@ -337,10 +338,8 @@ void TextWindow::ClearScreen() {
     int i, j;
     for(i = 0; i < MAX_ROWS; i++) {
         for(j = 0; j < MAX_COLS; j++) {
-            text[i][j] = ' ';
-            meta[i][j].fg = 'd';
-            meta[i][j].bg = 'd';
-            meta[i][j].link = NOT_A_LINK;
+            text(i, j) = ' ';
+            meta(i, j) = {};
         }
         top[i] = i*2;
     }
@@ -372,8 +371,8 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     rows++;
 
     for(c = 0; c < MAX_COLS; c++) {
-        text[r][c] = ' ';
-        meta[r][c].link = NOT_A_LINK;
+        text(r, c) = ' ';
+        meta(r, c).link = NOT_A_LINK;
     }
 
     char fg = 'd';
@@ -500,14 +499,14 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
         for(utf8_iterator it(buf); *it; ++it) {
             for(size_t i = 0; i < canvas->GetBitmapFont()->GetWidth(*it); i++) {
                 if(c >= MAX_COLS) goto done;
-                text[r][c] = (i == 0) ? *it : ' ';
-                meta[r][c].fg = fg;
-                meta[r][c].bg = bg;
-                meta[r][c].bgRgb = bgRgb;
-                meta[r][c].link = link;
-                meta[r][c].data = data;
-                meta[r][c].f = f;
-                meta[r][c].h = h;
+                text(r, c) = (i == 0) ? *it : ' ';
+                meta(r, c).fg = fg;
+                meta(r, c).bg = bg;
+                meta(r, c).bgRgb = bgRgb;
+                meta(r, c).link = link;
+                meta(r, c).data = data;
+                meta(r, c).f = f;
+                meta(r, c).h = h;
                 c++;
             }
         }
@@ -517,9 +516,9 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
         fmt = it.ptr();
     }
     while(c < MAX_COLS) {
-        meta[r][c].fg = fg;
-        meta[r][c].bg = bg;
-        meta[r][c].bgRgb = bgRgb;
+        meta(r, c).fg = fg;
+        meta(r, c).bg = bg;
+        meta(r, c).bgRgb = bgRgb;
         c++;
     }
 
@@ -966,13 +965,13 @@ void TextWindow::Paint() {
                 int x = LEFT_MARGIN + c*CHAR_WIDTH_;
                 int y = (ltop-scrollPos)*(LINE_HEIGHT/2) + 4;
 
-                int fg = meta[r][c].fg;
-                int bg = meta[r][c].bg;
+                int fg = meta(r, c).fg;
+                int bg = meta(r, c).bg;
 
                 // On the first pass, all the background quads; on the next
                 // pass, all the foreground (i.e., font) quads.
                 if(a == 0) {
-                    RgbaColor bgRgb = meta[r][c].bgRgb;
+                    RgbaColor bgRgb = meta(r, c).bgRgb;
                     int bh = LINE_HEIGHT, adj = 0;
                     if(bg == 'z') {
                         bh = CHAR_HEIGHT;
@@ -993,34 +992,34 @@ void TextWindow::Paint() {
                     RgbaColor fgRgb = RgbaColor::FromFloat(fgColorTable[fg*3+0],
                                                            fgColorTable[fg*3+1],
                                                            fgColorTable[fg*3+2]);
-                    if(text[r][c] != ' ') {
-                        uiCanvas.DrawBitmapChar(text[r][c], x, y + CHAR_HEIGHT, fgRgb);
+                    if(text(r, c) != ' ') {
+                        uiCanvas.DrawBitmapChar(text(r, c), x, y + CHAR_HEIGHT, fgRgb);
                     }
 
                     // If this is a link and it's hovered, then draw the
                     // underline
-                    if(meta[r][c].link && meta[r][c].link != 'n' &&
+                    if(meta(r, c).link && meta(r, c).link != 'n' &&
                         (r == hoveredRow && c == hoveredCol))
                     {
                         int cs = c, cf = c;
-                        while(cs >= 0 && meta[r][cs].link &&
-                                         meta[r][cs].f    == meta[r][c].f &&
-                                         meta[r][cs].data == meta[r][c].data)
+                        while(cs >= 0 && meta(r, cs).link &&
+                                         meta(r, cs).f    == meta(r, c).f &&
+                                         meta(r, cs).data == meta(r, c).data)
                         {
                             cs--;
                         }
                         cs++;
 
-                        while(          meta[r][cf].link &&
-                                        meta[r][cf].f    == meta[r][c].f &&
-                                        meta[r][cf].data == meta[r][c].data)
+                        while(          meta(r, cf).link &&
+                                        meta(r, cf).f    == meta(r, c).f &&
+                                        meta(r, cf).data == meta(r, c).data)
                         {
                             cf++;
                         }
 
                         // But don't underline checkboxes or radio buttons
-                        while(((text[r][cs] >= 0xe000 && text[r][cs] <= 0xefff) ||
-                                text[r][cs] == ' ') &&
+                        while(((text(r, cs) >= 0xe000 && text(r, cs) <= 0xefff) ||
+                                text(r, cs) == ' ') &&
                               cs < cf)
                         {
                             cs++;
@@ -1028,7 +1027,7 @@ void TextWindow::Paint() {
 
                         // Always use the color of the rightmost character
                         // in the link, so that underline is consistent color
-                        fg = meta[r][cf-1].fg;
+                        fg = meta(r, cf-1).fg;
                         fgRgb = RgbaColor::FromFloat(fgColorTable[fg*3+0],
                                                      fgColorTable[fg*3+1],
                                                      fgColorTable[fg*3+2]);
@@ -1113,7 +1112,7 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
         hoveredRow = r;
         hoveredCol = c;
 
-        const auto &item = meta[r][c];
+        const auto &item = meta(r, c);
         if(leftClick) {
             if(item.link && item.f) {
                 (item.f)(item.link, item.data);
