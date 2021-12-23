@@ -261,8 +261,8 @@ void GraphicsWindow::MakeTangentArc() {
     // in our group and workplane) that generate entities that have an
     // endpoint at our vertex to be rounded.
     int i, c = 0;
-    Entity *ent[2];
-    Request *req[2];
+    std::array<Entity *, 2> ent;
+    std::array<Request *, 2> req;
     hRequest hreq[2];
     hEntity hent[2];
     bool pointf[2];
@@ -314,8 +314,8 @@ void GraphicsWindow::MakeTangentArc() {
     // And thereafter we mustn't touch the entity or req ptrs,
     // because the new requests/entities we add might force a
     // realloc.
-    memset(ent, 0, sizeof(ent));
-    memset(req, 0, sizeof(req));
+    ent.fill(nullptr);
+    req.fill(nullptr);
 
     Vector pinter;
     double r = 0.0, vv = 0.0;
