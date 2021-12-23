@@ -257,14 +257,14 @@ bool System::SolveLeastSquares() {
         } else {
             mat.scale[c] = 1;
         }
-        }
+    }
 
     int size = mat.A.sym.outerSize();
     for(int k = 0; k < size; k++) {
         for(SparseMatrix<double>::InnerIterator it(mat.A.num, k); it; ++it) {
             it.valueRef() *= mat.scale[it.col()];
-            }
         }
+    }
 
     SparseMatrix<double> AAt = mat.A.num * mat.A.num.transpose();
     AAt.makeCompressed();
