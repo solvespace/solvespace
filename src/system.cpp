@@ -264,7 +264,7 @@ bool System::SolveLeastSquares() {
         }
     }
 
-    int size = mat.A.sym.outerSize();
+    const int size = mat.A.num.outerSize();
     for(int k = 0; k < size; k++) {
         for(SparseMatrix<double>::InnerIterator it(mat.A.num, k); it; ++it) {
             it.valueRef() *= mat.scale[it.col()];
