@@ -297,7 +297,6 @@ void TextWindow::ClearSuper() {
     MakeColorTable(fgColors, fgColorTable);
     MakeColorTable(bgColors, bgColorTable);
 
-    ClearScreen();
     Show();
 }
 
