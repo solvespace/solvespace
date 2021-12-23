@@ -246,7 +246,7 @@ public:
         int m, n;
         struct {
             // This only observes the Expr - does not own them!
-            Eigen::SparseMatrix<Expr *> sym;
+            std::vector<Eigen::Triplet<Expr *>> sym;
             Eigen::SparseMatrix<double> num;
         } A;
 
