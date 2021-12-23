@@ -70,7 +70,7 @@ public:
 
     Expr *PartialWrt(hParam p) const;
     double Eval() const;
-    void ParamsUsedList(List<hParam> *list) const;
+    void ParamsUsedList(std::vector<hParam> *list) const;
     bool DependsOn(hParam p) const;
     static bool Tol(double a, double b);
     bool IsZeroConst() const;
