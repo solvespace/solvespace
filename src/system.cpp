@@ -15,6 +15,8 @@
 // always be much less than LENGTH_EPS, and in practice should be much less.
 const double System::CONVERGE_TOLERANCE = (LENGTH_EPS/(1e2));
 
+constexpr size_t LikelyPartialCountPerEq = 10;
+
 bool System::WriteJacobian(int tag) {
     // Clear all
     mat.param.clear();
@@ -34,7 +36,7 @@ bool System::WriteJacobian(int tag) {
     }
     mat.m = mat.eq.size();
     mat.A.sym.resize(mat.m, mat.n);
-    mat.A.sym.reserve(Eigen::VectorXi::Constant(mat.n, 10));
+    mat.A.sym.reserve(Eigen::VectorXi::Constant(mat.n, LikelyPartialCountPerEq));
 
     // Fill the param id to index map
     std::map<uint32_t, int> paramToIndex;
@@ -46,11 +48,13 @@ bool System::WriteJacobian(int tag) {
         return false;
     }
     std::vector<hParam> paramsUsed;
-    // A single possibly-too-large allocation is probably preferred here?
+    // In some experimenting, this is almost always the right size.
+    // Value is usually between 0 and 20, comes from number of constraints?
     mat.B.sym.reserve(mat.eq.size());
     for(size_t i = 0; i < mat.eq.size(); i++) {
         Equation *e = mat.eq[i];
         if(e->tag != tag) continue;
+        // Simplify (fold) then deep-copy the current equation.
         Expr *f = e->e->FoldConstants();
         f = f->DeepCopyWithParamsAsPointers(&param, &(SK.param));
 
@@ -58,13 +62,17 @@ bool System::WriteJacobian(int tag) {
         f->ParamsUsedList(&paramsUsed);
 
         for(hParam &p : paramsUsed) {
-            auto j = paramToIndex.find(p.v);
-            if(j == paramToIndex.end()) continue;
+            // Find the index of this parameter
+            auto it = paramToIndex.find(p.v);
+            if(it == paramToIndex.end()) continue;
+            // this is the parameter index
+            const int j = it->second;
+            // compute partial derivative of f
             Expr *pd = f->PartialWrt(p);
             pd = pd->FoldConstants();
             if(pd->IsZeroConst())
                 continue;
-            mat.A.sym.insert(i, j->second) = pd;
+            mat.A.sym.insert(i, j) = pd;
         }
         paramsUsed.clear();
         mat.B.sym.push_back(f);
@@ -248,14 +256,12 @@ bool System::SolveLeastSquares() {
     // Scale the columns; this scale weights the parameters for the least
     // squares solve, so that we can encourage the solver to make bigger
     // changes in some parameters, and smaller in others.
-    mat.scale = VectorXd(mat.n);
+    mat.scale = VectorXd::Ones(mat.n);
     for(int c = 0; c < mat.n; c++) {
         if(IsDragged(mat.param[c])) {
             // It's least squares, so this parameter doesn't need to be all
             // that big to get a large effect.
-            mat.scale[c] = 1/20.0;
-        } else {
-            mat.scale[c] = 1;
+            mat.scale[c] = 1 / 20.0;
         }
     }
 
