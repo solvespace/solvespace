@@ -361,28 +361,22 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
         Printf(halfLine, endString);
         return;
     }
-    
+
     va_list vl;
     va_start(vl, fmt);
 
-    int r, c;
-    r = rows;
+    int r = rows;
     top[r] = (r == 0) ? 0 : (top[r-1] + (halfLine ? 3 : 2));
     rows++;
 
-    for(c = 0; c < MAX_COLS; c++) {
+    for(int c = 0; c < MAX_COLS; c++) {
         text(r, c) = ' ';
         meta(r, c).link = NOT_A_LINK;
     }
 
-    char fg = 'd';
-    char bg = 'd';
-    RgbaColor bgRgb = RGBi(0, 0, 0);
-    int link = NOT_A_LINK;
-    uint32_t data = 0;
-    LinkFunction *f = NULL, *h = NULL;
+    MetaField metaVal;
 
-    c = 0;
+    int c = 0;
     while(*fmt) {
         char buf[1024];
 
@@ -437,12 +431,12 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     break;
                 }
                 case 'E':
-                    fg = 'd';
+                    metaVal.fg = 'd';
                     // leave the background, though
-                    link = NOT_A_LINK;
-                    data = 0;
-                    f = NULL;
-                    h = NULL;
+                    metaVal.link = NOT_A_LINK;
+                    metaVal.data = 0;
+                    metaVal.f = NULL;
+                    metaVal.h = NULL;
                     break;
 
                 case 'F':
@@ -455,10 +449,11 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                         case 'z': rgbPtr = va_arg(vl, RgbaColor *); break;
                     }
                     if(*fmt == 'F') {
-                        fg = cc;
+                        metaVal.fg = cc;
                     } else {
-                        bg = cc;
-                        if(rgbPtr) bgRgb = *rgbPtr;
+                        metaVal.bg = cc;
+                        if(rgbPtr)
+                            metaVal.bgRgb = *rgbPtr;
                     }
                     fmt++;
                     break;
@@ -467,23 +462,23 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     if(fmt[1] == '\0') goto done;
                     fmt++;
                     if(*fmt == 'p') {
-                        link = va_arg(vl, int);
+                        metaVal.link = va_arg(vl, int);
                     } else {
-                        link = *fmt;
+                        metaVal.link = *fmt;
                     }
                     break;
 
                 case 'f':
-                    f = va_arg(vl, LinkFunction *);
+                    metaVal.f = va_arg(vl, LinkFunction *);
                     break;
 
                 case 'h':
-                    h = va_arg(vl, LinkFunction *);
+                    metaVal.h = va_arg(vl, LinkFunction *);
                     break;
 
                 case 'D': {
                     unsigned int v = va_arg(vl, unsigned int);
-                    data = (uint32_t)v;
+                    metaVal.data   = (uint32_t)v;
                     break;
                 }
                 case '%':
@@ -500,13 +495,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
             for(size_t i = 0; i < canvas->GetBitmapFont()->GetWidth(*it); i++) {
                 if(c >= MAX_COLS) goto done;
                 text(r, c) = (i == 0) ? *it : ' ';
-                meta(r, c).fg = fg;
-                meta(r, c).bg = bg;
-                meta(r, c).bgRgb = bgRgb;
-                meta(r, c).link = link;
-                meta(r, c).data = data;
-                meta(r, c).f = f;
-                meta(r, c).h = h;
+                meta(r, c) = metaVal;
                 c++;
             }
         }
@@ -516,9 +505,9 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
         fmt = it.ptr();
     }
     while(c < MAX_COLS) {
-        meta(r, c).fg = fg;
-        meta(r, c).bg = bg;
-        meta(r, c).bgRgb = bgRgb;
+        meta(r, c).fg = metaVal.fg;
+        meta(r, c).bg = metaVal.bg;
+        meta(r, c).bgRgb = metaVal.bgRgb;
         c++;
     }
 
