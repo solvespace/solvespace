@@ -564,7 +564,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
     // Find the hex representation in the (sorted) Unifont file.
     auto first = unifontData.cbegin(),
          last  = unifontData.cend();
-    while(first <= last) {
+    while(first < last) {
         auto mid = first + (last - first) / 2;
         while(mid != unifontData.cbegin()) {
             if(*mid == '\n') {
@@ -588,7 +588,10 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
         if(foundCodepoint < codepoint) {
             first = mid + 1;
             while(first != unifontData.cend()) {
-                if(*first == '\n') break;
+                if(*first == '\n') {
+                    first++;
+                    break;
+                }
                 first++;
             }
             continue; // and last stays the same

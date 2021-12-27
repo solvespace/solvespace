@@ -332,8 +332,9 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     
     double board_thickness = 10.0;
     double scale = 1.0; //mm
-    bool topEntities, bottomEntities;
-    
+    bool topEntities       = false;
+    bool bottomEntities    = false;
+
     Quaternion normal = Quaternion::From(Vector::From(1,0,0), Vector::From(0,1,0));
     hEntity hnorm = newNormal(el, &entityCount, normal);
 
