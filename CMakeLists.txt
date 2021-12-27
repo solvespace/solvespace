@@ -8,10 +8,9 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
             "    mkdir build && cd build && cmake ..")
 endif()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+list(APPEND CMAKE_MODULE_PATH
     "${CMAKE_SOURCE_DIR}/cmake/")
 
-cmake_policy(SET CMP0048 OLD)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
@@ -39,10 +38,10 @@ include(GetGitCommitHash)
 # and instead uncomment the following, adding the complete git hash of the checkout you are using:
 # set(GIT_COMMIT_HASH 0000000000000000000000000000000000000000)
 
-set(solvespace_VERSION_MAJOR 3)
-set(solvespace_VERSION_MINOR 0)
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
-project(solvespace LANGUAGES C CXX ASM)
+project(solvespace
+    VERSION 3.0
+    LANGUAGES C CXX ASM)
 
 set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
@@ -56,8 +55,11 @@ set(ENABLE_SANITIZERS OFF CACHE BOOL
     "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
 set(ENABLE_OPENMP     OFF CACHE BOOL
     "Whether geometric operations will be parallelized using OpenMP")
-set(ENABLE_LTO     OFF CACHE BOOL
+set(ENABLE_LTO        OFF CACHE BOOL
     "Whether interprocedural (global) optimizations are enabled")
+option(FORCE_VENDORED_Eigen3
+    "Whether we should use our bundled Eigen even in the presence of a system copy"
+    OFF)
 
 set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
@@ -114,7 +116,12 @@ endif()
 if(ENABLE_OPENMP)
     find_package( OpenMP REQUIRED )
     if(OPENMP_FOUND)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+        add_library(slvs_openmp INTERFACE)
+        target_compile_options(slvs_openmp INTERFACE ${OpenMP_CXX_FLAGS})
+        target_link_libraries(slvs_openmp INTERFACE
+            ${OpenMP_CXX_LIBRARIES})
+        target_include_directories(slvs_openmp INTERFACE SYSTEM
+            ${OpenMP_CXX_INCLUDE_DIRS})
         message(STATUS "found OpenMP, compiling with flags: " ${OpenMP_CXX_FLAGS} )
     endif()
 endif()
@@ -178,6 +185,9 @@ endif()
 message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
 
+message(STATUS "Using in-tree eigen")
+include_directories(extlib/eigen)
+
 message(STATUS "Using in-tree mimalloc")
 set(MI_OVERRIDE OFF CACHE BOOL "")
 set(MI_BUILD_SHARED OFF CACHE BOOL "")
@@ -185,6 +195,18 @@ set(MI_BUILD_OBJECT OFF CACHE BOOL "")
 set(MI_BUILD_TESTS OFF CACHE BOOL "")
 add_subdirectory(extlib/mimalloc EXCLUDE_FROM_ALL)
 set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
+
+if(NOT FORCE_VENDORED_Eigen3)
+    find_package(Eigen3 CONFIG)
+endif()
+if(FORCE_VENDORED_Eigen3 OR NOT EIGEN3_FOUND)
+    message(STATUS "Using in-tree Eigen")
+    set(EIGEN3_FOUND             YES)
+    set(EIGEN3_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/eigen)
+else()
+    message(STATUS "Using system Eigen: ${EIGEN3_INCLUDE_DIRS}")
+endif()
+
 
 if(WIN32 OR APPLE)
     # On Win32 and macOS we use vendored packages, since there is little to no benefit
@@ -281,7 +303,6 @@ if(ENABLE_GUI)
     elseif(APPLE)
         find_package(OpenGL REQUIRED)
         find_library(APPKIT_LIBRARY AppKit REQUIRED)
-        set(util_LIBRARIES ${APPKIT_LIBRARY})
     else()
         find_package(OpenGL REQUIRED)
         find_package(SpaceWare)
