@@ -215,7 +215,7 @@ void Error(const char *fmt, ...);
 
 class System {
 public:
-    enum { MAX_UNKNOWNS = 1024 };
+    enum { MAX_UNKNOWNS = 2048 };
 
     EntityList                      entity;
     ParamList                       param;
