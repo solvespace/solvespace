@@ -97,7 +97,6 @@ void System::EvalJacobian() {
 }
 
 bool System::IsDragged(hParam p) {
-    hParam *pp;
     const auto b = dragged.begin();
     const auto e = dragged.end();
     return e != std::find(b, e, p);
