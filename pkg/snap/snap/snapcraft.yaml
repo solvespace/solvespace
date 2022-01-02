@@ -66,6 +66,7 @@ parts:
       - libsigc++-2.0-dev
       - libspnav-dev
       - git
+      - g++
     stage-packages:
       - libspnav0
       - libsigc++-2.0-0v5
