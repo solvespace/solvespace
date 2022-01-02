@@ -88,7 +88,7 @@ target_link_libraries(slvs PRIVATE slvs_deps)
 
 set_target_properties(slvs PROPERTIES
     PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/slvs.h
-    VERSION ${solvespace_VERSION_MAJOR}.${solvespace_VERSION_MINOR}
+    VERSION ${PROJECT_VERSION}
     SOVERSION 1)
 
 if(NOT WIN32)
@@ -204,7 +204,7 @@ if(HAVE_GETTEXT)
                 --keyword --keyword=_ --keyword=N_ --keyword=C_:2,1c --keyword=CN_:2,1c
                 --force-po --width=100 --sort-by-file
                 --package-name=SolveSpace
-                --package-version=${solvespace_VERSION_MAJOR}.${solvespace_VERSION_MINOR}
+                --package-version=${PROJECT_VERSION}
                 "--copyright-holder=the PACKAGE authors"
                 --msgid-bugs-address=whitequark@whitequark.org
                 --from-code=utf-8 --output=${gen_output_pot} ${inputs}
