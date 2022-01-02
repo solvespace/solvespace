@@ -56,6 +56,7 @@ parts:
     build-packages:
       - zlib1g-dev
       - libpng-dev
+      - libcairo2-dev
       - libfreetype6-dev
       - libjson-c-dev
       - libgl-dev
