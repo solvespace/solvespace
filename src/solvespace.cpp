@@ -1053,7 +1053,7 @@ void SolveSpaceUI::MenuHelp(Command id) {
 "law. For details, visit http://gnu.org/licenses/\n"
 "\n"
 "© 2008-%d Jonathan Westhues and other authors.\n"),
-PACKAGE_VERSION, 2021);
+PACKAGE_VERSION, 2022);
             break;
 
         default: ssassert(false, "Unexpected menu ID");
