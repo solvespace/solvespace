@@ -11,7 +11,7 @@
 #include FT_ADVANCES_H
 
 /* Yecch. Irritatingly, you need to do this nonsense to get the error string table,
-   since nobody thought to put this exact function into FreeType itsself. */
+   since nobody thought to put this exact function into FreeType itself. */
 #undef __FTERRORS_H__
 #define FT_ERRORDEF(e, v, s) { (e), (s) },
 #define FT_ERROR_START_LIST
