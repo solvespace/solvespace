@@ -10,7 +10,7 @@
 
 #define MIN_POINT_DISTANCE 0.001
 
-// we will check for duplicate verticies and keep all their normals
+// we will check for duplicate vertices and keep all their normals
 class vertex {
 public:
     Vector p;
@@ -171,7 +171,7 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
         addUnique(verts, tr.b, normal);
         addUnique(verts, tr.c, normal);
     }
-    dbp("%d verticies", verts.size());
+    dbp("%d vertices", verts.size());
 
     BBox box = {};
     box.minp = verts[0].p;
