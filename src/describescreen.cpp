@@ -74,11 +74,14 @@ void TextWindow::DescribeSelection() {
     SS.MmToString((p).y).c_str(), \
     SS.MmToString((p).z).c_str()
 #define PT_AS_STR_NO_LINK "(%Fi%s%Fd, %Fi%s%Fd, %Fi%s%Fd)"
-#define PT_AS_NUM "(%Fi%3%E, %Fi%3%E, %Fi%3%E)"
+#define PT_AS_NUM "(%Fi%3%Fd, %Fi%3%Fd, %Fi%3%Fd)"
 #define COSTR(e, p) \
     e->h, (&TextWindow::ScreenSelectEntity), (&TextWindow::ScreenHoverEntity), \
         COSTR_NO_LINK(p)
 #define PT_AS_STR "%Ll%D%f%h" PT_AS_STR_NO_LINK "%E"
+#define CO_LINK(e, p) e->h, (&TextWindow::ScreenSelectEntity), (&TextWindow::ScreenHoverEntity), CO(p)
+#define PT_AS_NUM_LINK "%Ll%D%f%h" PT_AS_NUM "%E"
+
         switch(e->type) {
             case Entity::Type::POINT_IN_3D:
             case Entity::Type::POINT_IN_2D:
@@ -111,7 +114,7 @@ void TextWindow::DescribeSelection() {
                 Printf(true, "   origin = " PT_AS_STR, COSTR(SK.GetEntity(e->point[0]), p));
                 Quaternion q = e->Normal()->NormalGetNum();
                 p = q.RotationN();
-                Printf(true, "   normal = " PT_AS_NUM, CO(p));
+                Printf(true, "   normal = " PT_AS_NUM_LINK, CO_LINK(e->Normal(), p));
                 break;
             }
             case Entity::Type::LINE_SEGMENT: {
@@ -359,7 +362,7 @@ void TextWindow::DescribeSelection() {
         Printf(false, "  pointB = " PT_AS_STR, COSTR(SK.GetEntity(gs.point[1]), p1));
         Vector v  = SK.GetEntity(gs.vector[0])->VectorGetNum();
         v = v.WithMagnitude(1);
-        Printf(true,  "  vector = " PT_AS_NUM, CO(v));
+        Printf(true,  "  vector = " PT_AS_NUM_LINK, CO_LINK(SK.GetEntity(gs.vector[0]), v));
         double d = (p1.Minus(p0)).Dot(v);
         Printf(true,  "  proj_d = %Fi%s", SS.MmToString(d).c_str());
     } else if(gs.n == 2 && gs.lineSegments == 1 && gs.points == 1) {
@@ -390,8 +393,8 @@ void TextWindow::DescribeSelection() {
         v0 = v0.WithMagnitude(1);
         v1 = v1.WithMagnitude(1);
 
-        Printf(true,  "  vectorA = " PT_AS_NUM, CO(v0));
-        Printf(false, "  vectorB = " PT_AS_NUM, CO(v1));
+        Printf(true,  "  vectorA = " PT_AS_NUM_LINK, CO_LINK(SK.GetEntity(gs.entity[0]), v0));
+        Printf(false, "  vectorB = " PT_AS_NUM_LINK, CO_LINK(SK.GetEntity(gs.entity[1]), v1));
 
         double theta = acos(v0.Dot(v1));
         Printf(true,  "    angle = %Fi%2%E degrees", theta*180/PI);
