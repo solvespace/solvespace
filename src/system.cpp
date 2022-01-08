@@ -84,17 +84,11 @@ void System::EvalJacobian() {
     mat.A.num.setZero();
     mat.A.num.resize(mat.m, mat.n);
 
-    std::vector<Eigen::Triplet<double>> values(mat.A.sym.size());
-    // Not using range-for to achieve (old) OpenMP compatibility:
-    // worth it because this profiles as taking a lot of time.
-    // Must be signed integer for MSVC.
-    const int n = (int)mat.A.sym.size();
-#pragma omp parallel for
-    for(int i = 0; i < n; ++i) {
-        const auto &exprTriplet = mat.A.sym[i];
-        double value            = exprTriplet.value()->Eval();
-        // assigning rather than emplace_back so we don't have to stick a critical pragma in here for openmp.
-        values[i] = {exprTriplet.row(), exprTriplet.col(), value};
+    std::vector<Eigen::Triplet<double>> values;
+    values.reserve(mat.A.sym.size());
+    for(const auto &exprTriplet : mat.A.sym) {
+        double value = exprTriplet.value()->Eval();
+        values.emplace_back(exprTriplet.row(), exprTriplet.col(), value);
     }
     mat.A.num.setFromTriplets(values.begin(), values.end());
 }
