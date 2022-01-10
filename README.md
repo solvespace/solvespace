@@ -1,4 +1,4 @@
-# SolveSpace
+# SolveSpace Test
 
 <img src="res/freedesktop/solvespace-scalable.svg" width="70" height="70" alt="SolveSpace Logo" align="left">
 
