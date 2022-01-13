@@ -1056,6 +1056,10 @@ void SolveSpaceUI::MenuHelp(Command id) {
 PACKAGE_VERSION, 2022);
             break;
 
+        case Command::GITHUB:
+            Platform::OpenInBrowser(GIT_HASH_URL);
+            break;
+
         default: ssassert(false, "Unexpected menu ID");
     }
 }

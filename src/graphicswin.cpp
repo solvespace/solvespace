@@ -183,6 +183,7 @@ const MenuEntry Menu[] = {
 { 0, N_("&Help"),                       Command::NONE,             0,       KN, mHelp  },
 { 1, N_("&Language"),                   Command::LOCALE,           0,       KN, mHelp  },
 { 1, N_("&Website / Manual"),           Command::WEBSITE,          0,       KN, mHelp  },
+{ 1, N_("&Go to GitHub commit"),        Command::GITHUB,            0,       KN, mHelp  },
 #ifndef __APPLE__
 { 1, N_("&About"),                      Command::ABOUT,            0,       KN, mHelp  },
 #endif
