@@ -5,6 +5,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include "config.h"
 
 //-----------------------------------------------------------------------------
 // A navigation bar that always appears at the top of the window, with a
@@ -90,7 +91,7 @@ void TextWindow::ScreenShowEditView(int link, uint32_t v) {
     SS.TW.GoToScreen(Screen::EDIT_VIEW);
 }
 void TextWindow::ScreenGoToWebsite(int link, uint32_t v) {
-    Platform::OpenInBrowser("http://solvespace.com/txtlink");
+    Platform::OpenInBrowser(GIT_HASH_URL);
 }
 void TextWindow::ShowListOfGroups() {
     const char *radioTrue  = " " RADIO_TRUE  " ",

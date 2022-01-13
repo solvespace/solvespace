@@ -8,6 +8,7 @@
 #if defined(_OPENMP)
 #include <omp.h>
 #endif
+#include "config.h"
 
 void TextWindow::ScreenChangeColor(int link, uint32_t v) {
     SS.TW.ShowEditControlWithColorPicker(13, SS.modelColor[v]);
@@ -360,6 +361,8 @@ void TextWindow::ShowConfiguration() {
         Printf(false, " %FtOpenMP enabled");
         Printf(false, " %Ft   threads  %E%d", omp_get_max_threads());
     #endif
+
+    Printf(false, " %Fl%Ls%fGo to GitHub commit for %s%E", &ScreenGoToWebsite, PACKAGE_VERSION);
 }
 
 bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
