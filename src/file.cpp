@@ -415,7 +415,8 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
                 case 'P': {
                     Platform::Path path = Platform::Path::FromPortable(val);
                     if(!path.IsEmpty()) {
-                        p->P() = filename.Parent().Join(path).Expand();
+                        const Platform::Path &parent = filename.Parent();
+                        p->P() = parent.IsEmpty() ? path : parent.Join(path).Expand();
                     }
                     break;
                 }
