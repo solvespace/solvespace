@@ -130,6 +130,13 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     char str[80] = {};
     f.read(str, 80);
     
+    if(str[0]=='s' && str[1]=='o' && str[2]=='l' && str[3]=='i' && str[4]=='d') {
+    // we could display a message that text stl files are not supported
+    // just returning false will trigger the warning that linked file is not present
+    // best solution is to add an importer for text STL.
+        return false;
+    }
+    
     uint32_t n;
     uint32_t color;
     
