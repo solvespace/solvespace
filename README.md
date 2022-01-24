@@ -171,11 +171,11 @@ Space Navigator support will not be available.
 
 ## Building on macOS
 
-You will need git, XCode tools and CMake. Git and CMake can be installed
+You will need git, XCode tools, CMake and libomp. Git, CMake and libomp can be installed
 via [Homebrew][]:
 
 ```sh
-brew install git cmake
+brew install git cmake libomp
 ```
 
 XCode has to be installed via AppStore or [the Apple website][appledeveloper];
