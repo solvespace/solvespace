@@ -131,9 +131,9 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     f.read(str, 80);
     
     if(0==memcmp("solid", str, 5)) {
-    // we could display a message that text stl files are not supported
     // just returning false will trigger the warning that linked file is not present
     // best solution is to add an importer for text STL.
+        Message(_("Text-formated STL files are not currently supported"));
         return false;
     }
     
