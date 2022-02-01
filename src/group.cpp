@@ -136,6 +136,9 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
                         g.predef.negateV = wrkplg->predef.negateV;
                     } else if(wrkplg->subtype == Subtype::WORKPLANE_BY_POINT_ORTHO) {
                         g.predef.q = wrkplg->predef.q;
+                    } else if(wrkplg->subtype == Subtype::WORKPLANE_BY_POINT_NORMAL) {
+                        g.predef.q = wrkplg->predef.q;
+                        g.predef.entityB = wrkplg->predef.entityB;
                     } else ssassert(false, "Unexpected workplane subtype");
                 }
             } else if(gs.anyNormals == 1 && gs.points == 1 && gs.n == 2) {
