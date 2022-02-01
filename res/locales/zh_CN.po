@@ -2,12 +2,12 @@
 # Copyright (C) 2020 the PACKAGE authors
 # This file is distributed under the same license as the SolveSpace package.
 # <lomatus@163.com>, 2020.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-09-26 16:25-0400\n"
+"POT-Creation-Date: 2022-02-01 16:24+0200\n"
 "PO-Revision-Date: 2021-04-03 13:10-0400\n"
 "Last-Translator: lomatus@163.com\n"
 "Language-Team: none\n"
@@ -35,7 +35,7 @@ msgstr "剪贴板为空;没有要粘贴的内容。"
 msgid "Number of copies to paste must be at least one."
 msgstr "要粘贴的副本数必须至少为 1 个。"
 
-#: clipboard.cpp:389 textscreens.cpp:827
+#: clipboard.cpp:389 textscreens.cpp:833
 msgid "Scale cannot be zero."
 msgstr "缩放不能为零。"
 
@@ -61,38 +61,38 @@ msgstr "要粘贴的项目太多; 请把他们拆分。"
 msgid "No workplane active."
 msgstr "没有工作平面处于活动状态。"
 
-#: confscreen.cpp:376
+#: confscreen.cpp:381
 msgid "Bad format: specify coordinates as x, y, z"
 msgstr "格式错误：将坐标指定为 x、y、z"
 
-#: confscreen.cpp:386 style.cpp:729 textscreens.cpp:858
+#: confscreen.cpp:391 style.cpp:729 textscreens.cpp:864
 msgid "Bad format: specify color as r, g, b"
 msgstr "格式错误：将颜色指定为 r、g、b"
 
-#: confscreen.cpp:412
+#: confscreen.cpp:417
 msgid ""
 "The perspective factor will have no effect until you enable View -> Use "
 "Perspective Projection."
 msgstr "在启用\"视图 -= 使用透视投影\"之前，透视因子将不起作用。"
 
-#: confscreen.cpp:430 confscreen.cpp:440
+#: confscreen.cpp:435 confscreen.cpp:445
 #, c-format
 msgid "Specify between 0 and %d digits after the decimal."
 msgstr "在十进制之后指定 0 和 %d 数字之间。"
 
-#: confscreen.cpp:452
+#: confscreen.cpp:457
 msgid "Export scale must not be zero!"
 msgstr "输出比例不能为零！"
 
-#: confscreen.cpp:464
+#: confscreen.cpp:469
 msgid "Cutter radius offset must not be negative!"
 msgstr "刀具半径偏移不能为负数！"
 
-#: confscreen.cpp:518
+#: confscreen.cpp:528
 msgid "Bad value: autosave interval should be positive"
 msgstr "坏值：自动保存间隔应为正"
 
-#: confscreen.cpp:521
+#: confscreen.cpp:531
 msgid "Bad format: specify interval in integral minutes"
 msgstr "格式错误：以整数分钟为单位指定间隔"
 
@@ -632,7 +632,7 @@ msgctxt "button"
 msgid "&No"
 msgstr "否(&N)"
 
-#: file.cpp:877 solvespace.cpp:610
+#: file.cpp:877 solvespace.cpp:611
 msgctxt "button"
 msgid "&Cancel"
 msgstr "取消(&C)"
@@ -1085,24 +1085,28 @@ msgstr "语言(&L)"
 msgid "&Website / Manual"
 msgstr "网页/手册(&W)"
 
-#: graphicswin.cpp:187
+#: graphicswin.cpp:186
+msgid "&Go to GitHub commit"
+msgstr ""
+
+#: graphicswin.cpp:188
 msgid "&About"
 msgstr "关于(&A)"
 
-#: graphicswin.cpp:361
+#: graphicswin.cpp:362
 msgid "(no recent files)"
 msgstr "(无文件)"
 
-#: graphicswin.cpp:369
+#: graphicswin.cpp:370
 #, c-format
 msgid "File '%s' does not exist."
 msgstr "文件不存在: \"%s\"。"
 
-#: graphicswin.cpp:736
+#: graphicswin.cpp:737
 msgid "No workplane is active, so the grid will not appear."
 msgstr "没有激活的工作面，因此无法显示轴网。"
 
-#: graphicswin.cpp:751
+#: graphicswin.cpp:752
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel "
 "projection.\n"
@@ -1111,91 +1115,91 @@ msgid ""
 "configuration screen. A value around 0.3 is typical."
 msgstr ""
 
-#: graphicswin.cpp:836
+#: graphicswin.cpp:837
 msgid ""
 "Select a point; this point will become the center of the view on screen."
 msgstr ""
 
-#: graphicswin.cpp:1136
+#: graphicswin.cpp:1137
 msgid "No additional entities share endpoints with the selected entities."
 msgstr ""
 
-#: graphicswin.cpp:1154
+#: graphicswin.cpp:1155
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
 msgstr ""
 
-#: graphicswin.cpp:1177
+#: graphicswin.cpp:1178
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
 msgstr ""
 
-#: graphicswin.cpp:1184
+#: graphicswin.cpp:1185
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
 msgstr ""
 
-#: graphicswin.cpp:1269
+#: graphicswin.cpp:1270
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr ""
 
-#: graphicswin.cpp:1272
+#: graphicswin.cpp:1273
 msgid ""
 "No workplane is selected, and the active group does not have a default "
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
 "workplane group."
 msgstr ""
 
-#: graphicswin.cpp:1293
+#: graphicswin.cpp:1294
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
 msgstr ""
 
-#: graphicswin.cpp:1304
+#: graphicswin.cpp:1305
 msgid "click point on arc (draws anti-clockwise)"
 msgstr "点击弧线的点（逆时针方向绘制）"
 
-#: graphicswin.cpp:1305
+#: graphicswin.cpp:1306
 msgid "click to place datum point"
 msgstr "点击放置基准点"
 
-#: graphicswin.cpp:1306
+#: graphicswin.cpp:1307
 msgid "click first point of line segment"
 msgstr "点击线条的起点"
 
-#: graphicswin.cpp:1308
+#: graphicswin.cpp:1309
 msgid "click first point of construction line segment"
 msgstr "点击构造线的起点"
 
-#: graphicswin.cpp:1309
+#: graphicswin.cpp:1310
 msgid "click first point of cubic segment"
 msgstr "点击立方体的起点"
 
-#: graphicswin.cpp:1310
+#: graphicswin.cpp:1311
 msgid "click center of circle"
 msgstr "点击圆弧的中心"
 
-#: graphicswin.cpp:1311
+#: graphicswin.cpp:1312
 msgid "click origin of workplane"
 msgstr "点击工作面的原点"
 
-#: graphicswin.cpp:1312
+#: graphicswin.cpp:1313
 msgid "click one corner of rectangle"
 msgstr "点击一个矩形倒角"
 
-#: graphicswin.cpp:1313
+#: graphicswin.cpp:1314
 msgid "click top left of text"
 msgstr "点击文字左上角"
 
-#: graphicswin.cpp:1319
+#: graphicswin.cpp:1320
 msgid "click top left of image"
 msgstr "点击图片左上角"
 
-#: graphicswin.cpp:1345
+#: graphicswin.cpp:1346
 msgid ""
 "No entities are selected. Select entities before trying to toggle their "
 "construction state."
@@ -1325,6 +1329,10 @@ msgstr "轮廓自相交！"
 #: groupmesh.cpp:724
 msgid "zero-length edge!"
 msgstr "边缘长度为零！"
+
+#: importmesh.cpp:136
+msgid "Text-formated STL files are not currently supported"
+msgstr ""
 
 #: modify.cpp:252
 msgid "Must be sketching in workplane to create tangent arc."
@@ -1505,7 +1513,7 @@ msgid ""
 "Workplane."
 msgstr "无法在三维空间内绘制图片，可使用 草图->在工作面 激活工作面。"
 
-#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:552
+#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:553
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "SolveSpace模型"
@@ -1600,130 +1608,130 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "逗号分隔数据"
 
-#: platform/guigtk.cpp:1367 platform/guimac.mm:1487 platform/guiwin.cpp:1641
+#: platform/guigtk.cpp:1382 platform/guimac.mm:1509 platform/guiwin.cpp:1641
 msgid "untitled"
 msgstr "未命名"
 
-#: platform/guigtk.cpp:1378 platform/guigtk.cpp:1411 platform/guimac.mm:1445
+#: platform/guigtk.cpp:1393 platform/guigtk.cpp:1426 platform/guimac.mm:1467
 #: platform/guiwin.cpp:1639
 msgctxt "title"
 msgid "Save File"
 msgstr "保存文件"
 
-#: platform/guigtk.cpp:1379 platform/guigtk.cpp:1412 platform/guimac.mm:1428
+#: platform/guigtk.cpp:1394 platform/guigtk.cpp:1427 platform/guimac.mm:1450
 #: platform/guiwin.cpp:1645
 msgctxt "title"
 msgid "Open File"
 msgstr "打开文件"
 
-#: platform/guigtk.cpp:1382 platform/guigtk.cpp:1418
+#: platform/guigtk.cpp:1397 platform/guigtk.cpp:1433
 msgctxt "button"
 msgid "_Cancel"
 msgstr "取消_C"
 
-#: platform/guigtk.cpp:1383 platform/guigtk.cpp:1416
+#: platform/guigtk.cpp:1398 platform/guigtk.cpp:1431
 msgctxt "button"
 msgid "_Save"
 msgstr "保存_S"
 
-#: platform/guigtk.cpp:1384 platform/guigtk.cpp:1417
+#: platform/guigtk.cpp:1399 platform/guigtk.cpp:1432
 msgctxt "button"
 msgid "_Open"
 msgstr "打开_O"
 
-#: solvespace.cpp:170
+#: solvespace.cpp:171
 msgctxt "title"
 msgid "Autosave Available"
 msgstr ""
 
-#: solvespace.cpp:171
+#: solvespace.cpp:172
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
 msgstr ""
 
-#: solvespace.cpp:172
+#: solvespace.cpp:173
 msgctxt "dialog"
 msgid "Do you want to load the autosave file instead?"
 msgstr ""
 
-#: solvespace.cpp:173
+#: solvespace.cpp:174
 msgctxt "button"
 msgid "&Load autosave"
 msgstr ""
 
-#: solvespace.cpp:175
+#: solvespace.cpp:176
 msgctxt "button"
 msgid "Do&n't Load"
 msgstr ""
 
-#: solvespace.cpp:598
+#: solvespace.cpp:599
 msgctxt "title"
 msgid "Modified File"
 msgstr ""
 
-#: solvespace.cpp:600
+#: solvespace.cpp:601
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
 msgstr ""
 
-#: solvespace.cpp:603
+#: solvespace.cpp:604
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
 msgstr ""
 
-#: solvespace.cpp:606
+#: solvespace.cpp:607
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
 msgstr ""
 
-#: solvespace.cpp:607
+#: solvespace.cpp:608
 msgctxt "button"
 msgid "&Save"
 msgstr ""
 
-#: solvespace.cpp:609
+#: solvespace.cpp:610
 msgctxt "button"
 msgid "Do&n't Save"
 msgstr ""
 
-#: solvespace.cpp:630
+#: solvespace.cpp:631
 msgctxt "title"
 msgid "(new sketch)"
 msgstr ""
 
-#: solvespace.cpp:637
+#: solvespace.cpp:638
 msgctxt "title"
 msgid "Property Browser"
 msgstr ""
 
-#: solvespace.cpp:699
+#: solvespace.cpp:700
 msgid ""
 "Constraints are currently shown, and will be exported in the toolpath. This "
 "is probably not what you want; hide them by clicking the link at the top of "
 "the text window."
 msgstr ""
 
-#: solvespace.cpp:771
+#: solvespace.cpp:772
 #, c-format
 msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
 "dwg."
 msgstr ""
 
-#: solvespace.cpp:823
+#: solvespace.cpp:824
 msgid "Constraint must have a label, and must not be a reference dimension."
 msgstr ""
 
-#: solvespace.cpp:827
+#: solvespace.cpp:828
 msgid "Bad selection for step dimension; select a constraint."
 msgstr ""
 
-#: solvespace.cpp:851
+#: solvespace.cpp:852
 msgid "The assembly does not interfere, good."
 msgstr ""
 
-#: solvespace.cpp:867
+#: solvespace.cpp:868
 #, c-format
 msgid ""
 "The volume of the solid model is:\n"
@@ -1731,7 +1739,7 @@ msgid ""
 "    %s"
 msgstr ""
 
-#: solvespace.cpp:876
+#: solvespace.cpp:877
 #, c-format
 msgid ""
 "\n"
@@ -1740,7 +1748,7 @@ msgid ""
 "    %s"
 msgstr ""
 
-#: solvespace.cpp:881
+#: solvespace.cpp:882
 msgid ""
 "\n"
 "\n"
@@ -1748,7 +1756,7 @@ msgid ""
 "This introduces error, typically of around 1%."
 msgstr ""
 
-#: solvespace.cpp:896
+#: solvespace.cpp:897
 #, c-format
 msgid ""
 "The surface area of the selected faces is:\n"
@@ -1759,13 +1767,13 @@ msgid ""
 "This introduces error, typically of around 1%%."
 msgstr ""
 
-#: solvespace.cpp:905
+#: solvespace.cpp:906
 msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
 msgstr ""
 
-#: solvespace.cpp:917
+#: solvespace.cpp:918
 #, c-format
 msgid ""
 "The area of the region sketched in this group is:\n"
@@ -1776,7 +1784,7 @@ msgid ""
 "This introduces error, typically of around 1%%."
 msgstr ""
 
-#: solvespace.cpp:937
+#: solvespace.cpp:938
 #, c-format
 msgid ""
 "The total length of the selected entities is:\n"
@@ -1787,36 +1795,36 @@ msgid ""
 "This introduces error, typically of around 1%%."
 msgstr ""
 
-#: solvespace.cpp:943
+#: solvespace.cpp:944
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
 msgstr ""
 
-#: solvespace.cpp:959
+#: solvespace.cpp:960
 msgid "Bad selection for trace; select a single point."
 msgstr ""
 
-#: solvespace.cpp:986
+#: solvespace.cpp:987
 #, c-format
 msgid "Couldn't write to '%s'"
 msgstr ""
 
-#: solvespace.cpp:1016
+#: solvespace.cpp:1017
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
 msgstr ""
 
-#: solvespace.cpp:1017
+#: solvespace.cpp:1018
 msgid "The mesh is not self-intersecting (okay, valid)."
 msgstr ""
 
-#: solvespace.cpp:1019
+#: solvespace.cpp:1020
 msgid "The mesh has naked edges (NOT okay, invalid)."
 msgstr ""
 
-#: solvespace.cpp:1020
+#: solvespace.cpp:1021
 msgid "The mesh is watertight (okay, valid)."
 msgstr ""
 
-#: solvespace.cpp:1023
+#: solvespace.cpp:1024
 #, c-format
 msgid ""
 "\n"
@@ -1824,7 +1832,7 @@ msgid ""
 "The model contains %d triangles, from %d surfaces."
 msgstr ""
 
-#: solvespace.cpp:1027
+#: solvespace.cpp:1028
 #, c-format
 msgid ""
 "%s\n"
@@ -1834,7 +1842,7 @@ msgid ""
 "Zero problematic edges, good.%s"
 msgstr ""
 
-#: solvespace.cpp:1030
+#: solvespace.cpp:1031
 #, c-format
 msgid ""
 "%s\n"
@@ -1844,7 +1852,7 @@ msgid ""
 "%d problematic edges, bad.%s"
 msgstr ""
 
-#: solvespace.cpp:1043
+#: solvespace.cpp:1044
 #, c-format
 msgid ""
 "This is SolveSpace version %s.\n"
@@ -1871,23 +1879,23 @@ msgstr "无法将样式分配给派生自其他实体的实体;尝试将样式�
 msgid "Style name cannot be empty"
 msgstr "样式名称不能为空"
 
-#: textscreens.cpp:785
+#: textscreens.cpp:791
 msgid "Can't repeat fewer than 1 time."
 msgstr "不能重复少于 1 次。"
 
-#: textscreens.cpp:789
+#: textscreens.cpp:795
 msgid "Can't repeat more than 999 times."
 msgstr "重复不超过 999 次。"
 
-#: textscreens.cpp:814
+#: textscreens.cpp:820
 msgid "Group name cannot be empty"
 msgstr "组名称不能为空"
 
-#: textscreens.cpp:866
+#: textscreens.cpp:872
 msgid "Opacity must be between zero and one."
 msgstr "不透明度必须在零和 1 之间。"
 
-#: textscreens.cpp:901
+#: textscreens.cpp:907
 msgid "Radius cannot be zero or negative."
 msgstr "半径偏移不能为负数。"
 

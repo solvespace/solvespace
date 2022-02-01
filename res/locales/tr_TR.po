@@ -2,12 +2,12 @@
 # Copyright (C) 2017 the SolveSpace authors
 # This file is distributed under the same license as the SolveSpace package.
 # Automatically generated, 2017.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-09-26 16:25-0400\n"
+"POT-Creation-Date: 2022-02-01 16:24+0200\n"
 "PO-Revision-Date: 2021-03-09 22:58+0300\n"
 "Last-Translator: Mustafa Halil GÖRENTAŞ <halil.mustafa@gmail.com>\n"
 "Language-Team: app4soft\n"
@@ -37,7 +37,7 @@ msgstr "Pano boş; yapıştırılacak bir şey yok."
 msgid "Number of copies to paste must be at least one."
 msgstr "Yapıştırılacak kopya sayısı en az bir olmalıdır."
 
-#: clipboard.cpp:389 textscreens.cpp:827
+#: clipboard.cpp:389 textscreens.cpp:833
 msgid "Scale cannot be zero."
 msgstr "Ölçek sıfır olamaz."
 
@@ -63,15 +63,15 @@ msgstr "Yapıştırılamayacak kadar çok öğe; bunu daha küçük yapıştıma
 msgid "No workplane active."
 msgstr "Etkin Çalışma Düzlemi yok."
 
-#: confscreen.cpp:376
+#: confscreen.cpp:381
 msgid "Bad format: specify coordinates as x, y, z"
 msgstr "Hatalı biçim: koordinatları x, y, z olarak belirtin"
 
-#: confscreen.cpp:386 style.cpp:729 textscreens.cpp:858
+#: confscreen.cpp:391 style.cpp:729 textscreens.cpp:864
 msgid "Bad format: specify color as r, g, b"
 msgstr "Hatalı biçim: rengi r, g, b olarak belirtin"
 
-#: confscreen.cpp:412
+#: confscreen.cpp:417
 msgid ""
 "The perspective factor will have no effect until you enable View -> Use "
 "Perspective Projection."
@@ -79,24 +79,24 @@ msgstr ""
 "Görünüm -> Perspektif Projeksiyonu Kullan'ı etkinleştirene kadar perspektif "
 "çarpanının hiçbir etkisi olmayacaktır."
 
-#: confscreen.cpp:430 confscreen.cpp:440
+#: confscreen.cpp:435 confscreen.cpp:445
 #, c-format
 msgid "Specify between 0 and %d digits after the decimal."
 msgstr "Ondalık basamak sonra 0 ile %d arasında basamak belirtin."
 
-#: confscreen.cpp:452
+#: confscreen.cpp:457
 msgid "Export scale must not be zero!"
 msgstr "Dışa aktarma ölçeği sıfır olmamalıdır!"
 
-#: confscreen.cpp:464
+#: confscreen.cpp:469
 msgid "Cutter radius offset must not be negative!"
 msgstr "Kesici yarıçap ofseti negatif olmamalıdır!"
 
-#: confscreen.cpp:518
+#: confscreen.cpp:528
 msgid "Bad value: autosave interval should be positive"
 msgstr "Hatalı değer: otomatik kaydetme süresi pozitif olmalıdır"
 
-#: confscreen.cpp:521
+#: confscreen.cpp:531
 msgid "Bad format: specify interval in integral minutes"
 msgstr "Hatalı biçim: süre aralığını dakika cinsinden belirtin"
 
@@ -673,7 +673,7 @@ msgctxt "button"
 msgid "&No"
 msgstr "&Hayır"
 
-#: file.cpp:877 solvespace.cpp:610
+#: file.cpp:877 solvespace.cpp:611
 msgctxt "button"
 msgid "&Cancel"
 msgstr "&İptal"
@@ -1126,24 +1126,28 @@ msgstr "&Dil"
 msgid "&Website / Manual"
 msgstr "&Web sitesi / Kılavuz"
 
-#: graphicswin.cpp:187
+#: graphicswin.cpp:186
+msgid "&Go to GitHub commit"
+msgstr ""
+
+#: graphicswin.cpp:188
 msgid "&About"
 msgstr "&Hakkında"
 
-#: graphicswin.cpp:361
+#: graphicswin.cpp:362
 msgid "(no recent files)"
 msgstr "(yeni dosyalar yok)"
 
-#: graphicswin.cpp:369
+#: graphicswin.cpp:370
 #, c-format
 msgid "File '%s' does not exist."
 msgstr "'%s' dosyası mevcut değil."
 
-#: graphicswin.cpp:736
+#: graphicswin.cpp:737
 msgid "No workplane is active, so the grid will not appear."
 msgstr "Etkin çalışma düzlemi yok, bu nedenle ızgara görünmeyecektir."
 
-#: graphicswin.cpp:751
+#: graphicswin.cpp:752
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel "
 "projection.\n"
@@ -1157,17 +1161,17 @@ msgstr ""
 "Perspektif bir projeksiyon için, konfigürasyon ekranındaki perspektif "
 "çarpanını değiştirin. 0,3 civarında bir değer tipiktir."
 
-#: graphicswin.cpp:836
+#: graphicswin.cpp:837
 msgid ""
 "Select a point; this point will become the center of the view on screen."
 msgstr ""
 "Bir nokta seçin; bu nokta ekrandaki görüntünün merkezi haline gelecektir."
 
-#: graphicswin.cpp:1136
+#: graphicswin.cpp:1137
 msgid "No additional entities share endpoints with the selected entities."
 msgstr "Hiçbir ek öğe, seçili öğeler ile uç noktaları paylaşmaz."
 
-#: graphicswin.cpp:1154
+#: graphicswin.cpp:1155
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
@@ -1175,7 +1179,7 @@ msgstr ""
 "Bu komutu kullanmak için, bağlantılı bir parçadan bir nokta veya başka bir "
 "öğe seçin veya bir bağlantı grubunu etkin grup haline getirin."
 
-#: graphicswin.cpp:1177
+#: graphicswin.cpp:1178
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
@@ -1183,7 +1187,7 @@ msgstr ""
 "Etkin çalışma düzlemi yok. Tutturma ızgarasının düzlemini tanımlamak için "
 "bir çalışma düzlemini (Çizim -> Çalışma Düzleminde menüsü ile) etkinleştirin."
 
-#: graphicswin.cpp:1184
+#: graphicswin.cpp:1185
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
@@ -1192,13 +1196,13 @@ msgstr ""
 "sınırlamaları bir etiketle seçin. Bir çizgiyi tutturmak için uç noktalarını "
 "seçin."
 
-#: graphicswin.cpp:1269
+#: graphicswin.cpp:1270
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr ""
 "Çalışma düzlemi seçilmedi. Bu grup için varsayılan çalışma düzlemi "
 "etkinleştiriliyor."
 
-#: graphicswin.cpp:1272
+#: graphicswin.cpp:1273
 msgid ""
 "No workplane is selected, and the active group does not have a default "
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
@@ -1208,7 +1212,7 @@ msgstr ""
 "düzlemi yoktur. Bir çalışma düzlemi seçmeyi veya yeni çalışma düzleminde "
 "çizim grubunu etkinleştirmeyi deneyin."
 
-#: graphicswin.cpp:1293
+#: graphicswin.cpp:1294
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
@@ -1216,47 +1220,47 @@ msgstr ""
 "Noktada teğet yay oluşturmak için hatalı seçim. Tek bir nokta seçin veya yay "
 "parametrelerini ayarlamak için hiçbir şey seçmeyin."
 
-#: graphicswin.cpp:1304
+#: graphicswin.cpp:1305
 msgid "click point on arc (draws anti-clockwise)"
 msgstr "yayın ilk noktası için tıklayın (saat yönünün tersine çizilir)"
 
-#: graphicswin.cpp:1305
+#: graphicswin.cpp:1306
 msgid "click to place datum point"
 msgstr "referans noktasını yerleştirmek için tıklayın"
 
-#: graphicswin.cpp:1306
+#: graphicswin.cpp:1307
 msgid "click first point of line segment"
 msgstr "çizgi parçasının ilk noktası için tıklayın"
 
-#: graphicswin.cpp:1308
+#: graphicswin.cpp:1309
 msgid "click first point of construction line segment"
 msgstr "yapı çizgisinin ilk noktası için tıklayın"
 
-#: graphicswin.cpp:1309
+#: graphicswin.cpp:1310
 msgid "click first point of cubic segment"
 msgstr "kübik segmentin ilk noktası için tıklayın"
 
-#: graphicswin.cpp:1310
+#: graphicswin.cpp:1311
 msgid "click center of circle"
 msgstr "çemberin merkezi için tıklayın"
 
-#: graphicswin.cpp:1311
+#: graphicswin.cpp:1312
 msgid "click origin of workplane"
 msgstr "çalışma düzleminin merkezi için tıklayın"
 
-#: graphicswin.cpp:1312
+#: graphicswin.cpp:1313
 msgid "click one corner of rectangle"
 msgstr "dikdörtgenin bir köşesi için tıklayın"
 
-#: graphicswin.cpp:1313
+#: graphicswin.cpp:1314
 msgid "click top left of text"
 msgstr "metnin sol üst köşesi için tıklayın"
 
-#: graphicswin.cpp:1319
+#: graphicswin.cpp:1320
 msgid "click top left of image"
 msgstr "resmin sol üst köşesi için tıklayın"
 
-#: graphicswin.cpp:1345
+#: graphicswin.cpp:1346
 msgid ""
 "No entities are selected. Select entities before trying to toggle their "
 "construction state."
@@ -1408,6 +1412,10 @@ msgstr "kontur kendisiyle kesişiyor!"
 #: groupmesh.cpp:724
 msgid "zero-length edge!"
 msgstr "sıfır-uzunlukta kenar!"
+
+#: importmesh.cpp:136
+msgid "Text-formated STL files are not currently supported"
+msgstr ""
 
 #: modify.cpp:252
 msgid "Must be sketching in workplane to create tangent arc."
@@ -1604,7 +1612,7 @@ msgstr ""
 "3d'de resim eklenemez; önce Çizim -> Çalışma Düzleminde menüsü ile bir "
 "çalışma düzlemini etkinleştirin."
 
-#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:552
+#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:553
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "SolveSpace Modelleri"
@@ -1699,104 +1707,104 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "Virgülle ayrılmış değerler (CSV)"
 
-#: platform/guigtk.cpp:1367 platform/guimac.mm:1487 platform/guiwin.cpp:1641
+#: platform/guigtk.cpp:1382 platform/guimac.mm:1509 platform/guiwin.cpp:1641
 msgid "untitled"
 msgstr "isimsiz"
 
-#: platform/guigtk.cpp:1378 platform/guigtk.cpp:1411 platform/guimac.mm:1445
+#: platform/guigtk.cpp:1393 platform/guigtk.cpp:1426 platform/guimac.mm:1467
 #: platform/guiwin.cpp:1639
 msgctxt "title"
 msgid "Save File"
 msgstr "Dosyayı Kaydet"
 
-#: platform/guigtk.cpp:1379 platform/guigtk.cpp:1412 platform/guimac.mm:1428
+#: platform/guigtk.cpp:1394 platform/guigtk.cpp:1427 platform/guimac.mm:1450
 #: platform/guiwin.cpp:1645
 msgctxt "title"
 msgid "Open File"
 msgstr "Dosyayı Aç"
 
-#: platform/guigtk.cpp:1382 platform/guigtk.cpp:1418
+#: platform/guigtk.cpp:1397 platform/guigtk.cpp:1433
 msgctxt "button"
 msgid "_Cancel"
 msgstr "_İptal"
 
-#: platform/guigtk.cpp:1383 platform/guigtk.cpp:1416
+#: platform/guigtk.cpp:1398 platform/guigtk.cpp:1431
 msgctxt "button"
 msgid "_Save"
 msgstr "_Kaydet"
 
-#: platform/guigtk.cpp:1384 platform/guigtk.cpp:1417
+#: platform/guigtk.cpp:1399 platform/guigtk.cpp:1432
 msgctxt "button"
 msgid "_Open"
 msgstr "_Aç"
 
-#: solvespace.cpp:170
+#: solvespace.cpp:171
 msgctxt "title"
 msgid "Autosave Available"
 msgstr "Otomatik Kaydetme Kullanılabilir"
 
-#: solvespace.cpp:171
+#: solvespace.cpp:172
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
 msgstr "Bu çizim için otomatik kaydetme dosyası kullanılabilir."
 
-#: solvespace.cpp:172
+#: solvespace.cpp:173
 msgctxt "dialog"
 msgid "Do you want to load the autosave file instead?"
 msgstr "Bunun yerine otomatik kaydetme dosyasını yüklemek istiyor musunuz?"
 
-#: solvespace.cpp:173
+#: solvespace.cpp:174
 msgctxt "button"
 msgid "&Load autosave"
 msgstr "&Otomatik kaydetmeyi yükle"
 
-#: solvespace.cpp:175
+#: solvespace.cpp:176
 msgctxt "button"
 msgid "Do&n't Load"
 msgstr "&Yükleme"
 
-#: solvespace.cpp:598
+#: solvespace.cpp:599
 msgctxt "title"
 msgid "Modified File"
 msgstr "Değiştirilen Dosya"
 
-#: solvespace.cpp:600
+#: solvespace.cpp:601
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
 msgstr "\"%s\" çiziminde yaptığınız değişiklikleri kaydetmek istiyor musunuz?"
 
-#: solvespace.cpp:603
+#: solvespace.cpp:604
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
 msgstr "Yeni çizimde yaptığınız değişiklikleri kaydetmek istiyor musunuz?"
 
-#: solvespace.cpp:606
+#: solvespace.cpp:607
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
 msgstr "Bunları kaydetmezseniz değişiklikleriniz kaybolur."
 
-#: solvespace.cpp:607
+#: solvespace.cpp:608
 msgctxt "button"
 msgid "&Save"
 msgstr "&Kaydet"
 
-#: solvespace.cpp:609
+#: solvespace.cpp:610
 msgctxt "button"
 msgid "Do&n't Save"
 msgstr "K&aydetme"
 
-#: solvespace.cpp:630
+#: solvespace.cpp:631
 msgctxt "title"
 msgid "(new sketch)"
 msgstr "(yeni çizim)"
 
-#: solvespace.cpp:637
+#: solvespace.cpp:638
 msgctxt "title"
 msgid "Property Browser"
 msgstr "Özellik Tarayıcısı"
 
-#: solvespace.cpp:699
+#: solvespace.cpp:700
 msgid ""
 "Constraints are currently shown, and will be exported in the toolpath. This "
 "is probably not what you want; hide them by clicking the link at the top of "
@@ -1806,7 +1814,7 @@ msgstr ""
 "Muhtemelen istediğiniz bu değil; metin penceresinin üst kısmındaki "
 "bağlantıya tıklayarak bunları gizleyin."
 
-#: solvespace.cpp:771
+#: solvespace.cpp:772
 #, c-format
 msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
@@ -1814,21 +1822,21 @@ msgid ""
 msgstr ""
 "Dosya türü '%s' dosya uzantısından tanımlanamıyor; .dxf veya .dwg'yi deneyin."
 
-#: solvespace.cpp:823
+#: solvespace.cpp:824
 msgid "Constraint must have a label, and must not be a reference dimension."
 msgstr "Sınırlamanın bir etiketi olmalı ve bir referans ölçüsü olmamalıdır."
 
-#: solvespace.cpp:827
+#: solvespace.cpp:828
 msgid "Bad selection for step dimension; select a constraint."
 msgstr ""
 "Adım ölçüsü için hatalı seçim; bir nokta boyunca, eksenleri koordine etmek "
 "için ortogonal seçin."
 
-#: solvespace.cpp:851
+#: solvespace.cpp:852
 msgid "The assembly does not interfere, good."
 msgstr "Montaj engel değil, iyi."
 
-#: solvespace.cpp:867
+#: solvespace.cpp:868
 #, c-format
 msgid ""
 "The volume of the solid model is:\n"
@@ -1839,7 +1847,7 @@ msgstr ""
 "\n"
 "     % s"
 
-#: solvespace.cpp:876
+#: solvespace.cpp:877
 #, c-format
 msgid ""
 "\n"
@@ -1852,7 +1860,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: solvespace.cpp:881
+#: solvespace.cpp:882
 msgid ""
 "\n"
 "\n"
@@ -1864,7 +1872,7 @@ msgstr ""
 "Eğri yüzeyler, üçgenler olarak yaklaştırılmıştır.\n"
 "Bu, tipik olarak yaklaşık 1% hataya neden olur."
 
-#: solvespace.cpp:896
+#: solvespace.cpp:897
 #, c-format
 msgid ""
 "The surface area of the selected faces is:\n"
@@ -1881,7 +1889,7 @@ msgstr ""
 "Eğriler, parçalı doğrusal olarak yaklaştırıldı.\n"
 "Bu, tipik olarak yaklaşık 1%% hataya neden olur."
 
-#: solvespace.cpp:905
+#: solvespace.cpp:906
 msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
@@ -1889,7 +1897,7 @@ msgstr ""
 "Bu grup, doğru biçimlendirilmiş 2d kapalı alan içermiyor. Açık, eş düzlemli "
 "değil veya kendisiyle kesişiyor."
 
-#: solvespace.cpp:917
+#: solvespace.cpp:918
 #, c-format
 msgid ""
 "The area of the region sketched in this group is:\n"
@@ -1906,7 +1914,7 @@ msgstr ""
 "Eğriler, parçalı doğrusal olarak yaklaştırıldı.\n"
 "Bu, tipik olarak yaklaşık 1%% hataya neden olur."
 
-#: solvespace.cpp:937
+#: solvespace.cpp:938
 #, c-format
 msgid ""
 "The total length of the selected entities is:\n"
@@ -1923,38 +1931,38 @@ msgstr ""
 "Eğriler, parçalı doğrusal olarak yaklaştırıldı.\n"
 "Bu, tipik olarak yaklaşık 1%% hataya neden olur."
 
-#: solvespace.cpp:943
+#: solvespace.cpp:944
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
 msgstr ""
 "Çevre uzunluğu için hatalı seçim; çizgi parçalarını, yayları ve eğrileri "
 "seçin."
 
-#: solvespace.cpp:959
+#: solvespace.cpp:960
 msgid "Bad selection for trace; select a single point."
 msgstr "İzleme için hatalı seçim; tek bir nokta seçin."
 
-#: solvespace.cpp:986
+#: solvespace.cpp:987
 #, c-format
 msgid "Couldn't write to '%s'"
 msgstr "\"%s\" ye yazılamadı"
 
-#: solvespace.cpp:1016
+#: solvespace.cpp:1017
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
 msgstr "Mesh kendisiyle kesişiyor (TAMAM değil, geçersiz)."
 
-#: solvespace.cpp:1017
+#: solvespace.cpp:1018
 msgid "The mesh is not self-intersecting (okay, valid)."
 msgstr "Mesh kendi kendine kesişmiyor (tamam, geçerli)."
 
-#: solvespace.cpp:1019
+#: solvespace.cpp:1020
 msgid "The mesh has naked edges (NOT okay, invalid)."
 msgstr "Mesh'in açık kenarları var (tamam DEĞİL, geçersiz)."
 
-#: solvespace.cpp:1020
+#: solvespace.cpp:1021
 msgid "The mesh is watertight (okay, valid)."
 msgstr "Mesh çok sıkı (tamam, geçerli)"
 
-#: solvespace.cpp:1023
+#: solvespace.cpp:1024
 #, c-format
 msgid ""
 "\n"
@@ -1965,7 +1973,7 @@ msgstr ""
 "\n"
 "Model, %d yüzeylerden %d üçgen içerir."
 
-#: solvespace.cpp:1027
+#: solvespace.cpp:1028
 #, c-format
 msgid ""
 "%s\n"
@@ -1980,7 +1988,7 @@ msgstr ""
 "\n"
 "Sıfır sorunlu kenar, iyi.%s"
 
-#: solvespace.cpp:1030
+#: solvespace.cpp:1031
 #, c-format
 msgid ""
 "%s\n"
@@ -1995,7 +2003,7 @@ msgstr ""
 "\n"
 "%d sorunlu kenar, kötü.%s"
 
-#: solvespace.cpp:1043
+#: solvespace.cpp:1044
 #, c-format
 msgid ""
 "This is SolveSpace version %s.\n"
@@ -2036,23 +2044,23 @@ msgstr ""
 msgid "Style name cannot be empty"
 msgstr "Biçim adı boş olamaz"
 
-#: textscreens.cpp:785
+#: textscreens.cpp:791
 msgid "Can't repeat fewer than 1 time."
 msgstr "1 defadan az tekrar edilemez."
 
-#: textscreens.cpp:789
+#: textscreens.cpp:795
 msgid "Can't repeat more than 999 times."
 msgstr "999 defadan fazla tekrar edilemez."
 
-#: textscreens.cpp:814
+#: textscreens.cpp:820
 msgid "Group name cannot be empty"
 msgstr "Grup adı boş olamaz"
 
-#: textscreens.cpp:866
+#: textscreens.cpp:872
 msgid "Opacity must be between zero and one."
 msgstr "Şeffaflık değeri sıfır ile bir arasında olmalıdır."
 
-#: textscreens.cpp:901
+#: textscreens.cpp:907
 msgid "Radius cannot be zero or negative."
 msgstr "Yarıçap sıfır veya negatif değer olamaz."
 
