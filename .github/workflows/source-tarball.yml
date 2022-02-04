@@ -1,0 +1,51 @@
+name: Source Tarball
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  create_tarball:
+    name: Create & Upload Tarball
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+        fetch-depth: 0
+    - name: Pack Tarball
+      id: pack_tarball
+      run: |
+        version="${GITHUB_REF#refs/tags/v}"
+        dir_name="solvespace-${version}"
+        archive_name="${dir_name}.tar.xz"
+        archive_path="${HOME}/${archive_name}"
+        
+        echo "::set-output name=archive_name::${archive_name}"
+        echo "::set-output name=archive_path::${archive_path}"
+
+        cd ..
+        tar \
+          --exclude-vcs \
+          --transform "s:^solvespace:${dir_name}:" \
+          -cvaf \
+          ${archive_path} \
+          solvespace
+    - name: Get Release Upload URL
+      id: get_upload_url
+      env:
+        event: ${{ toJson(github.event) }}
+      run: |
+        upload_url=$(echo "$event" | jq -r ".release.upload_url")
+        echo "::set-output name=upload_url::$upload_url"
+        echo "Upload URL: $upload_url"
+    - name: Upload Tarball
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
+        asset_path: ${{ steps.pack_tarball.outputs.archive_path }}
+        asset_name: ${{ steps.pack_tarball.outputs.archive_name }}
+        asset_content_type: binary/octet-stream
