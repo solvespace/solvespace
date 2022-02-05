@@ -207,7 +207,6 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
     for(auto &entity : SK.entity) {
         Entity *e = &entity;
         if(!e->IsVisible()) continue;
-        if(e->construction) continue;
 
         if(SS.exportPwlCurves || sm || fabs(SS.exportOffset) > LENGTH_EPS)
         {
@@ -367,9 +366,9 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
 
             // And calculate lighting for the triangle
             Vector n = tt.Normal().WithMagnitude(1);
-            double lighting = SS.ambientIntensity +
+            double lighting = min(1.0, SS.ambientIntensity +
                                   max(0.0, (SS.lightIntensity[0])*(n.Dot(l0))) +
-                                  max(0.0, (SS.lightIntensity[1])*(n.Dot(l1)));
+                                  max(0.0, (SS.lightIntensity[1])*(n.Dot(l1))));
             double r = min(1.0, tt.meta.color.redF()   * lighting),
                    g = min(1.0, tt.meta.color.greenF() * lighting),
                    b = min(1.0, tt.meta.color.blueF()  * lighting);
@@ -735,25 +734,22 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
     if(sblss) {
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-            SBezierLoop *sbl;
-            sbl = sbls->l.First();
-            if(!sbl) continue;
-            b = sbl->l.First();
-            if(!b || !Style::Exportable(b->auxA)) continue;
+            for(SBezierLoop *sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+                b = sbl->l.First();
+                if(!b || !Style::Exportable(b->auxA)) continue;
 
-            hStyle hs = { (uint32_t)b->auxA };
-            Style *stl = Style::Get(hs);
-            double lineWidth   = Style::WidthMm(b->auxA)*s;
-            RgbaColor strokeRgb = Style::Color(hs, /*forExport=*/true);
-            RgbaColor fillRgb   = Style::FillColor(hs, /*forExport=*/true);
+                hStyle hs = { (uint32_t)b->auxA };
+                Style *stl = Style::Get(hs);
+                double lineWidth   = Style::WidthMm(b->auxA)*s;
+                RgbaColor strokeRgb = Style::Color(hs, /*forExport=*/true);
+                RgbaColor fillRgb   = Style::FillColor(hs, /*forExport=*/true);
 
-            StartPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs);
-            for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+                StartPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs);
                 for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
                     Bezier(b);
                 }
+                FinishPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs);
             }
-            FinishPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs);
         }
     }
     FinishAndCloseFile();

@@ -86,8 +86,10 @@ std::vector<FileFilter> SolveSpaceModelFileFilters = {
 };
 
 std::vector<FileFilter> SolveSpaceLinkFileFilters = {
+    { CN_("file-type", "ALL"), { "slvs", "emn", "stl" } },
     { CN_("file-type", "SolveSpace models"), { "slvs" } },
     { CN_("file-type", "IDF circuit board"), { "emn" } },
+    { CN_("file-type", "STL triangle mesh"), { "stl" } },
 };
 
 std::vector<FileFilter> RasterFileFilters = {

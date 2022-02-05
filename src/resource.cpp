@@ -179,7 +179,8 @@ void Pixmap::ConvertTo(Format newFormat) {
 
 static std::shared_ptr<Pixmap> ReadPngIntoPixmap(png_struct *png_ptr, png_info *info_ptr,
                                                  bool flip) {
-    png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_GRAY_TO_RGB, NULL);
+    png_read_png(png_ptr, info_ptr,
+                 PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_GRAY_TO_RGB | PNG_TRANSFORM_SCALE_16, NULL);
 
     std::shared_ptr<Pixmap> pixmap = std::make_shared<Pixmap>();
     pixmap->width    = png_get_image_width(png_ptr, info_ptr);
@@ -564,7 +565,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
     // Find the hex representation in the (sorted) Unifont file.
     auto first = unifontData.cbegin(),
          last  = unifontData.cend();
-    while(first <= last) {
+    while(first < last) {
         auto mid = first + (last - first) / 2;
         while(mid != unifontData.cbegin()) {
             if(*mid == '\n') {
@@ -588,7 +589,10 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
         if(foundCodepoint < codepoint) {
             first = mid + 1;
             while(first != unifontData.cend()) {
-                if(*first == '\n') break;
+                if(*first == '\n') {
+                    first++;
+                    break;
+                }
                 first++;
             }
             continue; // and last stays the same

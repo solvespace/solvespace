@@ -22,7 +22,11 @@ std::string Constraint::DescriptionString() const {
         case Type::EQ_LEN_PT_LINE_D:    s = C_("constr-name", "eq-length-and-pt-ln-dist"); break;
         case Type::EQ_PT_LN_DISTANCES:  s = C_("constr-name", "eq-pt-line-distances"); break;
         case Type::LENGTH_RATIO:        s = C_("constr-name", "length-ratio"); break;
+        case Type::ARC_ARC_LEN_RATIO:   s = C_("constr-name", "arc-arc-length-ratio"); break;
+        case Type::ARC_LINE_LEN_RATIO:  s = C_("constr-name", "arc-line-length-ratio"); break;
         case Type::LENGTH_DIFFERENCE:   s = C_("constr-name", "length-difference"); break;
+        case Type::ARC_ARC_DIFFERENCE:  s = C_("constr-name", "arc-arc-len-difference"); break;
+        case Type::ARC_LINE_DIFFERENCE: s = C_("constr-name", "arc-line-len-difference"); break;
         case Type::SYMMETRIC:           s = C_("constr-name", "symmetric"); break;
         case Type::SYMMETRIC_HORIZ:     s = C_("constr-name", "symmetric-h"); break;
         case Type::SYMMETRIC_VERT:      s = C_("constr-name", "symmetric-v"); break;
@@ -127,7 +131,7 @@ hConstraint Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
         Entity::NO_ENTITY, Entity::NO_ENTITY, /*other=*/false, /*other2=*/false);
 }
 
-void Constraint::ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc) {
+bool Constraint::ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc) {
     Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
            l1 = SK.GetEntity(line->point[1])->PointGetNum();
     Vector a1 = SK.GetEntity(arc->point[1])->PointGetNum(),
@@ -140,11 +144,12 @@ void Constraint::ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *ar
         Error(_("The tangent arc and line segment must share an "
                 "endpoint. Constrain them with Constrain -> "
                 "On Point before constraining tangent."));
-        return;
+        return false;
     }
+    return true;
 }
 
-void Constraint::ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic) {
+bool Constraint::ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic) {
     Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
            l1 = SK.GetEntity(line->point[1])->PointGetNum();
     Vector as = cubic->CubicGetStartNum(),
@@ -158,11 +163,12 @@ void Constraint::ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *
         Error(_("The tangent cubic and line segment must share an "
                 "endpoint. Constrain them with Constrain -> "
                 "On Point before constraining tangent."));
-        return;
+        return false;
     }
+    return true;
 }
 
-void Constraint::ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB) {
+bool Constraint::ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB) {
     Vector as = eA->EndpointStart(),
            af = eA->EndpointFinish(),
            bs = eB->EndpointStart(),
@@ -183,8 +189,9 @@ void Constraint::ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *e
         Error(_("The curves must share an endpoint. Constrain them "
                 "with Constrain -> On Point before constraining "
                 "tangent."));
-        return;
+        return false;
     }
+    return true;
 }
 
 void Constraint::MenuConstrain(Command id) {
@@ -381,10 +388,27 @@ void Constraint::MenuConstrain(Command id) {
                 c.type = Type::LENGTH_RATIO;
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
+            }
+            else if(gs.arcs == 2 && gs.n == 2) {
+                c.type = Type::ARC_ARC_LEN_RATIO;
+                c.entityA = gs.entity[0];
+                c.entityB = gs.entity[1];
+            }
+            else if(gs.lineSegments == 1 && gs.arcs == 1 && gs.n == 2) {
+                c.type = Type::ARC_LINE_LEN_RATIO;
+                if(SK.GetEntity(gs.entity[0])->type == Entity::Type::ARC_OF_CIRCLE) {
+                    c.entityA = gs.entity[1];
+                    c.entityB = gs.entity[0];
+                } else {
+                    c.entityA = gs.entity[0];
+                    c.entityB = gs.entity[1];
+                }
             } else {
                 Error(_("Bad selection for length ratio constraint. This "
                         "constraint can apply to:\n\n"
-                        "    * two line segments\n"));
+                        "    * two line segments\n"
+                        "    * two arcs\n"
+                        "    * one arc and one line segment\n"));
                 return;
             }
 
@@ -398,10 +422,27 @@ void Constraint::MenuConstrain(Command id) {
                 c.type = Type::LENGTH_DIFFERENCE;
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
+            }
+            else if(gs.arcs == 2 && gs.n == 2) {
+                c.type = Type::ARC_ARC_DIFFERENCE;
+                c.entityA = gs.entity[0];
+                c.entityB = gs.entity[1];
+            }
+            else if(gs.lineSegments == 1 && gs.arcs == 1 && gs.n == 2) {
+                c.type = Type::ARC_LINE_DIFFERENCE;
+                if(SK.GetEntity(gs.entity[0])->type == Entity::Type::ARC_OF_CIRCLE) {
+                    c.entityA = gs.entity[1];
+                    c.entityB = gs.entity[0];
+                } else {
+                    c.entityA = gs.entity[0];
+                    c.entityB = gs.entity[1];
+                }
             } else {
                 Error(_("Bad selection for length difference constraint. This "
                         "constraint can apply to:\n\n"
-                        "    * two line segments\n"));
+                        "    * two line segments\n"
+                        "    * two arcs\n"
+                        "    * one arc and one line segment\n"));
                 return;
             }
 
@@ -417,8 +458,11 @@ void Constraint::MenuConstrain(Command id) {
                 c.ptA = gs.point[0];
 
                 // If a point is at-midpoint, then no reason to also constrain
-                // it on-line; so auto-remove that.
+                // it on-line; so auto-remove that.  Handle as one undo group.
+                SS.UndoRemember();
                 DeleteAllConstraintsFor(Type::PT_ON_LINE, c.entityA, c.ptA);
+                AddConstraint(&c, /*rememberForUndo=*/false);
+                break;
             } else if(gs.lineSegments == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = Type::AT_MIDPOINT;
                 int i = SK.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
@@ -493,6 +537,7 @@ void Constraint::MenuConstrain(Command id) {
                             "(symmetric about workplane)\n"));
                 return;
             }
+            // We may remove constraints so remember manually
             if(c.entityA == Entity::NO_ENTITY) {
                 // Horizontal / vertical symmetry, implicit symmetry plane
                 // normal to the workplane
@@ -514,10 +559,14 @@ void Constraint::MenuConstrain(Command id) {
                 if(gs.lineSegments == 1) {
                     // If this line segment is already constrained horiz or
                     // vert, then auto-remove that redundant constraint.
+                    // Handle as one undo group.
+                    SS.UndoRemember();
                     DeleteAllConstraintsFor(Type::HORIZONTAL, (gs.entity[0]),
                         Entity::NO_ENTITY);
                     DeleteAllConstraintsFor(Type::VERTICAL, (gs.entity[0]),
                         Entity::NO_ENTITY);
+                    AddConstraint(&c, /*rememberForUndo=*/false);
+                    break;
                 }
             }
             AddConstraint(&c);
@@ -682,7 +731,9 @@ void Constraint::MenuConstrain(Command id) {
                 if(line->type == Entity::Type::ARC_OF_CIRCLE) {
                     swap(line, arc);
                 }
-                ConstrainArcLineTangent(&c, line, arc);
+                if(!ConstrainArcLineTangent(&c, line, arc)) {
+                    return;
+                }
                 c.type = Type::ARC_LINE_TANGENT;
                 c.entityA = arc->h;
                 c.entityB = line->h;
@@ -692,7 +743,9 @@ void Constraint::MenuConstrain(Command id) {
                 if(line->type == Entity::Type::CUBIC) {
                     swap(line, cubic);
                 }
-                ConstrainCubicLineTangent(&c, line, cubic);
+                if(!ConstrainCubicLineTangent(&c, line, cubic)) {
+                    return;
+                }
                 c.type = Type::CUBIC_LINE_TANGENT;
                 c.entityA = cubic->h;
                 c.entityB = line->h;
@@ -703,7 +756,9 @@ void Constraint::MenuConstrain(Command id) {
                 }
                 Entity *eA = SK.GetEntity(gs.entity[0]),
                        *eB = SK.GetEntity(gs.entity[1]);
-                ConstrainCurveCurveTangent(&c, eA, eB);
+                if(!ConstrainCurveCurveTangent(&c, eA, eB)) {
+                    return;
+                }
                 c.type = Type::CURVE_CURVE_TANGENT;
                 c.entityA = eA->h;
                 c.entityB = eB->h;
@@ -750,10 +805,19 @@ void Constraint::MenuConstrain(Command id) {
             break;
 
         case Command::COMMENT:
-            SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
-            SS.GW.pending.command = Command::COMMENT;
-            SS.GW.pending.description = _("click center of comment text");
-            SS.ScheduleShowTW();
+            if(gs.points == 1 && gs.n == 1) {
+                c.type = Type::COMMENT;
+                c.ptA = gs.point[0];
+                c.group       = SS.GW.activeGroup;
+                c.workplane   = SS.GW.ActiveWorkplane();
+                c.comment     = _("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
+                AddConstraint(&c);
+            } else {
+                SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
+                SS.GW.pending.command = Command::COMMENT;
+                SS.GW.pending.description = _("click center of comment text");
+                SS.ScheduleShowTW();
+            }
             break;
 
         default: ssassert(false, "Unexpected menu ID");

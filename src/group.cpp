@@ -136,14 +136,30 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
                         g.predef.negateV = wrkplg->predef.negateV;
                     } else if(wrkplg->subtype == Subtype::WORKPLANE_BY_POINT_ORTHO) {
                         g.predef.q = wrkplg->predef.q;
+                    } else if(wrkplg->subtype == Subtype::WORKPLANE_BY_POINT_NORMAL) {
+                        g.predef.q = wrkplg->predef.q;
+                        g.predef.entityB = wrkplg->predef.entityB;
                     } else ssassert(false, "Unexpected workplane subtype");
                 }
+            } else if(gs.anyNormals == 1 && gs.points == 1 && gs.n == 2) {
+                g.subtype       = Subtype::WORKPLANE_BY_POINT_NORMAL;
+                g.predef.entityB = gs.anyNormal[0];
+                g.predef.q      = SK.GetEntity(gs.anyNormal[0])->NormalGetNum();
+                g.predef.origin = gs.point[0];
+            //} else if(gs.faces == 1 && gs.points == 1 && gs.n == 2) {
+            //    g.subtype = Subtype::WORKPLANE_BY_POINT_FACE;
+            //    g.predef.q      = SK.GetEntity(gs.face[0])->NormalGetNum();
+            //    g.predef.origin = gs.point[0];
             } else {
                 Error(_("Bad selection for new sketch in workplane. This "
                         "group can be created with:\n\n"
                         "    * a point (through the point, orthogonal to coordinate axes)\n"
                         "    * a point and two line segments (through the point, "
-                               "parallel to the lines)\n"
+                        "parallel to the lines)\n"
+                        "    * a point and a normal (through the point, "
+                        "orthogonal to the normal)\n"
+                        /*"    * a point and a face (through the point, "
+                        "parallel to the face)\n"*/
                         "    * a workplane (copy of the workplane)\n"));
                 return;
             }
@@ -392,7 +408,11 @@ bool Group::IsForcedToMeshBySource() const {
 }
 
 bool Group::IsForcedToMesh() const {
-    return forceToMesh || IsForcedToMeshBySource();
+    return forceToMesh || IsTriangleMeshAssembly() || IsForcedToMeshBySource();
+}
+
+bool Group::IsTriangleMeshAssembly() const {
+    return type == Type::LINKED && linkFile.Extension() == "stl";
 }
 
 std::string Group::DescriptionString() {
@@ -404,11 +424,10 @@ std::string Group::DescriptionString() {
 }
 
 void Group::Activate() {
-    if(type == Type::EXTRUDE || type == Type::LINKED || type == Type::LATHE ||
-       type == Type::REVOLVE || type == Type::HELIX || type == Type::TRANSLATE || type == Type::ROTATE) {
-        SS.GW.showFaces = true;
+    if(type == Type::DRAWING_WORKPLANE || type == Type::DRAWING_3D) {
+        SS.GW.showFaces = SS.GW.showFacesDrawing;
     } else {
-        SS.GW.showFaces = false;
+        SS.GW.showFaces = SS.GW.showFacesNonDrawing;
     }
     SS.MarkGroupDirty(h); // for good measure; shouldn't be needed
     SS.ScheduleShowTW();
@@ -443,11 +462,14 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             } else if(subtype == Subtype::WORKPLANE_BY_POINT_ORTHO) {
                 // Already given, numerically.
                 q = predef.q;
+            } else if(subtype == Subtype::WORKPLANE_BY_POINT_NORMAL) {
+                q = SK.GetEntity(predef.entityB)->NormalGetNum();
             } else ssassert(false, "Unexpected workplane subtype");
 
             Entity normal = {};
             normal.type = Entity::Type::NORMAL_N_COPY;
             normal.numNormal = q;
+
             normal.point[0] = h.entity(2);
             normal.group = h;
             normal.h = h.entity(1);
@@ -800,6 +822,12 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         AddEq(l, (EC(axis.z))->Minus(EP(6)), 5);
 #undef EC
 #undef EP
+        if(type == Type::HELIX) {
+            if(valB != 0.0) {
+                AddEq(l, Expr::From(h.param(7))->Times(Expr::From(PI))->
+                Minus(Expr::From(h.param(3))->Times(Expr::From(valB))), 6);
+            }
+        }
     } else if(type == Type::EXTRUDE) {
         if(predef.entityB != Entity::FREE_IN_3D) {
             // The extrusion path is locked along a line, normal to the
@@ -1172,3 +1200,6 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
     el->Add(&en);
 }
 
+bool Group::ShouldDrawExploded() const {
+    return SS.explode && h == SS.GW.activeGroup && type == Type::DRAWING_WORKPLANE && !SS.exportMode;
+}

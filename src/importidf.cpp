@@ -54,7 +54,7 @@ static std::vector <std::string> splitString(const std::string line) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// Functions for linking an IDF file - we need to create entites that
+// Functions for linking an IDF file - we need to create entities that
 // get remapped into a linked group similar to linking .slvs files
 //////////////////////////////////////////////////////////////////////////////
 
@@ -77,7 +77,7 @@ static hEntity newPoint(EntityList *el, int *id, Vector p, bool visible = true) 
     return en.h;
 }
 
-static hEntity newLine(EntityList *el, int *id, hEntity p0, hEntity p1) {
+static hEntity newLine(EntityList *el, int *id, hEntity p0, hEntity p1, bool keepout) {
     Entity en = {};
     en.type = Entity::Type::LINE_SEGMENT;
     en.point[0] = p0;
@@ -85,8 +85,8 @@ static hEntity newLine(EntityList *el, int *id, hEntity p0, hEntity p1) {
     en.extraPoints = 0;
     en.timesApplied = 0;
     en.group.v = 493;
-    en.construction = false;
-    en.style.v = Style::ACTIVE_GRP;
+    en.construction = keepout;
+    en.style.v = keepout? Style::CONSTRUCTION : Style::ACTIVE_GRP;
     en.actVisible = true;
     en.forceHidden = false;
 
@@ -117,7 +117,7 @@ static hEntity newNormal(EntityList *el, int *id, Quaternion normal) {
     return en.h;
 }
 
-static hEntity newArc(EntityList *el, int *id, hEntity p0, hEntity p1, hEntity pc, hEntity hnorm) {
+static hEntity newArc(EntityList *el, int *id, hEntity p0, hEntity p1, hEntity pc, hEntity hnorm, bool keepout) {
     Entity en = {};
     en.type = Entity::Type::ARC_OF_CIRCLE;
     en.point[0] = pc;
@@ -127,8 +127,8 @@ static hEntity newArc(EntityList *el, int *id, hEntity p0, hEntity p1, hEntity p
     en.extraPoints = 0;
     en.timesApplied = 0;
     en.group.v = 403;
-    en.construction = false;
-    en.style.v = Style::ACTIVE_GRP;
+    en.construction = keepout;
+    en.style.v = keepout? Style::CONSTRUCTION : Style::ACTIVE_GRP;
     en.actVisible = true;
     en.forceHidden = false;    *id = *id+1;
 
@@ -158,7 +158,7 @@ static hEntity newDistance(EntityList *el, int *id, double distance) {
     return en.h;
 }
 
-static hEntity newCircle(EntityList *el, int *id, hEntity p0, hEntity hdist, hEntity hnorm) {
+static hEntity newCircle(EntityList *el, int *id, hEntity p0, hEntity hdist, hEntity hnorm, bool keepout) {
     Entity en = {};
     en.type = Entity::Type::CIRCLE;
     en.point[0] = p0;
@@ -167,8 +167,8 @@ static hEntity newCircle(EntityList *el, int *id, hEntity p0, hEntity hdist, hEn
     en.extraPoints = 0;
     en.timesApplied = 0;
     en.group.v = 399;
-    en.construction = false;
-    en.style.v = Style::ACTIVE_GRP;
+    en.construction = keepout;
+    en.style.v = keepout? Style::CONSTRUCTION : Style::ACTIVE_GRP;
     en.actVisible = true;
     en.forceHidden = false;
 
@@ -196,18 +196,18 @@ static Vector ArcCenter(Vector p0, Vector p1, double angle) {
 // Positive angles are counter clockwise, negative are clockwise. An angle of 360
 // indicates a circle centered at x1,y1 passing through x2,y2 and is a complete loop.
 static void CreateEntity(EntityList *el, int *id, hEntity h0, hEntity h1, hEntity hnorm,
-                    Vector p0, Vector p1, double angle) {
+                    Vector p0, Vector p1, double angle, bool keepout) {
     if (angle == 0.0) {
         //line
         if(p0.Equals(p1)) return;
 
-        newLine(el, id, h0, h1);
+        newLine(el, id, h0, h1, keepout);
 
     } else if(angle == 360.0) {
         // circle
         double d = p1.Minus(p0).Magnitude();
         hEntity hd = newDistance(el, id, d);
-        newCircle(el, id, h1, hd, hnorm);
+        newCircle(el, id, h1, hd, hnorm, keepout);
         
     } else {
         // arc
@@ -226,7 +226,7 @@ static void CreateEntity(EntityList *el, int *id, hEntity h0, hEntity h1, hEntit
         }
         Vector c = m.Minus(perp.ScaledBy(dist));
         hEntity hc = newPoint(el, id, c, /*visible=*/false);
-        newArc(el, id, h0, h1, hc, hnorm);
+        newArc(el, id, h0, h1, hc, hnorm, keepout);
     }
 }
 
@@ -291,9 +291,9 @@ static void MakeBeziersForArcs(SBezierList *sbl, Vector center, Vector pa, Vecto
 namespace SolveSpace {
 
 // Here we read the important section of an IDF file. SolveSpace Entities are directly created by
-// the funcions above, which is only OK because of the way linking works. For example points do
+// the functions above, which is only OK because of the way linking works. For example points do
 // not have handles for solver parameters (coordinates), they only have their actPoint values
-// set (or actNormal or actDistance). These are incompete entites and would be a problem if
+// set (or actNormal or actDistance). These are incomplete entities and would be a problem if
 // they were part of the sketch, but they are not. After making a list of them here, a new group
 // gets created from copies of these. Those copies are complete and part of the sketch group.
 bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *sh) {
@@ -332,8 +332,9 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     
     double board_thickness = 10.0;
     double scale = 1.0; //mm
-    bool topEntities, bottomEntities;
-    
+    bool topEntities       = false;
+    bool bottomEntities    = false;
+
     Quaternion normal = Quaternion::From(Vector::From(1,0,0), Vector::From(0,1,0));
     hEntity hnorm = newNormal(el, &entityCount, normal);
 
@@ -355,10 +356,9 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
                 } else if (line.find(".BOARD_OUTLINE") == 0) {
                     section = board_outline;
                     record_number = 1;
-// no keepouts for now - they should also be shown as construction?
-//                } else if (line.find(".ROUTE_KEEPOUT") == 0) {
-//                    section = routing_keepout;
-//                    record_number = 1;
+                } else if (line.find(".ROUTE_KEEPOUT") == 0) {
+                    section = routing_keepout;
+                    record_number = 1;
                 } else if(line.find(".DRILLED_HOLES") == 0) {
                     section = drilled_holes;
                     record_number = 1;
@@ -433,13 +433,15 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
                         bool vis = (ang == 360.0);
                         if (bottomEntities) {
                             hEntity hp = newPoint(el, &entityCount, point, /*visible=*/vis);
-                            CreateEntity(el, &entityCount, hprev, hp, hnorm, pprev, point, ang);
+                            CreateEntity(el, &entityCount, hprev, hp, hnorm, pprev, point, ang,
+                                (section == routing_keepout) );
                             pprev = point;
                             hprev = hp;
                         }
                         if (topEntities) {
                             hEntity hp = newPoint(el, &entityCount, pTop, /*visible=*/vis);
-                            CreateEntity(el, &entityCount, hprevTop, hp, hnorm, pprevTop, pTop, ang);
+                            CreateEntity(el, &entityCount, hprevTop, hp, hnorm, pprevTop, pTop,
+                                 ang, (section == routing_keepout) );
                             pprevTop = pTop;
                             hprevTop = hp;
                         }
@@ -467,12 +469,12 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
                         Vector cent = Vector::From(x,y,0.0);
                         hEntity hcent = newPoint(el, &entityCount, cent);
                         hEntity hdist = newDistance(el, &entityCount, d/2);
-                        newCircle(el, &entityCount, hcent, hdist, hnorm);
+                        newCircle(el, &entityCount, hcent, hdist, hnorm, false);
                         // and again for the top
                         Vector cTop = Vector::From(x,y,board_thickness);
                         hcent = newPoint(el, &entityCount, cTop);
                         hdist = newDistance(el, &entityCount, d/2);
-                        newCircle(el, &entityCount, hcent, hdist, hnorm);
+                        newCircle(el, &entityCount, hcent, hdist, hnorm, false);
                         // create the curves for the extrusion
                         Vector pt = Vector::From(x+d/2, y, 0.0);
                         MakeBeziersForArcs(&sbl, cent, pt, pt, normal, 360.0);

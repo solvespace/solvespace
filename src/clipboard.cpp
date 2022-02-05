@@ -138,18 +138,17 @@ void GraphicsWindow::CopySelection() {
         }
     }
 
-    Constraint *c;
-    for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-        if(!SS.clipboard.ContainsEntity(c->ptA) ||
-           !SS.clipboard.ContainsEntity(c->ptB) ||
-           !SS.clipboard.ContainsEntity(c->entityA) ||
-           !SS.clipboard.ContainsEntity(c->entityB) ||
-           !SS.clipboard.ContainsEntity(c->entityC) ||
-           !SS.clipboard.ContainsEntity(c->entityD) ||
-           c->type == Constraint::Type::COMMENT) {
+    for(Constraint &c : SK.constraint) {
+        if(!SS.clipboard.ContainsEntity(c.ptA) ||
+           !SS.clipboard.ContainsEntity(c.ptB) ||
+           !SS.clipboard.ContainsEntity(c.entityA) ||
+           !SS.clipboard.ContainsEntity(c.entityB) ||
+           !SS.clipboard.ContainsEntity(c.entityC) ||
+           !SS.clipboard.ContainsEntity(c.entityD) ||
+           c.type == Constraint::Type::COMMENT) {
             continue;
         }
-        SS.clipboard.c.Add(c);
+        SS.clipboard.c.Add(&c);
     }
 }
 
@@ -282,7 +281,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             }
             case Constraint::Type::HORIZONTAL:
             case Constraint::Type::VERTICAL:
-                // When rotating 90 or 270 degrees, swap the vertical / horizontal constaints
+                // When rotating 90 or 270 degrees, swap the vertical / horizontal constraints
                 if (EXACT(fmod(theta + (PI/2), PI) == 0)) {
                     if(c.type == Constraint::Type::HORIZONTAL) {
                         c.type = Constraint::Type::VERTICAL;

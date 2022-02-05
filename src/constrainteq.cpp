@@ -18,7 +18,11 @@ bool ConstraintBase::HasLabel() const {
         case Type::PROJ_PT_DISTANCE:
         case Type::DIAMETER:
         case Type::LENGTH_RATIO:
+        case Type::ARC_ARC_LEN_RATIO:  
+        case Type::ARC_LINE_LEN_RATIO: 
         case Type::LENGTH_DIFFERENCE:
+        case Type::ARC_ARC_DIFFERENCE: 
+        case Type::ARC_LINE_DIFFERENCE:
         case Type::ANGLE:
         case Type::COMMENT:
             return true;
@@ -39,7 +43,11 @@ bool ConstraintBase::IsProjectible() const {
         case Type::EQ_PT_LN_DISTANCES:
         case Type::EQUAL_ANGLE:
         case Type::LENGTH_RATIO:
+        case Type::ARC_ARC_LEN_RATIO:  
+        case Type::ARC_LINE_LEN_RATIO: 
         case Type::LENGTH_DIFFERENCE:
+        case Type::ARC_ARC_DIFFERENCE: 
+        case Type::ARC_LINE_DIFFERENCE:
         case Type::SYMMETRIC:
         case Type::SYMMETRIC_HORIZ:
         case Type::SYMMETRIC_VERT:
@@ -334,6 +342,110 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
             AddEq(l, (la->Div(lb))->Minus(exA), 0);
             return;
         }
+        
+        case Type::ARC_ARC_LEN_RATIO: {
+            EntityBase *arc1  = SK.GetEntity(entityA),
+                       *arc2  = SK.GetEntity(entityB);
+
+            // And get the arc1 radius, and the cosine of its angle
+            EntityBase *ao1 = SK.GetEntity(arc1->point[0]),
+                       *as1 = SK.GetEntity(arc1->point[1]),
+                       *af1 = SK.GetEntity(arc1->point[2]);
+
+            ExprVector aos1 = (as1->PointGetExprs()).Minus(ao1->PointGetExprs()),
+                       aof1 = (af1->PointGetExprs()).Minus(ao1->PointGetExprs());
+            Expr *r1 = aof1.Magnitude();
+
+            ExprVector n1 = arc1->Normal()->NormalExprsN();
+            ExprVector u1 = aos1.WithMagnitude(Expr::From(1.0));
+            ExprVector v1 = n1.Cross(u1);
+            // so in our new csys, we start at (1, 0, 0)
+            Expr *costheta1 = aof1.Dot(u1)->Div(r1);
+            Expr *sintheta1 = aof1.Dot(v1)->Div(r1);
+
+            double thetas1, thetaf1, dtheta1;
+            arc1->ArcGetAngles(&thetas1, &thetaf1, &dtheta1);
+            Expr *theta1;
+            if(dtheta1 < 3*PI/4) {
+                theta1 = costheta1->ACos();
+            } else if(dtheta1 < 5*PI/4) {
+                // As the angle crosses pi, cos theta1 is not invertible;
+                // so use the sine to stop blowing up
+                theta1 = Expr::From(PI)->Minus(sintheta1->ASin());
+            } else {
+                theta1 = (Expr::From(2*PI))->Minus(costheta1->ACos());
+            }
+            
+            // And get the arc2 radius, and the cosine of its angle
+            EntityBase *ao2 = SK.GetEntity(arc2->point[0]),
+                       *as2 = SK.GetEntity(arc2->point[1]),
+                       *af2 = SK.GetEntity(arc2->point[2]);
+
+            ExprVector aos2 = (as2->PointGetExprs()).Minus(ao2->PointGetExprs()),
+                       aof2 = (af2->PointGetExprs()).Minus(ao2->PointGetExprs());
+            Expr *r2 = aof2.Magnitude();
+
+            ExprVector n2 = arc2->Normal()->NormalExprsN();
+            ExprVector u2 = aos2.WithMagnitude(Expr::From(1.0));
+            ExprVector v2 = n2.Cross(u2);
+            // so in our new csys, we start at (1, 0, 0)
+            Expr *costheta2 = aof2.Dot(u2)->Div(r2);
+            Expr *sintheta2 = aof2.Dot(v2)->Div(r2);
+
+            double thetas2, thetaf2, dtheta2;
+            arc2->ArcGetAngles(&thetas2, &thetaf2, &dtheta2);
+            Expr *theta2;
+            if(dtheta2 < 3*PI/4) {
+                theta2 = costheta2->ACos();
+            } else if(dtheta2 < 5*PI/4) {
+                // As the angle crosses pi, cos theta2 is not invertible;
+                // so use the sine to stop blowing up
+                theta2 = Expr::From(PI)->Minus(sintheta2->ASin());
+            } else {
+                theta2 = (Expr::From(2*PI))->Minus(costheta2->ACos());
+            }
+            // And write the equation; (r1*theta1) / ( r2*theta2) = some ratio
+            AddEq(l, (r1->Times(theta1))->Div(r2->Times(theta2))->Minus(exA), 0);
+            return;
+        }
+        
+        case Type::ARC_LINE_LEN_RATIO: {
+            EntityBase *line   = SK.GetEntity(entityA),
+                       *arc1   = SK.GetEntity(entityB);
+             
+            Expr *ll = Distance(workplane, line->point[0], line->point[1]);
+               
+            // And get the arc1 radius, and the cosine of its angle
+            EntityBase *ao1 = SK.GetEntity(arc1->point[0]),
+                       *as1 = SK.GetEntity(arc1->point[1]),
+                       *af1 = SK.GetEntity(arc1->point[2]);
+
+            ExprVector aos1 = (as1->PointGetExprs()).Minus(ao1->PointGetExprs()),
+                       aof1 = (af1->PointGetExprs()).Minus(ao1->PointGetExprs());
+            Expr *r1 = aof1.Magnitude();
+            ExprVector n1 = arc1->Normal()->NormalExprsN();
+            ExprVector u1 = aos1.WithMagnitude(Expr::From(1.0));
+            ExprVector v1 = n1.Cross(u1);
+            // so in our new csys, we start at (1, 0, 0)
+            Expr *costheta1 = aof1.Dot(u1)->Div(r1);
+            Expr *sintheta1 = aof1.Dot(v1)->Div(r1);
+
+            double thetas1, thetaf1, dtheta1;
+            arc1->ArcGetAngles(&thetas1, &thetaf1, &dtheta1);
+            Expr *theta1;
+            if(dtheta1 < 3*PI/4) {
+                theta1 = costheta1->ACos();
+            } else if(dtheta1 < 5*PI/4) {
+                // As the angle crosses pi, cos theta1 is not invertible;
+                // so use the sine to stop blowing up
+                theta1 = Expr::From(PI)->Minus(sintheta1->ASin());
+            } else {
+                theta1 = (Expr::From(2*PI))->Minus(costheta1->ACos());
+            }
+            // And write the equation; (r1*theta1) / ( length) = some ratio
+            AddEq(l, (r1->Times(theta1))->Div(ll)->Minus(exA), 0);
+            return;
+        }
 
         case Type::LENGTH_DIFFERENCE: {
             EntityBase *a = SK.GetEntity(entityA);
@@ -343,7 +455,111 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
             AddEq(l, (la->Minus(lb))->Minus(exA), 0);
             return;
         }
+        
+        case Type::ARC_ARC_DIFFERENCE: {
+            EntityBase *arc1  = SK.GetEntity(entityA),
+                       *arc2  = SK.GetEntity(entityB);
 
+            // And get the arc1 radius, and the cosine of its angle
+            EntityBase *ao1 = SK.GetEntity(arc1->point[0]),
+                       *as1 = SK.GetEntity(arc1->point[1]),
+                       *af1 = SK.GetEntity(arc1->point[2]);
+
+            ExprVector aos1 = (as1->PointGetExprs()).Minus(ao1->PointGetExprs()),
+                       aof1 = (af1->PointGetExprs()).Minus(ao1->PointGetExprs());
+            Expr *r1 = aof1.Magnitude();
+
+            ExprVector n1 = arc1->Normal()->NormalExprsN();
+            ExprVector u1 = aos1.WithMagnitude(Expr::From(1.0));
+            ExprVector v1 = n1.Cross(u1);
+            // so in our new csys, we start at (1, 0, 0)
+            Expr *costheta1 = aof1.Dot(u1)->Div(r1);
+            Expr *sintheta1 = aof1.Dot(v1)->Div(r1);
+
+            double thetas1, thetaf1, dtheta1;
+            arc1->ArcGetAngles(&thetas1, &thetaf1, &dtheta1);
+            Expr *theta1;
+            if(dtheta1 < 3*PI/4) {
+                theta1 = costheta1->ACos();
+            } else if(dtheta1 < 5*PI/4) {
+                // As the angle crosses pi, cos theta1 is not invertible;
+                // so use the sine to stop blowing up
+                theta1 = Expr::From(PI)->Minus(sintheta1->ASin());
+            } else {
+                theta1 = (Expr::From(2*PI))->Minus(costheta1->ACos());
+            }
+            
+            // And get the arc2 radius, and the cosine of its angle
+            EntityBase *ao2 = SK.GetEntity(arc2->point[0]),
+                       *as2 = SK.GetEntity(arc2->point[1]),
+                       *af2 = SK.GetEntity(arc2->point[2]);
+
+            ExprVector aos2 = (as2->PointGetExprs()).Minus(ao2->PointGetExprs()),
+                       aof2 = (af2->PointGetExprs()).Minus(ao2->PointGetExprs());
+            Expr *r2 = aof2.Magnitude();
+
+            ExprVector n2 = arc2->Normal()->NormalExprsN();
+            ExprVector u2 = aos2.WithMagnitude(Expr::From(1.0));
+            ExprVector v2 = n2.Cross(u2);
+            // so in our new csys, we start at (1, 0, 0)
+            Expr *costheta2 = aof2.Dot(u2)->Div(r2);
+            Expr *sintheta2 = aof2.Dot(v2)->Div(r2);
+
+            double thetas2, thetaf2, dtheta2;
+            arc2->ArcGetAngles(&thetas2, &thetaf2, &dtheta2);
+            Expr *theta2;
+            if(dtheta2 < 3*PI/4) {
+                theta2 = costheta2->ACos();
+            } else if(dtheta2 < 5*PI/4) {
+                // As the angle crosses pi, cos theta2 is not invertible;
+                // so use the sine to stop blowing up
+                theta2 = Expr::From(PI)->Minus(sintheta2->ASin());
+            } else {
+                theta2 = (Expr::From(2*PI))->Minus(costheta2->ACos());
+            }
+            // And write the equation; (r1*theta1) - ( r2*theta2) = some difference
+            AddEq(l, (r1->Times(theta1))->Minus(r2->Times(theta2))->Minus(exA), 0);
+            return;
+        }
+        
+        case Type::ARC_LINE_DIFFERENCE: {
+            EntityBase *line   = SK.GetEntity(entityA),
+                       *arc1   = SK.GetEntity(entityB);
+             
+            Expr *ll = Distance(workplane, line->point[0], line->point[1]);
+               
+            // And get the arc1 radius, and the cosine of its angle
+            EntityBase *ao1 = SK.GetEntity(arc1->point[0]),
+                       *as1 = SK.GetEntity(arc1->point[1]),
+                       *af1 = SK.GetEntity(arc1->point[2]);
+
+            ExprVector aos1 = (as1->PointGetExprs()).Minus(ao1->PointGetExprs()),
+                       aof1 = (af1->PointGetExprs()).Minus(ao1->PointGetExprs());
+            Expr *r1 = aof1.Magnitude();
+            ExprVector n1 = arc1->Normal()->NormalExprsN();
+            ExprVector u1 = aos1.WithMagnitude(Expr::From(1.0));
+            ExprVector v1 = n1.Cross(u1);
+            // so in our new csys, we start at (1, 0, 0)
+            Expr *costheta1 = aof1.Dot(u1)->Div(r1);
+            Expr *sintheta1 = aof1.Dot(v1)->Div(r1);
+
+            double thetas1, thetaf1, dtheta1;
+            arc1->ArcGetAngles(&thetas1, &thetaf1, &dtheta1);
+            Expr *theta1;
+            if(dtheta1 < 3*PI/4) {
+                theta1 = costheta1->ACos();
+            } else if(dtheta1 < 5*PI/4) {
+                // As the angle crosses pi, cos theta1 is not invertible;
+                // so use the sine to stop blowing up
+                theta1 = Expr::From(PI)->Minus(sintheta1->ASin());
+            } else {
+                theta1 = (Expr::From(2*PI))->Minus(costheta1->ACos());
+            }
+            // And write the equation; (r1*theta1) - ( length) = some difference
+            AddEq(l, (r1->Times(theta1))->Minus(ll)->Minus(exA), 0);
+            return;
+        }
+        
         case Type::DIAMETER: {
             EntityBase *circle = SK.GetEntity(entityA);
             Expr *r = circle->CircleGetRadiusExpr();
@@ -511,7 +727,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                 }
             }
             return;
-
+        
         case Type::SYMMETRIC:
             if(workplane == EntityBase::FREE_IN_3D) {
                 EntityBase *plane = SK.GetEntity(entityA);
