@@ -19,3 +19,6 @@
 out/
 .vs/
 CMakeSettings.json
+
+# Qt
+CMakeLists.txt.user
