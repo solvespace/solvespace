@@ -183,7 +183,7 @@ void TextWindow::DescribeSelection() {
                 double r = e->CircleGetRadiusNum();
                 Printf(true, "   diameter =  %Fi%s", SS.MmToString(r * 2).c_str());
                 Printf(false, "     radius =  %Fi%s", SS.MmToString(r).c_str());
-                Printf(true, " circle len  =  %Fi%s", SS.MmToString(r * r * M_PI).c_str());
+                Printf(true, " circle len  =  %Fi%s", SS.MmToString(2 * r * M_PI).c_str());
                 break;
             }
 
