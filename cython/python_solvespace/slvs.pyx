@@ -397,11 +397,12 @@ cdef class SolverSystem:
         sys.constraint = self.cons_list.data()
         sys.constraints = self.cons_list.size()
         # Faileds
-        self.failed_list.reserve(self.cons_list.size())
+        self.failed_list = vector[Slvs_hConstraint](self.cons_list.size(), 0)
         sys.failed = self.failed_list.data()
-        sys.faileds = self.cons_list.size()
+        sys.faileds = self.failed_list.size()
         # Solve
         Slvs_Solve(&sys, self.g)
+        self.failed_list.resize(sys.faileds)
         self.dof_v = sys.dof
         return sys.result
 
