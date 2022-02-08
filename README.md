@@ -25,9 +25,9 @@ IRC channel [#solvespace at web.libera.chat][ssirc].
 
 ## Installation
 
-### Via official binary packages
+### Via Official Packages
 
-_Official_ release binary packages for macOS (>=10.6 64-bit) and Windows
+_Official_ release packages for macOS (>=10.6 64-bit) and Windows
 (>=Vista 32-bit) are available via [GitHub releases][rel]. These packages are
 automatically built by the SolveSpace maintainers for each stable release.
 
@@ -53,15 +53,6 @@ snap install solvespace
 snap install solvespace --edge
 ```
 
-### Via third-party binary packages
-
-_Third-party_ nightly binary packages for Debian and Ubuntu are available via
-[notesalexp.org][notesalexp]. These packages are automatically built from
-non-released source code. The SolveSpace maintainers do not control the contents
-of these packages and cannot guarantee their functionality.
-
-[notesalexp]: https://notesalexp.org/packages/en/source/solvespace/
-
 ### Via automated edge builds
 
 > :warning: **Edge builds might be unstable or contain severe bugs!**
@@ -76,6 +67,15 @@ from the following links:
 
 Extract the downloaded archive and install or execute the contained file as is
 appropriate for your platform.
+
+### Via third-party packages
+
+_Third-party_ nightly binary packages for Debian and Ubuntu are available via
+[notesalexp.org][notesalexp]. These packages are automatically built from
+non-released source code. The SolveSpace maintainers do not control the contents
+of these packages and cannot guarantee their functionality.
+
+[notesalexp]: https://notesalexp.org/packages/en/source/solvespace/
 
 ### Via source code
 
@@ -111,7 +111,7 @@ Before building, check out the project and the necessary submodules:
 ```sh
 git clone https://github.com/solvespace/solvespace
 cd solvespace
-git submodule update --init extlib/libdxfrw extlib/mimalloc
+git submodule update --init extlib/libdxfrw extlib/mimalloc extlib/eigen
 ```
 
 After that, build SolveSpace as following:
@@ -171,11 +171,11 @@ Space Navigator support will not be available.
 
 ## Building on macOS
 
-You will need git, XCode tools and CMake. Git and CMake can be installed
+You will need git, XCode tools, CMake and libomp. Git, CMake and libomp can be installed
 via [Homebrew][]:
 
 ```sh
-brew install git cmake
+brew install git cmake libomp
 ```
 
 XCode has to be installed via AppStore or [the Apple website][appledeveloper];
@@ -230,7 +230,7 @@ Before building, check out the project and the necessary submodules:
 ```sh
 git clone https://github.com/solvespace/solvespace
 cd solvespace
-git submodule update --init extlib/libdxfrw extlib/mimalloc
+git submodule update --init extlib/libdxfrw extlib/mimalloc extlib/eigen
 ```
 
 After that, build SolveSpace as following:

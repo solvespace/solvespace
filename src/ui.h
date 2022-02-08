@@ -172,6 +172,7 @@ enum class Command : uint32_t {
     // Help
     LOCALE,
     WEBSITE,
+    GITHUB,
     ABOUT,
 };
 

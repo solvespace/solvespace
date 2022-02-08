@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2021-09-26 16:25-0400\n"
+"POT-Creation-Date: 2022-02-01 16:24+0200\n"
 "PO-Revision-Date: 2021-10-04 15:33+0300\n"
 "Last-Translator: Olesya Gerasimenko <translation-team@basealt.ru>\n"
 "Language-Team: Basealt Translation Team\n"
@@ -36,7 +36,7 @@ msgstr "Буфер обмена пуст; нечего вставлять."
 msgid "Number of copies to paste must be at least one."
 msgstr "Укажите в поле 'количество' хотя бы одну копию для вставки."
 
-#: clipboard.cpp:389 textscreens.cpp:827
+#: clipboard.cpp:389 textscreens.cpp:833
 msgid "Scale cannot be zero."
 msgstr "Масштабный коэффициент не может быть нулевым."
 
@@ -63,15 +63,15 @@ msgstr "Слишком много элементов для вставки; ра
 msgid "No workplane active."
 msgstr "Рабочая плоскость не активна"
 
-#: confscreen.cpp:376
+#: confscreen.cpp:381
 msgid "Bad format: specify coordinates as x, y, z"
 msgstr "Неверный формат: введите координаты как x, y, z"
 
-#: confscreen.cpp:386 style.cpp:729 textscreens.cpp:858
+#: confscreen.cpp:391 style.cpp:729 textscreens.cpp:864
 msgid "Bad format: specify color as r, g, b"
 msgstr "Неверный формат: введите цвет как r, g, b"
 
-#: confscreen.cpp:412
+#: confscreen.cpp:417
 msgid ""
 "The perspective factor will have no effect until you enable View -> Use "
 "Perspective Projection."
@@ -79,25 +79,25 @@ msgstr ""
 "Коэффициент перспективы не будет иметь эффект, пока вы не включите Вид-"
 ">Перспективная Проекция."
 
-#: confscreen.cpp:430 confscreen.cpp:440
+#: confscreen.cpp:435 confscreen.cpp:445
 #, c-format
 msgid "Specify between 0 and %d digits after the decimal."
 msgstr "Введите число от 0 до %d."
 
-#: confscreen.cpp:452
+#: confscreen.cpp:457
 msgid "Export scale must not be zero!"
 msgstr "Масштабный коэффициент не может быть нулевым!"
 
-#: confscreen.cpp:464
+#: confscreen.cpp:469
 msgid "Cutter radius offset must not be negative!"
 msgstr "Радиус режущего инструмента не может быть отрицательным!"
 
-#: confscreen.cpp:518
+#: confscreen.cpp:528
 msgid "Bad value: autosave interval should be positive"
 msgstr ""
 "Неверное значение: интервал автосохранения должен быть положительным числом"
 
-#: confscreen.cpp:521
+#: confscreen.cpp:531
 msgid "Bad format: specify interval in integral minutes"
 msgstr ""
 "Неверный формат: введите целое число, чтобы задать интервал автосохранения"
@@ -405,8 +405,8 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
-"Неправильное выделение для ограничения 'отношение длин'. Ограничение может"
-" принимать в качестве выделения следующие примитивы:\n"
+"Неправильное выделение для ограничения 'отношение длин'. Ограничение может "
+"принимать в качестве выделения следующие примитивы:\n"
 "\n"
 "    * два отрезка\n"
 "    * две дуги\n"
@@ -421,8 +421,8 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
-"Неправильное выделение для ограничения 'разность длин'. Ограничение может"
-" принимать в качестве выделения следующие примитивы:\n"
+"Неправильное выделение для ограничения 'разность длин'. Ограничение может "
+"принимать в качестве выделения следующие примитивы:\n"
 "\n"
 "    * два отрезка\n"
 "    * две дуги\n"
@@ -693,7 +693,7 @@ msgctxt "button"
 msgid "&No"
 msgstr "Нет"
 
-#: file.cpp:877 solvespace.cpp:610
+#: file.cpp:877 solvespace.cpp:611
 msgctxt "button"
 msgid "&Cancel"
 msgstr "Отменить"
@@ -1146,24 +1146,28 @@ msgstr "&Язык"
 msgid "&Website / Manual"
 msgstr "Вебсайт / &Справка"
 
-#: graphicswin.cpp:187
+#: graphicswin.cpp:186
+msgid "&Go to GitHub commit"
+msgstr ""
+
+#: graphicswin.cpp:188
 msgid "&About"
 msgstr "О &Программе"
 
-#: graphicswin.cpp:361
+#: graphicswin.cpp:362
 msgid "(no recent files)"
 msgstr "(пусто)"
 
-#: graphicswin.cpp:369
+#: graphicswin.cpp:370
 #, c-format
 msgid "File '%s' does not exist."
 msgstr "Файл '%s' не существует."
 
-#: graphicswin.cpp:736
+#: graphicswin.cpp:737
 msgid "No workplane is active, so the grid will not appear."
 msgstr "Сетку не будет видно, пока рабочая плоскость не активирована."
 
-#: graphicswin.cpp:751
+#: graphicswin.cpp:752
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel "
 "projection.\n"
@@ -1177,16 +1181,16 @@ msgstr ""
 "перспективы на конфигурационной странице браузера.\n"
 "Значение по умолчанию 0.3."
 
-#: graphicswin.cpp:836
+#: graphicswin.cpp:837
 msgid ""
 "Select a point; this point will become the center of the view on screen."
 msgstr "Выделите точку. Вид будет отцентрован по этой точке."
 
-#: graphicswin.cpp:1136
+#: graphicswin.cpp:1137
 msgid "No additional entities share endpoints with the selected entities."
 msgstr "Нет дополнительных объектов, соединенных с выбранными примитивами."
 
-#: graphicswin.cpp:1154
+#: graphicswin.cpp:1155
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
@@ -1195,7 +1199,7 @@ msgstr ""
 "принадлежащий импортированной детали, или активируйте группу импортированной "
 "детали."
 
-#: graphicswin.cpp:1177
+#: graphicswin.cpp:1178
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
@@ -1203,7 +1207,7 @@ msgstr ""
 "Рабочая плоскость не активна. Активируйте ее через Эскиз -> В Рабочей "
 "Плоскости чтобы определить плоскость для сетки."
 
-#: graphicswin.cpp:1184
+#: graphicswin.cpp:1185
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
@@ -1212,13 +1216,13 @@ msgstr ""
 "текстовые комментарии или ограничения с размерными значениями. Чтобы "
 "привязать отрезок или другой примитив, выбирайте его точки."
 
-#: graphicswin.cpp:1269
+#: graphicswin.cpp:1270
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr ""
 "Рабочая плоскость не активна. Активирована рабочая плоскость по умолчанию "
 "для данной группы."
 
-#: graphicswin.cpp:1272
+#: graphicswin.cpp:1273
 msgid ""
 "No workplane is selected, and the active group does not have a default "
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
@@ -1228,7 +1232,7 @@ msgstr ""
 "по умолчанию. Попробуйте выделить рабочую плоскость или создать новую с "
 "помощью Группа -> Создать Эскиз в Новой Рабочей Плоскости."
 
-#: graphicswin.cpp:1293
+#: graphicswin.cpp:1294
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
@@ -1237,54 +1241,54 @@ msgstr ""
 "точку, либо запустите команду без выделения, чтобы перейти к окну настроек "
 "этой команды."
 
-#: graphicswin.cpp:1304
+#: graphicswin.cpp:1305
 msgid "click point on arc (draws anti-clockwise)"
 msgstr ""
 "кликните мышью там, где хотите создать дугу окружности (дуга будет "
 "нарисована против часовой стрелки)"
 
-#: graphicswin.cpp:1305
+#: graphicswin.cpp:1306
 msgid "click to place datum point"
 msgstr "кликните мышью там, где хотите создать опорную точку"
 
-#: graphicswin.cpp:1306
+#: graphicswin.cpp:1307
 msgid "click first point of line segment"
 msgstr "кликните мышью там, где хотите создать первую точку отрезка"
 
-#: graphicswin.cpp:1308
+#: graphicswin.cpp:1309
 msgid "click first point of construction line segment"
 msgstr ""
 "кликните мышью  там, где хотите создать первую точку вспомогательного отрезка"
 
-#: graphicswin.cpp:1309
+#: graphicswin.cpp:1310
 msgid "click first point of cubic segment"
 msgstr ""
 "кликните мышью там, где хотите создать первую точку кубического сплайна Безье"
 
-#: graphicswin.cpp:1310
+#: graphicswin.cpp:1311
 msgid "click center of circle"
 msgstr "кликните мышью там, где будет находиться центр окружности"
 
-#: graphicswin.cpp:1311
+#: graphicswin.cpp:1312
 msgid "click origin of workplane"
 msgstr ""
 "кликните мышью там, где будет находиться точка, через которую будет "
 "построена рабочая плоскость"
 
-#: graphicswin.cpp:1312
+#: graphicswin.cpp:1313
 msgid "click one corner of rectangle"
 msgstr "кликните мышью там, где будет находиться один из углов прямоугольника"
 
-#: graphicswin.cpp:1313
+#: graphicswin.cpp:1314
 msgid "click top left of text"
 msgstr "кликните мышью там, где хотите создать текст"
 
-#: graphicswin.cpp:1319
+#: graphicswin.cpp:1320
 msgid "click top left of image"
 msgstr ""
 "кликните мышью там, где будет расположен левый верхний угол изображения"
 
-#: graphicswin.cpp:1345
+#: graphicswin.cpp:1346
 msgid ""
 "No entities are selected. Select entities before trying to toggle their "
 "construction state."
@@ -1307,9 +1311,8 @@ msgid ""
 "    * a point and a normal (through the point, orthogonal to the normal)\n"
 "    * a workplane (copy of the workplane)\n"
 msgstr ""
-"Неправильное выделение для создания эскиза в рабочей плоскости. Группа может"
-" быть создана, используя в качестве выделения следующие "
-"примитивы:\n"
+"Неправильное выделение для создания эскиза в рабочей плоскости. Группа может "
+"быть создана, используя в качестве выделения следующие примитивы:\n"
 "\n"
 "    * точку (через точку, ортогонально осям координат)\n"
 "    * точку и два отрезка (через точку, параллельно отрезкам)\n"
@@ -1461,6 +1464,10 @@ msgstr "контур имеет самопересечения!"
 #: groupmesh.cpp:724
 msgid "zero-length edge!"
 msgstr "вырожденный отрезок!"
+
+#: importmesh.cpp:136
+msgid "Text-formated STL files are not currently supported"
+msgstr ""
 
 #: modify.cpp:252
 msgid "Must be sketching in workplane to create tangent arc."
@@ -1659,7 +1666,7 @@ msgid ""
 "Workplane."
 msgstr "Невозможно создать изображение. Активируйте рабочую плоскость."
 
-#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:552
+#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:553
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "проекты SolveSpace"
@@ -1754,104 +1761,104 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "CSV файлы (значения, разделенные запятой)"
 
-#: platform/guigtk.cpp:1367 platform/guimac.mm:1487 platform/guiwin.cpp:1641
+#: platform/guigtk.cpp:1382 platform/guimac.mm:1509 platform/guiwin.cpp:1641
 msgid "untitled"
 msgstr "без имени"
 
-#: platform/guigtk.cpp:1378 platform/guigtk.cpp:1411 platform/guimac.mm:1445
+#: platform/guigtk.cpp:1393 platform/guigtk.cpp:1426 platform/guimac.mm:1467
 #: platform/guiwin.cpp:1639
 msgctxt "title"
 msgid "Save File"
 msgstr "Сохранить Файл"
 
-#: platform/guigtk.cpp:1379 platform/guigtk.cpp:1412 platform/guimac.mm:1428
+#: platform/guigtk.cpp:1394 platform/guigtk.cpp:1427 platform/guimac.mm:1450
 #: platform/guiwin.cpp:1645
 msgctxt "title"
 msgid "Open File"
 msgstr "Открыть Файл"
 
-#: platform/guigtk.cpp:1382 platform/guigtk.cpp:1418
+#: platform/guigtk.cpp:1397 platform/guigtk.cpp:1433
 msgctxt "button"
 msgid "_Cancel"
 msgstr "Отменить"
 
-#: platform/guigtk.cpp:1383 platform/guigtk.cpp:1416
+#: platform/guigtk.cpp:1398 platform/guigtk.cpp:1431
 msgctxt "button"
 msgid "_Save"
 msgstr "Сохранить"
 
-#: platform/guigtk.cpp:1384 platform/guigtk.cpp:1417
+#: platform/guigtk.cpp:1399 platform/guigtk.cpp:1432
 msgctxt "button"
 msgid "_Open"
 msgstr "_Открыть"
 
-#: solvespace.cpp:170
+#: solvespace.cpp:171
 msgctxt "title"
 msgid "Autosave Available"
 msgstr "Автосохранение Доступно"
 
-#: solvespace.cpp:171
+#: solvespace.cpp:172
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
 msgstr "Автоматически сохраненный файл доступен для данного проекта."
 
-#: solvespace.cpp:172
+#: solvespace.cpp:173
 msgctxt "dialog"
 msgid "Do you want to load the autosave file instead?"
 msgstr "Хотите загрузить автосохраненный файл вместо исходного?"
 
-#: solvespace.cpp:173
+#: solvespace.cpp:174
 msgctxt "button"
 msgid "&Load autosave"
 msgstr "&Загрузить Автосохранение"
 
-#: solvespace.cpp:175
+#: solvespace.cpp:176
 msgctxt "button"
 msgid "Do&n't Load"
 msgstr "&Не Загружать"
 
-#: solvespace.cpp:598
+#: solvespace.cpp:599
 msgctxt "title"
 msgid "Modified File"
 msgstr "Измененный Файл"
 
-#: solvespace.cpp:600
+#: solvespace.cpp:601
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
 msgstr "Сохранить изменения, сделанные в файле “%s”?"
 
-#: solvespace.cpp:603
+#: solvespace.cpp:604
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
 msgstr "Сохранить изменения, сделанные в новом проекте?"
 
-#: solvespace.cpp:606
+#: solvespace.cpp:607
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
 msgstr "Изменения будут утеряны, если их не сохранить."
 
-#: solvespace.cpp:607
+#: solvespace.cpp:608
 msgctxt "button"
 msgid "&Save"
 msgstr "&Сохранить"
 
-#: solvespace.cpp:609
+#: solvespace.cpp:610
 msgctxt "button"
 msgid "Do&n't Save"
 msgstr "&Не Сохранять"
 
-#: solvespace.cpp:630
+#: solvespace.cpp:631
 msgctxt "title"
 msgid "(new sketch)"
 msgstr "(новый проект)"
 
-#: solvespace.cpp:637
+#: solvespace.cpp:638
 msgctxt "title"
 msgid "Property Browser"
 msgstr "Браузер"
 
-#: solvespace.cpp:699
+#: solvespace.cpp:700
 msgid ""
 "Constraints are currently shown, and will be exported in the toolpath. This "
 "is probably not what you want; hide them by clicking the link at the top of "
@@ -1861,7 +1868,7 @@ msgstr ""
 "это не то, что требуется, если так, необходимо спрятать их, нажав ссылку "
 "вверху окна Браузера."
 
-#: solvespace.cpp:771
+#: solvespace.cpp:772
 #, c-format
 msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
@@ -1870,21 +1877,21 @@ msgstr ""
 "Неподдерживаемый тип файла '%s'. Поддерживаются файлы с расширением .dxf и ."
 "dwg."
 
-#: solvespace.cpp:823
+#: solvespace.cpp:824
 msgid "Constraint must have a label, and must not be a reference dimension."
 msgstr "У ограничения должно быть значение и оно не должно быть справочным."
 
-#: solvespace.cpp:827
+#: solvespace.cpp:828
 msgid "Bad selection for step dimension; select a constraint."
 msgstr ""
 "Неправильное выделение для операции изменения значения с заданным шагом; "
 "необходимо выбрать ограничение со значением."
 
-#: solvespace.cpp:851
+#: solvespace.cpp:852
 msgid "The assembly does not interfere, good."
 msgstr "Сборка не содержит пересечения деталей - это хорошо."
 
-#: solvespace.cpp:867
+#: solvespace.cpp:868
 #, c-format
 msgid ""
 "The volume of the solid model is:\n"
@@ -1895,7 +1902,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: solvespace.cpp:876
+#: solvespace.cpp:877
 #, c-format
 msgid ""
 "\n"
@@ -1908,7 +1915,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: solvespace.cpp:881
+#: solvespace.cpp:882
 msgid ""
 "\n"
 "\n"
@@ -1920,7 +1927,7 @@ msgstr ""
 "Кривые аппроксимированы кусочно-линейными функциями.\n"
 "Это приводит к ошибке в расчетах, обычно в пределах 1%."
 
-#: solvespace.cpp:896
+#: solvespace.cpp:897
 #, c-format
 msgid ""
 "The surface area of the selected faces is:\n"
@@ -1937,7 +1944,7 @@ msgstr ""
 "Кривые аппроксимированы кусочно-линейными функциями.\n"
 "Это приводит к ошибке в расчетах, обычно в пределах 1%%."
 
-#: solvespace.cpp:905
+#: solvespace.cpp:906
 msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
@@ -1945,7 +1952,7 @@ msgstr ""
 "Эта группа не содержит замкнутых областей. В ней нет замкнутых контуров, "
 "примитивы не лежат в одной плоскости или самопересекаются."
 
-#: solvespace.cpp:917
+#: solvespace.cpp:918
 #, c-format
 msgid ""
 "The area of the region sketched in this group is:\n"
@@ -1962,7 +1969,7 @@ msgstr ""
 "Кривые аппроксимированы кусочно-линейными функциями.\n"
 "Это приводит к ошибке в расчетах, обычно в пределах 1%%."
 
-#: solvespace.cpp:937
+#: solvespace.cpp:938
 #, c-format
 msgid ""
 "The total length of the selected entities is:\n"
@@ -1979,38 +1986,38 @@ msgstr ""
 "Кривые аппроксимированы кусочно-линейными функциями.\n"
 "Это приводит к ошибке в расчетах, обычно в пределах 1%%."
 
-#: solvespace.cpp:943
+#: solvespace.cpp:944
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
 msgstr ""
 "Неправильное выделение для расчета периметра; необходимо выбирать только "
 "отрезки, дуги и кривые в качестве исходных данных"
 
-#: solvespace.cpp:959
+#: solvespace.cpp:960
 msgid "Bad selection for trace; select a single point."
 msgstr "Неправильное выделение для трассировки; необходимо выбрать одну точку."
 
-#: solvespace.cpp:986
+#: solvespace.cpp:987
 #, c-format
 msgid "Couldn't write to '%s'"
 msgstr "Невозможно записать в '%s'"
 
-#: solvespace.cpp:1016
+#: solvespace.cpp:1017
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
 msgstr "Полигональная сетка содержит самопересечения (это плохо)"
 
-#: solvespace.cpp:1017
+#: solvespace.cpp:1018
 msgid "The mesh is not self-intersecting (okay, valid)."
 msgstr "Полигональная сетка не содержит самопересечений (это хорошо)"
 
-#: solvespace.cpp:1019
+#: solvespace.cpp:1020
 msgid "The mesh has naked edges (NOT okay, invalid)."
 msgstr "Полигональная сетка содержит \"оголенные\" ребра (это плохо)"
 
-#: solvespace.cpp:1020
+#: solvespace.cpp:1021
 msgid "The mesh is watertight (okay, valid)."
 msgstr "Полигональная сетка герметична (это хорошо)"
 
-#: solvespace.cpp:1023
+#: solvespace.cpp:1024
 #, c-format
 msgid ""
 "\n"
@@ -2021,7 +2028,7 @@ msgstr ""
 "\n"
 "Модель содержит %d треугольников, содержащихся в %d поверхностях."
 
-#: solvespace.cpp:1027
+#: solvespace.cpp:1028
 #, c-format
 msgid ""
 "%s\n"
@@ -2036,7 +2043,7 @@ msgstr ""
 "\n"
 "Нет проблемных ребер - это хорошо.%s"
 
-#: solvespace.cpp:1030
+#: solvespace.cpp:1031
 #, c-format
 msgid ""
 "%s\n"
@@ -2051,7 +2058,7 @@ msgstr ""
 "\n"
 "%d найдены проблемные ребра - это плохо.%s"
 
-#: solvespace.cpp:1043
+#: solvespace.cpp:1044
 #, c-format
 msgid ""
 "This is SolveSpace version %s.\n"
@@ -2094,23 +2101,23 @@ msgstr ""
 msgid "Style name cannot be empty"
 msgstr "Имя стиля не может быть пустым."
 
-#: textscreens.cpp:785
+#: textscreens.cpp:791
 msgid "Can't repeat fewer than 1 time."
 msgstr "Невозможно сделать повторение меньше, чем 1 раз."
 
-#: textscreens.cpp:789
+#: textscreens.cpp:795
 msgid "Can't repeat more than 999 times."
 msgstr "Невозможно сделать повтор больше, чем 999 раз."
 
-#: textscreens.cpp:814
+#: textscreens.cpp:820
 msgid "Group name cannot be empty"
 msgstr "Имя группы не может быть пустым."
 
-#: textscreens.cpp:866
+#: textscreens.cpp:872
 msgid "Opacity must be between zero and one."
 msgstr "Прозрачность должна быть числом от нуля до единицы."
 
-#: textscreens.cpp:901
+#: textscreens.cpp:907
 msgid "Radius cannot be zero or negative."
 msgstr "Радиус не может быть нулевым или отрицательным."
 

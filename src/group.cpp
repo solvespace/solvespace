@@ -136,10 +136,14 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
                         g.predef.negateV = wrkplg->predef.negateV;
                     } else if(wrkplg->subtype == Subtype::WORKPLANE_BY_POINT_ORTHO) {
                         g.predef.q = wrkplg->predef.q;
+                    } else if(wrkplg->subtype == Subtype::WORKPLANE_BY_POINT_NORMAL) {
+                        g.predef.q = wrkplg->predef.q;
+                        g.predef.entityB = wrkplg->predef.entityB;
                     } else ssassert(false, "Unexpected workplane subtype");
                 }
             } else if(gs.anyNormals == 1 && gs.points == 1 && gs.n == 2) {
                 g.subtype       = Subtype::WORKPLANE_BY_POINT_NORMAL;
+                g.predef.entityB = gs.anyNormal[0];
                 g.predef.q      = SK.GetEntity(gs.anyNormal[0])->NormalGetNum();
                 g.predef.origin = gs.point[0];
             //} else if(gs.faces == 1 && gs.points == 1 && gs.n == 2) {
@@ -455,9 +459,11 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 if(predef.negateU) u = u.ScaledBy(-1);
                 if(predef.negateV) v = v.ScaledBy(-1);
                 q = Quaternion::From(u, v);
-            } else if(subtype == Subtype::WORKPLANE_BY_POINT_ORTHO || subtype == Subtype::WORKPLANE_BY_POINT_NORMAL /*|| subtype == Subtype::WORKPLANE_BY_POINT_FACE*/) {
+            } else if(subtype == Subtype::WORKPLANE_BY_POINT_ORTHO) {
                 // Already given, numerically.
                 q = predef.q;
+            } else if(subtype == Subtype::WORKPLANE_BY_POINT_NORMAL) {
+                q = SK.GetEntity(predef.entityB)->NormalGetNum();
             } else ssassert(false, "Unexpected workplane subtype");
 
             Entity normal = {};
