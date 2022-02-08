@@ -252,7 +252,7 @@ cdef class SolverSystem:
     cpdef int dof(self)
     cpdef object constraints(self)
     cpdef list failures(self)
-    cpdef int solve(self)
+    cdef int solve_c(self) nogil
 
     cpdef size_t param_len(self)
     cpdef size_t entity_len(self)

@@ -10,6 +10,7 @@ email: pyslvs@gmail.com
 """
 
 from cpython.object cimport Py_EQ, Py_NE
+from enum import IntEnum, auto
 from collections import Counter
 
 
@@ -63,6 +64,54 @@ cpdef tuple make_quaternion(double ux, double uy, double uz, double vx, double v
     cdef double qw, qx, qy, qz
     Slvs_MakeQuaternion(ux, uy, uz, vx, vy, vz, &qw, &qx, &qy, &qz)
     return qw, qx, qy, qz
+
+
+class Constraint(IntEnum):
+    """Symbol of the constraint types."""
+    # Expose macro of constraint types
+    POINTS_COINCIDENT = 100000
+    PT_PT_DISTANCE = auto()
+    PT_PLANE_DISTANCE = auto()
+    PT_LINE_DISTANCE = auto()
+    PT_FACE_DISTANCE = auto()
+    PT_IN_PLANE = auto()
+    PT_ON_LINE = auto()
+    PT_ON_FACE = auto()
+    EQUAL_LENGTH_LINES = auto()
+    LENGTH_RATIO = auto()
+    EQ_LEN_PT_LINE_D = auto()
+    EQ_PT_LN_DISTANCES = auto()
+    EQUAL_ANGLE = auto()
+    EQUAL_LINE_ARC_LEN = auto()
+    SYMMETRIC = auto()
+    SYMMETRIC_HORIZ = auto()
+    SYMMETRIC_VERT = auto()
+    SYMMETRIC_LINE = auto()
+    AT_MIDPOINT = auto()
+    HORIZONTAL = auto()
+    VERTICAL = auto()
+    DIAMETER = auto()
+    PT_ON_CIRCLE = auto()
+    SAME_ORIENTATION = auto()
+    ANGLE = auto()
+    PARALLEL = auto()
+    PERPENDICULAR = auto()
+    ARC_LINE_TANGENT = auto()
+    CUBIC_LINE_TANGENT = auto()
+    EQUAL_RADIUS = auto()
+    PROJ_PT_DISTANCE = auto()
+    WHERE_DRAGGED = auto()
+    CURVE_CURVE_TANGENT = auto()
+    LENGTH_DIFFERENCE = auto()
+
+
+class ResultFlag(IntEnum):
+    """Symbol of the result flags."""
+    # Expose macro of result flags
+    OKAY = 0
+    INCONSISTENT = auto()
+    DIDNT_CONVERGE = auto()
+    TOO_MANY_UNKNOWNS = auto()
 
 
 cdef class Params:
@@ -384,7 +433,7 @@ cdef class SolverSystem:
         """Return a list of failed constraint numbers."""
         return self.failed_list
 
-    cpdef int solve(self):
+    cdef int solve_c(self) nogil:
         """Start the solving, return the result flag."""
         cdef Slvs_System sys
         # Parameters
@@ -405,6 +454,9 @@ cdef class SolverSystem:
         self.failed_list.resize(sys.faileds)
         self.dof_v = sys.dof
         return sys.result
+
+    def solve(self):
+        return ResultFlag(self.solve_c())
 
     cpdef size_t param_len(self):
         """The length of parameter list."""
