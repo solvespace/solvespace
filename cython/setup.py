@@ -24,6 +24,7 @@ extlib_path = join(m_path, 'extlib')
 mimalloc_path = join(extlib_path, 'mimalloc')
 mimalloc_include_path = join(mimalloc_path, 'include')
 mimalloc_src_path = join(mimalloc_path, 'src')
+eigen_path = join(include_path, 'Eigen')
 build_dir = 'build'
 macros = [
     ('M_PI', 'PI'),
@@ -97,6 +98,7 @@ compiler_directives = {'binding': True, 'cdivision': True}
 
 def copy_source(dry_run):
     dir_util.copy_tree(join('..', 'include'), include_path, dry_run=dry_run)
+    dir_util.copy_tree(join('..', 'extlib', 'eigen', 'Eigen'), eigen_path, dry_run=dry_run)
     dir_util.copy_tree(join('..', 'extlib', 'mimalloc', 'include'),
                        mimalloc_include_path,
                        dry_run=dry_run)
