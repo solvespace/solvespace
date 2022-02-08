@@ -15,6 +15,8 @@ from .slvs import (
     quaternion_v,
     quaternion_n,
     make_quaternion,
+    Constraint,
+    ResultFlag,
     Params,
     Entity,
     SolverSystem,
