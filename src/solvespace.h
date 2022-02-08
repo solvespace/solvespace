@@ -7,6 +7,10 @@
 #ifndef SOLVESPACE_H
 #define SOLVESPACE_H
 
+#include "resource.h"
+#include "platform/platform.h"
+#include "platform/gui.h"
+
 #include <cctype>
 #include <climits>
 #include <cmath>
@@ -29,6 +33,10 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+
+#define EIGEN_NO_DEBUG
+#undef Success
+#include <Eigen/SparseCore>
 
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including
@@ -122,9 +130,6 @@ static constexpr double LENGTH_EPS    =  1e-6;
 static constexpr double VERY_POSITIVE =  1e10;
 static constexpr double VERY_NEGATIVE = -1e10;
 
-#include "platform/platform.h"
-#include "platform/gui.h"
-#include "resource.h"
 
 using Platform::AllocTemporary;
 using Platform::FreeAllTemporary;
@@ -210,7 +215,7 @@ void Error(const char *fmt, ...);
 
 class System {
 public:
-    enum { MAX_UNKNOWNS = 1024 };
+    enum { MAX_UNKNOWNS = 2048 };
 
     EntityList                      entity;
     ParamList                       param;
@@ -232,37 +237,34 @@ public:
     // The system Jacobian matrix
     struct {
         // The corresponding equation for each row
-        hEquation   eq[MAX_UNKNOWNS];
+        std::vector<Equation *> eq;
 
         // The corresponding parameter for each column
-        hParam      param[MAX_UNKNOWNS];
+        std::vector<hParam>     param;
 
         // We're solving AX = B
         int m, n;
         struct {
-            Expr        *sym[MAX_UNKNOWNS][MAX_UNKNOWNS];
-            double       num[MAX_UNKNOWNS][MAX_UNKNOWNS];
-        }           A;
+            // This only observes the Expr - does not own them!
+            Eigen::SparseMatrix<Expr *> sym;
+            Eigen::SparseMatrix<double> num;
+        } A;
 
-        double      scale[MAX_UNKNOWNS];
-
-        // Some helpers for the least squares solve
-        double AAt[MAX_UNKNOWNS][MAX_UNKNOWNS];
-        double Z[MAX_UNKNOWNS];
-
-        double      X[MAX_UNKNOWNS];
+        Eigen::VectorXd scale;
+        Eigen::VectorXd X;
 
         struct {
-            Expr        *sym[MAX_UNKNOWNS];
-            double       num[MAX_UNKNOWNS];
-        }           B;
+            // This only observes the Expr - does not own them!
+            std::vector<Expr *> sym;
+            Eigen::VectorXd     num;
+        } B;
     } mat;
 
-    static const double RANK_MAG_TOLERANCE, CONVERGE_TOLERANCE;
+    static const double CONVERGE_TOLERANCE;
     int CalculateRank();
-    bool TestRank(int *rank = NULL);
-    static bool SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
-                                  double B[], int N);
+    bool TestRank(int *dof = NULL);
+    static bool SolveLinearSystem(const Eigen::SparseMatrix<double> &A,
+                                  const Eigen::VectorXd &B, Eigen::VectorXd *X);
     bool SolveLeastSquares();
 
     bool WriteJacobian(int tag);
@@ -278,7 +280,6 @@ public:
     bool NewtonSolve(int tag);
 
     void MarkParamsFree(bool findFree);
-    int CalculateDof();
 
     SolveResult Solve(Group *g, int *rank = NULL, int *dof = NULL,
                       List<hConstraint> *bad = NULL,
@@ -290,6 +291,9 @@ public:
                           bool andFindBad = false, bool andFindFree = false);
 
     void Clear();
+    Param *GetLastParamSubstitution(Param *p);
+    void SubstituteParamsByLast(Expr *e);
+    void SortSubstitutionByDragged(Param *p);
 };
 
 #include "ttf.h"

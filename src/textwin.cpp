@@ -235,6 +235,7 @@ void TextWindow::Init() {
 
             using namespace std::placeholders;
             window->onClose = []() {
+                SS.TW.HideEditControl();
                 SS.GW.showTextWindow = false;
                 SS.GW.EnsureValidActives();
             };

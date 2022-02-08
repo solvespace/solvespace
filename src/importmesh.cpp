@@ -10,7 +10,7 @@
 
 #define MIN_POINT_DISTANCE 0.001
 
-// we will check for duplicate verticies and keep all their normals
+// we will check for duplicate vertices and keep all their normals
 class vertex {
 public:
     Vector p;
@@ -47,7 +47,7 @@ static void addUnique(std::vector<vertex> &lv, Vector &p, Vector &n) {
 };
 
 // Make a new point - type doesn't matter since we will make a copy later
-static hEntity newPoint(EntityList *el, int id, Vector p) {
+static hEntity newPoint(EntityList *el, int *id, Vector p) {
     Entity en = {};
     en.type = Entity::Type::POINT_N_COPY;
     en.extraPoints = 0;
@@ -59,7 +59,8 @@ static hEntity newPoint(EntityList *el, int id, Vector p) {
     en.actVisible = true;
     en.forceHidden = false;
 
-    en.h.v = id + en.group.v*65536;    
+    en.h.v = *id + en.group.v*65536; 
+    *id = *id+1;   
     el->Add(&en);
     return en.h;
 }
@@ -67,12 +68,34 @@ static hEntity newPoint(EntityList *el, int id, Vector p) {
 // check if a vertex is unique and add it via newPoint if it is.
 static void addVertex(EntityList *el, Vector v) {
     if(el->n < 15000) {
-        int id = el->n+2;
-        newPoint(el, id, v);
+        int id = el->n;
+        newPoint(el, &id, v);
     }
 }
 
-static hEntity newLine(EntityList *el, int id, hEntity p0, hEntity p1) {
+static hEntity newNormal(EntityList *el, int *id, Quaternion normal, hEntity p) {
+    // normals have parameters, but we don't need them to make a NORMAL_N_COPY from this
+    Entity en = {};
+    en.type = Entity::Type::NORMAL_N_COPY;
+    en.extraPoints = 0;
+    en.timesApplied = 0;
+    en.group.v = 472;
+    en.actNormal = normal;
+    en.construction = false;
+    en.style.v = Style::NORMALS;
+    // to be visible we need to add a point.
+//    en.point[0] = newPoint(el, id, Vector::From(0,0,0));
+    en.point[0] = p;
+    en.actVisible = true;
+    en.forceHidden = false;
+
+    *id = *id+1;
+    en.h.v = *id + en.group.v*65536;    
+    el->Add(&en);
+    return en.h;
+}
+
+static hEntity newLine(EntityList *el, int *id, hEntity p0, hEntity p1) {
     Entity en = {};
     en.type = Entity::Type::LINE_SEGMENT;
     en.point[0] = p0;
@@ -85,7 +108,8 @@ static hEntity newLine(EntityList *el, int id, hEntity p0, hEntity p1) {
     en.actVisible = true;
     en.forceHidden = false;
 
-    en.h.v = id + en.group.v*65536;
+    en.h.v = *id + en.group.v*65536;
+    *id = *id + 1;
     el->Add(&en);
     return en.h;
 }
@@ -106,6 +130,13 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     char str[80] = {};
     f.read(str, 80);
     
+    if(0==memcmp("solid", str, 5)) {
+    // just returning false will trigger the warning that linked file is not present
+    // best solution is to add an importer for text STL.
+        Message(_("Text-formated STL files are not currently supported"));
+        return false;
+    }
+    
     uint32_t n;
     uint32_t color;
     
@@ -114,9 +145,6 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     
     float x,y,z;
     float xn,yn,zn;
-    
-    //add the STL origin as an entity
-    addVertex(el, Vector::From(0.0, 0.0, 0.0));
     
     std::vector<vertex> verts = {};
     
@@ -171,7 +199,15 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
         addUnique(verts, tr.b, normal);
         addUnique(verts, tr.c, normal);
     }
-    dbp("%d verticies", verts.size());
+    dbp("%d vertices", verts.size());
+
+    int id = 1;
+
+    //add the STL origin and normals
+    hEntity origin = newPoint(el, &id, Vector::From(0.0, 0.0, 0.0));    
+    newNormal(el, &id, Quaternion::From(Vector::From(1,0,0),Vector::From(0,1,0)), origin);
+    newNormal(el, &id, Quaternion::From(Vector::From(0,1,0),Vector::From(0,0,1)), origin);
+    newNormal(el, &id, Quaternion::From(Vector::From(0,0,1),Vector::From(1,0,0)), origin);
 
     BBox box = {};
     box.minp = verts[0].p;
@@ -183,35 +219,34 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     }
 
     hEntity p[8];
-    int id = el->n+2;
-    p[0] = newPoint(el, id++, Vector::From(box.minp.x, box.minp.y, box.minp.z));
-    p[1] = newPoint(el, id++, Vector::From(box.maxp.x, box.minp.y, box.minp.z));
-    p[2] = newPoint(el, id++, Vector::From(box.minp.x, box.maxp.y, box.minp.z));
-    p[3] = newPoint(el, id++, Vector::From(box.maxp.x, box.maxp.y, box.minp.z));
-    p[4] = newPoint(el, id++, Vector::From(box.minp.x, box.minp.y, box.maxp.z));
-    p[5] = newPoint(el, id++, Vector::From(box.maxp.x, box.minp.y, box.maxp.z));
-    p[6] = newPoint(el, id++, Vector::From(box.minp.x, box.maxp.y, box.maxp.z));
-    p[7] = newPoint(el, id++, Vector::From(box.maxp.x, box.maxp.y, box.maxp.z));
+    p[0] = newPoint(el, &id, Vector::From(box.minp.x, box.minp.y, box.minp.z));
+    p[1] = newPoint(el, &id, Vector::From(box.maxp.x, box.minp.y, box.minp.z));
+    p[2] = newPoint(el, &id, Vector::From(box.minp.x, box.maxp.y, box.minp.z));
+    p[3] = newPoint(el, &id, Vector::From(box.maxp.x, box.maxp.y, box.minp.z));
+    p[4] = newPoint(el, &id, Vector::From(box.minp.x, box.minp.y, box.maxp.z));
+    p[5] = newPoint(el, &id, Vector::From(box.maxp.x, box.minp.y, box.maxp.z));
+    p[6] = newPoint(el, &id, Vector::From(box.minp.x, box.maxp.y, box.maxp.z));
+    p[7] = newPoint(el, &id, Vector::From(box.maxp.x, box.maxp.y, box.maxp.z));
 
-    newLine(el, id++, p[0], p[1]);
-    newLine(el, id++, p[0], p[2]);
-    newLine(el, id++, p[3], p[1]);
-    newLine(el, id++, p[3], p[2]);
+    newLine(el, &id, p[0], p[1]);
+    newLine(el, &id, p[0], p[2]);
+    newLine(el, &id, p[3], p[1]);
+    newLine(el, &id, p[3], p[2]);
 
-    newLine(el, id++, p[4], p[5]);
-    newLine(el, id++, p[4], p[6]);
-    newLine(el, id++, p[7], p[5]);
-    newLine(el, id++, p[7], p[6]);
+    newLine(el, &id, p[4], p[5]);
+    newLine(el, &id, p[4], p[6]);
+    newLine(el, &id, p[7], p[5]);
+    newLine(el, &id, p[7], p[6]);
 
-    newLine(el, id++, p[0], p[4]);
-    newLine(el, id++, p[1], p[5]);
-    newLine(el, id++, p[2], p[6]);
-    newLine(el, id++, p[3], p[7]);
+    newLine(el, &id, p[0], p[4]);
+    newLine(el, &id, p[1], p[5]);
+    newLine(el, &id, p[2], p[6]);
+    newLine(el, &id, p[3], p[7]);
     
     for(unsigned int i=0; i<verts.size(); i++) {
         // create point entities for edge vertexes
         if(isEdgeVertex(verts[i])) {
-            addVertex(el, verts[i].p);
+           addVertex(el, verts[i].p);
         }
     }
 

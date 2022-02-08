@@ -16,7 +16,7 @@ if(UNIX)
 
     # Support the REQUIRED and QUIET arguments, and set SPACEWARE_FOUND if found.
     include(FindPackageHandleStandardArgs)
-    FIND_PACKAGE_HANDLE_STANDARD_ARGS(SPACEWARE DEFAULT_MSG
+    find_package_handle_standard_args(SpaceWare DEFAULT_MSG
         SPACEWARE_LIBRARY SPACEWARE_INCLUDE_DIR)
 
     if(SPACEWARE_FOUND)

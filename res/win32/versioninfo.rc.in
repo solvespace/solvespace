@@ -1,6 +1,6 @@
 1 VERSIONINFO
-FILEVERSION     ${solvespace_VERSION_MAJOR},${solvespace_VERSION_MINOR},0,0
-PRODUCTVERSION  ${solvespace_VERSION_MAJOR},${solvespace_VERSION_MINOR},0,0
+FILEVERSION     ${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},0,0
+PRODUCTVERSION  ${PROJECT_VERSION_MAJOR},${PROJECT_VERSION_MINOR},0,0
 FILEFLAGSMASK   0
 FILEFLAGS       0
 FILEOS          VOS_NT_WINDOWS32
@@ -13,12 +13,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName",      "The SolveSpace authors"
             VALUE "ProductName",      "SolveSpace"
-            VALUE "ProductVersion",   "${solvespace_VERSION_MAJOR}.${solvespace_VERSION_MINOR}~${solvespace_GIT_HASH}"
+            VALUE "ProductVersion",   "${PROJECT_VERSION}~${solvespace_GIT_HASH}"
             VALUE "FileDescription",  "SolveSpace, a parametric 2d/3d CAD"
-            VALUE "FileVersion",      "${solvespace_VERSION_MAJOR}.${solvespace_VERSION_MINOR}~${solvespace_GIT_HASH}"
+            VALUE "FileVersion",      "${PROJECT_VERSION}~${solvespace_GIT_HASH}"
             VALUE "OriginalFilename", "solvespace.exe"
             VALUE "InternalName",     "solvespace"
-            VALUE "LegalCopyright",   "(c) 2008-2021 Jonathan Westhues and other authors"
+            VALUE "LegalCopyright",   "(c) 2008-2022 Jonathan Westhues and other authors"
         END
     END
 
