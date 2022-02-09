@@ -37,7 +37,7 @@ jobs:
           python -m unittest
       - name: Pack
         working-directory: cython
-        run: python -m build
+        run: python -m build --sdist --wheel
       - if: matrix.os == 'ubuntu-latest'
         name: Upload artifact
         uses: actions/upload-artifact@v2
