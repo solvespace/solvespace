@@ -59,12 +59,12 @@ pip install python-solvespace
 First build and install the module from the repo:
 
 ```bash
-git submodule update --init extlib/mimalloc
+git submodule update --init extlib/mimalloc extlib/eigen
 cd cython
 pip install -e .
 ```
 
-Build the module:
+Rebuild the module:
 
 ```bash
 pip install -e . --no-deps
