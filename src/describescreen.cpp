@@ -171,6 +171,7 @@ void TextWindow::DescribeSelection() {
                 double r = e->CircleGetRadiusNum();
                 Printf(true,  "   diameter =  %Fi%s", SS.MmToString(r*2).c_str());
                 Printf(false, "     radius =  %Fi%s", SS.MmToString(r).c_str());
+                Printf(false, " circle len =  %Fi%s", SS.MmToString(r*2*M_PI).c_str());
                 break;
             }
             case Entity::Type::FACE_NORMAL_PT:
