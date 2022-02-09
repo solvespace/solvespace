@@ -167,10 +167,11 @@ void TextWindow::DescribeSelection() {
             case Entity::Type::CIRCLE: {
                 Printf(false, "%FtCIRCLE%E");
                 p = SK.GetEntity(e->point[0])->PointGetNum();
-                Printf(true,  "     center = " PT_AS_STR, COSTR(SK.GetEntity(e->point[0]), p));
+                Printf(true,  "        center = " PT_AS_STR, COSTR(SK.GetEntity(e->point[0]), p));
                 double r = e->CircleGetRadiusNum();
-                Printf(true,  "   diameter =  %Fi%s", SS.MmToString(r*2).c_str());
-                Printf(false, "     radius =  %Fi%s", SS.MmToString(r).c_str());
+                Printf(true,  "      diameter =  %Fi%s", SS.MmToString(r*2).c_str());
+                Printf(false, "        radius =  %Fi%s", SS.MmToString(r).c_str());
+                Printf(false, " circumference =  %Fi%s", SS.MmToString(2*M_PI*r).c_str());
                 break;
             }
             case Entity::Type::FACE_NORMAL_PT:
