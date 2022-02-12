@@ -372,7 +372,6 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     double             rotationGestureCurrent;
     Point2d            trackpadPositionShift;
     bool               inTrackpadScrollGesture;
-    int                numTouches;
     Platform::Window::Kind kind;
 }
 
@@ -398,8 +397,6 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
         editor.action = @selector(didEdit:);
 
         inTrackpadScrollGesture = false;
-        numTouches = 0;
-        self.acceptsTouchEvents = YES;
         kind = aKind;
         if(kind == Platform::Window::Kind::TOPLEVEL) {
             NSGestureRecognizer *mag = [[NSMagnificationGestureRecognizer alloc] initWithTarget:self
@@ -576,9 +573,7 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     using Platform::MouseEvent;
 
     MouseEvent event = [self convertMouseEvent:nsEvent];
-    // Check for number of touches to exclude single-finger scrolling on Magic Mouse
-    bool isTrackpadEvent = numTouches >= 2 && nsEvent.subtype == NSEventSubtypeTabletPoint;
-    if(isTrackpadEvent && kind == Platform::Window::Kind::TOPLEVEL) {
+    if(nsEvent.subtype == NSEventSubtypeTabletPoint && kind == Platform::Window::Kind::TOPLEVEL) {
         // This is how Cocoa represents 2 finger trackpad drag gestures, rather than going via
         // NSPanGestureRecognizer which is how you might expect this to work... We complicate this
         // further by also handling shift-two-finger-drag to mean rotate. Fortunately we're using
@@ -629,23 +624,6 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     event.scrollDelta = [nsEvent scrollingDeltaY] / (isPrecise ? 50 : 5);
 
     receiver->onMouseEvent(event);
-}
-
-- (void)touchesBeganWithEvent:(NSEvent *)event {
-    numTouches = [event touchesMatchingPhase:NSTouchPhaseTouching inView:self].count;
-    [super touchesBeganWithEvent:event];
-}
-- (void)touchesMovedWithEvent:(NSEvent *)event {
-    numTouches = [event touchesMatchingPhase:NSTouchPhaseTouching inView:self].count;
-    [super touchesMovedWithEvent:event];
-}
-- (void)touchesEndedWithEvent:(NSEvent *)event {
-    numTouches = [event touchesMatchingPhase:NSTouchPhaseTouching inView:self].count;
-    [super touchesEndedWithEvent:event];
-}
-- (void)touchesCancelledWithEvent:(NSEvent *)event {
-    numTouches = 0;
-    [super touchesCancelledWithEvent:event];
 }
 
 - (void)mouseExited:(NSEvent *)nsEvent {
