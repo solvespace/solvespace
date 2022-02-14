@@ -166,6 +166,7 @@ add_library(solvespace-core STATIC
     srf/merge.cpp
     srf/ratpoly.cpp
     srf/raycast.cpp
+    srf/shell.cpp
     srf/surface.cpp
     srf/surfinter.cpp
     srf/triangulate.cpp)
