@@ -88,6 +88,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 {
     if(window->IsEditorVisible()) return;
     if(context.active) return;
+
     SS.extraLine.draw = false;
 
     if(!orig.mouseDown) {
@@ -878,9 +879,6 @@ bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
 
     event.x = event.x - width / 2;
     event.y = height / 2 - event.y;
-    // orig.mouse.x = event.x; // provents secont point for shapes
-    // orig.mouse.y = event.y;
-   
 
     switch(event.type) {
         case MouseEvent::Type::MOTION:
@@ -1303,7 +1301,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
     if(g != NULL) {
         g->visible = true;
     }
-    //dbp(orig.mouse); // debug output
+
     SS.ScheduleShowTW();
     Invalidate();
 }
