@@ -914,7 +914,7 @@ bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
             break;
 
         case MouseEvent::Type::SCROLL_VERT:
-            this->MouseScroll(event.x, event.y, event.shiftDown ? event.scrollDelta / 10 : event.scrollDelta);
+            this->MouseScroll(event.shiftDown ? event.scrollDelta / 10 : event.scrollDelta);
             break;
 
         case MouseEvent::Type::LEAVE:
@@ -1478,17 +1478,10 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
     }
 }
 
-void GraphicsWindow::MouseScroll(double x, double y, double delta) {
-    double offsetRight = offset.Dot(projRight);
-    double offsetUp = offset.Dot(projUp);
-
-    double righti = x/scale - offsetRight;
-    double upi = y/scale - offsetUp;
-
-    // The default zoom factor is 1.2x for one scroll wheel click (delta==1).
+void GraphicsWindow::MouseScroll(double zoomMultiplyer) {
     // To support smooth scrolling where scroll wheel events come in increments
     // smaller (or larger) than 1 we do:
-    //     scale *= exp(ln(1.2) * delta);
+    //     scale *= exp(ln(1.2) * zoomMultiplyer);
     // to ensure that the same total scroll delta always results in the same
     // total zoom irrespective of in how many increments the zoom was applied.
     // For example if we scroll a total delta of a+b in two events vs. one then
@@ -1496,21 +1489,7 @@ void GraphicsWindow::MouseScroll(double x, double y, double delta) {
     // while
     //     scale * a * b != scale * (a+b)
     // So this constant is ln(1.2) = 0.1823216 to make the default zoom 1.2x
-    scale *= exp(0.1823216 * delta);
-
-    double rightf = x/scale - offsetRight;
-    double upf = y/scale - offsetUp;
-
-    offset = offset.Plus(projRight.ScaledBy(rightf - righti));
-    offset = offset.Plus(projUp.ScaledBy(upf - upi));
-
-    if(SS.TW.shown.screen == TextWindow::Screen::EDIT_VIEW) {
-        if(havePainted) {
-            SS.ScheduleShowTW();
-        }
-    }
-    havePainted = false;
-    Invalidate();
+    ZoomToMouse(zoomMultiplyer);
 }
 
 void GraphicsWindow::MouseLeave() {
