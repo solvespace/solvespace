@@ -712,16 +712,47 @@ double GraphicsWindow::ZoomToFit(const Camera &camera,
     return scale;
 }
 
+
+void GraphicsWindow::ZoomToMouse(double zoomMultiplyer) {
+    double offsetRight = offset.Dot(projRight);
+    double offsetUp    = offset.Dot(projUp);
+
+    double width, height;
+    window->GetContentSize(&width, &height);
+
+    double righti = currentMousePosition.x / scale - offsetRight;
+    double upi    = currentMousePosition.y / scale - offsetUp;
+
+    // zoomMultiplyer of 1 gives a default zoom factor of 1.2x: zoomMultiplyer * 1.2
+    // zoom = adjusted zoom negative zoomMultiplyer will zoom out, positive will zoom in
+    //
+
+    scale *= exp(0.1823216 * zoomMultiplyer); // ln(1.2) = 0.1823216
+
+    double rightf = currentMousePosition.x / scale - offsetRight;
+    double upf    = currentMousePosition.y / scale - offsetUp;
+
+    offset = offset.Plus(projRight.ScaledBy(rightf - righti));
+    offset = offset.Plus(projUp.ScaledBy(upf - upi));
+
+    if(SS.TW.shown.screen == TextWindow::Screen::EDIT_VIEW) {
+        if(havePainted) {
+            SS.ScheduleShowTW();
+        }
+    }
+    havePainted = false;
+    Invalidate();
+}
+
+
 void GraphicsWindow::MenuView(Command id) {
     switch(id) {
         case Command::ZOOM_IN:
-            SS.GW.scale *= 1.2;
-            SS.ScheduleShowTW();
+            SS.GW.ZoomToMouse(1);
             break;
 
         case Command::ZOOM_OUT:
-            SS.GW.scale /= 1.2;
-            SS.ScheduleShowTW();
+            SS.GW.ZoomToMouse(-1);
             break;
 
         case Command::ZOOM_TO_FIT:
