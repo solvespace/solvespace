@@ -471,10 +471,11 @@ void GraphicsWindow::AlternateTool() {
 // Switches between most recent tool and the mouse selector
     if(SS.GW.activeTool != Command::NONE) {
         if(pending.command == Command::NONE) {
-            ClearPending(true, false);
+            SS.GW.MenuEdit(Command::UNSELECT_ALL);
             MenuRequest(SS.GW.activeTool);
-        // rechose tool through menu?
-        } else ClearPending(true, false);
+        } else {
+            ClearPending(true, false);
+        }
         SS.GW.Invalidate();
         SS.ScheduleShowTW();
     }
@@ -486,6 +487,7 @@ void GraphicsWindow::ClearPending(bool scheduleShowTW, bool allowCommandToContin
     Command temp_store = Command::NONE; 
     pending.points.Clear();
     pending.requests.Clear();
+
 
     if(pending.command != Command::NONE && allowCommandToContinue) {
 

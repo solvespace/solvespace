@@ -1095,11 +1095,16 @@ void GraphicsWindow::MenuEdit(Command id) {
                     }
                 }
             }
+            if(SS.GW.pending.operation != SS.GW.Pending::NONE) {
+                // Undo partially completed operation if there is one in process and dont remeber it. 
+                SS.UndoUndo();  
+            }
             SS.GW.ClearSuper();
             SS.TW.HideEditControl();
             SS.nakedEdges.Clear();
             SS.justExportedInfo.draw = false;
             SS.centerOfMass.draw = false;
+            //SS.GW.pending.operation;
             // This clears the marks drawn to indicate which points are
             // still free to drag.
             for(Param &p : SK.param) {
