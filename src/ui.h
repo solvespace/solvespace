@@ -128,6 +128,7 @@ enum class Command : uint32_t {
     TANGENT_ARC,
     CONSTRUCTION,
     ALTERNATE_TOOL,
+    ESCAPE_KEY,
     // Group
     GROUP_3D,
     GROUP_WRKPL,
@@ -679,6 +680,7 @@ public:
 
     Command activeTool;
     void AlternateTool();
+    void CancelPending();
     void ClearPending(bool scheduleShowTW = true, bool allowCommandToContinue = true);
     bool IsFromPending(hRequest r);
     void AddToPending(hRequest r);
@@ -802,7 +804,7 @@ public:
     void ToolbarDraw(UiCanvas *canvas);
     bool ToolbarMouseMoved(int x, int y);
     bool ToolbarMouseDown(int x, int y);
-    bool GraphicsWindow::CheckIfKeepCommandActive(Command theCom);
+    bool CheckIfKeepCommandActive(Command theCom);
     Command toolbarHovered;
 
     // This sets what gets displayed.

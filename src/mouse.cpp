@@ -470,15 +470,29 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 void GraphicsWindow::AlternateTool() {
 // Switches between most recent tool and the mouse selector
     if(SS.GW.activeTool != Command::NONE) {
-        if(pending.command == Command::NONE) {
-            SS.GW.MenuEdit(Command::UNSELECT_ALL);
+        // need to make sure there is actually a pending action or else it will undo a previous curve
+        if(pending.command == Command::NONE && pending.operation == Pending::NONE) {
             MenuRequest(SS.GW.activeTool);
         } else {
-            ClearPending(true, false);
+            SS.GW.CancelPending();
         }
         SS.GW.Invalidate();
         SS.ScheduleShowTW();
     }
+}
+
+
+void GraphicsWindow::CancelPending() {
+    if(pending.operation != Pending::NONE && pending.operation != Pending::COMMAND) {
+        // undo any pending object and reselect the tool to be used again
+        SS.GW.MenuEdit(Command::UNSELECT_ALL);
+        ClearPending(true, false);
+        MenuRequest(SS.GW.activeTool);
+    } else
+        // If there is not an in process object to cancel, unselect the tool
+        ClearPending(true, false); 
+    Invalidate();
+    SS.ScheduleShowTW();
 }
 
 void GraphicsWindow::ClearPending(bool scheduleShowTW, bool allowCommandToContinue) {
@@ -487,8 +501,6 @@ void GraphicsWindow::ClearPending(bool scheduleShowTW, bool allowCommandToContin
     Command temp_store = Command::NONE; 
     pending.points.Clear();
     pending.requests.Clear();
-
-
     if(pending.command != Command::NONE && allowCommandToContinue) {
 
         if(CheckIfKeepCommandActive(pending.command)) {
@@ -567,11 +579,8 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
        pending.operation == Pending::DRAGGING_NEW_POINT
        )
     {
-        // Special case; use a right click to stop drawing lines, since
-        // a left click would draw another one. This is quicker and more
-        // intuitive than hitting escape. Likewise for other entities
-        // for consistency.
-        ClearPending();
+        // Right click cancels pending operation. Same as escape/backspace.
+        CancelPending();
         return;
     }
 

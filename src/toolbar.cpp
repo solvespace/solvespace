@@ -58,6 +58,7 @@ static ToolIcon Toolbar[] = {
     { "ontoworkplane",   Command::ONTO_WORKPLANE,  0,  N_("Align view to active workplane"),                   {} },
 };
 
+
 bool GraphicsWindow::CheckIfKeepCommandActive(Command theCom) {
     for(ToolIcon &icon : Toolbar) {
         if(theCom == icon.command) {

@@ -74,7 +74,7 @@ const MenuEntry Menu[] = {
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Select &Edge Chain"),          Command::SELECT_CHAIN,     C|'e',   KN, mEdit  },
 { 1, N_("Select &All"),                 Command::SELECT_ALL,       C|'a',   KN, mEdit  },
-{ 1, N_("&Unselect All"),               Command::UNSELECT_ALL,     '\x1b',  KN, mEdit  },
+{ 1, N_("&Unselect All"),               Command::ESCAPE_KEY,     '\x1b',  KN, mEdit  }, // x1b = escape key
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("&Line Styles..."),             Command::EDIT_LINE_STYLES, 0,       KN, mEdit  },
 { 1, N_("&View Projection..."),         Command::VIEW_PROJECTION,  0,       KN, mEdit  },
@@ -245,7 +245,7 @@ bool GraphicsWindow::KeyboardEvent(Platform::KeyboardEvent event) {
     if(event.key == KeyboardEvent::Key::CHARACTER) {
         if(event.chr == '\b') {
             // Treat backspace identically to escape.
-            MenuEdit(Command::UNSELECT_ALL);
+            SS.GW.CancelPending();
             return true;
         } else if(event.chr == '=') {
             // Treat = as +. This is specific to US (and US-compatible) keyboard layouts,
@@ -1005,6 +1005,7 @@ void GraphicsWindow::EnsureValidActives() {
 void GraphicsWindow::SetWorkplaneFreeIn3d() {
     SK.GetGroup(activeGroup)->activeWorkplane = Entity::FREE_IN_3D;
 }
+
 hEntity GraphicsWindow::ActiveWorkplane() {
     Group *g = SK.group.FindByIdNoOops(activeGroup);
     if(g) {
@@ -1095,9 +1096,9 @@ void GraphicsWindow::MenuEdit(Command id) {
                     }
                 }
             }
-            if(SS.GW.pending.operation != SS.GW.Pending::NONE) {
+            if(SS.GW.pending.operation != Pending::COMMAND) {
                 // Undo partially completed operation if there is one in process and dont remeber it. 
-                SS.UndoUndo();  
+                SS.UndoUndo(false);  
             }
             SS.GW.ClearSuper();
             SS.TW.HideEditControl();
@@ -1121,7 +1122,11 @@ void GraphicsWindow::MenuEdit(Command id) {
         case Command::ALTERNATE_TOOL:
             SS.GW.AlternateTool();
             break;
-            
+
+        case Command::ESCAPE_KEY:
+            SS.GW.CancelPending();
+            break;
+
         case Command::SELECT_ALL: {
             for(Entity &e : SK.entity) {
                 if(e.group != SS.GW.activeGroup) continue;
