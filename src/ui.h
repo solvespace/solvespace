@@ -127,6 +127,8 @@ enum class Command : uint32_t {
     SPLIT_CURVES,
     TANGENT_ARC,
     CONSTRUCTION,
+    ALTERNATE_TOOL,
+    ESCAPE_KEY,
     // Group
     GROUP_3D,
     GROUP_WRKPL,
@@ -660,7 +662,7 @@ public:
     struct {
         Pending              operation;
         Command              command;
-
+        Command              stored_command;
         hRequest             request;
         hEntity              point;
         List<hEntity>        points;
@@ -675,7 +677,11 @@ public:
         bool                 hasSuggestion;
         Constraint::Type     suggestion;
     } pending;
-    void ClearPending(bool scheduleShowTW = true);
+
+    Command activeTool;
+    void AlternateTool();
+    void CancelPending();
+    void ClearPending(bool scheduleShowTW = true, bool allowCommandToContinue = true);
     bool IsFromPending(hRequest r);
     void AddToPending(hRequest r);
     void ReplacePending(hRequest before, hRequest after);
@@ -798,6 +804,7 @@ public:
     void ToolbarDraw(UiCanvas *canvas);
     bool ToolbarMouseMoved(int x, int y);
     bool ToolbarMouseDown(int x, int y);
+    bool CheckIfKeepCommandActive(Command theCom);
     Command toolbarHovered;
 
     // This sets what gets displayed.

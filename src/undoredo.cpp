@@ -8,16 +8,18 @@
 #include "solvespace.h"
 
 void SolveSpaceUI::UndoRemember() {
-    unsaved = true;
+    unsaved = true; // current interation of file is not saved
     PushFromCurrentOnto(&undo);
     UndoClearStack(&redo);
     UndoEnableMenus();
 }
 
-void SolveSpaceUI::UndoUndo() {
+
+void SolveSpaceUI::UndoUndo(bool save_undo /*remeber undo for redo call, default is true*/) {
+    // Will undo last operations without remebering it for redo
     if(undo.cnt <= 0) return;
 
-    PushFromCurrentOnto(&redo);
+    if(save_undo) PushFromCurrentOnto(&redo);
     PopOntoCurrentFrom(&undo);
     UndoEnableMenus();
 }

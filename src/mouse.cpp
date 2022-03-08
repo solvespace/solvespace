@@ -467,14 +467,64 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     }
 }
 
-void GraphicsWindow::ClearPending(bool scheduleShowTW) {
+void GraphicsWindow::AlternateTool() {
+// Switches between most recent tool and the mouse selector
+    if(SS.GW.activeTool != Command::NONE) {
+        // need to make sure there is actually a pending action or else it will undo a previous curve
+        if(pending.command == Command::NONE && pending.operation == Pending::NONE) {
+            MenuRequest(SS.GW.activeTool);
+        } else {
+            SS.GW.CancelPending();
+        }
+        SS.GW.Invalidate();
+        SS.ScheduleShowTW();
+    }
+}
+
+
+void GraphicsWindow::CancelPending() {
+    if(pending.operation != Pending::NONE && pending.operation != Pending::COMMAND) {
+        // undo any pending object and reselect the tool to be used again
+        SS.GW.MenuEdit(Command::UNSELECT_ALL);
+        ClearPending(true, false);
+        MenuRequest(SS.GW.activeTool);
+    } else
+        // If there is not an in process object to cancel, unselect the tool
+        ClearPending(true, false); 
+    Invalidate();
+    SS.ScheduleShowTW();
+}
+
+void GraphicsWindow::ClearPending(bool scheduleShowTW, bool allowCommandToContinue) {
+// Clears selected tool or, steps of a tool's use (tow point rectangle). 
+// Allows tool to be reactivated after use if specified in toolbar.cpp/Toolbar[]
+    Command temp_store = Command::NONE; 
     pending.points.Clear();
     pending.requests.Clear();
-    pending = {};
+    if(pending.command != Command::NONE && allowCommandToContinue) {
+
+        if(CheckIfKeepCommandActive(pending.command)) {
+            temp_store = pending.command;
+        };
+        pending                = {};
+        pending.stored_command = temp_store;
+    // If there is a tool stored, activate it
+    } else if(pending.stored_command != Command::NONE && allowCommandToContinue) {
+        temp_store = pending.stored_command;
+        pending    = {};
+        if(allowCommandToContinue) {
+            pending.command   = temp_store;
+            pending.operation = Pending::COMMAND;
+        }
+    } else {
+        pending = {};
+    }
+
     if(scheduleShowTW) {
         SS.ScheduleShowTW();
     }
 }
+
 
 bool GraphicsWindow::IsFromPending(hRequest r) {
     for(auto &req : pending.requests) {
@@ -529,11 +579,8 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
        pending.operation == Pending::DRAGGING_NEW_POINT
        )
     {
-        // Special case; use a right click to stop drawing lines, since
-        // a left click would draw another one. This is quicker and more
-        // intuitive than hitting escape. Likewise for other entities
-        // for consistency.
-        ClearPending();
+        // Right click cancels pending operation. Same as escape/backspace.
+        CancelPending();
         return;
     }
 
@@ -794,6 +841,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 hRequest GraphicsWindow::AddRequest(Request::Type type) {
     return AddRequest(type, /*rememberForUndo=*/true);
 }
+
 hRequest GraphicsWindow::AddRequest(Request::Type type, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
 
@@ -1021,7 +1069,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                         }
                     }
 
-                    pending.operation = Pending::DRAGGING_NEW_POINT;
+                    pending.operation   = Pending::DRAGGING_NEW_POINT;
                     pending.point = lns[1].entity(2);
                     pending.description = _("click to place other corner of rectangle");
                     hr = lns[0];
@@ -1164,13 +1212,15 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
             break;
 
         case Pending::DRAGGING_RADIUS:
-            ClearPending();
+            //ClearPending();
             break;
 
         case Pending::DRAGGING_NEW_POINT:
         case Pending::DRAGGING_NEW_ARC_POINT:
             ConstrainPointByHovered(pending.point, &mouse);
             ClearPending();
+            //pending.command   = Command::RECTANGLE;
+            //pending.operation = Pending::COMMAND;
             break;
 
         case Pending::DRAGGING_NEW_CUBIC_POINT: {
