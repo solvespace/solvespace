@@ -286,6 +286,8 @@ cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make
 ```
+If gawk is in your path be sure it is a proper Windows port that can handle CL/LF line endings.
+If not CMake may fail in libpng due to some awk scripts - issue #1228.
 
 [gitwin]: https://git-scm.com/download/win
 [cmakewin]: http://www.cmake.org/download/#latest
