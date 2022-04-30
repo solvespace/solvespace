@@ -7,15 +7,15 @@ msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
 "POT-Creation-Date: 2022-02-01 16:24+0200\n"
-"PO-Revision-Date: 2018-07-19 06:55+0000\n"
+"PO-Revision-Date: 2022-04-30 16:44+0200\n"
 "Last-Translator: Reini Urban <rurban@cpan.org>\n"
 "Language-Team: none\n"
 "Language: de\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Zanata 4.5.0\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"X-Generator: Poedit 2.4.2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: clipboard.cpp:309
 msgid ""
@@ -26,7 +26,7 @@ msgstr ""
 "Ausschneiden, Einfügen und Kopieren sind nur in einer Arbeitsebene "
 "zulässig.\n"
 "\n"
-"Aktivieren Sie eine mit Skizze -> In Arbeitsebene"
+"Aktivieren Sie eine mit \"Skizze -> In Arbeitsebene\"."
 
 #: clipboard.cpp:326
 msgid "Clipboard is empty; nothing to paste."
@@ -172,12 +172,12 @@ msgstr "Längenverhältnis"
 #: constraint.cpp:25
 msgctxt "constr-name"
 msgid "arc-arc-length-ratio"
-msgstr ""
+msgstr "Bogen-Bogen-Längenverhältnis"
 
 #: constraint.cpp:26
 msgctxt "constr-name"
 msgid "arc-line-length-ratio"
-msgstr ""
+msgstr "Bogen-Linien-Längenverhältnis"
 
 #: constraint.cpp:27
 msgctxt "constr-name"
@@ -187,12 +187,12 @@ msgstr "Längendifferenz"
 #: constraint.cpp:28
 msgctxt "constr-name"
 msgid "arc-arc-len-difference"
-msgstr ""
+msgstr "Bogen-Bogen-Längendifferenz"
 
 #: constraint.cpp:29
 msgctxt "constr-name"
 msgid "arc-line-len-difference"
-msgstr ""
+msgstr "Bogen-Linien-Längendifferenz"
 
 #: constraint.cpp:30
 msgctxt "constr-name"
@@ -306,7 +306,7 @@ msgid ""
 msgstr ""
 "Die Bogentangente und das Liniensegment müssen einen gemeinsamen Endpunkt "
 "haben. Schränken Sie mit \"Einschränkung / Auf Punkt\" ein, bevor Sie die "
-"Tangente einschränken. -> Sc"
+"Tangente einschränken."
 
 #: constraint.cpp:163
 msgid ""
@@ -315,7 +315,7 @@ msgid ""
 msgstr ""
 "Die Kurventangente und das Liniensegment müssen einen gemeinsamen Endpunkt "
 "haben. Schränken Sie mit \"Einschränkung / Auf Punkt\" ein, bevor Sie die "
-"Tangente einschränken. -> Sc"
+"Tangente einschränken."
 
 #: constraint.cpp:189
 msgid ""
@@ -323,7 +323,7 @@ msgid ""
 "before constraining tangent."
 msgstr ""
 "Die Kurven müssen einen gemeinsamen Endpunkt haben. Schränken Sie mit "
-"\"Einschränkung / Auf Punkt\" ein, bevor Sie die Tangente einschränken. -> Sc"
+"\"Einschränkung / Auf Punkt\" ein, bevor Sie die Tangente einschränken."
 
 #: constraint.cpp:238
 msgid ""
@@ -408,6 +408,12 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
+"Ungültige Auswahl für Einschränkung \"Längenverhältnis\". Diese "
+"Einschränkung ist anwendbar auf:\n"
+"\n"
+"    * zwei Liniensegmente\n"
+"    * zwei Bögen\n"
+"    * einen Bogen und ein Liniensegment\n"
 
 #: constraint.cpp:441
 msgid ""
@@ -418,6 +424,12 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
+"Ungültige Auswahl für Einschränkung \"Längendifferenz\". Diese Einschränkung "
+"ist anwendbar auf:\n"
+"\n"
+"    * zwei Liniensegmente\n"
+"    * zwei Bögen\n"
+"    * einen Bogen und ein Liniensegment\n"
 
 #: constraint.cpp:472
 msgid ""
@@ -584,7 +596,7 @@ msgid ""
 "2d View to export bare lines and curves."
 msgstr ""
 "Kein Festkörper vorhanden; zeichnen Sie eines mit Extrusionen und Drehungen, "
-"oder exportieren Sie bloße Linien und Kurven mit \"2D-Ansicht exportieren\""
+"oder exportieren Sie bloße Linien und Kurven mit \"2D-Ansicht exportieren\"."
 
 #: export.cpp:61
 msgid ""
@@ -699,7 +711,7 @@ msgstr "&Neu"
 
 #: graphicswin.cpp:43
 msgid "&Open..."
-msgstr "&Öffnen"
+msgstr "&Öffnen..."
 
 #: graphicswin.cpp:44
 msgid "Open &Recent"
@@ -727,7 +739,7 @@ msgstr "Exportiere 2D-Auswahl…"
 
 #: graphicswin.cpp:51
 msgid "Export 3d &Wireframe..."
-msgstr "Exportiere 3D-Drahtgittermodell"
+msgstr "Exportiere 3D-Drahtgittermodell..."
 
 #: graphicswin.cpp:52
 msgid "Export Triangle &Mesh..."
@@ -859,7 +871,7 @@ msgstr "Perspektivische Projektion"
 
 #: graphicswin.cpp:97
 msgid "Show E&xploded View"
-msgstr ""
+msgstr "Zeige e&xplodierte Ansicht"
 
 #: graphicswin.cpp:98
 msgid "Dimension &Units"
@@ -879,7 +891,7 @@ msgstr "Maße in Zoll"
 
 #: graphicswin.cpp:102
 msgid "Dimensions in &Feet and Inches"
-msgstr ""
+msgstr "Maße in &Fuß und Inch"
 
 #: graphicswin.cpp:104
 msgid "Show &Toolbar"
@@ -931,7 +943,7 @@ msgstr "D&rehen"
 
 #: graphicswin.cpp:121
 msgid "Link / Assemble..."
-msgstr "Verknüpfen / Zusammensetzen"
+msgstr "Verknüpfen / Zusammensetzen..."
 
 #: graphicswin.cpp:122
 msgid "Link Recent"
@@ -1047,11 +1059,11 @@ msgstr "Gleicher Abstand / Radius / Winkel"
 
 #: graphicswin.cpp:158
 msgid "Length / Arc Ra&tio"
-msgstr ""
+msgstr "Länge / Bogen Verhäl&tnis"
 
 #: graphicswin.cpp:159
 msgid "Length / Arc Diff&erence"
-msgstr ""
+msgstr "Länge / Bogen Diff&erenz"
 
 #: graphicswin.cpp:160
 msgid "At &Midpoint"
@@ -1119,7 +1131,7 @@ msgstr "Punkt nachzeichnen"
 
 #: graphicswin.cpp:180
 msgid "&Stop Tracing..."
-msgstr "Nachzeichnen beenden"
+msgstr "Nachzeichnen beenden..."
 
 #: graphicswin.cpp:181
 msgid "Step &Dimension..."
@@ -1139,7 +1151,7 @@ msgstr "&Website / Anleitung"
 
 #: graphicswin.cpp:186
 msgid "&Go to GitHub commit"
-msgstr ""
+msgstr "&Gehe zu GitHub commit"
 
 #: graphicswin.cpp:188
 msgid "&About"
@@ -1300,6 +1312,12 @@ msgid ""
 "    * a point and a normal (through the point, orthogonal to the normal)\n"
 "    * a workplane (copy of the workplane)\n"
 msgstr ""
+"Ungültige Auswahl für neue Skizze in der Arbeitsebene. Diese Gruppe kann "
+"erstellt werden mit:\n"
+"\n"
+"    * einem Punkt (durch den Punkt, orthogonal zur Koordinatenachse)\n"
+"    * einem Punkt und zwei Linienabschnitten (durch den Punkt, parallel zu "
+"den Linien)\n"
 
 #: group.cpp:166
 msgid ""
@@ -1307,7 +1325,7 @@ msgid ""
 "will be extruded normal to the workplane."
 msgstr ""
 "Aktivieren Sie vor der Extrusion eine Arbeitsebene (mit Skizze -> In "
-"Arbeitsebene). Die Skizze wird senkrecht zur Arbeitsebene extrudiert"
+"Arbeitsebene). Die Skizze wird senkrecht zur Arbeitsebene extrudiert."
 
 #: group.cpp:175
 msgctxt "group-name"
@@ -1434,7 +1452,7 @@ msgstr "Kante mit Länge Null!"
 
 #: importmesh.cpp:136
 msgid "Text-formated STL files are not currently supported"
-msgstr ""
+msgstr "Text-formatierte STL Dateien werden aktuell nicht unterstützt"
 
 #: modify.cpp:252
 msgid "Must be sketching in workplane to create tangent arc."
@@ -1447,7 +1465,7 @@ msgid ""
 msgstr ""
 "Um eine Bogentangente zu erstellen, wählen Sie einen Punkt, in dem sich zwei "
 "nicht-Konstruktionslinien oder -kreise in dieser Gruppe und Arbeitsebene "
-"treffen. "
+"treffen."
 
 #: modify.cpp:386
 msgid ""
@@ -1646,7 +1664,7 @@ msgstr "SolveSpace-Modelle"
 #: platform/gui.cpp:89
 msgctxt "file-type"
 msgid "ALL"
-msgstr ""
+msgstr "ALLE"
 
 #: platform/gui.cpp:91
 msgctxt "file-type"
@@ -1656,7 +1674,7 @@ msgstr "IDF Leiterplatte"
 #: platform/gui.cpp:92
 msgctxt "file-type"
 msgid "STL triangle mesh"
-msgstr ""
+msgstr "STL-Dreiecks-Netz"
 
 #: platform/gui.cpp:96
 msgctxt "file-type"
@@ -2072,7 +2090,7 @@ msgstr ""
 
 #: style.cpp:735
 msgid "Style name cannot be empty"
-msgstr "Name des Linientyps kann nicht leer sein."
+msgstr "Name des Linientyps kann nicht leer sein"
 
 #: textscreens.cpp:791
 msgid "Can't repeat fewer than 1 time."
@@ -2084,7 +2102,7 @@ msgstr "Nicht mehr als 999 Wiederholungen möglich."
 
 #: textscreens.cpp:820
 msgid "Group name cannot be empty"
-msgstr "Der Name der Gruppe darf nicht leer sein."
+msgstr "Der Name der Gruppe darf nicht leer sein"
 
 #: textscreens.cpp:872
 msgid "Opacity must be between zero and one."
