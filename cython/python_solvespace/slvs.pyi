@@ -257,13 +257,13 @@ class SolverSystem:
     def equal(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> None:
         ...
 
-    def equal_included_angle(
+    def equal_angle(
         self,
         e1: Entity,
         e2: Entity,
         e3: Entity,
         e4: Entity,
-        wp: Entity
+        wp: Entity = Entity.FREE_IN_3D
     ) -> None:
         ...
 
@@ -273,20 +273,14 @@ class SolverSystem:
         e2: Entity,
         e3: Entity,
         e4: Entity,
-        wp: Entity
-    ) -> None:
-        ...
-
-    def ratio(self, e1: Entity, e2: Entity, value: float, wp: Entity) -> None:
-        ...
-
-    def symmetric(
-        self,
-        e1: Entity,
-        e2: Entity,
-        e3: Entity = Entity.NONE,
         wp: Entity = Entity.FREE_IN_3D
     ) -> None:
+        ...
+
+    def ratio(self, e1: Entity, e2: Entity, value: float, wp: Entity = Entity.FREE_IN_3D) -> None:
+        ...
+
+    def symmetric(self, e1: Entity, e2: Entity, e3: Entity = Entity.NONE, wp: Entity = Entity.FREE_IN_3D) -> None:
         ...
 
     def symmetric_h(self, e1: Entity, e2: Entity, wp: Entity) -> None:
@@ -295,12 +289,7 @@ class SolverSystem:
     def symmetric_v(self, e1: Entity, e2: Entity, wp: Entity) -> None:
         ...
 
-    def midpoint(
-        self,
-        e1: Entity,
-        e2: Entity,
-        wp: Entity = Entity.FREE_IN_3D
-    ) -> None:
+    def midpoint(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> None:
         ...
 
     def horizontal(self, e1: Entity, wp: Entity) -> None:
@@ -309,16 +298,16 @@ class SolverSystem:
     def vertical(self, e1: Entity, wp: Entity) -> None:
         ...
 
-    def diameter(self, e1: Entity, value: float, wp: Entity) -> None:
+    def diameter(self, e1: Entity, value: float) -> None:
         ...
 
     def same_orientation(self, e1: Entity, e2: Entity) -> None:
         ...
 
-    def angle(self, e1: Entity, e2: Entity, value: float, wp: Entity, inverse: bool = False) -> None:
+    def angle(self, e1: Entity, e2: Entity, value: float, wp: Entity = Entity.FREE_IN_3D, inverse: bool = False) -> None:
         ...
 
-    def perpendicular(self, e1: Entity, e2: Entity, wp: Entity, inverse: bool = False) -> None:
+    def perpendicular(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D, inverse: bool = False) -> None:
         ...
 
     def parallel(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> None:

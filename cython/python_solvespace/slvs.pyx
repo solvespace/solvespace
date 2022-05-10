@@ -719,19 +719,14 @@ cdef class SolverSystem:
         | [is_point] | [is_line] | Optional |
         | [is_point] | [is_circle] | Optional |
         """
-        cdef int t
         if e1.is_point() and e2.is_point():
-            self.add_constraint(SLVS_C_POINTS_COINCIDENT, wp, 0., e1, e2,
-                                _E_NONE, _E_NONE)
-        elif e1.is_point() and e2.is_work_plane() and wp is _E_FREE_IN_3D:
-            self.add_constraint(SLVS_C_PT_IN_PLANE, e2, 0., e1, _E_NONE, e2,
-                                _E_NONE)
-        elif e1.is_point() and (e2.is_line() or e2.is_circle()):
-            if e2.is_line():
-                t = SLVS_C_PT_ON_LINE
-            else:
-                t = SLVS_C_PT_ON_CIRCLE
-            self.add_constraint(t, wp, 0., e1, _E_NONE, e2, _E_NONE)
+            self.add_constraint(SLVS_C_POINTS_COINCIDENT, wp, 0., e1, e2, _E_NONE, _E_NONE)
+        elif e1.is_point() and e2.is_work_plane():
+            self.add_constraint(SLVS_C_PT_IN_PLANE, _E_FREE_IN_3D, 0., e1, _E_NONE, e2, _E_NONE)
+        elif e1.is_point() and e2.is_line():
+            self.add_constraint(SLVS_C_PT_ON_LINE, wp, 0., e1, _E_NONE, e2, _E_NONE)
+        elif e1.is_point() and e2.is_circle():
+            self.add_constraint(SLVS_C_PT_ON_CIRCLE, _E_FREE_IN_3D, 0., e1, _E_NONE, e2, _E_NONE)
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
@@ -757,14 +752,11 @@ cdef class SolverSystem:
             self.coincident(e1, e2, wp)
             return
         if e1.is_point() and e2.is_point():
-            self.add_constraint(SLVS_C_PT_PT_DISTANCE, wp, value, e1, e2,
-                                _E_NONE, _E_NONE)
+            self.add_constraint(SLVS_C_PT_PT_DISTANCE, wp, value, e1, e2, _E_NONE, _E_NONE)
         elif e1.is_point() and e2.is_work_plane() and wp is _E_FREE_IN_3D:
-            self.add_constraint(SLVS_C_PT_PLANE_DISTANCE, e2, value, e1,
-                                _E_NONE, e2, _E_NONE)
+            self.add_constraint(SLVS_C_PT_PLANE_DISTANCE, e2, value, e1, _E_NONE, e2, _E_NONE)
         elif e1.is_point() and e2.is_line():
-            self.add_constraint(SLVS_C_PT_LINE_DISTANCE, wp, value, e1,
-                                _E_NONE, e2, _E_NONE)
+            self.add_constraint(SLVS_C_PT_LINE_DISTANCE, wp, value, e1, _E_NONE, e2, _E_NONE)
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
@@ -792,20 +784,18 @@ cdef class SolverSystem:
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
-    cpdef void equal_included_angle(
+    cpdef void equal_angle(
         self,
         Entity e1,
         Entity e2,
         Entity e3,
         Entity e4,
-        Entity wp
+        Entity wp = _E_FREE_IN_3D
     ):
         """Constraint that 2D line 1 (`e1`) and line 2 (`e2`),
         line 3 (`e3`) and line 4 (`e4`) must have same included angle on work
         plane `wp`.
         """
-        if wp is _E_FREE_IN_3D:
-            raise ValueError("this is a 2d constraint")
         if e1.is_line_2d() and e2.is_line_2d() and e3.is_line_2d() and e4.is_line_2d():
             self.add_constraint(SLVS_C_EQUAL_ANGLE, wp, 0., _E_NONE, _E_NONE,
                                 e1, e2, e3, e4)
@@ -818,25 +808,18 @@ cdef class SolverSystem:
         Entity e2,
         Entity e3,
         Entity e4,
-        Entity wp
+        Entity wp = _E_FREE_IN_3D
     ):
         """Constraint that point 1 (`e1`) and line 1 (`e2`),
-        point 2 (`e3`) and line 2  (`e4`) must have same distance on work
-        plane `wp`.
+        point 2 (`e3`) and line 2  (`e4`) must have same distance on work plane `wp`.
         """
-        if wp is _E_FREE_IN_3D:
-            raise ValueError("this is a 2d constraint")
         if e1.is_point_2d() and e2.is_line_2d() and e3.is_point_2d() and e4.is_line_2d():
             self.add_constraint(SLVS_C_EQ_PT_LN_DISTANCES, wp, 0., e1, e3, e2, e4)
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {e3}, {e4}, {wp}")
 
-    cpdef void ratio(self, Entity e1, Entity e2, double value, Entity wp):
-        """The ratio (`value`) constraint between two 2D lines (`e1` and
-        `e2`).
-        """
-        if wp is _E_FREE_IN_3D:
-            raise ValueError("this is a 2d constraint")
+    cpdef void ratio(self, Entity e1, Entity e2, double value, Entity wp = _E_FREE_IN_3D):
+        """The ratio (`value`) constraint between two 2D lines (`e1` and `e2`)."""
         if e1.is_line_2d() and e2.is_line_2d():
             self.add_constraint(SLVS_C_LENGTH_RATIO, wp, value, _E_NONE, _E_NONE, e1, e2)
         else:
@@ -855,7 +838,7 @@ cdef class SolverSystem:
         |:---------------:|:---------------:|:---------------:|:-----------------:|
         | [is_point_3d] | [is_point_3d] | [is_work_plane] | [Entity.FREE_IN_3D] |
         | [is_point_2d] | [is_point_2d] | [is_work_plane] | [Entity.FREE_IN_3D] |
-        | [is_point_2d] | [is_point_2d] | [is_line_2d] | Is not [Entity.FREE_IN_3D] |
+        | [is_point_2d] | [is_point_2d] | [is_line_2d] | not [Entity.FREE_IN_3D] |
         """
         if e1.is_point_3d() and e2.is_point_3d() and e3.is_work_plane() and wp is _E_FREE_IN_3D:
             self.add_constraint(SLVS_C_SYMMETRIC, wp, 0., e1, e2, e3, _E_NONE)
@@ -870,8 +853,7 @@ cdef class SolverSystem:
 
     cpdef void symmetric_h(self, Entity e1, Entity e2, Entity wp):
         """Symmetric constraint between two 2D points (`e1` and `e2`)
-        with horizontal line on the work plane (`wp` can not be
-        [Entity.FREE_IN_3D]).
+        with horizontal line on the work plane (`wp` can not be [Entity.FREE_IN_3D]).
         """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
@@ -882,8 +864,7 @@ cdef class SolverSystem:
 
     cpdef void symmetric_v(self, Entity e1, Entity e2, Entity wp):
         """Symmetric constraint between two 2D points (`e1` and `e2`)
-        with vertical line on the work plane (`wp` can not be
-        [Entity.FREE_IN_3D]).
+        with vertical line on the work plane (`wp` can not be [Entity.FREE_IN_3D]).
         """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
@@ -928,7 +909,7 @@ cdef class SolverSystem:
         else:
             raise TypeError(f"unsupported entities: {e1}, {wp}")
 
-    cpdef void diameter(self, Entity e1, double value, Entity wp):
+    cpdef void diameter(self, Entity e1, double value):
         """Diameter (`value`) constraint of a circular entities.
 
         | Entity 1 (`e1`) | Work plane (`wp`) |
@@ -936,43 +917,34 @@ cdef class SolverSystem:
         | [is_arc] | Optional |
         | [is_circle] | Optional |
         """
-        if wp is _E_FREE_IN_3D:
-            raise ValueError("this is a 2d constraint")
         if e1.is_arc() or e1.is_circle():
-            self.add_constraint(SLVS_C_DIAMETER, wp, value, _E_NONE, _E_NONE,
+            self.add_constraint(SLVS_C_DIAMETER, _E_FREE_IN_3D, value, _E_NONE, _E_NONE,
                                 e1, _E_NONE)
         else:
-            raise TypeError(f"unsupported entities: {e1}, {wp}")
+            raise TypeError(f"unsupported entities: {e1}")
 
     cpdef void same_orientation(self, Entity e1, Entity e2):
-        """Equal orientation constraint between two 3d normals (`e1` and
-        `e2`).
-        """
+        """Equal orientation constraint between two 3d normals (`e1` and `e2`)."""
         if e1.is_normal_3d() and e2.is_normal_3d():
             self.add_constraint(SLVS_C_SAME_ORIENTATION, _E_FREE_IN_3D, 0.,
                                 _E_NONE, _E_NONE, e1, e2)
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}")
 
-    cpdef void angle(self, Entity e1, Entity e2, double value, Entity wp, bint inverse = False):
+    cpdef void angle(self, Entity e1, Entity e2, double value, Entity wp = _E_FREE_IN_3D, bint inverse = False):
         """Degrees angle (`value`) constraint between two 2d lines (`e1` and
         `e2`) on the work plane (`wp` can not be [Entity.FREE_IN_3D]).
         """
-        if wp is _E_FREE_IN_3D:
-            raise ValueError("this is a 2d constraint")
         if e1.is_line_2d() and e2.is_line_2d():
             self.add_constraint(SLVS_C_ANGLE, wp, value, _E_NONE, _E_NONE,
                                 e1, e2, _E_NONE, _E_NONE, inverse)
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
-    cpdef void perpendicular(self, Entity e1, Entity e2, Entity wp, bint inverse = False):
+    cpdef void perpendicular(self, Entity e1, Entity e2, Entity wp = _E_FREE_IN_3D, bint inverse = False):
         """Perpendicular constraint between two 2d lines (`e1` and `e2`)
-        on the work plane (`wp` can not be [Entity.FREE_IN_3D]) with
-        `inverse` option.
+        on the work plane (`wp`) with `inverse` option.
         """
-        if wp is _E_FREE_IN_3D:
-            raise ValueError("this is a 2d constraint")
         if e1.is_line_2d() and e2.is_line_2d():
             self.add_constraint(SLVS_C_PERPENDICULAR, wp, 0., _E_NONE, _E_NONE,
                                 e1, e2, _E_NONE, _E_NONE, inverse)
@@ -994,11 +966,9 @@ cdef class SolverSystem:
 
         | Entity 1 (`e1`) | Entity 2 (`e2`) | Work plane (`wp`) |
         |:---------------:|:---------------:|:-----------------:|
-        | [is_arc] | [is_line_2d] | Is not [Entity.FREE_IN_3D] |
+        | [is_arc] | [is_line_2d] | not [Entity.FREE_IN_3D] |
         | [is_cubic] | [is_line_3d] | [Entity.FREE_IN_3D] |
-        | [is_arc] | [is_cubic] | Is not [Entity.FREE_IN_3D] |
-        | [is_arc] | [is_arc] | Is not [Entity.FREE_IN_3D] |
-        | [is_cubic] | [is_cubic] | Optional |
+        | [is_arc]/[is_cubic] | [is_arc]/[is_cubic] | not [Entity.FREE_IN_3D] |
         """
         if e1.is_arc() and e2.is_line_2d():
             if wp is _E_FREE_IN_3D:
@@ -1007,7 +977,7 @@ cdef class SolverSystem:
         elif e1.is_cubic() and e2.is_line_3d() and wp is _E_FREE_IN_3D:
             self.add_constraint(SLVS_C_CUBIC_LINE_TANGENT, wp, 0., _E_NONE, _E_NONE, e1, e2)
         elif (e1.is_arc() or e1.is_cubic()) and (e2.is_arc() or e2.is_cubic()):
-            if (e1.is_arc() or e2.is_arc()) and wp is _E_FREE_IN_3D:
+            if wp is _E_FREE_IN_3D:
                 raise ValueError("this is a 2d constraint")
             self.add_constraint(SLVS_C_CURVE_CURVE_TANGENT, wp, 0., _E_NONE, _E_NONE, e1, e2)
         else:
@@ -1015,10 +985,10 @@ cdef class SolverSystem:
 
     cpdef void distance_proj(self, Entity e1, Entity e2, double value):
         """Projected distance (`value`) constraint between
-        two 3d points (`e1` and `e2`).
+        two 2D/3D points (`e1` and `e2`).
         """
-        if e1.is_point_3d() and e2.is_point_3d():
-            self.add_constraint(SLVS_C_CURVE_CURVE_TANGENT, _E_FREE_IN_3D,
+        if e1.is_point() and e2.is_point():
+            self.add_constraint(SLVS_C_PROJ_PT_DISTANCE, _E_FREE_IN_3D,
                                 value, e1, e2, _E_NONE, _E_NONE)
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}")
@@ -1029,3 +999,10 @@ cdef class SolverSystem:
             self.add_constraint(SLVS_C_WHERE_DRAGGED, wp, 0., e1, _E_NONE, _E_NONE, _E_NONE)
         else:
             raise TypeError(f"unsupported entities: {e1}, {wp}")
+
+    cpdef void length_diff(self, Entity e1, Entity e2, double value, Entity wp = _E_FREE_IN_3D):
+        """The length difference between two lines (`e1` and `e2`)."""
+        if e1.is_line() and e2.is_line():
+            self.add_constraint(SLVS_C_LENGTH_DIFFERENCE, wp, value, _E_NONE, _E_NONE, e1, e2)
+        else:
+            raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
