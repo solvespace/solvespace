@@ -40,7 +40,7 @@ include(GetGitCommitHash)
 
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 project(solvespace
-    VERSION 3.1~rc1
+    VERSION 3.1
     LANGUAGES C CXX ASM)
 
 set(ENABLE_GUI        ON CACHE BOOL
