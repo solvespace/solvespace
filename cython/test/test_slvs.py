@@ -219,7 +219,7 @@ class CoreTest(TestCase):
         sys.equal(a401, c402, wp200)
 
         # The arc has radius 17.0 units.
-        sys.diameter(a401, 17 * 2, wp200)
+        sys.diameter(a401, 17 * 2)
 
         # If the solver fails, then ask it to report which constraints caused
         # the problem.
