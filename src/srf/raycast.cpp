@@ -530,7 +530,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         SBspUv::Class c = (srf.bsp) ? srf.bsp->ClassifyPoint(puv, dummy, &srf) : SBspUv::Class::OUTSIDE;
         if(c == SBspUv::Class::OUTSIDE) continue;
 
-        // Edge-on-face (unless edge-on-edge above superceded)
+        // Edge-on-face (unless edge-on-edge above superseded)
         Point2d pin, pout;
         srf.ClosestPointTo(p.Plus(edge_n_in),  &pin,  /*mustConverge=*/false);
         srf.ClosestPointTo(p.Plus(edge_n_out), &pout, /*mustConverge=*/false);

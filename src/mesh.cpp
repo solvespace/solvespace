@@ -16,7 +16,7 @@ void SMesh::AddTriangle(STriMeta meta, Vector n, Vector a, Vector b, Vector c) {
     Vector ab = b.Minus(a), bc = c.Minus(b);
     Vector np = ab.Cross(bc);
     if(np.Magnitude() < 1e-10) {
-        // ugh; gl sometimes tesselates to collinear triangles
+        // ugh; gl sometimes tessellates to collinear triangles
         return;
     }
     if(np.Dot(n) > 0) {

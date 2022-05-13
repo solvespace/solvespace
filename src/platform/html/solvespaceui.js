@@ -423,7 +423,7 @@ window.addEventListener('keyup', function(event) {
 });
 
 
-// FIXME(emscripten): Should be implemnted in guihtmlcpp ?
+// FIXME(emscripten): Should be implemented in guihtmlcpp ?
 class FileUploadHelper {
     constructor() {
         this.modalRoot = document.createElement("div");
@@ -583,7 +583,7 @@ function createFileUploadHelperInstance() {
     return new FileUploadHelper();
 }
 
-// FIXME(emscripten): Should be implemnted in guihtmlcpp ?
+// FIXME(emscripten): Should be implemented in guihtmlcpp ?
 class FileDownloadHelper {
     constructor() {
         this.modalRoot = document.createElement("div");
