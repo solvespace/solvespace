@@ -82,7 +82,9 @@ target_compile_definitions(slvs
     PRIVATE -DLIBRARY)
 
 target_include_directories(slvs
-    PUBLIC ${CMAKE_SOURCE_DIR}/include)
+    PUBLIC
+        ${CMAKE_SOURCE_DIR}/include
+        ${EIGEN3_INCLUDE_DIRS})
 
 target_link_libraries(slvs PRIVATE slvs_deps)
 
@@ -336,7 +338,8 @@ target_compile_definitions(solvespace-headless
     PRIVATE HEADLESS)
 
 target_include_directories(solvespace-headless
-    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
+    PUBLIC ${EIGEN3_INCLUDE_DIRS})
 
 target_link_libraries(solvespace-headless
     PRIVATE
