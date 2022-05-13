@@ -241,7 +241,7 @@ void GraphicsWindow::SelectByMarquee() {
 }
 
 //-----------------------------------------------------------------------------
-// Sort the selection according to various critieria: the entities and
+// Sort the selection according to various criteria: the entities and
 // constraints separately, counts of certain types of entities (circles,
 // lines, etc.), and so on.
 //-----------------------------------------------------------------------------
