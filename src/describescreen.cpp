@@ -87,8 +87,10 @@ void TextWindow::DescribeSelection() {
             case Entity::Type::POINT_IN_2D:
             case Entity::Type::POINT_N_TRANS:
             case Entity::Type::POINT_N_ROT_TRANS:
+            case Entity::Type::POINT_N_ROT_AXIS_TRANS:
             case Entity::Type::POINT_N_COPY:
             case Entity::Type::POINT_N_ROT_AA:
+            case Entity::Type::POINT_N_MIRROR:
                 p = e->PointGetNum();
                 Printf(false, "%FtPOINT%E at " PT_AS_STR, COSTR(e, p));
                 break;
@@ -96,6 +98,7 @@ void TextWindow::DescribeSelection() {
             case Entity::Type::NORMAL_IN_3D:
             case Entity::Type::NORMAL_IN_2D:
             case Entity::Type::NORMAL_N_COPY:
+            case Entity::Type::NORMAL_N_MIRROR:
             case Entity::Type::NORMAL_N_ROT:
             case Entity::Type::NORMAL_N_ROT_AA: {
                 Quaternion q = e->NormalGetNum();
@@ -179,6 +182,8 @@ void TextWindow::DescribeSelection() {
             case Entity::Type::FACE_N_ROT_TRANS:
             case Entity::Type::FACE_N_ROT_AA:
             case Entity::Type::FACE_N_TRANS:
+            case Entity::Type::FACE_N_MIRROR:
+            case Entity::Type::FACE_N_COPY:
                 Printf(false, "%FtPLANE FACE%E");
                 p = e->FaceGetNormalNum();
                 Printf(true,  "   normal = " PT_AS_NUM, CO(p));
