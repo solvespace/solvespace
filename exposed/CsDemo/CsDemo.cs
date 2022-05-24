@@ -517,11 +517,11 @@ public static class CsDemo
       public int result;
     }
 
-    private List<Slvs_Param> Params = new List<Slvs_Param>();
-    private List<Slvs_Entity> Entities = new List<Slvs_Entity>();
-    private List<Slvs_Constraint> Constraints = new List<Slvs_Constraint>();
+    private readonly List<Slvs_Param> Params = new();
+    private readonly List<Slvs_Entity> Entities = new();
+    private readonly List<Slvs_Constraint> Constraints = new();
 
-    private List<uint> Faileds = new List<uint>();
+    private readonly List<uint> Faileds = new();
 
     private int Result;
     private int Dof;
@@ -585,7 +585,6 @@ public static class CsDemo
     }
 
 
-    // ''''''''''''''''''''''''''''''
     // These functions are broadly similar to the Slvs_Make...
     // functions in slvs.h. See the file DOC.txt accompanying the
     // library for details.
@@ -898,7 +897,6 @@ public static class CsDemo
       return new Workplane(this);
     }
 
-    // ''''''''''''''''''''''''''''''
     // Functions to create the object-oriented wrappers defined below.
 
     public Param NewParam(uint group, double val)
@@ -977,7 +975,6 @@ public static class CsDemo
     }
 
 
-    // ''''''''''''''''''''''''''''''
     // The object-oriented wrapper classes themselves, to allow the
     // representation of entities and constraints as .net objects, not
     // integer handles. These don't do any work themselves, beyond
