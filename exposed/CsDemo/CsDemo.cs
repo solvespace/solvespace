@@ -12,6 +12,8 @@
 // Copyright 2008-2013 Jonathan Westhues.
 // -----------------------------------------------------------------------------
 
+namespace CsDemo;
+
 using System.Runtime.InteropServices;
 
 public static class CsDemo
