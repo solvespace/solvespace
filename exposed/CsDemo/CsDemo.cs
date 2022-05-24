@@ -57,7 +57,7 @@ public static class CsDemo
   public static void Example3dWithObjects()
   {
     uint g;
-    Slvs slv = new Slvs();
+    var slv = new Slvs();
 
     // This will contain a single group, which will arbitrarily number 1.
     g = 1;
@@ -94,7 +94,7 @@ public static class CsDemo
   public static void Example2dWithObjects()
   {
     uint g;
-    Slvs slv = new Slvs();
+    var slv = new Slvs();
 
     g = 1;
 
@@ -206,7 +206,7 @@ public static class CsDemo
   public static void Example3dWithHandles()
   {
     uint g;
-    Slvs slv = new Slvs();
+    var slv = new Slvs();
 
     // This will contain a single group, which will arbitrarily number 1.
     g = 1;
@@ -252,7 +252,7 @@ public static class CsDemo
     uint g;
     double qw = 0, qx = 0, qy = 0, qz = 0;
 
-    Slvs slv = new Slvs();
+    var slv = new Slvs();
 
     g = 1;
 
@@ -534,7 +534,9 @@ public static class CsDemo
       foreach (var t in Params)
       {
         if ((t.h == h))
+        {
           return t.val;
+        }
       }
 
       throw new Exception("Invalid parameter handle.");
@@ -590,150 +592,174 @@ public static class CsDemo
 
     public void AddParam(uint h, uint group, double val)
     {
-      Slvs_Param p;
-      p.h = h;
-      p.group = group;
-      p.val = val;
+      Slvs_Param p = new()
+      {
+        h = h,
+        group = group,
+        val = val
+      };
       Params.Add(p);
     }
 
     public void AddPoint2d(uint h, uint group, uint wrkpl, uint u, uint v)
     {
-      Slvs_Entity e = new();
-      e.h = h;
-      e.group = group;
-      e.type = SLVS_E_POINT_IN_2D;
-      e.wrkpl = wrkpl;
-      e.param0 = u;
-      e.param1 = v;
+      Slvs_Entity e = new()
+      {
+        h = h,
+        group = group,
+        type = SLVS_E_POINT_IN_2D,
+        wrkpl = wrkpl,
+        param0 = u,
+        param1 = v
+      };
       Entities.Add(e);
     }
 
     public void AddPoint3d(uint h, uint group, uint x, uint y, uint z)
     {
-      Slvs_Entity e = new();
-      e.h = h;
-      e.group = group;
-      e.type = SLVS_E_POINT_IN_3D;
-      e.wrkpl = SLVS_FREE_IN_3D;
-      e.param0 = x;
-      e.param1 = y;
-      e.param2 = z;
+      Slvs_Entity e = new()
+      {
+        h = h,
+        group = group,
+        type = SLVS_E_POINT_IN_3D,
+        wrkpl = SLVS_FREE_IN_3D,
+        param0 = x,
+        param1 = y,
+        param2 = z
+      };
       Entities.Add(e);
     }
 
     public void AddNormal3d(uint h, uint group, uint qw, uint qx, uint qy, uint qz)
     {
-      Slvs_Entity e = new();
-      e.h = h;
-      e.group = group;
-      e.type = SLVS_E_NORMAL_IN_3D;
-      e.wrkpl = SLVS_FREE_IN_3D;
-      e.param0 = qw;
-      e.param1 = qx;
-      e.param2 = qy;
-      e.param3 = qz;
+      Slvs_Entity e = new()
+      {
+        h = h,
+        group = group,
+        type = SLVS_E_NORMAL_IN_3D,
+        wrkpl = SLVS_FREE_IN_3D,
+        param0 = qw,
+        param1 = qx,
+        param2 = qy,
+        param3 = qz
+      };
       Entities.Add(e);
     }
 
     public void AddNormal2d(uint h, uint group, uint wrkpl)
     {
-      Slvs_Entity e = new();
-      e.h = h;
-      e.group = group;
-      e.type = SLVS_E_NORMAL_IN_2D;
-      e.wrkpl = wrkpl;
+      Slvs_Entity e = new()
+      {
+        h = h,
+        group = group,
+        type = SLVS_E_NORMAL_IN_2D,
+        wrkpl = wrkpl
+      };
       Entities.Add(e);
     }
 
     public void AddDistance(uint h, uint group, uint wrkpl, uint d)
     {
-      Slvs_Entity e = new();
-      e.h = h;
-      e.group = group;
-      e.type = SLVS_E_DISTANCE;
-      e.wrkpl = wrkpl;
-      e.param0 = d;
+      Slvs_Entity e = new()
+      {
+        h = h,
+        group = group,
+        type = SLVS_E_DISTANCE,
+        wrkpl = wrkpl,
+        param0 = d
+      };
       Entities.Add(e);
     }
 
     public void AddLineSegment(uint h, uint group, uint wrkpl, uint ptA, uint ptB)
     {
-      Slvs_Entity e = new();
-      e.h = h;
-      e.group = group;
-      e.type = SLVS_E_LINE_SEGMENT;
-      e.wrkpl = wrkpl;
-      e.point0 = ptA;
-      e.point1 = ptB;
+      Slvs_Entity e = new()
+      {
+        h = h,
+        group = group,
+        type = SLVS_E_LINE_SEGMENT,
+        wrkpl = wrkpl,
+        point0 = ptA,
+        point1 = ptB
+      };
       Entities.Add(e);
     }
 
     public void AddCubic(uint h, uint group, uint wrkpl, uint pt0, uint pt1, uint pt2, uint pt3)
     {
-      Slvs_Entity e = new();
-      e.h = h;
-      e.group = group;
-      e.type = SLVS_E_CUBIC;
-      e.wrkpl = wrkpl;
-      e.point0 = pt0;
-      e.point1 = pt1;
-      e.point2 = pt2;
-      e.point3 = pt3;
+      Slvs_Entity e = new()
+      {
+        h = h,
+        group = group,
+        type = SLVS_E_CUBIC,
+        wrkpl = wrkpl,
+        point0 = pt0,
+        point1 = pt1,
+        point2 = pt2,
+        point3 = pt3
+      };
       Entities.Add(e);
     }
 
     public void AddArcOfCircle(uint h, uint group, uint wrkpl, uint normal, uint center, uint pstart, uint pend)
     {
-      Slvs_Entity e = new();
-      e.h = h;
-      e.group = group;
-      e.type = SLVS_E_ARC_OF_CIRCLE;
-      e.wrkpl = wrkpl;
-      e.normal = normal;
-      e.point0 = center;
-      e.point1 = pstart;
-      e.point2 = pend;
+      Slvs_Entity e = new()
+      {
+        h = h,
+        group = group,
+        type = SLVS_E_ARC_OF_CIRCLE,
+        wrkpl = wrkpl,
+        normal = normal,
+        point0 = center,
+        point1 = pstart,
+        point2 = pend
+      };
       Entities.Add(e);
     }
 
     public void AddCircle(uint h, uint group, uint wrkpl, uint center, uint normal, uint radius)
     {
-      Slvs_Entity e = new();
-      e.h = h;
-      e.group = group;
-      e.type = SLVS_E_CIRCLE;
-      e.wrkpl = wrkpl;
-      e.point0 = center;
-      e.normal = normal;
-      e.distance = radius;
+      Slvs_Entity e = new()
+      {
+        h = h,
+        group = group,
+        type = SLVS_E_CIRCLE,
+        wrkpl = wrkpl,
+        point0 = center,
+        normal = normal,
+        distance = radius
+      };
       Entities.Add(e);
     }
 
     public void AddWorkplane(uint h, uint group, uint origin, uint normal)
     {
-      Slvs_Entity e = new();
-      e.h = h;
-      e.group = group;
-      e.type = SLVS_E_WORKPLANE;
-      e.wrkpl = SLVS_FREE_IN_3D;
-      e.point0 = origin;
-      e.normal = normal;
+      Slvs_Entity e = new()
+      {
+        h = h,
+        group = group,
+        type = SLVS_E_WORKPLANE,
+        wrkpl = SLVS_FREE_IN_3D,
+        point0 = origin,
+        normal = normal
+      };
       Entities.Add(e);
     }
 
     public void AddConstraint(uint h, uint group, int type, uint wrkpl, double valA, uint ptA, uint ptB, uint entityA, uint entityB)
     {
-      Slvs_Constraint c = new();
-      c.h = h;
-      c.group = group;
-      c.type = type;
-      c.wrkpl = wrkpl;
-      c.valA = valA;
-      c.ptA = ptA;
-      c.ptB = ptB;
-      c.entityA = entityA;
-      c.entityB = entityB;
+      Slvs_Constraint c = new()
+      {
+        h = h,
+        group = group,
+        type = type,
+        wrkpl = wrkpl,
+        valA = valA,
+        ptA = ptA,
+        ptB = ptB,
+        entityA = entityA,
+        entityB = entityB
+      };
       Constraints.Add(c);
     }
 
@@ -750,16 +776,15 @@ public static class CsDemo
     // parameters may be specified as zero.
     public void Solve(uint group, uint dragged0, uint dragged1, uint dragged2, uint dragged3, bool calculateFaileds)
     {
-      int i;
-      Slvs_Param[] p = new Slvs_Param[Params.Count() + 1];
-      i = 0;
+      var p = new Slvs_Param[Params.Count + 1];
+      var i = 0;
       foreach (var pp in Params)
       {
         p[i] = pp;
         i += 1;
       }
 
-      Slvs_Entity[] e = new Slvs_Entity[Entities.Count() + 1];
+      var e = new Slvs_Entity[Entities.Count + 1];
       i = 0;
       foreach (var ee in Entities)
       {
@@ -767,7 +792,7 @@ public static class CsDemo
         i += 1;
       }
 
-      Slvs_Constraint[] c = new Slvs_Constraint[Constraints.Count() + 1];
+      var c = new Slvs_Constraint[Constraints.Count + 1];
       i = 0;
       foreach (var cc in Constraints)
       {
@@ -775,48 +800,46 @@ public static class CsDemo
         i += 1;
       }
 
-      uint[] f = new uint[Constraints.Count() + 1];
+      var f = new uint[Constraints.Count + 1];
 
       Slvs_System sys = new();
 
-      GCHandle pgc, egc, cgc;
-      pgc = GCHandle.Alloc(p, GCHandleType.Pinned);
+      var pgc = GCHandle.Alloc(p, GCHandleType.Pinned);
       sys.param = pgc.AddrOfPinnedObject();
-      sys.@params = Params.Count();
-      egc = GCHandle.Alloc(e, GCHandleType.Pinned);
+      sys.@params = Params.Count;
+      var egc = GCHandle.Alloc(e, GCHandleType.Pinned);
       sys.entity = egc.AddrOfPinnedObject();
-      sys.entities = Entities.Count();
-      cgc = GCHandle.Alloc(c, GCHandleType.Pinned);
+      sys.entities = Entities.Count;
+      var cgc = GCHandle.Alloc(c, GCHandleType.Pinned);
       sys.constraint = cgc.AddrOfPinnedObject();
-      sys.constraints = Constraints.Count();
+      sys.constraints = Constraints.Count;
 
       sys.dragged0 = dragged0;
       sys.dragged1 = dragged1;
       sys.dragged2 = dragged2;
       sys.dragged3 = dragged3;
 
-      GCHandle fgc;
-      fgc = GCHandle.Alloc(f, GCHandleType.Pinned);
-      if (calculateFaileds)
-        sys.calculatedFaileds = 1;
-      else
-        sys.calculatedFaileds = 0;
-      sys.faileds = Constraints.Count();
+      var fgc = GCHandle.Alloc(f, GCHandleType.Pinned);
+      sys.calculatedFaileds = calculateFaileds ? 1 : 0;
+      sys.faileds = Constraints.Count;
       sys.failed = fgc.AddrOfPinnedObject();
 
-      GCHandle sysgc;
-      sysgc = GCHandle.Alloc(sys, GCHandleType.Pinned);
+      var sysgc = GCHandle.Alloc(sys, GCHandleType.Pinned);
 
       Slvs_Solve(sysgc.AddrOfPinnedObject(), group);
 
       sys = (Slvs_System)sysgc.Target;
 
-      for (i = 0; i <= Params.Count() - 1; i++)
+      for (i = 0; i <= Params.Count - 1; i++)
+      {
         Params[i] = p[i];
+      }
 
       Faileds.Clear();
       for (i = 0; i <= sys.faileds - 1; i++)
+      {
         Faileds.Add(f[i]);
+      }
 
       sysgc.Free();
       fgc.Free();
@@ -834,18 +857,18 @@ public static class CsDemo
     {
       if (dragged is Point2d)
       {
-        Point2d p;
-        p = (Point2d)dragged;
+        var p = (Point2d)dragged;
         Solve(group, p.up.H, p.vp.H, 0, 0, calculatedFaileds);
       }
       else if (dragged is Point3d)
       {
-        Point3d p;
-        p = (Point3d)dragged;
+        var p = (Point3d)dragged;
         Solve(group, p.xp.H, p.yp.H, p.zp.H, 0, calculatedFaileds);
       }
       else
+      {
         throw new Exception("Can't get dragged params for point.");
+      }
     }
 
     // or if it's a single distance (e.g., the radius of a circle)
@@ -974,7 +997,7 @@ public static class CsDemo
       public Param(Slvs s, uint group, double val)
       {
         Slv = s;
-        H = (uint)(Slv.Params.Count() + 1);
+        H = (uint)(Slv.Params.Count + 1);
         Slv.AddParam(H, group, val);
       }
     }
@@ -987,7 +1010,7 @@ public static class CsDemo
       public Entity(Slvs s)
       {
         Slv = s;
-        H = (uint)(Slv.Entities.Count() + 1);
+        H = (uint)(Slv.Entities.Count + 1);
       }
     }
 
