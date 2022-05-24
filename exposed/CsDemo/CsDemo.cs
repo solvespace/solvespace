@@ -372,7 +372,6 @@ public static class CsDemo
   }
 
 
-  // ''''''''''''''''''''''''''''''
   // The interface to the library, and the wrapper functions around
   // that interface, follow.
 
@@ -397,6 +396,8 @@ public static class CsDemo
 
     public const int SLVS_FREE_IN_3D = 0;
 
+    #region Entities
+
     public const int SLVS_E_POINT_IN_3D = 50000;
     public const int SLVS_E_POINT_IN_2D = 50001;
     public const int SLVS_E_NORMAL_IN_3D = 60000;
@@ -407,6 +408,8 @@ public static class CsDemo
     public const int SLVS_E_CUBIC = 80002;
     public const int SLVS_E_CIRCLE = 80003;
     public const int SLVS_E_ARC_OF_CIRCLE = 80004;
+
+    #endregion
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Slvs_Entity
@@ -429,6 +432,8 @@ public static class CsDemo
       public uint param2;
       public uint param3;
     }
+
+    #region Constraints
 
     public const int SLVS_C_POINTS_COINCIDENT = 100000;
     public const int SLVS_C_PT_PT_DISTANCE = 100001;
@@ -465,6 +470,8 @@ public static class CsDemo
     public const int SLVS_C_CURVE_CURVE_TANGENT = 100032;
     public const int SLVS_C_LENGTH_DIFFERENCE = 100033;
 
+    #endregion
+
     [StructLayout(LayoutKind.Sequential)]
     public struct Slvs_Constraint
     {
@@ -487,10 +494,14 @@ public static class CsDemo
       public int other2;
     }
 
+    #region Results
+
     public const int SLVS_RESULT_OKAY = 0;
     public const int SLVS_RESULT_INCONSISTENT = 1;
     public const int SLVS_RESULT_DIDNT_CONVERGE = 2;
     public const int SLVS_RESULT_TOO_MANY_UNKNOWNS = 3;
+
+    #endregion
 
     [StructLayout(LayoutKind.Sequential)]
     public struct Slvs_System
