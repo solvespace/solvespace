@@ -37,7 +37,6 @@ public static class CsDemo
     Console.WriteLine("");
   }
 
-  // ''''''''''''''''''''''''''''''
   // This is the simplest way to use the library. A set of wrapper
   // classes allow us to represent entities (e.g., lines and points)
   // as .net objects. So we create an Slvs object, which will contain
@@ -54,23 +53,20 @@ public static class CsDemo
   // not, then the solver will suggest problematic constraints that, if
   // removed, would render the sketch solvable.
 
-  public static void Example3dWithObjects()
+  private static void Example3dWithObjects()
   {
-    uint g;
     var slv = new Slvs();
 
     // This will contain a single group, which will arbitrarily number 1.
-    g = 1;
+    uint g = 1;
 
-    Slvs.Point3d p1, p2;
     // A point, initially at (x y z) = (10 10 10)
-    p1 = slv.NewPoint3d(g, 10.0, 10.0, 10.0);
+    var p1 = slv.NewPoint3d(g, 10.0, 10.0, 10.0);
     // and a second point at (20 20 20)
-    p2 = slv.NewPoint3d(g, 20.0, 20.0, 20.0);
+    var p2 = slv.NewPoint3d(g, 20.0, 20.0, 20.0);
 
-    Slvs.LineSegment ln;
     // and a line segment connecting them.
-    ln = slv.NewLineSegment(g, slv.FreeIn3d(), p1, p2);
+    var ln = slv.NewLineSegment(g, slv.FreeIn3d(), p1, p2);
 
     // The distance between the points should be 30.0 units.
     slv.AddConstraint(1, g, Slvs.SLVS_C_PT_PT_DISTANCE, slv.FreeIn3d(), 30.0, p1, p2, null, null);
@@ -83,32 +79,28 @@ public static class CsDemo
     {
       // We call the GetX(), GetY(), and GetZ() functions to see
       // where the solver moved our points to.
-      Console.WriteLine(string.Format("okay; now at ({0:F3}, {1:F3}, {2:F3})", p1.GetX(), p1.GetY(), p1.GetZ()));
-      Console.WriteLine(string.Format("             ({0:F3}, {1:F3}, {2:F3})", p2.GetX(), p2.GetY(), p2.GetZ()));
-      Console.WriteLine(slv.GetDof().ToString() + " DOF");
+      Console.WriteLine($"okay; now at ({p1.GetX():F3}, {p1.GetY():F3}, {p1.GetZ():F3})");
+      Console.WriteLine($"             ({p2.GetX():F3}, {p2.GetY():F3}, {p2.GetZ():F3})");
+      Console.WriteLine(slv.GetDof() + " DOF");
     }
     else
       Console.WriteLine("solve failed");
   }
 
-  public static void Example2dWithObjects()
+  private static void Example2dWithObjects()
   {
-    uint g;
     var slv = new Slvs();
 
-    g = 1;
+    uint g = 1;
 
     // First, we create our workplane. Its origin corresponds to the origin
     // of our base frame (x y z) = (0 0 0)
-    Slvs.Point3d origin;
-    origin = slv.NewPoint3d(g, 0.0, 0.0, 0.0);
+    var origin = slv.NewPoint3d(g, 0.0, 0.0, 0.0);
     // and it is parallel to the xy plane, so it has basis vectors (1 0 0)
     // and (0 1 0).
-    Slvs.Normal3d normal;
-    normal = slv.NewNormal3d(g, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+    var normal = slv.NewNormal3d(g, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
 
-    Slvs.Workplane wrkpl;
-    wrkpl = slv.NewWorkplane(g, origin, normal);
+    var wrkpl = slv.NewWorkplane(g, origin, normal);
 
     // Now create a second group. We'll solve group 2, while leaving group 1
     // constant; so the workplane that we've created will be locked down,
@@ -116,35 +108,28 @@ public static class CsDemo
     g = 2;
     // These points are represented by their coordinates (u v) within the
     // workplane, so they need only two parameters each.
-    Slvs.Point2d pl1, pl2;
-    pl1 = slv.NewPoint2d(g, wrkpl, 10.0, 20.0);
-    pl2 = slv.NewPoint2d(g, wrkpl, 20.0, 10.0);
+    var pl1 = slv.NewPoint2d(g, wrkpl, 10.0, 20.0);
+    var pl2 = slv.NewPoint2d(g, wrkpl, 20.0, 10.0);
 
     // And we create a line segment with those endpoints.
-    Slvs.LineSegment ln;
-    ln = slv.NewLineSegment(g, wrkpl, pl1, pl2);
+    var ln = slv.NewLineSegment(g, wrkpl, pl1, pl2);
 
     // Now three more points.
-    Slvs.Point2d pc, ps, pf;
-    pc = slv.NewPoint2d(g, wrkpl, 100.0, 120.0);
-    ps = slv.NewPoint2d(g, wrkpl, 120.0, 110.0);
-    pf = slv.NewPoint2d(g, wrkpl, 115.0, 115.0);
+    var pc = slv.NewPoint2d(g, wrkpl, 100.0, 120.0);
+    var ps = slv.NewPoint2d(g, wrkpl, 120.0, 110.0);
+    var pf = slv.NewPoint2d(g, wrkpl, 115.0, 115.0);
 
     // And arc, centered at point pc, starting at point ps, ending at
     // point pf.
-    Slvs.ArcOfCircle arc;
-    arc = slv.NewArcOfCircle(g, wrkpl, normal, pc, ps, pf);
+    var arc = slv.NewArcOfCircle(g, wrkpl, normal, pc, ps, pf);
 
     // Now one more point, and a distance
-    Slvs.Point2d pcc;
-    pcc = slv.NewPoint2d(g, wrkpl, 200.0, 200.0);
-    Slvs.Distance r;
-    r = slv.NewDistance(g, wrkpl, 30.0);
+    var pcc = slv.NewPoint2d(g, wrkpl, 200.0, 200.0);
+    var r = slv.NewDistance(g, wrkpl, 30.0);
 
     // And a complete circle, centered at point pcc with radius equal to
     // distance r. The normal is the same as for our workplane.
-    Slvs.Circle circle;
-    circle = slv.NewCircle(g, wrkpl, pcc, normal, r);
+    var circle = slv.NewCircle(g, wrkpl, pcc, normal, r);
 
     // The length of our line segment is 30.0 units.
     slv.AddConstraint(1, g, Slvs.SLVS_C_PT_PT_DISTANCE, wrkpl, 30.0, pl1, pl2, null, null);
@@ -173,43 +158,47 @@ public static class CsDemo
     // the problem.
     slv.Solve(g, true);
 
-    if ((slv.GetResult() == Slvs.SLVS_RESULT_OKAY))
+    if (slv.GetResult() == Slvs.SLVS_RESULT_OKAY)
     {
       Console.WriteLine("solved okay");
       // We call the GetU(), GetV(), and GetDistance() functions to
       // see where the solver moved our points and distances to.
-      Console.WriteLine(string.Format("line from ({0:F3} {1:F3}) to ({2:F3} {3:F3})", pl1.GetU(), pl1.GetV(), pl2.GetU(), pl2.GetV()));
-      Console.WriteLine(string.Format("arc center ({0:F3} {1:F3}) start ({2:F3} {3:F3}) " + "finish ({4:F3} {5:F3})", pc.GetU(), pc.GetV(), ps.GetU(), ps.GetV(), pf.GetU(), pf.GetV()));
-      Console.WriteLine(string.Format("circle center ({0:F3} {1:F3}) radius {2:F3}", pcc.GetU(), pcc.GetV(), r.GetDistance()));
+      Console.WriteLine($"line from ({pl1.GetU():F3} {pl1.GetV():F3}) to ({pl2.GetU():F3} {pl2.GetV():F3})");
+      Console.WriteLine("arc center ({0:F3} {1:F3}) start ({2:F3} {3:F3}) " + "finish ({4:F3} {5:F3})", pc.GetU(), pc.GetV(), ps.GetU(), ps.GetV(), pf.GetU(), pf.GetV());
+      Console.WriteLine($"circle center ({pcc.GetU():F3} {pcc.GetV():F3}) radius {r.GetDistance():F3}");
 
-      Console.WriteLine(slv.GetDof().ToString() + " DOF");
+      Console.WriteLine(slv.GetDof() + " DOF");
     }
     else
     {
       Console.Write("solve failed; problematic constraints are:");
       foreach (var t in slv.GetFaileds())
-        Console.Write(" " + t.ToString());
+      {
+        Console.Write(" " + t);
+      }
       Console.WriteLine("");
       if ((slv.GetResult() == Slvs.SLVS_RESULT_INCONSISTENT))
+      {
         Console.WriteLine("system inconsistent");
+      }
       else
+      {
         Console.WriteLine("system nonconvergent");
+      }
     }
   }
 
-  // ''''''''''''''''''''''''''''''
   // This is a lower-level way to use the library. Internally, the library
   // represents parameters, entities, and constraints by integer handles.
   // Here, those handles are assigned manually, and not by the wrapper
   // classes.
 
-  public static void Example3dWithHandles()
+  private static void Example3dWithHandles()
   {
-    uint g;
     var slv = new Slvs();
 
     // This will contain a single group, which will arbitrarily number 1.
-    g = 1;
+    uint g = 1;
 
     // A point, initially at (x y z) = (10 10 10)
     slv.AddParam(1, g, 10.0);
@@ -239,22 +228,23 @@ public static class CsDemo
       // Note that we are referring to the parameters by their handles,
       // and not by their index in the list. This is a difference from
       // the C example.
-      Console.WriteLine(string.Format("okay; now at ({0:F3}, {1:F3}, {2:F3})", slv.GetParamByHandle(1), slv.GetParamByHandle(2), slv.GetParamByHandle(3)));
-      Console.WriteLine(string.Format("             ({0:F3}, {1:F3}, {2:F3})", slv.GetParamByHandle(4), slv.GetParamByHandle(5), slv.GetParamByHandle(6)));
-      Console.WriteLine(slv.GetDof().ToString() + " DOF");
+      Console.WriteLine($"okay; now at ({slv.GetParamByHandle(1):F3}, {slv.GetParamByHandle(2):F3}, {slv.GetParamByHandle(3):F3})");
+      Console.WriteLine($"             ({slv.GetParamByHandle(4):F3}, {slv.GetParamByHandle(5):F3}, {slv.GetParamByHandle(6):F3})");
+      Console.WriteLine(slv.GetDof() + " DOF");
     }
     else
+    {
       Console.WriteLine("solve failed");
+    }
   }
 
-  public static void Example2dWithHandles()
+  private static void Example2dWithHandles()
   {
-    uint g;
     double qw = 0, qx = 0, qy = 0, qz = 0;
 
     var slv = new Slvs();
 
-    g = 1;
+    uint g = 1;
 
     // First, we create our workplane. Its origin corresponds to the origin
     // of our base frame (x y z) = (0 0 0)
@@ -352,40 +342,46 @@ public static class CsDemo
       // Note that we are referring to the parameters by their handles,
       // and not by their index in the list. This is a difference from
       // the C example.
-      Console.WriteLine(string.Format("line from ({0:F3} {1:F3}) to ({2:F3} {3:F3})", slv.GetParamByHandle(11), slv.GetParamByHandle(12), slv.GetParamByHandle(13), slv.GetParamByHandle(14)));
-      Console.WriteLine(string.Format("arc center ({0:F3} {1:F3}) start ({2:F3} {3:F3}) " + "finish ({4:F3} {5:F3})", slv.GetParamByHandle(15), slv.GetParamByHandle(16), slv.GetParamByHandle(17), slv.GetParamByHandle(18), slv.GetParamByHandle(19), slv.GetParamByHandle(20)));
-      Console.WriteLine(string.Format("circle center ({0:F3} {1:F3}) radius {2:F3}", slv.GetParamByHandle(21), slv.GetParamByHandle(22), slv.GetParamByHandle(23)));
+      Console.WriteLine($"line from ({slv.GetParamByHandle(11):F3} {slv.GetParamByHandle(12):F3}) to ({slv.GetParamByHandle(13):F3} {slv.GetParamByHandle(14):F3})");
+      Console.WriteLine("arc center ({0:F3} {1:F3}) start ({2:F3} {3:F3}) " + "finish ({4:F3} {5:F3})", slv.GetParamByHandle(15), slv.GetParamByHandle(16), slv.GetParamByHandle(17), slv.GetParamByHandle(18), slv.GetParamByHandle(19), slv.GetParamByHandle(20));
+      Console.WriteLine($"circle center ({slv.GetParamByHandle(21):F3} {slv.GetParamByHandle(22):F3}) radius {slv.GetParamByHandle(23):F3}");
 
-      Console.WriteLine(slv.GetDof().ToString() + " DOF");
+      Console.WriteLine(slv.GetDof() + " DOF");
     }
     else
     {
       Console.Write("solve failed; problematic constraints are:");
       foreach (var t in slv.GetFaileds())
-        Console.Write(" " + t.ToString());
+      {
+        Console.Write(" " + t);
+      }
       Console.WriteLine("");
       if ((slv.GetResult() == Slvs.SLVS_RESULT_INCONSISTENT))
+      {
         Console.WriteLine("system inconsistent");
+      }
       else
+      {
         Console.WriteLine("system nonconvergent");
+      }
     }
   }
 
-
-  // The interface to the library, and the wrapper functions around
-  // that interface, follow.
-
-  // These are the core functions imported from the DLL
-  [DllImport("slvs.dll", CallingConvention = CallingConvention.Cdecl)]
-  public static extern void Slvs_Solve(IntPtr sys, uint hg);
-
-  [DllImport("slvs.dll", CallingConvention = CallingConvention.Cdecl)]
-  public static extern void Slvs_MakeQuaternion(double ux, double uy, double uz, double vx, double vy, double vz, ref double qw, ref double qx, ref double qy, ref double qz);
-
-  // And this is a thin wrapper around those functions, which provides
+  // This is a thin wrapper around those functions, which provides
   // convenience functions similar to those provided in slvs.h for the C API.
   public class Slvs
   {
+    // The interface to the library, and the wrapper functions around
+    // that interface, follow.
+
+    // These are the core functions imported from the DLL
+    [DllImport("slvs.dll", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void Slvs_Solve(IntPtr sys, uint hg);
+
+    [DllImport("slvs.dll", CallingConvention = CallingConvention.Cdecl)]
+    public static extern void Slvs_MakeQuaternion(double ux, double uy, double uz, double vx, double vy, double vz, ref double qw, ref double qx, ref double qy, ref double qz);
+
+
     [StructLayout(LayoutKind.Sequential)]
     public struct Slvs_Param
     {
@@ -865,19 +861,16 @@ public static class CsDemo
     // correspond to a single point.
     public void Solve(uint group, Point dragged, bool calculatedFaileds)
     {
-      if (dragged is Point2d)
+      switch (dragged)
       {
-        var p = (Point2d)dragged;
-        Solve(group, p.up.H, p.vp.H, 0, 0, calculatedFaileds);
-      }
-      else if (dragged is Point3d)
-      {
-        var p = (Point3d)dragged;
-        Solve(group, p.xp.H, p.yp.H, p.zp.H, 0, calculatedFaileds);
-      }
-      else
-      {
-        throw new Exception("Can't get dragged params for point.");
+        case Point2d point2d:
+          Solve(group, point2d.up.H, point2d.vp.H, 0, 0, calculatedFaileds);
+          break;
+        case Point3d point3d:
+          Solve(group, point3d.xp.H, point3d.yp.H, point3d.zp.H, 0, calculatedFaileds);
+          break;
+        default:
+          throw new Exception("Can't get dragged params for point.");
       }
     }
 
@@ -980,9 +973,9 @@ public static class CsDemo
       return new Workplane(this, group, origin, normal);
     }
 
-    public void AddConstraint(uint H, uint group, int type, Workplane wrkpl, double valA, Point ptA, Point ptB, Entity entityA, Entity entityB)
+    public void AddConstraint(uint h, uint group, int type, Workplane wrkpl, double valA, Point ptA, Point ptB, Entity entityA, Entity entityB)
     {
-      AddConstraint(H, group, type, wrkpl is null ? 0 : wrkpl.H, valA, ptA is null ? 0 : ptA.H, ptB is null ? 0 : ptB.H, entityA is null ? 0 : entityA.H, entityB is null ? 0 : entityB.H);
+      AddConstraint(h, group, type, wrkpl is null ? 0 : wrkpl.H, valA, ptA is null ? 0 : ptA.H, ptB is null ? 0 : ptB.H, entityA is null ? 0 : entityA.H, entityB is null ? 0 : entityB.H);
     }
 
 
