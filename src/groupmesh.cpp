@@ -44,7 +44,7 @@ void Group::AssembleLoops(bool *allClosed,
     // Try to assemble all these Beziers into loops. The closed loops go into
     // bezierLoops, with the outer loops grouped with their holes. The
     // leftovers, if any, go in bezierOpens.
-    bezierLoops.FindOuterFacesFrom(&sbl, &polyLoops, NULL,
+    bezierLoops.FindOuterFacesFrom(&sbl, &polyLoops, nullptr,
                                    SS.ChordTolMm(),
                                    allClosed, &(polyError.notClosedAt),
                                    allCoplanar, &(polyError.errorPointAt),

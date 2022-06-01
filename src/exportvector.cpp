@@ -581,7 +581,7 @@ void DxfFileWriter::FinishAndCloseFile() {
     std::stringstream stream;
     dxf.write(stream, &interface, DRW::AC1021, /*bin=*/false);
     paths.clear();
-    constraint = NULL;
+    constraint = nullptr;
 
     if(!WriteFile(filename, stream.str())) {
         Error("Couldn't write to '%s'", filename.raw.c_str());
@@ -1286,7 +1286,7 @@ void GCodeFileWriter::Bezier(SBezier *sb) {
 
 void GCodeFileWriter::FinishAndCloseFile() {
     SPolygon sp = {};
-    sel.AssemblePolygon(&sp, NULL);
+    sel.AssemblePolygon(&sp, nullptr);
 
     int i;
     for(i = 0; i < SS.gCode.passes; i++) {

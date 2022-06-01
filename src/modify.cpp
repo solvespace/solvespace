@@ -333,7 +333,7 @@ void GraphicsWindow::MakeTangentArc() {
 
         pinter = Vector::AtIntersectionOfLines(p0, p0.Plus(t0),
                                                p1, p1.Plus(t1),
-                                               NULL, NULL, NULL);
+                                               nullptr, nullptr, nullptr);
 
         // The sign of vv determines whether shortest distance is
         // clockwise or anti-clockwise.
@@ -432,7 +432,7 @@ void GraphicsWindow::MakeTangentArc() {
     SK.GetEntity(earc->point[a])->PointForceTo(pc[0].PointAt(t[0]));
     SK.GetEntity(earc->point[b])->PointForceTo(pc[1].PointAt(t[1]));
 
-    earc = NULL;
+    earc = nullptr;
 
     // Modify or duplicate the original entities and connect them to the tangent arc.
     pc[0].CreateRequestTrimmedTo(t[0], SS.tangentArcModify,
@@ -473,7 +473,7 @@ hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
         // Start with an unbroken circle, split it into a 360 degree arc.
         Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
 
-        circle = NULL; // shortly invalid!
+        circle = nullptr; // shortly invalid!
         hRequest hr = AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false);
 
         Entity *arc = SK.GetEntity(hr.entity(0));
@@ -493,7 +493,7 @@ hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
                start  = SK.GetEntity(hs)->PointGetNum(),
                finish = SK.GetEntity(hf)->PointGetNum();
 
-        circle = NULL; // shortly invalid!
+        circle = nullptr; // shortly invalid!
         hRequest hr0 = AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false),
                  hr1 = AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false);
 

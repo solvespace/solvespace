@@ -614,7 +614,7 @@ public:
         TokenType  type;
         Expr      *expr;
 
-        static Token From(TokenType type = TokenType::ERROR, Expr *expr = NULL);
+        static Token From(TokenType type = TokenType::ERROR, Expr *expr = nullptr);
         static Token From(TokenType type, Expr::Op op);
         bool IsError() const { return type == TokenType::ERROR; }
     };
@@ -910,10 +910,10 @@ Expr *ExprParser::Parse(const std::string &input, std::string *error) {
     ExprParser parser;
     parser.it  = input.cbegin();
     parser.end = input.cend();
-    if(!parser.Parse(error)) return NULL;
+    if(!parser.Parse(error)) return nullptr;
 
     Token r = parser.PopOperand(error);
-    if(r.IsError()) return NULL;
+    if(r.IsError()) return nullptr;
     return r.expr;
 }
 

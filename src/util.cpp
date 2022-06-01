@@ -20,7 +20,7 @@ std::string SolveSpace::ssprintf(const char *fmt, ...)
     va_list va;
 
     va_start(va, fmt);
-    int size = vsnprintf(NULL, 0, fmt, va);
+    int size = vsnprintf(nullptr, 0, fmt, va);
     ssassert(size >= 0, "vsnprintf could not encode string");
     va_end(va);
 
@@ -109,7 +109,7 @@ static void MessageBox(const char *fmt, va_list va, bool error,
 #ifndef LIBRARY
     va_list va_size;
     va_copy(va_size, va);
-    int size = vsnprintf(NULL, 0, fmt, va_size);
+    int size = vsnprintf(nullptr, 0, fmt, va_size);
     ssassert(size >= 0, "vsnprintf could not encode string");
     va_end(va_size);
 

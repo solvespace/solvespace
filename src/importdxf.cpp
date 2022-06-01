@@ -157,12 +157,12 @@ public:
     std::map<std::string, hStyle> styles;
     std::map<std::string, Block> blocks;
     std::map<std::string, DRW_Layer> layers;
-    Block *readBlock = NULL;
-    const DRW_Insert *insertInsert = NULL;
+    Block *readBlock = nullptr;
+    const DRW_Insert *insertInsert = nullptr;
 
     template<class T>
     bool addPendingBlockEntity(const T &e) {
-        if(readBlock == NULL) return false;
+        if(readBlock == nullptr) return false;
         readBlock->entities.emplace_back(new T(e));
         return true;
     }
@@ -263,8 +263,8 @@ public:
     }
 
     DRW_Layer *getSourceLayer(const DRW_Entity *e) {
-        DRW_Layer *layer = NULL;
-        if(insertInsert != NULL) {
+        DRW_Layer *layer = nullptr;
+        if(insertInsert != nullptr) {
             std::string l = insertInsert->layer;
             auto bi = layers.find(l);
             if(bi != layers.end()) layer = &bi->second;
@@ -279,7 +279,7 @@ public:
     int getColor(const DRW_Entity *e) {
         int col = e->color;
         if(col == DRW::ColorByBlock) {
-            if(insertInsert != NULL) {
+            if(insertInsert != nullptr) {
                 col = insertInsert->color;
             } else {
                 col = 7;
@@ -287,7 +287,7 @@ public:
         }
         if(col == DRW::ColorByLayer) {
             DRW_Layer *layer = getSourceLayer(e);
-            if(layer != NULL) {
+            if(layer != nullptr) {
                 col = layer->color;
             } else {
                 col = 7;
@@ -299,7 +299,7 @@ public:
     DRW_LW_Conv::lineWidth getLineWidth(const DRW_Entity *e) {
         DRW_LW_Conv::lineWidth result = e->lWeight;
         if(result == DRW_LW_Conv::widthByBlock) {
-            if(insertInsert != NULL) {
+            if(insertInsert != nullptr) {
                 result = insertInsert->lWeight;
             } else {
                 result = DRW_LW_Conv::widthDefault;
@@ -307,7 +307,7 @@ public:
         }
         if(result == DRW_LW_Conv::widthByLayer) {
             DRW_Layer *layer = getSourceLayer(e);
-            if(layer != NULL) {
+            if(layer != nullptr) {
                 result = layer->lWeight;
             } else {
                 result = DRW_LW_Conv::widthDefault;
@@ -319,7 +319,7 @@ public:
     std::string getLineType(const DRW_Entity *e) {
         std::string  result = e->lineType;
         if(result == "BYBLOCK") {
-            if(insertInsert != NULL) {
+            if(insertInsert != nullptr) {
                 result = ToUpper(insertInsert->lineType);
             } else {
                 result = "CONTINUOUS";
@@ -327,7 +327,7 @@ public:
         }
         if(result == "BYLAYER") {
             DRW_Layer *layer = getSourceLayer(e);
-            if(layer != NULL) {
+            if(layer != nullptr) {
                 result = ToUpper(layer->lineType);
             } else {
                 result = "CONTINUOUS";
@@ -580,7 +580,7 @@ public:
     }
 
     void endBlock() override {
-        readBlock = NULL;
+        readBlock = nullptr;
     }
 
     void addPoint(const DRW_Point &data) override {

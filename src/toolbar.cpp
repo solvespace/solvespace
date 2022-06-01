@@ -91,7 +91,7 @@ static ToolIcon Toolbar[] = {
 };
 
 void GraphicsWindow::ToolbarDraw(UiCanvas *canvas) {
-    ToolbarDrawOrHitTest(0, 0, canvas, NULL, NULL, NULL);
+    ToolbarDrawOrHitTest(0, 0, canvas, nullptr, nullptr, nullptr);
 }
 
 bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
@@ -103,7 +103,7 @@ bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
 
     Command hitCommand;
     int hitX, hitY;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &hitCommand, &hitX, &hitY);
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, nullptr, &hitCommand, &hitX, &hitY);
 
     if(hitCommand != toolbarHovered) {
         toolbarHovered = hitCommand;
@@ -140,7 +140,7 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
     y += ((int)height/2);
 
     Command hitCommand;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &hitCommand, NULL, NULL);
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, nullptr, &hitCommand, nullptr, nullptr);
     if(hitCommand != Command::NONE) {
         SS.GW.ActivateCommand(hitCommand);
     }

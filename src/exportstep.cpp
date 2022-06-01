@@ -136,7 +136,7 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
         int curveId = ExportCurve(sb);
 
         int thisFinish;
-        if(loop->l.NextAfter(sb) != NULL) {
+        if(loop->l.NextAfter(sb) != nullptr) {
             fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
                 id, CO(sb->Finish()));
             fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, id);
@@ -162,7 +162,7 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
     int *oe;
     for(oe = listOfTrims.First(); oe; oe = listOfTrims.NextAfter(oe)) {
         fprintf(f, "#%d", *oe);
-        if(listOfTrims.NextAfter(oe) != NULL) fprintf(f, ",");
+        if(listOfTrims.NextAfter(oe) != nullptr) fprintf(f, ",");
     }
     fprintf(f, "));\n");
 
@@ -239,8 +239,8 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     sblss.FindOuterFacesFrom(sbl, &spxyz, ss,
                              SS.ExportChordTolMm(),
                              &allClosed, &notClosedAt,
-                             NULL, NULL,
-                             NULL);
+                             nullptr, nullptr,
+                             nullptr);
 
     // So in our list of SBezierLoopSet, each set contains at least one loop
     // (the outer boundary), plus any inner loops associated with that outer
@@ -269,7 +269,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
         int *fb;
         for(fb = listOfLoops.First(); fb; fb = listOfLoops.NextAfter(fb)) {
             fprintf(f, "#%d", *fb);
-            if(listOfLoops.NextAfter(fb) != NULL) fprintf(f, ",");
+            if(listOfLoops.NextAfter(fb) != nullptr) fprintf(f, ",");
         }
 
         fprintf(f, "),#%d,.T.);\n", srfid);
@@ -361,7 +361,7 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
         // Bezier split so that we use the section as t goes from 0 to 1), and
         // the piecewise linearization of those loops in xyz space.
         SBezierList sbl = {};
-        ss.MakeSectionEdgesInto(shell, NULL, &sbl);
+        ss.MakeSectionEdgesInto(shell, nullptr, &sbl);
 
         // Apply the export scale factor.
         ss.ScaleSelfBy(1.0/SS.exportScale);
@@ -376,7 +376,7 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
     int *af;
     for(af = advancedFaces.First(); af; af = advancedFaces.NextAfter(af)) {
         fprintf(f, "#%d", *af);
-        if(advancedFaces.NextAfter(af) != NULL) fprintf(f, ",");
+        if(advancedFaces.NextAfter(af) != nullptr) fprintf(f, ",");
     }
     fprintf(f, "));\n");
     fprintf(f, "#%d=MANIFOLD_SOLID_BREP('brep',#%d);\n", id+1, id);
@@ -396,7 +396,7 @@ void StepFileWriter::WriteWireframe() {
     int *c;
     for(c = curves.First(); c; c = curves.NextAfter(c)) {
         fprintf(f, "#%d", *c);
-        if(curves.NextAfter(c) != NULL) fprintf(f, ",");
+        if(curves.NextAfter(c) != nullptr) fprintf(f, ",");
     }
     fprintf(f, "));\n");
     fprintf(f, "#%d=GEOMETRICALLY_BOUNDED_WIREFRAME_SHAPE_REPRESENTATION"

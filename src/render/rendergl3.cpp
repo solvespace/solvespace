@@ -207,7 +207,7 @@ Canvas::Stroke *OpenGl3Renderer::SelectStroke(hStroke hcs) {
     current.hcs    = hcs;
     current.stroke = stroke;
     current.hcf    = {};
-    current.fill   = NULL;
+    current.fill   = nullptr;
     current.texture.reset();
     return stroke;
 }
@@ -251,7 +251,7 @@ Canvas::Fill *OpenGl3Renderer::SelectFill(hFill hcf) {
     ssglDepthRange(fill->layer, fill->zIndex);
 
     current.hcs    = {};
-    current.stroke = NULL;
+    current.stroke = nullptr;
     current.hcf    = hcf;
     current.fill   = fill;
     if(fill->pattern != FillPattern::SOLID) {
@@ -314,7 +314,7 @@ void OpenGl3Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
 
 void OpenGl3Renderer::DoLine(const Vector &a, const Vector &b, hStroke hcs) {
     SEdgeListItem *eli = lines.FindByIdNoOops(hcs);
-    if(eli == NULL) {
+    if(eli == nullptr) {
         SEdgeListItem item = {};
         item.h = hcs;
         lines.Add(&item);
@@ -326,7 +326,7 @@ void OpenGl3Renderer::DoLine(const Vector &a, const Vector &b, hStroke hcs) {
 
 void OpenGl3Renderer::DoPoint(Vector p, hStroke hs) {
     SPointListItem *pli = points.FindByIdNoOops(hs);
-    if(pli == NULL) {
+    if(pli == nullptr) {
         SPointListItem item = {};
         item.h = hs;
         points.Add(&item);
@@ -345,7 +345,7 @@ void OpenGl3Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke h
         return;
     }
 
-    const char *patternSeq = NULL;
+    const char *patternSeq = nullptr;
     Stroke s = *stroke;
     s.stipplePattern = StipplePattern::CONTINUOUS;
     hcs = GetStroke(s);
@@ -482,7 +482,7 @@ void OpenGl3Renderer::DrawVectorText(const std::string &text, double height,
                                      const Vector &o, const Vector &u, const Vector &v,
                                      hStroke hcs) {
     SEdgeListItem *eli = lines.FindByIdNoOops(hcs);
-    if(eli == NULL) {
+    if(eli == nullptr) {
         SEdgeListItem item = {};
         item.h = hcs;
         lines.Add(&item);
@@ -496,7 +496,7 @@ void OpenGl3Renderer::DrawVectorText(const std::string &text, double height,
 void OpenGl3Renderer::DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
                                hFill hcf) {
     SMeshListItem *li = meshes.FindByIdNoOops(hcf);
-    if(li == NULL) {
+    if(li == nullptr) {
         SMeshListItem item = {};
         item.h = hcf;
         meshes.Add(&item);
@@ -549,7 +549,7 @@ void OpenGl3Renderer::DrawPixmap(std::shared_ptr<const Pixmap> pm,
     hcf = GetFill(fill);
 
     SMeshListItem *mli = meshes.FindByIdNoOops(hcf);
-    if(mli == NULL) {
+    if(mli == nullptr) {
         SMeshListItem item = {};
         item.h = hcf;
         meshes.Add(&item);
@@ -872,14 +872,14 @@ public:
     int GetZIndex() const override { return fillFront.zIndex; }
 
     static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SMesh &m,
-                                            Canvas::Fill *fillFront, Canvas::Fill *fillBack = NULL,
+                                            Canvas::Fill *fillFront, Canvas::Fill *fillBack = nullptr,
                                             bool isShaded = false) {
         MeshDrawCall *dc = new MeshDrawCall();
         dc->fillFront       = *fillFront;
         dc->handle          = renderer->meshRenderer.Add(m);
         dc->fillBack        = *fillBack;
         dc->isShaded        = isShaded;
-        dc->hasFillBack     = (fillBack != NULL);
+        dc->hasFillBack     = (fillBack != nullptr);
         return std::shared_ptr<DrawCall>(dc);
     }
 

@@ -112,7 +112,7 @@ precision highp float;
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
     if(infoLen > 1) {
         std::string infoStr(infoLen, '\0');
-        glGetShaderInfoLog(shader, infoLen, NULL, &infoStr[0]);
+        glGetShaderInfoLog(shader, infoLen, nullptr, &infoStr[0]);
         dbp(infoStr.c_str());
     }
 
@@ -149,7 +149,7 @@ void Shader::Init(const std::string &vertexRes, const std::string &fragmentRes,
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLen);
     if(infoLen > 1) {
         std::string infoStr(infoLen, '\0');
-        glGetProgramInfoLog(program, infoLen, NULL, &infoStr[0]);
+        glGetProgramInfoLog(program, infoLen, nullptr, &infoStr[0]);
         dbp(infoStr.c_str());
     }
 
@@ -604,7 +604,7 @@ void EdgeRenderer::Draw(const EdgeRenderer::Handle &handle) {
     glVertexAttribPointer(ATTRIB_POS, 3, GL_FLOAT, GL_FALSE, sizeof(EdgeVertex), (void *)offsetof(EdgeVertex, pos));
     glVertexAttribPointer(ATTRIB_LOC, 3, GL_FLOAT, GL_FALSE, sizeof(EdgeVertex), (void *)offsetof(EdgeVertex, loc));
     glVertexAttribPointer(ATTRIB_TAN, 3, GL_FLOAT, GL_FALSE, sizeof(EdgeVertex), (void *)offsetof(EdgeVertex, tan));
-    glDrawElements(GL_TRIANGLES, handle.size, GL_UNSIGNED_INT, NULL);
+    glDrawElements(GL_TRIANGLES, handle.size, GL_UNSIGNED_INT, nullptr);
 
     glDisableVertexAttribArray(ATTRIB_POS);
     glDisableVertexAttribArray(ATTRIB_LOC);
@@ -815,7 +815,7 @@ void OutlineRenderer::Draw(const OutlineRenderer::Handle &handle, Canvas::DrawOu
                           (void *)offsetof(OutlineVertex, nol));
     glVertexAttribPointer(ATTRIB_NOR, 3, GL_FLOAT, GL_FALSE, sizeof(OutlineVertex),
                           (void *)offsetof(OutlineVertex, nor));
-    glDrawElements(GL_TRIANGLES, handle.size, GL_UNSIGNED_INT, NULL);
+    glDrawElements(GL_TRIANGLES, handle.size, GL_UNSIGNED_INT, nullptr);
 
     glDisableVertexAttribArray(ATTRIB_POS);
     glDisableVertexAttribArray(ATTRIB_LOC);
@@ -1015,7 +1015,7 @@ void IndexedMeshRenderer::Draw(const IndexedMeshRenderer::Handle &handle) {
     }
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle.indexBuffer);
-    glDrawElements(GL_TRIANGLES, handle.size, GL_UNSIGNED_INT, NULL);
+    glDrawElements(GL_TRIANGLES, handle.size, GL_UNSIGNED_INT, nullptr);
 
     glDisableVertexAttribArray(ATTRIB_POS);
     if(NeedsTexture()) glDisableVertexAttribArray(ATTRIB_TEX);

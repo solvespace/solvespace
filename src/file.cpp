@@ -117,7 +117,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'g',  "Group.allDimsReference",   'b',    &(SS.sv.g.allDimsReference)   },
     { 'g',  "Group.scale",              'f',    &(SS.sv.g.scale)              },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
-    { 'g',  "Group.impFile",            'i',    NULL                          },
+    { 'g',  "Group.impFile",            'i',    nullptr                          },
     { 'g',  "Group.impFileRel",         'P',    &(SS.sv.g.linkFile)           },
 
     { 'p',  "Param.h.v.",               'x',    &(SS.sv.p.h.v)                },
@@ -206,7 +206,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 's',  "Style.stippleType",        'd',    &(SS.sv.s.stippleType)        },
     { 's',  "Style.stippleScale",       'f',    &(SS.sv.s.stippleScale)       },
 
-    { 0, NULL, 0, NULL }
+    { 0, nullptr, 0, nullptr }
 };
 
 struct SAVEDptr {
@@ -431,7 +431,7 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
                         EntityKey ek;
                         EntityId ei;
                         char line2[1024];
-                        if (fgets(line2, (int)sizeof(line2), fh) == NULL)
+                        if (fgets(line2, (int)sizeof(line2), fh) == nullptr)
                             break;
                         if(sscanf(line2, "%d %x %d", &(ei.v), &(ek.input.v),
                                                      &(ek.copyNumber)) == 3) {
@@ -584,12 +584,12 @@ void SolveSpaceUI::UpgradeLegacyData() {
                 // request would generate, then add them now, so that we can
                 // force them to their appropriate positions.
                 for(Param &p : param) {
-                    if(SK.param.FindByIdNoOops(p.h) != NULL) continue;
+                    if(SK.param.FindByIdNoOops(p.h) != nullptr) continue;
                     SK.param.Add(&p);
                 }
                 bool allPointsExist = true;
                 for(Entity &e : entity) {
-                    if(SK.entity.FindByIdNoOops(e.h) != NULL) continue;
+                    if(SK.entity.FindByIdNoOops(e.h) != nullptr) continue;
                     SK.entity.Add(&e);
                     allPointsExist = false;
                 }
@@ -625,7 +625,7 @@ void SolveSpaceUI::UpgradeLegacyData() {
         c.Generate(&param);
         bool allParamsExist = true;
         for(Param &p : param) {
-            if(oldParam.FindByIdNoOops(p.h) != NULL) continue;
+            if(oldParam.FindByIdNoOops(p.h) != nullptr) continue;
             allParamsExist = false;
             break;
         }
@@ -973,7 +973,7 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
         if(image != SS.images.end()) return true;
 
         pixmap = Pixmap::ReadPng(*filename);
-        if(pixmap == NULL) {
+        if(pixmap == nullptr) {
             // The file was moved; prompt the user for its new location.
             switch(LocateImportedFile(filename->RelativeTo(saveFile), canCancel)) {
                 case Platform::MessageDialog::Response::YES:
@@ -1002,7 +1002,7 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
             dialog->FreezeChoices(settings, "LinkImage");
             *filename = dialog->GetFilename();
             pixmap = Pixmap::ReadPng(*filename);
-            if(pixmap == NULL) {
+            if(pixmap == nullptr) {
                 Error("The image '%s' is corrupted.", filename->raw.c_str());
             }
             // We know where the file is now, good.

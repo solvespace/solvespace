@@ -46,7 +46,7 @@ public:
     }
 
     void Draw(UiCanvas *uiCanvas, int x, int y, bool asHovered) override {
-        if(icon == NULL) {
+        if(icon == nullptr) {
             icon = LoadPng("icons/text-window/" + iconName + ".png");
         }
 
@@ -105,13 +105,13 @@ public:
     }
 
     void Draw(UiCanvas *uiCanvas, int x, int y, bool asHovered) override {
-        if(visibleIcon == NULL) {
+        if(visibleIcon == nullptr) {
             visibleIcon = LoadPng("icons/text-window/occluded-visible.png");
         }
-        if(stippledIcon == NULL) {
+        if(stippledIcon == nullptr) {
             stippledIcon = LoadPng("icons/text-window/occluded-stippled.png");
         }
-        if(invisibleIcon == NULL) {
+        if(invisibleIcon == nullptr) {
             invisibleIcon = LoadPng("icons/text-window/occluded-invisible.png");
         }
 
@@ -383,7 +383,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     RgbaColor bgRgb = RGBi(0, 0, 0);
     int link = NOT_A_LINK;
     uint32_t data = 0;
-    LinkFunction *f = NULL, *h = NULL;
+    LinkFunction *f = nullptr, *h = nullptr;
 
     c = 0;
     while(*fmt) {
@@ -444,14 +444,14 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     // leave the background, though
                     link = NOT_A_LINK;
                     data = 0;
-                    f = NULL;
-                    h = NULL;
+                    f = nullptr;
+                    h = nullptr;
                     break;
 
                 case 'F':
                 case 'B': {
                     char cc = fmt[1];  // color code
-                    RgbaColor *rgbPtr = NULL;
+                    RgbaColor *rgbPtr = nullptr;
                     switch(cc) {
                         case 0:   goto done;  // truncated directive
                         case 'p': cc = (char)va_arg(vl, int); break;
@@ -622,7 +622,7 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
 
     Button *oldHovered = hoveredButton;
     if(how != PAINT) {
-        hoveredButton = NULL;
+        hoveredButton = nullptr;
     }
 
     double hoveredX, hoveredY;
@@ -643,7 +643,7 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
     }
 
     if(how != PAINT && hoveredButton != oldHovered) {
-        if(hoveredButton == NULL) {
+        if(hoveredButton == nullptr) {
             window->SetTooltip("", 0, 0, 0, 0);
         } else {
             window->SetTooltip(hoveredButton->Tooltip(), hoveredX, hoveredY, 28, 28);
@@ -1076,7 +1076,7 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
     using Platform::Window;
 
     if(SS.TW.window->IsEditorVisible() || SS.GW.window->IsEditorVisible()) {
-        if(DrawOrHitTestColorPicker(NULL, leftClick ? CLICK : HOVER, leftDown, x, y)) {
+        if(DrawOrHitTestColorPicker(nullptr, leftClick ? CLICK : HOVER, leftDown, x, y)) {
             return;
         }
 
@@ -1089,7 +1089,7 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
         return;
     }
 
-    DrawOrHitTestIcons(NULL, leftClick ? CLICK : HOVER, x, y);
+    DrawOrHitTestIcons(nullptr, leftClick ? CLICK : HOVER, x, y);
 
     GraphicsWindow::Selection ps = SS.GW.hover;
     SS.GW.hover.Clear();
@@ -1144,7 +1144,7 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
 }
 
 void TextWindow::MouseLeave() {
-    hoveredButton = NULL;
+    hoveredButton = nullptr;
     hoveredRow = 0;
     hoveredCol = 0;
     window->Invalidate();

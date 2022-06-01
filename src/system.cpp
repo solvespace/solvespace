@@ -104,11 +104,11 @@ bool System::IsDragged(hParam p) {
 
 Param *System::GetLastParamSubstitution(Param *p) {
     Param *current = p;
-    while(current->substd != NULL) {
+    while(current->substd != nullptr) {
         current = current->substd;
         if(current == p) {
             // Break the loop
-            current->substd = NULL;
+            current->substd = nullptr;
             break;
         }
     }
@@ -117,22 +117,22 @@ Param *System::GetLastParamSubstitution(Param *p) {
 
 void System::SortSubstitutionByDragged(Param *p) {
     std::vector<Param *> subsParams;
-    Param *by = NULL;
+    Param *by = nullptr;
     Param *current = p;
-    while(current != NULL) {
+    while(current != nullptr) {
         subsParams.push_back(current);
         if(IsDragged(current->h)) {
             by = current;
         }
         current = current->substd;
     }
-    if(by == NULL) by = p;
+    if(by == nullptr) by = p;
     for(Param *p : subsParams) {
        if(p == by) continue;
        p->substd = by;
        p->tag = VAR_SUBSTITUTED;
     }
-    by->substd = NULL;
+    by->substd = nullptr;
     by->tag = 0;
 }
 
@@ -141,9 +141,9 @@ void System::SubstituteParamsByLast(Expr *e) {
 
     if(e->op == Expr::Op::PARAM) {
         Param *p = param.FindByIdNoOops(e->parh);
-        if(p != NULL) {
+        if(p != nullptr) {
             Param *s = GetLastParamSubstitution(p);
-            if(s != NULL) {
+            if(s != nullptr) {
                 e->parh = s->h;
             }
         }
@@ -187,11 +187,11 @@ void System::SolveBySubstitution() {
             last->substd = pb;
             last->tag = VAR_SUBSTITUTED;
 
-            if(pb->substd != NULL) {
+            if(pb->substd != nullptr) {
                 // Break the loops
                 GetLastParamSubstitution(pb);
                 // if b loop was broken
-                if(pb->substd == NULL) {
+                if(pb->substd == nullptr) {
                     // Clear substitution
                     pb->tag = 0;
                 }
@@ -212,7 +212,7 @@ void System::SolveBySubstitution() {
 
     // Substitute all the parameters with last substitutions
     for(auto &p : param) {
-        if(p.substd == NULL) continue;
+        if(p.substd == nullptr) continue;
         p.substd = GetLastParamSubstitution(p.substd);
     }
 }
@@ -234,7 +234,7 @@ bool System::TestRank(int *dof) {
     int jacobianRank = CalculateRank();
     // We are calculating dof based on real rank, not mat.m.
     // Using this approach we can calculate real dof even when redundant is allowed.
-    if(dof != NULL) *dof = mat.n - jacobianRank;
+    if(dof != nullptr) *dof = mat.n - jacobianRank;
     return jacobianRank == mat.m;
 }
 
@@ -477,7 +477,7 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
         return SolveResult::TOO_MANY_UNKNOWNS;
     }
     // Clear dof value in order to have indication when dof is actually not calculated
-    if(dof != NULL) *dof = -1;
+    if(dof != nullptr) *dof = -1;
     // We are suppressing or allowing redundant, so we no need to catch unsolveable + redundant
     rankOk = (!g->suppressDofCalculation && !g->allowRedundant) ? TestRank(dof) : true;
 

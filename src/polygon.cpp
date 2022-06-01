@@ -78,7 +78,7 @@ bool STriangle::Raytrace(const Vector &rayPoint, const Vector &rayDir,
     *t = edge2.Dot(qvec) * inv_det;
 
     // Calculate intersection point.
-    if(inters != NULL) *inters = rayPoint.Plus(rayDir.ScaledBy(*t));
+    if(inters != nullptr) *inters = rayPoint.Plus(rayDir.ScaledBy(*t));
 
     return true;
 }
@@ -363,7 +363,7 @@ SEdgeLl *SEdgeLl::Alloc() {
     return sell;
 }
 SKdNodeEdges *SKdNodeEdges::From(SEdgeList *sel) {
-    SEdgeLl *sell = NULL;
+    SEdgeLl *sell = nullptr;
     SEdge *se;
     for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
         SEdgeLl *n = SEdgeLl::Alloc();
@@ -426,7 +426,7 @@ SKdNodeEdges *SKdNodeEdges::From(SEdgeLl *sell) {
     }
 
     // Sort the edges according to which side(s) of the split plane they're on.
-    SEdgeLl *gtl = NULL, *ltl = NULL;
+    SEdgeLl *gtl = nullptr, *ltl = nullptr;
     for(flip = sell; flip; flip = flip->next) {
         if(flip->se->a.Element(n->which) < n->c + KDTREE_EPS ||
            flip->se->b.Element(n->which) < n->c + KDTREE_EPS)

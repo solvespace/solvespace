@@ -180,7 +180,7 @@ void Pixmap::ConvertTo(Format newFormat) {
 static std::shared_ptr<Pixmap> ReadPngIntoPixmap(png_struct *png_ptr, png_info *info_ptr,
                                                  bool flip) {
     png_read_png(png_ptr, info_ptr,
-                 PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_GRAY_TO_RGB | PNG_TRANSFORM_SCALE_16, NULL);
+                 PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_GRAY_TO_RGB | PNG_TRANSFORM_SCALE_16, nullptr);
 
     std::shared_ptr<Pixmap> pixmap = std::make_shared<Pixmap>();
     pixmap->width    = png_get_image_width(png_ptr, info_ptr);
@@ -203,17 +203,17 @@ static std::shared_ptr<Pixmap> ReadPngIntoPixmap(png_struct *png_ptr, png_info *
                pixmap->width * pixmap->GetBytesPerPixel());
     }
 
-    png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     return pixmap;
 }
 
 std::shared_ptr<Pixmap> Pixmap::FromPng(const uint8_t *data, size_t size, bool flip) {
     struct Slice { const uint8_t *data; size_t size; };
     Slice dataSlice = { data, size };
-    png_struct *png_ptr = NULL;
-    png_info *info_ptr = NULL;
+    png_struct *png_ptr = nullptr;
+    png_info *info_ptr = nullptr;
 
-    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
     if(!png_ptr) goto exit;
     info_ptr = png_create_info_struct(png_ptr);
     if(!info_ptr) goto exit;
@@ -235,19 +235,19 @@ std::shared_ptr<Pixmap> Pixmap::FromPng(const uint8_t *data, size_t size, bool f
     return ReadPngIntoPixmap(png_ptr, info_ptr, flip);
 
 exit:
-    png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     return nullptr;
 }
 
 std::shared_ptr<Pixmap> Pixmap::ReadPng(FILE *f, bool flip) {
-    png_struct *png_ptr = NULL;
-    png_info *info_ptr = NULL;
+    png_struct *png_ptr = nullptr;
+    png_info *info_ptr = nullptr;
 
     uint8_t header[8];
     if(fread(header, 1, sizeof(header), f) != sizeof(header)) goto exit;
     if(png_sig_cmp(header, 0, sizeof(header))) goto exit;
 
-    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
     if(!png_ptr) goto exit;
     info_ptr = png_create_info_struct(png_ptr);
     if(!info_ptr) goto exit;
@@ -260,13 +260,13 @@ std::shared_ptr<Pixmap> Pixmap::ReadPng(FILE *f, bool flip) {
     return ReadPngIntoPixmap(png_ptr, info_ptr, flip);
 
 exit:
-    png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
     return nullptr;
 }
 
 std::shared_ptr<Pixmap> Pixmap::ReadPng(const Platform::Path &filename, bool flip) {
     FILE *f = OpenFile(filename, "rb");
-    if(!f) return NULL;
+    if(!f) return nullptr;
     std::shared_ptr<Pixmap> pixmap = ReadPng(f, flip);
     fclose(f);
     return pixmap;
@@ -292,10 +292,10 @@ bool Pixmap::WritePng(FILE *f, bool flip) {
         }
     }
 
-    png_struct *png_ptr = NULL;
-    png_info *info_ptr = NULL;
+    png_struct *png_ptr = nullptr;
+    png_info *info_ptr = nullptr;
 
-    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
     if(!png_ptr) goto exit;
     info_ptr = png_create_info_struct(png_ptr);
     if(!info_ptr) goto exit;
@@ -1516,7 +1516,7 @@ const std::set<Locale, LocaleLess> &Locales() {
         Locale locale = {};
         locale.language    = m.str(1);
         locale.region      = m.str(2);
-        locale.lcid        = std::stoi(m.str(3), NULL, 16);
+        locale.lcid        = std::stoi(m.str(3), nullptr, 16);
         locale.displayName = m.str(4);
         locales.emplace(locale);
     }

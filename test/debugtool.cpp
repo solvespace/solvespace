@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
     if(args.size() == 3 && args[1] == "expr") {
         std::string expr = args[2], err;
         Expr *e = Expr::Parse(expr.c_str(), &err);
-        if(e == NULL) {
+        if(e == nullptr) {
             fprintf(stderr, "cannot parse: %s\n", err.c_str());
         } else {
             fprintf(stderr, "%g\n", e->Eval());

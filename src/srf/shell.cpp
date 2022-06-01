@@ -237,7 +237,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                         hEntity he;
                         he.v          = sb->entity;
                         hEntity hface = group->Remap(he, Group::REMAP_LINE_TO_FACE);
-                        if(SK.entity.FindByIdNoOops(hface) != NULL) {
+                        if(SK.entity.FindByIdNoOops(hface) != nullptr) {
                             ss.face = hface.v;
                         }
                     }
@@ -389,7 +389,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                         hEntity he;
                         he.v = sb->entity;
                         hEntity hface = group->Remap(he, Group::REMAP_LINE_TO_FACE);
-                        if(SK.entity.FindByIdNoOops(hface) != NULL) {
+                        if(SK.entity.FindByIdNoOops(hface) != nullptr) {
                             ss.face = hface.v;
                         }
                     }

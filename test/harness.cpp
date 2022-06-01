@@ -108,7 +108,7 @@ static std::string PrepareSavefile(std::string data) {
             for(int i = 0; SolveSpaceUI::SAVED[i].type != 0; i++) {
                 if(SolveSpaceUI::SAVED[i].fmt  != 'f') continue;
                 if(SolveSpaceUI::SAVED[i].desc != key) continue;
-                double f = strtod(value.c_str(), NULL);
+                double f = strtod(value.c_str(), nullptr);
                 f = round(f * precision) / precision;
                 std::string newValue = ssprintf("%.20f", f);
                 ssassert(value.size() == newValue.size(), "Expected no change in value length");
@@ -204,7 +204,7 @@ bool Test::Helper::CheckLoad(const char *file, int line, const char *fixture) {
     Platform::Path fixturePath = GetAssetPath(file, fixture);
 
     FILE *f = OpenFile(fixturePath, "rb");
-    bool fixtureExists = (f != NULL);
+    bool fixtureExists = (f != nullptr);
     if(f) fclose(f);
 
     bool result = fixtureExists && SS.LoadFromFile(fixturePath);

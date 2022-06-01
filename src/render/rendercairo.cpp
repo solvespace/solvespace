@@ -11,8 +11,8 @@ namespace SolveSpace {
 void CairoRenderer::Clear() {
     SurfaceRenderer::Clear();
 
-    if(context != NULL) cairo_destroy(context);
-    context = NULL;
+    if(context != nullptr) cairo_destroy(context);
+    context = nullptr;
 }
 
 void CairoRenderer::GetIdent(const char **vendor, const char **renderer, const char **version) {
@@ -160,8 +160,8 @@ void CairoPixmapRenderer::Init() {
 void CairoPixmapRenderer::Clear() {
     CairoRenderer::Clear();
 
-    if(surface != NULL) cairo_surface_destroy(surface);
-    surface = NULL;
+    if(surface != nullptr) cairo_surface_destroy(surface);
+    surface = nullptr;
 }
 
 std::shared_ptr<Pixmap> CairoPixmapRenderer::ReadFrame() {

@@ -52,7 +52,7 @@ bool EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
 {
     for(const EntReqMapping &te : EntReqMap) {
         if(req == te.reqType) {
-            CopyEntityInfo(&te, extraPoints, ent, NULL, pts, hasNormal, hasDistance);
+            CopyEntityInfo(&te, extraPoints, ent, nullptr, pts, hasNormal, hasDistance);
             return true;
         }
     }
@@ -64,7 +64,7 @@ bool EntReqTable::GetEntityInfo(Entity::Type ent, int extraPoints,
 {
     for(const EntReqMapping &te : EntReqMap) {
         if(ent == te.entType) {
-            CopyEntityInfo(&te, extraPoints, NULL, req, pts, hasNormal, hasDistance);
+            CopyEntityInfo(&te, extraPoints, nullptr, req, pts, hasNormal, hasDistance);
             return true;
         }
     }
@@ -73,7 +73,7 @@ bool EntReqTable::GetEntityInfo(Entity::Type ent, int extraPoints,
 
 Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
     Request::Type req;
-    ssassert(GetEntityInfo(ent, 0, &req, NULL, NULL, NULL),
+    ssassert(GetEntityInfo(ent, 0, &req, nullptr, nullptr, nullptr),
              "No entity for request");
     return req;
 }
@@ -107,7 +107,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
             auto image = SS.images.find(file);
             if(image != SS.images.end()) {
                 std::shared_ptr<Pixmap> pixmap = (*image).second;
-                if(pixmap != NULL) {
+                if(pixmap != nullptr) {
                     aspectRatio = (double)pixmap->width / (double)pixmap->height;
                 }
             }
@@ -222,7 +222,7 @@ std::string Request::DescriptionString() const {
             case Type::IMAGE:           s = "image";          break;
         }
     }
-    ssassert(s != NULL, "Unexpected request type");
+    ssassert(s != nullptr, "Unexpected request type");
     return ssprintf("r%03x-%s", h.v, s);
 }
 

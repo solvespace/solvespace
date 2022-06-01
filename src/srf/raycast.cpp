@@ -268,7 +268,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
            (n.Dot(a) > d + LENGTH_EPS && n.Dot(b) < d - LENGTH_EPS) ||
            (n.Dot(b) > d + LENGTH_EPS && n.Dot(a) < d - LENGTH_EPS))
         {
-            Vector p = Vector::AtIntersectionOfPlaneAndLine(n, d, a, b, NULL);
+            Vector p = Vector::AtIntersectionOfPlaneAndLine(n, d, a, b, nullptr);
             Inter inter;
             ClosestPointTo(p, &(inter.p.x), &(inter.p.y));
             inters.Add(&inter);

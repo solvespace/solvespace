@@ -1304,7 +1304,7 @@ s:
 }
 
 void Constraint::Draw(DrawAs how, Canvas *canvas) {
-    DoLayout(how, canvas, NULL, NULL);
+    DoLayout(how, canvas, nullptr, nullptr);
 }
 
 Vector Constraint::GetLabelPos(const Camera &camera) {
@@ -1312,7 +1312,7 @@ Vector Constraint::GetLabelPos(const Camera &camera) {
 
     ObjectPicker canvas = {};
     canvas.camera = camera;
-    DoLayout(DrawAs::DEFAULT, &canvas, &p, NULL);
+    DoLayout(DrawAs::DEFAULT, &canvas, &p, nullptr);
     canvas.Clear();
 
     return p;
@@ -1321,7 +1321,7 @@ Vector Constraint::GetLabelPos(const Camera &camera) {
 void Constraint::GetReferencePoints(const Camera &camera, std::vector<Vector> *refs) {
     ObjectPicker canvas = {};
     canvas.camera = camera;
-    DoLayout(DrawAs::DEFAULT, &canvas, NULL, refs);
+    DoLayout(DrawAs::DEFAULT, &canvas, nullptr, refs);
     canvas.Clear();
 }
 

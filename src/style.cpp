@@ -23,7 +23,7 @@ const Style::Default Style::Defaults[] = {
     { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, 0, true,  StipplePattern::CONTINUOUS },
     { { HIDDEN_EDGE },  "HiddenEdge",   RGBf(0.8, 0.8, 0.8), 1.0, 1, true,  StipplePattern::DASH },
     { { OUTLINE },      "Outline",      RGBf(0.8, 0.8, 0.8), 3.0, 5, true,  StipplePattern::CONTINUOUS },
-    { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0, 0, true,  StipplePattern::CONTINUOUS }
+    { { 0 },            nullptr,           RGBf(0.0, 0.0, 0.0), 0.0, 0, true,  StipplePattern::CONTINUOUS }
 };
 
 std::string Style::CnfColor(const std::string &prefix) {
@@ -92,7 +92,7 @@ void Style::CreateDefaultStyle(hStyle h) {
 void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
     Platform::SettingsRef settings = Platform::GetSettings();
 
-    if(d == NULL) d = &Defaults[0];
+    if(d == nullptr) d = &Defaults[0];
     s->color         = (factory)
                         ? d->color
                         : settings->ThawColor(CnfColor(d->cnfPrefix), d->color);

@@ -139,7 +139,7 @@ bool SBezier::IsCircle(Vector axis, Vector *center, double *r) const {
 
     *center = Vector::AtIntersectionOfLines(ctrl[0], (ctrl[0]).Plus(r0),
                                             ctrl[2], (ctrl[2]).Plus(r2),
-                                            NULL, NULL, NULL);
+                                            nullptr, nullptr, nullptr);
 
     double rd0 = center->Minus(ctrl[0]).Magnitude(),
            rd2 = center->Minus(ctrl[2]).Magnitude();
@@ -283,7 +283,7 @@ void SBezier::AllIntersectionsWith(const SBezier *sbb, SPointList *spl) const {
         // the case where two pairs of line segments intersect at their
         // vertices. So this isn't robust, although that case isn't very
         // likely.
-        seb.AnyEdgeCrossings(se->a, se->b, NULL, &splRaw);
+        seb.AnyEdgeCrossings(se->a, se->b, nullptr, &splRaw);
     }
     SPoint *sp;
     for(sp = splRaw.l.First(); sp; sp = splRaw.l.NextAfter(sp)) {
@@ -465,7 +465,7 @@ void SBezierLoop::MakePwlInto(SContour *sc, double chordTol) const {
         sb->MakePwlInto(sc, chordTol);
         // Avoid double points at join between Beziers; except that
         // first and last points should be identical.
-        if(l.NextAfter(sb) != NULL) {
+        if(l.NextAfter(sb) != nullptr) {
             sc->l.RemoveLast(1);
         }
     }

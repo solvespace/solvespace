@@ -58,7 +58,7 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
     {
         int pts;
         EntReqTable::GetEntityInfo(e->type, e->extraPoints,
-            NULL, &pts, NULL, NULL);
+            nullptr, &pts, nullptr, nullptr);
         for(int i = 0; i < pts; i++) {
             AddPointToDraggedList(e->point[i]);
         }
@@ -189,7 +189,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         // If we're currently not doing anything, then see if we should
         // start dragging something.
         if(leftDown && dm > 3) {
-            Entity *e = NULL;
+            Entity *e = nullptr;
             hEntity dragEntity = ChooseFromHoverToDrag().entity;
             if(dragEntity.v) e = SK.GetEntity(dragEntity);
             if(e && e->type != Entity::Type::WORKPLANE) {
@@ -697,7 +697,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                     Entity *e = SK.GetEntity(r->h.entity(0));
                     for(int i = MAX_POINTS_IN_ENTITY; i > addAfterPoint + 1; i--) {
                         Entity *p0 = SK.entity.FindByIdNoOops(e->point[i]);
-                        if(p0 == NULL) continue;
+                        if(p0 == nullptr) continue;
                         Entity *p1 = SK.GetEntity(e->point[i - 1]);
                         ReplacePointInConstraints(p1->h, p0->h);
                         p0->PointForceTo(p1->PointGetNum());
@@ -825,7 +825,7 @@ Vector GraphicsWindow::SnapToEntityByScreenPoint(Point2d pp, hEntity he) {
 
     double minD = -1.0f;
     double k;
-    const SEdge *edge = NULL;
+    const SEdge *edge = nullptr;
     for(const auto &e : edges->l) {
         Point2d p0 = ProjectPoint(e.a);
         Point2d p1 = ProjectPoint(e.b);
@@ -836,7 +836,7 @@ Vector GraphicsWindow::SnapToEntityByScreenPoint(Point2d pp, hEntity he) {
         k = pp.Minus(p0).Dot(dir) / dir.Dot(dir);
         edge = &e;
     }
-    if(edge == NULL) return UnProjectPoint(pp);
+    if(edge == nullptr) return UnProjectPoint(pp);
     return edge->a.Plus(edge->b.Minus(edge->a).ScaledBy(k));
 }
 
@@ -851,7 +851,7 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt, const Point2d *projecte
         return true;
     }
     if(e->IsCircle()) {
-        if(projected != NULL) {
+        if(projected != nullptr) {
             Vector snapPos = SnapToEntityByScreenPoint(*projected, e->h);
             point->PointForceTo(snapPos);
         }
@@ -860,7 +860,7 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt, const Point2d *projecte
         return true;
     }
     if(e->type == Entity::Type::LINE_SEGMENT) {
-        if(projected != NULL) {
+        if(projected != nullptr) {
             Vector snapPos = SnapToEntityByScreenPoint(*projected, e->h);
             point->PointForceTo(snapPos);
         }
@@ -1291,14 +1291,14 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
     }
 
     // Activate group with newly created request/constraint
-    Group *g = NULL;
+    Group *g = nullptr;
     if(hr.v != 0) {
         g = SK.GetGroup(SK.GetRequest(hr)->group);
     }
     if(hc.v != 0) {
         g = SK.GetGroup(SK.GetConstraint(hc)->group);
     }
-    if(g != NULL) {
+    if(g != nullptr) {
         g->visible = true;
     }
 
@@ -1522,8 +1522,8 @@ void GraphicsWindow::SixDofEvent(Platform::SixDofEvent event) {
 
     // This can either transform our view, or transform a linked part.
     GroupSelection();
-    Entity *e = NULL;
-    Group *g = NULL;
+    Entity *e = nullptr;
+    Group *g = nullptr;
     if(gs.points == 1   && gs.n == 1) e = SK.GetEntity(gs.point [0]);
     if(gs.entities == 1 && gs.n == 1) e = SK.GetEntity(gs.entity[0]);
     if(e) g = SK.GetGroup(e->group);

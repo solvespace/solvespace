@@ -85,7 +85,7 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
     SKdNode *root = SKdNode::From(&m);
     root->SnapToMesh(&m);
     root->MakeCertainEdgesInto(sel, EdgeKind::NAKED_OR_SELF_INTER,
-                               /*coplanarIsInter=*/false, NULL, NULL);
+                               /*coplanarIsInter=*/false, nullptr, nullptr);
 
     m.Clear();
 }
@@ -348,7 +348,7 @@ uint32_t SMesh::FirstIntersectionWith(Point2d mp) const {
         if(tr.meta.face == 0) continue;
 
         double t;
-        if(!tr.Raytrace(rayPoint, rayDir, &t, NULL)) continue;
+        if(!tr.Raytrace(rayPoint, rayDir, &t, nullptr)) continue;
         if(t > faceT) {
             face  = tr.meta.face;
             faceT = t;
@@ -391,7 +391,7 @@ SKdNode *SKdNode::From(SMesh *m) {
         swap(tra[k], tra[n]);
     }
 
-    STriangleLl *tll = NULL;
+    STriangleLl *tll = nullptr;
     for(i = 0; i < m->l.n; i++) {
         STriangleLl *tn = STriangleLl::Alloc();
         tn->tri = &(tra[i]);
@@ -462,7 +462,7 @@ SKdNode *SKdNode::From(STriangleLl *tll) {
     }
 
     STriangleLl *ll;
-    STriangleLl *lgt, *llt; lgt = llt = NULL;
+    STriangleLl *lgt, *llt; lgt = llt = nullptr;
     for(ll = tll; ll; ll = ll->next) {
         STriangle *tr = ll->tri;
 
@@ -698,7 +698,7 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) const {
             {
                 Vector m = Vector::AtIntersectionOfPlaneAndLine(
                                         tn, td,
-                                        se->a, se->b, NULL);
+                                        se->a, se->b, nullptr);
                 seln.AddEdge(m, se->b, se->auxA, 0, se->tag);
                 se->b = m;
             }
@@ -900,7 +900,7 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter,
                         info->intersectsMesh = true;
                     } else {
                         Vector p = Vector::AtIntersectionOfPlaneAndLine(
-                                                n, d, a, b, NULL);
+                                                n, d, a, b, nullptr);
                         Vector ta = tr->a,
                                tb = tr->b,
                                tc = tr->c;

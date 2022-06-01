@@ -911,7 +911,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             SEdgeList sel = {};
             g->polyLoops.MakeEdgesInto(&sel);
             SPolygon sp = {};
-            sel.AssemblePolygon(&sp, NULL, /*keepDir=*/true);
+            sel.AssemblePolygon(&sp, nullptr, /*keepDir=*/true);
             sp.normal = sp.ComputeNormal();
             sp.FixContourDirections();
             double area = sp.SignedArea();
@@ -1070,25 +1070,25 @@ void SolveSpaceUI::Clear() {
         if(i < undo.cnt) undo.d[i].Clear();
         if(i < redo.cnt) redo.d[i].Clear();
     }
-    TW.window = NULL;
-    GW.openRecentMenu = NULL;
-    GW.linkRecentMenu = NULL;
-    GW.showGridMenuItem = NULL;
-    GW.dimSolidModelMenuItem = NULL;
-    GW.perspectiveProjMenuItem = NULL;
-    GW.explodeMenuItem = NULL;
-    GW.showToolbarMenuItem = NULL;
-    GW.showTextWndMenuItem = NULL;
-    GW.fullScreenMenuItem = NULL;
-    GW.unitsMmMenuItem = NULL;
-    GW.unitsMetersMenuItem = NULL;
-    GW.unitsInchesMenuItem = NULL;
-    GW.unitsFeetInchesMenuItem = NULL;
-    GW.inWorkplaneMenuItem = NULL;
-    GW.in3dMenuItem = NULL;
-    GW.undoMenuItem = NULL;
-    GW.redoMenuItem = NULL;
-    GW.window = NULL;
+    TW.window = nullptr;
+    GW.openRecentMenu = nullptr;
+    GW.linkRecentMenu = nullptr;
+    GW.showGridMenuItem = nullptr;
+    GW.dimSolidModelMenuItem = nullptr;
+    GW.perspectiveProjMenuItem = nullptr;
+    GW.explodeMenuItem = nullptr;
+    GW.showToolbarMenuItem = nullptr;
+    GW.showTextWndMenuItem = nullptr;
+    GW.fullScreenMenuItem = nullptr;
+    GW.unitsMmMenuItem = nullptr;
+    GW.unitsMetersMenuItem = nullptr;
+    GW.unitsInchesMenuItem = nullptr;
+    GW.unitsFeetInchesMenuItem = nullptr;
+    GW.inWorkplaneMenuItem = nullptr;
+    GW.in3dMenuItem = nullptr;
+    GW.undoMenuItem = nullptr;
+    GW.redoMenuItem = nullptr;
+    GW.window = nullptr;
 }
 
 void Sketch::Clear() {
@@ -1160,11 +1160,11 @@ BBox Sketch::CalculateEntityBBox(bool includingInvisible) {
 
 Group *Sketch::GetRunningMeshGroupFor(hGroup h) {
     Group *g = GetGroup(h);
-    while(g != NULL) {
+    while(g != nullptr) {
         if(g->IsMeshGroup()) {
             return g;
         }
         g = g->PreviousGroup();
     }
-    return NULL;
+    return nullptr;
 }

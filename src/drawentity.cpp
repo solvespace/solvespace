@@ -435,7 +435,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
                 // The control point must lie on both tangents.
                 Vector p1 = Vector::AtIntersectionOfLines(p0, p0.Plus(t0),
                                                           p2, p2.Plus(t2),
-                                                          NULL);
+                                                          nullptr);
 
                 SBezier sb = SBezier::From(p0, p1, p2);
                 sb.weight[1] = cos(dtheta/2);
@@ -809,7 +809,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
             Vector iu = v[3].Minus(v[0]);
             Vector iv = v[1].Minus(v[0]);
 
-            if(how == DrawAs::DEFAULT && pixmap == NULL) {
+            if(how == DrawAs::DEFAULT && pixmap == nullptr) {
                 Canvas::Stroke stroke = Style::Stroke(Style::DRAW_ERROR);
                 stroke.color = stroke.color.WithAlpha(50);
                 Canvas::hStroke hs = canvas->GetStroke(stroke);

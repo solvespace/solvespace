@@ -328,7 +328,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
     // Copy color from the previous mesh-contributing group.
     if(g.IsMeshGroup() && !SK.groupOrder.IsEmpty()) {
         Group *running = SK.GetRunningMeshGroupFor(SS.GW.activeGroup);
-        if(running != NULL) {
+        if(running != nullptr) {
             g.color = running->color;
         }
     }
@@ -403,7 +403,7 @@ bool Group::IsForcedToMeshBySource() const {
         if(srcg->forceToMesh) return true;
     }
     Group *g = srcg->RunningMeshGroup();
-    if(g == NULL) return false;
+    if(g == nullptr) return false;
     return g->forceToMesh || g->IsForcedToMeshBySource();
 }
 
@@ -515,7 +515,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 if(e->IsPoint()) pt = e->h;
 
                 e->CalculateNumerical(/*forExport=*/false);
-                hEntity he = e->h; e = NULL;
+                hEntity he = e->h; e = nullptr;
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
                 CopyEntity(entity, SK.GetEntity(he), ai, REMAP_BOTTOM,
@@ -1181,7 +1181,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
             int i, points;
             bool hasNormal, hasDistance;
             EntReqTable::GetEntityInfo(ep->type, ep->extraPoints,
-                NULL, &points, &hasNormal, &hasDistance);
+                nullptr, &points, &hasNormal, &hasDistance);
             for(i = 0; i < points; i++) {
                 en.point[i] = Remap(ep->point[i], remap);
             }

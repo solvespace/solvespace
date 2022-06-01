@@ -89,7 +89,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
     }
     
     const SCurvePt *p = pts.First();
-    ssassert(p != NULL, "Cannot split an empty curve");
+    ssassert(p != nullptr, "Cannot split an empty curve");
     SCurvePt prev = *p;
     ret.pts.Add(p);
     p = pts.NextAfter(p);
@@ -204,7 +204,7 @@ void SShell::CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into) {
 #pragma omp parallel for
     for(int i=0; i<curve.n; i++) {
         SCurve *sc = &curve[i];
-        SCurve scn = sc->MakeCopySplitAgainst(agnst, NULL,
+        SCurve scn = sc->MakeCopySplitAgainst(agnst, nullptr,
                                 surface.FindById(sc->surfA),
                                 surface.FindById(sc->surfB));
         scn.source = opA ? SCurve::Source::A : SCurve::Source::B;
@@ -673,7 +673,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
     SPolygon poly = {};
     final.l.ClearTags();
-    if(!final.AssemblePolygon(&poly, NULL, /*keepDir=*/true))
+    if(!final.AssemblePolygon(&poly, nullptr, /*keepDir=*/true))
 #pragma omp critical
     {
         into->booleanFailed = true;
@@ -792,8 +792,8 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
 void SShell::MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type) {
     booleanFailed = false;
 
-    a->MakeClassifyingBsps(NULL);
-    b->MakeClassifyingBsps(NULL);
+    a->MakeClassifyingBsps(nullptr);
+    b->MakeClassifyingBsps(nullptr);
 
     // Copy over all the original curves, splitting them so that a
     // piecewise linear segment never crosses a surface from the other
@@ -877,7 +877,7 @@ SBspUv *SBspUv::From(SEdgeList *el, SSurface *srf) {
         // stability for the normals.
         return la > lb;
     });
-    SBspUv *bsp = NULL;
+    SBspUv *bsp = nullptr;
     for(se = work.l.First(); se; se = work.l.NextAfter(se)) {
         bsp = InsertOrCreateEdge(bsp, (se->a).ProjectXy(), (se->b).ProjectXy(), srf);
     }
@@ -926,7 +926,7 @@ double SBspUv::ScaledDistanceToLine(Point2d pt, Point2d a, Point2d b, bool asSeg
 }
 
 SBspUv *SBspUv::InsertOrCreateEdge(SBspUv *where, Point2d ea, Point2d eb, SSurface *srf) {
-    if(where == NULL) {
+    if(where == nullptr) {
         SBspUv *ret = Alloc();
         ret->a = ea;
         ret->b = eb;

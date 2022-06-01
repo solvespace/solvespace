@@ -23,7 +23,7 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
     // Now we have to piecewise linearize the curve. If there's already an
     // identical curve in the shell, then follow that pwl exactly, otherwise
     // calculate from scratch.
-    SCurve split, *existing = NULL;
+    SCurve split, *existing = nullptr;
     SBezier sbrev = *sb;
     sbrev.Reverse();
     bool backwards = false;
@@ -243,7 +243,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                        p1 = p0.Plus(along);
 
                 bezier.ctrl[i] =
-                    Vector::AtIntersectionOfPlaneAndLine(n, d, p0, p1, NULL);
+                    Vector::AtIntersectionOfPlaneAndLine(n, d, p0, p1, nullptr);
             }
 
             AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
@@ -362,7 +362,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                      *srfB = (a == 0) ? b : this;
 
             SEdgeList el = {};
-            srfA->MakeEdgesInto(shA, &el, MakeAs::XYZ, NULL);
+            srfA->MakeEdgesInto(shA, &el, MakeAs::XYZ, nullptr);
 
             SEdge *se;
             for(se = el.l.First(); se; se = el.l.NextAfter(se)) {

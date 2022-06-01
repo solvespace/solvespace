@@ -23,7 +23,7 @@ bool PolylineBuilder::Vertex::GetNext(uint32_t kind, Vertex **next, Edge **nextE
 
 bool PolylineBuilder::Vertex::GetNext(uint32_t kind, Vector plane, double dist,
                                       Vertex **next, Edge **nextEdge) {
-    Edge *best = NULL;
+    Edge *best = nullptr;
     double minD = VERY_POSITIVE;
     for(Edge *e : edges) {
         if(e->tag != 0) continue;
@@ -32,12 +32,12 @@ bool PolylineBuilder::Vertex::GetNext(uint32_t kind, Vector plane, double dist,
         // We choose the best next edge with minimal distance from the current plane
         Vector nextPos = e->GetOtherVertex(this)->pos;
         double curD = fabs(plane.Dot(nextPos) - dist);
-        if(best != NULL && curD > minD) continue;
+        if(best != nullptr && curD > minD) continue;
         best = e;
         minD = curD;
     }
 
-    if(best != NULL) {
+    if(best != nullptr) {
         best->tag = 1;
         *next = best->GetOtherVertex(this);
         *nextEdge = best;
@@ -57,7 +57,7 @@ size_t PolylineBuilder::Vertex::CountEdgesWithTagAndKind(int tag, uint32_t kind)
 PolylineBuilder::Vertex *PolylineBuilder::Edge::GetOtherVertex(PolylineBuilder::Vertex *v) const {
     if(a == v) return b;
     if(b == v) return a;
-    return NULL;
+    return nullptr;
 }
 
 size_t PolylineBuilder::VertexPairHash::operator()(const std::pair<Vertex *, Vertex *> &v) const {
@@ -118,7 +118,7 @@ PolylineBuilder::Edge *PolylineBuilder::AddEdge(const Vector &p0, const Vector &
                                                 uint32_t kind, uintptr_t data) {
     Vertex *v0 = AddVertex(p0);
     Vertex *v1 = AddVertex(p1);
-    if(v0 == v1) return NULL;
+    if(v0 == v1) return nullptr;
 
     auto it = edgeMap.find(std::make_pair(v0, v1));
     if(it != edgeMap.end()) {

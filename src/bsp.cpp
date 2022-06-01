@@ -23,8 +23,8 @@ SBsp3 *SBsp3::FromMesh(const SMesh *m) {
         swap(mc.l[k], mc.l[n]);
     }
 
-    SBsp3 *bsp3 = NULL;
-    for(auto &elt : mc.l) { bsp3 = InsertOrCreate(bsp3, &elt, NULL); }
+    SBsp3 *bsp3 = nullptr;
+    for(auto &elt : mc.l) { bsp3 = InsertOrCreate(bsp3, &elt, nullptr); }
     mc.Clear();
     return bsp3;
 }
@@ -437,7 +437,7 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, size_t cnt, SMesh *ins
 }
 
 SBsp3 *SBsp3::InsertOrCreate(SBsp3 *where, STriangle *tr, SMesh *instead) {
-    if(where == NULL) {
+    if(where == nullptr) {
         if(instead) {
             // ruevs: I do not think this code is reachable, but in
             // principle should we use instead->keepInsideOtherShell
@@ -447,7 +447,7 @@ SBsp3 *SBsp3::InsertOrCreate(SBsp3 *where, STriangle *tr, SMesh *instead) {
             } else {
                 instead->AddTriangle(tr->meta, tr->a, tr->b, tr->c);
             }
-            return NULL;
+            return nullptr;
         }
 
         // Brand new node; so allocate for it, and fill us in.
@@ -541,7 +541,7 @@ Vector SBsp2::IntersectionWith(Vector a, Vector b) const {
 }
 
 SBsp2 *SBsp2::InsertOrCreateEdge(SBsp2 *where, SEdge *nedge, Vector nnp, Vector out) {
-    if(where == NULL) {
+    if(where == nullptr) {
         // Brand new node; so allocate for it, and fill us in.
         SBsp2 *r = Alloc();
         r->np = nnp;

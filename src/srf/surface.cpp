@@ -415,7 +415,7 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     MakeEdgesInto(shell, &el, MakeAs::UV);
 
     SPolygon poly = {};
-    if(el.AssemblePolygon(&poly, NULL, /*keepDir=*/true)) {
+    if(el.AssemblePolygon(&poly, nullptr, /*keepDir=*/true)) {
         int i, start = sm->l.n;
         if(degm == 1 && degn == 1) {
             // A surface with curvature along one direction only; so

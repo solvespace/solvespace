@@ -83,7 +83,7 @@ public:
     // Why aren't we using GSettings? Two reasons. It doesn't allow to easily see whether
     // the setting had the default value, and it requires to install a schema globally.
     Path         _path;
-    json_object *_json = NULL;
+    json_object *_json = nullptr;
 
     static Path GetConfigPath() {
         Path configHome;
@@ -130,7 +130,7 @@ public:
             }
         }
 
-        if(_json == NULL) {
+        if(_json == nullptr) {
             _json = json_object_new_object();
         }
     }
@@ -364,7 +364,7 @@ public:
     std::vector<std::shared_ptr<MenuImplGtk>>       subMenus;
 
     MenuItemRef AddItem(const std::string &label,
-                        std::function<void()> onTrigger = NULL,
+                        std::function<void()> onTrigger = nullptr,
                         bool mnemonics = true) override {
         auto menuItem = std::make_shared<MenuItemImplGtk>();
         menuItems.push_back(menuItem);
@@ -743,7 +743,7 @@ protected:
 class GtkWindow : public Gtk::Window {
     Platform::Window   *_receiver;
     Gtk::VBox           _vbox;
-    Gtk::MenuBar       *_menu_bar = NULL;
+    Gtk::MenuBar       *_menu_bar = nullptr;
     Gtk::HBox           _hbox;
     GtkEditorOverlay    _editor_overlay;
     Gtk::VScrollbar     _scrollbar;
@@ -930,7 +930,7 @@ public:
             Gtk::MenuBar *gtkMenuBar = &((MenuBarImplGtk*)&*newMenuBar)->gtkMenuBar;
             gtkWindow.set_menu_bar(gtkMenuBar);
         } else {
-            gtkWindow.set_menu_bar(NULL);
+            gtkWindow.set_menu_bar(nullptr);
         }
         menuBar = newMenuBar;
     }
@@ -1476,8 +1476,8 @@ std::vector<Platform::Path> GetFontFiles() {
 
     // fontconfig is already initialized by GTK
     FcPattern   *pat = FcPatternCreate();
-    FcObjectSet *os  = FcObjectSetBuild(FC_FILE, (char *)0);
-    FcFontSet   *fs  = FcFontList(0, pat, os);
+    FcObjectSet *os  = FcObjectSetBuild(FC_FILE, (char *)nullptr);
+    FcFontSet   *fs  = FcFontList(nullptr, pat, os);
 
     for(int i = 0; i < fs->nfont; i++) {
         FcChar8 *filenameFC = FcPatternFormat(fs->fonts[i], (const FcChar8*) "%{file}");
@@ -1493,7 +1493,7 @@ std::vector<Platform::Path> GetFontFiles() {
 }
 
 void OpenInBrowser(const std::string &url) {
-    gtk_show_uri(Gdk::Screen::get_default()->gobj(), url.c_str(), GDK_CURRENT_TIME, NULL);
+    gtk_show_uri(Gdk::Screen::get_default()->gobj(), url.c_str(), GDK_CURRENT_TIME, nullptr);
 }
 
 Gtk::Main *gtkMain;

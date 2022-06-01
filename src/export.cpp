@@ -79,7 +79,7 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
 
     // If there's a shell, then grab the edges and possibly Beziers.
     bool export_as_pwl = SS.exportPwlCurves || fabs(SS.exportOffset) > LENGTH_EPS;
-    g->runningShell.MakeSectionEdgesInto(n, d, &el, export_as_pwl ? NULL : &bl);
+    g->runningShell.MakeSectionEdgesInto(n, d, &el, export_as_pwl ? nullptr : &bl);
 
     // All of these are solid model edges, so use the appropriate style.
     SEdge *se;
@@ -117,7 +117,7 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
     VectorFileWriter *out = VectorFileWriter::ForFile(filename);
     if(out) {
         // parallel projection (no perspective), and no mesh
-        ExportLinesAndMesh(&el, &bl, NULL,
+        ExportLinesAndMesh(&el, &bl, nullptr,
                            u, v, n, origin, 0,
                            out);
     }
@@ -194,14 +194,14 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
     SS.exportMode = true;
     GenerateAll(Generate::ALL);
 
-    SMesh *sm = NULL;
+    SMesh *sm = nullptr;
     if(SS.GW.showShaded || SS.GW.drawOccludedAs != GraphicsWindow::DrawOccludedAs::VISIBLE) {
         Group *g = SK.GetGroup(SS.GW.activeGroup);
         g->GenerateDisplayItems();
         sm = &(g->displayMesh);
     }
     if(sm && sm->IsEmpty()) {
-        sm = NULL;
+        sm = nullptr;
     }
 
     for(auto &entity : SK.entity) {
@@ -305,7 +305,7 @@ void SolveSpaceUI::ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
         sblss.AddOpenPath(sb);
     }
 
-    out->OutputLinesAndMesh(&sblss, NULL);
+    out->OutputLinesAndMesh(&sblss, nullptr);
     sblss.Clear();
 }
 
@@ -338,7 +338,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     if(fabs(SS.exportOffset) > LENGTH_EPS) {
         // assemble those edges into a polygon, and clear the edge list
         SPolygon sp = {};
-        sel->AssemblePolygon(&sp, NULL);
+        sel->AssemblePolygon(&sp, nullptr);
         sel->Clear();
 
         SPolygon compd = {};
@@ -406,7 +406,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
         // to back-facing.
         if(SS.GW.showEdges || SS.GW.showOutlines) {
             root->MakeCertainEdgesInto(sel, EdgeKind::TURNING,
-                                       /*coplanarIsInter=*/false, NULL, NULL,
+                                       /*coplanarIsInter=*/false, nullptr, nullptr,
                                        GW.showOutlines ? Style::OUTLINE : Style::SOLID_EDGE);
         }
 
@@ -599,7 +599,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     sblss.FindOuterFacesFrom(sbl, &spxyz, &srf,
                              SS.ExportChordTolMm(),
                              &allClosed, &notClosedAt,
-                             NULL, NULL,
+                             nullptr, nullptr,
                              &leftovers);
     sblss.l.Add(&leftovers);
 
@@ -649,7 +649,7 @@ VectorFileWriter *VectorFileWriter::ForFile(const Platform::Path &filename) {
         ".step, .stp, .dxf, .svg, .plt, .hpgl, .pdf, .txt, .ngc, "
         ".eps, or .ps.",
             filename.raw.c_str());
-        return NULL;
+        return nullptr;
     }
     ret->filename = filename;
     if(!needOpen) return ret;
@@ -657,7 +657,7 @@ VectorFileWriter *VectorFileWriter::ForFile(const Platform::Path &filename) {
     FILE *f = OpenFile(filename, "wb");
     if(!f) {
         Error("Couldn't write to '%s'", filename.raw.c_str());
-        return NULL;
+        return nullptr;
     }
     ret->f = f;
     return ret;

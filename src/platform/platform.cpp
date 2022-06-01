@@ -138,8 +138,8 @@ Path Path::CurrentDirectory() {
     rawW.resize(length);
     return From(Narrow(rawW));
 #else
-    char *raw = getcwd(NULL, 0);
-    ssassert(raw != NULL, "Cannot get current directory");
+    char *raw = getcwd(nullptr, 0);
+    ssassert(raw != nullptr, "Cannot get current directory");
     Path path = From(raw);
     free(raw);
     return path;
@@ -411,7 +411,7 @@ FILE *OpenFile(const Platform::Path &filename, const char *mode) {
 
 bool FileExists(const Platform::Path &filename) {
     FILE *f = OpenFile(filename, "rb");
-    if(f == NULL) return false;
+    if(f == nullptr) return false;
     fclose(f);
     return true;
 }
@@ -428,7 +428,7 @@ void RemoveFile(const Platform::Path &filename) {
 
 bool ReadFile(const Platform::Path &filename, std::string *data) {
     FILE *f = OpenFile(filename, "rb");
-    if(f == NULL) return false;
+    if(f == nullptr) return false;
 
     if(fseek(f, 0, SEEK_END) != 0)
         return false;
@@ -445,7 +445,7 @@ bool ReadFile(const Platform::Path &filename, std::string *data) {
 
 bool WriteFile(const Platform::Path &filename, const std::string &data) {
     FILE *f = OpenFile(filename, "wb");
-    if(f == NULL) return false;
+    if(f == nullptr) return false;
 
     if(fwrite(&data[0], 1, data.size(), f) != data.size())
         return false;
@@ -531,8 +531,8 @@ static const char *selfSymlink = "";
 static Platform::Path FindLocalResourceDir() {
     // Find out the path to the running binary.
     Platform::Path selfPath;
-    char *expandedSelfPath = realpath(selfSymlink, NULL);
-    if(expandedSelfPath != NULL) {
+    char *expandedSelfPath = realpath(selfSymlink, nullptr);
+    if(expandedSelfPath != nullptr) {
         selfPath = Path::From(expandedSelfPath);
     }
     free(expandedSelfPath);
@@ -686,10 +686,10 @@ void DebugPrint(const char *fmt, ...) {
 //-----------------------------------------------------------------------------
 
 struct MimallocHeap {
-    mi_heap_t *heap = NULL;
+    mi_heap_t *heap = nullptr;
 
     ~MimallocHeap() {
-        if(heap != NULL)
+        if(heap != nullptr)
             mi_heap_destroy(heap);
     }
 };
@@ -697,12 +697,12 @@ struct MimallocHeap {
 static thread_local MimallocHeap TempArena;
 
 void *AllocTemporary(size_t size) {
-    if(TempArena.heap == NULL) {
+    if(TempArena.heap == nullptr) {
         TempArena.heap = mi_heap_new();
-        ssassert(TempArena.heap != NULL, "out of memory");
+        ssassert(TempArena.heap != nullptr, "out of memory");
     }
     void *ptr = mi_heap_zalloc(TempArena.heap, size);
-    ssassert(ptr != NULL, "out of memory");
+    ssassert(ptr != nullptr, "out of memory");
     return ptr;
 }
 

@@ -67,7 +67,7 @@ void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
 //        dbp("finished finding holes: %d ms", (int)(GetMilliseconds() - in));
         for(;;) {
             double xmin = 1e10;
-            SContour *scmin = NULL;
+            SContour *scmin = nullptr;
 
             for(sc = l.First(); sc; sc = l.NextAfter(sc)) {
                 if(sc->tag != 2) continue;
@@ -634,10 +634,10 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
                 //  +-------------> j/v axis
 
                 if( (i==(li.n-2)) || (j==(lj.n-2)) ||
-                   orig.AnyEdgeCrossings(a, b, NULL) ||
-                   orig.AnyEdgeCrossings(b, c, NULL) ||
-                   orig.AnyEdgeCrossings(c, d, NULL) ||
-                   orig.AnyEdgeCrossings(d, a, NULL))
+                   orig.AnyEdgeCrossings(a, b, nullptr) ||
+                   orig.AnyEdgeCrossings(b, c, nullptr) ||
+                   orig.AnyEdgeCrossings(c, d, nullptr) ||
+                   orig.AnyEdgeCrossings(d, a, nullptr))
                 {
                     this_flag = false;
                 }
@@ -693,7 +693,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
 
         // Because no duplicate edges were created we do not need to cull them.
         SPolygon hp = {};
-        holes.AssemblePolygon(&hp, NULL, /*keepDir=*/true);
+        holes.AssemblePolygon(&hp, nullptr, /*keepDir=*/true);
 
         SContour *sc;
         for(sc = hp.l.First(); sc; sc = hp.l.NextAfter(sc)) {

@@ -280,7 +280,7 @@ static void MakeBeziersForArcs(SBezierList *sbl, Vector center, Vector pa, Vecto
         // The control point must lie on both tangents.
         Vector p1 = Vector::AtIntersectionOfLines(p0, p0.Plus(t0),
                                                   p2, p2.Plus(t2),
-                                                  NULL);
+                                                  nullptr);
 
         SBezier sb = SBezier::From(p0, p1, p2);
         sb.weight[1] = cos(dtheta/2);
@@ -501,9 +501,9 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     SEdge errorAt = {};
     
     SBezierLoopSetSet sblss = {};
-    sblss.FindOuterFacesFrom(&sbl, &polyLoops, NULL,
+    sblss.FindOuterFacesFrom(&sbl, &polyLoops, nullptr,
                              100.0, &allClosed, &errorAt,
-                             &allCoplanar, &errorPointAt, NULL);
+                             &allCoplanar, &errorPointAt, nullptr);
 
     //hack for when there is no sketch yet and the first group is a linked IDF
     double ctc = SS.chordTolCalculated;

@@ -704,7 +704,7 @@ void GraphicsWindow::Draw(Canvas *canvas) {
     if(showSnapGrid) DrawSnapGrid(canvas);
 
     // Draw all the things that don't change when we rotate.
-    if(persistentCanvas != NULL) {
+    if(persistentCanvas != nullptr) {
         if(persistentDirty) {
             persistentDirty = false;
 
@@ -858,7 +858,7 @@ void GraphicsWindow::Draw(Canvas *canvas) {
 }
 
 void GraphicsWindow::Paint() {
-    ssassert(window != NULL && canvas != NULL,
+    ssassert(window != nullptr && canvas != nullptr,
              "Cannot paint without window and canvas");
 
     havePainted = true;

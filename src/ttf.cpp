@@ -95,7 +95,7 @@ TtfFont *TtfFontList::LoadFont(const std::string &font)
         [&font](const TtfFont &tf) { return tf.FontFileBaseName() == font; });
 
     if(tf != l.end()) {
-        if(tf->fontFace == NULL) {
+        if(tf->fontFace == nullptr) {
             if(tf->IsResource())
                 tf->LoadFromResource(fontLibrary, /*keepOpen=*/true);
             else
@@ -103,7 +103,7 @@ TtfFont *TtfFontList::LoadFont(const std::string &font)
         }
         return tf;
     } else {
-        return NULL;
+        return nullptr;
     }
 }
 
@@ -111,7 +111,7 @@ void TtfFontList::PlotString(const std::string &font, const std::string &str,
                              SBezierList *sbl, Vector origin, Vector u, Vector v)
 {
     TtfFont *tf = LoadFont(font);
-    if(!str.empty() && tf != NULL) {
+    if(!str.empty() && tf != nullptr) {
         tf->PlotString(str, sbl, origin, u, v);
     } else {
         // No text or no font; so draw a big X for an error marker.
@@ -126,7 +126,7 @@ void TtfFontList::PlotString(const std::string &font, const std::string &str,
 double TtfFontList::AspectRatio(const std::string &font, const std::string &str)
 {
     TtfFont *tf = LoadFont(font);
-    if(tf != NULL) {
+    if(tf != nullptr) {
         return tf->AspectRatio(str);
     }
 
@@ -207,7 +207,7 @@ bool TtfFont::ExtractTTFData(bool keepOpen) {
         dbp("freetype: loading unicode CMap for file '%s' failed: %s",
             fontFile.raw.c_str(), ft_error_string(fterr));
         FT_Done_Face(fontFace);
-        fontFace = NULL;
+        fontFace = nullptr;
         return false;
     }
 
@@ -228,7 +228,7 @@ bool TtfFont::ExtractTTFData(bool keepOpen) {
         dbp("freetype: size request for file '%s' failed: %s",
             fontFile.raw.c_str(), ft_error_string(fterr));
         FT_Done_Face(fontFace);
-        fontFace = NULL;
+        fontFace = nullptr;
         return false;
     }
 
@@ -247,7 +247,7 @@ bool TtfFont::ExtractTTFData(bool keepOpen) {
             dbp("freetype: cannot load glyph for GID 0x%04x in file '%s': %s",
                 gid, fontFile.raw.c_str(), ft_error_string(fterr));
             FT_Done_Face(fontFace);
-            fontFace = NULL;
+            fontFace = nullptr;
             return false;
         }
 
@@ -261,7 +261,7 @@ bool TtfFont::ExtractTTFData(bool keepOpen) {
     // descriptor limit (especially on Windows), breaking all file operations.
     if(!keepOpen) {
         FT_Done_Face(fontFace);
-        fontFace = NULL;
+        fontFace = nullptr;
         return true;
     }
 
@@ -333,7 +333,7 @@ static int CubicTo(const FT_Vector *c1, const FT_Vector *c2, const FT_Vector *p,
 void TtfFont::PlotString(const std::string &str,
                          SBezierList *sbl, Vector origin, Vector u, Vector v)
 {
-    ssassert(fontFace != NULL, "Expected font face to be loaded");
+    ssassert(fontFace != nullptr, "Expected font face to be loaded");
 
     FT_Outline_Funcs outlineFuncs;
     outlineFuncs.move_to  = MoveTo;
@@ -406,7 +406,7 @@ void TtfFont::PlotString(const std::string &str,
 }
 
 double TtfFont::AspectRatio(const std::string &str) {
-    ssassert(fontFace != NULL, "Expected font face to be loaded");
+    ssassert(fontFace != nullptr, "Expected font face to be loaded");
 
     // We always request a unit size character, so the aspect ratio is the same as advance length.
     double dx = 0;
