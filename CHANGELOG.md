@@ -1,7 +1,7 @@
 Changelog
 =========
 
-3.1  - Release Candidate 1
+3.1
 ---
 
 Constraints:
