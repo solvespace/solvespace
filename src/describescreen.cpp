@@ -89,6 +89,7 @@ void TextWindow::DescribeSelection() {
             case Entity::Type::POINT_N_ROT_TRANS:
             case Entity::Type::POINT_N_COPY:
             case Entity::Type::POINT_N_ROT_AA:
+            case Entity::Type::POINT_N_ROT_AXIS_TRANS:
                 p = e->PointGetNum();
                 Printf(false, "%FtPOINT%E at " PT_AS_STR, COSTR(e, p));
                 break;
@@ -179,7 +180,9 @@ void TextWindow::DescribeSelection() {
             case Entity::Type::FACE_N_ROT_TRANS:
             case Entity::Type::FACE_N_ROT_AA:
             case Entity::Type::FACE_N_TRANS:
-                Printf(false, "%FtPLANE FACE%E");
+            case Entity::Type::FACE_ROT_NORMAL_PT:
+            case Entity::Type::FACE_N_ROT_AXIS_TRANS:
+                  Printf(false, "%FtPLANE FACE%E");
                 p = e->FaceGetNormalNum();
                 Printf(true,  "   normal = " PT_AS_NUM, CO(p));
                 p = e->FaceGetPointNum();
