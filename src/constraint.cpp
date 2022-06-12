@@ -721,7 +721,11 @@ void Constraint::MenuConstrain(Command id) {
         }
 
         case Command::PARALLEL:
-            if(gs.vectors == 2 && gs.n == 2) {
+            if(gs.faces == 2 && gs.n == 2) {
+                c.type = Type::PARALLEL;
+                c.entityA = gs.face[0];
+                c.entityB = gs.face[1];            
+            } else if(gs.vectors == 2 && gs.n == 2) {
                 c.type = Type::PARALLEL;
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
@@ -765,6 +769,7 @@ void Constraint::MenuConstrain(Command id) {
             } else {
                 Error(_("Bad selection for parallel / tangent constraint. This "
                         "constraint can apply to:\n\n"
+                        "    * two faces\n"
                         "    * two line segments (parallel)\n"
                         "    * a line segment and a normal (parallel)\n"
                         "    * two normals (parallel)\n"
@@ -776,13 +781,18 @@ void Constraint::MenuConstrain(Command id) {
             break;
 
         case Command::PERPENDICULAR:
-            if(gs.vectors == 2 && gs.n == 2) {
+            if(gs.faces == 2 && gs.n == 2) {
+                c.type = Type::PERPENDICULAR;
+                c.entityA = gs.face[0];
+                c.entityB = gs.face[1];            
+            } else if(gs.vectors == 2 && gs.n == 2) {
                 c.type = Type::PERPENDICULAR;
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
             } else {
                 Error(_("Bad selection for perpendicular constraint. This "
                         "constraint can apply to:\n\n"
+                        "    * two faces\n"
                         "    * two line segments\n"
                         "    * a line segment and a normal\n"
                         "    * two normals\n"));
