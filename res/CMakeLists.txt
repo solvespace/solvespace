@@ -270,6 +270,7 @@ add_resources(
     locales/tr_TR.po
     locales/ru_RU.po
     locales/zh_CN.po
+    locales/ja_JP.po
     fonts/unifont.hex.gz
     fonts/private/0-check-false.png
     fonts/private/1-check-true.png
