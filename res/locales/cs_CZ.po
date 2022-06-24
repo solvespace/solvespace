@@ -1,0 +1,2281 @@
+# Czech translations for SolveSpace package.
+# Copyright (C) 2022 the SolveSpace authors
+# This file is distributed under the same license as the SolveSpace package.
+# Pavel Stržínek <pavel.strzinek@gmail.com>, 2022
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: SolveSpace 3.1\n"
+"Report-Msgid-Bugs-To: phkahler@gmail.com\n"
+"POT-Creation-Date: 2022-06-19 20:16+0200\n"
+"PO-Revision-Date: 2022-06-19 20:16+0200\n"
+"Last-Translator: Pavel Stržínek <pavel.strzinek@gmail.com>\n"
+"Language-Team: none\n"
+"Language: cs_CZ\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: clipboard.cpp:309
+msgid ""
+"Cut, paste, and copy work only in a workplane.\n"
+"\n"
+"Activate one with Sketch -> In Workplane."
+msgstr ""
+"Kopírování, vkládání a vyjímání je funkční jen v pracovní rovině.\n"
+"\n"
+"Aktivuj ji přes Náčrt -> V pracovní rovině."
+
+#: clipboard.cpp:326
+msgid "Clipboard is empty; nothing to paste."
+msgstr "Schránka je prázdná; nic ke vložení."
+
+#: clipboard.cpp:373
+msgid "Number of copies to paste must be at least one."
+msgstr "Je třeba zadat alespoň jednu kopii ke vložení."
+
+#: clipboard.cpp:389 textscreens.cpp:833
+msgid "Scale cannot be zero."
+msgstr "Měřítko nemůže být nulové."
+
+#: clipboard.cpp:431
+msgid "Select one point to define origin of rotation."
+msgstr "Vyber jeden bod pro určení počátku otočení."
+
+#: clipboard.cpp:443
+msgid "Select two points to define translation vector."
+msgstr "Vyber dva body pro určení vektoru posunutí."
+
+#: clipboard.cpp:453
+msgid ""
+"Transformation is identity. So all copies will be exactly on top of each "
+"other."
+msgstr ""
+"Transformace je identická. Všechny kopie budou přesně " 
+"nad sebou."
+
+#: clipboard.cpp:457
+msgid "Too many items to paste; split this into smaller pastes."
+msgstr "Příliš mnoho položek ke vložení; rozděl je a vlož po částech."
+
+#: clipboard.cpp:462
+msgid "No workplane active."
+msgstr "Není aktivní žádná pracovní rovina."
+
+#: confscreen.cpp:381
+msgid "Bad format: specify coordinates as x, y, z"
+msgstr "Chybný formát: zadej souřadnice jako x, y, z"
+
+#: confscreen.cpp:391 style.cpp:729 textscreens.cpp:864
+msgid "Bad format: specify color as r, g, b"
+msgstr "Chybný formát: zadej barvu jako r, g, b"
+
+#: confscreen.cpp:417
+msgid ""
+"The perspective factor will have no effect until you enable View -> Use "
+"Perspective Projection."
+msgstr ""
+"Faktor perspektivy nebude mít žádný vliv, dokud nezvolíš Pohled -> Použít perspektivní projekci."
+
+#: confscreen.cpp:435 confscreen.cpp:445
+#, c-format
+msgid "Specify between 0 and %d digits after the decimal."
+msgstr "Urči počet platných číslic za desetinnou čárkou mezi 0 a %d."
+
+#: confscreen.cpp:457
+msgid "Export scale must not be zero!"
+msgstr "Měřítko exportu nesmí být nulové!"
+
+#: confscreen.cpp:469
+msgid "Cutter radius offset must not be negative!"
+msgstr "Posunutí poloměru výřezu nesmí být záporné!"
+
+#: confscreen.cpp:528
+msgid "Bad value: autosave interval should be positive"
+msgstr "Chybná hodnota: interval automatického ukládání by měl být kladný"
+
+#: confscreen.cpp:531
+msgid "Bad format: specify interval in integral minutes"
+msgstr "Chybný formát: zadej interval v celých minutách"
+
+#: constraint.cpp:12
+msgctxt "constr-name"
+msgid "pts-coincident"
+msgstr "shoda-bodů"
+
+#: constraint.cpp:13
+msgctxt "constr-name"
+msgid "pt-pt-distance"
+msgstr "vzdálenost-dvou-bodů"
+
+#: constraint.cpp:14
+msgctxt "constr-name"
+msgid "pt-line-distance"
+msgstr "vzdálenost-bodu-a-úsečky"
+
+#: constraint.cpp:15
+msgctxt "constr-name"
+msgid "pt-plane-distance"
+msgstr "vzdálenost-bodu-a-roviny"
+
+#: constraint.cpp:16
+msgctxt "constr-name"
+msgid "pt-face-distance"
+msgstr "vzdálenost-bodu-a-stěny"
+
+#: constraint.cpp:17
+msgctxt "constr-name"
+msgid "proj-pt-pt-distance"
+msgstr "proj-vzdálenost-dvou-bodů"
+
+#: constraint.cpp:18
+msgctxt "constr-name"
+msgid "pt-in-plane"
+msgstr "bod-v-rovině"
+
+#: constraint.cpp:19
+msgctxt "constr-name"
+msgid "pt-on-line"
+msgstr "bod-na-přímce"
+
+#: constraint.cpp:20
+msgctxt "constr-name"
+msgid "pt-on-face"
+msgstr "bod-na-stěně"
+
+#: constraint.cpp:21
+msgctxt "constr-name"
+msgid "eq-length"
+msgstr "shodná-délka"
+
+#: constraint.cpp:22
+msgctxt "constr-name"
+msgid "eq-length-and-pt-ln-dist"
+msgstr "shodná-délka-a-vzdálenost-bodu-a-úsečky"
+
+#: constraint.cpp:23
+msgctxt "constr-name"
+msgid "eq-pt-line-distances"
+msgstr "shodná-vzdálenost-bodu-a-úsečky"
+
+#: constraint.cpp:24
+msgctxt "constr-name"
+msgid "length-ratio"
+msgstr "poměr-délky"
+
+#: constraint.cpp:25
+msgctxt "constr-name"
+msgid "arc-arc-length-ratio"
+msgstr "poměr-délky-dvou-oblouků"
+
+#: constraint.cpp:26
+msgctxt "constr-name"
+msgid "arc-line-length-ratio"
+msgstr "poměr-délky-oblouku-a-úsečky"
+
+#: constraint.cpp:27
+msgctxt "constr-name"
+msgid "length-difference"
+msgstr "rozdíl-délky"
+
+#: constraint.cpp:28
+msgctxt "constr-name"
+msgid "arc-arc-len-difference"
+msgstr "rozdíl-délky-dvou-oblouků"
+
+#: constraint.cpp:29
+msgctxt "constr-name"
+msgid "arc-line-len-difference"
+msgstr "rozdíl-délky-oblouku-a-úsečky"
+
+#: constraint.cpp:30
+msgctxt "constr-name"
+msgid "symmetric"
+msgstr "symetrie"
+
+#: constraint.cpp:31
+msgctxt "constr-name"
+msgid "symmetric-h"
+msgstr "symetrie-h"
+
+#: constraint.cpp:32
+msgctxt "constr-name"
+msgid "symmetric-v"
+msgstr "symetrie-v"
+
+#: constraint.cpp:33
+msgctxt "constr-name"
+msgid "symmetric-line"
+msgstr "symetrie-přímka"
+
+#: constraint.cpp:34
+msgctxt "constr-name"
+msgid "at-midpoint"
+msgstr "ve-středu"
+
+#: constraint.cpp:35
+msgctxt "constr-name"
+msgid "horizontal"
+msgstr "horizontála"
+
+#: constraint.cpp:36
+msgctxt "constr-name"
+msgid "vertical"
+msgstr "vertikála"
+
+#: constraint.cpp:37
+msgctxt "constr-name"
+msgid "diameter"
+msgstr "průměr"
+
+#: constraint.cpp:38
+msgctxt "constr-name"
+msgid "pt-on-circle"
+msgstr "bod-na-kruhu"
+
+#: constraint.cpp:39
+msgctxt "constr-name"
+msgid "same-orientation"
+msgstr "shodná-orientace"
+
+#: constraint.cpp:40
+msgctxt "constr-name"
+msgid "angle"
+msgstr "úhel"
+
+#: constraint.cpp:41
+msgctxt "constr-name"
+msgid "parallel"
+msgstr "rovnoběžnost"
+
+#: constraint.cpp:42
+msgctxt "constr-name"
+msgid "arc-line-tangent"
+msgstr "tečný-oblouk-a-úsečka"
+
+#: constraint.cpp:43
+msgctxt "constr-name"
+msgid "cubic-line-tangent"
+msgstr "tečná-splajna-a-úsečka"
+
+#: constraint.cpp:44
+msgctxt "constr-name"
+msgid "curve-curve-tangent"
+msgstr "tečné-dvě-křivky"
+
+#: constraint.cpp:45
+msgctxt "constr-name"
+msgid "perpendicular"
+msgstr "kolmost"
+
+#: constraint.cpp:46
+msgctxt "constr-name"
+msgid "eq-radius"
+msgstr "shodný-poloměr"
+
+#: constraint.cpp:47
+msgctxt "constr-name"
+msgid "eq-angle"
+msgstr "shodný-úhel"
+
+#: constraint.cpp:48
+msgctxt "constr-name"
+msgid "eq-line-len-arc-len"
+msgstr "shodná-délka-úsečky-a-oblouku"
+
+#: constraint.cpp:49
+msgctxt "constr-name"
+msgid "lock-where-dragged"
+msgstr "zámek-kam-přetažen"
+
+#: constraint.cpp:50
+msgctxt "constr-name"
+msgid "comment"
+msgstr "komentář"
+
+#: constraint.cpp:144
+msgid ""
+"The tangent arc and line segment must share an endpoint. Constrain them with "
+"Constrain -> On Point before constraining tangent."
+msgstr ""
+"Oblouk a tečná úsečka musejí mít společný koncový bod. Omez je nejdříve příkazem "
+"Omezit -> Na bodě / křivce / ploše."
+
+#: constraint.cpp:163
+msgid ""
+"The tangent cubic and line segment must share an endpoint. Constrain them "
+"with Constrain -> On Point before constraining tangent."
+msgstr ""
+"Tečný splajn a úsečka musejí mít společný koncový bod. Omez je nejdříve příkazem "
+"Omezit -> Na bodě / křivce / ploše."
+
+#: constraint.cpp:189
+msgid ""
+"The curves must share an endpoint. Constrain them with Constrain -> On Point "
+"before constraining tangent."
+msgstr ""
+"Křivky musejí mít společný koncový bod. Omez je příkazem Omezit -> V bodě "
+"před omezením tečny."
+
+#: constraint.cpp:238
+msgid ""
+"Bad selection for distance / diameter constraint. This constraint can apply "
+"to:\n"
+"\n"
+"    * two points (distance between points)\n"
+"    * a line segment (length)\n"
+"    * two points and a line segment or normal (projected distance)\n"
+"    * a workplane and a point (minimum distance)\n"
+"    * a line segment and a point (minimum distance)\n"
+"    * a plane face and a point (minimum distance)\n"
+"    * a circle or an arc (diameter)\n"
+msgstr ""
+"Chybný výběr pro omezení vzdálenosti / průměru. Toto omezení lze použít "
+"na:\n"
+"\n"
+"    * dva body (vzdálenost mezi body)\n"
+"    * úsečku (délka)\n"
+"    * dva body a úsečku nebo normálu (promítnutá vzdálenost)\n"
+"    * pracovní rovinu a bod (minimální vzdálenost)\n"
+"    * úsečku a bod (minimální vzdálenost)\n"
+"    * rovinnou plochu a bod (minimální vzdálenost)\n"
+"    * kružnici nebo oblouk (průměr)\n"
+
+#: constraint.cpp:291
+msgid ""
+"Bad selection for on point / curve / plane constraint. This constraint can "
+"apply to:\n"
+"\n"
+"    * two points (points coincident)\n"
+"    * a point and a workplane (point in plane)\n"
+"    * a point and a line segment (point on line)\n"
+"    * a point and a circle or arc (point on curve)\n"
+"    * a point and a plane face (point on face)\n"
+msgstr ""
+"Chybný výběr pro omezení na bod / křivku / rovinu. Toto omezení lze "
+"použít na:\n"
+"\n"
+"    * dva body (body se shodují)\n"
+"    * bod a pracovní rovinu (bod v rovině)\n"
+"    * bod a úsečku (bod na přímce)\n"
+"    * bod a kružnici nebo oblouk (bod na křivce)\n"
+"    * bod a rovinnou plochu (bod na ploše)\n"
+
+#: constraint.cpp:353
+msgid ""
+"Bad selection for equal length / radius constraint. This constraint can "
+"apply to:\n"
+"\n"
+"    * two line segments (equal length)\n"
+"    * two line segments and two points (equal point-line distances)\n"
+"    * a line segment and two points (equal point-line distances)\n"
+"    * a line segment, and a point and line segment (point-line distance "
+"equals length)\n"
+"    * four line segments or normals (equal angle between A,B and C,D)\n"
+"    * three line segments or normals (equal angle between A,B and B,C)\n"
+"    * two circles or arcs (equal radius)\n"
+"    * a line segment and an arc (line segment length equals arc length)\n"
+msgstr ""
+"Chybný výběr pro omezení stejné délky / poloměru. Toto omezení lze "
+"použít pro:\n"
+"\n"
+"    * dvě úsečky (stejné délky)\n"
+"    * dvě úsečky a dva body (stejné vzdálenosti bodů od úseček)\n"
+"    * úsečku a dva body (stejné vzdálenosti bodů od přímky)\n"
+"    * úsečku a bod a úsečku (vzdálenost bodu od přímky "
+"se rovná délce)\n"
+"    * čtyři úsečky nebo normály (stejný úhel mezi A,B a C,D)\n"
+"    * tři úsečky nebo normály (stejný úhel mezi A,B a B,C)\n"
+"    * dvě kružnice nebo oblouky (stejný poloměr)\n"
+"    * úsečku a oblouk (délka úsečky se rovná délce oblouku)\n"
+
+#: constraint.cpp:407
+msgid ""
+"Bad selection for length ratio constraint. This constraint can apply to:\n"
+"\n"
+"    * two line segments\n"
+"    * two arcs\n"
+"    * one arc and one line segment\n"
+msgstr ""
+"Chybný výběr pro omezení poměru délky. Toto omezení lze použít pro:\n"
+"\n"
+"    * dvě úsečky\n"
+"    * dva oblouky\n"
+"    * jeden oblouk a jednu úsečku\n"
+
+#: constraint.cpp:441
+msgid ""
+"Bad selection for length difference constraint. This constraint can apply "
+"to:\n"
+"\n"
+"    * two line segments\n"
+"    * two arcs\n"
+"    * one arc and one line segment\n"
+msgstr ""
+"Chybný výběr pro omezení rozdílu délek. Toto omezení lze použít "
+"pro:\n"
+"\n"
+"    * dvě úsečky\n"
+"    * dva oblouky\n"
+"    * jeden oblouk a jednu úsečku\n"
+
+#: constraint.cpp:472
+msgid ""
+"Bad selection for at midpoint constraint. This constraint can apply to:\n"
+"\n"
+"    * a line segment and a point (point at midpoint)\n"
+"    * a line segment and a workplane (line's midpoint on plane)\n"
+msgstr ""
+"Chybný výběr pro omezení ve středovém bodě. Toto omezení lze použít pro: \n"
+"\n"
+"    * úsečku a bod (bod ve středovém bodě)\n"
+"    * úsečku a pracovní rovinu (střed úsečky v rovině)\n"
+
+#: constraint.cpp:530
+msgid ""
+"Bad selection for symmetric constraint. This constraint can apply to:\n"
+"\n"
+"    * two points or a line segment (symmetric about workplane's coordinate "
+"axis)\n"
+"    * line segment, and two points or a line segment (symmetric about line "
+"segment)\n"
+"    * workplane, and two points or a line segment (symmetric about "
+"workplane)\n"
+msgstr ""
+"Chybný výběr pro symetrické omezení. Toto omezení lze použít pro:\n"
+"\n"
+"    * dva body nebo úsečku (symetrickou vůči souřadnicím osy pracovní roviny) "
+"    * úsečku a dva body nebo úsečku (symetrická k úsečce)\n"
+"    * pracovní rovinu a dva body nebo úsečku (symetrická k "
+"pracovní rovině)\n"
+
+#: constraint.cpp:545
+msgid ""
+"A workplane must be active when constraining symmetric without an explicit "
+"symmetry plane."
+msgstr ""
+"Pracovní rovina musí být aktivní, pokud je omezena symetricky bez explicitní "
+"symetrické roviny."
+
+#: constraint.cpp:579
+msgid ""
+"Activate a workplane (with Sketch -> In Workplane) before applying a "
+"horizontal or vertical constraint."
+msgstr ""
+"Aktivuj pracovní rovinu (pomocí Náčrt -> V pracovní rovině) před použitím "
+"omezení horizontály nebo vertikály."
+
+#: constraint.cpp:592
+msgid ""
+"Bad selection for horizontal / vertical constraint. This constraint can "
+"apply to:\n"
+"\n"
+"    * two points\n"
+"    * a line segment\n"
+msgstr ""
+"Chybný výběr pro horizontální / vertikální omezení. Toto omezení lze "
+"použít pro:\n"
+"\n"
+"    * dva body\n"
+"    * úsečku\n"
+
+#: constraint.cpp:613
+msgid ""
+"Bad selection for same orientation constraint. This constraint can apply "
+"to:\n"
+"\n"
+"    * two normals\n"
+msgstr ""
+"Chybný výběr pro omezení stejné orientace. Toto omezení lze použít "
+" pro: \n "
+"\n"
+"    * dvě normály\n"
+
+#: constraint.cpp:663
+msgid "Must select an angle constraint."
+msgstr "Je nutné vybrat omezení úhlu."
+
+#: constraint.cpp:676
+msgid "Must select a constraint with associated label."
+msgstr "Je nutné vybrat omezení s přiřazeným štítkem."
+
+#: constraint.cpp:687
+msgid ""
+"Bad selection for angle constraint. This constraint can apply to:\n"
+"\n"
+"    * two line segments\n"
+"    * a line segment and a normal\n"
+"    * two normals\n"
+msgstr ""
+"Chybný výběr pro omezení úhlu. Toto omezení lze použít pro: \n"
+"\n"
+"    * dvě úsečky\n"
+"    * úsečku a normálu\n"
+"    * dvě normály\n"
+
+#: constraint.cpp:754
+msgid "Curve-curve tangency must apply in workplane."
+msgstr "Tečnost dvou křivek musí být použita v pracovní rovině."
+
+#: constraint.cpp:766
+msgid ""
+"Bad selection for parallel / tangent constraint. This constraint can apply "
+"to:\n"
+"\n"
+"    * two line segments (parallel)\n"
+"    * a line segment and a normal (parallel)\n"
+"    * two normals (parallel)\n"
+"    * two line segments, arcs, or beziers, that share an endpoint (tangent)\n"
+msgstr ""
+"Chybný výběr pro rovnoběžné / tečné omezení. Toto omezení lze použít "
+" pro: \n "
+"\n"
+"    * dvě úsečky (rovnoběžné)\n"
+"    * úsečku a normálu (rovnoběžnou)\n"
+"    * dvě normály (rovnoběžné)\n"
+"    * dvě úsečky, oblouky nebo beziéry, které mají společný koncový bod (tečna)\n"
+
+#: constraint.cpp:784
+msgid ""
+"Bad selection for perpendicular constraint. This constraint can apply to:\n"
+"\n"
+"    * two line segments\n"
+"    * a line segment and a normal\n"
+"    * two normals\n"
+msgstr ""
+"Chybný výběr pro omezení kolmosti. Toto omezení lze použít pro: \n"
+"\n"
+"    * dvě úsečky\n"
+"    * úsečku a normálu\n"
+"    * dvě normály\n"
+
+#: constraint.cpp:799
+msgid ""
+"Bad selection for lock point where dragged constraint. This constraint can "
+"apply to:\n"
+"\n"
+"    * a point\n"
+msgstr ""
+"Chybný výběr pro omezení uzamčení v místě přetažení. Toto omezení lze "
+"použít pro: \n"
+"\n"
+"    * bod\n"
+
+#: constraint.cpp:813 mouse.cpp:1158
+msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
+msgstr "NOVÝ KOMENTÁŘ -- UPRAVIT DVOJKLIKEM"
+
+#: constraint.cpp:818
+msgid "click center of comment text"
+msgstr "klikni na střed textu komentáře"
+
+#: export.cpp:19
+msgid ""
+"No solid model present; draw one with extrudes and revolves, or use Export "
+"2d View to export bare lines and curves."
+msgstr ""
+"Není přítomen žádný model tělesa; vytvoř model pomocí extruzí a rotací nebo "
+"použij Exportovat 2D pohled... pro export prostých čar a křivek."
+
+#: export.cpp:61
+msgid ""
+"Bad selection for export section. Please select:\n"
+"\n"
+"    * nothing, with an active workplane (workplane is section plane)\n"
+"    * a face (section plane through face)\n"
+"    * a point and two line segments (plane through point and parallel to "
+"lines)\n"
+msgstr ""
+"Chybný výběr části pro export. Vyber prosím:\n"
+"\n"
+"    * nic, s aktivní pracovní rovinou (pracovní rovina je rovina řezu)\n"
+"    * plochu (rovina řezu procházející plochou)\n"
+"    * bod a dvě úsečky (rovina procházející bodem a rovnoběžná s "
+" přímkami)\n"
+
+#: export.cpp:818
+msgid "Active group mesh is empty; nothing to export."
+msgstr "Síť aktivní skupiny je prázdná; není co exportovat."
+
+#: exportvector.cpp:336
+msgid "freehand lines were replaced with continuous lines"
+msgstr "volné úsečky byly nahrazeny souvislými"
+
+#: exportvector.cpp:338
+msgid "zigzag lines were replaced with continuous lines"
+msgstr "klikaté úsečky byly nahrazeny souvislými"
+
+#: exportvector.cpp:592
+msgid ""
+"Some aspects of the drawing have no DXF equivalent and were not exported:\n"
+msgstr ""
+"Některé prvky výkresu nemají ekvivalent ve formátu DXF a nebyly exportovány:\n"
+
+#: exportvector.cpp:838
+msgid ""
+"PDF page size exceeds 200 by 200 inches; many viewers may reject this file."
+msgstr ""
+"Velikost stránky PDF přesahuje 200 x 200 palců; mnoho prohlížečů může tento "
+"soubor odmítnout."
+
+#: file.cpp:44 group.cpp:91
+msgctxt "group-name"
+msgid "sketch-in-plane"
+msgstr "náčrt-v-rovině"
+
+#: file.cpp:62
+msgctxt "group-name"
+msgid "#references"
+msgstr "#odkazy"
+
+#: file.cpp:550
+msgid "The file is empty. It may be corrupt."
+msgstr "Soubor je prázdný. Může být poškozený."
+
+#: file.cpp:555
+msgid ""
+"Unrecognized data in file. This file may be corrupt, or from a newer version "
+"of the program."
+msgstr ""
+"Nerozpoznaná data v souboru. Tento soubor může být poškozený nebo pochází z novější verze "
+"programu."
+
+#: file.cpp:867
+msgctxt "title"
+msgid "Missing File"
+msgstr "Chybějící soubor"
+
+#: file.cpp:868
+#, c-format
+msgctxt "dialog"
+msgid "The linked file “%s” is not present."
+msgstr "Odkazovaný soubor “%s” není k dispozici."
+
+#: file.cpp:870
+msgctxt "dialog"
+msgid ""
+"Do you want to locate it manually?\n"
+"\n"
+"If you decline, any geometry that depends on the missing file will be "
+"permanently removed."
+msgstr ""
+"Chceš jej vyhledat ručně?\n"
+"\n"
+"Pokud odmítneš, všechny geometrie, které závisí na chybějícím souboru, budou "
+"trvale odstraněny."
+
+#: file.cpp:873
+msgctxt "button"
+msgid "&Yes"
+msgstr "&Ano"
+
+#: file.cpp:875
+msgctxt "button"
+msgid "&No"
+msgstr "&Ne"
+
+#: file.cpp:877 solvespace.cpp:611
+msgctxt "button"
+msgid "&Cancel"
+msgstr "&Zrušit"
+
+#: graphicswin.cpp:41
+msgid "&File"
+msgstr "&Soubor"
+
+#: graphicswin.cpp:42
+msgid "&New"
+msgstr "&Nový"
+
+#: graphicswin.cpp:43
+msgid "&Open..."
+msgstr "&Otevřít..."
+
+#: graphicswin.cpp:44
+msgid "Open &Recent"
+msgstr "Otevřít &nedávný"
+
+#: graphicswin.cpp:45
+msgid "&Save"
+msgstr "&Uložit"
+
+#: graphicswin.cpp:46
+msgid "Save &As..."
+msgstr "Uložit &jako..."
+
+#: graphicswin.cpp:48
+msgid "Export &Image..."
+msgstr "Exportovat &Obrázek..."
+
+#: graphicswin.cpp:49
+msgid "Export 2d &View..."
+msgstr "Exportovat 2D &pohled..."
+
+#: graphicswin.cpp:50
+msgid "Export 2d &Section..."
+msgstr "Exportovat 2D čá&st..."
+
+#: graphicswin.cpp:51
+msgid "Export 3d &Wireframe..."
+msgstr "Exportovat 3D &drátěný model..."
+
+#: graphicswin.cpp:52
+msgid "Export Triangle &Mesh..."
+msgstr "Exportovat &trojúhelníkovou síť (mesh)..."
+
+#: graphicswin.cpp:53
+msgid "Export &Surfaces..."
+msgstr "Exportovat &povrchy..."
+
+#: graphicswin.cpp:54
+msgid "Im&port..."
+msgstr "&Importovat..."
+
+#: graphicswin.cpp:57
+msgid "E&xit"
+msgstr "U&končit"
+
+#: graphicswin.cpp:60
+msgid "&Edit"
+msgstr "Up&ravit"
+
+#: graphicswin.cpp:61
+msgid "&Undo"
+msgstr "&Zpět"
+
+#: graphicswin.cpp:62
+msgid "&Redo"
+msgstr "Z&novu"
+
+#: graphicswin.cpp:63
+msgid "Re&generate All"
+msgstr "Znovu vše &generovat"
+
+#: graphicswin.cpp:65
+msgid "Snap Selection to &Grid"
+msgstr "Přichytit výběr k &mřížce"
+
+#: graphicswin.cpp:66
+msgid "Rotate Imported &90°"
+msgstr "Otočit importované o &90°"
+
+#: graphicswin.cpp:68
+msgid "Cu&t"
+msgstr "Vyjmou&t"
+
+#: graphicswin.cpp:69
+msgid "&Copy"
+msgstr "&Kopírovat"
+
+#: graphicswin.cpp:70
+msgid "&Paste"
+msgstr "V&ložit"
+
+#: graphicswin.cpp:71
+msgid "Paste &Transformed..."
+msgstr "Vložit &transformované..."
+
+#: graphicswin.cpp:72
+msgid "&Delete"
+msgstr "O&dstranit"
+
+#: graphicswin.cpp:74
+msgid "Select &Edge Chain"
+msgstr "Vybrat ř&etězec hran"
+
+#: graphicswin.cpp:75
+msgid "Select &All"
+msgstr "Vybr&at vše"
+
+#: graphicswin.cpp:76
+msgid "&Unselect All"
+msgstr "Zr&ušit výběr všeho"
+
+#: graphicswin.cpp:78
+msgid "&Line Styles..."
+msgstr "Sty&ly čar..."
+
+#: graphicswin.cpp:79
+msgid "&View Projection..."
+msgstr "&Projekční pohled..."
+
+#: graphicswin.cpp:81
+msgid "Con&figuration..."
+msgstr "Nastave&ní..."
+
+#: graphicswin.cpp:84
+msgid "&View"
+msgstr "&Zobrazení"
+
+#: graphicswin.cpp:85
+msgid "Zoom &In"
+msgstr "Přiblíž&it"
+
+#: graphicswin.cpp:86
+msgid "Zoom &Out"
+msgstr "&Oddálit"
+
+#: graphicswin.cpp:87
+msgid "Zoom To &Fit"
+msgstr "Přiblížit na &míru"
+
+#: graphicswin.cpp:89
+msgid "Align View to &Workplane"
+msgstr "Zarovnat pohled na pracovní rovinu"
+
+#: graphicswin.cpp:90
+msgid "Nearest &Ortho View"
+msgstr "Nejbližší &ortogonální pohled"
+
+#: graphicswin.cpp:91
+msgid "Nearest &Isometric View"
+msgstr "Nejbližší &izometrický pohled"
+
+#: graphicswin.cpp:92
+msgid "&Center View At Point"
+msgstr "&Pohled na střed v bodě"
+
+#: graphicswin.cpp:94
+msgid "Show Snap &Grid"
+msgstr "Zobrazit mřížku přichy&cení"
+
+#: graphicswin.cpp:95
+msgid "Darken Inactive Solids"
+msgstr "Ztmavit neaktivní tělesa"
+
+#: graphicswin.cpp:96
+msgid "Use &Perspective Projection"
+msgstr "Použít &perspektivní projekci"
+
+#: graphicswin.cpp:97
+msgid "Show E&xploded View"
+msgstr "Zobrazit &rozbalený pohled"
+
+#: graphicswin.cpp:98
+msgid "Dimension &Units"
+msgstr "&Jednotky rozměru"
+
+#: graphicswin.cpp:99
+msgid "Dimensions in &Millimeters"
+msgstr "Rozměry v &milimetrech"
+
+#: graphicswin.cpp:100
+msgid "Dimensions in M&eters"
+msgstr "Rozměry v m&etrech"
+
+#: graphicswin.cpp:101
+msgid "Dimensions in &Inches"
+msgstr "Rozměry v &palcích"
+
+#: graphicswin.cpp:102
+msgid "Dimensions in &Feet and Inches"
+msgstr "Rozměry ve &stopách a palcích"
+
+#: graphicswin.cpp:104
+msgid "Show &Toolbar"
+msgstr "Zobrazit panel &nástrojů"
+
+#: graphicswin.cpp:105
+msgid "Show Property Bro&wser"
+msgstr "Zobrazit &parametry"
+
+#: graphicswin.cpp:107
+msgid "&Full Screen"
+msgstr "Na &celou obrazovku"
+
+#: graphicswin.cpp:109
+msgid "&New Group"
+msgstr "&Nová skupina"
+
+#: graphicswin.cpp:110
+msgid "Sketch In &3d"
+msgstr "Náčrt ve &3D"
+
+#: graphicswin.cpp:111
+msgid "Sketch In New &Workplane"
+msgstr "Náčrt v nové pracovní &rovině"
+
+#: graphicswin.cpp:113
+msgid "Step &Translating"
+msgstr "Krokový &posun"
+
+#: graphicswin.cpp:114
+msgid "Step &Rotating"
+msgstr "Krokové &otočení"
+
+#: graphicswin.cpp:116
+msgid "E&xtrude"
+msgstr "Extruze (e&xtrude)"
+
+#: graphicswin.cpp:117
+msgid "&Helix"
+msgstr "Šroubovice (&helix)"
+
+#: graphicswin.cpp:118
+msgid "&Lathe"
+msgstr "Plná rotace (&lathe)"
+
+#: graphicswin.cpp:119
+msgid "Re&volve"
+msgstr "Volná rotace (re&volve)"
+
+#: graphicswin.cpp:121
+msgid "Link / Assemble..."
+msgstr "Odkaz / Sestavení..."
+
+#: graphicswin.cpp:122
+msgid "Link Recent"
+msgstr "Odkaz na nedávný"
+
+#: graphicswin.cpp:124
+msgid "&Sketch"
+msgstr "&Náčrt"
+
+#: graphicswin.cpp:125
+msgid "In &Workplane"
+msgstr "V &pracovní rovině"
+
+#: graphicswin.cpp:126
+msgid "Anywhere In &3d"
+msgstr "Kdekoliv ve &3D"
+
+#: graphicswin.cpp:128
+msgid "Datum &Point"
+msgstr "Vztažný &Bod"
+
+#: graphicswin.cpp:129
+msgid "&Workplane"
+msgstr "&Pracovní rovina"
+
+#: graphicswin.cpp:131
+msgid "Line &Segment"
+msgstr "Úsečka"
+
+#: graphicswin.cpp:132
+msgid "C&onstruction Line Segment"
+msgstr "Konstrukční úsečka"
+
+#: graphicswin.cpp:133
+msgid "&Rectangle"
+msgstr "&Obdélník"
+
+#: graphicswin.cpp:134
+msgid "&Circle"
+msgstr "&Kružnice"
+
+#: graphicswin.cpp:135
+msgid "&Arc of a Circle"
+msgstr "&Oblouk kružnice"
+
+#: graphicswin.cpp:136
+msgid "&Bezier Cubic Spline"
+msgstr "&Bézierův kubický splajn"
+
+#: graphicswin.cpp:138
+msgid "&Text in TrueType Font"
+msgstr "&Text v písmu TrueType"
+
+#: graphicswin.cpp:139
+msgid "&Image"
+msgstr "&Obrázek"
+
+#: graphicswin.cpp:141
+msgid "To&ggle Construction"
+msgstr "Přepnout &konstrukci"
+
+#: graphicswin.cpp:142
+msgid "Tangent &Arc at Point"
+msgstr "Tečný &oblouk v bodě"
+
+#: graphicswin.cpp:143
+msgid "Split Curves at &Intersection"
+msgstr "Rozdělit kř&ivky v průsečíku"
+
+#: graphicswin.cpp:145
+msgid "&Constrain"
+msgstr "Ome&zení"
+
+#: graphicswin.cpp:146
+msgid "&Distance / Diameter"
+msgstr "&Vzdálenost / průměr"
+
+#: graphicswin.cpp:147
+msgid "Re&ference Dimension"
+msgstr "Re&ferenční rozměr"
+
+#: graphicswin.cpp:148
+msgid "A&ngle"
+msgstr "Úhe&l"
+
+#: graphicswin.cpp:149
+msgid "Reference An&gle"
+msgstr "Refe&renční úhel"
+
+#: graphicswin.cpp:150
+msgid "Other S&upplementary Angle"
+msgstr "Další doplňkový úh&el"
+
+#: graphicswin.cpp:151
+msgid "Toggle R&eference Dim"
+msgstr "Přepnout r&eferenční rozměr"
+
+#: graphicswin.cpp:153
+msgid "&Horizontal"
+msgstr "&Horizontála"
+
+#: graphicswin.cpp:154
+msgid "&Vertical"
+msgstr "&Vertikála"
+
+#: graphicswin.cpp:156
+msgid "&On Point / Curve / Plane"
+msgstr "&Na bodě / křivce / ploše"
+
+#: graphicswin.cpp:157
+msgid "E&qual Length / Radius / Angle"
+msgstr "&Shodná délka / poloměr / úhel"
+
+#: graphicswin.cpp:158
+msgid "Length / Arc Ra&tio"
+msgstr "Poměr délky / oblo&uku"
+
+#: graphicswin.cpp:159
+msgid "Length / Arc Diff&erence"
+msgstr "Rozdíl &délky / oblouku"
+
+#: graphicswin.cpp:160
+msgid "At &Midpoint"
+msgstr "Ve středové&m bodě"
+
+#: graphicswin.cpp:161
+msgid "S&ymmetric"
+msgstr "S&ymetrie"
+
+#: graphicswin.cpp:162
+msgid "Para&llel / Tangent"
+msgstr "Rovno&běžnost / tečna"
+
+#: graphicswin.cpp:163
+msgid "&Perpendicular"
+msgstr "&Kolmost"
+
+#: graphicswin.cpp:164
+msgid "Same Orient&ation"
+msgstr "Shodná orient&ace"
+
+#: graphicswin.cpp:165
+msgid "Lock Point Where &Dragged"
+msgstr "Uzamčení v místě pře&tažení"
+
+#: graphicswin.cpp:167
+msgid "Comment"
+msgstr "Komentář"
+
+#: graphicswin.cpp:169
+msgid "&Analyze"
+msgstr "&Analyzovat"
+
+#: graphicswin.cpp:170
+msgid "Measure &Volume"
+msgstr "Měření &objemu"
+
+#: graphicswin.cpp:171
+msgid "Measure A&rea"
+msgstr "Měření &plochy"
+
+#: graphicswin.cpp:172
+msgid "Measure &Perimeter"
+msgstr "Měření ob&vodu"
+
+#: graphicswin.cpp:173
+msgid "Show &Interfering Parts"
+msgstr "Zobrazit kol&idující části"
+
+#: graphicswin.cpp:174
+msgid "Show &Naked Edges"
+msgstr "Zobrazit ob&nažené hrany"
+
+#: graphicswin.cpp:175
+msgid "Show &Center of Mass"
+msgstr "Zobrazit &těžiště"
+
+#: graphicswin.cpp:177
+msgid "Show &Underconstrained Points"
+msgstr "Zobrazit &nedostatečně omezené body"
+
+#: graphicswin.cpp:179
+msgid "&Trace Point"
+msgstr "&Trasovat bod"
+
+#: graphicswin.cpp:180
+msgid "&Stop Tracing..."
+msgstr "&Zastavit trasování..."
+
+#: graphicswin.cpp:181
+msgid "Step &Dimension..."
+msgstr "&Rozměr kroku..."
+
+#: graphicswin.cpp:183
+msgid "&Help"
+msgstr "&Nápověda"
+
+#: graphicswin.cpp:184
+msgid "&Language"
+msgstr "&Jazyk"
+
+#: graphicswin.cpp:185
+msgid "&Website / Manual"
+msgstr "&Web / Manuál"
+
+#: graphicswin.cpp:186
+msgid "&Go to GitHub commit"
+msgstr "Revize na &GitHubu"
+
+#: graphicswin.cpp:188
+msgid "&About"
+msgstr "O &aplikaci"
+
+#: graphicswin.cpp:362
+msgid "(no recent files)"
+msgstr "(žádné nedávné soubory)"
+
+#: graphicswin.cpp:370
+#, c-format
+msgid "File '%s' does not exist."
+msgstr "Soubor '%s' neexistuje."
+
+#: graphicswin.cpp:737
+msgid "No workplane is active, so the grid will not appear."
+msgstr "Žádná pracovní rovina není aktivní, proto nebude mřížka zobrazena."
+
+#: graphicswin.cpp:752
+msgid ""
+"The perspective factor is set to zero, so the view will always be a parallel "
+"projection.\n"
+"\n"
+"For a perspective projection, modify the perspective factor in the "
+"configuration screen. A value around 0.3 is typical."
+msgstr ""
+"Faktor perspektivy je nastaven na nulu, proto bude pohled vždy rovnoběžnou "
+"projekcí.\n"
+"\n"
+"Pro perspektivní projekci uprav faktor perspektivy v "
+"konfigurační obrazovce. Typická hodnota je kolem 0,3."
+
+#: graphicswin.cpp:837
+msgid ""
+"Select a point; this point will become the center of the view on screen."
+msgstr ""
+"Vyber bod; tento bod se stane středem pohledu na obrazovce."
+
+#: graphicswin.cpp:1137
+msgid "No additional entities share endpoints with the selected entities."
+msgstr "Žádné další entity nesdílejí koncové body s vybranými entitami."
+
+#: graphicswin.cpp:1155
+msgid ""
+"To use this command, select a point or other entity from an linked part, or "
+"make a link group the active group."
+msgstr ""
+"Chceš-li použít tento příkaz, vyber bod nebo jinou entitu z propojené části "
+"nebo vyber skupinu propojení jako aktivní skupinu."
+
+#: graphicswin.cpp:1178
+msgid ""
+"No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
+"to define the plane for the snap grid."
+msgstr ""
+"Žádná pracovní rovina není aktivní. Aktivuj pracovní rovinu (pomocí Náčrt "
+"-> V pracovní rovině) pro nastavení roviny přichytávání na mřížku."
+
+#: graphicswin.cpp:1185
+msgid ""
+"Can't snap these items to grid; select points, text comments, or constraints "
+"with a label. To snap a line, select its endpoints."
+msgstr ""
+"Tyto položky nelze přichytit k mřížce; vyber body, textové komentáře nebo omezení "
+"se štítkem. Chceš-li přichytit úsečku, vyber její koncové body."
+
+#: graphicswin.cpp:1270
+msgid "No workplane selected. Activating default workplane for this group."
+msgstr ""
+"Není vybrána žádná pracovní rovina. Aktivuji výchozí pracovní rovinu pro "
+"tuto skupinu."
+
+#: graphicswin.cpp:1273
+msgid ""
+"No workplane is selected, and the active group does not have a default "
+"workplane. Try selecting a workplane, or activating a sketch-in-new-"
+"workplane group."
+msgstr ""
+"Není vybrána žádná pracovní rovina a aktivní skupina nemá výchozí "
+"pracovní rovinu přiřazenu. Zkus vybrat pracovní rovinu nebo aktivovat "
+"skupinu náčrt-v-rovině."
+
+#: graphicswin.cpp:1294
+msgid ""
+"Bad selection for tangent arc at point. Select a single point, or select "
+"nothing to set up arc parameters."
+msgstr ""
+"Chybný výběr tečného oblouku v bodě. Vyber jeden bod nebo výběr "
+"zruš pro nastavení parametrů oblouku."
+
+#: graphicswin.cpp:1305
+msgid "click point on arc (draws anti-clockwise)"
+msgstr "klikni na bod oblouku (kresleno proti směru hodinových ručiček)"
+
+#: graphicswin.cpp:1306
+msgid "click to place datum point"
+msgstr "klikni pro umístění vztažného bodu"
+
+#: graphicswin.cpp:1307
+msgid "click first point of line segment"
+msgstr "klikni na první bod úsečky"
+
+#: graphicswin.cpp:1309
+msgid "click first point of construction line segment"
+msgstr "klikni na první bod konstrukční úsečky"
+
+#: graphicswin.cpp:1310
+msgid "click first point of cubic segment"
+msgstr "klikni na první bod segmentu splajnu"
+
+#: graphicswin.cpp:1311
+msgid "click center of circle"
+msgstr "klikni na střed kružnice"
+
+#: graphicswin.cpp:1312
+msgid "click origin of workplane"
+msgstr "klikni na počátek pracovní roviny"
+
+#: graphicswin.cpp:1313
+msgid "click one corner of rectangle"
+msgstr "klikni na jeden roh obdélníku"
+
+#: graphicswin.cpp:1314
+msgid "click top left of text"
+msgstr "klikni na levý horní roh textu"
+
+#: graphicswin.cpp:1320
+msgid "click top left of image"
+msgstr "klikni na levý horní roh obrázku"
+
+#: graphicswin.cpp:1346
+msgid ""
+"No entities are selected. Select entities before trying to toggle their "
+"construction state."
+msgstr ""
+"Nejsou vybrány žádné entity. Před přepnutím stavu konstrukce "
+"nějaké entity vyber."
+
+#: group.cpp:86
+msgctxt "group-name"
+msgid "sketch-in-3d"
+msgstr "náčrt-ve-3D"
+
+#: group.cpp:150
+msgid ""
+"Bad selection for new sketch in workplane. This group can be created with:\n"
+"\n"
+"    * a point (through the point, orthogonal to coordinate axes)\n"
+"    * a point and two line segments (through the point, parallel to the "
+"lines)\n"
+"    * a point and a normal (through the point, orthogonal to the normal)\n"
+"    * a workplane (copy of the workplane)\n"
+msgstr ""
+"Chybný výběr nového náčrtu v pracovním plánu. Tuto skupinu lze vytvořit pomocí:\n"
+"\n"
+"    * bodu (přes bod, kolmo na souřadnicové osy)\n"
+"    * bodu a dvou úseček (procházející bodem, rovnoběžná s "
+"přímkami)\n"
+"    * bodu a normály (procházející bodem, kolmá na normálu)\n"
+"    * pracovní roviny (kopie pracovní roviny)\n"
+
+#: group.cpp:166
+msgid ""
+"Activate a workplane (Sketch -> In Workplane) before extruding. The sketch "
+"will be extruded normal to the workplane."
+msgstr ""
+"Před extruzí aktivuj pracovní rovinu (Náčrt -> V pracovní rovině). Náčrt "
+"bude extrudován ve směru normály k pracovní rovině."
+
+#: group.cpp:175
+msgctxt "group-name"
+msgid "extrude"
+msgstr "extruze"
+
+#: group.cpp:180
+msgid "Lathe operation can only be applied to planar sketches."
+msgstr "Operace plné rotace lze použít pouze na rovinné náčrty.."
+
+#: group.cpp:191
+msgid ""
+"Bad selection for new lathe group. This group can be created with:\n"
+"\n"
+"    * a point and a line segment or normal (revolved about an axis parallel "
+"to line / normal, through point)\n"
+"    * a line segment (revolved about line segment)\n"
+msgstr ""
+"Chybný výběr pro novou skupinu plné rotace. Tuto skupinu lze vytvořit pomocí:\n"
+"\n"
+"    * bodu a úsečky nebo normály (rotací kolem osy rovnoběžné "
+"k přímce / normále, procházející bodem)\n"
+"    * úsečky (rotací kolem úsečky)\n"
+
+#: group.cpp:201
+msgctxt "group-name"
+msgid "lathe"
+msgstr "plná-rotace"
+
+#: group.cpp:206
+msgid "Revolve operation can only be applied to planar sketches."
+msgstr "Operaci volné rotace lze použít pouze na rovinné náčrty."
+
+#: group.cpp:217
+msgid ""
+"Bad selection for new revolve group. This group can be created with:\n"
+"\n"
+"    * a point and a line segment or normal (revolved about an axis parallel "
+"to line / normal, through point)\n"
+"    * a line segment (revolved about line segment)\n"
+msgstr ""
+"Chybný výběr pro novou skupinu volné rotace. Tuto skupinu lze vytvořit pomocí:\n"
+"\n"
+"    * bodu a úsečky nebo normály (rotace kolem osy rovnoběžné s "
+"přímkou / normálou, procházející bodem)\n"
+"    * úsečky (rotace kolem úsečky)\n"
+
+#: group.cpp:229
+msgctxt "group-name"
+msgid "revolve"
+msgstr "volná-rotace"
+
+#: group.cpp:234
+msgid "Helix operation can only be applied to planar sketches."
+msgstr "Operaci šroubovice lze použít pouze na rovinné náčrty."
+
+#: group.cpp:245
+msgid ""
+"Bad selection for new helix group. This group can be created with:\n"
+"\n"
+"    * a point and a line segment or normal (revolved about an axis parallel "
+"to line / normal, through point)\n"
+"    * a line segment (revolved about line segment)\n"
+msgstr ""
+"Chybný výběr pro novou skupinu šroubovice. Tuto skupinu lze vytvořit pomocí:\n"
+"\n"
+"    * bodu a úsečky nebo normály (rotací kolem osy rovnoběžné "
+"k přímce / normále, procházející bodem)\n"
+"    * úsečky (rotací kolem úsečky)\n"
+
+#: group.cpp:257
+msgctxt "group-name"
+msgid "helix"
+msgstr "šroubovice"
+
+#: group.cpp:270
+msgid ""
+"Bad selection for new rotation. This group can be created with:\n"
+"\n"
+"    * a point, while locked in workplane (rotate in plane, about that "
+"point)\n"
+"    * a point and a line or a normal (rotate about an axis through the "
+"point, and parallel to line / normal)\n"
+msgstr ""
+"Chybný výběr pro nové krokové otočení. Tuto skupinu lze vytvořit pomocí:\n"
+"\n"
+"    * bodu, přičemž je uzamčen v pracovní rovině (otočení v rovině, kolem tohoto "
+"bodu)\n"
+"    * bodu a úsečky nebo normály (otočení kolem osy procházející "
+"bodem a rovnoběžně s přímkou / normálou)\n"
+
+#: group.cpp:283
+msgctxt "group-name"
+msgid "rotate"
+msgstr "otočení"
+
+#: group.cpp:294
+msgctxt "group-name"
+msgid "translate"
+msgstr "posun"
+
+#: group.cpp:416
+msgid "(unnamed)"
+msgstr "(nepojmenované)"
+
+#: groupmesh.cpp:707
+msgid "not closed contour, or not all same style!"
+msgstr "Obrys není uzavřený nebo není celý v jednotném stylu!"
+
+#: groupmesh.cpp:720
+msgid "points not all coplanar!"
+msgstr "Ne všechny body jsou v rovině!"
+
+#: groupmesh.cpp:722
+msgid "contour is self-intersecting!"
+msgstr "Obrys se sám protíná!"
+
+#: groupmesh.cpp:724
+msgid "zero-length edge!"
+msgstr "Nulová délka hrany!"
+
+#: importmesh.cpp:136
+msgid "Text-formated STL files are not currently supported"
+msgstr "Textové soubory STL nejsou v této chvíli podporovány."
+
+#: modify.cpp:252
+msgid "Must be sketching in workplane to create tangent arc."
+msgstr "Pro vytvoření tečného oblouku je nutné kreslit v pracovní rovině."
+
+#: modify.cpp:299
+msgid ""
+"To create a tangent arc, select a point where two non-construction lines or "
+"circles in this group and workplane join."
+msgstr ""
+"Chceš-li vytvořit tečný oblouk, vyber bod, kde se s pracovní rovinou stýkají "
+"dvě nekonstrukční úsečky nebo kružnice v této skupině."
+
+#: modify.cpp:386
+msgid ""
+"Couldn't round this corner. Try a smaller radius, or try creating the "
+"desired geometry by hand with tangency constraints."
+msgstr ""
+"Tento roh nelze zaoblit. Zkus menší poloměr nebo zkus vytvořit "
+"požadovanou geometrii ručně pomocí tečných omezení."
+
+#: modify.cpp:595
+msgid "Couldn't split this entity; lines, circles, or cubics only."
+msgstr "Tuto entitu se nepodařilo rozdělit; pouze úsečky, kružnice nebo splajny."
+
+#: modify.cpp:622
+msgid "Must be sketching in workplane to split."
+msgstr "Rozdělení lze provést pouze při náčrtu v pracovní rovině."
+
+#: modify.cpp:629
+msgid ""
+"Select two entities that intersect each other (e.g. two lines/circles/arcs "
+"or a line/circle/arc and a point)."
+msgstr ""
+"Vyber dvě entity, které se vzájemně protínají (např. dvě čáry / kružnice / oblouky "
+"nebo úsečka / kružnice / oblouk a bod)."
+
+#: modify.cpp:734
+msgid "Can't split; no intersection found."
+msgstr "Nelze rozdělit, nebyla nalezena žádná průsečnice."
+
+#: mouse.cpp:557
+msgid "Assign to Style"
+msgstr "Přiřadit ke stylu"
+
+#: mouse.cpp:573
+msgid "No Style"
+msgstr "Žádný styl"
+
+#: mouse.cpp:576
+msgid "Newly Created Custom Style..."
+msgstr "Nově vytvořený vlastní styl..."
+
+#: mouse.cpp:583
+msgid "Group Info"
+msgstr "Info o skupině"
+
+#: mouse.cpp:603
+msgid "Style Info"
+msgstr "Info o stylu"
+
+#: mouse.cpp:623
+msgid "Select Edge Chain"
+msgstr "Vybrat řetězec hran"
+
+#: mouse.cpp:629
+msgid "Toggle Reference Dimension"
+msgstr "Přepnout referenční rozměr"
+
+#: mouse.cpp:635
+msgid "Other Supplementary Angle"
+msgstr "Další doplňkový úhel"
+
+#: mouse.cpp:640
+msgid "Snap to Grid"
+msgstr "Přichytit k mřížce"
+
+#: mouse.cpp:649
+msgid "Remove Spline Point"
+msgstr "Odebrat bod splajnu"
+
+#: mouse.cpp:684
+msgid "Add Spline Point"
+msgstr "Přidat bod splajnu"
+
+#: mouse.cpp:688
+msgid "Cannot add spline point: maximum number of points reached."
+msgstr "Nelze přidat bod splajnu: bylo dosaženo maximálního počtu bodů."
+
+#: mouse.cpp:713
+msgid "Toggle Construction"
+msgstr "Přepnout konstrukci"
+
+#: mouse.cpp:729
+msgid "Delete Point-Coincident Constraint"
+msgstr "Odstranit omezení kolidujícího bodu"
+
+#: mouse.cpp:747
+msgid "Cut"
+msgstr "Vyjmout"
+
+#: mouse.cpp:749
+msgid "Copy"
+msgstr "Kopírovat"
+
+#: mouse.cpp:753
+msgid "Select All"
+msgstr "Vybrat vše"
+
+#: mouse.cpp:758
+msgid "Paste"
+msgstr "Vložit"
+
+#: mouse.cpp:760
+msgid "Paste Transformed..."
+msgstr "Vložit transformované..."
+
+#: mouse.cpp:765
+msgid "Delete"
+msgstr "Odstranit"
+
+#: mouse.cpp:768
+msgid "Unselect All"
+msgstr "Zrušit výběr všeho"
+
+#: mouse.cpp:775
+msgid "Unselect Hovered"
+msgstr "Zrušit výběr při najetí"
+
+#: mouse.cpp:784
+msgid "Zoom to Fit"
+msgstr "Přiblížit na míru"
+
+#: mouse.cpp:986 mouse.cpp:1274
+msgid "click next point of line, or press Esc"
+msgstr "klikni na další bod úsečky nebo stiskni klávesu Esc"
+
+#: mouse.cpp:992
+msgid ""
+"Can't draw rectangle in 3d; first, activate a workplane with Sketch -> In "
+"Workplane."
+msgstr ""
+"Nelze nakreslit obdélník ve 3D; nejprve aktivuj pracovní rovinu pomocí Náčrt -> V "
+"pracovní rovině."
+
+#: mouse.cpp:1026
+msgid "click to place other corner of rectangle"
+msgstr "kliknutím umísti další roh obdélníku"
+
+#: mouse.cpp:1047
+msgid "click to set radius"
+msgstr "kliknutím nastav poloměr"
+
+#: mouse.cpp:1052
+msgid ""
+"Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
+"Workplane."
+msgstr ""
+"Nelze nakreslit oblouk ve 3D; nejprve aktivuj pracovní rovinu pomocí Náčrt -> V "
+"pracovní rovině."
+
+#: mouse.cpp:1071
+msgid "click to place point"
+msgstr "kliknutím umísti bod"
+
+#: mouse.cpp:1087
+msgid "click next point of cubic, or press Esc"
+msgstr "klikni na další bod splajnu nebo stiskni Esc"
+
+#: mouse.cpp:1092
+msgid ""
+"Sketching in a workplane already; sketch in 3d before creating new workplane."
+msgstr ""
+"Kreslení v pracovní rovině již probíhá; před vytvořením nové pracovní roviny "
+"kresli ve 3D."
+
+#: mouse.cpp:1108
+msgid ""
+"Can't draw text in 3d; first, activate a workplane with Sketch -> In "
+"Workplane."
+msgstr ""
+"Nelze kreslit text ve 3D; nejprve aktivuj pracovní rovinu pomocí Náčrt -> V "
+"pracovní rovině."
+
+#: mouse.cpp:1125
+msgid "click to place bottom right of text"
+msgstr "klikni pro umístění pravého dolního rohu textu"
+
+#: mouse.cpp:1131
+msgid ""
+"Can't draw image in 3d; first, activate a workplane with Sketch -> In "
+"Workplane."
+msgstr ""
+"Nelze nakreslit obrázek ve 3d; nejprve aktivuj pracovní rovinu pomocí Náčrt -> V "
+"pracovní rovině."
+
+#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:553
+msgctxt "file-type"
+msgid "SolveSpace models"
+msgstr "SolveSpace modely"
+
+#: platform/gui.cpp:89
+msgctxt "file-type"
+msgid "ALL"
+msgstr "VŠE"
+
+#: platform/gui.cpp:91
+msgctxt "file-type"
+msgid "IDF circuit board"
+msgstr "IDF deska plošných spojů"
+
+#: platform/gui.cpp:92
+msgctxt "file-type"
+msgid "STL triangle mesh"
+msgstr "STL trojúhelníková síť"
+
+#: platform/gui.cpp:96
+msgctxt "file-type"
+msgid "PNG image"
+msgstr "PNG obrázek"
+
+#: platform/gui.cpp:100
+msgctxt "file-type"
+msgid "STL mesh"
+msgstr "STL síť (mesh)"
+
+#: platform/gui.cpp:101
+msgctxt "file-type"
+msgid "Wavefront OBJ mesh"
+msgstr "Wavefront OBJ síť (mesh)"
+
+#: platform/gui.cpp:102
+msgctxt "file-type"
+msgid "Three.js-compatible mesh, with viewer"
+msgstr "Three.js-compatibilní síť (mesh), s prohlížečem"
+
+#: platform/gui.cpp:103
+msgctxt "file-type"
+msgid "Three.js-compatible mesh, mesh only"
+msgstr "Three.js-compatibilní síť (mesh), bez prohlížeče"
+
+#: platform/gui.cpp:104
+msgctxt "file-type"
+msgid "VRML text file"
+msgstr "VRML textový soubor"
+
+#: platform/gui.cpp:108 platform/gui.cpp:115 platform/gui.cpp:122
+msgctxt "file-type"
+msgid "STEP file"
+msgstr "STEP soubor"
+
+#: platform/gui.cpp:112
+msgctxt "file-type"
+msgid "PDF file"
+msgstr "PDF soubor"
+
+#: platform/gui.cpp:113
+msgctxt "file-type"
+msgid "Encapsulated PostScript"
+msgstr "Zapouzdřený PostScript"
+
+#: platform/gui.cpp:114
+msgctxt "file-type"
+msgid "Scalable Vector Graphics"
+msgstr "SVG soubor"
+
+#: platform/gui.cpp:116 platform/gui.cpp:123
+msgctxt "file-type"
+msgid "DXF file (AutoCAD 2007)"
+msgstr "DXF soubor (AutoCAD 2007)"
+
+#: platform/gui.cpp:117
+msgctxt "file-type"
+msgid "HPGL file"
+msgstr "HPGL soubor"
+
+#: platform/gui.cpp:118
+msgctxt "file-type"
+msgid "G Code"
+msgstr "G kód (G Code)"
+
+#: platform/gui.cpp:127
+msgctxt "file-type"
+msgid "AutoCAD DXF and DWG files"
+msgstr "AutoCAD DXF a DWG soubory"
+
+#: platform/gui.cpp:131
+msgctxt "file-type"
+msgid "Comma-separated values"
+msgstr "CSV soubor"
+
+#: platform/guigtk.cpp:1382 platform/guimac.mm:1509 platform/guiwin.cpp:1641
+msgid "untitled"
+msgstr "nepojmenovaný"
+
+#: platform/guigtk.cpp:1393 platform/guigtk.cpp:1426 platform/guimac.mm:1467
+#: platform/guiwin.cpp:1639
+msgctxt "title"
+msgid "Save File"
+msgstr "Uložit soubor"
+
+#: platform/guigtk.cpp:1394 platform/guigtk.cpp:1427 platform/guimac.mm:1450
+#: platform/guiwin.cpp:1645
+msgctxt "title"
+msgid "Open File"
+msgstr "Otevřít soubor"
+
+#: platform/guigtk.cpp:1397 platform/guigtk.cpp:1433
+msgctxt "button"
+msgid "_Cancel"
+msgstr "_Zrušit"
+
+#: platform/guigtk.cpp:1398 platform/guigtk.cpp:1431
+msgctxt "button"
+msgid "_Save"
+msgstr "_Uložit"
+
+#: platform/guigtk.cpp:1399 platform/guigtk.cpp:1432
+msgctxt "button"
+msgid "_Open"
+msgstr "_Otevřít"
+
+#: solvespace.cpp:171
+msgctxt "title"
+msgid "Autosave Available"
+msgstr "Dostupné automatické ukládání"
+
+#: solvespace.cpp:172
+msgctxt "dialog"
+msgid "An autosave file is available for this sketch."
+msgstr "Pro tento náčrt je k dispozici automatické ukládání souboru."
+
+#: solvespace.cpp:173
+msgctxt "dialog"
+msgid "Do you want to load the autosave file instead?"
+msgstr "Chceš místo toho načíst automaticky uložený soubor?"
+
+#: solvespace.cpp:174
+msgctxt "button"
+msgid "&Load autosave"
+msgstr "&Načíst automaticky uložený"
+
+#: solvespace.cpp:176
+msgctxt "button"
+msgid "Do&n't Load"
+msgstr "&Nenačítat"
+
+#: solvespace.cpp:599
+msgctxt "title"
+msgid "Modified File"
+msgstr "Upravený soubor"
+
+#: solvespace.cpp:601
+#, c-format
+msgctxt "dialog"
+msgid "Do you want to save the changes you made to the sketch “%s”?"
+msgstr "Chceš uložit změny, které jsi provedl v náčrtu “%s”?"
+
+#: solvespace.cpp:604
+msgctxt "dialog"
+msgid "Do you want to save the changes you made to the new sketch?"
+msgstr "Chceš provedené změny uložit do nového náčrtu?"
+
+#: solvespace.cpp:607
+msgctxt "dialog"
+msgid "Your changes will be lost if you don't save them."
+msgstr "Pokud změny neuložíš, budou ztraceny."
+
+#: solvespace.cpp:608
+msgctxt "button"
+msgid "&Save"
+msgstr "&Uložit"
+
+#: solvespace.cpp:610
+msgctxt "button"
+msgid "Do&n't Save"
+msgstr "&Neukládat"
+
+#: solvespace.cpp:631
+msgctxt "title"
+msgid "(new sketch)"
+msgstr "(nový náčrt)"
+
+#: solvespace.cpp:638
+msgctxt "title"
+msgid "Property Browser"
+msgstr "Parametry"
+
+#: solvespace.cpp:700
+msgid ""
+"Constraints are currently shown, and will be exported in the toolpath. This "
+"is probably not what you want; hide them by clicking the link at the top of "
+"the text window."
+msgstr ""
+"Omezení jsou aktuálně zobrazena a budou exportována do cesty nástroje. To "
+"pravděpodobně není to, co chceš; skryj je kliknutím na odkaz v horní části "
+"textového okna."
+
+#: solvespace.cpp:772
+#, c-format
+msgid ""
+"Can't identify file type from file extension of filename '%s'; try .dxf or ."
+"dwg."
+msgstr ""
+"Nelze určit typ souboru podle přípony názvu souboru '%s'; zkus .dxf nebo ."
+"dwg."
+
+#: solvespace.cpp:824
+msgid "Constraint must have a label, and must not be a reference dimension."
+msgstr "Omezení musí mít popisek a nesmí být referenčním rozměrem."
+
+#: solvespace.cpp:828
+msgid "Bad selection for step dimension; select a constraint."
+msgstr "Chybný výběr rozměru kroku; vyber omezení."
+
+#: solvespace.cpp:852
+msgid "The assembly does not interfere, good."
+msgstr "V pořádku, sestava se nepřekrývá."
+
+#: solvespace.cpp:868
+#, c-format
+msgid ""
+"The volume of the solid model is:\n"
+"\n"
+"    %s"
+msgstr ""
+"Objem modelu tělesa je:\n"
+"\n"
+"    %s"
+
+#: solvespace.cpp:877
+#, c-format
+msgid ""
+"\n"
+"The volume of current group mesh is:\n"
+"\n"
+"    %s"
+msgstr ""
+"\n"
+"Objem aktuální mesh skupiny je:\n"
+"\n"
+"    %s"
+
+#: solvespace.cpp:882
+msgid ""
+"\n"
+"\n"
+"Curved surfaces have been approximated as triangles.\n"
+"This introduces error, typically of around 1%."
+msgstr ""
+"\n"
+"\n"
+"Zakřivené plochy byly aproximovány jako trojúhelníky.\n"
+"To přináší chybu, obvykle kolem 1%%."
+
+#: solvespace.cpp:897
+#, c-format
+msgid ""
+"The surface area of the selected faces is:\n"
+"\n"
+"    %s\n"
+"\n"
+"Curves have been approximated as piecewise linear.\n"
+"This introduces error, typically of around 1%%."
+msgstr ""
+"Plocha vybraných stěn je:\n"
+"\n"
+" %s\n"
+"\n"
+"Křivky byly aproximovány jako po částech lineární.\n"
+"To přináší chybu, obvykle kolem 1%%."
+
+#: solvespace.cpp:906
+msgid ""
+"This group does not contain a correctly-formed 2d closed area. It is open, "
+"not coplanar, or self-intersecting."
+msgstr ""
+"Tato skupina neobsahuje správně vytvořenou uzavřenou 2D oblast. Je otevřená, "
+"není koplanární ani se neprotíná."
+
+#: solvespace.cpp:918
+#, c-format
+msgid ""
+"The area of the region sketched in this group is:\n"
+"\n"
+"    %s\n"
+"\n"
+"Curves have been approximated as piecewise linear.\n"
+"This introduces error, typically of around 1%%."
+msgstr ""
+"Plocha regionu zakresleného v této skupině je:\n"
+"\n"
+" %s\n"
+"\n"
+"Křivky byly aproximovány jako po částech lineární.\n"
+"To přináší chybu, obvykle kolem 1%%."
+
+#: solvespace.cpp:938
+#, c-format
+msgid ""
+"The total length of the selected entities is:\n"
+"\n"
+"    %s\n"
+"\n"
+"Curves have been approximated as piecewise linear.\n"
+"This introduces error, typically of around 1%%."
+msgstr ""
+"Celková délka vybraných entit je:\n"
+"\n"
+" %s\n"
+"\n"
+"Křivky byly aproximovány jako po částech lineární.\n"
+"To přináší chybu, obvykle kolem 1%%."
+
+#: solvespace.cpp:944
+msgid "Bad selection for perimeter; select line segments, arcs, and curves."
+msgstr "Chybný výběr obvodu; vyber úsečky, oblouky a křivky."
+
+#: solvespace.cpp:960
+msgid "Bad selection for trace; select a single point."
+msgstr "Chybný výběr pro trasování; vyber jeden bod."
+
+#: solvespace.cpp:987
+#, c-format
+msgid "Couldn't write to '%s'"
+msgstr "Nelze zapisovat do '%s'"
+
+#: solvespace.cpp:1017
+msgid "The mesh is self-intersecting (NOT okay, invalid)."
+msgstr "Síť se sama protíná (NENÍ v pořádku, je neplatná)."
+
+#: solvespace.cpp:1018
+msgid "The mesh is not self-intersecting (okay, valid)."
+msgstr "Síť se sama neprotíná (je v pořádku, je platná)."
+
+#: solvespace.cpp:1020
+msgid "The mesh has naked edges (NOT okay, invalid)."
+msgstr "Síť má obnažené hrany (NENÍ v pořádku, je neplatná)."
+
+#: solvespace.cpp:1021
+msgid "The mesh is watertight (okay, valid)."
+msgstr "Síť je vodotěsná (je v pořádku, je platná)."
+
+#: solvespace.cpp:1024
+#, c-format
+msgid ""
+"\n"
+"\n"
+"The model contains %d triangles, from %d surfaces."
+msgstr ""
+"\n"
+"\n"
+"Model obsahuje %d trojúhelníků z %d povrchů."
+
+#: solvespace.cpp:1028
+#, c-format
+msgid ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"Zero problematic edges, good.%s"
+msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"Žádné problematické hrany, v pořádku.%s"
+
+#: solvespace.cpp:1031
+#, c-format
+msgid ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"%d problematic edges, bad.%s"
+msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"Chyba, počet problematických hran: %d.%s"
+
+#: solvespace.cpp:1044
+#, c-format
+msgid ""
+"This is SolveSpace version %s.\n"
+"\n"
+"For more information, see http://solvespace.com/\n"
+"\n"
+"SolveSpace is free software: you are free to modify\n"
+"and/or redistribute it under the terms of the GNU\n"
+"General Public License (GPL) version 3 or later.\n"
+"\n"
+"There is NO WARRANTY, to the extent permitted by\n"
+"law. For details, visit http://gnu.org/licenses/\n"
+"\n"
+"© 2008-%d Jonathan Westhues and other authors.\n"
+msgstr ""
+"Toto je SolveSpace verze %s.\n"
+"\n"
+"Další informace naleznete na adrese http://solvespace.com/\n"
+"\n"
+"SolveSpace je svobodný software: můžete jej svobodně upravovat\n"
+"a/nebo jej šířit za podmínek GNU\n"
+"General Public License (GPL) verze 3 nebo novější.\n"
+"\n"
+"V rozsahu povoleném zákonem není poskytována ŽÁDNÁ ZÁRUKA.\n"
+"Podrobnosti najdete na adrese http://gnu.org/licenses/\n"
+"\n"
+"© 2008-%d Jonathan Westhues a další autoři.\n"
+
+#: style.cpp:185
+msgid ""
+"Can't assign style to an entity that's derived from another entity; try "
+"assigning a style to this entity's parent."
+msgstr ""
+"Nelze přiřadit styl entitě, která je odvozena od jiné entity; zkus "
+"přiřadit styl nadřazené entitě."
+
+#: style.cpp:735
+msgid "Style name cannot be empty"
+msgstr "Název stylu nemůže být prázdný"
+
+#: textscreens.cpp:791
+msgid "Can't repeat fewer than 1 time."
+msgstr "Nelze opakovat méně než 1krát."
+
+#: textscreens.cpp:795
+msgid "Can't repeat more than 999 times."
+msgstr "Nelze opakovat více než 999krát."
+
+#: textscreens.cpp:820
+msgid "Group name cannot be empty"
+msgstr "Název skupiny nemůže být prázdný"
+
+#: textscreens.cpp:872
+msgid "Opacity must be between zero and one."
+msgstr "Neprůhlednost musí být mezi nulou a jedničkou."
+
+#: textscreens.cpp:907
+msgid "Radius cannot be zero or negative."
+msgstr "Poloměr nemůže být nulový nebo záporný."
+
+#: toolbar.cpp:18
+msgid "Sketch line segment"
+msgstr "Náčrt úsečky"
+
+#: toolbar.cpp:20
+msgid "Sketch rectangle"
+msgstr "Náčrt obdélníku"
+
+#: toolbar.cpp:22
+msgid "Sketch circle"
+msgstr "Náčrt kružnice"
+
+#: toolbar.cpp:24
+msgid "Sketch arc of a circle"
+msgstr "Náčrt oblouku kružnice"
+
+#: toolbar.cpp:26
+msgid "Sketch curves from text in a TrueType font"
+msgstr "Náčrt křivek z textu v písmu TrueType"
+
+#: toolbar.cpp:28
+msgid "Sketch image from a file"
+msgstr "Náčrt obrázku ze souboru"
+
+#: toolbar.cpp:30
+msgid "Create tangent arc at selected point"
+msgstr "Vytvořit tečný oblouk ve vybraném bodě"
+
+#: toolbar.cpp:32
+msgid "Sketch cubic Bezier spline"
+msgstr "Náčrt kubického Bézierova splajnu"
+
+#: toolbar.cpp:34
+msgid "Sketch datum point"
+msgstr "Náčrt vztažného bodu"
+
+#: toolbar.cpp:36
+msgid "Toggle construction"
+msgstr "Přepnout konstrukci"
+
+#: toolbar.cpp:38
+msgid "Split lines / curves where they intersect"
+msgstr "Rozdělení úseček / křivek v místě jejich průsečíku"
+
+#: toolbar.cpp:42
+msgid "Constrain distance / diameter / length"
+msgstr "Omezení vzdálenosti / průměru / délky"
+
+#: toolbar.cpp:44
+msgid "Constrain angle"
+msgstr "Omezení úhlu"
+
+#: toolbar.cpp:46
+msgid "Constrain to be horizontal"
+msgstr "Omezení horizontály"
+
+#: toolbar.cpp:48
+msgid "Constrain to be vertical"
+msgstr "Omezení vertikály"
+
+#: toolbar.cpp:50
+msgid "Constrain to be parallel or tangent"
+msgstr "Omezení rovnoběžnosti nebo tečny"
+
+#: toolbar.cpp:52
+msgid "Constrain to be perpendicular"
+msgstr "Omezení kolmosti"
+
+#: toolbar.cpp:54
+msgid "Constrain point on line / curve / plane / point"
+msgstr "Omezení bodu na přímce / křivce / rovině / bodu"
+
+#: toolbar.cpp:56
+msgid "Constrain symmetric"
+msgstr "Omezení symetrie"
+
+#: toolbar.cpp:58
+msgid "Constrain equal length / radius / angle"
+msgstr "Omezení shodné délky / poloměru / úhlu"
+
+#: toolbar.cpp:60
+msgid "Constrain normals in same orientation"
+msgstr "Omezení normál se stejnou orientací"
+
+#: toolbar.cpp:62
+msgid "Other supplementary angle"
+msgstr "Další doplňkový úhel"
+
+#: toolbar.cpp:64
+msgid "Toggle reference dimension"
+msgstr "Přepnout referenční rozměr"
+
+#: toolbar.cpp:68
+msgid "New group extruding active sketch"
+msgstr "Nová skupina extruzí aktivního náčrtu"
+
+#: toolbar.cpp:70
+msgid "New group rotating active sketch"
+msgstr "Nová skupina plnou rotací aktivního náčrtu"
+
+#: toolbar.cpp:72
+msgid "New group helix from active sketch"
+msgstr "Nová skupina šroubovicí aktivního náčrtu"
+
+#: toolbar.cpp:74
+msgid "New group revolve active sketch"
+msgstr "Nová skupina volnou rotací aktivního náčrtu"
+
+#: toolbar.cpp:76
+msgid "New group step and repeat rotating"
+msgstr "Nová skupina krokovým otočením"
+
+#: toolbar.cpp:78
+msgid "New group step and repeat translating"
+msgstr "Nová skupina krokovým posunem"
+
+#: toolbar.cpp:80
+msgid "New group in new workplane (thru given entities)"
+msgstr "Nová skupina v pracovní rovině (přes dané entity)"
+
+#: toolbar.cpp:82
+msgid "New group in 3d"
+msgstr "Nová skupina ve 3D"
+
+#: toolbar.cpp:84
+msgid "New group linking / assembling file"
+msgstr "Nová skupina odkazem / sestavením souboru"
+
+#: toolbar.cpp:88
+msgid "Nearest isometric view"
+msgstr "Nejbližší isometrický pohled"
+
+#: toolbar.cpp:90
+msgid "Align view to active workplane"
+msgstr "Zarovnat pohled na aktivní pracovní rovinu"
+
+#: util.cpp:165
+msgctxt "title"
+msgid "Error"
+msgstr "Chyba"
+
+#: util.cpp:165
+msgctxt "title"
+msgid "Message"
+msgstr "Zpráva"
+
+#: util.cpp:170
+msgctxt "button"
+msgid "&OK"
+msgstr "&OK"
+
+#: view.cpp:127
+msgid "Scale cannot be zero or negative."
+msgstr "Měřítko nemůže být nulové nebo záporné."
+
+#: view.cpp:139 view.cpp:148
+msgid "Bad format: specify x, y, z"
+msgstr "Chybný formát: zadej x, y, z"
+
+#~ msgid "&Mirror"
+#~ msgstr "&Zrcadlit"
+
+#~ msgctxt "group-name"
+#~ msgid "mirror"
+#~ msgstr "zrcadlit"
+
+#~ msgid ""
+#~ "Bad selection for length ratio constraint. This constraint can apply to:\n"
+#~ "\n"
+#~ "    * two line segments\n"
+#~ msgstr ""
+#~ "Chybný výběr pro omezení poměru délky. Toto omezení lze použít pro:\n"
+#~ "\n"
+#~ "    * dvě úsečky\n"
+
+#~ msgid ""
+#~ "Bad selection for length difference constraint. This constraint can apply "
+#~ "to:\n"
+#~ "\n"
+#~ "    * two line segments\n"
+#~ msgstr ""
+#~ "Chybný výběr pro omezení rozdílu délek. Toto omezení lze použít"
+#~ "pro:\n"
+#~ "\n"
+#~ "    * dvě úsečky\n"
+
+#~ msgid "Length Ra&tio"
+#~ msgstr "Poměr &délky"
+
+#~ msgid "Length Diff&erence"
+#~ msgstr "Rozdíl dél&ek"
+
+#~ msgid ""
+#~ "Bad selection for new sketch in workplane. This group can be created "
+#~ "with:\n"
+#~ "\n"
+#~ "    * a point (through the point, orthogonal to coordinate axes)\n"
+#~ "    * a point and two line segments (through the point, parallel to the "
+#~ "lines)\n"
+#~ "    * a workplane (copy of the workplane)\n"
+#~ msgstr ""
+#~ "Chybný výběr nového náčrtu v pracovní rovině. Tuto skupinu lze vytvořit "
+#~ "pomocí:\n"
+#~ "\n"
+#~ "    * bodu (procházejícího bodem kolmým na souřadnicové osy)\n"
+#~ "    * bodu a dvěma úsečkami (procházejícího bodem rovnoběžným "
+#~ "s úsečkami)\n"
+#~ "    * pracovní roviny (kopie pracovní roviny)\n"
+
+#~ msgctxt "file-type"
+#~ msgid "Q3D Object file"
+#~ msgstr "Q3D Objektový soubor"
