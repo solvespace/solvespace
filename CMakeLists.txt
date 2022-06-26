@@ -91,6 +91,10 @@ endif()
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+    # Link 32 bit SolveSpace with --large-address-aware which allows it to access
+    # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
+    # See https://msdn.microsoft.com/en-us/library/aa366778
+    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--large-address-aware")
 endif()
 
 # Ensure that all platforms use 64-bit IEEE floating point operations for consistency;
@@ -376,6 +380,12 @@ if(MSVC)
     # We rely on these /we flags. They correspond to the GNU-style flags below as
     # follows: /w4062=-Wswitch
     set(WARNING_FLAGS   "${WARNING_FLAGS} /we4062")
+
+    # Link 32 bit SolveSpace with /LARGEADDRESSAWARE which allows it to access
+    # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
+    # See https://msdn.microsoft.com/en-us/library/aa366778
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /LARGEADDRESSAWARE")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
