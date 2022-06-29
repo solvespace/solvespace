@@ -151,8 +151,8 @@
             "name": "gtkmm",
             "buildsystem": "meson",
             "config-opts": [
-              "-Dbuild-demos=false",
-              "-Dbuild-tests=false"
+                "-Dbuild-demos=false",
+                "-Dbuild-tests=false"
             ],
             "sources": [
                 {
@@ -196,8 +196,8 @@
             "buildsystem": "cmake-ninja",
             "builddir": true,
             "config-opts": [
-              "-DBUILD_STATIC_LIBS=OFF",
-              "-DENABLE_THREADING=ON"
+                "-DBUILD_STATIC_LIBS=OFF",
+                "-DENABLE_THREADING=ON"
             ],
             "sources": [
                 {
@@ -214,19 +214,19 @@
             ]
         },
         {
-            "name": "SolveSpace",
-            "sources": [
-                {
-                    "type": "dir",
-                    "path": "../.."
-                }
-            ],
+            "name": "solvespace",
             "buildsystem": "cmake-ninja",
             "builddir": true,
             "config-opts": [
                 "-DFLATPAK=ON",
                 "-DENABLE_CLI=OFF",
                 "-DENABLE_TESTS=OFF"
+            ],
+            "sources": [
+                {
+                    "type": "dir",
+                    "path": "../.."
+                }
             ]
         }
     ]
