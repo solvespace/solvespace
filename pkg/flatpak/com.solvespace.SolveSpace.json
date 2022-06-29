@@ -195,6 +195,10 @@
             "name": "libjson-c",
             "buildsystem": "cmake-ninja",
             "builddir": true,
+            "config-opts": [
+              "-DBUILD_STATIC_LIBS=OFF",
+              "-DENABLE_THREADING=ON"
+            ],
             "sources": [
                 {
                     "type": "archive",
