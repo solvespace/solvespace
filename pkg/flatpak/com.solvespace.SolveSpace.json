@@ -150,6 +150,10 @@
         {
             "name": "gtkmm",
             "buildsystem": "meson",
+            "config-opts": [
+              "-Dbuild-demos=false",
+              "-Dbuild-tests=false"
+            ],
             "sources": [
                 {
                     "type": "archive",
