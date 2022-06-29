@@ -5,10 +5,10 @@
     "runtime-version": "21.08",
     "sdk": "org.freedesktop.Sdk",
     "finish-args": [
+        "--device=dri",
         "--share=ipc",
         "--socket=fallback-x11",
-        "--socket=wayland",
-        "--device=dri"
+        "--socket=wayland"
     ],
     "cleanup": [
         "/include",
