@@ -12,19 +12,11 @@
     ],
     "cleanup": [
         "/include",
-        "/lib/*/include",
-        "*.a",
-        "*.la",
-        "*.m4",
-        "/lib/libslvs*.so*",
-        "/lib/libglibmm_generate_extra_defs*.so*",
-        "/share/pkgconfig",
-        "*.pc",
-        "/share/man",
-        "/share/doc",
+        "/lib/cmake",
+        "/lib/pkgconfig",
         "/share/aclocal",
-        "/bin/mm-common-prepare",
-        "/share/mm-common"
+        "/share/pkgconfig",
+        "*.la"
     ],
     "command": "solvespace",
     "modules": [
@@ -42,6 +34,12 @@
                         "stable-only": true
                     }
                 }
+            ],
+            "cleanup": [
+                "/bin",
+                "/share/doc",
+                "/share/man",
+                "/share/mm-common"
             ]
         },
         {
@@ -64,6 +62,9 @@
                         }
                     }
                 }
+            ],
+            "cleanup": [
+                "/lib/sigc++-*"
             ]
         },
         {
@@ -86,6 +87,11 @@
                         }
                     }
                 }
+            ],
+            "cleanup": [
+                "/lib/giomm-*",
+                "/lib/glibmm-*",
+                "/lib/libglibmm_generate_extra_defs-*.so*"
             ]
         },
         {
@@ -107,6 +113,9 @@
                         }
                     }
                 }
+            ],
+            "cleanup": [
+                "/lib/cairomm-*"
             ]
         },
         {
@@ -126,6 +135,9 @@
                         }
                     }
                 }
+            ],
+            "cleanup": [
+                "/lib/pangomm-*"
             ]
         },
         {
@@ -145,6 +157,9 @@
                         }
                     }
                 }
+            ],
+            "cleanup": [
+                "/lib/atkmm-*"
             ]
         },
         {
@@ -168,6 +183,10 @@
                         }
                     }
                 }
+            ],
+            "cleanup": [
+                "/lib/gdkmm-*",
+                "/lib/gtkmm-*"
             ]
         },
         {
@@ -227,6 +246,9 @@
                     "type": "dir",
                     "path": "../.."
                 }
+            ],
+            "cleanup": [
+                "/lib/libslvs*.so*"
             ]
         }
     ]
