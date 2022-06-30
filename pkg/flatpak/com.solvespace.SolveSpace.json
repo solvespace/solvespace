@@ -2,7 +2,7 @@
     "$schema": "https://raw.githubusercontent.com/TingPing/flatpak-manifest-schema/master/flatpak-manifest.schema",
     "app-id": "com.solvespace.SolveSpace",
     "runtime": "org.freedesktop.Platform",
-    "runtime-version": "20.08",
+    "runtime-version": "21.08",
     "sdk": "org.freedesktop.Sdk",
     "finish-args": [
         "--share=ipc",
