@@ -238,7 +238,6 @@
             "builddir": true,
             "config-opts": [
                 "-DFLATPAK=ON",
-                "-DENABLE_CLI=OFF",
                 "-DENABLE_TESTS=OFF"
             ],
             "sources": [
