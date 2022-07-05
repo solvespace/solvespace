@@ -33,6 +33,14 @@ automatically built by the SolveSpace maintainers for each stable release.
 
 [rel]: https://github.com/solvespace/solvespace/releases
 
+### Via Flathub
+
+Official releases can be installed as a Flatpak from Flathub.
+
+[Get SolveSpace from Flathub](https://flathub.org/apps/details/com.solvespace.SolveSpace)
+
+These should work on any Linux distribution that supports Flatpak.
+
 ### Via Snap Store
 
 Official releases can be installed from the `stable` channel.
