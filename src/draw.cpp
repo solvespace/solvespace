@@ -193,6 +193,8 @@ void GraphicsWindow::MakeSelected(Selection *stog) {
             hEntity he = s->entity;
             if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
                 c++;
+                // Modify also Group::DrawMesh "case DrawMeshAs::SELECTED:"
+                // Magic numers are ugly :-(
                 if(c >= 3) s->tag = 1;
             }
         }
