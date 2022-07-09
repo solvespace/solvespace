@@ -750,6 +750,7 @@ public:
     Selection hover;
     bool hoverWasSelectedOnMousedown;
     List<Selection> selection;
+    const unsigned MAX_SELECTABLE_FACES = 3u;
 
     Selection ChooseFromHoverToSelect();
     Selection ChooseFromHoverToDrag();
