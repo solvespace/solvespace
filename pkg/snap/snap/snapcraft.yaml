@@ -1,5 +1,5 @@
 name: solvespace
-base: core20
+base: core22
 summary: Parametric 2d/3d CAD
 adopt-info: solvespace
 description: |
@@ -15,6 +15,7 @@ description: |
 confinement: strict
 license: GPL-3.0
 compression: lzo
+grade: stable
 
 layout:
   /usr/share/solvespace:
@@ -24,11 +25,11 @@ apps:
   solvespace:
     command: usr/bin/solvespace
     desktop: solvespace.desktop
-    extensions: [gnome-3-38]
+    extensions: [gnome]
     plugs: [opengl, unity7, home, removable-media, gsettings, network]
   cli:
     command: usr/bin/solvespace-cli
-    extensions: [gnome-3-38]
+    extensions: [gnome]
     plugs: [home, removable-media, network]
 
 parts:
@@ -37,16 +38,14 @@ parts:
     source: ./solvespace-snap-src
     source-type: local
     override-pull: |
-      snapcraftctl pull
+      craftctl default
       git submodule update --init extlib/libdxfrw extlib/mimalloc extlib/eigen
     override-build: |
-      snapcraftctl build
+      craftctl default
       project_version=$(grep CMAKE_PROJECT_VERSION:STATIC CMakeCache.txt | cut -d "=" -f2)
-      cd $SNAPCRAFT_PART_SRC
+      cd $CRAFT_PART_SRC
       version="$project_version~$(git rev-parse --short=8 HEAD)"
-      snapcraftctl set-version "$version"
-      git describe --exact-match HEAD && grade="stable" || grade="devel"
-      snapcraftctl set-grade "$grade"
+      craftctl set version="$version"
     cmake-parameters:
       - -DCMAKE_INSTALL_PREFIX=/usr
       - -DCMAKE_BUILD_TYPE=Release
@@ -54,8 +53,6 @@ parts:
       - -DSNAP=ON
       - -DENABLE_OPENMP=ON
       - -DENABLE_LTO=ON
-    build-snaps:
-      - gnome-3-38-2004-sdk
     build-packages:
       - zlib1g-dev
       - libpng-dev
@@ -67,6 +64,7 @@ parts:
       - libspnav-dev
       - git
       - g++
+      - libc6-dev
     stage-packages:
       - libspnav0
       - libsigc++-2.0-0v5
@@ -74,14 +72,14 @@ parts:
   cleanup:
     after: [solvespace]
     plugin: nil
-    build-snaps: [gnome-3-38-2004]
+    build-snaps: [gnome-42-2204]
     override-prime: |
       set -eux
-      for snap in "gnome-3-38-2004"; do  # List all content-snaps you're using here
-        cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$SNAPCRAFT_PRIME/{}" "$SNAPCRAFT_PRIME/usr/{}" \;
+      for snap in "gnome-42-2204"; do  # List all content-snaps you're using here
+        cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$CRAFT_PRIME/{}" "$CRAFT_PRIME/usr/{}" \;
       done
       for cruft in bug lintian man; do
-        rm -rf $SNAPCRAFT_PRIME/usr/share/$cruft
+        rm -rf $CRAFT_PRIME/usr/share/$cruft
       done
-      find $SNAPCRAFT_PRIME/usr/share/doc/ -type f -not -name 'copyright' -delete
-      find $SNAPCRAFT_PRIME/usr/share -type d -empty -delete
+      find $CRAFT_PRIME/usr/share/doc/ -type f -not -name 'copyright' -delete
+      find $CRAFT_PRIME/usr/share -type d -empty -delete
