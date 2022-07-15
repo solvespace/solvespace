@@ -262,6 +262,7 @@ add_resources(
     icons/text-window/shaded.png
     icons/text-window/workplane.png
     locales.txt
+    locales/cs_CZ.po
     locales/de_DE.po
     locales/en_US.po
     locales/fr_FR.po
@@ -270,6 +271,7 @@ add_resources(
     locales/tr_TR.po
     locales/ru_RU.po
     locales/zh_CN.po
+    locales/ja_JP.po
     fonts/unifont.hex.gz
     fonts/private/0-check-false.png
     fonts/private/1-check-true.png

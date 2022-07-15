@@ -89,6 +89,7 @@ void TextWindow::DescribeSelection() {
             case Entity::Type::POINT_N_ROT_TRANS:
             case Entity::Type::POINT_N_COPY:
             case Entity::Type::POINT_N_ROT_AA:
+            case Entity::Type::POINT_N_ROT_AXIS_TRANS:
                 p = e->PointGetNum();
                 Printf(false, "%FtPOINT%E at " PT_AS_STR, COSTR(e, p));
                 break;
@@ -179,7 +180,9 @@ void TextWindow::DescribeSelection() {
             case Entity::Type::FACE_N_ROT_TRANS:
             case Entity::Type::FACE_N_ROT_AA:
             case Entity::Type::FACE_N_TRANS:
-                Printf(false, "%FtPLANE FACE%E");
+            case Entity::Type::FACE_ROT_NORMAL_PT:
+            case Entity::Type::FACE_N_ROT_AXIS_TRANS:
+                  Printf(false, "%FtPLANE FACE%E");
                 p = e->FaceGetNormalNum();
                 Printf(true,  "   normal = " PT_AS_NUM, CO(p));
                 p = e->FaceGetPointNum();
@@ -425,14 +428,19 @@ void TextWindow::DescribeSelection() {
             double d = (p1.Minus(p0)).Dot(n0);
             Printf(true,  "      distance = %Fi%s", SS.MmToString(d).c_str());
         }
-    } else if(gs.n == 0 && gs.stylables > 0) {
-        Printf(false, "%FtSELECTED:%E comment text");
     } else if(gs.n == 0 && gs.constraints == 1) {
         Constraint *c = SK.GetConstraint(gs.constraint[0]);
         const std::string &desc = c->DescriptionString().c_str();
 
         if(c->type == Constraint::Type::COMMENT) {
             Printf(false, "%FtCOMMENT%E  %s", desc.c_str());
+            if(c->ptA != Entity::NO_ENTITY) {
+                Vector p = SK.GetEntity(c->ptA)->PointGetNum();
+                Printf(true,  "  attached to point at: " PT_AS_STR, COSTR(SK.GetEntity(c->ptA), p));
+                Vector dv = c->disp.offset;
+                Printf(false, "    distance = %Fi%s", SS.MmToString(dv.Magnitude()).c_str());
+                Printf(false, "  d(x, y, z) = " PT_AS_STR_NO_LINK, COSTR_NO_LINK(dv));
+            }
         } else if(c->HasLabel()) {
             if(c->reference) {
                 Printf(false, "%FtREFERENCE%E  %s", desc.c_str());

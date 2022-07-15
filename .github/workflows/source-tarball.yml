@@ -21,7 +21,12 @@ jobs:
         dir_name="solvespace-${version}"
         archive_name="${dir_name}.tar.xz"
         archive_path="${HOME}/${archive_name}"
-        
+        commit_sha="$GITHUB_SHA"
+
+        sed -e 's/^\(include(GetGitCommitHash)\)/#\1/' \
+            -e 's/^# \(set(GIT_COMMIT_HASH\).*/\1 '"$commit_sha"')/' \
+            -i CMakeLists.txt
+
         echo "::set-output name=archive_name::${archive_name}"
         echo "::set-output name=archive_path::${archive_path}"
 

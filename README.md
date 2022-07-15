@@ -33,6 +33,14 @@ automatically built by the SolveSpace maintainers for each stable release.
 
 [rel]: https://github.com/solvespace/solvespace/releases
 
+### Via Flathub
+
+Official releases can be installed as a Flatpak from Flathub.
+
+[Get SolveSpace from Flathub](https://flathub.org/apps/details/com.solvespace.SolveSpace)
+
+These should work on any Linux distribution that supports Flatpak.
+
 ### Via Snap Store
 
 Official releases can be installed from the `stable` channel.
@@ -67,15 +75,6 @@ from the following links:
 
 Extract the downloaded archive and install or execute the contained file as is
 appropriate for your platform.
-
-### Via third-party packages
-
-_Third-party_ nightly binary packages for Debian and Ubuntu are available via
-[notesalexp.org][notesalexp]. These packages are automatically built from
-non-released source code. The SolveSpace maintainers do not control the contents
-of these packages and cannot guarantee their functionality.
-
-[notesalexp]: https://notesalexp.org/packages/en/source/solvespace/
 
 ### Via source code
 
@@ -254,6 +253,8 @@ by passing the `-DENABLE_GUI=OFF` flag to the cmake invocation.
 You will need [git][gitwin], [cmake][cmakewin] and a C++ compiler
 (either Visual C++ or MinGW). If using Visual C++, Visual Studio 2015
 or later is required.
+If gawk is in your path be sure it is a proper Windows port that can handle CL LF line endings.
+If not CMake may fail in libpng due to some awk scripts - issue #1228.
 
 ### Building with Visual Studio IDE
 

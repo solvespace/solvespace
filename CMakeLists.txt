@@ -40,7 +40,7 @@ include(GetGitCommitHash)
 
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 project(solvespace
-    VERSION 3.0
+    VERSION 3.1
     LANGUAGES C CXX ASM)
 
 set(ENABLE_GUI        ON CACHE BOOL
@@ -91,6 +91,10 @@ endif()
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+    # Link 32 bit SolveSpace with --large-address-aware which allows it to access
+    # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
+    # See https://msdn.microsoft.com/en-us/library/aa366778
+    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--large-address-aware")
 endif()
 
 # Ensure that all platforms use 64-bit IEEE floating point operations for consistency;
@@ -185,9 +189,6 @@ endif()
 message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
 
-message(STATUS "Using in-tree eigen")
-include_directories(extlib/eigen)
-
 message(STATUS "Using in-tree mimalloc")
 set(MI_OVERRIDE OFF CACHE BOOL "")
 set(MI_BUILD_SHARED OFF CACHE BOOL "")
@@ -199,12 +200,15 @@ set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
 if(NOT FORCE_VENDORED_Eigen3)
     find_package(Eigen3 CONFIG)
 endif()
-if(FORCE_VENDORED_Eigen3 OR NOT EIGEN3_FOUND)
+if(FORCE_VENDORED_Eigen3 OR NOT EIGEN3_INCLUDE_DIRS)
     message(STATUS "Using in-tree Eigen")
     set(EIGEN3_FOUND             YES)
     set(EIGEN3_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/eigen)
 else()
     message(STATUS "Using system Eigen: ${EIGEN3_INCLUDE_DIRS}")
+endif()
+if(NOT EXISTS "${EIGEN3_INCLUDE_DIRS}")
+    message(FATAL_ERROR "Eigen 3 not found on system or in-tree")
 endif()
 
 
@@ -373,9 +377,19 @@ if(MSVC)
     # Same for the (C99) __func__ special variable; we use it only in C++ code.
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D__func__=__FUNCTION__")
 
+    # Multi-processor Compilation
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+
     # We rely on these /we flags. They correspond to the GNU-style flags below as
     # follows: /w4062=-Wswitch
     set(WARNING_FLAGS   "${WARNING_FLAGS} /we4062")
+
+    # Link 32 bit SolveSpace with /LARGEADDRESSAWARE which allows it to access
+    # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
+    # See https://msdn.microsoft.com/en-us/library/aa366778
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /LARGEADDRESSAWARE")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")

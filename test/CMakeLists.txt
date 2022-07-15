@@ -76,6 +76,9 @@ target_link_libraries(solvespace-testsuite
     solvespace-headless
     ${COVERAGE_LIBRARY})
 
+target_include_directories(solvespace-testsuite
+    PRIVATE
+    ${EIGEN3_INCLUDE_DIRS})
 add_dependencies(solvespace-testsuite
     resources)
 
