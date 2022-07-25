@@ -142,6 +142,46 @@ jobs:
         snap: ${{ steps.build.outputs.snap }}
         release: edge,beta
 
+  deploy_snap_arm64:
+    needs: [test_ubuntu, test_windows, test_macos]
+    concurrency: launchpad-remote-build
+    name: Deploy ARM64 Snap
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install snapcraft
+      run: sudo snap install --classic snapcraft
+    - name: Set up Launchpad credentials & git
+      env:
+        LAUNCHPAD_CREDENTIALS: ${{ secrets.LAUNCHPAD_CREDENTIALS }}
+      run: |
+        mkdir -p  ~/.local/share/snapcraft/provider/launchpad
+        echo "$LAUNCHPAD_CREDENTIALS" > ~/.local/share/snapcraft/provider/launchpad/credentials
+        git config --global user.email "github-actions@github.com"
+        git config --global user.name "Github Actions"
+    - name: Build Snap
+      id: build
+      run: |
+        ./pkg/snap/build.sh remote-build --launchpad-accept-public-upload --build-on=arm64
+        snap_file=$(readlink -f ./pkg/snap/solvespace*.snap | head -1)
+        echo "Snap: $snap_file"
+        echo "::set-output name=snap::$snap_file"
+        cat  ./pkg/snap/solvespace_arm64.txt
+    - name: Upload & Release to Edge
+      if: github.event_name == 'push'
+      uses: snapcore/action-publish@v1
+      with:
+        store_login: ${{ secrets.SNAPSTORE_LOGIN }}
+        snap: ${{ steps.build.outputs.snap }}
+        release: edge
+    - name: Upload & Release to Beta + Edge
+      if: github.event_name == 'release'
+      uses: snapcore/action-publish@v1
+      with:
+        store_login: ${{ secrets.SNAPSTORE_LOGIN }}
+        snap: ${{ steps.build.outputs.snap }}
+        release: edge,beta
+
   upload_release_assets:
     name: Upload Release Assets
     needs: [build_release_windows, build_release_windows_openmp, build_release_macos]
