@@ -372,6 +372,8 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     double             rotationGestureCurrent;
     Point2d            trackpadPositionShift;
     bool               inTrackpadScrollGesture;
+    int                activeTrackpadTouches;
+    bool               scrollFromTrackpadTouch;
     Platform::Window::Kind kind;
 }
 
@@ -397,6 +399,9 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
         editor.action = @selector(didEdit:);
 
         inTrackpadScrollGesture = false;
+        activeTrackpadTouches = 0;
+        scrollFromTrackpadTouch = false;
+        self.acceptsTouchEvents = YES;
         kind = aKind;
         if(kind == Platform::Window::Kind::TOPLEVEL) {
             NSGestureRecognizer *mag = [[NSMagnificationGestureRecognizer alloc] initWithTarget:self
@@ -573,7 +578,16 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     using Platform::MouseEvent;
 
     MouseEvent event = [self convertMouseEvent:nsEvent];
-    if(nsEvent.subtype == NSEventSubtypeTabletPoint && kind == Platform::Window::Kind::TOPLEVEL) {
+    if(nsEvent.phase == NSEventPhaseBegan) {
+        // If this scroll began on trackpad then touchesBeganWithEvent was called prior to this
+        // event and we have at least one active trackpad touch. We store this information so we
+        // can handle scroll originating from trackpad differently below.
+        scrollFromTrackpadTouch = activeTrackpadTouches > 0 &&
+            nsEvent.subtype == NSEventSubtypeTabletPoint &&
+            kind == Platform::Window::Kind::TOPLEVEL;
+    }
+    // Check if we are scrolling on trackpad and handle things differently.
+    if(scrollFromTrackpadTouch) {
         // This is how Cocoa represents 2 finger trackpad drag gestures, rather than going via
         // NSPanGestureRecognizer which is how you might expect this to work... We complicate this
         // further by also handling shift-two-finger-drag to mean rotate. Fortunately we're using
@@ -624,6 +638,18 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     event.scrollDelta = [nsEvent scrollingDeltaY] / (isPrecise ? 50 : 5);
 
     receiver->onMouseEvent(event);
+}
+
+- (void)touchesBeganWithEvent:(NSEvent *)event {
+    activeTrackpadTouches++;
+}
+
+- (void)touchesEndedWithEvent:(NSEvent *)event {
+    activeTrackpadTouches--;
+}
+
+- (void)touchesCancelledWithEvent:(NSEvent *)event {
+    activeTrackpadTouches--;
 }
 
 - (void)mouseExited:(NSEvent *)nsEvent {
