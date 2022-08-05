@@ -568,6 +568,54 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
 }
 
 void SolveSpaceUI::UpgradeLegacyData() {
+    for(Group &g : SK.group) {
+        switch(g.type) {
+        // TTF text requests saved in versions prior to 3.0 only have two
+        // reference points (origin and origin plus v); version 3.0 adds two
+        // more points, and if we don't do anything, then they will appear
+        // at workplane origin, and the solver will mess up the sketch if
+        // it is not fully constrained.
+        case Group::Type::DRAWING_WORKPLANE: {
+            if(Group::Subtype::WORKPLANE_BY_POINT_NORMAL == g.subtype) {
+                if(0 == g.predef.entityB.v) {
+                    // We are missing the handle to the normal the workplane was based on
+                    // There is only the numerical value in the Quaternion "q"
+                    // Try to find one that matches.
+                    auto quaternion_matches = [&](Entity e) { 
+                        if(Entity::Type::NORMAL_IN_3D == e.type ||
+                           Entity::Type::NORMAL_IN_2D == e.type ||
+                           Entity::Type::NORMAL_N_COPY == e.type ||
+                           Entity::Type::NORMAL_N_ROT == e.type ||
+                           Entity::Type::NORMAL_N_ROT_AA == e.type) {
+                            Quaternion q = e.NormalGetNum();
+                            return ((g.predef.q.w == q.w) && (g.predef.q.vx == q.vx) &&
+                                    (g.predef.q.vy == q.vy) && (g.predef.q.vz == q.vz));    // WTF don't we have quaternion operator == ?!
+                        }
+                        return false;
+                    };
+
+                    // Generate all gruoups up to but EXCLUDING the current problematic one
+                    // in order to fill in SK.entity for the next step
+                    for(Group &ag : SK.group) {
+                        if( (ag.order < g.order)) {
+                            SS.GW.activeGroup == ag.h;
+                            ag.Generate(&(SK.entity), &(SK.param));
+                        }
+                    }
+
+                    auto normal = std::find_if(SK.entity.begin(), SK.entity.end(), quaternion_matches); // SLOW! Iterates trgough all entities
+                    ssassert(SK.entity.end() != normal, "Could not find appropriate normal for Workplane");
+                    g.predef.entityB = normal->h;
+                }
+            }
+
+            break;
+        }
+
+        default: break;
+        }
+    }
+
     for(Request &r : SK.request) {
         switch(r.type) {
             // TTF text requests saved in versions prior to 3.0 only have two
@@ -618,6 +666,7 @@ void SolveSpaceUI::UpgradeLegacyData() {
     // so force them where they belong.
     IdList<Param,hParam> oldParam = {};
     SK.param.DeepCopyInto(&oldParam);
+
     SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
 
     auto AllParamsExistFor = [&](Constraint &c) {
