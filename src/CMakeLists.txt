@@ -304,35 +304,12 @@ if(ENABLE_GUI)
             XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES"
             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.solvespace"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-    else()
-        target_sources(solvespace PRIVATE
-            platform/guigtk.cpp)
-
-        target_include_directories(solvespace PRIVATE SYSTEM
-            ${GTKMM_INCLUDE_DIRS}
-            ${JSONC_INCLUDE_DIRS}
-            ${FONTCONFIG_INCLUDE_DIRS})
-        target_link_directories(solvespace PRIVATE
-            ${GTKMM_LIBRARY_DIRS}
-            ${JSONC_LIBRARY_DIRS}
-            ${FONTCONFIG_LIBRARY_DIRS})
-        target_link_libraries(solvespace PRIVATE
-            ${GTKMM_LIBRARIES}
-            ${JSONC_LIBRARIES}
-            ${FONTCONFIG_LIBRARIES})
-    endif()
-
-    if(MSVC)
-        set_target_properties(solvespace PROPERTIES
-            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
-    elseif(APPLE)
-        set_target_properties(solvespace PROPERTIES
-            OUTPUT_NAME SolveSpace)
     elseif(EMSCRIPTEN)
         set(SHELL ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/emshell.html)
         set(LINK_FLAGS
             --bind --shell-file ${SHELL}
-            --no-heap-copy -s ALLOW_MEMORY_GROWTH=1
+            --no-heap-copy -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s ASYNCIFY=1
+            -s DYNCALLS=1 -s ASSERTIONS=1
             -s TOTAL_STACK=33554432 -s TOTAL_MEMORY=134217728)
 
         get_target_property(resource_names resources NAMES)
@@ -344,9 +321,11 @@ if(ENABLE_GUI)
             list(APPEND LINK_FLAGS
                 --emrun --emit-symbol-map
                 -s DEMANGLE_SUPPORT=1
-                -s SAFE_HEAP=1
-                -s WASM=1)
+                -s SAFE_HEAP=1)
         endif()
+
+        target_sources(solvespace PRIVATE
+            platform/guihtml.cpp)
 
         string(REPLACE ";" " " LINK_FLAGS "${LINK_FLAGS}")
         set_target_properties(solvespace PROPERTIES
@@ -368,6 +347,28 @@ if(ENABLE_GUI)
                     ${EXECUTABLE_OUTPUT_PATH}/solvespaceui.js
             COMMENT "Copying UI script"
             VERBATIM)
+
+    else()
+        target_sources(solvespace PRIVATE
+            platform/guigtk.cpp)
+
+        target_include_directories(solvespace PRIVATE SYSTEM
+            ${GTKMM_INCLUDE_DIRS}
+            ${JSONC_INCLUDE_DIRS}
+            ${FONTCONFIG_INCLUDE_DIRS})
+        target_link_directories(solvespace PRIVATE
+            ${GTKMM_LIBRARY_DIRS}
+            ${JSONC_LIBRARY_DIRS}
+            ${FONTCONFIG_LIBRARY_DIRS})
+        target_link_libraries(solvespace PRIVATE
+            ${GTKMM_LIBRARIES}
+            ${JSONC_LIBRARIES}
+            ${FONTCONFIG_LIBRARIES})
+    endif()
+
+    if(MSVC)
+        set_target_properties(solvespace PROPERTIES
+            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
     endif()
 endif()
 

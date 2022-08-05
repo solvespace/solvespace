@@ -516,7 +516,7 @@ static Platform::Path ResourcePath(const std::string &name) {
     return path;
 }
 
-#elif defined(EMSCRIPTEN)
+#elif defined(__EMSCRIPTEN__)
 
 static Platform::Path ResourcePath(const std::string &name) {
     return Path::From("res/" + name);

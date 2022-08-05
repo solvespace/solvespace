@@ -95,6 +95,8 @@ window.addEventListener('keydown', function(event) {
         }
     } else if(event.key == 'Enter') {
         selected.dispatchEvent(new Event('trigger'));
+    } else if(event.key == 'Escape' && hasClass(selected, 'default')) {
+        selected.dispatchEvent(new Event('trigger'));
     }
 
     if(outSelected) removeClass(outSelected, 'selected');
@@ -127,7 +129,7 @@ window.addEventListener('keydown', function(event) {
         }
         event.stopPropagation();
     }
-});
+}, {capture: true});
 
 /* Menu helpers */
 function isMenubar(element) {
