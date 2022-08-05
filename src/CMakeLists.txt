@@ -332,7 +332,8 @@ if(ENABLE_GUI)
         set(SHELL ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/emshell.html)
         set(LINK_FLAGS
             --bind --shell-file ${SHELL}
-            --no-heap-copy -s ALLOW_MEMORY_GROWTH=1
+            --no-heap-copy -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s ASYNCIFY=1
+            -s DYNCALLS=1 -s ASSERTIONS=1
             -s TOTAL_STACK=33554432 -s TOTAL_MEMORY=134217728)
 
         get_target_property(resource_names resources NAMES)
@@ -344,8 +345,7 @@ if(ENABLE_GUI)
             list(APPEND LINK_FLAGS
                 --emrun --emit-symbol-map
                 -s DEMANGLE_SUPPORT=1
-                -s SAFE_HEAP=1
-                -s WASM=1)
+                -s SAFE_HEAP=1)
         endif()
 
         string(REPLACE ";" " " LINK_FLAGS "${LINK_FLAGS}")
