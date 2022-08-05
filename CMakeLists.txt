@@ -186,6 +186,10 @@ if(APPLE)
     set(CMAKE_FIND_FRAMEWORK LAST)
 endif()
 
+if(EMSCRIPTEN)
+    set(M_LIBRARY "" CACHE STRING "libm (not necessary)" FORCE)
+endif()
+
 message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
 

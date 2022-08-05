@@ -85,6 +85,11 @@ body {
     background: hsl(0, 0%, 20%);
     color: white;
     cursor: default;
+
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+     user-select: none;
 }
 
 /* Normal menu items */
