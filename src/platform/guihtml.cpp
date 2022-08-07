@@ -78,7 +78,7 @@ static val Wrap(std::function<void()> *func) {
 //-----------------------------------------------------------------------------
 
 void FatalError(const std::string &message) {
-    fprintf(stderr, "%s", message.c_str());
+    dbp("%s", message.c_str());
 #ifndef NDEBUG
     emscripten_debugger();
 #endif
@@ -808,6 +808,10 @@ public:
 
     std::vector<std::function<void()>> responseFuncs;
 
+    bool is_shown = false;
+
+    Response latestResponse = Response::NONE;
+
     MessageDialogImplHtml() :
         htmlModal(val::global("document").call<val>("createElement", val("div"))),
         htmlDialog(val::global("document").call<val>("createElement", val("div"))),
@@ -850,6 +854,7 @@ public:
 
         std::function<void()> responseFunc = [this, response] {
             htmlModal.call<void>("remove");
+            this->latestResponse = response;
             if(onResponse) {
                 onResponse(response);
             }
@@ -860,16 +865,43 @@ public:
         responseFuncs.push_back(responseFunc);
         htmlButton.call<void>("addEventListener", val("trigger"), Wrap(&responseFuncs.back()));
 
+        static std::function<void()> updateShowFlagFunc = [this] {
+            this->is_shown = false;
+        };
+        htmlButton.call<void>("addEventListener", val("trigger"), Wrap(&updateShowFlagFunc));
+
         htmlButtons.call<void>("appendChild", htmlButton);
     }
 
     Response RunModal() {
-        ssassert(false, "RunModal not supported on Emscripten");
+        // ssassert(false, "RunModal not supported on Emscripten");
+        dbp("MessageDialog::RunModal() called.");
+        this->ShowModal();
+        //FIXME(emscripten): use val::await() with JavaScript's Promise
+        while (true) {
+            if (this->is_shown) {
+                dbp("MessageDialog::RunModal(): is_shown == true");
+                emscripten_sleep(2000);
+            } else {
+                dbp("MessageDialog::RunModal(): break due to is_shown == false");
+                break;
+            }
+        }
+        
+        if (this->latestResponse != Response::NONE) {
+            return this->latestResponse;
+        } else {
+            // FIXME(emscripten):
+            dbp("MessageDialog::RunModal(): Cannot get Response.");
+            return this->latestResponse;
+        }
     }
 
     void ShowModal() {
         dialogsOnScreen.push_back(shared_from_this());
         val::global("document")["body"].call<void>("appendChild", htmlModal);
+
+        this->is_shown = true;
     }
 };
 
@@ -881,20 +913,187 @@ MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
 // File dialogs
 //-----------------------------------------------------------------------------
 
-class FileDialogImplHtml : public FileDialog {
+class FileOpenDialogImplHtml : public FileDialog {
 public:
-    // FIXME(emscripten): implement
+    std::string title;
+    std::string filename;
+    std::string filters;
+
+    emscripten::val fileUploadHelper;
+
+    FileOpenDialogImplHtml() {
+        //FIXME(emscripten):
+        dbp("FileOpenDialogImplHtml::FileOpenDialogImplHtml()");
+        // FIXME(emscripten): workaround. following code raises "constructor is not a constructor" exception.
+        // val fuh = val::global("FileUploadHelper");
+        // this->fileUploadHelper = fuh.new_();
+        this->fileUploadHelper = val::global().call<val>("createFileUploadHelperInstance");
+        dbp("FileOpenDialogImplHtml::FileOpenDialogImplHtml() OK.");
+    }
+
+    ~FileOpenDialogImplHtml() override {
+        dbp("FileOpenDialogImplHtml::~FileOpenDialogImplHtml()");
+        this->fileUploadHelper.call<void>("dispose");
+    }
+
+    void SetTitle(std::string title) override {
+        //FIXME(emscripten):
+        dbp("FileOpenDialogImplHtml::SetTitle(): title=%s", title.c_str());
+        this->title = title;
+        //FIXME(emscripten):
+        this->fileUploadHelper.set("title", val(this->title));
+    }
+
+    void SetCurrentName(std::string name) override {
+        //FIXME(emscripten):
+        dbp("FileOpenDialogImplHtml::SetCurrentName(): name=%s", name.c_str());
+        SetFilename(GetFilename().Parent().Join(name));
+    }
+
+    Platform::Path GetFilename() override {
+        //FIXME(emscripten):
+        dbp("FileOpenDialogImplHtml::GetFilename()");
+        return Platform::Path::From(this->filename.c_str());
+    }
+
+    void SetFilename(Platform::Path path) override {
+        //FIXME(emscripten):
+        dbp("FileOpenDialogImplHtml::SetFilename(): path=%s", path.raw.c_str());
+        this->filename = path.raw;
+        //FIXME(emscripten):
+        this->fileUploadHelper.set("filename", val(this->filename));
+    }
+    
+    void SuggestFilename(Platform::Path path) override {
+        //FIXME(emscripten):
+        dbp("FileOpenDialogImplHtml::SuggestFilename(): path=%s", path.raw.c_str());
+        SetFilename(Platform::Path::From(path.FileStem()));
+    }
+
+    void AddFilter(std::string name, std::vector<std::string> extensions) override {
+        //FIXME(emscripten):
+        dbp("FileOpenDialogImplHtml::AddFilter()");
+        this->filters = "";
+        for (auto extension : extensions) {
+            this->filters = "." + extension;
+            this->filters += ",";
+        }
+        dbp("filter=%s", this->filters.c_str());
+    }
+
+    void FreezeChoices(SettingsRef settings, const std::string &key) override {
+        //FIXME(emscripten):
+        dbp("FileOpenDialogImplHtml::FreezeChoise()");
+    }
+
+    void ThawChoices(SettingsRef settings, const std::string &key) override {
+        //FIXME(emscripten):
+        dbp("FileOpenDialogImplHtml::ThawChoices()");
+    }
+
+    bool RunModal() override {
+        //FIXME(emscripten):
+        dbp("FileOpenDialogImplHtml::RunModal()");
+        this->filename = "untitled.slvs";
+        this->fileUploadHelper.call<void>("showDialog");
+
+        //FIXME(emscripten): use val::await() with JavaScript's Promise
+        dbp("FileOpenDialogImplHtml: start loop");
+        // Wait until fileUploadHelper.is_shown == false
+        while (true) {
+            bool is_shown = this->fileUploadHelper["is_shown"].as<bool>();
+            if (!is_shown) {
+                dbp("FileOpenDialogImplHtml: break due to is_shown == false");
+                break;
+            } else {
+                // dbp("FileOpenDialogImplHtml: sleep 100msec... (%d)", is_shown);
+                emscripten_sleep(100);
+            }
+        }
+
+        val selectedFilenameVal = this->fileUploadHelper["currentFilename"];
+
+        if (selectedFilenameVal == val::null()) {
+            dbp("selectedFilenameVal is null");
+            return false;
+        } else {
+            std::string selectedFilename = selectedFilenameVal.as<std::string>();
+            this->filename = selectedFilename;
+            return true;
+        }
+    }
+};
+
+class FileSaveDummyDialogImplHtml : public FileDialog {
+public:
+    std::string title;
+    std::string filename;
+    std::string filters;
+
+    FileSaveDummyDialogImplHtml() {
+
+
+    }
+
+    ~FileSaveDummyDialogImplHtml() override {
+
+    }
+
+    void SetTitle(std::string title) override {
+        this->title = title;
+    }
+
+    void SetCurrentName(std::string name) override {
+        SetFilename(GetFilename().Parent().Join(name));
+    }
+
+    Platform::Path GetFilename() override {
+        return Platform::Path::From(this->filename.c_str());
+    }
+
+    void SetFilename(Platform::Path path) override {
+        this->filename = path.raw;
+    }
+    
+    void SuggestFilename(Platform::Path path) override {
+        SetFilename(Platform::Path::From(path.FileStem()));
+    }
+
+    void AddFilter(std::string name, std::vector<std::string> extensions) override {
+        this->filters = "";
+        for (auto extension : extensions) {
+            this->filters = "." + extension;
+            this->filters += ",";
+        }
+        dbp("filter=%s", this->filters.c_str());
+    }
+
+    void FreezeChoices(SettingsRef settings, const std::string &key) override {
+        
+    }
+
+    void ThawChoices(SettingsRef settings, const std::string &key) override {
+        
+    }
+
+    bool RunModal() override {
+        if (this->filename.length() < 1) {
+            this->filename = "untitled.slvs";
+        }
+        return true;
+    }
 };
 
 FileDialogRef CreateOpenFileDialog(WindowRef parentWindow) {
     // FIXME(emscripten): implement
-    return std::shared_ptr<FileDialogImplHtml>();
-
+    dbp("CreateOpenFileDialog()");
+    return std::shared_ptr<FileOpenDialogImplHtml>(new FileOpenDialogImplHtml());
 }
 
 FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
     // FIXME(emscripten): implement
-    return std::shared_ptr<FileDialogImplHtml>();
+    dbp("CreateSaveFileDialog()");
+    return std::shared_ptr<FileSaveDummyDialogImplHtml>(new FileSaveDummyDialogImplHtml());
 }
 
 //-----------------------------------------------------------------------------
@@ -909,10 +1108,20 @@ void OpenInBrowser(const std::string &url) {
     val::global("window").call<void>("open", Wrap(url));
 }
 
+
+void OnSaveFinishedCallback(const Platform::Path& filename, bool is_saveAs, bool is_autosave) {
+    dbp("OnSaveFinished(): %s, is_saveAs=%d, is_autosave=%d\n", filename.FileName().c_str(), is_saveAs, is_autosave);
+    std::string filename_str = filename.FileName();
+    EM_ASM(saveFileDone(UTF8ToString($0), $1, $2), filename_str.c_str(), is_saveAs, is_autosave);
+}
+
 std::vector<std::string> InitGui(int argc, char **argv) {
     static std::function<void()> onBeforeUnload = std::bind(&SolveSpaceUI::Exit, &SS);
     val::global("window").call<void>("addEventListener", val("beforeunload"),
                                      Wrap(&onBeforeUnload));
+
+    dbp("Set onSaveFinished");
+    SS.OnSaveFinished = OnSaveFinishedCallback;
 
     // FIXME(emscripten): get locale from user preferences
     SetLocale("en_US");
