@@ -11,6 +11,34 @@ function isModal() {
     return hasModal || hasMenuBar || hasPopupMenu || hasEditor;
 }
 
+/* String helpers */
+
+/** 
+ * @param {string} s - original string
+ * @param {number} digits - char length of generating string
+ * @param {string} ch - string to be used for padding
+ * @return {string} generated string ($digits chars length) or $s
+ */
+function stringPadLeft(s, digits, ch) {
+    if (s.length > digits) {
+        return s;
+    }
+    for (let i = s.length; i < digits; i++) {
+        s = ch + s;
+    }
+    return s;
+}
+
+/** Generate a string expression of now
+ * @return {string} like a "2022_08_31_2245" string (for 2022-08-31 22:45; local time)
+ */
+function GetCurrentDateTimeString() {
+    const now = new Date();
+    const padLeft2 = (num) => { return stringPadLeft(num.toString(), 2, '0') };
+    return (`${now.getFullYear()}_${padLeft2(now.getMonth()+1)}_${padLeft2(now.getDate())}` +
+            `_` + `${padLeft2(now.getHours())}${padLeft2(now.getMinutes())}`);
+}
+
 /* CSS helpers */
 function hasClass(element, className) {
     return element.classList.contains(className);
@@ -346,3 +374,272 @@ window.addEventListener('keyup', function(event) {
        removeClass(document.body, 'mnemonic');
     }
 });
+
+
+// FIXME(emscripten): Should be implemnted in guihtmlcpp ?
+class FileUploadHelper {
+    constructor() {
+        this.modalRoot = document.createElement("div");
+        addClass(this.modalRoot, "modal");
+        this.modalRoot.style.display = "none";
+        this.modalRoot.style.zIndex = 1000;
+        
+        this.dialogRoot = document.createElement("div");
+        addClass(this.dialogRoot, "dialog");
+        this.modalRoot.appendChild(this.dialogRoot);
+
+        this.messageHeader = document.createElement("strong");
+        this.dialogRoot.appendChild(this.messageHeader);
+
+        this.descriptionParagraph = document.createElement("p");
+        this.dialogRoot.appendChild(this.descriptionParagraph);
+
+        this.currentFileListHeader = document.createElement("p");
+        this.currentFileListHeader.textContent = "Current uploaded files:";
+        this.dialogRoot.appendChild(this.currentFileListHeader);
+
+        this.currentFileList = document.createElement("div");
+        this.dialogRoot.appendChild(this.currentFileList);
+
+        this.fileInputContainer = document.createElement("div");
+
+        this.fileInputElement = document.createElement("input");
+        this.fileInputElement.setAttribute("type", "file");
+        this.fileInputElement.addEventListener("change", (ev)=> this.onFileInputChanged(ev));
+        this.fileInputContainer.appendChild(this.fileInputElement);
+
+        this.dialogRoot.appendChild(this.fileInputContainer);
+
+        this.buttonHolder = document.createElement("div");
+        addClass(this.buttonHolder, "buttons");
+        this.dialogRoot.appendChild(this.buttonHolder);
+
+        this.AddButton("OK", 0, false);
+        this.AddButton("Cancel", 1, true);
+        
+        this.closeDialog();
+
+        document.querySelector("body").appendChild(this.modalRoot);
+
+        this.currentFilename = null;
+
+        // FIXME(emscripten): For debugging
+        this.title = "";
+        this.filename = "";
+        this.filters = "";
+    }
+
+    dispose() {
+        document.querySelector("body").removeChild(this.modalRoot);
+    }
+
+    AddButton(label, response, isDefault) {
+        // FIXME(emscripten): implement
+        const buttonElem = document.createElement("div");
+        addClass(buttonElem, "button");
+        setLabelWithMnemonic(buttonElem, label);
+        if (isDefault) {
+            addClass(buttonElem, "default");
+            addClass(buttonElem, "selected");
+        }
+        buttonElem.addEventListener("click", () => {
+            this.closeDialog();
+        });
+
+        this.buttonHolder.appendChild(buttonElem);
+    }
+
+    getFileEntries() {
+        const basePath = '/';
+        /** @type {Array<object} */
+        const nodes = FS.readdir(basePath);
+        const files = nodes.filter((nodename) => {
+            return FS.isFile(FS.lstat(basePath + nodename).mode);
+        }).map((filename) => {
+            return basePath + filename;
+        });
+        return files;
+    }
+
+    generateFileList() {
+        let filepaths = this.getFileEntries();
+        const listElem = document.createElement("ul");
+        for (let i = 0; i < filepaths.length; i++) {
+            const listitemElem = document.createElement("li");
+            const stat = FS.lstat(filepaths[i]);
+            const text = `"${filepaths[i]}" (${stat.size} bytes)`;
+            listitemElem.textContent = text;
+            listElem.appendChild(listitemElem);
+        }
+        return listElem;
+    }
+
+    updateFileList() {
+        this.currentFileList.innerHTML = "";
+        this.currentFileList.appendChild(this.generateFileList());
+    }
+
+    onFileInputChanged(ev) {
+        const selectedFiles = ev.target.files;
+        if (selectedFiles.length < 1) {
+            return;
+        }
+        const selectedFile = selectedFiles[0];
+        const selectedFilename = selectedFile.name;
+        this.filename = selectedFilename;
+        this.currentFilename = selectedFilename;
+
+        // Prepare FileReader
+        const fileReader = new FileReader();
+        const fileReaderReadAsArrayBufferPromise = new Promise((resolve, reject) => {
+            fileReader.addEventListener("load", (ev) => {
+                resolve(ev.target.result);
+            });
+            fileReader.addEventListener("abort", (err) => {
+                reject(err);
+            });
+            fileReader.readAsArrayBuffer(selectedFile);
+        });
+
+        fileReaderReadAsArrayBufferPromise
+            .then((arrayBuffer) => {
+                // Write selected file to FS
+                console.log(`Write uploaded file blob to filesystem. "${selectedFilename}" (${arrayBuffer.byteLength} bytes)`);
+                const u8array = new Uint8Array(arrayBuffer);
+                const fs = FS.open("/" + selectedFilename, "w");
+                FS.write(fs, u8array, 0, u8array.length, 0);
+                FS.close(fs);
+
+                // Update file list in dialog
+                this.updateFileList();
+            })
+            .catch((err) => {
+                console.error("Error while fileReader.readAsArrayBuffer():", err);
+            });
+    }
+
+    showDialog() {
+        this.updateFileList();
+
+        this.is_shown = true;
+        this.modalRoot.style.display = "block";
+    }
+
+    closeDialog() {
+        this.is_shown = false;
+        this.modalRoot.style.display = "none";
+    }
+};
+
+// FIXME(emscripten): Workaround
+function createFileUploadHelperInstance() {
+    return new FileUploadHelper();
+}
+
+// FIXME(emscripten): Should be implemnted in guihtmlcpp ?
+class FileDownloadHelper {
+    constructor() {
+        this.modalRoot = document.createElement("div");
+        addClass(this.modalRoot, "modal");
+        this.modalRoot.style.display = "none";
+        this.modalRoot.style.zIndex = 1000;
+        
+        this.dialogRoot = document.createElement("div");
+        addClass(this.dialogRoot, "dialog");
+        this.modalRoot.appendChild(this.dialogRoot);
+
+        this.messageHeader = document.createElement("strong");
+        this.dialogRoot.appendChild(this.messageHeader);
+
+        this.descriptionParagraph = document.createElement("p");
+        this.dialogRoot.appendChild(this.descriptionParagraph);
+
+        this.buttonHolder = document.createElement("div");
+        addClass(this.buttonHolder, "buttons");
+        this.dialogRoot.appendChild(this.buttonHolder);
+        
+        this.closeDialog();
+
+        document.querySelector("body").appendChild(this.modalRoot);
+    }
+
+    dispose() {
+        document.querySelector("body").removeChild(this.modalRoot);
+    }
+
+    AddButton(label, response, isDefault) {
+        // FIXME(emscripten): implement
+        const buttonElem = document.createElement("div");
+        addClass(buttonElem, "button");
+        setLabelWithMnemonic(buttonElem, label);
+        if (isDefault) {
+            addClass(buttonElem, "default");
+            addClass(buttonElem, "selected");
+        }
+        buttonElem.addEventListener("click", () => {
+            this.closeDialog();
+            this.dispose();
+        });
+
+        this.buttonHolder.appendChild(buttonElem);
+    }
+
+    createBlobURLFromArrayBuffer(arrayBuffer) {
+        const u8array = new Uint8Array(arrayBuffer);
+        let dataUrl = "data:application/octet-stream;base64,";
+        let binaryString = "";
+        for (let i = 0; i < u8array.length; i++) {
+            binaryString += String.fromCharCode(u8array[i]);
+        }
+        dataUrl += btoa(binaryString);
+
+        return dataUrl;
+    }
+
+    prepareFile(filename) {
+        this.messageHeader.textContent = "Your file ready";
+
+        const stat = FS.lstat(filename);
+        const filesize = stat.size;
+        const fs = FS.open(filename, "r");
+        const readbuffer = new Uint8Array(filesize);
+        FS.read(fs, readbuffer, 0, filesize, 0);
+        FS.close(fs);
+
+        const blobURL = this.createBlobURLFromArrayBuffer(readbuffer.buffer);
+
+        this.descriptionParagraph.innerHTML = "";
+        const linkElem = document.createElement("a");
+        let downloadfilename = "solvespace_browser-";
+        downloadfilename += `${GetCurrentDateTimeString()}.slvs`;
+        linkElem.setAttribute("download", downloadfilename);
+        linkElem.setAttribute("href", blobURL);
+        // WORKAROUND: FIXME(emscripten)
+        linkElem.style.color = "lightblue";
+        linkElem.textContent = downloadfilename;
+        this.descriptionParagraph.appendChild(linkElem);
+    }
+
+    showDialog() {
+        this.is_shown = true;
+        this.modalRoot.style.display = "block";
+    }
+
+    closeDialog() {
+        this.is_shown = false;
+        this.modalRoot.style.display = "none";
+    }
+};
+
+function saveFileDone(filename, isSaveAs, isAutosave) {
+    console.log(`saveFileDone(${filename}, ${isSaveAs}, ${isAutosave})`);
+    if (isAutosave) {
+        return;
+    }
+    const fileDownloadHelper = new FileDownloadHelper();
+    fileDownloadHelper.AddButton("OK", 0, true);
+    fileDownloadHelper.prepareFile(filename);
+    console.log(`Calling shoDialog()...`);
+    fileDownloadHelper.showDialog();
+    console.log(`shoDialog() finished.`);
+}

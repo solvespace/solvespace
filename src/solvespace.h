@@ -683,6 +683,7 @@ public:
     void NewFile();
     bool SaveToFile(const Platform::Path &filename);
     bool LoadAutosaveFor(const Platform::Path &filename);
+    std::function<void(const Platform::Path &filename, bool is_saveAs, bool is_autosave)> OnSaveFinished;
     bool LoadFromFile(const Platform::Path &filename, bool canCancel = false);
     void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
