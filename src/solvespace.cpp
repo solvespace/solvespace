@@ -560,12 +560,18 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
 
     if(saveAs || saveFile.IsEmpty()) {
         Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(GW.window);
+        // FIXME(emscripten):
+        dbp("Calling AddFilter()...");
         dialog->AddFilter(C_("file-type", "SolveSpace models"), { SKETCH_EXT });
+        dbp("Calling ThawChoices()...");
         dialog->ThawChoices(settings, "Sketch");
         if(!newSaveFile.IsEmpty()) {
+            dbp("Calling SetFilename()...");
             dialog->SetFilename(newSaveFile);
         }
+        dbp("Calling RunModal()...");
         if(dialog->RunModal()) {
+            dbp("Calling FreezeChoices()...");
             dialog->FreezeChoices(settings, "Sketch");
             newSaveFile = dialog->GetFilename();
         } else {
@@ -578,6 +584,9 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
         RemoveAutosave();
         saveFile = newSaveFile;
         unsaved = false;
+        if (this->OnSaveFinished) {
+            this->OnSaveFinished(newSaveFile, saveAs, false);
+        }
         return true;
     } else {
         return false;
@@ -589,7 +598,11 @@ void SolveSpaceUI::Autosave()
     ScheduleAutosave();
 
     if(!saveFile.IsEmpty() && unsaved) {
-        SaveToFile(saveFile.WithExtension(BACKUP_EXT));
+        Platform::Path saveFileName = saveFile.WithExtension(BACKUP_EXT);
+        SaveToFile(saveFileName);
+        if (this->OnSaveFinished) {
+            this->OnSaveFinished(saveFileName, false, true);
+        }
     }
 }
 
