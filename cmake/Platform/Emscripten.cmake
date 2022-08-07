@@ -10,3 +10,11 @@ set_property(GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)
 
 # FIXME(emscripten): Suppress non-c-typedef-for-linkage warnings in solvespace.h
 add_compile_options(-Wno-non-c-typedef-for-linkage)
+
+
+# Enable optimization. Workaround for "too many locals" error when runs on browser.
+if(CMAKE_BUILD_TYPE STREQUAL Release)
+    add_compile_options(-O2)
+else()
+    add_compile_options(-O1)
+endif()
