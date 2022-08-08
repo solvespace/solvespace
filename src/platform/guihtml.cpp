@@ -375,8 +375,8 @@ public:
         double x = 0;
         double y = 0;
         for (int i = 0; i < emEvent.numTouches; i++) {
-            x += emEvent.touches[i].clientX;
-            y += emEvent.touches[i].clientY;
+            x += emEvent.touches[i].targetX;
+            y += emEvent.touches[i].targetY;
         }
         dst_x = x / emEvent.numTouches;
         dst_y = y / emEvent.numTouches;
@@ -386,10 +386,10 @@ public:
         if (emEvent.numTouches < 2) {
             return;
         }
-        double x1 = emEvent.touches[0].clientX;
-        double y1 = emEvent.touches[0].clientY;
-        double x2 = emEvent.touches[1].clientX;
-        double y2 = emEvent.touches[1].clientY;
+        double x1 = emEvent.touches[0].targetX;
+        double y1 = emEvent.touches[0].targetY;
+        double x2 = emEvent.touches[1].targetX;
+        double y2 = emEvent.touches[1].targetY;
         dst_distance = std::sqrt(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2));
     }
 
@@ -574,9 +574,13 @@ public:
 
     val htmlContainer;
     val htmlEditor;
+    val scrollbarHelper;
 
     std::function<void()> editingDoneFunc;
     std::shared_ptr<MenuBarImplHtml> menuBar;
+
+    bool useWorkaround_devicePixelRatio = false;
+
 
     WindowImplHtml(val htmlContainer, std::string emCanvasSel) :
         emCanvasSel(emCanvasSel),
@@ -591,7 +595,34 @@ public:
             }
         };
         htmlEditor.call<void>("addEventListener", val("trigger"), Wrap(&editingDoneFunc));
-        htmlContainer.call<void>("appendChild", htmlEditor);
+        htmlContainer["parentElement"].call<void>("appendChild", htmlEditor);
+
+        std::string scrollbarElementQuery = emCanvasSel + "scrollbar";
+        dbp("scrollbar element query: \"%s\"", scrollbarElementQuery.c_str());
+        val scrollbarElement = val::global("document").call<val>("querySelector", val(scrollbarElementQuery));
+        if (scrollbarElement == val::null()) {
+            // dbp("scrollbar element is null.");
+            this->scrollbarHelper = val::null();
+        } else {
+            dbp("scrollbar element OK.");
+            this->scrollbarHelper = val::global("window")["ScrollbarHelper"].new_(val(scrollbarElementQuery));
+            static std::function<void()> onScrollCallback = [this] {
+                // dbp("onScrollCallback std::function this=%p", (void*)this);
+                if (this->onScrollbarAdjusted) {
+                    double newpos = this->scrollbarHelper.call<double>("getScrollbarPosition");
+                    // dbp("  call onScrollbarAdjusted(%f)", newpos);
+                    this->onScrollbarAdjusted(newpos);
+                }
+                this->Invalidate();
+            };
+            this->scrollbarHelper.set("onScrollCallback", Wrap(&onScrollCallback));
+        }
+
+        //FIXME(emscripten): In Chrome for Android on tablet device, devicePixelRatio should not be multiplied.
+        std::string userAgent = val::global("navigator")["userAgent"].as<std::string>();
+        bool is_smartphone = userAgent.find("Mobile") != std::string::npos;
+        bool is_android_device = userAgent.find("Android") != std::string::npos;
+        this->useWorkaround_devicePixelRatio = is_android_device && !is_smartphone;
 
         sscheck(emscripten_set_resize_callback(
             EMSCRIPTEN_EVENT_TARGET_WINDOW, this, /*useCapture=*/false,
@@ -618,21 +649,18 @@ public:
                     emCanvasSel.c_str(), this, /*useCapture=*/false,
                     WindowImplHtml::MouseCallback));
 
-        {
-            std::string altCanvasSelector = "#canvas0";
-            sscheck(emscripten_set_touchstart_callback(
-                        altCanvasSelector.c_str(), this, /*useCapture=*/false,
-                        WindowImplHtml::TouchCallback));
-            sscheck(emscripten_set_touchmove_callback(
-                        altCanvasSelector.c_str(), this, /*useCapture=*/false,
-                        WindowImplHtml::TouchCallback));
-            sscheck(emscripten_set_touchend_callback(
-                        altCanvasSelector.c_str(), this, /*useCapture=*/false,
-                        WindowImplHtml::TouchCallback));
-            sscheck(emscripten_set_touchcancel_callback(
-                        altCanvasSelector.c_str(), this, /*useCapture=*/false,
-                        WindowImplHtml::TouchCallback));
-        }
+        sscheck(emscripten_set_touchstart_callback(
+                    emCanvasSel.c_str(), this, /*useCapture=*/false,
+                    WindowImplHtml::TouchCallback));
+        sscheck(emscripten_set_touchmove_callback(
+                    emCanvasSel.c_str(), this, /*useCapture=*/false,
+                    WindowImplHtml::TouchCallback));
+        sscheck(emscripten_set_touchend_callback(
+                    emCanvasSel.c_str(), this, /*useCapture=*/false,
+                    WindowImplHtml::TouchCallback));
+        sscheck(emscripten_set_touchcancel_callback(
+                    emCanvasSel.c_str(), this, /*useCapture=*/false,
+                    WindowImplHtml::TouchCallback));
 
         sscheck(emscripten_set_wheel_callback(
                     emCanvasSel.c_str(), this, /*useCapture=*/false,
@@ -903,14 +931,24 @@ public:
         double width, height;
         std::string htmlContainerSel = "#" + htmlContainer["id"].as<std::string>();
         sscheck(emscripten_get_element_css_size(htmlContainerSel.c_str(), &width, &height));
-        width  *= emscripten_get_device_pixel_ratio();
-        height *= emscripten_get_device_pixel_ratio();
-        int curWidth, curHeight;
-        sscheck(emscripten_get_canvas_element_size(emCanvasSel.c_str(), &curWidth, &curHeight));
-        if(curWidth != (int)width || curHeight != (int)curHeight) {
-            dbp("Canvas %s: resizing to (%g,%g)", emCanvasSel.c_str(), width, height);
-            sscheck(emscripten_set_canvas_element_size(
-                        emCanvasSel.c_str(), (int)width, (int)height));
+        // sscheck(emscripten_get_element_css_size(emCanvasSel.c_str(), &width, &height));
+
+        if (this->useWorkaround_devicePixelRatio) {
+            // Workaround is to skip applying devicePixelRatio.
+            // So NOP here.
+        } else {
+            double devicePixelRatio = emscripten_get_device_pixel_ratio();
+            width *= devicePixelRatio;
+            height *= devicePixelRatio;
+        }
+
+        int currentWidth = 0, currentHeight = 0;
+        sscheck(emscripten_get_canvas_element_size(emCanvasSel.c_str(), &currentWidth, &currentHeight));
+        
+        if ((int)width != currentWidth || (int)height != currentHeight) {
+            // dbp("Canvas %s container current size: (%d, %d)", emCanvasSel.c_str(), (int)currentWidth, (int)currentHeight);
+            // dbp("Canvas %s: resizing to (%d, %d)", emCanvasSel.c_str(), (int)width, (int)height);
+            sscheck(emscripten_set_canvas_element_size(emCanvasSel.c_str(), (int)width, (int)height));
         }
     }
 
@@ -977,13 +1015,13 @@ public:
             std::static_pointer_cast<MenuBarImplHtml>(menuBar);
         this->menuBar = menuBarImpl;
 
-        val htmlBody = val::global("document")["body"];
-        val htmlCurrentMenuBar = htmlBody.call<val>("querySelector", val(".menubar"));
+        val htmlMain = val::global("document").call<val>("querySelector", val("main"));
+        val htmlCurrentMenuBar = htmlMain.call<val>("querySelector", val(".menubar"));
         if(htmlCurrentMenuBar.as<bool>()) {
             htmlCurrentMenuBar.call<void>("remove");
         }
-        htmlBody.call<void>("insertBefore", menuBarImpl->htmlMenuBar,
-                                 htmlBody["firstChild"]);
+        htmlMain.call<void>("insertBefore", menuBarImpl->htmlMenuBar,
+                                 htmlMain["firstChild"]);
         ResizeCanvasElement();
     }
 
@@ -1026,8 +1064,11 @@ public:
     void ShowEditor(double x, double y, double fontHeight, double minWidth,
                     bool isMonospace, const std::string &text) override {
         htmlEditor["style"].set("display", val(""));
-        htmlEditor["style"].set("left", std::to_string(x - 4) + "px");
-        htmlEditor["style"].set("top",  std::to_string(y - fontHeight - 2) + "px");
+        val canvasClientRect = val::global("document").call<val>("querySelector", val(this->emCanvasSel)).call<val>("getBoundingClientRect");
+        double canvasLeft = canvasClientRect["left"].as<double>();
+        double canvasTop = canvasClientRect["top"].as<double>();
+        htmlEditor["style"].set("left", std::to_string(canvasLeft + x - 4) + "px");
+        htmlEditor["style"].set("top",  std::to_string(canvasTop + y - fontHeight - 2) + "px");
         htmlEditor["style"].set("fontSize", std::to_string(fontHeight) + "px");
         htmlEditor["style"].set("minWidth", std::to_string(minWidth) + "px");
         htmlEditor["style"].set("fontFamily", isMonospace ? "monospace" : "sans");
@@ -1040,22 +1081,54 @@ public:
     }
 
     void SetScrollbarVisible(bool visible) override {
-        // FIXME(emscripten): implement
+        // dbp("SetScrollbarVisible(): visible=%d", visible ? 1 : 0);
+        if (this->scrollbarHelper == val::null()) {
+            // dbp("scrollbarHelper is null.");
+            return;
+        }
+        if (!visible) {
+            this->scrollbarHelper.call<void>("setScrollbarEnabled", val(false));
+        }
     }
 
     double scrollbarPos = 0.0;
+    double scrollbarMin = 0.0;
+    double scrollbarMax = 0.0;
+    double scrollbarPageSize = 0.0;
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
+        // dbp("ConfigureScrollbar(): min=%f, max=%f, pageSize=%f", min, max, pageSize);
+        if (this->scrollbarHelper == val::null()) {
+            // dbp("scrollbarHelper is null.");
+            return;
+        }
         // FIXME(emscripten): implement
+        this->scrollbarMin = min;
+        this->scrollbarMax = max;
+        this->scrollbarPageSize = pageSize;
+
+        this->scrollbarHelper.call<void>("setRange", this->scrollbarMin, this->scrollbarMax);
+        this->scrollbarHelper.call<void>("setPageSize", pageSize);
     }
 
     double GetScrollbarPosition() override {
-        // FIXME(emscripten): implement
+        // dbp("GetScrollbarPosition()");
+        if (this->scrollbarHelper == val::null()) {
+            // dbp("scrollbarHelper is null.");
+            return 0;
+        }
+        this->scrollbarPos = this->scrollbarHelper.call<double>("getScrollbarPosition");
+        // dbp("  GetScrollbarPosition() returns %f", this->scrollbarPos);
         return scrollbarPos;
     }
 
     void SetScrollbarPosition(double pos) override {
-        // FIXME(emscripten): implement
+        // dbp("SetScrollbarPosition(): pos=%f", pos);
+        if (this->scrollbarHelper == val::null()) {
+            // dbp("scrollbarHelper is null.");
+            return;
+        }
+        this->scrollbarHelper.call<void>("setScrollbarPosition", pos);
         scrollbarPos = pos;
     }
 
@@ -1170,15 +1243,15 @@ public:
 
     Response RunModal() {
         // ssassert(false, "RunModal not supported on Emscripten");
-        dbp("MessageDialog::RunModal() called.");
+        // dbp("MessageDialog::RunModal() called.");
         this->ShowModal();
         //FIXME(emscripten): use val::await() with JavaScript's Promise
         while (true) {
             if (this->is_shown) {
-                dbp("MessageDialog::RunModal(): is_shown == true");
+                // dbp("MessageDialog::RunModal(): is_shown == true");
                 emscripten_sleep(2000);
             } else {
-                dbp("MessageDialog::RunModal(): break due to is_shown == false");
+                // dbp("MessageDialog::RunModal(): break due to is_shown == false");
                 break;
             }
         }
@@ -1187,7 +1260,7 @@ public:
             return this->latestResponse;
         } else {
             // FIXME(emscripten):
-            dbp("MessageDialog::RunModal(): Cannot get Response.");
+            // dbp("MessageDialog::RunModal(): Cannot get Response.");
             return this->latestResponse;
         }
     }
@@ -1289,7 +1362,7 @@ public:
     bool RunModal() override {
         //FIXME(emscripten):
         dbp("FileOpenDialogImplHtml::RunModal()");
-        this->filename = "untitled.slvs";
+        this->filename = "/untitled.slvs";
         this->fileUploadHelper.call<void>("showDialog");
 
         //FIXME(emscripten): use val::await() with JavaScript's Promise
@@ -1298,7 +1371,7 @@ public:
         while (true) {
             bool is_shown = this->fileUploadHelper["is_shown"].as<bool>();
             if (!is_shown) {
-                dbp("FileOpenDialogImplHtml: break due to is_shown == false");
+                // dbp("FileOpenDialogImplHtml: break due to is_shown == false");
                 break;
             } else {
                 // dbp("FileOpenDialogImplHtml: sleep 100msec... (%d)", is_shown);
@@ -1309,7 +1382,7 @@ public:
         val selectedFilenameVal = this->fileUploadHelper["currentFilename"];
 
         if (selectedFilenameVal == val::null()) {
-            dbp("selectedFilenameVal is null");
+            // dbp("selectedFilenameVal is null");
             return false;
         } else {
             std::string selectedFilename = selectedFilenameVal.as<std::string>();
@@ -1356,9 +1429,11 @@ public:
 
     void AddFilter(std::string name, std::vector<std::string> extensions) override {
         this->filters = "";
-        for (auto extension : extensions) {
-            this->filters = "." + extension;
-            this->filters += ",";
+        for (size_t i = 0; i < extensions.size(); i++) {
+            if (i != 0) {
+                this->filters += ",";
+            }
+            this->filters = "." + extensions[i];
         }
         dbp("filter=%s", this->filters.c_str());
     }
@@ -1381,13 +1456,13 @@ public:
 
 FileDialogRef CreateOpenFileDialog(WindowRef parentWindow) {
     // FIXME(emscripten): implement
-    dbp("CreateOpenFileDialog()");
+    // dbp("CreateOpenFileDialog()");
     return std::shared_ptr<FileOpenDialogImplHtml>(new FileOpenDialogImplHtml());
 }
 
 FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
     // FIXME(emscripten): implement
-    dbp("CreateSaveFileDialog()");
+    // dbp("CreateSaveFileDialog()");
     return std::shared_ptr<FileSaveDummyDialogImplHtml>(new FileSaveDummyDialogImplHtml());
 }
 
@@ -1415,7 +1490,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     val::global("window").call<void>("addEventListener", val("beforeunload"),
                                      Wrap(&onBeforeUnload));
 
-    dbp("Set onSaveFinished");
+    // dbp("Set onSaveFinished");
     SS.OnSaveFinished = OnSaveFinishedCallback;
 
     // FIXME(emscripten): get locale from user preferences
