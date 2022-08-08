@@ -7,6 +7,7 @@ html, body {
     background: black;
     display: flex;
     flex-direction: column;
+    height: 100%;
 }
 html, body, canvas, #splash, #container {
     margin:  0;
@@ -53,6 +54,16 @@ body {
     to    { transform: rotate(360deg); }
 }
 
+/* Grid layout for main */
+main {
+    height: 100%;
+
+    /* Use CSS Grid layout for vertical placement. */
+    display: grid;
+    /* Row 0 for menubar (fit to content), Row 1 for canvas0, canvas1 (rest of space) */
+    grid-template-rows: auto 1fr;
+}
+
 /* Buttons */
 .button {
     border: 1px solid hsl(0, 0%, 60%);
@@ -70,8 +81,8 @@ body {
 
 /* Editors */
 .editor {
-    position: absolute;
-    padding: 1px 0;
+    position: fixed;
+    padding: 0;
     border: none;
 }
 
@@ -259,19 +270,52 @@ canvas {
 
 #container {
     display: flex;
-    height: 100%;
+    overflow: hidden;
 }
 /* FIXME(emscripten): this should be dynamically adjustable, not hardcoded in CSS */
 #container0 {
     flex-basis: 80%;
     height: 100%;
     position:  relative;
+    overflow: hidden;
 }
-#container1 {
+
+#container1parent {
     flex-basis: 20%;
     height: 100%;
     position:  relative;
+    overflow: hidden;
+    min-width: 410px;
+
+    display: grid;
+    grid-template-columns: auto 19px;
+    grid-template-rows: 100%;
 }
-#canvas1 {
-    min-width: 400px;
+
+#container1 {
+    height: 100%;
+}
+
+#canvas1scrollbarbox {
+    /* 19px is a magic number for scrollbar width (Yes, this is platform-dependent value but looks almost working.) */
+    width: 19px;
+    min-width: 19px;
+    height: 100%;
+    overflow-x: hidden;
+    overflow-y: scroll;
+
+    background-color: lightgray;
+    -webkit-overflow-scrolling: auto;
+}
+
+#canvas1scrollbar {
+    /* 0px will disable the scrollbar by browser. */
+    width: 1px;
+    /* Disable scrollbar as default. This value will be overwritten by program. */
+    height: 100%;
+}
+
+#view_separator {
+    width: 4px;
+    background: hsl(0, 0%, 20%);
 }

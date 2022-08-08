@@ -21,13 +21,21 @@
                 <progress id="progress" value="0" max="100" hidden="1"></progress>
             </div>
         </div><!--
-        FIXME(emscripten): without this, a window resize is required in Chrome
-        to get the layout to update and canvas size to match up. What?
-     --><ul class="menu menubar" style="visibility: hidden"><li>None</li></ul><!--
-     --><div id="container"><!--
-         --><div id="container0"><canvas id="canvas0"></canvas></div><!--
-         --><div id="container1"><canvas id="canvas1"></canvas></div><!--
-     --></div><!--
+        --><main><!--
+            FIXME(emscripten): without this, a window resize is required in Chrome
+            to get the layout to update and canvas size to match up. What?
+        --><ul class="menu menubar" style="visibility: hidden"><li>None</li></ul><!--
+        --><div id="container"><!--
+            --><div id="container0"><canvas id="canvas0"></canvas></div><!--
+            --><div id="view_separator"></div><!--
+            --><div id="container1parent"><!--
+                --><div id="container1"><canvas id="canvas1"></canvas></div><!--
+                --><div id="canvas1scrollbarbox"><!--
+                    --><div id="canvas1scrollbar"></div><!--
+                --></div><!--
+            --></div><!--
+        --></div><!--
+        --></main><!--
      --><script type="text/javascript">
         var splashElement   = document.getElementById('splash');
         var spinnerElement  = document.getElementById('spinner');
