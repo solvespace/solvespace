@@ -246,10 +246,33 @@ main {
     min-width: 200px;
     max-width: 400px;
     white-space: pre-wrap;
+    max-height: 70%;
+    overflow-y: auto;
+}
+.dialog.wide {
+    width: 80%;
+    max-width: 1200px;
 }
 .dialog > .buttons {
     display: flex;
     justify-content: space-around;
+}
+.dialog .filedrop {
+    margin: 1em 0 1em 0;
+    padding: 1em;
+    border: 2px solid black;
+    background-color:  hsl(0, 0%, 50%);
+}
+.dialog .filelist {
+    display: flex;
+    flex-flow: row wrap;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.dialog .filelist li {
+    padding: 0.2em 0.5em 0.2em 0.5em;
+    break-inside: avoid;
 }
 
 /* Mnemonics */
