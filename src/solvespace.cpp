@@ -702,6 +702,9 @@ void SolveSpaceUI::MenuFile(Command id) {
             if(dialog->RunModal()) {
                 dialog->FreezeChoices(settings, "ExportImage");
                 SS.ExportAsPngTo(dialog->GetFilename());
+                if (SS.OnSaveFinished) {
+                    SS.OnSaveFinished(dialog->GetFilename(), false, false);
+                }
             }
             break;
         }
@@ -727,6 +730,9 @@ void SolveSpaceUI::MenuFile(Command id) {
             }
 
             SS.ExportViewOrWireframeTo(dialog->GetFilename(), /*exportWireframe=*/false);
+            if (SS.OnSaveFinished) {
+                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+            }
             break;
         }
 
@@ -739,6 +745,9 @@ void SolveSpaceUI::MenuFile(Command id) {
             dialog->FreezeChoices(settings, "ExportWireframe");
 
             SS.ExportViewOrWireframeTo(dialog->GetFilename(), /*exportWireframe*/true);
+            if (SS.OnSaveFinished) {
+                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+            }
             break;
         }
 
@@ -751,6 +760,9 @@ void SolveSpaceUI::MenuFile(Command id) {
             dialog->FreezeChoices(settings, "ExportSection");
 
             SS.ExportSectionTo(dialog->GetFilename());
+            if (SS.OnSaveFinished) {
+                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+            }
             break;
         }
 
@@ -763,6 +775,10 @@ void SolveSpaceUI::MenuFile(Command id) {
             dialog->FreezeChoices(settings, "ExportMesh");
 
             SS.ExportMeshTo(dialog->GetFilename());
+            if (SS.OnSaveFinished) {
+                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+            }
+
             break;
         }
 
@@ -776,6 +792,9 @@ void SolveSpaceUI::MenuFile(Command id) {
 
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(dialog->GetFilename());
+            if (SS.OnSaveFinished) {
+                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+            }
             break;
         }
 

@@ -657,8 +657,9 @@ class FileDownloadHelper {
 
         this.descriptionParagraph.innerHTML = "";
         const linkElem = document.createElement("a");
-        let downloadfilename = "solvespace_browser-";
-        downloadfilename += `${GetCurrentDateTimeString()}.slvs`;
+        //let downloadfilename = "solvespace_browser-";
+        //downloadfilename += `${GetCurrentDateTimeString()}.slvs`;
+        let downloadfilename = filename;
         linkElem.setAttribute("download", downloadfilename);
         linkElem.setAttribute("href", blobURL);
         // WORKAROUND: FIXME(emscripten)
