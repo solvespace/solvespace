@@ -345,9 +345,15 @@ if(ENABLE_GUI)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                     ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/solvespaceui.js
                     ${EXECUTABLE_OUTPUT_PATH}/solvespaceui.js
-            COMMENT "Copying UI script"
+            COMMENT "Copying UI script solvespaceui.js"
             VERBATIM)
-
+        add_custom_command(
+            TARGET solvespace POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/filemanagerui.js
+                    ${EXECUTABLE_OUTPUT_PATH}/filemanagerui.js
+            COMMENT "Copying UI script filemanagerui.sj"
+            VERBATIM)
     else()
         target_sources(solvespace PRIVATE
             platform/guigtk.cpp)
