@@ -110,7 +110,7 @@ public:
         val value = val::global("localStorage").call<val>("getItem", Wrap(key));
         if(value == val::null())
         return defaultValue;
-        return val::global("parseFloat")(value).as<int>();
+        return val::global("parseFloat")(value).as<double>();
     }
 
     void FreezeString(const std::string &key, const std::string &value) {
