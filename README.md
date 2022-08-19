@@ -168,6 +168,43 @@ command-line interface is built as `build/bin/solvespace-cli.exe`.
 
 Space Navigator support will not be available.
 
+### Building for web (very experimental)
+
+**Please note that this port contains many critical bugs and unimplemented core functions.**
+
+You will need the usual build tools, cmake and [Emscripten][]. On a Debian derivative (e.g. Ubuntu) dependencies other than Emscripten can be installed with:
+
+    apt-get install git build-essential cmake
+
+First, install and prepare `emsdk`:
+
+    git clone https://github.com/emscripten-core/emsdk
+    cd emsdk
+    ./emsdk install latest
+    ./emsdk activate latest
+    source ./emsdk_env.sh
+    cd ..
+
+Before building, check out the project and the necessary submodules:
+
+    git clone -b emscripten https://github.com/solvespace/solvespace
+    cd solvespace
+    git submodule update --init
+
+After that, build SolveSpace as following:
+
+    mkdir build
+    cd build
+    emcmake cmake .. -DCMAKE_BUILD_TYPE=Release
+    make
+
+The graphical interface is built as multiple files in the `build/bin` directory with names
+starting with `solvespace`. It can be run locally with `emrun build/bin/solvespace.html`.
+
+The command-line interface is not available.
+
+[emscripten]: https://emscripten.org/
+
 ## Building on macOS
 
 You will need git, XCode tools, CMake and libomp. Git, CMake and libomp can be installed
