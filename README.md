@@ -181,14 +181,15 @@ First, install and prepare `emsdk`:
     git clone https://github.com/emscripten-core/emsdk
     cd emsdk
     ./emsdk install latest
+    ./emsdk activate latest
     source ./emsdk_env.sh
     cd ..
 
 Before building, check out the project and the necessary submodules:
 
-    git clone https://github.com/solvespace/solvespace
+    git clone -b emscripten https://github.com/solvespace/solvespace
     cd solvespace
-    git submodule update
+    git submodule update --init
 
 After that, build SolveSpace as following:
 
