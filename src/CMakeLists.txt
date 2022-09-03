@@ -103,7 +103,8 @@ endif()
 set(every_platform_SOURCES
     platform/guiwin.cpp
     platform/guigtk.cpp
-    platform/guimac.mm)
+    platform/guimac.mm
+    platform/guihtml.cpp)
 
 # solvespace library
 
@@ -303,6 +304,50 @@ if(ENABLE_GUI)
             XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES"
             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.solvespace"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    elseif(EMSCRIPTEN)
+        set(SHELL ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/emshell.html)
+        set(LINK_FLAGS
+            --bind --shell-file ${SHELL}
+            --no-heap-copy -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s ASYNCIFY=1
+            -s DYNCALLS=1 -s ASSERTIONS=1
+            -s TOTAL_STACK=33554432 -s TOTAL_MEMORY=134217728)
+
+        get_target_property(resource_names resources NAMES)
+        foreach(resource ${resource_names})
+            list(APPEND LINK_FLAGS --preload-file ${resource})
+        endforeach()
+
+        if(CMAKE_BUILD_TYPE STREQUAL Debug)
+            list(APPEND LINK_FLAGS
+                --emrun --emit-symbol-map
+                -s DEMANGLE_SUPPORT=1
+                -s SAFE_HEAP=1)
+        endif()
+
+        target_sources(solvespace PRIVATE
+            platform/guihtml.cpp)
+
+        string(REPLACE ";" " " LINK_FLAGS "${LINK_FLAGS}")
+        set_target_properties(solvespace PROPERTIES
+            LINK_FLAGS "${LINK_FLAGS}")
+        set_source_files_properties(platform/guihtml.cpp PROPERTIES
+            OBJECT_DEPENDS ${SHELL})
+
+        add_custom_command(
+            TARGET solvespace POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/solvespaceui.css
+                    ${EXECUTABLE_OUTPUT_PATH}/solvespaceui.css
+            COMMENT "Copying UI stylesheet"
+            VERBATIM)
+        add_custom_command(
+            TARGET solvespace POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/solvespaceui.js
+                    ${EXECUTABLE_OUTPUT_PATH}/solvespaceui.js
+            COMMENT "Copying UI script"
+            VERBATIM)
+
     else()
         target_sources(solvespace PRIVATE
             platform/guigtk.cpp)
@@ -367,7 +412,7 @@ endif()
 
 # solvespace unix package
 
-if(NOT (WIN32 OR APPLE))
+if(NOT (WIN32 OR APPLE OR EMSCRIPTEN))
     if(ENABLE_GUI)
         install(TARGETS solvespace
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
