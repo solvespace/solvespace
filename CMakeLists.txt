@@ -277,7 +277,7 @@ else()
     find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
-    pkg_check_modules(CAIRO REQUIRED cairo)
+    find_package(Cairo REQUIRED)
 endif()
 
 # GUI dependencies
