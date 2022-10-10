@@ -761,7 +761,7 @@ msgstr "Accrocher la sélection à la &Grille"
 
 #: graphicswin.cpp:66
 msgid "Rotate Imported &90°"
-msgstr "Rotation importation &90°"
+msgstr "Tourner l'import de &90°"
 
 #: graphicswin.cpp:68
 msgid "Cu&t"
