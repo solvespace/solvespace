@@ -901,11 +901,11 @@ msgstr "Dessin dans un nouveau &Plan de travail"
 
 #: graphicswin.cpp:113
 msgid "Step &Translating"
-msgstr "Espacement &Linéaire"
+msgstr "Répétiter par &Translation"
 
 #: graphicswin.cpp:114
 msgid "Step &Rotating"
-msgstr "Espacement &Circulaire"
+msgstr "Répétiter par &Rotation"
 
 #: graphicswin.cpp:116
 msgid "E&xtrude"
@@ -1117,7 +1117,7 @@ msgstr "&Arrêt Tracé..."
 
 #: graphicswin.cpp:181
 msgid "Step &Dimension..."
-msgstr "Espacement &Dimension..."
+msgstr "&Dimension pas-à-pas..."
 
 #: graphicswin.cpp:183
 msgid "&Help"
