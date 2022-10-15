@@ -25,7 +25,7 @@ msgid ""
 msgstr ""
 "Couper, coller et copier fonctionnent uniquement dans un plan de travail.\n"
 "\n"
-"Activez un plan avec \"Dessin -> Dans le plan de travail\"."
+"Activez un plan avec « Dessin -> Dans le plan de travail »."
 
 #: clipboard.cpp:326
 msgid "Clipboard is empty; nothing to paste."
@@ -77,7 +77,7 @@ msgid ""
 "Perspective Projection."
 msgstr ""
 "Le facteur de perspective n'aura aucun effet tant que vous n'aurez pas "
-"activé \"Affichage -> Utiliser la Vue en perspective\"."
+"activé « Affichage -> Utiliser la Vue en perspective »."
 
 #: confscreen.cpp:435 confscreen.cpp:445
 #, c-format
@@ -303,7 +303,7 @@ msgid ""
 "Constrain -> On Point before constraining tangent."
 msgstr ""
 "L'arc tangent et le segment de ligne doivent partager une extrémité. "
-"Contraignez-les avec \"Contraintes -> Sur Point\" avant de contraindre la "
+"Contraignez-les avec « Contraintes -> Sur Point » avant de contraindre la "
 "tangente."
 
 #: constraint.cpp:163
@@ -312,7 +312,7 @@ msgid ""
 "with Constrain -> On Point before constraining tangent."
 msgstr ""
 "La tangente cubique et le segment de ligne doivent partager une extrémité. "
-"Contraignez-les avec \"Contraintes -> Sur Point\" avant de contraindre la "
+"Contraignez-les avec « Contraintes -> Sur Point » avant de contraindre la "
 "tangente."
 
 #: constraint.cpp:189
@@ -321,7 +321,7 @@ msgid ""
 "before constraining tangent."
 msgstr ""
 "Les courbes doivent partager une extrémité. Contraignez-les avec "
-"\"Contraintes -> Sur Point\" avant de contraindre la tangente."
+"« Contraintes -> Sur Point » avant de contraindre la tangente."
 
 #: constraint.cpp:238
 msgid ""
@@ -592,7 +592,7 @@ msgid ""
 "2d View to export bare lines and curves."
 msgstr ""
 "Aucun modèle solide présent ; dessinez-en un avec une extrusion et révolution, ou "
-"utilisez \"Exporter vue 2d\" pour exporter les lignes et les courbes dépouillées."
+"utilisez « Exporter vue 2d » pour exporter les lignes et les courbes dépouillées."
 
 #: export.cpp:61
 msgid ""
@@ -668,7 +668,7 @@ msgstr "Fichier manquant"
 #, c-format
 msgctxt "dialog"
 msgid "The linked file “%s” is not present."
-msgstr "Le fichier lié \"%s\" n'est pas présent."
+msgstr "Le fichier lié « %s » n'est pas présent."
 
 #: file.cpp:870
 msgctxt "dialog"
@@ -1000,7 +1000,7 @@ msgstr "&Image"
 
 #: graphicswin.cpp:141
 msgid "To&ggle Construction"
-msgstr "&Basculer en mode \"Construction\""
+msgstr "&Basculer en mode « Construction »"
 
 #: graphicswin.cpp:142
 msgid "Tangent &Arc at Point"
@@ -1161,7 +1161,7 @@ msgstr "(pas de fichier récent)"
 #: graphicswin.cpp:370
 #, c-format
 msgid "File '%s' does not exist."
-msgstr "Le fichier \"%s\" n'existe pas."
+msgstr "Le fichier « %s » n'existe pas."
 
 #: graphicswin.cpp:737
 msgid "No workplane is active, so the grid will not appear."
@@ -1232,7 +1232,7 @@ msgid ""
 msgstr ""
 "Aucun plan de travail n'est sélectionné et le groupe actif n'a pas de plan "
 "de travail par défaut. Essayez de sélectionner un plan de travail ou "
-"d'activer un groupe de \"Dessin dans nouveau plan travail\"."
+"d'activer un groupe de « Dessin dans nouveau plan travail »."
 
 #: graphicswin.cpp:1294
 msgid ""
@@ -1541,7 +1541,7 @@ msgstr ""
 
 #: mouse.cpp:713
 msgid "Toggle Construction"
-msgstr "Basculer en mode \"construction\"."
+msgstr "Basculer en mode « construction »."
 
 #: mouse.cpp:729
 msgid "Delete Point-Coincident Constraint"
@@ -1593,7 +1593,7 @@ msgid ""
 "Workplane."
 msgstr ""
 "Impossible de dessiner un rectangle en 3d ; D'abord, activez un plan de "
-"travail avec \"Dessin -> Dans le plan de travail\"."
+"travail avec « Dessin -> Dans le plan de travail »."
 
 #: mouse.cpp:1026
 msgid "click to place other corner of rectangle"
@@ -1609,7 +1609,7 @@ msgid ""
 "Workplane."
 msgstr ""
 "Ne peut pas dessiner l'arc en 3d ; D'abord, activez un plan de travail avec "
-"\"Dessin -> Dans le plan de travail\"."
+"« Dessin -> Dans le plan de travail »."
 
 #: mouse.cpp:1071
 msgid "click to place point"
@@ -1623,7 +1623,7 @@ msgstr "cliquez le prochain point cubique ou appuyez sur Esc"
 msgid ""
 "Sketching in a workplane already; sketch in 3d before creating new workplane."
 msgstr ""
-"Vous dessinez déjà dans un plan de travail ; Sélectionner \"Dessiner en 3d\" "
+"Vous dessinez déjà dans un plan de travail ; Sélectionner « Dessiner en 3d » "
 "avant de créer un nouveau plan de travail."
 
 #: mouse.cpp:1108
@@ -1632,7 +1632,7 @@ msgid ""
 "Workplane."
 msgstr ""
 "Impossible de dessiner du texte en 3d ; D'abord, activer un plan de travail "
-"avec \"Dessin -> Dans le plan de travail\"."
+"avec « Dessin -> Dans le plan de travail »."
 
 #: mouse.cpp:1125
 msgid "click to place bottom right of text"
@@ -1644,7 +1644,7 @@ msgid ""
 "Workplane."
 msgstr ""
 "Impossible de dessiner l'image en 3d ; D'abord, activez un plan de travail "
-"avec \"Dessin -> Dans le plan de travail\"."
+"avec « Dessin -> Dans le plan de travail »."
 
 #: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:553
 msgctxt "file-type"
@@ -1806,7 +1806,7 @@ msgstr "Fichier modifié"
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
-msgstr "Voulez-vous sauver les changements que vous avez fait au dessin \"%s\" ?"
+msgstr "Voulez-vous sauver les changements que vous avez fait au dessin « %s » ?"
 
 #: solvespace.cpp:604
 msgctxt "dialog"
@@ -1979,7 +1979,7 @@ msgstr "Mauvaise sélection pour le tracé ; sélectionnez un unique point."
 #: solvespace.cpp:987
 #, c-format
 msgid "Couldn't write to '%s'"
-msgstr "Impossible d'écrire \"%s\""
+msgstr "Impossible d'écrire « %s »"
 
 #: solvespace.cpp:1017
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
@@ -2137,7 +2137,7 @@ msgstr "Dessin d'un point"
 
 #: toolbar.cpp:36
 msgid "Toggle construction"
-msgstr "Basculer en mode \"construction\""
+msgstr "Basculer en mode « construction »"
 
 #: toolbar.cpp:38
 msgid "Split lines / curves where they intersect"
@@ -2349,7 +2349,7 @@ msgstr "Mauvais format : Spécifiez x, y, z"
 #~ "removed."
 #~ msgstr ""
 #~ "Voulez-vous le localiser manuellement ?\n"
-#~ "Si vous sélectionnez \"Non\", toute géométrie qui dépend du fichier "
+#~ "Si vous sélectionnez « Non », toute géométrie qui dépend du fichier "
 #~ "manquant sera supprimée."
 
 #~ msgctxt "button"
