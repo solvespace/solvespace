@@ -25,7 +25,7 @@ msgid ""
 msgstr ""
 "Couper, coller et copier uniquement dans un plan de travail.\n"
 "\n"
-"Activez un plan avec \"Dessin -> Dans plan de travail\"."
+"Activez un plan avec \"Dessin -> Dans le plan de travail\"."
 
 #: clipboard.cpp:326
 msgid "Clipboard is empty; nothing to paste."
@@ -77,7 +77,7 @@ msgid ""
 "Perspective Projection."
 msgstr ""
 "Le facteur de perspective n'aura aucun effet tant que vous n'aurez pas "
-"activé \"Affichage -> Utiliser la projection de perspective\"."
+"activé \"Affichage -> Utiliser la Vue en perspective\"."
 
 #: confscreen.cpp:435 confscreen.cpp:445
 #, c-format
@@ -302,26 +302,26 @@ msgid ""
 "The tangent arc and line segment must share an endpoint. Constrain them with "
 "Constrain -> On Point before constraining tangent."
 msgstr ""
-"L'arc tangent et le segment de ligne doivent partager un point final. "
-"Contraignez-les avec \"Contrainte -> Sur point avant de contraindre la "
-"tangente\"."
+"L'arc tangent et le segment de ligne doivent partager une extrémité. "
+"Contraignez-les avec \"Contraintes -> Sur Point\" avant de contraindre la "
+"tangente."
 
 #: constraint.cpp:163
 msgid ""
 "The tangent cubic and line segment must share an endpoint. Constrain them "
 "with Constrain -> On Point before constraining tangent."
 msgstr ""
-"La tangente cubique et le segment de ligne doivent partager un point final. "
-"Contraignez-les avec \"Contrainte -> Sur point avant de contraindre la "
-"tangente\"."
+"La tangente cubique et le segment de ligne doivent partager une extrémité. "
+"Contraignez-les avec \"Contraintes -> Sur Point\" avant de contraindre la "
+"tangente."
 
 #: constraint.cpp:189
 msgid ""
 "The curves must share an endpoint. Constrain them with Constrain -> On Point "
 "before constraining tangent."
 msgstr ""
-"Les courbes doivent partager un point final. Contraignez-les avec "
-"\"Contrainte -> Sur point avant de contraindre la tangente\"."
+"Les courbes doivent partager une extrémité. Contraignez-les avec "
+"\"Contraintes -> Sur Point\" avant de contraindre la tangente."
 
 #: constraint.cpp:238
 msgid ""
@@ -464,7 +464,7 @@ msgid ""
 "Activate a workplane (with Sketch -> In Workplane) before applying a "
 "horizontal or vertical constraint."
 msgstr ""
-"Activez un plan de travail (avec Dessin -> Dans plan de travail) avant "
+"Activez un plan de travail (avec Dessin -> Dans le plan de travail) avant "
 "d'appliquer une contrainte horizontale ou verticale."
 
 #: constraint.cpp:592
@@ -797,7 +797,7 @@ msgstr "&Désélectionner Tout"
 
 #: graphicswin.cpp:78
 msgid "&Line Styles..."
-msgstr "&Ligne styles..."
+msgstr "&Styles de Ligne..."
 
 #: graphicswin.cpp:79
 msgid "&View Projection..."
@@ -845,15 +845,15 @@ msgstr "Afficher la &grille d'accrochage"
 
 #: graphicswin.cpp:95
 msgid "Darken Inactive Solids"
-msgstr ""
+msgstr "Noircir Solides Inactifs"
 
 #: graphicswin.cpp:96
 msgid "Use &Perspective Projection"
-msgstr "Utiliser la vue en &Perspective"
+msgstr "Utiliser la Vue en &Perspective"
 
 #: graphicswin.cpp:97
 msgid "Show E&xploded View"
-msgstr ""
+msgstr "Afficher Vue Éclatée"
 
 #: graphicswin.cpp:98
 msgid "Dimension &Units"
@@ -873,7 +873,7 @@ msgstr "Dimensions en &Pouces"
 
 #: graphicswin.cpp:102
 msgid "Dimensions in &Feet and Inches"
-msgstr ""
+msgstr "Dimensions en &Pieds et Pouces"
 
 #: graphicswin.cpp:104
 msgid "Show &Toolbar"
@@ -913,7 +913,7 @@ msgstr "E&xtruder"
 
 #: graphicswin.cpp:117
 msgid "&Helix"
-msgstr "&Helix"
+msgstr "&Hélice"
 
 #: graphicswin.cpp:118
 msgid "&Lathe"
@@ -925,11 +925,11 @@ msgstr "Ré&volution"
 
 #: graphicswin.cpp:121
 msgid "Link / Assemble..."
-msgstr "Lié / Assembler..."
+msgstr "Lier / Assembler..."
 
 #: graphicswin.cpp:122
 msgid "Link Recent"
-msgstr "Lié Récent"
+msgstr "Lier Récent"
 
 #: graphicswin.cpp:124
 msgid "&Sketch"
@@ -973,7 +973,7 @@ msgstr "&Arc de Cercle"
 
 #: graphicswin.cpp:136
 msgid "&Bezier Cubic Spline"
-msgstr "Spline Cubique de &Beziers"
+msgstr "Spline Cubique de &Bézier"
 
 #: graphicswin.cpp:138
 msgid "&Text in TrueType Font"
@@ -989,7 +989,7 @@ msgstr "&Basculer en mode \"Construction\""
 
 #: graphicswin.cpp:142
 msgid "Tangent &Arc at Point"
-msgstr "&Arc Tangent au Point"
+msgstr "Rendre l'&Arc Tangent au Point"
 
 #: graphicswin.cpp:143
 msgid "Split Curves at &Intersection"
@@ -1037,15 +1037,15 @@ msgstr "&Sur Point / Courbe / Plan"
 
 #: graphicswin.cpp:157
 msgid "E&qual Length / Radius / Angle"
-msgstr "&Egale Longueur / Rayon / Angle"
+msgstr "É&galité Longueur / Rayon / Angle"
 
 #: graphicswin.cpp:158
 msgid "Length / Arc Ra&tio"
-msgstr ""
+msgstr "Ratio Longueur / Arc"
 
 #: graphicswin.cpp:159
 msgid "Length / Arc Diff&erence"
-msgstr ""
+msgstr "Différence Longueur / Arc"
 
 #: graphicswin.cpp:160
 msgid "At &Midpoint"
@@ -1081,15 +1081,15 @@ msgstr "&Analyse"
 
 #: graphicswin.cpp:170
 msgid "Measure &Volume"
-msgstr "Mesure &Volume"
+msgstr "Mesurer &Volume"
 
 #: graphicswin.cpp:171
 msgid "Measure A&rea"
-msgstr "Mesure &Aire"
+msgstr "Mesurer &Aire"
 
 #: graphicswin.cpp:172
 msgid "Measure &Perimeter"
-msgstr "Mesure &Périmètre"
+msgstr "Mesurer &Périmètre"
 
 #: graphicswin.cpp:173
 msgid "Show &Interfering Parts"
@@ -1113,7 +1113,7 @@ msgstr "&Tracer Point"
 
 #: graphicswin.cpp:180
 msgid "&Stop Tracing..."
-msgstr "&Arrêt Tracé..."
+msgstr "&Arrêter Tracé..."
 
 #: graphicswin.cpp:181
 msgid "Step &Dimension..."
@@ -1133,7 +1133,7 @@ msgstr "&Site web / Manuel"
 
 #: graphicswin.cpp:186
 msgid "&Go to GitHub commit"
-msgstr ""
+msgstr "Voir le commit sur &GitHub"
 
 #: graphicswin.cpp:188
 msgid "&About"
@@ -1192,7 +1192,7 @@ msgid ""
 "to define the plane for the snap grid."
 msgstr ""
 "Aucun plan de travail n'est actif. Activez un plan de travail (avec Dessin -"
-"> Dans plan de travail) pour définir le plan pour la grille d'accrochage."
+"> Dans le plan de travail) pour définir le plan pour la grille d'accrochage."
 
 #: graphicswin.cpp:1185
 msgid ""
@@ -1298,7 +1298,7 @@ msgid ""
 "Activate a workplane (Sketch -> In Workplane) before extruding. The sketch "
 "will be extruded normal to the workplane."
 msgstr ""
-"Activez un plan de travail (Dessin -> Dans plan de travail) avant "
+"Activez un plan de travail (Dessin -> Dans le plan de travail) avant "
 "l'extrusion. Le croquis sera extrudé normalement au plan de travail."
 
 #: group.cpp:175
@@ -1559,7 +1559,7 @@ msgid ""
 "Workplane."
 msgstr ""
 "Impossible de dessiner un rectangle en 3d ; D'abord, activez un plan de "
-"travail avec \"Dessin -> Dans plan de travail\"."
+"travail avec \"Dessin -> Dans le plan de travail\"."
 
 #: mouse.cpp:1026
 msgid "click to place other corner of rectangle"
@@ -1575,7 +1575,7 @@ msgid ""
 "Workplane."
 msgstr ""
 "Ne peut pas dessiner l'arc en 3d ; D'abord, activez un plan de travail avec "
-"\"Dessin -> Dans plan de travail\"."
+"\"Dessin -> Dans le plan de travail\"."
 
 #: mouse.cpp:1071
 msgid "click to place point"
@@ -1598,7 +1598,7 @@ msgid ""
 "Workplane."
 msgstr ""
 "Impossible de dessiner du texte en 3d ; D'abord, activer un plan de travail "
-"avec \"Dessin -> Dans plan de travail\"."
+"avec \"Dessin -> Dans le plan de travail\"."
 
 #: mouse.cpp:1125
 msgid "click to place bottom right of text"
@@ -1610,7 +1610,7 @@ msgid ""
 "Workplane."
 msgstr ""
 "Impossible de dessiner l'image en 3d ; D'abord, activez un plan de travail "
-"avec \"Dessin -> Dans plan de travail\"."
+"avec \"Dessin -> Dans le plan de travail\"."
 
 #: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:553
 msgctxt "file-type"
@@ -2030,7 +2030,7 @@ msgstr "Créer un arc tangent au point sélectionné"
 
 #: toolbar.cpp:32
 msgid "Sketch cubic Bezier spline"
-msgstr "Dessin d'une spline cubique de Bezier"
+msgstr "Dessin d'une spline cubique de Bézier"
 
 #: toolbar.cpp:34
 msgid "Sketch datum point"
