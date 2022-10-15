@@ -7,14 +7,14 @@ msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
 "POT-Creation-Date: 2022-02-01 16:24+0200\n"
-"PO-Revision-Date: 2018-07-14 06:12+0000\n"
+"PO-Revision-Date: 2022-10-15 17:32+0200\n"
 "Last-Translator: whitequark <whitequark@whitequark.org>\n"
 "Language-Team: none\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Zanata 4.4.5\n"
+"X-Generator: Poedit 2.4.2\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
 #: clipboard.cpp:309
@@ -23,7 +23,7 @@ msgid ""
 "\n"
 "Activate one with Sketch -> In Workplane."
 msgstr ""
-"Couper, coller et copier uniquement dans un plan de travail.\n"
+"Couper, coller et copier fonctionnent uniquement dans un plan de travail.\n"
 "\n"
 "Activez un plan avec \"Dessin -> Dans le plan de travail\"."
 
@@ -170,12 +170,12 @@ msgstr "longueur-ratio"
 #: constraint.cpp:25
 msgctxt "constr-name"
 msgid "arc-arc-length-ratio"
-msgstr ""
+msgstr "arc-arc-longueur-ratio"
 
 #: constraint.cpp:26
 msgctxt "constr-name"
 msgid "arc-line-length-ratio"
-msgstr ""
+msgstr "arc-ligne-longueur-ratio"
 
 #: constraint.cpp:27
 msgctxt "constr-name"
@@ -185,12 +185,12 @@ msgstr "longueur-difference"
 #: constraint.cpp:28
 msgctxt "constr-name"
 msgid "arc-arc-len-difference"
-msgstr ""
+msgstr "arc-arc-longueur-différence"
 
 #: constraint.cpp:29
 msgctxt "constr-name"
 msgid "arc-line-len-difference"
-msgstr ""
+msgstr "arc-ligne-longueur-différence"
 
 #: constraint.cpp:30
 msgctxt "constr-name"
@@ -406,6 +406,12 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
+"Mauvaise sélection pour une contrainte de ratio de longueur. Cette contrainte peut "
+"s'appliquer à :\n"
+"\n"
+"    – Deux segments de ligne\n"
+"    – Deux arcs\n"
+"    – Un arc et un segment de ligne\n"
 
 #: constraint.cpp:441
 msgid ""
@@ -416,6 +422,12 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
+"Mauvaise sélection pour une contrainte de différence de longueur. Cette contrainte "
+"peut s'appliquer à :\n"
+"\n"
+"    – Deux segments de ligne\n"
+"    – Deux arcs\n"
+"    – Un arc et un segment de ligne\n"
 
 #: constraint.cpp:472
 msgid ""
@@ -518,7 +530,7 @@ msgstr ""
 
 #: constraint.cpp:754
 msgid "Curve-curve tangency must apply in workplane."
-msgstr "Courbe-Courbe tangence doit s'appliquer dans le plan de travail."
+msgstr "La tangence courbe-courbe doit s'appliquer dans le plan de travail."
 
 #: constraint.cpp:766
 msgid ""
@@ -568,7 +580,7 @@ msgstr ""
 
 #: constraint.cpp:813 mouse.cpp:1158
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
-msgstr "NOUVEAU COMMENTAIRE - DOUBLE-CLIQUE POUR EDITER"
+msgstr "NOUVEAU COMMENTAIRE — DOUBLE-CLIQUEZ POUR EDITER"
 
 #: constraint.cpp:818
 msgid "click center of comment text"
@@ -579,9 +591,8 @@ msgid ""
 "No solid model present; draw one with extrudes and revolves, or use Export "
 "2d View to export bare lines and curves."
 msgstr ""
-"Aucun modèle solide présent ; Dessinez-en un avec une extrusion et "
-"révolution, ou utilisez \"Exporter vue  2d\" pour exporter les lignes et les "
-"courbes dépouillées."
+"Aucun modèle solide présent ; dessinez-en un avec une extrusion et révolution, ou "
+"utilisez \"Exporter vue 2d\" pour exporter les lignes et les courbes dépouillées."
 
 #: export.cpp:61
 msgid ""
@@ -623,8 +634,8 @@ msgstr ""
 msgid ""
 "PDF page size exceeds 200 by 200 inches; many viewers may reject this file."
 msgstr ""
-"La taille de la page PDF dépasse 200 par 200 pouces ; De nombreux lecteurs "
-"peuvent rejeter ce fichier."
+"La taille de la page PDF dépasse 200 par 200 pouces ; de nombreux lecteurs "
+"risquent rejeter ce fichier."
 
 #: file.cpp:44 group.cpp:91
 msgctxt "group-name"
@@ -638,15 +649,15 @@ msgstr "#références"
 
 #: file.cpp:550
 msgid "The file is empty. It may be corrupt."
-msgstr ""
+msgstr "Le fichier est vide. Il est possible qu'il soit corrompu."
 
 #: file.cpp:555
 msgid ""
 "Unrecognized data in file. This file may be corrupt, or from a newer version "
 "of the program."
 msgstr ""
-"Données non reconnues dans le fichier. Ce fichier peut être corrompu ou "
-"depuis une version plus récente du programme."
+"Données non reconnues dans le fichier. Ce fichier peut être corrompu, ou venir "
+"d'une version plus récente du programme."
 
 #: file.cpp:867
 msgctxt "title"
@@ -657,7 +668,7 @@ msgstr "Fichier manquant"
 #, c-format
 msgctxt "dialog"
 msgid "The linked file “%s” is not present."
-msgstr ""
+msgstr "Le fichier lié \"%s\" n'est pas présent."
 
 #: file.cpp:870
 msgctxt "dialog"
@@ -667,21 +678,25 @@ msgid ""
 "If you decline, any geometry that depends on the missing file will be "
 "permanently removed."
 msgstr ""
+"Voulez-vous le chercher manuellement ?\n"
+"\n"
+"Sinon, toute géométrie qui dépend du fichier manquant sera définitivement "
+"supprimée."
 
 #: file.cpp:873
 msgctxt "button"
 msgid "&Yes"
-msgstr ""
+msgstr "&Oui"
 
 #: file.cpp:875
 msgctxt "button"
 msgid "&No"
-msgstr ""
+msgstr "&Non"
 
 #: file.cpp:877 solvespace.cpp:611
 msgctxt "button"
 msgid "&Cancel"
-msgstr ""
+msgstr "&Annuler"
 
 #: graphicswin.cpp:41
 msgid "&File"
@@ -917,7 +932,7 @@ msgstr "&Hélice"
 
 #: graphicswin.cpp:118
 msgid "&Lathe"
-msgstr "&Lathe"
+msgstr "&Tour (révolution complète)"
 
 #: graphicswin.cpp:119
 msgid "Re&volve"
@@ -1146,11 +1161,11 @@ msgstr "(pas de fichier récent)"
 #: graphicswin.cpp:370
 #, c-format
 msgid "File '%s' does not exist."
-msgstr ""
+msgstr "Le fichier \"%s\" n'existe pas."
 
 #: graphicswin.cpp:737
 msgid "No workplane is active, so the grid will not appear."
-msgstr "Pas de plan de travail actif, donc la grille ne va pas apparaître."
+msgstr "Pas de plan de travail actif, la grille ne va donc pas apparaître."
 
 #: graphicswin.cpp:752
 msgid ""
@@ -1199,9 +1214,9 @@ msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
 msgstr ""
-"Impossible d'accrocher ces éléments à la grille. Sélectionnez des points, "
-"des textes de commentaires ou des contraintes avec une étiquette. Pour "
-"accrocher une ligne, sélectionnez ses points d'extrémité."
+"Impossible d'accrocher ces éléments à la grille. Sélectionnez des points, des "
+"textes de commentaires ou des contraintes avec une étiquette. Pour accrocher une "
+"ligne, sélectionnez ses extrémités."
 
 #: graphicswin.cpp:1270
 msgid "No workplane selected. Activating default workplane for this group."
@@ -1229,9 +1244,7 @@ msgstr ""
 
 #: graphicswin.cpp:1305
 msgid "click point on arc (draws anti-clockwise)"
-msgstr ""
-"cliquez un point sur l'arc (dessine dans le sens inverse des aiguilles d'une "
-"montre)"
+msgstr "cliquez un point sur l'arc (dessine dans le sens anti-horaire)"
 
 #: graphicswin.cpp:1306
 msgid "click to place datum point"
@@ -1292,6 +1305,13 @@ msgid ""
 "    * a point and a normal (through the point, orthogonal to the normal)\n"
 "    * a workplane (copy of the workplane)\n"
 msgstr ""
+"Mauvaise sélection pour un nouveau dessin. Ce groupe peut être créé avec :\n"
+"\n"
+"    – Un point (passant par le point, orthogonal aux axes de coordonnées)\n"
+"    – Un point et deux segments de lignes (passant par le point, parallèle aux "
+"deux lignes)\n"
+"    – Un point et une normale (passant par le point, orthogonal à la normale)\n"
+"    – Un plan de travail (copie du plan de travail)\n"
 
 #: group.cpp:166
 msgid ""
@@ -1308,7 +1328,7 @@ msgstr "extruder"
 
 #: group.cpp:180
 msgid "Lathe operation can only be applied to planar sketches."
-msgstr ""
+msgstr "L'opération tour ne peut être appliquée qu'à des dessins plans."
 
 #: group.cpp:191
 msgid ""
@@ -1328,11 +1348,11 @@ msgstr ""
 #: group.cpp:201
 msgctxt "group-name"
 msgid "lathe"
-msgstr "révolution"
+msgstr "tour"
 
 #: group.cpp:206
 msgid "Revolve operation can only be applied to planar sketches."
-msgstr ""
+msgstr "L'opération révolution ne peut être appliquée qu'à des dessins plans"
 
 #: group.cpp:217
 msgid ""
@@ -1342,15 +1362,21 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"Mauvaise sélection pour un nouveau groupe de révolution. Ce groupe peut être créé "
+"avec :\n"
+"\n"
+"    – Un point et un segment de ligne ou normal (révolution autour d'un axe "
+"parallèle à la ligne / point normal, par le point)\n"
+"    – Un segment de ligne (révolution sur le segment de ligne)\n"
 
 #: group.cpp:229
 msgctxt "group-name"
 msgid "revolve"
-msgstr ""
+msgstr "révolution"
 
 #: group.cpp:234
 msgid "Helix operation can only be applied to planar sketches."
-msgstr ""
+msgstr "L'opération hélice ne peut être appliquée qu'à des dessins plans"
 
 #: group.cpp:245
 msgid ""
@@ -1360,11 +1386,17 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"Mauvaise sélection pour un nouveau groupe d'hélice. Ce groupe peut être créé "
+"avec :\n"
+"\n"
+"    – Un point et un segment de ligne ou normal (révolution autour d'un axe "
+"parallèle à la ligne / point normal, par le point)\n"
+"    – Un segment de ligne (révolution sur le segment de ligne)\n"
 
 #: group.cpp:257
 msgctxt "group-name"
 msgid "helix"
-msgstr ""
+msgstr "hélice"
 
 #: group.cpp:270
 msgid ""
@@ -1415,7 +1447,7 @@ msgstr "arête de longueur nulle !"
 
 #: importmesh.cpp:136
 msgid "Text-formated STL files are not currently supported"
-msgstr ""
+msgstr "Les fichiers STL textuels ne sont pas actuellement pas supportés"
 
 #: modify.cpp:252
 msgid "Must be sketching in workplane to create tangent arc."
@@ -1426,8 +1458,8 @@ msgid ""
 "To create a tangent arc, select a point where two non-construction lines or "
 "circles in this group and workplane join."
 msgstr ""
-"Pour créer un arc tangent, sélectionnez un point où deux lignes (pas de "
-"construction) ou cercles de ce groupe et de ce plan se joignent."
+"Pour créer un arc tangent, sélectionnez un point où deux lignes ou cercles (pas de "
+"construction) de ce groupe et de ce plan se rejoignent."
 
 #: modify.cpp:386
 msgid ""
@@ -1451,6 +1483,8 @@ msgid ""
 "Select two entities that intersect each other (e.g. two lines/circles/arcs "
 "or a line/circle/arc and a point)."
 msgstr ""
+"Sélectionnez deux entités qui s'intersectent (par exemple deux lignes/cercles/"
+"arcs, ou une ligne/cercle/arc et un point)."
 
 #: modify.cpp:734
 msgid "Can't split; no intersection found."
@@ -1602,7 +1636,7 @@ msgstr ""
 
 #: mouse.cpp:1125
 msgid "click to place bottom right of text"
-msgstr ""
+msgstr "cliquer pour placer le coin inférieur droit du texte"
 
 #: mouse.cpp:1131
 msgid ""
@@ -1615,97 +1649,97 @@ msgstr ""
 #: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:553
 msgctxt "file-type"
 msgid "SolveSpace models"
-msgstr ""
+msgstr "modèles Solvespace"
 
 #: platform/gui.cpp:89
 msgctxt "file-type"
 msgid "ALL"
-msgstr ""
+msgstr "TOUT"
 
 #: platform/gui.cpp:91
 msgctxt "file-type"
 msgid "IDF circuit board"
-msgstr ""
+msgstr "circuit imprimé IDF"
 
 #: platform/gui.cpp:92
 msgctxt "file-type"
 msgid "STL triangle mesh"
-msgstr ""
+msgstr "maillage de triangles STL"
 
 #: platform/gui.cpp:96
 msgctxt "file-type"
 msgid "PNG image"
-msgstr ""
+msgstr "image PNG"
 
 #: platform/gui.cpp:100
 msgctxt "file-type"
 msgid "STL mesh"
-msgstr ""
+msgstr "maillage STL"
 
 #: platform/gui.cpp:101
 msgctxt "file-type"
 msgid "Wavefront OBJ mesh"
-msgstr ""
+msgstr "Mesh Wavefront OBJ"
 
 #: platform/gui.cpp:102
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, with viewer"
-msgstr ""
+msgstr "Mesh compatible avec Three.js, avec visionneuse"
 
 #: platform/gui.cpp:103
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, mesh only"
-msgstr ""
+msgstr "Mesh compatible avec Three.js, mesh seulement"
 
 #: platform/gui.cpp:104
 msgctxt "file-type"
 msgid "VRML text file"
-msgstr ""
+msgstr "Fichier texte VRML"
 
 #: platform/gui.cpp:108 platform/gui.cpp:115 platform/gui.cpp:122
 msgctxt "file-type"
 msgid "STEP file"
-msgstr ""
+msgstr "fichier STEP"
 
 #: platform/gui.cpp:112
 msgctxt "file-type"
 msgid "PDF file"
-msgstr ""
+msgstr "fichier PDF"
 
 #: platform/gui.cpp:113
 msgctxt "file-type"
 msgid "Encapsulated PostScript"
-msgstr ""
+msgstr "PostScript encapsulé"
 
 #: platform/gui.cpp:114
 msgctxt "file-type"
 msgid "Scalable Vector Graphics"
-msgstr ""
+msgstr "image vectorielle SVG"
 
 #: platform/gui.cpp:116 platform/gui.cpp:123
 msgctxt "file-type"
 msgid "DXF file (AutoCAD 2007)"
-msgstr ""
+msgstr "fichier DXF (AutoCAD 2007)"
 
 #: platform/gui.cpp:117
 msgctxt "file-type"
 msgid "HPGL file"
-msgstr ""
+msgstr "fichier HPGL"
 
 #: platform/gui.cpp:118
 msgctxt "file-type"
 msgid "G Code"
-msgstr ""
+msgstr "G Code"
 
 #: platform/gui.cpp:127
 msgctxt "file-type"
 msgid "AutoCAD DXF and DWG files"
-msgstr ""
+msgstr "fichiers AutoCAD DXF et DWG"
 
 #: platform/gui.cpp:131
 msgctxt "file-type"
 msgid "Comma-separated values"
-msgstr ""
+msgstr "CSV (Comma-separated values)"
 
 #: platform/guigtk.cpp:1382 platform/guimac.mm:1509 platform/guiwin.cpp:1641
 msgid "untitled"
@@ -1736,7 +1770,7 @@ msgstr "_Sauver"
 #: platform/guigtk.cpp:1399 platform/guigtk.cpp:1432
 msgctxt "button"
 msgid "_Open"
-msgstr ""
+msgstr "_Ouvrir"
 
 #: solvespace.cpp:171
 msgctxt "title"
@@ -1746,22 +1780,22 @@ msgstr "Sauvegarde automatique existante"
 #: solvespace.cpp:172
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
-msgstr ""
+msgstr "Un fichier de sauvegarder automatique est disponible pour ce dessin"
 
 #: solvespace.cpp:173
 msgctxt "dialog"
 msgid "Do you want to load the autosave file instead?"
-msgstr ""
+msgstr "Voulez-vous charger la sauvegarde automatique à la place ?"
 
 #: solvespace.cpp:174
 msgctxt "button"
 msgid "&Load autosave"
-msgstr ""
+msgstr "&Charger la sauvegarde automatique"
 
 #: solvespace.cpp:176
 msgctxt "button"
 msgid "Do&n't Load"
-msgstr ""
+msgstr "Ne &pas la charger"
 
 #: solvespace.cpp:599
 msgctxt "title"
@@ -1772,27 +1806,27 @@ msgstr "Fichier modifié"
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
-msgstr ""
+msgstr "Voulez-vous sauver les changements que vous avez fait au dessin \"%s\" ?"
 
 #: solvespace.cpp:604
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
-msgstr ""
+msgstr "Voulez-vous sauver les changements que vous avez fait au nouveau dessin ?"
 
 #: solvespace.cpp:607
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
-msgstr ""
+msgstr "Vos changements seront perdus si vous ne les sauvez pas."
 
 #: solvespace.cpp:608
 msgctxt "button"
 msgid "&Save"
-msgstr ""
+msgstr "&Sauver"
 
 #: solvespace.cpp:610
 msgctxt "button"
 msgid "Do&n't Save"
-msgstr ""
+msgstr "&Ne pas sauver"
 
 #: solvespace.cpp:631
 msgctxt "title"
@@ -1810,6 +1844,9 @@ msgid ""
 "is probably not what you want; hide them by clicking the link at the top of "
 "the text window."
 msgstr ""
+"Les contraintes sont actuellement affichées, et seront exportées dans le toolpath. "
+"Ce n'est probablement pas ce que vous voulez, cachez-le en cliquer le lien en haut "
+"de la fenêtre de texte."
 
 #: solvespace.cpp:772
 #, c-format
@@ -1817,18 +1854,21 @@ msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
 "dwg."
 msgstr ""
+"Impossible d'identifier le type de fichier à partir de l'extension '%s' ; essayez ."
+"dxf ou .dwg."
 
 #: solvespace.cpp:824
 msgid "Constraint must have a label, and must not be a reference dimension."
-msgstr ""
+msgstr "La contrainte doit avoir un nom, et ne doit pas référencer une dimension."
 
 #: solvespace.cpp:828
 msgid "Bad selection for step dimension; select a constraint."
 msgstr ""
+"Mauvaise sélection pour le pas-à-pas dimension ; sélectionnea une contrainte."
 
 #: solvespace.cpp:852
 msgid "The assembly does not interfere, good."
-msgstr ""
+msgstr "Cet assemblage n'interfère pas, bien."
 
 #: solvespace.cpp:868
 #, c-format
@@ -1837,6 +1877,9 @@ msgid ""
 "\n"
 "    %s"
 msgstr ""
+"Le volume du modèle de solide est :\n"
+"\n"
+"    %s"
 
 #: solvespace.cpp:877
 #, c-format
@@ -1846,6 +1889,10 @@ msgid ""
 "\n"
 "    %s"
 msgstr ""
+"\n"
+"Le volume de ce groupe mesh est :\n"
+"\n"
+"    %s"
 
 #: solvespace.cpp:882
 msgid ""
@@ -1854,6 +1901,10 @@ msgid ""
 "Curved surfaces have been approximated as triangles.\n"
 "This introduces error, typically of around 1%."
 msgstr ""
+"\n"
+"\n"
+"Les surfaces courbes ont été approximée par des triangles.\n"
+"Cela introduit une erreur, d'environ 1% en général."
 
 #: solvespace.cpp:897
 #, c-format
@@ -1865,12 +1916,20 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"La surface des faces sélectionnées est :\n"
+"\n"
+"    %s\n"
+"\n"
+"Les courbes ont été approximée comme étant linéaires par morceau.\n"
+"Cela introduit une erreur, d'environ 1%% en général."
 
 #: solvespace.cpp:906
 msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
 msgstr ""
+"Ce groupe ne contient pas de surface 3d fermée correcte. Elle est ouverte, non "
+"coplanaire, ou s'intersecte."
 
 #: solvespace.cpp:918
 #, c-format
@@ -1882,6 +1941,12 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"La surface de la région dessinée dans ce groupe est :\n"
+"\n"
+"    %s\n"
+"\n"
+"Les courbes ont été approximée comme linéaires par morceau.\n"
+"Cela introduit une erreur, d'environ 1%% en général."
 
 #: solvespace.cpp:938
 #, c-format
@@ -1893,35 +1958,44 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"La longueur totale des entités sélectionnées est :\n"
+"\n"
+"    %s\n"
+"\n"
+"\n"
+"Les courbes ont été approximée comme linéaires par morceau.\n"
+"Cela introduit une erreur, d'environ 1%% en général."
 
 #: solvespace.cpp:944
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
 msgstr ""
+"Mauvaise sélection pour un périmètre ; sélectionnez des segments de ligne, des "
+"arcs, et des coubres."
 
 #: solvespace.cpp:960
 msgid "Bad selection for trace; select a single point."
-msgstr ""
+msgstr "Mauvaise sélection pour le tracé ; sélectionnez un unique point."
 
 #: solvespace.cpp:987
 #, c-format
 msgid "Couldn't write to '%s'"
-msgstr ""
+msgstr "Impossible d'écrire \"%s\""
 
 #: solvespace.cpp:1017
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
-msgstr ""
+msgstr "Le mesh s'intersecte (NON valide)."
 
 #: solvespace.cpp:1018
 msgid "The mesh is not self-intersecting (okay, valid)."
-msgstr ""
+msgstr "Le mesh ne s'intersecte pas (valide)."
 
 #: solvespace.cpp:1020
 msgid "The mesh has naked edges (NOT okay, invalid)."
-msgstr ""
+msgstr "Le mesh a des arêtes nues (NON valide)."
 
 #: solvespace.cpp:1021
 msgid "The mesh is watertight (okay, valid)."
-msgstr ""
+msgstr "Le mesh est étanche (valide)."
 
 #: solvespace.cpp:1024
 #, c-format
@@ -1930,6 +2004,9 @@ msgid ""
 "\n"
 "The model contains %d triangles, from %d surfaces."
 msgstr ""
+"\n"
+"\n"
+"Le modèle contient %d triangles, répartis sur %d surfaces."
 
 #: solvespace.cpp:1028
 #, c-format
@@ -1940,6 +2017,11 @@ msgid ""
 "\n"
 "Zero problematic edges, good.%s"
 msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"Pas d'arête problématique, bien.%s"
 
 #: solvespace.cpp:1031
 #, c-format
@@ -1950,6 +2032,11 @@ msgid ""
 "\n"
 "%d problematic edges, bad.%s"
 msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"%d arêtes problématiques, pas bien.%s"
 
 #: solvespace.cpp:1044
 #, c-format
@@ -1967,6 +2054,18 @@ msgid ""
 "\n"
 "© 2008-%d Jonathan Westhues and other authors.\n"
 msgstr ""
+"Ceci est SolveSpace version %s.\n"
+"\n"
+"Pour plus d'information, visitez http://solvespace.com/\n"
+"\n"
+"SolveSpace est un logiciel libre : vous êtes libre de le\n"
+"modifier et/ou le redistribuer selon les termes de la GNU\n"
+"General Public License (GPL) version 3 ou supérieure.\n"
+"\n"
+"Il n'y a AUCUNE GARANTIE, dans les limites légales.\n"
+"Pour plus de détails, visitez http://gnu.org/licenses/\n"
+"\n"
+"© 2008-%d Jonathan Westhues et autres auteurs.\n"
 
 #: style.cpp:185
 msgid ""
@@ -2098,15 +2197,15 @@ msgstr "Nouveau groupe d'extrusion du dessin actif"
 
 #: toolbar.cpp:70
 msgid "New group rotating active sketch"
-msgstr "Nouveau groupe de révolution du dessin actif"
+msgstr "Nouveau groupe de révolution du dessin actif (tour complet)"
 
 #: toolbar.cpp:72
 msgid "New group helix from active sketch"
-msgstr ""
+msgstr "Nouveau groupe hélice du dessin actif"
 
 #: toolbar.cpp:74
 msgid "New group revolve active sketch"
-msgstr ""
+msgstr "Nouveau groupe de révolution partielle du dessin actif"
 
 #: toolbar.cpp:76
 msgid "New group step and repeat rotating"
@@ -2150,7 +2249,7 @@ msgstr "Message"
 #: util.cpp:170
 msgctxt "button"
 msgid "&OK"
-msgstr ""
+msgstr "&Ok"
 
 #: view.cpp:127
 msgid "Scale cannot be zero or negative."
@@ -2158,7 +2257,7 @@ msgstr "L'échelle ne peut pas être zéro ou négative."
 
 #: view.cpp:139 view.cpp:148
 msgid "Bad format: specify x, y, z"
-msgstr "Mauvais format :  Spécifiez x, y, z"
+msgstr "Mauvais format : Spécifiez x, y, z"
 
 #~ msgid ""
 #~ "Bad selection for length ratio constraint. This constraint can apply to:\n"
