@@ -1012,7 +1012,7 @@ msgstr "Diviser les Courbes à l'&Intersection"
 
 #: graphicswin.cpp:145
 msgid "&Constrain"
-msgstr "&Constraintes"
+msgstr "&Contraintes"
 
 #: graphicswin.cpp:146
 msgid "&Distance / Diameter"
