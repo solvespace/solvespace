@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+#include <iostream>
+
 typedef void MenuHandler(Command id);
 using MenuKind = Platform::MenuItem::Indicator;
 struct MenuEntry {
@@ -817,13 +819,18 @@ void GraphicsWindow::MenuView(Command id) {
             Quaternion quatf = quat0;
             double dmin = 1e10;
 
-            // There are 24 possible views; 3*2*2*2
-            int i, j, negi, negj;
-            for(i = 0; i < 3; i++) {
-                for(j = 0; j < 3; j++) {
+            // There are 24 possible views (3*2*2*2), if all are
+            // allowed.  If the user is in turn-table mode, the
+            // isometric view must have the z-axis facing up, leaving
+            // 8 possible views (2*1*2*2).
+
+            bool require_turntable = (id==Command::NEAREST_ISO && SS.turntableNav);
+            for(int i = 0; i < 3; i++) {
+                for(int j = 0; j < 3; j++) {
                     if(i == j) continue;
-                    for(negi = 0; negi < 2; negi++) {
-                        for(negj = 0; negj < 2; negj++) {
+                    if(require_turntable && (j!=2)) continue;
+                    for(int negi = 0; negi < 2; negi++) {
+                        for(int negj = 0; negj < 2; negj++) {
                             Vector ou = ortho[i], ov = ortho[j];
                             if(negi) ou = ou.ScaledBy(-1);
                             if(negj) ov = ov.ScaledBy(-1);
