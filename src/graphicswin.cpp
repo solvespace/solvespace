@@ -6,8 +6,6 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-#include <iostream>
-
 typedef void MenuHandler(Command id);
 using MenuKind = Platform::MenuItem::Indicator;
 struct MenuEntry {
