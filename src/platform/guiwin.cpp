@@ -793,7 +793,7 @@ public:
                 break;
 
             case WM_SIZING: {
-                int pixelRatio = window->GetDevicePixelRatio();
+                double pixelRatio = window->GetDevicePixelRatio();
 
                 RECT rcw, rcc;
                 sscheck(GetWindowRect(window->hWindow, &rcw));
@@ -806,10 +806,10 @@ public:
                 int adjHeight = rc->bottom - rc->top;
 
                 adjWidth  -= nonClientWidth;
-                adjWidth   = max(window->minWidth * pixelRatio, adjWidth);
-                adjWidth  += nonClientWidth;
+                adjWidth   = max((int)(window->minWidth * pixelRatio), adjWidth);
+                adjWidth += nonClientWidth;
                 adjHeight -= nonClientHeight;
-                adjHeight  = max(window->minHeight * pixelRatio, adjHeight);
+                adjHeight  = max((int)(window->minHeight * pixelRatio), adjHeight);
                 adjHeight += nonClientHeight;
                 switch(wParam) {
                     case WMSZ_RIGHT:
@@ -868,7 +868,7 @@ public:
             case WM_MOUSEMOVE:
             case WM_MOUSEWHEEL:
             case WM_MOUSELEAVE: {
-                int pixelRatio = window->GetDevicePixelRatio();
+                double pixelRatio = window->GetDevicePixelRatio();
 
                 MouseEvent event = {};
                 event.x = GET_X_LPARAM(lParam) / pixelRatio;
@@ -941,7 +941,7 @@ public:
                         event.y = pt.y / pixelRatio;
 
                         event.type = MouseEvent::Type::SCROLL_VERT;
-                        event.scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
+                        event.scrollDelta = GET_WHEEL_DELTA_WPARAM(wParam) / (double)WHEEL_DELTA;
                         break;
 
                     case WM_MOUSELEAVE:
@@ -1109,10 +1109,10 @@ public:
         return (double)dpi;
     }
 
-    int GetDevicePixelRatio() override {
+    double GetDevicePixelRatio() override {
         UINT dpi;
         sscheck(dpi = ssGetDpiForWindow(hWindow));
-        return dpi / USER_DEFAULT_SCREEN_DPI;
+        return (double)dpi / USER_DEFAULT_SCREEN_DPI;
     }
 
     bool IsVisible() override {
@@ -1177,27 +1177,27 @@ public:
     }
 
     void GetContentSize(double *width, double *height) override {
-        int pixelRatio = GetDevicePixelRatio();
+        double pixelRatio = GetDevicePixelRatio();
 
         RECT rc;
         sscheck(GetClientRect(hWindow, &rc));
-        *width  = (rc.right  - rc.left) / pixelRatio;
-        *height = (rc.bottom - rc.top)  / pixelRatio;
+        *width  = (rc.right - rc.left) / pixelRatio;
+        *height = (rc.bottom - rc.top) / pixelRatio;
     }
 
     void SetMinContentSize(double width, double height) {
         minWidth  = (int)width;
         minHeight = (int)height;
 
-        int pixelRatio = GetDevicePixelRatio();
+        double pixelRatio = GetDevicePixelRatio();
 
         RECT rc;
         sscheck(GetClientRect(hWindow, &rc));
         if(rc.right  - rc.left < minWidth * pixelRatio) {
-            rc.right  = rc.left + minWidth  * pixelRatio;
+            rc.right  = rc.left + (LONG)(minWidth  * pixelRatio);
         }
         if(rc.bottom - rc.top < minHeight * pixelRatio) {
-            rc.bottom = rc.top  + minHeight * pixelRatio;
+            rc.bottom = rc.top  + (LONG)(minHeight * pixelRatio);
         }
     }
 
@@ -1270,7 +1270,7 @@ public:
         tooltipText = newText;
 
         if(!newText.empty()) {
-            int pixelRatio = GetDevicePixelRatio();
+            double pixelRatio = GetDevicePixelRatio();
             RECT toolRect;
             toolRect.left   = (int)(x * pixelRatio);
             toolRect.top    = (int)(y * pixelRatio);
@@ -1301,9 +1301,9 @@ public:
                     bool isMonospace, const std::string &text) override {
         if(IsEditorVisible()) return;
 
-        int pixelRatio = GetDevicePixelRatio();
+        double pixelRatio = GetDevicePixelRatio();
 
-        HFONT hFont = CreateFontW(-(LONG)fontHeight * GetDevicePixelRatio(), 0, 0, 0,
+        HFONT hFont = CreateFontW(-(int)(fontHeight * GetDevicePixelRatio()), 0, 0, 0,
             FW_REGULAR, FALSE, FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
             DEFAULT_QUALITY, FF_DONTCARE, isMonospace ? L"Lucida Console" : L"Arial");
         if(hFont == NULL) {
@@ -1324,12 +1324,12 @@ public:
         sscheck(ReleaseDC(hEditor, hDc));
 
         RECT rc;
-        rc.left   = (LONG)x * pixelRatio;
-        rc.top    = (LONG)y * pixelRatio - tm.tmAscent;
+        rc.left   = (LONG)(x * pixelRatio);
+        rc.top    = (LONG)(y * pixelRatio) - tm.tmAscent;
         // Add one extra char width to avoid scrolling.
-        rc.right  = (LONG)x * pixelRatio +
-                    std::max((LONG)minWidth * pixelRatio, ts.cx + tm.tmAveCharWidth);
-        rc.bottom = (LONG)y * pixelRatio + tm.tmDescent;
+        rc.right  = (LONG)(x * pixelRatio) +
+                    std::max((LONG)(minWidth * pixelRatio), ts.cx + tm.tmAveCharWidth);
+        rc.bottom = (LONG)(y * pixelRatio) + tm.tmDescent;
         sscheck(ssAdjustWindowRectExForDpi(&rc, 0, /*bMenu=*/FALSE, WS_EX_CLIENTEDGE,
 			                               ssGetDpiForWindow(hWindow)));
 
@@ -1608,7 +1608,7 @@ public:
 
     void AddFilter(std::string name, std::vector<std::string> extensions) override {
         std::string desc, patterns;
-        for(auto extension : extensions) {
+        for(auto &extension : extensions) {
             std::string pattern = "*." + extension;
             if(!desc.empty()) desc += ", ";
             desc += pattern;

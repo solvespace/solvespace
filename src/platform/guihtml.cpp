@@ -970,8 +970,8 @@ public:
         return 96.0 * emscripten_get_device_pixel_ratio();
     }
 
-    int GetDevicePixelRatio() override {
-        return (int)emscripten_get_device_pixel_ratio();
+    double GetDevicePixelRatio() override {
+        return emscripten_get_device_pixel_ratio();
     }
 
     bool IsVisible() override {

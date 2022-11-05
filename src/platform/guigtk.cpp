@@ -889,7 +889,7 @@ public:
         return gtkWindow.get_screen()->get_resolution();
     }
 
-    int GetDevicePixelRatio() override {
+    double GetDevicePixelRatio() override {
         return gtkWindow.get_scale_factor();
     }
 

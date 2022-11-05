@@ -987,10 +987,10 @@ public:
         return (displayPixelSize.width / displayPhysicalSize.width) * 25.4f;
     }
 
-    int GetDevicePixelRatio() override {
+    double GetDevicePixelRatio() override {
         NSSize unitSize = { 1.0f, 0.0f };
         unitSize = [ssView convertSizeToBacking:unitSize];
-        return (int)unitSize.width;
+        return unitSize.width;
     }
 
     bool IsVisible() override {
