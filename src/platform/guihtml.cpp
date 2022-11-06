@@ -579,9 +579,6 @@ public:
     std::function<void()> editingDoneFunc;
     std::shared_ptr<MenuBarImplHtml> menuBar;
 
-    bool useWorkaround_devicePixelRatio = false;
-
-
     WindowImplHtml(val htmlContainer, std::string emCanvasSel) :
         emCanvasSel(emCanvasSel),
         htmlContainer(htmlContainer),
@@ -617,12 +614,6 @@ public:
             };
             this->scrollbarHelper.set("onScrollCallback", Wrap(&onScrollCallback));
         }
-
-        //FIXME(emscripten): In Chrome for Android on tablet device, devicePixelRatio should not be multiplied.
-        std::string userAgent = val::global("navigator")["userAgent"].as<std::string>();
-        bool is_smartphone = userAgent.find("Mobile") != std::string::npos;
-        bool is_android_device = userAgent.find("Android") != std::string::npos;
-        this->useWorkaround_devicePixelRatio = is_android_device && !is_smartphone;
 
         sscheck(emscripten_set_resize_callback(
             EMSCRIPTEN_EVENT_TARGET_WINDOW, this, /*useCapture=*/false,
@@ -933,14 +924,9 @@ public:
         sscheck(emscripten_get_element_css_size(htmlContainerSel.c_str(), &width, &height));
         // sscheck(emscripten_get_element_css_size(emCanvasSel.c_str(), &width, &height));
 
-        if (this->useWorkaround_devicePixelRatio) {
-            // Workaround is to skip applying devicePixelRatio.
-            // So NOP here.
-        } else {
-            double devicePixelRatio = emscripten_get_device_pixel_ratio();
-            width *= devicePixelRatio;
-            height *= devicePixelRatio;
-        }
+        double devicePixelRatio = GetDevicePixelRatio();
+        width *= devicePixelRatio;
+        height *= devicePixelRatio;
 
         int currentWidth = 0, currentHeight = 0;
         sscheck(emscripten_get_canvas_element_size(emCanvasSel.c_str(), &currentWidth, &currentHeight));
@@ -967,7 +953,7 @@ public:
     }
 
     double GetPixelDensity() override {
-        return 96.0 * emscripten_get_device_pixel_ratio();
+        return 96.0 * GetDevicePixelRatio();
     }
 
     double GetDevicePixelRatio() override {
