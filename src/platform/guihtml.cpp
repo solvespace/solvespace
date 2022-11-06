@@ -808,13 +808,18 @@ public:
         MouseEvent event = {};
         if(emEvent->deltaY != 0) {
             event.type = MouseEvent::Type::SCROLL_VERT;
-            event.scrollDelta = -emEvent->deltaY * 0.1;
+            // FIXME(emscripten):
+            // Pay attention to:
+            //   dbp("Mouse wheel delta mode: %lu", emEvent->deltaMode);
+            //     https://emscripten.org/docs/api_reference/html5.h.html#id11
+            //     https://www.w3.org/TR/DOM-Level-3-Events/#dom-wheelevent-deltamode
+            // and adjust the 0.01 below. deltaMode == 0 on a Firefox on a Windows.
+            event.scrollDelta = -emEvent->deltaY * 0.01;
         } else {
             return EM_FALSE;
         }
 
-        EmscriptenMouseEvent emStatus = {};
-        sscheck(emscripten_get_mouse_status(&emStatus));
+        const EmscriptenMouseEvent &emStatus = emEvent->mouse;
         event.x           = emStatus.targetX;
         event.y           = emStatus.targetY;
         event.shiftDown   = emStatus.shiftKey;
