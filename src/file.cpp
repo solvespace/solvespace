@@ -918,7 +918,7 @@ try_again:
             switch(LocateImportedFile(linkFileRelative, canCancel)) {
                 case Platform::MessageDialog::Response::YES: {
                     Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
-                    dialog->AddFilters(Platform::SolveSpaceModelFileFilters);
+                    dialog->AddFilters(Platform::SolveSpaceLinkFileFilters);
                     dialog->ThawChoices(settings, "LinkSketch");
                     dialog->SuggestFilename(linkFileRelative);
                     if(dialog->RunModal()) {

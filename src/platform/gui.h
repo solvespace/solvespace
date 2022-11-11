@@ -221,6 +221,7 @@ public:
     std::function<bool(KeyboardEvent)>  onKeyboardEvent;
     std::function<void(std::string)>    onEditingDone;
     std::function<void(double)>         onScrollbarAdjusted;
+    std::function<void()>               onContextLost;
     std::function<void()>               onRender;
 
     virtual ~Window() = default;
@@ -229,7 +230,7 @@ public:
     virtual double GetPixelDensity() = 0;
     // Returns raster graphics and coordinate scale (already applied on the platform side),
     // i.e. size of logical pixel in physical pixels, or device pixel ratio.
-    virtual int GetDevicePixelRatio() = 0;
+    virtual double GetDevicePixelRatio() = 0;
     // Returns (fractional) font scale, to be applied on top of (integral) device pixel ratio.
     virtual double GetDeviceFontScale() {
         return GetPixelDensity() / GetDevicePixelRatio() / 96.0;

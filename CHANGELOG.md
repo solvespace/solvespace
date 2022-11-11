@@ -1,7 +1,7 @@
 Changelog
 =========
 
-3.x  - since the 3.0 release, only available in edge builds
+3.1
 ---
 
 Constraints:

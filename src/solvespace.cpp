@@ -125,12 +125,8 @@ void SolveSpaceUI::Init() {
         SetLocale(locale);
     }
 
-    generateAllTimer = Platform::CreateTimer();
-    generateAllTimer->onTimeout = std::bind(&SolveSpaceUI::GenerateAll, &SS, Generate::DIRTY,
-                                            /*andFindFree=*/false, /*genForBBox=*/false);
-
-    showTWTimer = Platform::CreateTimer();
-    showTWTimer->onTimeout = std::bind(&TextWindow::Show, &TW);
+    refreshTimer = Platform::CreateTimer();
+    refreshTimer->onTimeout = std::bind(&SolveSpaceUI::Refresh, &SS);
 
     autosaveTimer = Platform::CreateTimer();
     autosaveTimer->onTimeout = std::bind(&SolveSpaceUI::Autosave, &SS);
@@ -302,12 +298,26 @@ void SolveSpaceUI::Exit() {
     Platform::ExitGui();
 }
 
+void SolveSpaceUI::Refresh() {
+    // generateAll must happen bfore updating displays
+    if(scheduledGenerateAll) {
+        GenerateAll(Generate::DIRTY, /*andFindFree=*/false, /*genForBBox=*/false);
+        scheduledGenerateAll = false;
+    }
+    if(scheduledShowTW) {
+        TW.Show();
+        scheduledShowTW = false;
+    }
+}
+
 void SolveSpaceUI::ScheduleGenerateAll() {
-    generateAllTimer->RunAfterProcessingEvents();
+    scheduledGenerateAll = true;
+    refreshTimer->RunAfterProcessingEvents();
 }
 
 void SolveSpaceUI::ScheduleShowTW() {
-    showTWTimer->RunAfterProcessingEvents();
+    scheduledShowTW = true;
+    refreshTimer->RunAfterProcessingEvents();
 }
 
 void SolveSpaceUI::ScheduleAutosave() {
@@ -550,12 +560,18 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
 
     if(saveAs || saveFile.IsEmpty()) {
         Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(GW.window);
+        // FIXME(emscripten):
+        dbp("Calling AddFilter()...");
         dialog->AddFilter(C_("file-type", "SolveSpace models"), { SKETCH_EXT });
+        dbp("Calling ThawChoices()...");
         dialog->ThawChoices(settings, "Sketch");
         if(!newSaveFile.IsEmpty()) {
+            dbp("Calling SetFilename()...");
             dialog->SetFilename(newSaveFile);
         }
+        dbp("Calling RunModal()...");
         if(dialog->RunModal()) {
+            dbp("Calling FreezeChoices()...");
             dialog->FreezeChoices(settings, "Sketch");
             newSaveFile = dialog->GetFilename();
         } else {
@@ -568,6 +584,9 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
         RemoveAutosave();
         saveFile = newSaveFile;
         unsaved = false;
+        if (this->OnSaveFinished) {
+            this->OnSaveFinished(newSaveFile, saveAs, false);
+        }
         return true;
     } else {
         return false;
@@ -579,7 +598,11 @@ void SolveSpaceUI::Autosave()
     ScheduleAutosave();
 
     if(!saveFile.IsEmpty() && unsaved) {
-        SaveToFile(saveFile.WithExtension(BACKUP_EXT));
+        Platform::Path saveFileName = saveFile.WithExtension(BACKUP_EXT);
+        SaveToFile(saveFileName);
+        if (this->OnSaveFinished) {
+            this->OnSaveFinished(saveFileName, false, true);
+        }
     }
 }
 
@@ -679,6 +702,9 @@ void SolveSpaceUI::MenuFile(Command id) {
             if(dialog->RunModal()) {
                 dialog->FreezeChoices(settings, "ExportImage");
                 SS.ExportAsPngTo(dialog->GetFilename());
+                if (SS.OnSaveFinished) {
+                    SS.OnSaveFinished(dialog->GetFilename(), false, false);
+                }
             }
             break;
         }
@@ -704,6 +730,9 @@ void SolveSpaceUI::MenuFile(Command id) {
             }
 
             SS.ExportViewOrWireframeTo(dialog->GetFilename(), /*exportWireframe=*/false);
+            if (SS.OnSaveFinished) {
+                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+            }
             break;
         }
 
@@ -716,6 +745,9 @@ void SolveSpaceUI::MenuFile(Command id) {
             dialog->FreezeChoices(settings, "ExportWireframe");
 
             SS.ExportViewOrWireframeTo(dialog->GetFilename(), /*exportWireframe*/true);
+            if (SS.OnSaveFinished) {
+                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+            }
             break;
         }
 
@@ -728,6 +760,9 @@ void SolveSpaceUI::MenuFile(Command id) {
             dialog->FreezeChoices(settings, "ExportSection");
 
             SS.ExportSectionTo(dialog->GetFilename());
+            if (SS.OnSaveFinished) {
+                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+            }
             break;
         }
 
@@ -740,6 +775,10 @@ void SolveSpaceUI::MenuFile(Command id) {
             dialog->FreezeChoices(settings, "ExportMesh");
 
             SS.ExportMeshTo(dialog->GetFilename());
+            if (SS.OnSaveFinished) {
+                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+            }
+
             break;
         }
 
@@ -753,6 +792,9 @@ void SolveSpaceUI::MenuFile(Command id) {
 
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(dialog->GetFilename());
+            if (SS.OnSaveFinished) {
+                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+            }
             break;
         }
 

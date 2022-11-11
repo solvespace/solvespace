@@ -33,6 +33,14 @@ automatically built by the SolveSpace maintainers for each stable release.
 
 [rel]: https://github.com/solvespace/solvespace/releases
 
+### Via Flathub
+
+Official releases can be installed as a Flatpak from Flathub.
+
+[Get SolveSpace from Flathub](https://flathub.org/apps/details/com.solvespace.SolveSpace)
+
+These should work on any Linux distribution that supports Flatpak.
+
 ### Via Snap Store
 
 Official releases can be installed from the `stable` channel.
@@ -68,18 +76,18 @@ from the following links:
 Extract the downloaded archive and install or execute the contained file as is
 appropriate for your platform.
 
-### Via third-party packages
-
-_Third-party_ nightly binary packages for Debian and Ubuntu are available via
-[notesalexp.org][notesalexp]. These packages are automatically built from
-non-released source code. The SolveSpace maintainers do not control the contents
-of these packages and cannot guarantee their functionality.
-
-[notesalexp]: https://notesalexp.org/packages/en/source/solvespace/
-
 ### Via source code
 
-See below.
+Irrespective of the OS used, before building, check out the project and the
+necessary submodules:
+
+```sh
+git clone https://github.com/solvespace/solvespace
+cd solvespace
+git submodule update --init
+```
+
+You will need `git`. See the platform specific instructions below to install it.
 
 ## Building on Linux
 
@@ -106,13 +114,7 @@ sudo dnf install git gcc-c++ cmake zlib-devel libpng-devel \
             mesa-libGL-devel mesa-libGLU-devel libspnav-devel
 ```
 
-Before building, check out the project and the necessary submodules:
-
-```sh
-git clone https://github.com/solvespace/solvespace
-cd solvespace
-git submodule update --init extlib/libdxfrw extlib/mimalloc extlib/eigen
-```
+Before building, [check out the project and the necessary submodules](#via-source-code).
 
 After that, build SolveSpace as following:
 
@@ -146,13 +148,7 @@ Debian derivative (e.g. Ubuntu) these can be installed with:
 apt-get install git build-essential cmake mingw-w64
 ```
 
-Before building, check out the project and the necessary submodules:
-
-```sh
-git clone https://github.com/solvespace/solvespace
-cd solvespace
-git submodule update --init
-```
+Before building, [check out the project and the necessary submodules](#via-source-code).
 
 Build 64-bit SolveSpace with the following:
 
@@ -169,6 +165,45 @@ command-line interface is built as `build/bin/solvespace-cli.exe`.
 
 Space Navigator support will not be available.
 
+### Building for web (very experimental)
+
+**Please note that this port contains many critical bugs and unimplemented core functions.**
+
+You will need the usual build tools, cmake and [Emscripten][]. On a Debian derivative (e.g. Ubuntu) dependencies other than Emscripten can be installed with:
+
+```sh
+apt-get install git build-essential cmake
+```
+
+First, install and prepare `emsdk`:
+
+```sh
+git clone https://github.com/emscripten-core/emsdk
+cd emsdk
+./emsdk install latest
+./emsdk activate latest
+source ./emsdk_env.sh
+cd ..
+```
+
+Before building, [check out the project and the necessary submodules](#via-source-code).
+
+After that, build SolveSpace as following:
+
+```sh
+mkdir build
+cd build
+emcmake cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_LTO="ON" -DENABLE_TESTS="OFF" -DENABLE_CLI="OFF" -DENABLE_COVERAGE="OFF"
+make
+```
+
+The graphical interface is built as multiple files in the `build/bin` directory with names
+starting with `solvespace`. It can be run locally with `emrun build/bin/solvespace.html`.
+
+The command-line interface is not available.
+
+[emscripten]: https://emscripten.org/
+
 ## Building on macOS
 
 You will need git, XCode tools, CMake and libomp. Git, CMake and libomp can be installed
@@ -181,13 +216,7 @@ brew install git cmake libomp
 XCode has to be installed via AppStore or [the Apple website][appledeveloper];
 it requires a free Apple ID.
 
-Before building, check out the project and the necessary submodules:
-
-```sh
-git clone https://github.com/solvespace/solvespace
-cd solvespace
-git submodule update --init
-```
+Before building, [check out the project and the necessary submodules](#via-source-code).
 
 After that, build SolveSpace as following:
 
@@ -225,13 +254,7 @@ These can be installed from the ports tree:
 pkg_add -U git cmake libexecinfo png json-c gtk3mm pangomm
 ```
 
-Before building, check out the project and the necessary submodules:
-
-```sh
-git clone https://github.com/solvespace/solvespace
-cd solvespace
-git submodule update --init extlib/libdxfrw extlib/mimalloc extlib/eigen
-```
+Before building, [check out the project and the necessary submodules](#via-source-code).
 
 After that, build SolveSpace as following:
 
@@ -254,10 +277,14 @@ by passing the `-DENABLE_GUI=OFF` flag to the cmake invocation.
 You will need [git][gitwin], [cmake][cmakewin] and a C++ compiler
 (either Visual C++ or MinGW). If using Visual C++, Visual Studio 2015
 or later is required.
+If gawk is in your path be sure it is a proper Windows port that can handle CL LF line endings.
+If not CMake may fail in libpng due to some awk scripts - issue #1228.
+
+Before building, [check out the project and the necessary submodules](#via-source-code).
 
 ### Building with Visual Studio IDE
 
-Check out the git submodules. Create a directory `build` in
+Create a directory `build` in
 the source tree and point cmake-gui to the source tree and that directory.
 Press "Configure" and "Generate", then open `build\solvespace.sln` with
 Visual C++ and build it.
@@ -269,9 +296,6 @@ First, ensure that `git` and `cl` (the Visual C++ compiler driver) are in your
 Visual Studio install. Then, run the following in cmd or PowerShell:
 
 ```bat
-git clone https://github.com/solvespace/solvespace
-cd solvespace
-git submodule update --init
 mkdir build
 cd build
 cmake .. -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release
@@ -287,9 +311,6 @@ First, ensure that git and gcc are in your `$PATH`. Then, run the following
 in bash:
 
 ```sh
-git clone https://github.com/solvespace/solvespace
-cd solvespace
-git submodule update --init
 mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release

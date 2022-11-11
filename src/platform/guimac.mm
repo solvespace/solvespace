@@ -372,7 +372,8 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     double             rotationGestureCurrent;
     Point2d            trackpadPositionShift;
     bool               inTrackpadScrollGesture;
-    int                numTouches;
+    int                activeTrackpadTouches;
+    bool               scrollFromTrackpadTouch;
     Platform::Window::Kind kind;
 }
 
@@ -398,7 +399,8 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
         editor.action = @selector(didEdit:);
 
         inTrackpadScrollGesture = false;
-        numTouches = 0;
+        activeTrackpadTouches = 0;
+        scrollFromTrackpadTouch = false;
         self.acceptsTouchEvents = YES;
         kind = aKind;
         if(kind == Platform::Window::Kind::TOPLEVEL) {
@@ -576,9 +578,16 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     using Platform::MouseEvent;
 
     MouseEvent event = [self convertMouseEvent:nsEvent];
-    // Check for number of touches to exclude single-finger scrolling on Magic Mouse
-    bool isTrackpadEvent = numTouches >= 2 && nsEvent.subtype == NSEventSubtypeTabletPoint;
-    if(isTrackpadEvent && kind == Platform::Window::Kind::TOPLEVEL) {
+    if(nsEvent.phase == NSEventPhaseBegan) {
+        // If this scroll began on trackpad then touchesBeganWithEvent was called prior to this
+        // event and we have at least one active trackpad touch. We store this information so we
+        // can handle scroll originating from trackpad differently below.
+        scrollFromTrackpadTouch = activeTrackpadTouches > 0 &&
+            nsEvent.subtype == NSEventSubtypeTabletPoint &&
+            kind == Platform::Window::Kind::TOPLEVEL;
+    }
+    // Check if we are scrolling on trackpad and handle things differently.
+    if(scrollFromTrackpadTouch) {
         // This is how Cocoa represents 2 finger trackpad drag gestures, rather than going via
         // NSPanGestureRecognizer which is how you might expect this to work... We complicate this
         // further by also handling shift-two-finger-drag to mean rotate. Fortunately we're using
@@ -632,20 +641,15 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 }
 
 - (void)touchesBeganWithEvent:(NSEvent *)event {
-    numTouches = [event touchesMatchingPhase:NSTouchPhaseTouching inView:self].count;
-    [super touchesBeganWithEvent:event];
+    activeTrackpadTouches++;
 }
-- (void)touchesMovedWithEvent:(NSEvent *)event {
-    numTouches = [event touchesMatchingPhase:NSTouchPhaseTouching inView:self].count;
-    [super touchesMovedWithEvent:event];
-}
+
 - (void)touchesEndedWithEvent:(NSEvent *)event {
-    numTouches = [event touchesMatchingPhase:NSTouchPhaseTouching inView:self].count;
-    [super touchesEndedWithEvent:event];
+    activeTrackpadTouches--;
 }
+
 - (void)touchesCancelledWithEvent:(NSEvent *)event {
-    numTouches = 0;
-    [super touchesCancelledWithEvent:event];
+    activeTrackpadTouches--;
 }
 
 - (void)mouseExited:(NSEvent *)nsEvent {
@@ -983,10 +987,10 @@ public:
         return (displayPixelSize.width / displayPhysicalSize.width) * 25.4f;
     }
 
-    int GetDevicePixelRatio() override {
+    double GetDevicePixelRatio() override {
         NSSize unitSize = { 1.0f, 0.0f };
         unitSize = [ssView convertSizeToBacking:unitSize];
-        return (int)unitSize.width;
+        return unitSize.width;
     }
 
     bool IsVisible() override {
