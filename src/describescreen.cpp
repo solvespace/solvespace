@@ -64,11 +64,6 @@ void TextWindow::ScreenConstraintShowAsRadius(int link, uint32_t v) {
 void TextWindow::DescribeSelection() {
     Printf(false, "");
 
-    auto const &gs = SS.GW.gs;
-    if(gs.n == 1 && (gs.points == 1 || gs.entities == 1)) {
-        Entity *e = SK.GetEntity(gs.points == 1 ? gs.point[0] : gs.entity[0]);
-        Vector p;
-
 #define COSTR_NO_LINK(p) \
     SS.MmToString((p).x).c_str(), \
     SS.MmToString((p).y).c_str(), \
@@ -81,6 +76,23 @@ void TextWindow::DescribeSelection() {
 #define PT_AS_STR "%Ll%D%f%h" PT_AS_STR_NO_LINK "%E"
 #define CO_LINK(e, p) e->h, (&TextWindow::ScreenSelectEntity), (&TextWindow::ScreenHoverEntity), CO(p)
 #define PT_AS_NUM_LINK "%Ll%D%f%h" PT_AS_NUM "%E"
+
+    auto const &gs = SS.GW.gs;
+
+    auto ListFaces = [&]() {
+        char abc = 'A';
+        for(auto &fc : gs.face) {
+            Vector n = SK.GetEntity(fc)->FaceGetNormalNum();
+            Printf(true, " plane%c normal = " PT_AS_NUM, abc, CO(n));
+            Vector p = SK.GetEntity(fc)->FaceGetPointNum();
+            Printf(false, "   plane%c thru = " PT_AS_STR, abc, COSTR(SK.GetEntity(fc), p));
+            ++abc;
+        }
+    };
+
+    if(gs.n == 1 && (gs.points == 1 || gs.entities == 1)) {
+        Entity *e = SK.GetEntity(gs.points == 1 ? gs.point[0] : gs.entity[0]);
+        Vector p;
 
         switch(e->type) {
             case Entity::Type::POINT_IN_3D:
@@ -408,15 +420,10 @@ void TextWindow::DescribeSelection() {
     } else if(gs.n == 2 && gs.faces == 2) {
         Printf(false, "%FtTWO PLANE FACES");
 
-        Vector n0 = SK.GetEntity(gs.face[0])->FaceGetNormalNum();
-        Printf(true,  " planeA normal = " PT_AS_NUM, CO(n0));
-        Vector p0 = SK.GetEntity(gs.face[0])->FaceGetPointNum();
-        Printf(false, "   planeA thru = " PT_AS_STR, COSTR(SK.GetEntity(gs.face[0]), p0));
+        ListFaces();
 
+        Vector n0 = SK.GetEntity(gs.face[0])->FaceGetNormalNum();
         Vector n1 = SK.GetEntity(gs.face[1])->FaceGetNormalNum();
-        Printf(true,  " planeB normal = " PT_AS_NUM, CO(n1));
-        Vector p1 = SK.GetEntity(gs.face[1])->FaceGetPointNum();
-        Printf(false, "   planeB thru = " PT_AS_STR, COSTR(SK.GetEntity(gs.face[1]), p1));
 
         double theta = acos(n0.Dot(n1));
         Printf(true,  "         angle = %Fi%2%E degrees", theta*180/PI);
@@ -425,28 +432,18 @@ void TextWindow::DescribeSelection() {
         Printf(false, "      or angle = %Fi%2%E (mod 180)", theta*180/PI);
 
         if(fabs(theta) < 0.01) {
-            double d = (p1.Minus(p0)).Dot(n0);
+            Vector p0 = SK.GetEntity(gs.face[0])->FaceGetPointNum();
+            Vector p1 = SK.GetEntity(gs.face[1])->FaceGetPointNum();
+
+            double d  = (p1.Minus(p0)).Dot(n0);
             Printf(true,  "      distance = %Fi%s", SS.MmToString(d).c_str());
         }
     } else if(gs.n == 3 && gs.faces == 3) {
         Printf(false, "%FtTHREE PLANE FACES");
 
-        Vector n0 = SK.GetEntity(gs.face[0])->FaceGetNormalNum();
-        Printf(true,  " planeA normal = " PT_AS_NUM, CO(n0));
-        Vector p0 = SK.GetEntity(gs.face[0])->FaceGetPointNum();
-        Printf(false, "   planeA thru = " PT_AS_STR, COSTR(SK.GetEntity(gs.face[0]), p0));
+        ListFaces();
 
-        Vector n1 = SK.GetEntity(gs.face[1])->FaceGetNormalNum();
-        Printf(true,  " planeB normal = " PT_AS_NUM, CO(n1));
-        Vector p1 = SK.GetEntity(gs.face[1])->FaceGetPointNum();
-        Printf(false, "   planeB thru = " PT_AS_STR, COSTR(SK.GetEntity(gs.face[1]), p1));
-
-        Vector n2 = SK.GetEntity(gs.face[2])->FaceGetNormalNum();
-        Printf(true,  " planeC normal = " PT_AS_NUM, CO(n2));
-        Vector p2 = SK.GetEntity(gs.face[2])->FaceGetPointNum();
-        Printf(false, "   planeB thru = " PT_AS_STR, COSTR(SK.GetEntity(gs.face[2]), p2));
-
-        // We should probably compute and show the intersection point if there is onw.
+        // We should probably compute and show the intersection point if there is one.
 
     } else if(gs.n == 0 && gs.constraints == 1) {
         Constraint *c = SK.GetConstraint(gs.constraint[0]);
