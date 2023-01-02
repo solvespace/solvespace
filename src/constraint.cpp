@@ -270,11 +270,13 @@ void Constraint::MenuConstrain(Command id) {
         }
 
         case Command::ON_ENTITY:
-            if(gs.points == 2 && gs.n == 2) {
+            if(gs.points >= 2 && gs.points == gs.n) {
                 c.type = Type::POINTS_COINCIDENT;
                 c.ptA = gs.point[0];
-                c.ptB = gs.point[1];
-                newcons.push_back(c);
+                for(int k = 1; k < gs.points; k++) {
+                    c.ptB = gs.point[k];
+                    newcons.push_back(c);
+                }
             } else if(gs.points == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = Type::PT_IN_PLANE;
                 c.ptA = gs.point[0];
@@ -300,7 +302,7 @@ void Constraint::MenuConstrain(Command id) {
             } else {
                 Error(_("Bad selection for on point / curve / plane constraint. "
                         "This constraint can apply to:\n\n"
-                        "    * two points (points coincident)\n"
+                        "    * two or more points (points coincident)\n"
                         "    * a point and a workplane (point in plane)\n"
                         "    * a point and a line segment (point on line)\n"
                         "    * a point and a circle or arc (point on curve)\n"
