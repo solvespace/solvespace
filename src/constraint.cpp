@@ -384,6 +384,7 @@ void Constraint::MenuConstrain(Command id) {
                                 "(line segment length equals arc length)\n"));
                 return;
             }
+            SS.UndoRemember();
             for (auto&& nc : newcons){
                 if(nc.type == Type::EQUAL_ANGLE) {
                     // Infer the nearest supplementary angle from the sketch.
@@ -397,7 +398,7 @@ void Constraint::MenuConstrain(Command id) {
                         nc.other = true;
                     }
                 }
-                AddConstraint(&nc);
+                AddConstraint(&nc, /*rememberForUndo=*/false);
             }
             break;
 
@@ -815,8 +816,9 @@ void Constraint::MenuConstrain(Command id) {
                               "an endpoint (tangent)\n"));
                 return;
             }
+            SS.UndoRemember();
             for (auto&& nc:newcons)
-                AddConstraint(&nc);
+                AddConstraint(&nc, /*rememberForUndo=*/false);
             break;
 
         case Command::PERPENDICULAR:
