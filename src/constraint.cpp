@@ -270,38 +270,46 @@ void Constraint::MenuConstrain(Command id) {
         }
 
         case Command::ON_ENTITY:
-            if(gs.points == 2 && gs.n == 2) {
+            if(gs.points >= 2 && gs.points == gs.n) {
                 c.type = Type::POINTS_COINCIDENT;
                 c.ptA = gs.point[0];
-                c.ptB = gs.point[1];
+                for (int k = 1; k<gs.points; k++) {
+                  c.ptB = gs.point[k];
+                  newcons.push_back(c);
+                }
             } else if(gs.points == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = Type::PT_IN_PLANE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
+                newcons.push_back(c);
             } else if(gs.points == 1 && gs.lineSegments == 1 && gs.n == 2) {
                 c.type = Type::PT_ON_LINE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
+                newcons.push_back(c);
             } else if(gs.points == 1 && gs.circlesOrArcs == 1 && gs.n == 2) {
                 c.type = Type::PT_ON_CIRCLE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
+                newcons.push_back(c);
             } else if(gs.points == 1 && gs.faces == 1 && gs.n == 2) {
                 c.type = Type::PT_ON_FACE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.face[0];
+                newcons.push_back(c);
             } else {
                 Error(_("Bad selection for on point / curve / plane constraint. "
                         "This constraint can apply to:\n\n"
-                        "    * two points (points coincident)\n"
+                        "    * two or more points (points coincident)\n"
                         "    * a point and a workplane (point in plane)\n"
                         "    * a point and a line segment (point on line)\n"
                         "    * a point and a circle or arc (point on curve)\n"
                         "    * a point and a plane face (point on face)\n"));
                 return;
             }
-            AddConstraint(&c);
-            newcons.push_back(c);
+            SS.UndoRemember();
+            for (auto&& nc:newcons)
+                AddConstraint(&nc, /*rememberForUndo=*/false);
             break;
 
         case Command::EQUAL:
