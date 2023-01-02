@@ -264,9 +264,8 @@ void Constraint::MenuConstrain(Command id) {
 
             c.valA = 0;
             c.ModifyToSatisfy();
+            AddConstraint(&c);
             newcons.push_back(c);
-            for (auto&& nc:newcons)
-                AddConstraint(&nc);
             break;
         }
 
@@ -301,8 +300,8 @@ void Constraint::MenuConstrain(Command id) {
                         "    * a point and a plane face (point on face)\n"));
                 return;
             }
-            newcons.push_back(c);
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::EQUAL:
@@ -433,8 +432,8 @@ void Constraint::MenuConstrain(Command id) {
 
             c.valA = 0;
             c.ModifyToSatisfy();
-            newcons.push_back(c);
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::DIFFERENCE:
@@ -468,8 +467,8 @@ void Constraint::MenuConstrain(Command id) {
 
             c.valA = 0;
             c.ModifyToSatisfy();
-            newcons.push_back(c);
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::AT_MIDPOINT:
@@ -482,16 +481,16 @@ void Constraint::MenuConstrain(Command id) {
                 // it on-line; so auto-remove that.  Handle as one undo group.
                 SS.UndoRemember();
                 DeleteAllConstraintsFor(Type::PT_ON_LINE, c.entityA, c.ptA);
-                newcons.push_back(c);
                 AddConstraint(&c, /*rememberForUndo=*/false);
+                newcons.push_back(c);
                 break;
             } else if(gs.lineSegments == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = Type::AT_MIDPOINT;
                 int i = SK.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
                 c.entityA = gs.entity[i];
                 c.entityB = gs.entity[1-i];
-                newcons.push_back(c);
                 AddConstraint(&c);
+                newcons.push_back(c);
             } else {
                 Error(_("Bad selection for at midpoint constraint. This "
                         "constraint can apply to:\n\n"
@@ -594,8 +593,8 @@ void Constraint::MenuConstrain(Command id) {
                     break;
                 }
             }
-            newcons.push_back(c);
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::VERTICAL:
@@ -670,8 +669,8 @@ void Constraint::MenuConstrain(Command id) {
 
                 nfree->NormalForceTo(Quaternion::From(fu, fv));
             }
-            newcons.push_back(c);
             AddConstraint(&c, /*rememberForUndo=*/false);
+            newcons.push_back(c);
             break;
         }
 
@@ -747,8 +746,8 @@ void Constraint::MenuConstrain(Command id) {
             }
 
             c.ModifyToSatisfy();
-            newcons.push_back(c);
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
         }
 
@@ -757,6 +756,7 @@ void Constraint::MenuConstrain(Command id) {
                 c.type = Type::PARALLEL;
                 c.entityA = gs.face[0];
                 c.entityB = gs.face[1];            
+                newcons.push_back(c);
             } else if(gs.vectors > 1 && gs.vectors == gs.n) {
                 c.type = Type::PARALLEL;
                 c.entityA = gs.vector[0];
@@ -837,8 +837,8 @@ void Constraint::MenuConstrain(Command id) {
                         "    * two normals\n"));
                 return;
             }
-            newcons.push_back(c);
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::WHERE_DRAGGED:
@@ -851,8 +851,8 @@ void Constraint::MenuConstrain(Command id) {
                         "    * a point\n"));
                 return;
             }
-            newcons.push_back(c);
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::COMMENT:
@@ -862,8 +862,8 @@ void Constraint::MenuConstrain(Command id) {
                 c.group       = SS.GW.activeGroup;
                 c.workplane   = SS.GW.ActiveWorkplane();
                 c.comment     = _("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
-                newcons.push_back(c);
                 AddConstraint(&c);
+                newcons.push_back(c);
             } else {
                 SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
                 SS.GW.pending.command = Command::COMMENT;
