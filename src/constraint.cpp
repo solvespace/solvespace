@@ -599,7 +599,11 @@ void Constraint::MenuConstrain(Command id) {
 
         case Command::VERTICAL:
         case Command::HORIZONTAL: {
-            hEntity ha, hb;
+            if(id == Command::HORIZONTAL) {
+                c.type = Type::HORIZONTAL;
+            } else {
+                c.type = Type::VERTICAL;
+            }
             if(c.workplane == Entity::FREE_IN_3D) {
                 Error(_("Activate a workplane (with Sketch -> In Workplane) before "
                         "applying a horizontal or vertical constraint."));
@@ -608,19 +612,14 @@ void Constraint::MenuConstrain(Command id) {
             if(gs.lineSegments > 0 && gs.lineSegments == gs.n) {
                 for (auto enti : gs.entity){
                     c.entityA = enti;
-                    if(id == Command::HORIZONTAL) {
-                        c.type = Type::HORIZONTAL;
-                    } else {
-                        c.type = Type::VERTICAL;
-                    }
                     newcons.push_back(c);
                 }
-                Entity *e = SK.GetEntity(c.entityA);
-                ha = e->point[0];
-                hb = e->point[1];
-            } else if(gs.points == 2 && gs.n == 2) {
-                ha = c.ptA = gs.point[0];
-                hb = c.ptB = gs.point[1];
+            } else if(gs.points >= 2 && gs.n == gs.points) {
+                c.ptA = gs.point[0];
+                for (int k = 1; k<gs.points; k++) {
+                  c.ptB = gs.point[k];
+                  newcons.push_back(c);
+                }
             } else {
                 Error(_("Bad selection for horizontal / vertical constraint. "
                         "This constraint can apply to:\n\n"
@@ -628,8 +627,9 @@ void Constraint::MenuConstrain(Command id) {
                         "    * a line segment\n"));
                 return;
             }
+            SS.UndoRemember();
             for (auto && nc: newcons)
-                AddConstraint(&nc);
+                AddConstraint(&nc, /*rememberForUndo=*/false);
             break;
         }
 
