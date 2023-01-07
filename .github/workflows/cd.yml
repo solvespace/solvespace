@@ -130,8 +130,9 @@ jobs:
     - name: Upload & Release to Edge
       if: github.event_name == 'push'
       uses: snapcore/action-publish@v1
+      env:
+        SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPSTORE_LOGIN }}
       with:
-        store_login: ${{ secrets.SNAPSTORE_LOGIN }}
         snap: ${{ steps.build.outputs.snap }}
         release: edge
     - name: Upload & Release to Beta + Edge
