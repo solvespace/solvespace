@@ -6,58 +6,185 @@ on:
     tags: [ py* ]
 
 jobs:
-  python-build:
-    strategy:
-      matrix:
-        pyver:
-          - "3.6"
-          - "3.7"
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
+  python:
+    name: ${{ matrix.os_short }} python ${{ matrix.architecture }} cp${{ matrix.python_version }}
     runs-on: ${{ matrix.os }}
-    env:
-      TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
-      TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        os_arch: [
+          "windows-ia32",
+          "windows-x64",
+          # "windows-arm64",
+          "macos-x86_64",
+          "macos-arm64",
+          "linux-x86_64",
+          "linux-aarch64",
+        ]
+        python_version: [
+          "37",
+          "38",
+          "39",
+          "310",
+          "311",
+        ]
+        exclude:
+          - os_arch: "macos-arm64"
+            python_version: "37"
+        include:
+          - os_arch: "windows-ia32"
+            os: "windows-2022"
+            os_short: "windows"
+            architecture: "ia32"
+            cibuildwheel_architecture: "x86"
+            cmake_generator_platform: "Win32"
+          - os_arch: "windows-x64"
+            os: "windows-2022"
+            os_short: "windows"
+            architecture: "x64"
+            cibuildwheel_architecture: "AMD64"
+            cmake_generator_platform: "x64"
+          # - os_arch: "windows-arm64"
+          #   os: "windows-2022"
+          #   os_short: "windows"
+          #   architecture: "arm64"
+          #   cibuildwheel_architecture: "ARM64"
+          #   cmake_generator_platform: "ARM64"
+          - os_arch: "macos-x86_64"
+            os: "macos-11.0"
+            os_short: "macos"
+            cibuildwheel_architecture: "x86_64"
+            architecture: "x86_64"
+          - os_arch: "macos-arm64"
+            os: "macos-11.0"
+            os_short: "macos"
+            cibuildwheel_architecture: "arm64"
+            architecture: "arm64"
+          - os_arch: linux-x86_64
+            os: "ubuntu-22.04"
+            os_short: "linux"
+            cibuildwheel_architecture: "x86_64"
+            architecture: "x86_64"
+          - os_arch: linux-aarch64
+            os: "ubuntu-22.04"
+            os_short: "linux"
+            cibuildwheel_architecture: "aarch64"
+            architecture: "aarch64"
     steps:
-      - uses: actions/checkout@v2
-      - run: git submodule update --init extlib/mimalloc extlib/eigen
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
         with:
-          python-version: ${{ matrix.pyver }}
-      - name: Build and test
-        working-directory: cython
+          fetch-depth: 0
+          submodules: true
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        if: matrix.architecture == 'aarch64'
+        with:
+          platforms: arm64
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.11.2
+        with:
+          package-dir: cython
+        env:
+          CIBW_BUILD: "cp${{ matrix.python_version }}-*"
+          CIBW_PLATFORM: "${{ matrix.os_short }}"
+          CIBW_BUILD_VERBOSITY: "1"
+          CIBW_ARCHS: "${{ matrix.cibuildwheel_architecture }}"
+          CIBW_ENVIRONMENT_WINDOWS: >
+            CMAKE_GENERATOR="Visual Studio 17 2022"
+            CMAKE_GENERATOR_PLATFORM="${{ matrix.cmake_generator_platform }}"
+          CIBW_ENVIRONMENT_PASS_WINDOWS: "CMAKE_GENERATOR CMAKE_GENERATOR_PLATFORM"
+          CIBW_ENVIRONMENT_MACOS: >
+            OPENMP_PREFIX_MACOS="/tmp/libomp/libomp/fixed"
+          CIBW_ENVIRONMENT_PASS_MACOS: "OPENMP_PREFIX_MACOS"
+          CIBW_ENVIRONMENT_LINUX: >
+            CMAKE_GENERATOR="Unix Makefiles"
+          CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR"
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os_short }}-${{ matrix.architecture }}
+          path: |
+            ./wheelhouse/*.whl
+  publish-pypi:
+    name: publish to PyPi
+    needs: [
+      python,
+    ]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          path: prebuilds
+      - name: prepare
+        shell: bash
         run: |
-          python -m pip install -U pip setuptools wheel build
-          python -m pip install -e .
-          python -m unittest
-      - name: Pack
-        working-directory: cython
-        run: python -m build
-      - if: matrix.os == 'ubuntu-latest'
-        name: Upload artifact
-        uses: actions/upload-artifact@v2
+          mkdir dist
+          ls prebuilds
+          mv prebuilds/*/* dist
+          ls dist
+      - name: Publish wheels to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          name: ${{ matrix.os }}-py${{ matrix.pyver }}
-          path: cython/dist/*.tar.gz
-      - if: matrix.os != 'ubuntu-latest'
-        name: Upload artifact
-        uses: actions/upload-artifact@v2
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/
+      - name: Publish wheels to PyPI
+        if: startsWith(github.ref, 'refs/tags')
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          name: ${{ matrix.os }}-py${{ matrix.pyver }}
-          path: cython/dist/*.whl
-      - if: startsWith(github.ref, 'refs/tags/py')
-        run: python -m pip install twine
-      - if: startsWith(github.ref, 'refs/tags/py') && matrix.os == 'ubuntu-latest'
-        name: release
-        working-directory: cython
-        run: python -m twine upload "dist/*.tar.gz" --skip-existing
-      - if: startsWith(github.ref, 'refs/tags/py') && matrix.os != 'ubuntu-latest'
-        name: release
-        working-directory: cython
-        run: python -m twine upload "dist/*.whl" --skip-existing
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+  # python-build:
+  #   strategy:
+  #     matrix:
+  #       pyver:
+  #         - "3.6"
+  #         - "3.7"
+  #         - "3.8"
+  #         - "3.9"
+  #         - "3.10"
+  #         - "3.11"
+  #       os:
+  #         - ubuntu-latest
+  #         - macos-latest
+  #         - windows-latest
+  #   runs-on: ${{ matrix.os }}
+  #   env:
+  #     TWINE_USERNAME: ${{ secrets.TWINE_USERNAME }}
+  #     TWINE_PASSWORD: ${{ secrets.TWINE_PASSWORD }}
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - run: git submodule update --init extlib/mimalloc extlib/eigen
+  #     - uses: actions/setup-python@v2
+  #       with:
+  #         python-version: ${{ matrix.pyver }}
+  #     - name: Build and test
+  #       working-directory: cython
+  #       run: |
+  #         python -m pip install -U pip setuptools wheel build
+  #         python -m pip install -e .
+  #         python -m unittest
+  #     - name: Pack
+  #       working-directory: cython
+  #       run: python -m build
+  #     - if: matrix.os == 'ubuntu-latest'
+  #       name: Upload artifact
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: ${{ matrix.os }}-py${{ matrix.pyver }}
+  #         path: cython/dist/*.tar.gz
+  #     - if: matrix.os != 'ubuntu-latest'
+  #       name: Upload artifact
+  #       uses: actions/upload-artifact@v2
+  #       with:
+  #         name: ${{ matrix.os }}-py${{ matrix.pyver }}
+  #         path: cython/dist/*.whl
+  #     - if: startsWith(github.ref, 'refs/tags/py')
+  #       run: python -m pip install twine
+  #     - if: startsWith(github.ref, 'refs/tags/py') && matrix.os == 'ubuntu-latest'
+  #       name: release
+  #       working-directory: cython
+  #       run: python -m twine upload "dist/*.tar.gz" --skip-existing
+  #     - if: startsWith(github.ref, 'refs/tags/py') && matrix.os != 'ubuntu-latest'
+  #       name: release
+  #       working-directory: cython
+  #       run: python -m twine upload "dist/*.whl" --skip-existing
