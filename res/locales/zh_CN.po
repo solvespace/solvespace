@@ -164,12 +164,12 @@ msgstr "长度比率"
 #: constraint.cpp:25
 msgctxt "constr-name"
 msgid "arc-arc-length-ratio"
-msgstr ""
+msgstr "弧线与弧线长度比例"
 
 #: constraint.cpp:26
 msgctxt "constr-name"
 msgid "arc-line-length-ratio"
-msgstr ""
+msgstr "弧线与直线长度比例"
 
 #: constraint.cpp:27
 msgctxt "constr-name"
@@ -179,12 +179,12 @@ msgstr "长度不同"
 #: constraint.cpp:28
 msgctxt "constr-name"
 msgid "arc-arc-len-difference"
-msgstr ""
+msgstr "弧线与弧线长度差"
 
 #: constraint.cpp:29
 msgctxt "constr-name"
 msgid "arc-line-len-difference"
-msgstr ""
+msgstr "弧线与直线长度差"
 
 #: constraint.cpp:30
 msgctxt "constr-name"
@@ -386,6 +386,11 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
+"长度比例约束选择错误. 该约束可用于:\n"
+"\n"
+"    * 二个线段之间\n"
+"    * 二个弧线之间\n"
+"    * 一个弧线与一个线段之间\n"
 
 #: constraint.cpp:441
 msgid ""
@@ -396,6 +401,12 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
+"长度差约束选择错误. 该约束可用"
+"至:\n"
+"\n"
+"    * 二个线段之间\n"
+"    * 二个弧线之间\n"
+"    * 一个弧线与一个线段之间\n"
 
 #: constraint.cpp:472
 msgid ""
@@ -448,8 +459,8 @@ msgid ""
 msgstr ""
 "水平/垂直约束的选择错误。此约束可应用于：\n"
 "\n"
-"• 两点\n"
-"    • 线段\n"
+"    * 两点\n"
+"    * 线段\n"
 
 #: constraint.cpp:613
 msgid ""
@@ -460,7 +471,7 @@ msgid ""
 msgstr ""
 "同一方向约束的选择错误。此约束可应用于：\n"
 "\n"
-"• 两个法线\n"
+"    * 两个法线\n"
 
 #: constraint.cpp:663
 msgid "Must select an angle constraint."
@@ -482,7 +493,7 @@ msgstr ""
 "\n"
 "* 两个线段\n"
 "    * 线段和法线\n"
-"    • 两个法线\n"
+"    * 两个法线\n"
 
 #: constraint.cpp:754
 msgid "Curve-curve tangency must apply in workplane."
@@ -517,7 +528,7 @@ msgstr ""
 "\n"
 "* 两个线段\n"
 "    * 线段和法线\n"
-"    • 两个法线\n"
+"    * 两个法线\n"
 
 #: constraint.cpp:799
 msgid ""
@@ -528,7 +539,7 @@ msgid ""
 msgstr ""
 "拖动约束的锁点选择错误。此约束可应用于：\n"
 "\n"
-"• 一点\n"
+"    * 一点\n"
 
 #: constraint.cpp:813 mouse.cpp:1158
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
@@ -556,8 +567,8 @@ msgid ""
 msgstr ""
 "导出部分的选择错误。请选择：\n"
 "\n"
-"* 无，带活动工作平面（工作平面为剖面平面）\n"
-"    * 脸（通过面的剖面）\n"
+"    * 无，带活动工作平面（工作平面为剖面平面）\n"
+"    * 面（通过面的剖面）\n"
 "    * 一个点和两个线段（平面穿过点和平行线）\n"
 
 #: export.cpp:818
@@ -566,7 +577,7 @@ msgstr "活动组网格为空;没有要导出的。"
 
 #: exportvector.cpp:336
 msgid "freehand lines were replaced with continuous lines"
-msgstr "徒手线替换为连续线"
+msgstr "手绘线替换为连续线"
 
 #: exportvector.cpp:338
 msgid "zigzag lines were replaced with continuous lines"
@@ -594,7 +605,7 @@ msgstr "#参考"
 
 #: file.cpp:550
 msgid "The file is empty. It may be corrupt."
-msgstr ""
+msgstr "文件为空, 可能已损坏."
 
 #: file.cpp:555
 msgid ""
@@ -807,7 +818,7 @@ msgstr "使用远景透视(&P)"
 
 #: graphicswin.cpp:97
 msgid "Show E&xploded View"
-msgstr ""
+msgstr "显示爆炸视图(&E)"
 
 #: graphicswin.cpp:98
 msgid "Dimension &Units"
@@ -827,7 +838,7 @@ msgstr "标准单位英寸 (&I)"
 
 #: graphicswin.cpp:102
 msgid "Dimensions in &Feet and Inches"
-msgstr ""
+msgstr "使用英尺英寸标准尺寸(&F)"
 
 #: graphicswin.cpp:104
 msgid "Show &Toolbar"
@@ -995,11 +1006,11 @@ msgstr "等于/长度/半径/角度(&Q)"
 
 #: graphicswin.cpp:158
 msgid "Length / Arc Ra&tio"
-msgstr ""
+msgstr "长度/弧线比例(&t)"
 
 #: graphicswin.cpp:159
 msgid "Length / Arc Diff&erence"
-msgstr ""
+msgstr "长度/弧线差(&e)"
 
 #: graphicswin.cpp:160
 msgid "At &Midpoint"
@@ -1087,7 +1098,7 @@ msgstr "网页/手册(&W)"
 
 #: graphicswin.cpp:186
 msgid "&Go to GitHub commit"
-msgstr ""
+msgstr "至Github提交(&G)"
 
 #: graphicswin.cpp:188
 msgid "&About"
@@ -1114,37 +1125,44 @@ msgid ""
 "For a perspective projection, modify the perspective factor in the "
 "configuration screen. A value around 0.3 is typical."
 msgstr ""
+"透视因子被设置为零，因此视图将始终是一个平行投影. \n"
+"\n"
+"对于透视投影, 请在配置界面中修改透视因子。典型的值在0.3左右."
 
 #: graphicswin.cpp:837
 msgid ""
 "Select a point; this point will become the center of the view on screen."
 msgstr ""
+"选择一个点; 这个点将成为屏幕上视图的中心."
 
 #: graphicswin.cpp:1137
 msgid "No additional entities share endpoints with the selected entities."
-msgstr ""
+msgstr "没有其他实体与所选实体共享端点."
 
 #: graphicswin.cpp:1155
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
 msgstr ""
+"使用该命令时, 从被链接的部件中选择一个点或其他实体, 或者将一个链接组设置为活动组."
 
 #: graphicswin.cpp:1178
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
 msgstr ""
+"没有活动的工作平面。激活一个工作平面(使用 草图 -> 在工作面)来定义捕捉栅格的平面."
 
 #: graphicswin.cpp:1185
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
 msgstr ""
+"不能抓拍这些项目到网格;使用标签选择点、文本注释或约束。要捕捉一条线，请选择它的端点."
 
 #: graphicswin.cpp:1270
 msgid "No workplane selected. Activating default workplane for this group."
-msgstr ""
+msgstr "未选择工作平面。激活该组的默认工作平面。"
 
 #: graphicswin.cpp:1273
 msgid ""
@@ -1152,12 +1170,16 @@ msgid ""
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
 "workplane group."
 msgstr ""
+"未选择工作平面。没有选择工作平面，活动组没有默认工作平面。尝试选择一个工作平"
+"面，或激活一个<新工作面草图组>。激活该组的默认工作平面."
 
 #: graphicswin.cpp:1294
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
 msgstr ""
+"点上的切线选择错误。选择单个点，或选择"
+"不需要设置弧参数."
 
 #: graphicswin.cpp:1305
 msgid "click point on arc (draws anti-clockwise)"
@@ -1220,6 +1242,12 @@ msgid ""
 "    * a point and a normal (through the point, orthogonal to the normal)\n"
 "    * a workplane (copy of the workplane)\n"
 msgstr ""
+"工作平面上的新草图选择不当。这个组可以用于创建:\n"
+"\n"
+"    * 点(穿过该点，与坐标轴正交)\n"
+"    * 点与两条线段(通过点，平行于行)\n"
+"    * 一个点和一个法线(穿过点，正交于法线)\n"
+"    * 工作平面(工作平面的副本)\n"
 
 #: group.cpp:166
 msgid ""
@@ -1256,7 +1284,7 @@ msgstr "扫略"
 
 #: group.cpp:206
 msgid "Revolve operation can only be applied to planar sketches."
-msgstr ""
+msgstr "旋转操作只能应用于平面草图。"
 
 #: group.cpp:217
 msgid ""
@@ -1266,6 +1294,10 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"新旋转组的选择很糟糕。这个组可以用于创建:\n"
+"\n"
+"    * 点与线段/法线(通过点绕平行轴旋转至线/法线)\n"
+"    * 线段(绕线段旋转)\n"
 
 #: group.cpp:229
 msgctxt "group-name"
@@ -1274,7 +1306,7 @@ msgstr "旋转"
 
 #: group.cpp:234
 msgid "Helix operation can only be applied to planar sketches."
-msgstr ""
+msgstr "螺旋操作只能应用于平面草图."
 
 #: group.cpp:245
 msgid ""
@@ -1284,6 +1316,10 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"新螺旋组选择错误。这个组可以用于创建:\n"
+"\n"
+"    * 一个点和一个线段或法线(绕平行于线/法线的轴旋转，通过点)\n"
+"    * 线段(绕线段旋转)\n"
 
 #: group.cpp:257
 msgctxt "group-name"
@@ -1299,6 +1335,10 @@ msgid ""
 "    * a point and a line or a normal (rotate about an axis through the "
 "point, and parallel to line / normal)\n"
 msgstr ""
+"新的轮换人选不合适。这个组可以用于创建:\n"
+"\n"
+"    * 一个点，当锁定在工作平面时(在平面内旋转，围绕该点旋转)\n"
+"    * 一个点和一条线或法线(绕点旋转一个轴，平行于线/法线)\n"
 
 #: group.cpp:283
 msgctxt "group-name"
@@ -1332,37 +1372,39 @@ msgstr "边缘长度为零！"
 
 #: importmesh.cpp:136
 msgid "Text-formated STL files are not currently supported"
-msgstr ""
+msgstr "目前不支持文本格式的STL文件"
 
 #: modify.cpp:252
 msgid "Must be sketching in workplane to create tangent arc."
-msgstr ""
+msgstr "必须在工作平面上绘制切线。"
 
 #: modify.cpp:299
 msgid ""
 "To create a tangent arc, select a point where two non-construction lines or "
 "circles in this group and workplane join."
 msgstr ""
+"要创建切弧，请选择该组中两条非施工线或圆与工作平面的连接点."
 
 #: modify.cpp:386
 msgid ""
 "Couldn't round this corner. Try a smaller radius, or try creating the "
 "desired geometry by hand with tangency constraints."
 msgstr ""
+"不能绕过这个角落. 尝试较小的半径, 或者尝试用切线约束手工创建所需的几何形状."
 
 #: modify.cpp:595
 msgid "Couldn't split this entity; lines, circles, or cubics only."
-msgstr ""
+msgstr "不能拆分这个实体; 仅限直线, 圆或立方体."
 
 #: modify.cpp:622
 msgid "Must be sketching in workplane to split."
-msgstr ""
+msgstr "必须在工作平面上进行草图分割."
 
 #: modify.cpp:629
 msgid ""
 "Select two entities that intersect each other (e.g. two lines/circles/arcs "
 "or a line/circle/arc and a point)."
-msgstr ""
+msgstr "选择两个彼此相交的实体(例如两条线/圆/弧或一条线/圆/弧和一个点)."
 
 #: modify.cpp:734
 msgid "Can't split; no intersection found."
@@ -1482,7 +1524,7 @@ msgstr "点击设置半径"
 msgid ""
 "Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
-msgstr "无法在3D空间内绘制弧线，可使用 草图->在工作面 激活工作面。"
+msgstr "无法在3D空间内绘制弧线, 可使用 草图->在工作面 激活工作面。"
 
 #: mouse.cpp:1071
 msgid "click to place point"
@@ -1521,17 +1563,17 @@ msgstr "SolveSpace模型"
 #: platform/gui.cpp:89
 msgctxt "file-type"
 msgid "ALL"
-msgstr ""
+msgstr "全部"
 
 #: platform/gui.cpp:91
 msgctxt "file-type"
 msgid "IDF circuit board"
-msgstr ""
+msgstr "IDF电路图"
 
 #: platform/gui.cpp:92
 msgctxt "file-type"
 msgid "STL triangle mesh"
-msgstr ""
+msgstr "STL三角网格面"
 
 #: platform/gui.cpp:96
 msgctxt "file-type"
@@ -1642,68 +1684,68 @@ msgstr "打开_O"
 #: solvespace.cpp:171
 msgctxt "title"
 msgid "Autosave Available"
-msgstr ""
+msgstr "自动保存可用"
 
 #: solvespace.cpp:172
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
-msgstr ""
+msgstr "该草图存在可用的自动保存文件."
 
 #: solvespace.cpp:173
 msgctxt "dialog"
 msgid "Do you want to load the autosave file instead?"
-msgstr ""
+msgstr "是否加载自动保存文件替换?"
 
 #: solvespace.cpp:174
 msgctxt "button"
 msgid "&Load autosave"
-msgstr ""
+msgstr "加载自动保存(&L)"
 
 #: solvespace.cpp:176
 msgctxt "button"
 msgid "Do&n't Load"
-msgstr ""
+msgstr "不加载(&n)"
 
 #: solvespace.cpp:599
 msgctxt "title"
 msgid "Modified File"
-msgstr ""
+msgstr "修改的文件"
 
 #: solvespace.cpp:601
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
-msgstr ""
+msgstr "是否保存草图“%s”的更改?"
 
 #: solvespace.cpp:604
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
-msgstr ""
+msgstr "是否保存您对新草图所作的修改?"
 
 #: solvespace.cpp:607
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
-msgstr ""
+msgstr "您的修改将会丢失，若您不保存它们。"
 
 #: solvespace.cpp:608
 msgctxt "button"
 msgid "&Save"
-msgstr ""
+msgstr "保存(&S)"
 
 #: solvespace.cpp:610
 msgctxt "button"
 msgid "Do&n't Save"
-msgstr ""
+msgstr "不保存(&n)"
 
 #: solvespace.cpp:631
 msgctxt "title"
 msgid "(new sketch)"
-msgstr ""
+msgstr "(新草图)"
 
 #: solvespace.cpp:638
 msgctxt "title"
 msgid "Property Browser"
-msgstr ""
+msgstr "属性浏览器"
 
 #: solvespace.cpp:700
 msgid ""
@@ -1711,25 +1753,28 @@ msgid ""
 "is probably not what you want; hide them by clicking the link at the top of "
 "the text window."
 msgstr ""
+"当前显示约束，并将在工具路径中导出. "
+"这可能不是你想要的;通过点击顶部的链 "
+"接来隐藏它们文本窗口."
 
 #: solvespace.cpp:772
 #, c-format
 msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
 "dwg."
-msgstr ""
+msgstr "无法识别文件 '%s' 的文件类型, 请尝试 .dxf 或者 .dwg。"
 
 #: solvespace.cpp:824
 msgid "Constraint must have a label, and must not be a reference dimension."
-msgstr ""
+msgstr "约束必须含标签, 且不能是索引的标注."
 
 #: solvespace.cpp:828
 msgid "Bad selection for step dimension; select a constraint."
-msgstr ""
+msgstr "step标注选择错误, 请选择约束."
 
 #: solvespace.cpp:852
 msgid "The assembly does not interfere, good."
-msgstr ""
+msgstr "组件不包含干涉, 很好."
 
 #: solvespace.cpp:868
 #, c-format
@@ -1738,6 +1783,9 @@ msgid ""
 "\n"
 "    %s"
 msgstr ""
+"实体模型的体积是:\n"
+"\n"
+"    %s"
 
 #: solvespace.cpp:877
 #, c-format
@@ -1747,6 +1795,10 @@ msgid ""
 "\n"
 "    %s"
 msgstr ""
+"\n"
+"当前网格组的体积是:\n"
+"\n"
+"    %s"
 
 #: solvespace.cpp:882
 msgid ""
@@ -1755,6 +1807,10 @@ msgid ""
 "Curved surfaces have been approximated as triangles.\n"
 "This introduces error, typically of around 1%."
 msgstr ""
+"\n"
+"\n"
+"曲面已近似化为三角形.\n"
+"这会引入误差, 通常约为 1%."
 
 #: solvespace.cpp:897
 #, c-format
@@ -1766,12 +1822,19 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"所选面的表面积为:\n"
+"\n"
+"    %s\n"
+"\n"
+"曲线已近似为分段线性.\n"
+"这会引入误差, 通常约为 1%%."
 
 #: solvespace.cpp:906
 msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
 msgstr ""
+"这个组不包含一个正确形成的二维封闭区域。它是开放的，不是共面的，也不是自交的."
 
 #: solvespace.cpp:918
 #, c-format
@@ -1783,6 +1846,12 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"该组中所画区域的面积为:\n"
+"\n"
+"    %s\n"
+"\n"
+"曲线已近似为分段线性.\n"
+"这会引入误差, 通常约为 1%%."
 
 #: solvespace.cpp:938
 #, c-format
@@ -1794,35 +1863,41 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"所选实体的总长度为:\n"
+"\n"
+"    %s\n"
+"\n"
+"曲线已近似为分段线性.\n"
+"这会引入误差, 通常约为 1%%."
 
 #: solvespace.cpp:944
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
-msgstr ""
+msgstr "周长选择不当;选择线段、弧线和曲线."
 
 #: solvespace.cpp:960
 msgid "Bad selection for trace; select a single point."
-msgstr ""
+msgstr "痕迹选择不当;选择一个点"
 
 #: solvespace.cpp:987
 #, c-format
 msgid "Couldn't write to '%s'"
-msgstr ""
+msgstr "无法写入 '%s'"
 
 #: solvespace.cpp:1017
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
-msgstr ""
+msgstr "网格是自相交的(不可以，无效)."
 
 #: solvespace.cpp:1018
 msgid "The mesh is not self-intersecting (okay, valid)."
-msgstr ""
+msgstr "网格不是自相交的(好的，有效)"
 
 #: solvespace.cpp:1020
 msgid "The mesh has naked edges (NOT okay, invalid)."
-msgstr ""
+msgstr "网格有裸边(不行，无效)."
 
 #: solvespace.cpp:1021
 msgid "The mesh is watertight (okay, valid)."
-msgstr ""
+msgstr "网格是防水的(好的，有效)."
 
 #: solvespace.cpp:1024
 #, c-format
@@ -1831,6 +1906,9 @@ msgid ""
 "\n"
 "The model contains %d triangles, from %d surfaces."
 msgstr ""
+"\n"
+"\n"
+"该模型包含 %d 个三角形, 来自 %d 个曲面."
 
 #: solvespace.cpp:1028
 #, c-format
@@ -1841,6 +1919,11 @@ msgid ""
 "\n"
 "Zero problematic edges, good.%s"
 msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"没有问题边，很好.%s"
 
 #: solvespace.cpp:1031
 #, c-format
@@ -1851,6 +1934,11 @@ msgid ""
 "\n"
 "%d problematic edges, bad.%s"
 msgstr ""
+"%s\n"
+"\n"
+"%s\n"
+"\n"
+"%d 有问题的边，不好.%s"
 
 #: solvespace.cpp:1044
 #, c-format
@@ -1868,6 +1956,18 @@ msgid ""
 "\n"
 "© 2008-%d Jonathan Westhues and other authors.\n"
 msgstr ""
+"当前SolveSpace版本 %s.\n"
+"\n"
+"更多信息, 访问 http://solvespace.com/\n"
+"\n"
+"SolveSpace是一个自由软件: 您可以自由修改\n"
+"或重新发型, 但需遵循GNU协议\n"
+"General Public License (GPL) version 3 或后续版本.\n"
+"\n"
+"不包含质保, 在法律允许的范围内\n"
+"更多详细信息, 可访问 http://gnu.org/licenses/\n"
+"\n"
+"© 2008-%d Jonathan Westhues以及其它作者.\n"
 
 #: style.cpp:185
 msgid ""
@@ -2001,11 +2101,11 @@ msgstr "新组中旋转体当前草图"
 
 #: toolbar.cpp:72
 msgid "New group helix from active sketch"
-msgstr ""
+msgstr "来自激活草图的新组螺旋"
 
 #: toolbar.cpp:74
 msgid "New group revolve active sketch"
-msgstr ""
+msgstr "新组围绕激活草图"
 
 #: toolbar.cpp:76
 msgid "New group step and repeat rotating"
