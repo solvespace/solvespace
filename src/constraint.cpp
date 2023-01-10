@@ -312,21 +312,7 @@ void Constraint::MenuConstrain(Command id) {
             break;
 
         case Command::EQUAL:
-            if(gs.vectors == 3 && gs.n == 3) {
-                c.type = Type::EQUAL_ANGLE;
-                c.entityA = gs.vector[0];
-                c.entityB = gs.vector[1];
-                c.entityC = gs.vector[1];
-                c.entityD = gs.vector[2];
-                newcons.push_back(c);
-            } else if(gs.vectors == 4 && gs.n == 4) {
-                c.type = Type::EQUAL_ANGLE;
-                c.entityA = gs.vector[0];
-                c.entityB = gs.vector[1];
-                c.entityC = gs.vector[2];
-                c.entityD = gs.vector[3];
-                newcons.push_back(c);
-            } else if(gs.lineSegments >= 2 && gs.lineSegments == gs.n) {
+            if(gs.lineSegments >= 2 && gs.lineSegments == gs.n) {
                 c.type = Type::EQUAL_LENGTH_LINES;
                 c.entityA = gs.entity[0];
                 for (std::vector<hEntity>::size_type k = 1;k < gs.entity.size(); ++k){
@@ -716,7 +702,19 @@ void Constraint::MenuConstrain(Command id) {
 
         case Command::ANGLE:
         case Command::REF_ANGLE: {
-            if(gs.vectors == 2 && gs.n == 2) {
+            if(gs.vectors == 3 && gs.n == 3) {
+                c.type = Type::EQUAL_ANGLE;
+                c.entityA = gs.vector[0];
+                c.entityB = gs.vector[1];
+                c.entityC = gs.vector[1];
+                c.entityD = gs.vector[2];
+            } else if(gs.vectors == 4 && gs.n == 4) {
+                c.type = Type::EQUAL_ANGLE;
+                c.entityA = gs.vector[0];
+                c.entityB = gs.vector[1];
+                c.entityC = gs.vector[2];
+                c.entityD = gs.vector[3];
+            } else if(gs.vectors == 2 && gs.n == 2) {
                 c.type = Type::ANGLE;
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
