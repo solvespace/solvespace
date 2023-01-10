@@ -4,6 +4,7 @@
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include "config.h"
 
 static void ShowUsage(const std::string &cmd) {
     fprintf(stderr, "Usage: %s <command> <options> <filename> [filename...]", cmd.c_str());
@@ -29,6 +30,8 @@ Common options:
         Whether to export the background colour in vector formats. Defaults to off.
 
 Commands:
+    version
+        Prints the current solvespace version.
     thumbnail --output <pattern> --size <size> --view <direction>
               [--chord-tol <tolerance>]
         Outputs a rendered view of the sketch, like the SolveSpace GUI would.
@@ -174,7 +177,10 @@ static bool RunCommand(const std::vector<std::string> args) {
     };
 
     unsigned width = 0, height = 0;
-    if(args[1] == "thumbnail") {
+    if(args[1] == "version") {
+        fprintf(stderr, "SolveSpace version %s \n\n", PACKAGE_VERSION);
+        return false;
+    } else if(args[1] == "thumbnail") {
         auto ParseSize = [&](size_t &argn) {
             if(argn + 1 < args.size() && args[argn] == "--size") {
                 argn++;

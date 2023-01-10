@@ -33,7 +33,18 @@
 
 #if defined(HAVE_SPACEWARE)
 #   include <spnav.h>
-#   include <gdk/gdkx.h>
+#   include <gdk/gdk.h>
+#   if defined(GDK_WINDOWING_X11)
+#       include <gdk/gdkx.h>
+#   endif
+#   if defined(GDK_WINDOWING_WAYLAND)
+#       include <gdk/gdkwayland.h>
+#   endif
+#   if GTK_CHECK_VERSION(3, 20, 0)
+#       include <gdkmm/seat.h>
+#   else
+#       include <gdkmm/devicemanager.h>
+#   endif
 #endif
 
 #include "solvespace.h"
@@ -217,6 +228,10 @@ public:
             }
             return false;
         };
+        // Note: asan warnings about new-delete-type-mismatch are false positives here:
+        // https://gitlab.gnome.org/GNOME/gtkmm/-/issues/65
+        // Pass new_delete_type_mismatch=0 to ASAN_OPTIONS to disable those warnings.
+        // Unfortunately they won't go away until upgrading to gtkmm4
         _connection = Glib::signal_timeout().connect(handler, milliseconds);
     }
 };
@@ -472,7 +487,7 @@ protected:
     }
 
     bool process_pointer_event(MouseEvent::Type type, double x, double y,
-                               guint state, guint button = 0, int scroll_delta = 0) {
+                               guint state, guint button = 0, double scroll_delta = 0) {
         MouseEvent event = {};
         event.type = type;
         event.x = x;
@@ -536,7 +551,7 @@ protected:
     }
 
     bool on_scroll_event(GdkEventScroll *gdk_event) override {
-        int delta;
+        double delta;
         if(gdk_event->delta_y < 0 || gdk_event->direction == GDK_SCROLL_UP) {
             delta = 1;
         } else if(gdk_event->delta_y > 0 || gdk_event->direction == GDK_SCROLL_DOWN) {
@@ -874,7 +889,7 @@ public:
         return gtkWindow.get_screen()->get_resolution();
     }
 
-    int GetDevicePixelRatio() override {
+    double GetDevicePixelRatio() override {
         return gtkWindow.get_scale_factor();
     }
 
@@ -963,16 +978,17 @@ public:
     }
 
     void SetCursor(Cursor cursor) override {
-        Gdk::CursorType gdkCursorType;
+        std::string cursor_name;
         switch(cursor) {
-            case Cursor::POINTER: gdkCursorType = Gdk::ARROW; break;
-            case Cursor::HAND:    gdkCursorType = Gdk::HAND1; break;
+            case Cursor::POINTER: cursor_name = "default"; break;
+            case Cursor::HAND:    cursor_name = "pointer"; break;
             default: ssassert(false, "Unexpected cursor");
         }
 
         auto gdkWindow = gtkWindow.get_gl_widget().get_window();
         if(gdkWindow) {
-            gdkWindow->set_cursor(Gdk::Cursor::create(gdkCursorType));
+            gdkWindow->set_cursor(Gdk::Cursor::create(gdkWindow->get_display(), cursor_name.c_str()));
+//        gdkWindow->get_display()
         }
     }
 
@@ -1037,16 +1053,8 @@ WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
 void Open3DConnexion() {}
 void Close3DConnexion() {}
 
-#if defined(HAVE_SPACEWARE) && defined(GDK_WINDOWING_X11)
-static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, gpointer data) {
-    XEvent *xEvent = (XEvent *)gdkXEvent;
-    WindowImplGtk *window = (WindowImplGtk *)data;
-
-    spnav_event spnavEvent;
-    if(!spnav_x11_event(xEvent, &spnavEvent)) {
-        return GDK_FILTER_CONTINUE;
-    }
-
+#if defined(HAVE_SPACEWARE) && (defined(GDK_WINDOWING_X11) || defined(GDK_WINDOWING_WAYLAND))
+static void ProcessSpnavEvent(WindowImplGtk *window, const spnav_event &spnavEvent, bool shiftDown, bool controlDown) {
     switch(spnavEvent.type) {
         case SPNAV_EVENT_MOTION: {
             SixDofEvent event = {};
@@ -1057,8 +1065,8 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, 
             event.rotationX    = (double)spnavEvent.motion.rx *  0.001;
             event.rotationY    = (double)spnavEvent.motion.ry *  0.001;
             event.rotationZ    = (double)spnavEvent.motion.rz * -0.001;
-            event.shiftDown    = xEvent->xmotion.state & ShiftMask;
-            event.controlDown  = xEvent->xmotion.state & ControlMask;
+            event.shiftDown    = shiftDown;
+            event.controlDown  = controlDown;
             if(window->onSixDofEvent) {
                 window->onSixDofEvent(event);
             }
@@ -1074,17 +1082,52 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, 
             }
             switch(spnavEvent.button.bnum) {
                 case 0:  event.button = SixDofEvent::Button::FIT; break;
-                default: return GDK_FILTER_REMOVE;
+                default: return;
             }
-            event.shiftDown   = xEvent->xmotion.state & ShiftMask;
-            event.controlDown = xEvent->xmotion.state & ControlMask;
+            event.shiftDown   = shiftDown;
+            event.controlDown = controlDown;
             if(window->onSixDofEvent) {
                 window->onSixDofEvent(event);
             }
             break;
     }
+}
 
-    return GDK_FILTER_REMOVE;
+static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, gpointer data) {
+    XEvent *xEvent = (XEvent *)gdkXEvent;
+    WindowImplGtk *window = (WindowImplGtk *)data;
+    bool shiftDown   = (xEvent->xmotion.state & ShiftMask)   != 0;
+    bool controlDown = (xEvent->xmotion.state & ControlMask) != 0;
+
+    spnav_event spnavEvent;
+    if(spnav_x11_event(xEvent, &spnavEvent)) {
+        ProcessSpnavEvent(window, spnavEvent, shiftDown, controlDown);
+        return GDK_FILTER_REMOVE;
+    }
+    return GDK_FILTER_CONTINUE;
+}
+
+static gboolean ConsumeSpnavQueue(GIOChannel *, GIOCondition, gpointer data) {
+    WindowImplGtk *window = (WindowImplGtk *)data;
+    Glib::RefPtr<Gdk::Window> gdkWindow = window->gtkWindow.get_window();
+
+    // We don't get modifier state through the socket.
+    int x, y;
+    Gdk::ModifierType mask{};
+#if GTK_CHECK_VERSION(3, 20, 0)
+    Glib::RefPtr<Gdk::Device> device = gdkWindow->get_display()->get_default_seat()->get_pointer();
+#else
+    Glib::RefPtr<Gdk::Device> device = gdkWindow->get_display()->get_device_manager()->get_client_pointer();
+#endif
+    gdkWindow->get_device_position(device, x, y, mask);
+    bool shiftDown   = (mask & Gdk::SHIFT_MASK)   != 0;
+    bool controlDown = (mask & Gdk::CONTROL_MASK) != 0;
+
+    spnav_event spnavEvent;
+    while(spnav_poll_event(&spnavEvent)) {
+        ProcessSpnavEvent(window, spnavEvent, shiftDown, controlDown);
+    }
+    return TRUE;
 }
 
 void Request3DConnexionEventsForWindow(WindowRef window) {
@@ -1092,11 +1135,26 @@ void Request3DConnexionEventsForWindow(WindowRef window) {
         std::static_pointer_cast<WindowImplGtk>(window);
 
     Glib::RefPtr<Gdk::Window> gdkWindow = windowImpl->gtkWindow.get_window();
+#if defined(GDK_WINDOWING_X11)
     if(GDK_IS_X11_DISPLAY(gdkWindow->get_display()->gobj())) {
-        gdkWindow->add_filter(GdkSpnavFilter, windowImpl.get());
-        spnav_x11_open(gdk_x11_get_default_xdisplay(),
-                       gdk_x11_window_get_xid(gdkWindow->gobj()));
+        if(spnav_x11_open(gdk_x11_get_default_xdisplay(),
+                          gdk_x11_window_get_xid(gdkWindow->gobj())) != -1) {
+            gdkWindow->add_filter(GdkSpnavFilter, windowImpl.get());
+        } else if(spnav_open() != -1) {
+            g_io_add_watch(g_io_channel_unix_new(spnav_fd()), G_IO_IN,
+                           ConsumeSpnavQueue, windowImpl.get());
+        }
     }
+#endif
+#if defined(GDK_WINDOWING_WAYLAND)
+    if(GDK_IS_WAYLAND_DISPLAY(gdkWindow->get_display()->gobj())) {
+	if(spnav_open() != -1) {
+            g_io_add_watch(g_io_channel_unix_new(spnav_fd()), G_IO_IN,
+                           ConsumeSpnavQueue, windowImpl.get());
+        }
+    }
+#endif
+
 }
 #else
 void Request3DConnexionEventsForWindow(WindowRef window) {}
@@ -1246,6 +1304,10 @@ public:
         gtkChooser->set_filename(path.raw);
     }
 
+    void SuggestFilename(Platform::Path path) override {
+        gtkChooser->set_current_name(path.FileStem()+"."+GetExtension());
+    }
+
     void AddFilter(std::string name, std::vector<std::string> extensions) override {
         Glib::RefPtr<Gtk::FileFilter> gtkFilter = Gtk::FileFilter::create();
         Glib::ustring desc;
@@ -1291,13 +1353,16 @@ public:
         }
     }
 
+//TODO: This is not getting called when the extension selection is changed.
     void FilterChanged() {
         std::string extension = GetExtension();
         if(extension.empty())
             return;
 
         Platform::Path path = GetFilename();
-        SetCurrentName(path.WithExtension(extension).FileName());
+        if(gtkChooser->get_action() != Gtk::FILE_CHOOSER_ACTION_OPEN) {
+            SetCurrentName(path.WithExtension(extension).FileName());
+        }
     }
 
     void FreezeChoices(SettingsRef settings, const std::string &key) override {

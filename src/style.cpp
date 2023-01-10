@@ -8,22 +8,22 @@
 #include "solvespace.h"
 
 const Style::Default Style::Defaults[] = {
-    { { ACTIVE_GRP },   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, 4 },
-    { { CONSTRUCTION }, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, 0 },
-    { { INACTIVE_GRP }, "InactiveGrp",  RGBf(0.5, 0.3, 0.0), 1.5, 3 },
-    { { DATUM },        "Datum",        RGBf(0.0, 0.8, 0.0), 1.5, 0 },
-    { { SOLID_EDGE },   "SolidEdge",    RGBf(0.8, 0.8, 0.8), 1.0, 2 },
-    { { CONSTRAINT },   "Constraint",   RGBf(1.0, 0.1, 1.0), 1.0, 0 },
-    { { SELECTED },     "Selected",     RGBf(1.0, 0.0, 0.0), 1.5, 0 },
-    { { HOVERED },      "Hovered",      RGBf(1.0, 1.0, 0.0), 1.5, 0 },
-    { { CONTOUR_FILL }, "ContourFill",  RGBf(0.0, 0.1, 0.1), 1.0, 0 },
-    { { NORMALS },      "Normals",      RGBf(0.0, 0.4, 0.4), 1.0, 0 },
-    { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 3.0, 0 },
-    { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, 0 },
-    { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, 0 },
-    { { HIDDEN_EDGE },  "HiddenEdge",   RGBf(0.8, 0.8, 0.8), 1.0, 1 },
-    { { OUTLINE },      "Outline",      RGBf(0.8, 0.8, 0.8), 3.0, 5 },
-    { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0, 0 }
+    { { ACTIVE_GRP },   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, 4, true,  StipplePattern::CONTINUOUS },
+    { { CONSTRUCTION }, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, 0, false, StipplePattern::CONTINUOUS },
+    { { INACTIVE_GRP }, "InactiveGrp",  RGBf(0.5, 0.3, 0.0), 1.5, 3, true,  StipplePattern::CONTINUOUS },
+    { { DATUM },        "Datum",        RGBf(0.0, 0.8, 0.0), 1.5, 0, true,  StipplePattern::CONTINUOUS },
+    { { SOLID_EDGE },   "SolidEdge",    RGBf(0.8, 0.8, 0.8), 1.0, 2, true,  StipplePattern::CONTINUOUS },
+    { { CONSTRAINT },   "Constraint",   RGBf(1.0, 0.1, 1.0), 1.0, 0, true,  StipplePattern::CONTINUOUS },
+    { { SELECTED },     "Selected",     RGBf(1.0, 0.0, 0.0), 1.5, 0, true,  StipplePattern::CONTINUOUS },
+    { { HOVERED },      "Hovered",      RGBf(1.0, 1.0, 0.0), 1.5, 0, true,  StipplePattern::CONTINUOUS },
+    { { CONTOUR_FILL }, "ContourFill",  RGBf(0.0, 0.1, 0.1), 1.0, 0, true,  StipplePattern::CONTINUOUS },
+    { { NORMALS },      "Normals",      RGBf(0.0, 0.4, 0.4), 1.0, 0, true,  StipplePattern::CONTINUOUS },
+    { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 3.0, 0, true,  StipplePattern::CONTINUOUS },
+    { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, 0, true,  StipplePattern::CONTINUOUS },
+    { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, 0, true,  StipplePattern::CONTINUOUS },
+    { { HIDDEN_EDGE },  "HiddenEdge",   RGBf(0.8, 0.8, 0.8), 1.0, 1, true,  StipplePattern::DASH },
+    { { OUTLINE },      "Outline",      RGBf(0.8, 0.8, 0.8), 3.0, 5, true,  StipplePattern::CONTINUOUS },
+    { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0, 0, true,  StipplePattern::CONTINUOUS }
 };
 
 std::string Style::CnfColor(const std::string &prefix) {
@@ -32,8 +32,17 @@ std::string Style::CnfColor(const std::string &prefix) {
 std::string Style::CnfWidth(const std::string &prefix) {
     return "Style_" + prefix + "_Width";
 }
+std::string Style::CnfStippleType(const std::string &prefix) {
+    return "Style_" + prefix + "_StippleType";
+}
+std::string Style::CnfStippleScale(const std::string &prefix) {
+    return "Style_" + prefix + "_StippleScale";
+}
 std::string Style::CnfTextHeight(const std::string &prefix) {
     return "Style_" + prefix + "_TextHeight";
+}
+std::string Style::CnfExportable(const std::string &prefix) {
+    return "Style_" + prefix + "_Exportable";
 }
 
 std::string Style::CnfPrefixToName(const std::string &prefix) {
@@ -97,12 +106,19 @@ void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
     s->textOrigin    = TextOrigin::NONE;
     s->textAngle     = 0;
     s->visible       = true;
-    s->exportable    = true;
+    s->exportable    = (factory)
+                        ? d->exportable
+                        : settings->ThawBool(CnfExportable(d->cnfPrefix), d->exportable);
     s->filled        = false;
     s->fillColor     = RGBf(0.3, 0.3, 0.3);
-    s->stippleType   = (d->h.v == Style::HIDDEN_EDGE) ? StipplePattern::DASH
-                                                      : StipplePattern::CONTINUOUS;
-    s->stippleScale  = 15.0;
+    s->stippleType   = (factory)
+                        ? d->stippleType
+                        : Style::StipplePatternFromString(
+                            settings->ThawString(CnfStippleType(d->cnfPrefix),
+                            StipplePatternName(d->stippleType)));
+    s->stippleScale  = (factory)
+                        ? 15.0
+                        : settings->ThawFloat(CnfStippleScale(d->cnfPrefix), 15.0);
     s->zIndex        = d->zIndex;
 }
 
@@ -120,7 +136,10 @@ void Style::FreezeDefaultStyles(Platform::SettingsRef settings) {
     for(d = &(Defaults[0]); d->h.v; d++) {
         settings->FreezeColor(CnfColor(d->cnfPrefix), Color(d->h));
         settings->FreezeFloat(CnfWidth(d->cnfPrefix), (float)Width(d->h));
+        settings->FreezeString(CnfStippleType(d->cnfPrefix), StipplePatternName(d->h));
+        settings->FreezeFloat(CnfStippleScale(d->cnfPrefix), (float)StippleScale(d->h));
         settings->FreezeFloat(CnfTextHeight(d->cnfPrefix), (float)TextHeight(d->h));
+        settings->FreezeBool(CnfExportable(d->cnfPrefix), Exportable(d->h.v));
     }
 }
 
@@ -347,9 +366,60 @@ hStyle Style::ForEntity(hEntity he) {
     return hs;
 }
 
+StipplePattern Style::StipplePatternFromString(std::string name) {
+    std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+    if(name == "continuous") {
+        return StipplePattern::CONTINUOUS;
+    } else if(name == "shortdash") {
+        return StipplePattern::SHORT_DASH;
+    } else if(name == "dash") {
+        return StipplePattern::DASH;
+    } else if(name == "longdash") {
+        return StipplePattern::LONG_DASH;
+    } else if(name == "dashdot") {
+        return StipplePattern::DASH_DOT;
+    } else if(name == "dashdotdot") {
+        return StipplePattern::DASH_DOT_DOT;
+    } else if(name == "dot") {
+        return StipplePattern::DOT;
+    } else if(name == "freehand") {
+        return StipplePattern::FREEHAND;
+    } else if(name == "zigzag") {
+        return StipplePattern::ZIGZAG;
+    }
+
+    return StipplePattern::CONTINUOUS;
+}
+
 StipplePattern Style::PatternType(hStyle hs) {
     Style *s = Get(hs);
     return s->stippleType;
+}
+
+std::string Style::StipplePatternName(hStyle hs) {
+    Style *s = Get(hs);
+    return StipplePatternName(s->stippleType);
+}
+
+std::string Style::StipplePatternName(StipplePattern stippleType) {
+    switch(stippleType) {
+        case StipplePattern::CONTINUOUS:   return "Continuous";
+        case StipplePattern::SHORT_DASH:   return "ShortDash";
+        case StipplePattern::DASH:         return "Dash";
+        case StipplePattern::LONG_DASH:    return "LongDash";
+        case StipplePattern::DASH_DOT:     return "DashDot";
+        case StipplePattern::DASH_DOT_DOT: return "DashDotDot";
+        case StipplePattern::DOT:          return "Dot";
+        case StipplePattern::FREEHAND:     return "FreeHand";
+        case StipplePattern::ZIGZAG:       return "ZigZag";
+    }
+
+    return "Continuous";
+}
+
+double Style::StippleScale(hStyle hs) {
+    Style *s = Get(hs);
+    return s->stippleScale;
 }
 
 double Style::StippleScaleMm(hStyle hs) {
@@ -383,6 +453,7 @@ void TextWindow::ScreenShowStyleInfo(int link, uint32_t v) {
 void TextWindow::ScreenLoadFactoryDefaultStyles(int link, uint32_t v) {
     Style::LoadFactoryDefaults();
     SS.TW.GoToScreen(Screen::LIST_OF_STYLES);
+    SS.GW.persistentDirty = true;
 }
 
 void TextWindow::ScreenCreateCustomStyle(int link, uint32_t v) {
@@ -399,14 +470,13 @@ void TextWindow::ShowListOfStyles() {
     Printf(true, "%Ft color  style-name");
 
     bool darkbg = false;
-    Style *s;
-    for(s = SK.style.First(); s; s = SK.style.NextAfter(s)) {
+    for(Style &s : SK.style) {
         Printf(false, "%Bp  %Bz   %Bp   %Fl%Ll%f%D%s%E",
             darkbg ? 'd' : 'a',
-            &s->color,
+            &s.color,
             darkbg ? 'd' : 'a',
-            ScreenShowStyleInfo, s->h.v,
-            s->DescriptionString().c_str());
+            ScreenShowStyleInfo, s.h.v,
+            s.DescriptionString().c_str());
 
         darkbg = !darkbg;
     }
@@ -493,7 +563,7 @@ void TextWindow::ScreenChangeStyleMetric(int link, uint32_t v) {
     if(units == Style::UnitsAs::PIXELS) {
         edit_value = ssprintf("%.2f", val);
     } else {
-        edit_value = SS.MmToString(val);
+        edit_value = SS.MmToString(val, true);
     }
     SS.TW.ShowEditControl(col, edit_value);
     SS.TW.edit.style = hs;
@@ -850,17 +920,19 @@ void TextWindow::ShowStyleInfo() {
             ((uint32_t)s->textOrigin & (uint32_t)Style::TextOrigin::TOP) ? RADIO_TRUE : RADIO_FALSE);
     }
 
-    if(s->h.v >= Style::FIRST_CUSTOM) {
-        Printf(false, "");
+    Printf(false, "");
 
+    if(s->h.v >= Style::FIRST_CUSTOM) {
         Printf(false, "  %Fd%D%f%Lv%s  show these objects on screen%E",
                 s->h.v, &ScreenChangeStyleYesNo,
                 s->visible ? CHECK_TRUE : CHECK_FALSE);
+    }
 
-        Printf(false, "  %Fd%D%f%Le%s  export these objects%E",
-                s->h.v, &ScreenChangeStyleYesNo,
-                s->exportable ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%D%f%Le%s  export these objects%E",
+            s->h.v, &ScreenChangeStyleYesNo,
+            s->exportable ? CHECK_TRUE : CHECK_FALSE);
 
+    if(s->h.v >= Style::FIRST_CUSTOM) {
         Printf(false, "");
         Printf(false, "To assign lines or curves to this style,");
         Printf(false, "right-click them on the drawing.");

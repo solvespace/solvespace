@@ -92,11 +92,14 @@ const MenuEntry Menu[] = {
 { 1, N_("&Center View At Point"),       Command::CENTER_VIEW,      F|4,     KN, mView  },
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Show Snap &Grid"),             Command::SHOW_GRID,        '>',     KC, mView  },
+{ 1, N_("Darken Inactive Solids"),      Command::DIM_SOLID_MODEL,  0,       KC, mView  },
 { 1, N_("Use &Perspective Projection"), Command::PERSPECTIVE_PROJ, '`',     KC, mView  },
+{ 1, N_("Show E&xploded View"),         Command::EXPLODE_SKETCH,   '\\',    KC, mView  },
 { 1, N_("Dimension &Units"),            Command::NONE,             0,       KN, NULL  },
 { 2, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       KR, mView },
 { 2, N_("Dimensions in M&eters"),       Command::UNITS_METERS,     0,       KR, mView },
 { 2, N_("Dimensions in &Inches"),       Command::UNITS_INCHES,     0,       KR, mView },
+{ 2, N_("Dimensions in &Feet and Inches"), Command::UNITS_FEET_INCHES, 0,   KR, mView },
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Show &Toolbar"),               Command::SHOW_TOOLBAR,     0,       KC, mView  },
 { 1, N_("Show Property Bro&wser"),      Command::SHOW_TEXT_WND,    '\t',    KC, mView  },
@@ -152,8 +155,8 @@ const MenuEntry Menu[] = {
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
 { 1, N_("&On Point / Curve / Plane"),   Command::ON_ENTITY,        'o',     KN, mCon   },
 { 1, N_("E&qual Length / Radius / Angle"), Command::EQUAL,         'q',     KN, mCon   },
-{ 1, N_("Length Ra&tio"),               Command::RATIO,            'z',     KN, mCon   },
-{ 1, N_("Length Diff&erence"),          Command::DIFFERENCE,       'j',     KN, mCon   },
+{ 1, N_("Length / Arc Ra&tio"),         Command::RATIO,            'z',     KN, mCon   },
+{ 1, N_("Length / Arc Diff&erence"),    Command::DIFFERENCE,       'j',     KN, mCon   },
 { 1, N_("At &Midpoint"),                Command::AT_MIDPOINT,      'm',     KN, mCon   },
 { 1, N_("S&ymmetric"),                  Command::SYMMETRIC,        'y',     KN, mCon   },
 { 1, N_("Para&llel / Tangent"),         Command::PARALLEL,         'l',     KN, mCon   },
@@ -180,6 +183,7 @@ const MenuEntry Menu[] = {
 { 0, N_("&Help"),                       Command::NONE,             0,       KN, mHelp  },
 { 1, N_("&Language"),                   Command::LOCALE,           0,       KN, mHelp  },
 { 1, N_("&Website / Manual"),           Command::WEBSITE,          0,       KN, mHelp  },
+{ 1, N_("&Go to GitHub commit"),        Command::GITHUB,            0,       KN, mHelp  },
 #ifndef __APPLE__
 { 1, N_("&About"),                      Command::ABOUT,            0,       KN, mHelp  },
 #endif
@@ -312,8 +316,12 @@ void GraphicsWindow::PopulateMainMenu() {
 
             if(Menu[i].cmd == Command::SHOW_GRID) {
                 showGridMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::DIM_SOLID_MODEL) {
+                dimSolidModelMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::PERSPECTIVE_PROJ) {
                 perspectiveProjMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::EXPLODE_SKETCH) {
+                explodeMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::SHOW_TOOLBAR) {
                 showToolbarMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::SHOW_TEXT_WND) {
@@ -326,6 +334,8 @@ void GraphicsWindow::PopulateMainMenu() {
                 unitsMetersMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::UNITS_INCHES) {
                 unitsInchesMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::UNITS_FEET_INCHES) {
+                unitsFeetInchesMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::SEL_WORKPLANE) {
                 inWorkplaneMenuItem = menuItem;
             } else if(Menu[i].cmd == Command::FREE_IN_3D) {
@@ -366,8 +376,11 @@ static void PopulateMenuWithPathnames(Platform::MenuRef menu,
 
 void GraphicsWindow::PopulateRecentFiles() {
     PopulateMenuWithPathnames(openRecentMenu, SS.recentFiles, [](const Platform::Path &path) {
+        // OkayToStartNewFile could mutate recentFiles, which will invalidate path (which is a
+        // reference into the recentFiles vector), so take a copy of it here.
+        Platform::Path pathCopy(path);
         if(!SS.OkayToStartNewFile()) return;
-        SS.Load(path);
+        SS.Load(pathCopy);
     });
 
     PopulateMenuWithPathnames(linkRecentMenu, SS.recentFiles, [](const Platform::Path &path) {
@@ -401,11 +414,14 @@ void GraphicsWindow::Init() {
     showEdges = true;
     showMesh = false;
     showOutlines = false;
+    showFacesDrawing = false;
+    showFacesNonDrawing = true;
     drawOccludedAs = DrawOccludedAs::INVISIBLE;
 
     showTextWindow = true;
 
     showSnapGrid = false;
+    dimSolidModel = true;
     context.active = false;
     toolbarHovered = Command::NONE;
 
@@ -415,8 +431,13 @@ void GraphicsWindow::Init() {
             using namespace std::placeholders;
             // Do this first, so that if it causes an onRender event we don't try to paint without
             // a canvas.
-            window->SetMinContentSize(720, 670);
+            window->SetMinContentSize(720, /*ToolbarDrawOrHitTest 636*/ 32 * 18 + 3 * 16 + 8 + 4);
             window->onClose = std::bind(&SolveSpaceUI::MenuFile, Command::EXIT);
+            window->onContextLost = [&] {
+                canvas = NULL;
+                persistentCanvas = NULL;
+                persistentDirty = true;
+            };
             window->onRender = std::bind(&GraphicsWindow::Paint, this);
             window->onKeyboardEvent = std::bind(&GraphicsWindow::KeyboardEvent, this, _1);
             window->onMouseEvent = std::bind(&GraphicsWindow::MouseEvent, this, _1);
@@ -696,16 +717,47 @@ double GraphicsWindow::ZoomToFit(const Camera &camera,
     return scale;
 }
 
+
+void GraphicsWindow::ZoomToMouse(double zoomMultiplyer) {
+    double offsetRight = offset.Dot(projRight);
+    double offsetUp    = offset.Dot(projUp);
+
+    double width, height;
+    window->GetContentSize(&width, &height);
+
+    double righti = currentMousePosition.x / scale - offsetRight;
+    double upi    = currentMousePosition.y / scale - offsetUp;
+
+    // zoomMultiplyer of 1 gives a default zoom factor of 1.2x: zoomMultiplyer * 1.2
+    // zoom = adjusted zoom negative zoomMultiplyer will zoom out, positive will zoom in
+    //
+
+    scale *= exp(0.1823216 * zoomMultiplyer); // ln(1.2) = 0.1823216
+
+    double rightf = currentMousePosition.x / scale - offsetRight;
+    double upf    = currentMousePosition.y / scale - offsetUp;
+
+    offset = offset.Plus(projRight.ScaledBy(rightf - righti));
+    offset = offset.Plus(projUp.ScaledBy(upf - upi));
+
+    if(SS.TW.shown.screen == TextWindow::Screen::EDIT_VIEW) {
+        if(havePainted) {
+            SS.ScheduleShowTW();
+        }
+    }
+    havePainted = false;
+    Invalidate();
+}
+
+
 void GraphicsWindow::MenuView(Command id) {
     switch(id) {
         case Command::ZOOM_IN:
-            SS.GW.scale *= 1.2;
-            SS.ScheduleShowTW();
+            SS.GW.ZoomToMouse(1);
             break;
 
         case Command::ZOOM_OUT:
-            SS.GW.scale /= 1.2;
-            SS.ScheduleShowTW();
+            SS.GW.ZoomToMouse(-1);
             break;
 
         case Command::ZOOM_TO_FIT:
@@ -722,6 +774,12 @@ void GraphicsWindow::MenuView(Command id) {
             }
             break;
 
+        case Command::DIM_SOLID_MODEL:
+            SS.GW.dimSolidModel = !SS.GW.dimSolidModel;
+            SS.GW.EnsureValidActives();
+            SS.GW.Invalidate(/*clearPersistent=*/true);
+            break;
+
         case Command::PERSPECTIVE_PROJ:
             SS.usePerspectiveProj = !SS.usePerspectiveProj;
             SS.GW.EnsureValidActives();
@@ -733,6 +791,12 @@ void GraphicsWindow::MenuView(Command id) {
                         "factor in the configuration screen. A value around 0.3 "
                         "is typical."));
             }
+            break;
+
+        case Command::EXPLODE_SKETCH:
+            SS.explode = !SS.explode;
+            SS.GW.EnsureValidActives();
+            SS.MarkGroupDirty(SS.GW.activeGroup, true);
             break;
 
         case Command::ONTO_WORKPLANE:
@@ -753,13 +817,18 @@ void GraphicsWindow::MenuView(Command id) {
             Quaternion quatf = quat0;
             double dmin = 1e10;
 
-            // There are 24 possible views; 3*2*2*2
-            int i, j, negi, negj;
-            for(i = 0; i < 3; i++) {
-                for(j = 0; j < 3; j++) {
+            // There are 24 possible views (3*2*2*2), if all are
+            // allowed.  If the user is in turn-table mode, the
+            // isometric view must have the z-axis facing up, leaving
+            // 8 possible views (2*1*2*2).
+
+            bool require_turntable = (id==Command::NEAREST_ISO && SS.turntableNav);
+            for(int i = 0; i < 3; i++) {
+                for(int j = 0; j < 3; j++) {
                     if(i == j) continue;
-                    for(negi = 0; negi < 2; negi++) {
-                        for(negj = 0; negj < 2; negj++) {
+                    if(require_turntable && (j!=2)) continue;
+                    for(int negi = 0; negi < 2; negi++) {
+                        for(int negj = 0; negj < 2; negj++) {
                             Vector ou = ortho[i], ov = ortho[j];
                             if(negi) ou = ou.ScaledBy(-1);
                             if(negj) ov = ov.ScaledBy(-1);
@@ -824,6 +893,12 @@ void GraphicsWindow::MenuView(Command id) {
 
         case Command::UNITS_INCHES:
             SS.viewUnits = Unit::INCHES;
+            SS.ScheduleShowTW();
+            SS.GW.EnsureValidActives();
+            break;
+
+        case Command::UNITS_FEET_INCHES:
+            SS.viewUnits = Unit::FEET_INCHES;
             SS.ScheduleShowTW();
             SS.GW.EnsureValidActives();
             break;
@@ -910,6 +985,7 @@ void GraphicsWindow::EnsureValidActives() {
         case Unit::MM:
         case Unit::METERS:
         case Unit::INCHES:
+        case Unit::FEET_INCHES:
             break;
         default:
             SS.viewUnits = Unit::MM;
@@ -918,12 +994,15 @@ void GraphicsWindow::EnsureValidActives() {
     unitsMmMenuItem->SetActive(SS.viewUnits == Unit::MM);
     unitsMetersMenuItem->SetActive(SS.viewUnits == Unit::METERS);
     unitsInchesMenuItem->SetActive(SS.viewUnits == Unit::INCHES);
+    unitsFeetInchesMenuItem->SetActive(SS.viewUnits == Unit::FEET_INCHES);
 
     if(SS.TW.window) SS.TW.window->SetVisible(SS.GW.showTextWindow);
     showTextWndMenuItem->SetActive(SS.GW.showTextWindow);
 
     showGridMenuItem->SetActive(SS.GW.showSnapGrid);
+    dimSolidModelMenuItem->SetActive(SS.GW.dimSolidModel);
     perspectiveProjMenuItem->SetActive(SS.usePerspectiveProj);
+    explodeMenuItem->SetActive(SS.explode);
     showToolbarMenuItem->SetActive(SS.showToolbar);
     fullScreenMenuItem->SetActive(SS.GW.window->IsFullScreen());
 
@@ -954,20 +1033,19 @@ void GraphicsWindow::ForceTextWindowShown() {
 }
 
 void GraphicsWindow::DeleteTaggedRequests() {
-    Request *r;
     // Delete any requests that were affected by this deletion.
-    for(r = SK.request.First(); r; r = SK.request.NextAfter(r)) {
-        if(r->workplane == Entity::FREE_IN_3D) continue;
-        if(!r->workplane.isFromRequest()) continue;
-        Request *wrkpl = SK.GetRequest(r->workplane.request());
+    for(Request &r : SK.request) {
+        if(r.workplane == Entity::FREE_IN_3D) continue;
+        if(!r.workplane.isFromRequest()) continue;
+        Request *wrkpl = SK.GetRequest(r.workplane.request());
         if(wrkpl->tag)
-            r->tag = 1;
+            r.tag = 1;
     }
     // Rewrite any point-coincident constraints that were affected by this
     // deletion.
-    for(r = SK.request.First(); r; r = SK.request.NextAfter(r)) {
-        if(!r->tag) continue;
-        FixConstraintsForRequestBeingDeleted(r->h);
+    for(Request &r : SK.request) {
+        if(!r.tag) continue;
+        FixConstraintsForRequestBeingDeleted(r.h);
     }
     // and then delete the tagged requests.
     SK.request.RemoveTagged();
@@ -1031,9 +1109,8 @@ void GraphicsWindow::MenuEdit(Command id) {
             SS.centerOfMass.draw = false;
             // This clears the marks drawn to indicate which points are
             // still free to drag.
-            Param *p;
-            for(p = SK.param.First(); p; p = SK.param.NextAfter(p)) {
-                p->free = false;
+            for(Param &p : SK.param) {
+                p.free = false;
             }
             if(SS.exportMode) {
                 SS.exportMode = false;
@@ -1043,13 +1120,12 @@ void GraphicsWindow::MenuEdit(Command id) {
             break;
 
         case Command::SELECT_ALL: {
-            Entity *e;
-            for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                if(e->group != SS.GW.activeGroup) continue;
-                if(e->IsFace() || e->IsDistance()) continue;
-                if(!e->IsVisible()) continue;
+            for(Entity &e : SK.entity) {
+                if(e.group != SS.GW.activeGroup) continue;
+                if(e.IsFace() || e.IsDistance()) continue;
+                if(!e.IsVisible()) continue;
 
-                SS.GW.MakeSelected(e->h);
+                SS.GW.MakeSelected(e.h);
             }
             SS.GW.Invalidate();
             SS.ScheduleShowTW();
@@ -1057,24 +1133,23 @@ void GraphicsWindow::MenuEdit(Command id) {
         }
 
         case Command::SELECT_CHAIN: {
-            Entity *e;
             int newlySelected = 0;
             bool didSomething;
             do {
                 didSomething = false;
-                for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                    if(e->group != SS.GW.activeGroup) continue;
-                    if(!e->HasEndpoints()) continue;
-                    if(!e->IsVisible()) continue;
+                for(Entity &e : SK.entity) {
+                    if(e.group != SS.GW.activeGroup) continue;
+                    if(!e.HasEndpoints()) continue;
+                    if(!e.IsVisible()) continue;
 
-                    Vector st = e->EndpointStart(),
-                           fi = e->EndpointFinish();
+                    Vector st = e.EndpointStart(),
+                           fi = e.EndpointFinish();
 
                     bool onChain = false, alreadySelected = false;
                     List<Selection> *ls = &(SS.GW.selection);
                     for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
                         if(!s->entity.v) continue;
-                        if(s->entity == e->h) {
+                        if(s->entity == e.h) {
                             alreadySelected = true;
                             continue;
                         }
@@ -1091,7 +1166,7 @@ void GraphicsWindow::MenuEdit(Command id) {
                         }
                     }
                     if(onChain && !alreadySelected) {
-                        SS.GW.MakeSelected(e->h);
+                        SS.GW.MakeSelected(e.h);
                         newlySelected++;
                         didSomething = true;
                     }
@@ -1175,10 +1250,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             }
             // Regenerate, with these points marked as dragged so that they
             // get placed as close as possible to our snap grid.
-            SS.GW.ClearPending();
-
             SS.GW.ClearSelection();
-            SS.GW.Invalidate();
             break;
         }
 
@@ -1296,6 +1368,20 @@ c:
             break;
 
         case Command::CONSTRUCTION: {
+            // if we are drawing
+            if(SS.GW.pending.operation == Pending::DRAGGING_NEW_POINT ||
+               SS.GW.pending.operation == Pending::DRAGGING_NEW_LINE_POINT ||
+               SS.GW.pending.operation == Pending::DRAGGING_NEW_ARC_POINT ||
+               SS.GW.pending.operation == Pending::DRAGGING_NEW_CUBIC_POINT ||
+               SS.GW.pending.operation == Pending::DRAGGING_NEW_RADIUS) {
+                for(auto &hr : SS.GW.pending.requests) {
+                    Request* r = SK.GetRequest(hr);
+                    r->construction = !(r->construction);
+                    SS.MarkGroupDirty(r->group);
+                }
+                SS.GW.Invalidate();
+                break;
+            }
             SS.GW.GroupSelection();
             if(SS.GW.gs.entities == 0) {
                 Error(_("No entities are selected. Select entities before "
@@ -1343,6 +1429,14 @@ void GraphicsWindow::ToggleBool(bool *v) {
     Group *g = SK.GetGroup(SS.GW.activeGroup);
     if(*v && (g->displayOutlines.l.IsEmpty() && (v == &showEdges || v == &showOutlines))) {
         SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
+    }
+
+    if(v == &showFaces) {
+        if(g->type == Group::Type::DRAWING_WORKPLANE || g->type == Group::Type::DRAWING_3D) {
+            showFacesDrawing = showFaces;
+        } else {
+            showFacesNonDrawing = showFaces;
+        }
     }
 
     Invalidate(/*clearPersistent=*/true);

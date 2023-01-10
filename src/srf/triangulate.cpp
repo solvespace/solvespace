@@ -426,7 +426,7 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
             if (i == l.n-1) {
                 end = true;
             }
-            if (end) {  // triangulate the fan and tag the verticies
+            if (end) {  // triangulate the fan and tag the vertices
                 if (j > 3) {
                     Vector center = l[pstart+1].p.Plus(l[pstart+j-1].p).ScaledBy(0.5);
                     for (int x=0; x<j; x++) {
@@ -597,11 +597,11 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
     srf->MakeTriangulationGridInto(&lj, 0, 1, /*swapped=*/false, 0);
 
     // force 2nd order grid to have at least 4 segments in each direction
-    if ((li.n < 5) && (srf->degm>1)) { // 4 segments minimun
+    if ((li.n < 5) && (srf->degm>1)) { // 4 segments minimum
         li.Clear();
         li.Add(&v[0]);li.Add(&v[1]);li.Add(&v[2]);li.Add(&v[3]);li.Add(&v[4]);
     }
-    if ((lj.n < 5) && (srf->degn>1)) { // 4 segments minimun
+    if ((lj.n < 5) && (srf->degn>1)) { // 4 segments minimum
         lj.Clear();
         lj.Add(&v[0]);lj.Add(&v[1]);lj.Add(&v[2]);lj.Add(&v[3]);lj.Add(&v[4]);
     }
@@ -681,7 +681,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
                     if (!bottom[j]) // add our own bottom edge
                         holes.AddEdge(a, b);
                 } else {
-                    if (prev_flag) // add our left neighbots right edge
+                    if (prev_flag) // add our left neighbors right edge
                         holes.AddEdge(a, d);
                     if (bottom[j]) // add our bottom neighbors top edge
                         holes.AddEdge(b, a);

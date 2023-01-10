@@ -23,20 +23,20 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
     // Now we have to piecewise linearize the curve. If there's already an
     // identical curve in the shell, then follow that pwl exactly, otherwise
     // calculate from scratch.
-    SCurve split, *existing = NULL, *se;
+    SCurve split, *existing = NULL;
     SBezier sbrev = *sb;
     sbrev.Reverse();
     bool backwards = false;
 #pragma omp critical(into)
     {
-        for(se = into->curve.First(); se; se = into->curve.NextAfter(se)) {
-            if(se->isExact) {
-                if(sb->Equals(&(se->exact))) {
-                    existing = se;
+        for(SCurve &se : into->curve) {
+            if(se.isExact) {
+                if(sb->Equals(&(se.exact))) {
+                    existing = &se;
                     break;
                 }
-                if(sbrev.Equals(&(se->exact))) {
-                    existing = se;
+                if(sbrev.Equals(&(se.exact))) {
+                    existing = &se;
                     backwards = true;
                     break;
                 }
@@ -313,6 +313,44 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         inters.Clear();
         lv.Clear();
     } else {
+        if((degm == 1 && degn == 1) || (b->degm == 1 && b->degn == 1)) {
+            // we should only be here if just one surface is a plane because the
+            // plane-plane case was already handled above. Need to check the other
+            // nonplanar surface for trim curves that lie in the plane and are not
+            // already trimming both surfaces. This happens when we cut a Lathe shell
+            // on one of the seams for example.
+            // This also seems necessary to merge some coincident surfaces.
+            SSurface *splane, *sext;
+            SShell *shext;
+            if(degm == 1 && degn == 1) { // this and other checks assume coplanar ctrl pts.
+                splane = this;
+                sext = b;
+                shext = agnstB;
+            } else {
+                splane = b;
+                sext = this;
+                shext = agnstA;
+            }
+            bool foundExact = false;
+            for(SCurve &sc : shext->curve) {
+                if(sc.source == SCurve::Source::INTERSECTION) continue;
+                if(!sc.isExact) continue;
+                if((sc.surfA != sext->h) && (sc.surfB != sext->h)) continue;
+                // we have a curve belonging to the curved surface and not the plane.
+                // does it lie completely in the plane?
+                if(splane->ContainsPlaneCurve(&sc)) {
+                    SBezier bezier = sc.exact;
+                    AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
+                    foundExact = true;
+                }
+            }
+            // if we found at lest one of these we don't want to do the numerical
+            // intersection as well. Sometimes it will also find the same curve but
+            // with different PWLs and the polygon will fail to assemble.
+            if(foundExact)
+                return;
+        }
+
         // Try intersecting the surfaces numerically, by a marching algorithm.
         // First, we find all the intersections between a surface and the
         // boundary of the other surface.
@@ -506,6 +544,24 @@ bool SSurface::CoincidentWithPlane(Vector n, double d) const {
 }
 
 //-----------------------------------------------------------------------------
+// Does a planar surface contain a curve? Does the curve lie completely in plane?
+//-----------------------------------------------------------------------------
+bool SSurface::ContainsPlaneCurve(SCurve *sc) const {
+    if(degm != 1 || degn != 1) return false;
+    if(!sc->isExact) return false; // we don't handle those (yet?)
+    
+    Vector p = ctrl[0][0];
+    Vector n = NormalAt(0, 0).WithMagnitude(1);
+    double d = n.Dot(p);
+
+    // check all control points on the curve
+    for(int i=0; i<= sc->exact.deg; i++) {
+        if(fabs(n.Dot(sc->exact.ctrl[i]) - d) > LENGTH_EPS) return false;
+    }
+    return true;
+}
+
+//-----------------------------------------------------------------------------
 // In our shell, find all surfaces that are coincident with the prototype
 // surface (with same or opposite normal, as specified), and copy all of
 // their trim polygons into el. The edges are returned in uv coordinates for
@@ -514,10 +570,9 @@ bool SSurface::CoincidentWithPlane(Vector n, double d) const {
 void SShell::MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
                                      SEdgeList *el, SShell *useCurvesFrom)
 {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        if(proto->CoincidentWith(ss, sameNormal)) {
-            ss->MakeEdgesInto(this, el, SSurface::MakeAs::XYZ, useCurvesFrom);
+    for(SSurface &ss : surface) {
+        if(proto->CoincidentWith(&ss, sameNormal)) {
+            ss.MakeEdgesInto(this, el, SSurface::MakeAs::XYZ, useCurvesFrom);
         }
     }
 

@@ -190,11 +190,11 @@ void SurfaceRenderer::DrawFaces(const SMesh &m, const std::vector<uint32_t> &fac
 void SurfaceRenderer::DrawPixmap(std::shared_ptr<const Pixmap> pm,
                     const Vector &o, const Vector &u, const Vector &v,
                     const Point2d &ta, const Point2d &tb, hFill hcf) {
-    ssassert(false, "Not implemented");
+    dbp("Not implemented");
 }
 
 void SurfaceRenderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
-    ssassert(false, "Not implemented");
+    dbp("Not implemented");
 }
 
 //-----------------------------------------------------------------------------

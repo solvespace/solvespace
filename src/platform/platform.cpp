@@ -185,8 +185,10 @@ Path Path::WithExtension(std::string ext) const {
     if(dot != std::string::npos) {
         withExt.raw.erase(dot);
     }
-    withExt.raw += ".";
-    withExt.raw += ext;
+    if(!ext.empty()) {
+        withExt.raw += ".";
+        withExt.raw += ext;
+    }
     return withExt;
 }
 
@@ -401,7 +403,7 @@ FILE *OpenFile(const Platform::Path &filename, const char *mode) {
     ssassert(filename.raw.length() == strlen(filename.raw.c_str()),
              "Unexpected null byte in middle of a path");
 #if defined(WIN32)
-    return _wfopen(Widen(filename.Expand().raw).c_str(), Widen(mode).c_str());
+    return _wfopen(Widen(filename.Expand(/*fromCurrentDirectory=*/true).raw).c_str(), Widen(mode).c_str());
 #else
     return fopen(filename.raw.c_str(), mode);
 #endif
@@ -512,6 +514,12 @@ static Platform::Path ResourcePath(const std::string &name) {
     }
 
     return path;
+}
+
+#elif defined(__EMSCRIPTEN__)
+
+static Platform::Path ResourcePath(const std::string &name) {
+    return Path::From("res/" + name);
 }
 
 #elif !defined(WIN32)

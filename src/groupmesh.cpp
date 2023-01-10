@@ -83,13 +83,12 @@ void Group::GenerateLoops() {
 }
 
 void SShell::RemapFaces(Group *g, int remap) {
-    SSurface *ss;
-    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)){
-        hEntity face = { ss->face };
+    for(SSurface &ss : surface){
+        hEntity face = { ss.face };
         if(face == Entity::NO_ENTITY) continue;
 
         face = g->Remap(face, remap);
-        ss->face = face.v;
+        ss.face = face.v;
     }
 }
 
@@ -292,13 +291,12 @@ void Group::GenerateShellAndMesh() {
                 // So these are the sides
                 if(ss->degm != 1 || ss->degn != 1) continue;
 
-                Entity *e;
-                for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                    if(e->group != opA) continue;
-                    if(e->type != Entity::Type::LINE_SEGMENT) continue;
+                for(Entity &e : SK.entity) {
+                    if(e.group != opA) continue;
+                    if(e.type != Entity::Type::LINE_SEGMENT) continue;
 
-                    Vector a = SK.GetEntity(e->point[0])->PointGetNum(),
-                           b = SK.GetEntity(e->point[1])->PointGetNum();
+                    Vector a = SK.GetEntity(e.point[0])->PointGetNum(),
+                           b = SK.GetEntity(e.point[1])->PointGetNum();
                     a = a.Plus(ttop);
                     b = b.Plus(ttop);
                     // Could get taken backwards, so check all cases.
@@ -307,7 +305,7 @@ void Group::GenerateShellAndMesh() {
                        (a.Equals(ss->ctrl[0][1]) && b.Equals(ss->ctrl[1][1])) ||
                        (b.Equals(ss->ctrl[0][1]) && a.Equals(ss->ctrl[1][1])))
                     {
-                        face = Remap(e->h, REMAP_LINE_TO_FACE);
+                        face = Remap(e.h, REMAP_LINE_TO_FACE);
                         ss->face = face.v;
                         break;
                     }
@@ -569,7 +567,8 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
             if(!SS.GW.showShaded) {
                 fillFront.layer = Canvas::Layer::DEPTH_ONLY;
             }
-            if(type == Type::DRAWING_3D || type == Type::DRAWING_WORKPLANE) {
+            if((type == Type::DRAWING_3D || type == Type::DRAWING_WORKPLANE)
+               && SS.GW.dimSolidModel) {
                 fillFront.color = Style::Color(Style::DIM_SOLID);
             }
             Canvas::hFill hcfFront = canvas->GetFill(fillFront);
@@ -636,8 +635,11 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
             std::vector<uint32_t> faces;
             SS.GW.GroupSelection();
             auto const &gs = SS.GW.gs;
-            if(gs.faces > 0) faces.push_back(gs.face[0].v);
-            if(gs.faces > 1) faces.push_back(gs.face[1].v);
+            // See also GraphicsWindow::MakeSelected "if(c >= MAX_SELECTABLE_FACES)"
+            // and GraphicsWindow::GroupSelection "if(e->IsFace())"
+            for(auto &fc : gs.face) {
+                faces.push_back(fc.v);
+            }
             canvas->DrawFaces(displayMesh, faces, hcf);
             break;
         }

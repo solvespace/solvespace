@@ -22,7 +22,11 @@ std::string Constraint::DescriptionString() const {
         case Type::EQ_LEN_PT_LINE_D:    s = C_("constr-name", "eq-length-and-pt-ln-dist"); break;
         case Type::EQ_PT_LN_DISTANCES:  s = C_("constr-name", "eq-pt-line-distances"); break;
         case Type::LENGTH_RATIO:        s = C_("constr-name", "length-ratio"); break;
+        case Type::ARC_ARC_LEN_RATIO:   s = C_("constr-name", "arc-arc-length-ratio"); break;
+        case Type::ARC_LINE_LEN_RATIO:  s = C_("constr-name", "arc-line-length-ratio"); break;
         case Type::LENGTH_DIFFERENCE:   s = C_("constr-name", "length-difference"); break;
+        case Type::ARC_ARC_DIFFERENCE:  s = C_("constr-name", "arc-arc-len-difference"); break;
+        case Type::ARC_LINE_DIFFERENCE: s = C_("constr-name", "arc-line-len-difference"); break;
         case Type::SYMMETRIC:           s = C_("constr-name", "symmetric"); break;
         case Type::SYMMETRIC_HORIZ:     s = C_("constr-name", "symmetric-h"); break;
         case Type::SYMMETRIC_VERT:      s = C_("constr-name", "symmetric-v"); break;
@@ -127,7 +131,72 @@ hConstraint Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
         Entity::NO_ENTITY, Entity::NO_ENTITY, /*other=*/false, /*other2=*/false);
 }
 
+bool Constraint::ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc) {
+    Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
+           l1 = SK.GetEntity(line->point[1])->PointGetNum();
+    Vector a1 = SK.GetEntity(arc->point[1])->PointGetNum(),
+           a2 = SK.GetEntity(arc->point[2])->PointGetNum();
+    if(l0.Equals(a1) || l1.Equals(a1)) {
+        c->other = false;
+    } else if(l0.Equals(a2) || l1.Equals(a2)) {
+        c->other = true;
+    } else {
+        Error(_("The tangent arc and line segment must share an "
+                "endpoint. Constrain them with Constrain -> "
+                "On Point before constraining tangent."));
+        return false;
+    }
+    return true;
+}
+
+bool Constraint::ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic) {
+    Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
+           l1 = SK.GetEntity(line->point[1])->PointGetNum();
+    Vector as = cubic->CubicGetStartNum(),
+           af = cubic->CubicGetFinishNum();
+
+    if(l0.Equals(as) || l1.Equals(as)) {
+        c->other = false;
+    } else if(l0.Equals(af) || l1.Equals(af)) {
+        c->other = true;
+    } else {
+        Error(_("The tangent cubic and line segment must share an "
+                "endpoint. Constrain them with Constrain -> "
+                "On Point before constraining tangent."));
+        return false;
+    }
+    return true;
+}
+
+bool Constraint::ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB) {
+    Vector as = eA->EndpointStart(),
+           af = eA->EndpointFinish(),
+           bs = eB->EndpointStart(),
+           bf = eB->EndpointFinish();
+    if(as.Equals(bs)) {
+        c->other = false;
+        c->other2 = false;
+    } else if(as.Equals(bf)) {
+        c->other = false;
+        c->other2 = true;
+    } else if(af.Equals(bs)) {
+        c->other = true;
+        c->other2 = false;
+    } else if(af.Equals(bf)) {
+        c->other = true;
+        c->other2 = true;
+    } else {
+        Error(_("The curves must share an endpoint. Constrain them "
+                "with Constrain -> On Point before constraining "
+                "tangent."));
+        return false;
+    }
+    return true;
+}
+
 void Constraint::MenuConstrain(Command id) {
+    std::vector<Constraint> newcons;
+
     Constraint c = {};
     c.group = SS.GW.activeGroup;
     c.workplane = SS.GW.ActiveWorkplane();
@@ -196,6 +265,7 @@ void Constraint::MenuConstrain(Command id) {
             c.valA = 0;
             c.ModifyToSatisfy();
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
         }
 
@@ -204,22 +274,29 @@ void Constraint::MenuConstrain(Command id) {
                 c.type = Type::POINTS_COINCIDENT;
                 c.ptA = gs.point[0];
                 c.ptB = gs.point[1];
+                newcons.push_back(c);
             } else if(gs.points == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = Type::PT_IN_PLANE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
+                newcons.push_back(c);
             } else if(gs.points == 1 && gs.lineSegments == 1 && gs.n == 2) {
                 c.type = Type::PT_ON_LINE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
+                newcons.push_back(c);
             } else if(gs.points == 1 && gs.circlesOrArcs == 1 && gs.n == 2) {
                 c.type = Type::PT_ON_CIRCLE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
-            } else if(gs.points == 1 && gs.faces == 1 && gs.n == 2) {
+                newcons.push_back(c);
+            } else if(gs.points == 1 && gs.faces >= 1 && gs.n == gs.points+gs.faces) {
                 c.type = Type::PT_ON_FACE;
                 c.ptA = gs.point[0];
-                c.entityA = gs.face[0];
+                for (int k=0; k<gs.faces; k++) {
+                    c.entityA = gs.face[k];
+                    newcons.push_back(c);
+                }
             } else {
                 Error(_("Bad selection for on point / curve / plane constraint. "
                         "This constraint can apply to:\n\n"
@@ -230,20 +307,39 @@ void Constraint::MenuConstrain(Command id) {
                         "    * a point and a plane face (point on face)\n"));
                 return;
             }
-            AddConstraint(&c);
+            for (auto&& nc : newcons)
+              AddConstraint(&nc);
             break;
 
         case Command::EQUAL:
-            if(gs.lineSegments == 2 && gs.n == 2) {
+            if(gs.vectors == 3 && gs.n == 3) {
+                c.type = Type::EQUAL_ANGLE;
+                c.entityA = gs.vector[0];
+                c.entityB = gs.vector[1];
+                c.entityC = gs.vector[1];
+                c.entityD = gs.vector[2];
+                newcons.push_back(c);
+            } else if(gs.vectors == 4 && gs.n == 4) {
+                c.type = Type::EQUAL_ANGLE;
+                c.entityA = gs.vector[0];
+                c.entityB = gs.vector[1];
+                c.entityC = gs.vector[2];
+                c.entityD = gs.vector[3];
+                newcons.push_back(c);
+            } else if(gs.lineSegments >= 2 && gs.lineSegments == gs.n) {
                 c.type = Type::EQUAL_LENGTH_LINES;
                 c.entityA = gs.entity[0];
-                c.entityB = gs.entity[1];
+                for (std::vector<hEntity>::size_type k = 1;k < gs.entity.size(); ++k){
+                    c.entityB = gs.entity[k];
+                    newcons.push_back(c);
+                }
             } else if(gs.lineSegments == 2 && gs.points == 2 && gs.n == 4) {
                 c.type = Type::EQ_PT_LN_DISTANCES;
                 c.entityA = gs.entity[0];
                 c.ptA = gs.point[0];
                 c.entityB = gs.entity[1];
                 c.ptB = gs.point[1];
+                newcons.push_back(c);
             } else if(gs.lineSegments == 1 && gs.points == 2 && gs.n == 3) {
                 // The same line segment for the distances, but different
                 // points.
@@ -252,27 +348,20 @@ void Constraint::MenuConstrain(Command id) {
                 c.ptA = gs.point[0];
                 c.entityB = gs.entity[0];
                 c.ptB = gs.point[1];
+                newcons.push_back(c);
             } else if(gs.lineSegments == 2 && gs.points == 1 && gs.n == 3) {
                 c.type = Type::EQ_LEN_PT_LINE_D;
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
                 c.ptA = gs.point[0];
-            } else if(gs.vectors == 4 && gs.n == 4) {
-                c.type = Type::EQUAL_ANGLE;
-                c.entityA = gs.vector[0];
-                c.entityB = gs.vector[1];
-                c.entityC = gs.vector[2];
-                c.entityD = gs.vector[3];
-            } else if(gs.vectors == 3 && gs.n == 3) {
-                c.type = Type::EQUAL_ANGLE;
-                c.entityA = gs.vector[0];
-                c.entityB = gs.vector[1];
-                c.entityC = gs.vector[1];
-                c.entityD = gs.vector[2];
-            } else if(gs.circlesOrArcs == 2 && gs.n == 2) {
+                newcons.push_back(c);
+            } else  if(gs.circlesOrArcs >= 2 && gs.circlesOrArcs == gs.n) {
                 c.type = Type::EQUAL_RADIUS;
                 c.entityA = gs.entity[0];
-                c.entityB = gs.entity[1];
+                for (std::vector<hEntity>::size_type k = 1;k < gs.entity.size(); ++k){
+                    c.entityB = gs.entity[k];
+                    newcons.push_back(c);
+                }
             } else if(gs.arcs == 1 && gs.lineSegments == 1 && gs.n == 2) {
                 c.type = Type::EQUAL_LINE_ARC_LEN;
                 if(SK.GetEntity(gs.entity[0])->type == Entity::Type::ARC_OF_CIRCLE) {
@@ -282,6 +371,7 @@ void Constraint::MenuConstrain(Command id) {
                     c.entityA = gs.entity[0];
                     c.entityB = gs.entity[1];
                 }
+                newcons.push_back(c);
             } else {
                 Error(_("Bad selection for equal length / radius constraint. "
                         "This constraint can apply to:\n\n"
@@ -301,19 +391,22 @@ void Constraint::MenuConstrain(Command id) {
                                 "(line segment length equals arc length)\n"));
                 return;
             }
-            if(c.type == Type::EQUAL_ANGLE) {
-                // Infer the nearest supplementary angle from the sketch.
-                Vector a1 = SK.GetEntity(c.entityA)->VectorGetNum(),
-                       b1 = SK.GetEntity(c.entityB)->VectorGetNum(),
-                       a2 = SK.GetEntity(c.entityC)->VectorGetNum(),
-                       b2 = SK.GetEntity(c.entityD)->VectorGetNum();
-                double d1 = a1.Dot(b1), d2 = a2.Dot(b2);
+            SS.UndoRemember();
+            for (auto&& nc : newcons){
+                if(nc.type == Type::EQUAL_ANGLE) {
+                    // Infer the nearest supplementary angle from the sketch.
+                    Vector a1 = SK.GetEntity(c.entityA)->VectorGetNum(),
+                            b1 = SK.GetEntity(c.entityB)->VectorGetNum(),
+                            a2 = SK.GetEntity(c.entityC)->VectorGetNum(),
+                            b2 = SK.GetEntity(c.entityD)->VectorGetNum();
+                    double d1 = a1.Dot(b1), d2 = a2.Dot(b2);
 
-                if(d1*d2 < 0) {
-                    c.other = true;
+                    if(d1*d2 < 0) {
+                        nc.other = true;
+                    }
                 }
+                AddConstraint(&nc, /*rememberForUndo=*/false);
             }
-            AddConstraint(&c);
             break;
 
         case Command::RATIO:
@@ -321,16 +414,34 @@ void Constraint::MenuConstrain(Command id) {
                 c.type = Type::LENGTH_RATIO;
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
+            }
+            else if(gs.arcs == 2 && gs.n == 2) {
+                c.type = Type::ARC_ARC_LEN_RATIO;
+                c.entityA = gs.entity[0];
+                c.entityB = gs.entity[1];
+            }
+            else if(gs.lineSegments == 1 && gs.arcs == 1 && gs.n == 2) {
+                c.type = Type::ARC_LINE_LEN_RATIO;
+                if(SK.GetEntity(gs.entity[0])->type == Entity::Type::ARC_OF_CIRCLE) {
+                    c.entityA = gs.entity[1];
+                    c.entityB = gs.entity[0];
+                } else {
+                    c.entityA = gs.entity[0];
+                    c.entityB = gs.entity[1];
+                }
             } else {
                 Error(_("Bad selection for length ratio constraint. This "
                         "constraint can apply to:\n\n"
-                        "    * two line segments\n"));
+                        "    * two line segments\n"
+                        "    * two arcs\n"
+                        "    * one arc and one line segment\n"));
                 return;
             }
 
             c.valA = 0;
             c.ModifyToSatisfy();
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::DIFFERENCE:
@@ -338,16 +449,34 @@ void Constraint::MenuConstrain(Command id) {
                 c.type = Type::LENGTH_DIFFERENCE;
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
+            }
+            else if(gs.arcs == 2 && gs.n == 2) {
+                c.type = Type::ARC_ARC_DIFFERENCE;
+                c.entityA = gs.entity[0];
+                c.entityB = gs.entity[1];
+            }
+            else if(gs.lineSegments == 1 && gs.arcs == 1 && gs.n == 2) {
+                c.type = Type::ARC_LINE_DIFFERENCE;
+                if(SK.GetEntity(gs.entity[0])->type == Entity::Type::ARC_OF_CIRCLE) {
+                    c.entityA = gs.entity[1];
+                    c.entityB = gs.entity[0];
+                } else {
+                    c.entityA = gs.entity[0];
+                    c.entityB = gs.entity[1];
+                }
             } else {
                 Error(_("Bad selection for length difference constraint. This "
                         "constraint can apply to:\n\n"
-                        "    * two line segments\n"));
+                        "    * two line segments\n"
+                        "    * two arcs\n"
+                        "    * one arc and one line segment\n"));
                 return;
             }
 
             c.valA = 0;
             c.ModifyToSatisfy();
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::AT_MIDPOINT:
@@ -357,13 +486,19 @@ void Constraint::MenuConstrain(Command id) {
                 c.ptA = gs.point[0];
 
                 // If a point is at-midpoint, then no reason to also constrain
-                // it on-line; so auto-remove that.
+                // it on-line; so auto-remove that.  Handle as one undo group.
+                SS.UndoRemember();
                 DeleteAllConstraintsFor(Type::PT_ON_LINE, c.entityA, c.ptA);
+                AddConstraint(&c, /*rememberForUndo=*/false);
+                newcons.push_back(c);
+                break;
             } else if(gs.lineSegments == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = Type::AT_MIDPOINT;
                 int i = SK.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
                 c.entityA = gs.entity[i];
                 c.entityB = gs.entity[1-i];
+                AddConstraint(&c);
+                newcons.push_back(c);
             } else {
                 Error(_("Bad selection for at midpoint constraint. This "
                         "constraint can apply to:\n\n"
@@ -373,7 +508,7 @@ void Constraint::MenuConstrain(Command id) {
                               "(line's midpoint on plane)\n"));
                 return;
             }
-            AddConstraint(&c);
+
             break;
 
         case Command::SYMMETRIC:
@@ -433,6 +568,7 @@ void Constraint::MenuConstrain(Command id) {
                             "(symmetric about workplane)\n"));
                 return;
             }
+            // We may remove constraints so remember manually
             if(c.entityA == Entity::NO_ENTITY) {
                 // Horizontal / vertical symmetry, implicit symmetry plane
                 // normal to the workplane
@@ -454,31 +590,44 @@ void Constraint::MenuConstrain(Command id) {
                 if(gs.lineSegments == 1) {
                     // If this line segment is already constrained horiz or
                     // vert, then auto-remove that redundant constraint.
+                    // Handle as one undo group.
+                    SS.UndoRemember();
                     DeleteAllConstraintsFor(Type::HORIZONTAL, (gs.entity[0]),
                         Entity::NO_ENTITY);
                     DeleteAllConstraintsFor(Type::VERTICAL, (gs.entity[0]),
                         Entity::NO_ENTITY);
+                    newcons.push_back(c);
+                    AddConstraint(&c, /*rememberForUndo=*/false);
+                    break;
                 }
             }
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::VERTICAL:
         case Command::HORIZONTAL: {
-            hEntity ha, hb;
+            if(id == Command::HORIZONTAL) {
+                c.type = Type::HORIZONTAL;
+            } else {
+                c.type = Type::VERTICAL;
+            }
             if(c.workplane == Entity::FREE_IN_3D) {
                 Error(_("Activate a workplane (with Sketch -> In Workplane) before "
                         "applying a horizontal or vertical constraint."));
                 return;
             }
-            if(gs.lineSegments == 1 && gs.n == 1) {
-                c.entityA = gs.entity[0];
-                Entity *e = SK.GetEntity(c.entityA);
-                ha = e->point[0];
-                hb = e->point[1];
-            } else if(gs.points == 2 && gs.n == 2) {
-                ha = c.ptA = gs.point[0];
-                hb = c.ptB = gs.point[1];
+            if(gs.lineSegments > 0 && gs.lineSegments == gs.n) {
+                for (auto enti : gs.entity){
+                    c.entityA = enti;
+                    newcons.push_back(c);
+                }
+            } else if(gs.points >= 2 && gs.n == gs.points) {
+                c.ptA = gs.point[0];
+                for (int k = 1; k<gs.points; k++) {
+                  c.ptB = gs.point[k];
+                  newcons.push_back(c);
+                }
             } else {
                 Error(_("Bad selection for horizontal / vertical constraint. "
                         "This constraint can apply to:\n\n"
@@ -486,12 +635,9 @@ void Constraint::MenuConstrain(Command id) {
                         "    * a line segment\n"));
                 return;
             }
-            if(id == Command::HORIZONTAL) {
-                c.type = Type::HORIZONTAL;
-            } else {
-                c.type = Type::VERTICAL;
-            }
-            AddConstraint(&c);
+            SS.UndoRemember();
+            for (auto && nc: newcons)
+                AddConstraint(&nc, /*rememberForUndo=*/false);
             break;
         }
 
@@ -532,6 +678,7 @@ void Constraint::MenuConstrain(Command id) {
                 nfree->NormalForceTo(Quaternion::From(fu, fv));
             }
             AddConstraint(&c, /*rememberForUndo=*/false);
+            newcons.push_back(c);
             break;
         }
 
@@ -608,62 +755,49 @@ void Constraint::MenuConstrain(Command id) {
 
             c.ModifyToSatisfy();
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
         }
 
         case Command::PARALLEL:
-            if(gs.vectors == 2 && gs.n == 2) {
+            if(gs.faces == 2 && gs.n == 2) {
+                c.type = Type::PARALLEL;
+                c.entityA = gs.face[0];
+                c.entityB = gs.face[1];            
+                newcons.push_back(c);
+            } else if(gs.vectors > 1 && gs.vectors == gs.n) {
                 c.type = Type::PARALLEL;
                 c.entityA = gs.vector[0];
-                c.entityB = gs.vector[1];
+                for (std::vector<hEntity>::size_type k = 1; k < gs.vector.size();++k ){
+                    c.entityB = gs.vector[k];
+                    newcons.push_back(c);
+                }
             } else if(gs.lineSegments == 1 && gs.arcs == 1 && gs.n == 2) {
-                Entity *line = SK.GetEntity(gs.entity[0]);
-                Entity *arc  = SK.GetEntity(gs.entity[1]);
+                Entity *line = SK.GetEntity(gs.entity[0]),
+                       *arc  = SK.GetEntity(gs.entity[1]);
                 if(line->type == Entity::Type::ARC_OF_CIRCLE) {
                     swap(line, arc);
                 }
-                Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
-                       l1 = SK.GetEntity(line->point[1])->PointGetNum();
-                Vector a1 = SK.GetEntity(arc->point[1])->PointGetNum(),
-                       a2 = SK.GetEntity(arc->point[2])->PointGetNum();
-
-                if(l0.Equals(a1) || l1.Equals(a1)) {
-                    c.other = false;
-                } else if(l0.Equals(a2) || l1.Equals(a2)) {
-                    c.other = true;
-                } else {
-                    Error(_("The tangent arc and line segment must share an "
-                            "endpoint. Constrain them with Constrain -> "
-                            "On Point before constraining tangent."));
+                if(!ConstrainArcLineTangent(&c, line, arc)) {
                     return;
                 }
                 c.type = Type::ARC_LINE_TANGENT;
                 c.entityA = arc->h;
                 c.entityB = line->h;
+                newcons.push_back(c);
             } else if(gs.lineSegments == 1 && gs.cubics == 1 && gs.n == 2) {
-                Entity *line  = SK.GetEntity(gs.entity[0]);
-                Entity *cubic = SK.GetEntity(gs.entity[1]);
+                Entity *line  = SK.GetEntity(gs.entity[0]),
+                       *cubic = SK.GetEntity(gs.entity[1]);
                 if(line->type == Entity::Type::CUBIC) {
                     swap(line, cubic);
                 }
-                Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
-                       l1 = SK.GetEntity(line->point[1])->PointGetNum();
-                Vector as = cubic->CubicGetStartNum(),
-                       af = cubic->CubicGetFinishNum();
-
-                if(l0.Equals(as) || l1.Equals(as)) {
-                    c.other = false;
-                } else if(l0.Equals(af) || l1.Equals(af)) {
-                    c.other = true;
-                } else {
-                    Error(_("The tangent cubic and line segment must share an "
-                            "endpoint. Constrain them with Constrain -> "
-                            "On Point before constraining tangent."));
+                if(!ConstrainCubicLineTangent(&c, line, cubic)) {
                     return;
                 }
                 c.type = Type::CUBIC_LINE_TANGENT;
                 c.entityA = cubic->h;
                 c.entityB = line->h;
+                newcons.push_back(c);
             } else if(gs.cubics + gs.arcs == 2 && gs.n == 2) {
                 if(!SS.GW.LockedInWorkplane()) {
                     Error(_("Curve-curve tangency must apply in workplane."));
@@ -671,30 +805,17 @@ void Constraint::MenuConstrain(Command id) {
                 }
                 Entity *eA = SK.GetEntity(gs.entity[0]),
                        *eB = SK.GetEntity(gs.entity[1]);
-                Vector as = eA->EndpointStart(),
-                       af = eA->EndpointFinish(),
-                       bs = eB->EndpointStart(),
-                       bf = eB->EndpointFinish();
-                if(as.Equals(bs)) {
-                    c.other = false; c.other2 = false;
-                } else if(as.Equals(bf)) {
-                    c.other = false; c.other2 = true;
-                } else if(af.Equals(bs)) {
-                    c.other = true; c.other2 = false;
-                } else if(af.Equals(bf)) {
-                    c.other = true; c.other2 = true;
-                } else {
-                    Error(_("The curves must share an endpoint. Constrain them "
-                            "with Constrain -> On Point before constraining "
-                            "tangent."));
+                if(!ConstrainCurveCurveTangent(&c, eA, eB)) {
                     return;
                 }
                 c.type = Type::CURVE_CURVE_TANGENT;
                 c.entityA = eA->h;
                 c.entityB = eB->h;
+                newcons.push_back(c);
             } else {
                 Error(_("Bad selection for parallel / tangent constraint. This "
                         "constraint can apply to:\n\n"
+                        "    * two faces\n"
                         "    * two line segments (parallel)\n"
                         "    * a line segment and a normal (parallel)\n"
                         "    * two normals (parallel)\n"
@@ -702,23 +823,31 @@ void Constraint::MenuConstrain(Command id) {
                               "an endpoint (tangent)\n"));
                 return;
             }
-            AddConstraint(&c);
+            SS.UndoRemember();
+            for (auto&& nc:newcons)
+                AddConstraint(&nc, /*rememberForUndo=*/false);
             break;
 
         case Command::PERPENDICULAR:
-            if(gs.vectors == 2 && gs.n == 2) {
+            if(gs.faces == 2 && gs.n == 2) {
+                c.type = Type::PERPENDICULAR;
+                c.entityA = gs.face[0];
+                c.entityB = gs.face[1];            
+            } else if(gs.vectors == 2 && gs.n == 2) {
                 c.type = Type::PERPENDICULAR;
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
             } else {
                 Error(_("Bad selection for perpendicular constraint. This "
                         "constraint can apply to:\n\n"
+                        "    * two faces\n"
                         "    * two line segments\n"
                         "    * a line segment and a normal\n"
                         "    * two normals\n"));
                 return;
             }
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::WHERE_DRAGGED:
@@ -732,42 +861,54 @@ void Constraint::MenuConstrain(Command id) {
                 return;
             }
             AddConstraint(&c);
+            newcons.push_back(c);
             break;
 
         case Command::COMMENT:
-            SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
-            SS.GW.pending.command = Command::COMMENT;
-            SS.GW.pending.description = _("click center of comment text");
-            SS.ScheduleShowTW();
+            if(gs.points == 1 && gs.n == 1) {
+                c.type = Type::COMMENT;
+                c.ptA = gs.point[0];
+                c.group       = SS.GW.activeGroup;
+                c.workplane   = SS.GW.ActiveWorkplane();
+                c.comment     = _("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
+                AddConstraint(&c);
+                newcons.push_back(c);
+            } else {
+                SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
+                SS.GW.pending.command = Command::COMMENT;
+                SS.GW.pending.description = _("click center of comment text");
+                SS.ScheduleShowTW();
+            }
             break;
 
         default: ssassert(false, "Unexpected menu ID");
     }
-
-    for(const Constraint &cc : SK.constraint) {
-        if(c.h != cc.h && c.Equals(cc)) {
-            // Oops, we already have this exact constraint. Remove the one we just added.
-            SK.constraint.RemoveById(c.h);
-            SS.GW.ClearSelection();
-            // And now select the old one, to give feedback.
-            SS.GW.MakeSelected(cc.h);
-            return;
+    for (auto nc:newcons){
+        for(const Constraint &cc : SK.constraint) {
+            if(nc.h != cc.h && nc.Equals(cc)) {
+                // Oops, we already have this exact constraint. Remove the one we just added.
+                SK.constraint.RemoveById(nc.h);
+                SS.GW.ClearSelection();
+                // And now select the old one, to give feedback.
+                SS.GW.MakeSelected(cc.h);
+                return;
+            }
         }
-    }
 
-    if(SK.constraint.FindByIdNoOops(c.h)) {
-        Constraint *constraint = SK.GetConstraint(c.h);
-        if(SS.TestRankForGroup(c.group) == SolveResult::REDUNDANT_OKAY &&
-                !SK.GetGroup(SS.GW.activeGroup)->allowRedundant &&
-                constraint->HasLabel()) {
-            constraint->reference = true;
+        if(SK.constraint.FindByIdNoOops(nc.h)) {
+            Constraint *constraint = SK.GetConstraint(nc.h);
+            if(SS.TestRankForGroup(nc.group) == SolveResult::REDUNDANT_OKAY &&
+                    !SK.GetGroup(SS.GW.activeGroup)->allowRedundant &&
+                    constraint->HasLabel()) {
+                constraint->reference = true;
+            }
         }
-    }
 
-    if((id == Command::DISTANCE_DIA || id == Command::ANGLE ||
-        id == Command::RATIO || id == Command::DIFFERENCE) &&
-       SS.immediatelyEditDimension) {
-        SS.GW.EditConstraint(c.h);
+        if((id == Command::DISTANCE_DIA || id == Command::ANGLE ||
+            id == Command::RATIO || id == Command::DIFFERENCE) &&
+                SS.immediatelyEditDimension) {
+            SS.GW.EditConstraint(nc.h);
+        }
     }
 
     SS.GW.ClearSelection();

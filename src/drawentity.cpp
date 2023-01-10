@@ -26,7 +26,7 @@ void Entity::GenerateEdges(SEdgeList *el) {
         List<Vector> lv = {};
         sb->MakePwlInto(&lv);
         for(int j = 1; j < lv.n; j++) {
-            el->AddEdge(lv[j-1], lv[j], style.v, i);
+            el->AddEdge(lv[j-1], lv[j], Style::ForEntity(h).v, i);
         }
         lv.Clear();
     }
@@ -64,13 +64,13 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
         Vector proj = SS.GW.ProjectPoint3(PointGetNum());
         screenBBox = BBox::From(proj, proj);
     } else if(IsNormal()) {
-        Vector proj = SK.GetEntity(point[0])->PointGetNum();
+        Vector proj = SS.GW.ProjectPoint3(SK.GetEntity(point[0])->PointGetNum());
         screenBBox = BBox::From(proj, proj);
     } else if(!sbl->l.IsEmpty()) {
         Vector first = SS.GW.ProjectPoint3(sbl->l[0].ctrl[0]);
         screenBBox = BBox::From(first, first);
         for(auto &sb : sbl->l) {
-            for(int i = 0; i < sb.deg; ++i) { screenBBox.Include(SS.GW.ProjectPoint3(sb.ctrl[i])); }
+            for(int i = 0; i <= sb.deg; ++i) { screenBBox.Include(SS.GW.ProjectPoint3(sb.ctrl[i])); }
         }
     } else
         ssassert(false, "Expected entity to be a point or have beziers");
@@ -88,7 +88,7 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
         case Type::POINT_N_ROT_AXIS_TRANS:
         case Type::POINT_IN_3D:
         case Type::POINT_IN_2D:
-            refs->push_back(PointGetNum());
+            refs->push_back(PointGetDrawNum());
             break;
 
         case Type::NORMAL_N_COPY:
@@ -103,12 +103,12 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
         case Type::CUBIC_PERIODIC:
         case Type::TTF_TEXT:
         case Type::IMAGE:
-            refs->push_back(SK.GetEntity(point[0])->PointGetNum());
+            refs->push_back(SK.GetEntity(point[0])->PointGetDrawNum());
             break;
 
         case Type::LINE_SEGMENT: {
-            Vector a = SK.GetEntity(point[0])->PointGetNum(),
-                   b = SK.GetEntity(point[1])->PointGetNum();
+            Vector a = SK.GetEntity(point[0])->PointGetDrawNum(),
+                   b = SK.GetEntity(point[1])->PointGetDrawNum();
             refs->push_back(b.Plus(a.Minus(b).ScaledBy(0.5)));
             break;
         }
@@ -315,9 +315,13 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const {
             } else {
                 // The wrapping would work, except when n = 1 and everything
                 // wraps to zero...
-                if(i > 0)     bm.A[i][i - 1] = eq.x;
-                /**/          bm.A[i][i]     = eq.y;
-                if(i < (n-1)) bm.A[i][i + 1] = eq.z;
+                if(i > 0) {
+                    bm.A[i][i - 1] = eq.x;
+                }
+                bm.A[i][i] = eq.y;
+                if(i < (n-1)) {
+                    bm.A[i][i + 1] = eq.z;
+                }
             }
         }
         bm.Solve();
@@ -458,8 +462,28 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
 
     // Record our style for all of the Beziers that we just created.
     for(; i < sbl->l.n; i++) {
-        sbl->l[i].auxA = style.v;
+        sbl->l[i].auxA = Style::ForEntity(h).v;
     }
+}
+
+bool Entity::ShouldDrawExploded() const {
+    return SK.GetGroup(group)->ShouldDrawExploded();
+}
+
+Vector Entity::ExplodeOffset() const {
+    if(ShouldDrawExploded() && workplane.v != 0) {
+        int requestIdx = SK.GetRequest(h.request())->groupRequestIndex;
+        double offset = SS.explodeDistance * (requestIdx + 1);
+        return SK.GetEntity(workplane)->Normal()->NormalN().ScaledBy(offset);
+    } else {
+        return Vector::From(0, 0, 0);
+    }
+}
+
+Vector Entity::PointGetDrawNum() const {
+    // As per EntityBase::PointGetNum but specifically for when drawing/rendering the point
+    // (and not when solving), so we can potentially draw it somewhere different
+    return PointGetNum().Plus(ExplodeOffset());
 }
 
 void Entity::Draw(DrawAs how, Canvas *canvas) {
@@ -468,13 +492,13 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
 
     int zIndex;
     if(IsPoint()) {
-        zIndex = 5;
+        zIndex = 6;
     } else if(how == DrawAs::HIDDEN) {
         zIndex = 2;
     } else if(group != SS.GW.activeGroup) {
         zIndex = 3;
     } else {
-        zIndex = 4;
+        zIndex = 5;
     }
 
     hStyle hs;
@@ -484,6 +508,9 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         hs.v = Style::NORMALS;
     } else {
         hs = Style::ForEntity(h);
+        if (hs.v == Style::CONSTRUCTION) {
+            zIndex = 4;
+        }
     }
 
     Canvas::Stroke stroke = Style::Stroke(hs);
@@ -550,16 +577,17 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
             pointStroke.unit   = Canvas::Unit::PX;
             Canvas::hStroke hcsPoint = canvas->GetStroke(pointStroke);
 
+            Vector p = PointGetDrawNum();
             if(free) {
                 Canvas::Stroke analyzeStroke = Style::Stroke(Style::ANALYZE);
                 analyzeStroke.width = 14.0;
                 analyzeStroke.layer = Canvas::Layer::FRONT;
                 Canvas::hStroke hcsAnalyze = canvas->GetStroke(analyzeStroke);
 
-                canvas->DrawPoint(PointGetNum(), hcsAnalyze);
+                canvas->DrawPoint(p, hcsAnalyze);
             }
 
-            canvas->DrawPoint(PointGetNum(), hcsPoint);
+            canvas->DrawPoint(p, hcsPoint);
             return;
         }
 
@@ -608,13 +636,13 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                     double w = 60 - camera.width  / 2.0;
                     // Shift the axis to the right if they would overlap with the toolbar.
                     if(SS.showToolbar) {
-                        if(h + 30 > -(34*16 + 3*16 + 8) / 2)
+                        if(h + 30 > -(32*18 + 3*16 + 8) / 2)
                             w += 60;
                     }
                     tail = camera.projRight.ScaledBy(w/s).Plus(
                            camera.projUp.   ScaledBy(h/s)).Minus(camera.offset);
                 } else {
-                    tail = SK.GetEntity(point[0])->PointGetNum();
+                    tail = SK.GetEntity(point[0])->PointGetDrawNum();
                 }
                 tail = camera.AlignToPixelGrid(tail);
 
@@ -702,8 +730,32 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         case Type::TTF_TEXT: {
             // Generate the rational polynomial curves, then piecewise linearize
             // them, and display those.
-            if(!canvas->DrawBeziers(*GetOrGenerateBezierCurves(),  hcs)) {
-                canvas->DrawEdges(*GetOrGenerateEdges(), hcs);
+            // Calculating the draw offset, if necessary.
+            const bool shouldExplode = ShouldDrawExploded();
+            Vector explodeOffset;
+            SBezierList offsetBeziers = {};
+            SBezierList *beziers = GetOrGenerateBezierCurves();
+            if(shouldExplode) {
+                explodeOffset = ExplodeOffset();
+                for(const SBezier& b : beziers->l) {
+                    SBezier offset = b.TransformedBy(explodeOffset, Quaternion::IDENTITY, 1.0);
+                    offsetBeziers.l.Add(&offset);
+                }
+                beziers = &offsetBeziers;
+            }
+
+            SEdgeList *edges = nullptr;
+            SEdgeList offsetEdges = {};
+
+            if(!canvas->DrawBeziers(*beziers, hcs)) {
+                edges = GetOrGenerateEdges();
+                if(shouldExplode) {
+                    for(const SEdge &e : edges->l) {
+                        offsetEdges.AddEdge(e.a.Plus(explodeOffset), e.b.Plus(explodeOffset), e.auxA, e.auxB, e.tag);
+                    }
+                    edges = &offsetEdges;
+                }
+                canvas->DrawEdges(*edges, hcs);
             }
             if(type == Type::CIRCLE) {
                 Entity *dist = SK.GetEntity(distance);
@@ -713,12 +765,14 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                         Canvas::Stroke analyzeStroke = Style::Stroke(Style::ANALYZE);
                         analyzeStroke.layer = Canvas::Layer::FRONT;
                         Canvas::hStroke hcsAnalyze = canvas->GetStroke(analyzeStroke);
-                        if(!canvas->DrawBeziers(*GetOrGenerateBezierCurves(), hcsAnalyze)) {
-                            canvas->DrawEdges(*GetOrGenerateEdges(), hcsAnalyze);
+                        if(!canvas->DrawBeziers(*beziers, hcsAnalyze)) {
+                            canvas->DrawEdges(*edges, hcsAnalyze);
                         }
                     }
                 }
             }
+            offsetBeziers.Clear();
+            offsetEdges.Clear();
             return;
         }
         case Type::IMAGE: {
@@ -750,7 +804,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
             Canvas::hFill hf = canvas->GetFill(fill);
             Vector v[4] = {};
             for(int i = 0; i < 4; i++) {
-                v[i] = SK.GetEntity(point[i])->PointGetNum();
+                v[i] = SK.GetEntity(point[i])->PointGetDrawNum();
             }
             Vector iu = v[3].Minus(v[0]);
             Vector iv = v[1].Minus(v[0]);

@@ -1,5 +1,5 @@
 name: solvespace
-base: core18
+base: core22
 summary: Parametric 2d/3d CAD
 adopt-info: solvespace
 description: |
@@ -14,6 +14,8 @@ description: |
 
 confinement: strict
 license: GPL-3.0
+compression: lzo
+grade: stable
 
 layout:
   /usr/share/solvespace:
@@ -23,13 +25,11 @@ apps:
   solvespace:
     command: usr/bin/solvespace
     desktop: solvespace.desktop
-    extensions: [gnome-3-34]
+    extensions: [gnome]
     plugs: [opengl, unity7, home, removable-media, gsettings, network]
-    environment:
-      __EGL_VENDOR_LIBRARY_DIRS: $SNAP/gnome-platform/usr/share/glvnd/egl_vendor.d:$SNAP/usr/share/glvnd/egl_vendor.d
   cli:
     command: usr/bin/solvespace-cli
-    extensions: [gnome-3-34]
+    extensions: [gnome]
     plugs: [home, removable-media, network]
 
 parts:
@@ -38,22 +38,25 @@ parts:
     source: ./solvespace-snap-src
     source-type: local
     override-pull: |
-      snapcraftctl pull
-      version_major=$(grep "solvespace_VERSION_MAJOR" CMakeLists.txt | tr -d "()" | cut -d" " -f2)
-      version_minor=$(grep "solvespace_VERSION_MINOR" CMakeLists.txt | tr -d "()" | cut -d" " -f2)
-      version="$version_major.$version_minor~$(git rev-parse --short=8 HEAD)"
-      snapcraftctl set-version "$version"
-      git describe --exact-match HEAD && grade="stable" || grade="devel"
-      snapcraftctl set-grade "$grade"
-      git submodule update --init extlib/libdxfrw extlib/flatbuffers extlib/q3d extlib/mimalloc
-    configflags:
+      craftctl default
+      git submodule update --init extlib/libdxfrw extlib/mimalloc extlib/eigen
+    override-build: |
+      craftctl default
+      project_version=$(grep CMAKE_PROJECT_VERSION:STATIC CMakeCache.txt | cut -d "=" -f2)
+      cd $CRAFT_PART_SRC
+      version="$project_version~$(git rev-parse --short=8 HEAD)"
+      craftctl set version="$version"
+    cmake-parameters:
       - -DCMAKE_INSTALL_PREFIX=/usr
       - -DCMAKE_BUILD_TYPE=Release
       - -DENABLE_TESTS=OFF
       - -DSNAP=ON
+      - -DENABLE_OPENMP=ON
+      - -DENABLE_LTO=ON
     build-packages:
       - zlib1g-dev
       - libpng-dev
+      - libcairo2-dev
       - libfreetype6-dev
       - libjson-c-dev
       - libgl-dev
@@ -61,6 +64,7 @@ parts:
       - libspnav-dev
       - git
       - g++
+      - libc6-dev
     stage-packages:
       - libspnav0
       - libsigc++-2.0-0v5
@@ -68,11 +72,14 @@ parts:
   cleanup:
     after: [solvespace]
     plugin: nil
-    build-snaps: [core18, gnome-3-34-1804]
+    build-snaps: [gnome-42-2204]
     override-prime: |
-      # Remove all files from snap that are already included in the base snap or in
-      # any connected content snaps
       set -eux
-      for snap in "core18" "gnome-3-34-1804"; do  # List all content-snaps and base snaps you're using here
-        cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$SNAPCRAFT_PRIME/{}" \;
+      for snap in "gnome-42-2204"; do  # List all content-snaps you're using here
+        cd "/snap/$snap/current" && find . -type f,l -exec rm -f "$CRAFT_PRIME/{}" "$CRAFT_PRIME/usr/{}" \;
       done
+      for cruft in bug lintian man; do
+        rm -rf $CRAFT_PRIME/usr/share/$cruft
+      done
+      find $CRAFT_PRIME/usr/share/doc/ -type f -not -name 'copyright' -delete
+      find $CRAFT_PRIME/usr/share -type d -empty -delete

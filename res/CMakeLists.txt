@@ -1,6 +1,7 @@
 # First, set up registration functions for the kinds of resources we handle.
 set(resource_root ${CMAKE_CURRENT_SOURCE_DIR}/)
 set(resource_list)
+set(resource_names)
 if(WIN32)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/win32/versioninfo.rc.in
                    ${CMAKE_CURRENT_BINARY_DIR}/win32/versioninfo.rc)
@@ -31,7 +32,7 @@ if(WIN32)
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${source}")
     endfunction()
 elseif(APPLE)
-    set(app_resource_dir ${CMAKE_BINARY_DIR}/bin/SolveSpace.app/Contents/Resources)
+    set(app_resource_dir ${CMAKE_BINARY_DIR}/Resources)
     set(cli_resource_dir ${CMAKE_BINARY_DIR}/res)
 
     function(add_resource name)
@@ -83,6 +84,23 @@ elseif(APPLE)
             DEPENDS ${source}
             VERBATIM)
     endfunction()
+elseif(EMSCRIPTEN)
+    set(resource_dir ${CMAKE_BINARY_DIR}/src/res)
+
+    function(add_resource name)
+        set(source ${CMAKE_CURRENT_SOURCE_DIR}/${name})
+        set(target ${resource_dir}/${name})
+        set(resource_list  "${resource_list};${target}" PARENT_SCOPE)
+        set(resource_names "${resource_names};res/${name}" PARENT_SCOPE)
+
+        add_custom_command(
+            OUTPUT ${target}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${resource_dir}
+            COMMAND ${CMAKE_COMMAND} -E copy ${source} ${target}
+            COMMENT "Copying resource ${name}"
+            DEPENDS ${source}
+            VERBATIM)
+    endfunction()
 else() # Unix
     include(GNUInstallDirs)
 
@@ -111,7 +129,8 @@ endif()
 function(add_resources)
     foreach(name ${ARGN})
         add_resource(${name})
-        set(resource_list "${resource_list}" PARENT_SCOPE)
+        set(resource_list  "${resource_list}" PARENT_SCOPE)
+        set(resource_names "${resource_names}" PARENT_SCOPE)
     endforeach()
 endfunction()
 
@@ -133,6 +152,13 @@ else()
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace-flatpak.desktop
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications
             RENAME      com.solvespace.SolveSpace.desktop)
+
+        set(DESKTOP_FILE_NAME com.solvespace.SolveSpace.desktop)
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/freedesktop/com.solvespace.SolveSpace.metainfo.xml.in
+            ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/com.solvespace.SolveSpace.metainfo.xml)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/com.solvespace.SolveSpace.metainfo.xml
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/metainfo)
 
         install(FILES freedesktop/solvespace-flatpak-mime.xml
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages
@@ -176,6 +202,13 @@ else()
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace.desktop
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 
+        set(DESKTOP_FILE_NAME solvespace.desktop)
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/freedesktop/com.solvespace.SolveSpace.metainfo.xml.in
+            ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/com.solvespace.SolveSpace.metainfo.xml)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/com.solvespace.SolveSpace.metainfo.xml
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/metainfo)
+
         install(FILES freedesktop/solvespace-mime.xml
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages
             RENAME      solvespace-slvs.xml)
@@ -185,7 +218,7 @@ else()
             RENAME      solvespace.svg)
         install(FILES freedesktop/solvespace-scalable.svg
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/mimetypes
-            RENAME      application.x-solvespace.svg)
+            RENAME      application-x-solvespace.svg)
 
         foreach(SIZE 16x16 24x24 32x32 48x48)
             install(FILES freedesktop/solvespace-${SIZE}.png
@@ -193,12 +226,7 @@ else()
                 RENAME      solvespace.png)
             install(FILES freedesktop/solvespace-${SIZE}.png
                 DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/mimetypes
-                RENAME      application.x-solvespace.png)
-        endforeach()
-
-        foreach(SIZE 16x16 24x24 32x32 48x48)
-            install(FILES freedesktop/solvespace-${SIZE}.xpm
-                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pixmaps)
+                RENAME      application-x-solvespace.png)
         endforeach()
     endif()
 endif()
@@ -213,6 +241,7 @@ add_resources(
     icons/graphics-window/construction.png
     icons/graphics-window/equal.png
     icons/graphics-window/extrude.png
+    icons/graphics-window/helix.png
     icons/graphics-window/horiz.png
     icons/graphics-window/image.png
     icons/graphics-window/in3d.png
@@ -227,6 +256,7 @@ add_resources(
     icons/graphics-window/point.png
     icons/graphics-window/rectangle.png
     icons/graphics-window/ref.png
+    icons/graphics-window/revolve.png
     icons/graphics-window/same-orientation.png
     icons/graphics-window/sketch-in-3d.png
     icons/graphics-window/sketch-in-plane.png
@@ -251,12 +281,16 @@ add_resources(
     icons/text-window/shaded.png
     icons/text-window/workplane.png
     locales.txt
+    locales/cs_CZ.po
     locales/de_DE.po
     locales/en_US.po
     locales/fr_FR.po
     locales/uk_UA.po
+    locales/es_AR.po
+    locales/tr_TR.po
     locales/ru_RU.po
     locales/zh_CN.po
+    locales/ja_JP.po
     fonts/unifont.hex.gz
     fonts/private/0-check-false.png
     fonts/private/1-check-true.png
@@ -282,7 +316,7 @@ add_resources(
     shaders/edge.frag
     shaders/edge.vert
     shaders/outline.vert
-    threejs/three-r76.js.gz
+    threejs/three-r111.min.js.gz
     threejs/hammer-2.0.8.js.gz
     threejs/SolveSpaceControls.js)
 
@@ -291,4 +325,6 @@ add_custom_target(resources
     DEPENDS ${resource_list})
 if(WIN32)
     set_property(TARGET resources PROPERTY EXTRA_SOURCES ${rc_file})
+elseif(EMSCRIPTEN)
+    set_property(TARGET resources PROPERTY NAMES ${resource_names})
 endif()

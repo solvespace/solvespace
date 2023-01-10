@@ -138,18 +138,17 @@ void GraphicsWindow::CopySelection() {
         }
     }
 
-    Constraint *c;
-    for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-        if(!SS.clipboard.ContainsEntity(c->ptA) ||
-           !SS.clipboard.ContainsEntity(c->ptB) ||
-           !SS.clipboard.ContainsEntity(c->entityA) ||
-           !SS.clipboard.ContainsEntity(c->entityB) ||
-           !SS.clipboard.ContainsEntity(c->entityC) ||
-           !SS.clipboard.ContainsEntity(c->entityD) ||
-           c->type == Constraint::Type::COMMENT) {
+    for(Constraint &c : SK.constraint) {
+        if(!SS.clipboard.ContainsEntity(c.ptA) ||
+           !SS.clipboard.ContainsEntity(c.ptB) ||
+           !SS.clipboard.ContainsEntity(c.entityA) ||
+           !SS.clipboard.ContainsEntity(c.entityB) ||
+           !SS.clipboard.ContainsEntity(c.entityC) ||
+           !SS.clipboard.ContainsEntity(c.entityD) ||
+           c.type == Constraint::Type::COMMENT) {
             continue;
         }
-        SS.clipboard.c.Add(c);
+        SS.clipboard.c.Add(&c);
     }
 }
 
@@ -227,7 +226,6 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             MakeSelected(hr.entity(j));
         }
     }
-
     Constraint *cc;
     for(cc = SS.clipboard.c.First(); cc; cc = SS.clipboard.c.NextAfter(cc)) {
         Constraint c = {};
@@ -246,25 +244,62 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         c.reference = cc->reference;
         c.disp = cc->disp;
         c.comment = cc->comment;
+        bool dontAddConstraint = false;
         switch(c.type) {
             case Constraint::Type::COMMENT:
                 c.disp.offset = c.disp.offset.Plus(trans);
                 break;
-
             case Constraint::Type::PT_PT_DISTANCE:
             case Constraint::Type::PT_LINE_DISTANCE:
             case Constraint::Type::PROJ_PT_DISTANCE:
             case Constraint::Type::DIAMETER:
                 c.valA *= fabs(scale);
                 break;
-
+            case Constraint::Type::ARC_LINE_TANGENT: {
+                Entity *line = SK.GetEntity(c.entityB),
+                       *arc  = SK.GetEntity(c.entityA);
+                if(line->type == Entity::Type::ARC_OF_CIRCLE) {
+                    swap(line, arc);
+                }
+                Constraint::ConstrainArcLineTangent(&c, line, arc);
+                break;
+            }
+            case Constraint::Type::CUBIC_LINE_TANGENT: {
+                Entity *line  = SK.GetEntity(c.entityB),
+                       *cubic = SK.GetEntity(c.entityA);
+                if(line->type == Entity::Type::CUBIC) {
+                    swap(line, cubic);
+                }
+                Constraint::ConstrainCubicLineTangent(&c, line, cubic);
+                break;
+            }
+            case Constraint::Type::CURVE_CURVE_TANGENT: {
+                Entity *eA = SK.GetEntity(c.entityA),
+                       *eB = SK.GetEntity(c.entityB);
+                Constraint::ConstrainCurveCurveTangent(&c, eA, eB);
+                break;
+            }
+            case Constraint::Type::HORIZONTAL:
+            case Constraint::Type::VERTICAL:
+                // When rotating 90 or 270 degrees, swap the vertical / horizontal constraints
+                if (EXACT(fmod(theta + (PI/2), PI) == 0)) {
+                    if(c.type == Constraint::Type::HORIZONTAL) {
+                        c.type = Constraint::Type::VERTICAL;
+                    } else {
+                        c.type = Constraint::Type::HORIZONTAL;
+                    }
+                } else if (fmod(theta, PI/2) != 0) {
+                    dontAddConstraint = true;
+                }
+                break;
             default:
                 break;
         }
-
-        hConstraint hc = Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
-        if(c.type == Constraint::Type::COMMENT) {
-            MakeSelected(hc);
+        if (!dontAddConstraint) {
+            hConstraint hc = Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
+            if(c.type == Constraint::Type::COMMENT) {
+                MakeSelected(hc);
+            }
         }
     }
 }

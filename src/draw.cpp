@@ -185,7 +185,7 @@ void GraphicsWindow::MakeSelected(Selection *stog) {
 
     if(stog->entity.v != 0 && SK.GetEntity(stog->entity)->IsFace()) {
         // In the interest of speed for the triangle drawing code,
-        // only two faces may be selected at a time.
+        // only MAX_SELECTABLE_FACES faces may be selected at a time.
         int c = 0;
         Selection *s;
         selection.ClearTags();
@@ -193,7 +193,9 @@ void GraphicsWindow::MakeSelected(Selection *stog) {
             hEntity he = s->entity;
             if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
                 c++;
-                if(c >= 2) s->tag = 1;
+                // See also GraphicsWindow::GroupSelection "if(e->IsFace())"
+                // and Group::DrawMesh "case DrawMeshAs::SELECTED:"
+                if(c >= MAX_SELECTABLE_FACES) s->tag = 1;
             }
         }
         selection.RemoveTagged();
@@ -207,19 +209,18 @@ void GraphicsWindow::MakeSelected(Selection *stog) {
 //-----------------------------------------------------------------------------
 void GraphicsWindow::SelectByMarquee() {
     Point2d marqueePoint = ProjectPoint(orig.marqueePoint);
-    BBox marqueeBBox = BBox::From(Vector::From(marqueePoint.x, marqueePoint.y, -1),
-                                  Vector::From(orig.mouse.x,   orig.mouse.y,    1));
+    BBox marqueeBBox = BBox::From(Vector::From(marqueePoint.x, marqueePoint.y, VERY_NEGATIVE),
+                                  Vector::From(orig.mouse.x,   orig.mouse.y,   VERY_POSITIVE));
 
-    Entity *e;
-    for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-        if(e->group != SS.GW.activeGroup) continue;
-        if(e->IsFace() || e->IsDistance()) continue;
-        if(!e->IsVisible()) continue;
+    for(Entity &e : SK.entity) {
+        if(e.group != SS.GW.activeGroup) continue;
+        if(e.IsFace() || e.IsDistance()) continue;
+        if(!e.IsVisible()) continue;
 
         bool entityHasBBox;
-        BBox entityBBox = e->GetOrGenerateScreenBBox(&entityHasBBox);
+        BBox entityBBox = e.GetOrGenerateScreenBBox(&entityHasBBox);
         if(entityHasBBox && entityBBox.Overlaps(marqueeBBox)) {
-            MakeSelected(e->h);
+            MakeSelected(e.h);
         }
     }
 }
@@ -305,9 +306,16 @@ void GraphicsWindow::GroupSelection() {
 
 Camera GraphicsWindow::GetCamera() const {
     Camera camera = {};
-    window->GetContentSize(&camera.width, &camera.height);
-    camera.pixelRatio = window->GetDevicePixelRatio();
-    camera.gridFit    = (window->GetDevicePixelRatio() == 1);
+    if(window) {
+        window->GetContentSize(&camera.width, &camera.height);
+        camera.pixelRatio = window->GetDevicePixelRatio();
+        camera.gridFit    = (window->GetDevicePixelRatio() == 1);
+    } else {    // solvespace-cli
+        camera.width = 297.0;   // A4? Whatever...
+        camera.height = 210.0;
+        camera.pixelRatio = 1.0;
+        camera.gridFit    = camera.pixelRatio == 1.0;
+    }
     camera.offset     = offset;
     camera.projUp     = projUp;
     camera.projRight  = projRight;
@@ -335,6 +343,8 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
     Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
     int bestOrder = -1;
     int bestZIndex = 0;
+    double bestDepth = VERY_POSITIVE;
+    
     for(const Hover &hov : hoverList) {
         hGroup hg = {};
         if(hov.selection.entity.v != 0) {
@@ -345,9 +355,12 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
 
         Group *g = SK.GetGroup(hg);
         if(g->order > activeGroup->order) continue;
-        if(bestOrder != -1 && (bestOrder >= g->order || bestZIndex > hov.zIndex)) continue;
+        if(bestOrder != -1 && (bestOrder > g->order || bestZIndex > hov.zIndex)) continue;
+        // we have hov.zIndex is >= best and hov.group is >= best (but not > active group)
+        if(hov.depth > bestDepth && bestOrder == g->order && bestZIndex == hov.zIndex) continue;
         bestOrder  = g->order;
         bestZIndex = hov.zIndex;
+        bestDepth = hov.depth;
         sel = hov.selection;
     }
     return sel;
@@ -363,6 +376,8 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToDrag() {
     Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
     int bestOrder = -1;
     int bestZIndex = 0;
+    double bestDepth = VERY_POSITIVE;
+
     for(const Hover &hov : hoverList) {
         hGroup hg = {};
         if(hov.selection.entity.v != 0) {
@@ -375,7 +390,9 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToDrag() {
 
         Group *g = SK.GetGroup(hg);
         if(g->order > activeGroup->order) continue;
-        if(bestOrder != -1 && (bestOrder >= g->order || bestZIndex > hov.zIndex)) continue;
+        if(bestOrder != -1 && (bestOrder > g->order || bestZIndex > hov.zIndex)) continue;
+        // we have hov.zIndex is >= best and hov.group is >= best (but not > active group)
+        if(hov.depth > bestDepth && bestOrder == g->order && bestZIndex == hov.zIndex) continue;
         bestOrder  = g->order;
         bestZIndex = hov.zIndex;
         sel = hov.selection;
@@ -396,8 +413,8 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         cached.projRight = projRight;
         cached.projUp = projUp;
         cached.scale = scale;
-        for(Entity *e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-            e->screenBBoxValid = false;
+        for(Entity &e : SK.entity) {
+            e.screenBBoxValid = false;
         }
     }
 
@@ -432,6 +449,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
             Hover hov = {};
             hov.distance = canvas.minDistance;
             hov.zIndex   = canvas.maxZIndex;
+            hov.depth    = canvas.minDepth;
             hov.selection.entity = e.h;
             hoverList.Add(&hov);
         }

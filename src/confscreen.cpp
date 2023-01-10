@@ -5,24 +5,9 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-
-void TextWindow::ScreenChangeLightDirection(int link, uint32_t v) {
-    SS.TW.ShowEditControl(8, ssprintf("%.2f, %.2f, %.2f", CO(SS.lightDir[v])));
-    SS.TW.edit.meaning = Edit::LIGHT_DIRECTION;
-    SS.TW.edit.i = v;
-}
-
-void TextWindow::ScreenChangeLightIntensity(int link, uint32_t v) {
-    SS.TW.ShowEditControl(31, ssprintf("%.2f", SS.lightIntensity[v]));
-    SS.TW.edit.meaning = Edit::LIGHT_INTENSITY;
-    SS.TW.edit.i = v;
-}
-
-void TextWindow::ScreenChangeLightAmbient(int link, uint32_t v) {
-    SS.TW.ShowEditControl(31, ssprintf("%.2f", SS.ambientIntensity));
-    SS.TW.edit.meaning = Edit::LIGHT_AMBIENT;
-    SS.TW.edit.i = 0;
-}
+#if defined(_OPENMP)
+#include <omp.h>
+#endif
 
 void TextWindow::ScreenChangeColor(int link, uint32_t v) {
     SS.TW.ShowEditControlWithColorPicker(13, SS.modelColor[v]);
@@ -55,13 +40,8 @@ void TextWindow::ScreenChangeExportMaxSegments(int link, uint32_t v) {
     SS.TW.edit.i = 1;
 }
 
-void TextWindow::ScreenChangeCameraTangent(int link, uint32_t v) {
-    SS.TW.ShowEditControl(3, ssprintf("%.3f", 1000*SS.cameraTangent));
-    SS.TW.edit.meaning = Edit::CAMERA_TANGENT;
-}
-
 void TextWindow::ScreenChangeGridSpacing(int link, uint32_t v) {
-    SS.TW.ShowEditControl(3, SS.MmToString(SS.gridSpacing));
+    SS.TW.ShowEditControl(3, SS.MmToString(SS.gridSpacing, true));
     SS.TW.edit.meaning = Edit::GRID_SPACING;
 }
 
@@ -86,7 +66,7 @@ void TextWindow::ScreenChangeExportScale(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeExportOffset(int link, uint32_t v) {
-    SS.TW.ShowEditControl(3, SS.MmToString(SS.exportOffset));
+    SS.TW.ShowEditControl(3, SS.MmToString(SS.exportOffset, true));
     SS.TW.edit.meaning = Edit::EXPORT_OFFSET;
 }
 
@@ -168,7 +148,7 @@ void TextWindow::ScreenChangeCanvasSize(int link, uint32_t v) {
     }
     int col = 13;
     if(v < 10) col = 11;
-    SS.TW.ShowEditControl(col, SS.MmToString(d));
+    SS.TW.ShowEditControl(col, SS.MmToString(d, true));
     SS.TW.edit.meaning = Edit::CANVAS_SIZE;
     SS.TW.edit.i = v;
 }
@@ -178,7 +158,12 @@ void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
     switch(link) {
         case 'd':
             SS.TW.edit.meaning = Edit::G_CODE_DEPTH;
-            buf += SS.MmToString(SS.gCode.depth);
+            buf += SS.MmToString(SS.gCode.depth, true);
+            break;
+
+        case 'h':
+            SS.TW.edit.meaning = Edit::G_CODE_SAFE_HEIGHT;
+            buf += SS.MmToString(SS.gCode.safeHeight, true);
             break;
 
         case 's':
@@ -188,12 +173,12 @@ void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
 
         case 'F':
             SS.TW.edit.meaning = Edit::G_CODE_FEED;
-            buf += SS.MmToString(SS.gCode.feed);
+            buf += SS.MmToString(SS.gCode.feed, true);
             break;
 
         case 'P':
             SS.TW.edit.meaning = Edit::G_CODE_PLUNGE_FEED;
-            buf += SS.MmToString(SS.gCode.plungeFeed);
+            buf += SS.MmToString(SS.gCode.plungeFeed, true);
             break;
     }
     SS.TW.ShowEditControl(14, buf);
@@ -225,20 +210,6 @@ void TextWindow::ShowConfiguration() {
     }
 
     Printf(false, "");
-    Printf(false, "%Ft light direction               intensity");
-    for(i = 0; i < 2; i++) {
-        Printf(false, "%Bp   #%d  (%2,%2,%2)%Fl%D%f%Ll[c]%E "
-                      "%2 %Fl%D%f%Ll[c]%E",
-            (i & 1) ? 'd' : 'a', i,
-            CO(SS.lightDir[i]), i, &ScreenChangeLightDirection,
-            SS.lightIntensity[i], i, &ScreenChangeLightIntensity);
-    }
-    Printf(false, "%Bp         ambient lighting     "
-                  "%2 %Fl%D%f%Ll[c]%E",
-            (i & 1) ? 'd' : 'a', i,
-        SS.ambientIntensity, &ScreenChangeLightAmbient);
-
-    Printf(false, "");
     Printf(false, "%Ft chord tolerance (in percents)%E");
     Printf(false, "%Ba   %@ %% %Fl%Ll%f%D[change]%E; %@ mm, %d triangles",
         SS.chordTol,
@@ -259,11 +230,6 @@ void TextWindow::ShowConfiguration() {
         SS.exportMaxSegments,
         &ScreenChangeExportMaxSegments);
 
-    Printf(false, "");
-    Printf(false, "%Ft perspective factor (0 for parallel)%E");
-    Printf(false, "%Ba   %# %Fl%Ll%f%D[change]%E",
-        SS.cameraTangent*1000,
-        &ScreenChangeCameraTangent, 0);
     Printf(false, "%Ft snap grid spacing%E");
     Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
         SS.MmToString(SS.gridSpacing).c_str(),
@@ -389,6 +355,11 @@ void TextWindow::ShowConfiguration() {
         Printf(false, " %Ft   renderer %E%s", gl_renderer);
         Printf(false, " %Ft   version  %E%s", gl_version);
     }
+
+    #if defined(_OPENMP)
+        Printf(false, " %FtOpenMP enabled");
+        Printf(false, " %Ft   threads  %E%d", omp_get_max_threads());
+    #endif
 }
 
 bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
@@ -451,6 +422,11 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         case Edit::GRID_SPACING: {
             SS.gridSpacing = (float)min(1e4, max(1e-3, SS.StringToMm(s)));
             SS.GW.Invalidate();
+            break;
+        }
+        case Edit::EXPLODE_DISTANCE: {
+            SS.explodeDistance = min(1e4, max(-1e4, SS.StringToMm(s)));
+            SS.MarkGroupDirty(SS.GW.activeGroup, true);
             break;
         }
         case Edit::DIGITS_AFTER_DECIMAL: {
@@ -519,6 +495,11 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         case Edit::G_CODE_DEPTH: {
             Expr *e = Expr::From(s, /*popUpError=*/true);
             if(e) SS.gCode.depth = (float)SS.ExprToMm(e);
+            break;
+        }
+        case Edit::G_CODE_SAFE_HEIGHT: {
+            Expr *e = Expr::From(s, /*popUpError=*/true);
+            if(e) SS.gCode.safeHeight = (float)SS.ExprToMm(e);
             break;
         }
         case Edit::G_CODE_PASSES: {

@@ -15,11 +15,11 @@
         <key>CFBundlePackageType</key>
         <string>APPL</string>
         <key>CFBundleVersion</key>
-        <string>${solvespace_VERSION_MAJOR}.${solvespace_VERSION_MINOR}~${solvespace_GIT_HASH}</string>
+        <string>${PROJECT_VERSION}~${solvespace_GIT_HASH}</string>
         <key>CFBundleShortVersionString</key>
-        <string>${solvespace_VERSION_MAJOR}.${solvespace_VERSION_MINOR}</string>
+        <string>${PROJECT_VERSION}</string>
         <key>NSHumanReadableCopyright</key>
-        <string>© 2008-2016 Jonathan Westhues and other authors</string>
+        <string>© 2008-2022 Jonathan Westhues and other authors</string>
         <key>NSPrincipalClass</key>
         <string>NSApplication</string>
         <key>NSMainNibFile</key>

@@ -10,6 +10,8 @@ void GraphicsWindow::UpdateDraggedPoint(hEntity hp, double mx, double my) {
     Vector pos = p->PointGetNum();
     UpdateDraggedNum(&pos, mx, my);
     p->PointForceTo(pos);
+
+    SS.ScheduleShowTW();
 }
 
 void GraphicsWindow::UpdateDraggedNum(Vector *pos, double mx, double my) {
@@ -101,7 +103,10 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         shiftDown = !shiftDown;
     }
 
-    if(SS.showToolbar) {
+    // Not passing right-button and middle-button drags to the toolbar avoids
+    // some cosmetic issues with trackpad pans/rotates implemented with
+    // simulated right-button drag events causing spurious hover events.
+    if(SS.showToolbar && !middleDown) {
         if(ToolbarMouseMoved((int)x, (int)y)) {
             hover.Clear();
             return;
@@ -188,32 +193,23 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             hEntity dragEntity = ChooseFromHoverToDrag().entity;
             if(dragEntity.v) e = SK.GetEntity(dragEntity);
             if(e && e->type != Entity::Type::WORKPLANE) {
-                Entity *e = SK.GetEntity(dragEntity);
+                if(!hoverWasSelectedOnMousedown) {
+                    // The user clicked an unselected entity, which
+                    // means they're dragging just the hovered thing,
+                    // not the full selection. So clear all the selection
+                    // except that entity.
+                    ClearSelection();
+                    MakeSelected(dragEntity);
+                }
                 if(e->type == Entity::Type::CIRCLE && selection.n <= 1) {
                     // Drag the radius.
-                    ClearSelection();
                     pending.circle = dragEntity;
                     pending.operation = Pending::DRAGGING_RADIUS;
                 } else if(e->IsNormal()) {
-                    ClearSelection();
                     pending.normal = dragEntity;
                     pending.operation = Pending::DRAGGING_NORMAL;
                 } else {
-                    if(!hoverWasSelectedOnMousedown) {
-                        // The user clicked an unselected entity, which
-                        // means they're dragging just the hovered thing,
-                        // not the full selection. So clear all the selection
-                        // except that entity.
-                        ClearSelection();
-                        MakeSelected(e->h);
-                    }
                     StartDraggingBySelection();
-                    if(!hoverWasSelectedOnMousedown) {
-                        // And then clear the selection again, since they
-                        // probably didn't want that selected if they just
-                        // were dragging it.
-                        ClearSelection();
-                    }
                     hover.Clear();
                     pending.operation = Pending::DRAGGING_POINTS;
                 }
@@ -270,15 +266,16 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         return;
     }
 
+    if(pending.operation == Pending::DRAGGING_POINTS && ctrlDown) {
+        SS.extraLine.ptA = UnProjectPoint(orig.mouseOnButtonDown);
+        SS.extraLine.ptB = UnProjectPoint(mp);
+        SS.extraLine.draw = true;
+    }
+
     // We're currently dragging something; so do that. But if we haven't
     // painted since the last time we solved, do nothing, because there's
     // no sense solving a frame and not displaying it.
     if(!havePainted) {
-        if(pending.operation == Pending::DRAGGING_POINTS && ctrlDown) {
-            SS.extraLine.ptA = UnProjectPoint(orig.mouseOnButtonDown);
-            SS.extraLine.ptB = UnProjectPoint(mp);
-            SS.extraLine.draw = true;
-        }
         return;
     }
 
@@ -305,7 +302,6 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             HitTestMakeSelection(mp);
             SS.MarkGroupDirtyByEntity(pending.point);
             orig.mouse = mp;
-            Invalidate();
             break;
 
         case Pending::DRAGGING_POINTS:
@@ -320,20 +316,16 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                         // Don't start dragging the position about the normal
                         // until we're a little ways out, to get a reasonable
                         // reference pos
-                        orig.mouse = mp;
-                        break;
+                        qt = Quaternion::IDENTITY;
+                    } else {
+                        double theta = atan2(orig.mouse.y-orig.mouseOnButtonDown.y,
+                                             orig.mouse.x-orig.mouseOnButtonDown.x);
+                        theta -= atan2(y-orig.mouseOnButtonDown.y,
+                                       x-orig.mouseOnButtonDown.x);
+
+                        Vector gn = projRight.Cross(projUp);
+                        qt = Quaternion::From(gn, -theta);
                     }
-                    double theta = atan2(orig.mouse.y-orig.mouseOnButtonDown.y,
-                                         orig.mouse.x-orig.mouseOnButtonDown.x);
-                    theta -= atan2(y-orig.mouseOnButtonDown.y,
-                                   x-orig.mouseOnButtonDown.x);
-
-                    Vector gn = projRight.Cross(projUp);
-                    qt = Quaternion::From(gn, -theta);
-
-                    SS.extraLine.draw = true;
-                    SS.extraLine.ptA = UnProjectPoint(orig.mouseOnButtonDown);
-                    SS.extraLine.ptB = UnProjectPoint(mp);
                 } else {
                     double dx = -(x - orig.mouse.x);
                     double dy = -(y - orig.mouse.y);
@@ -341,7 +333,6 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     qt = Quaternion::From(projUp,   -s*dx).Times(
                          Quaternion::From(projRight, s*dy));
                 }
-                orig.mouse = mp;
 
                 // Now apply this rotation to the points being dragged.
                 List<hEntity> *lhe = &(pending.points);
@@ -354,18 +345,18 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                             p = qt.Rotate(p);
                             p = p.Plus(SS.extraLine.ptA);
                             e->PointForceTo(p);
-                            SS.MarkGroupDirtyByEntity(e->h);
+                        } else {
+                            UpdateDraggedPoint(*he, x, y);
                         }
-                        continue;
+                    } else {
+                        Quaternion q = e->PointGetQuaternion();
+                        Vector     p = e->PointGetNum();
+                        q = qt.Times(q);
+                        e->PointForceQuaternionTo(q);
+                        // Let's rotate about the selected point; so fix up the
+                        // translation so that that point didn't move.
+                        e->PointForceTo(p);
                     }
-
-                    Quaternion q = e->PointGetQuaternion();
-                    Vector     p = e->PointGetNum();
-                    q = qt.Times(q);
-                    e->PointForceQuaternionTo(q);
-                    // Let's rotate about the selected point; so fix up the
-                    // translation so that that point didn't move.
-                    e->PointForceTo(p);
                     SS.MarkGroupDirtyByEntity(e->h);
                 }
             } else {
@@ -374,8 +365,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     UpdateDraggedPoint(*he, x, y);
                     SS.MarkGroupDirtyByEntity(*he);
                 }
-                orig.mouse = mp;
             }
+            orig.mouse = mp;
             break;
 
         case Pending::DRAGGING_NEW_CUBIC_POINT: {
@@ -430,6 +421,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             SK.GetEntity(circle->distance)->DistanceForceTo(r);
 
             SS.MarkGroupDirtyByEntity(pending.circle);
+            SS.ScheduleShowTW();
             break;
         }
 
@@ -531,11 +523,16 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     }
 
     if(pending.operation == Pending::DRAGGING_NEW_LINE_POINT ||
-       pending.operation == Pending::DRAGGING_NEW_CUBIC_POINT)
+       pending.operation == Pending::DRAGGING_NEW_CUBIC_POINT ||
+       pending.operation == Pending::DRAGGING_NEW_ARC_POINT ||
+       pending.operation == Pending::DRAGGING_NEW_RADIUS ||
+       pending.operation == Pending::DRAGGING_NEW_POINT
+       )
     {
         // Special case; use a right click to stop drawing lines, since
         // a left click would draw another one. This is quicker and more
-        // intuitive than hitting escape. Likewise for new cubic segments.
+        // intuitive than hitting escape. Likewise for other entities
+        // for consistency.
         ClearPending();
         return;
     }
@@ -624,24 +621,24 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
         if(gs.withEndpoints > 0) {
             menu->AddItem(_("Select Edge Chain"),
-                          [this]() { MenuEdit(Command::SELECT_CHAIN); });
+                []() { MenuEdit(Command::SELECT_CHAIN); });
         }
         if(gs.constraints == 1 && gs.n == 0) {
             Constraint *c = SK.GetConstraint(gs.constraint[0]);
             if(c->HasLabel() && c->type != Constraint::Type::COMMENT) {
                 menu->AddItem(_("Toggle Reference Dimension"),
-                              []() { Constraint::MenuConstrain(Command::REFERENCE); });
+                    []() { Constraint::MenuConstrain(Command::REFERENCE); });
             }
             if(c->type == Constraint::Type::ANGLE ||
-               c->type == Constraint::Type::EQUAL_ANGLE)
+                c->type == Constraint::Type::EQUAL_ANGLE)
             {
                 menu->AddItem(_("Other Supplementary Angle"),
-                              []() { Constraint::MenuConstrain(Command::OTHER_ANGLE); });
+                    []() { Constraint::MenuConstrain(Command::OTHER_ANGLE); });
             }
         }
         if(gs.constraintLabels > 0 || gs.points > 0) {
             menu->AddItem(_("Snap to Grid"),
-                          [this]() { MenuEdit(Command::SNAP_TO_GRID); });
+                []() { MenuEdit(Command::SNAP_TO_GRID); });
         }
 
         if(gs.points == 1 && gs.point[0].isFromRequest()) {
@@ -714,16 +711,17 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
         if(gs.entities == gs.n) {
             menu->AddItem(_("Toggle Construction"),
-                          [this]() { MenuRequest(Command::CONSTRUCTION); });
+                []() { MenuRequest(Command::CONSTRUCTION); });
         }
 
         if(gs.points == 1) {
             Entity *p = SK.GetEntity(gs.point[0]);
-            Constraint *c;
+            Constraint *c = nullptr;
             IdList<Constraint,hConstraint> *lc = &(SK.constraint);
-            for(c = lc->First(); c; c = lc->NextAfter(c)) {
-                if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-                if(c->ptA == p->h || c->ptB == p->h) {
+            for(Constraint &ci : *lc) {
+                if(ci.type != Constraint::Type::POINTS_COINCIDENT) continue;
+                if(ci.ptA == p->h || ci.ptB == p->h) {
+                    c = &ci;
                     break;
                 }
             }
@@ -733,11 +731,10 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
                     SS.UndoRemember();
                     SK.constraint.ClearTags();
-                    Constraint *c;
-                    for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-                        if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-                        if(c->ptA == p->h || c->ptB == p->h) {
-                            c->tag = 1;
+                    for(Constraint &c : SK.constraint) {
+                        if(c.type != Constraint::Type::POINTS_COINCIDENT) continue;
+                        if(c.ptA == p->h || c.ptB == p->h) {
+                            c.tag = 1;
                         }
                     }
                     SK.constraint.RemoveTagged();
@@ -748,28 +745,28 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         menu->AddSeparator();
         if(LockedInWorkplane()) {
             menu->AddItem(_("Cut"),
-                          [this]() { MenuClipboard(Command::CUT); });
+                []() { MenuClipboard(Command::CUT); });
             menu->AddItem(_("Copy"),
-                          [this]() { MenuClipboard(Command::COPY); });
+                []() { MenuClipboard(Command::COPY); });
         }
     } else {
         menu->AddItem(_("Select All"),
-                      [this]() { MenuEdit(Command::SELECT_ALL); });
+            []() { MenuEdit(Command::SELECT_ALL); });
     }
 
     if((!SS.clipboard.r.IsEmpty() || !SS.clipboard.c.IsEmpty()) && LockedInWorkplane()) {
         menu->AddItem(_("Paste"),
-                      [this]() { MenuClipboard(Command::PASTE); });
+            []() { MenuClipboard(Command::PASTE); });
         menu->AddItem(_("Paste Transformed..."),
-                      [this]() { MenuClipboard(Command::PASTE_TRANSFORM); });
+            []() { MenuClipboard(Command::PASTE_TRANSFORM); });
     }
 
     if(itemsSelected) {
         menu->AddItem(_("Delete"),
-                      [this]() { MenuClipboard(Command::DELETE); });
+            []() { MenuClipboard(Command::DELETE); });
         menu->AddSeparator();
         menu->AddItem(_("Unselect All"),
-                      [this]() { MenuEdit(Command::UNSELECT_ALL); });
+            []() { MenuEdit(Command::UNSELECT_ALL); });
     }
     // If only one item is selected, then it must be the one that we just
     // selected from the hovered item; in which case unselect all and hovered
@@ -785,7 +782,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     if(itemsSelected) {
         menu->AddSeparator();
         menu->AddItem(_("Zoom to Fit"),
-                      [this]() { MenuView(Command::ZOOM_TO_FIT); });
+            []() { MenuView(Command::ZOOM_TO_FIT); });
     }
 
     menu->PopUp();
@@ -877,7 +874,6 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt, const Point2d *projecte
 
 bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
     using Platform::MouseEvent;
-
     double width, height;
     window->GetContentSize(&width, &height);
 
@@ -918,7 +914,7 @@ bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
             break;
 
         case MouseEvent::Type::SCROLL_VERT:
-            this->MouseScroll(event.x, event.y, (int)event.scrollDelta);
+            this->MouseScroll(event.shiftDown ? event.scrollDelta / 10 : event.scrollDelta);
             break;
 
         case MouseEvent::Type::LEAVE:
@@ -1044,6 +1040,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     ConstrainPointByHovered(hr.entity(1), &mouse);
 
                     ClearSuper();
+                    AddToPending(hr);
 
                     pending.operation = Pending::DRAGGING_NEW_RADIUS;
                     pending.circle = hr.entity(0);
@@ -1117,7 +1114,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     AddToPending(hr);
                     Request *r = SK.GetRequest(hr);
                     r->str = "Abc";
-                    r->font = "BitstreamVeraSans-Roman-builtin.ttf";
+                    r->font = Platform::embeddedFont;
 
                     for(int i = 1; i <= 4; i++) {
                         SK.GetEntity(hr.entity(i))->PointForceTo(v);
@@ -1311,15 +1308,20 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
 
 void GraphicsWindow::MouseLeftUp(double mx, double my, bool shiftDown, bool ctrlDown) {
     orig.mouseDown = false;
-    hoverWasSelectedOnMousedown = false;
 
     switch(pending.operation) {
         case Pending::DRAGGING_POINTS:
-            SS.extraLine.draw = false;
-            // fall through
         case Pending::DRAGGING_CONSTRAINT:
         case Pending::DRAGGING_NORMAL:
         case Pending::DRAGGING_RADIUS:
+            if(!hoverWasSelectedOnMousedown) {
+                // And then clear the selection again, since they
+                // probably didn't want that selected if they just
+                // were dragging it.
+                ClearSelection();
+            }
+            hoverWasSelectedOnMousedown = false;
+            SS.extraLine.draw = false;
             ClearPending();
             Invalidate();
             break;
@@ -1374,12 +1376,12 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
                 value /= 2;
 
             // Try showing value with default number of digits after decimal first.
-            if(c->type == Constraint::Type::LENGTH_RATIO) {
+            if(c->type == Constraint::Type::LENGTH_RATIO || c->type == Constraint::Type::ARC_ARC_LEN_RATIO || c->type == Constraint::Type::ARC_LINE_LEN_RATIO) {
                 editValue = ssprintf("%.3f", value);
             } else if(c->type == Constraint::Type::ANGLE) {
                 editValue = SS.DegreeToString(value);
             } else {
-                editValue = SS.MmToString(value);
+                editValue = SS.MmToString(value, true);
                 value /= SS.MmPerUnit();
             }
             // If that's not enough to represent it exactly, show the value with as many
@@ -1435,7 +1437,9 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
             case Constraint::Type::PT_LINE_DISTANCE:
             case Constraint::Type::PT_FACE_DISTANCE:
             case Constraint::Type::PT_PLANE_DISTANCE:
-            case Constraint::Type::LENGTH_DIFFERENCE: {
+            case Constraint::Type::LENGTH_DIFFERENCE:
+            case Constraint::Type::ARC_ARC_DIFFERENCE:
+            case Constraint::Type::ARC_LINE_DIFFERENCE: {
                 // The sign is not displayed to the user, but this is a signed
                 // distance internally. To flip the sign, the user enters a
                 // negative distance.
@@ -1449,6 +1453,8 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
             }
             case Constraint::Type::ANGLE:
             case Constraint::Type::LENGTH_RATIO:
+            case Constraint::Type::ARC_ARC_LEN_RATIO:
+            case Constraint::Type::ARC_LINE_LEN_RATIO:
                 // These don't get the units conversion for distance, and
                 // they're always positive
                 c->valA = fabs(e->Eval());
@@ -1472,32 +1478,18 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
     }
 }
 
-void GraphicsWindow::MouseScroll(double x, double y, int delta) {
-    double offsetRight = offset.Dot(projRight);
-    double offsetUp = offset.Dot(projUp);
-
-    double righti = x/scale - offsetRight;
-    double upi = y/scale - offsetUp;
-
-    if(delta > 0) {
-        scale *= 1.2;
-    } else if(delta < 0) {
-        scale /= 1.2;
-    } else return;
-
-    double rightf = x/scale - offsetRight;
-    double upf = y/scale - offsetUp;
-
-    offset = offset.Plus(projRight.ScaledBy(rightf - righti));
-    offset = offset.Plus(projUp.ScaledBy(upf - upi));
-
-    if(SS.TW.shown.screen == TextWindow::Screen::EDIT_VIEW) {
-        if(havePainted) {
-            SS.ScheduleShowTW();
-        }
-    }
-    havePainted = false;
-    Invalidate();
+void GraphicsWindow::MouseScroll(double zoomMultiplyer) {
+    // To support smooth scrolling where scroll wheel events come in increments
+    // smaller (or larger) than 1 we do:
+    //     scale *= exp(ln(1.2) * zoomMultiplyer);
+    // to ensure that the same total scroll delta always results in the same
+    // total zoom irrespective of in how many increments the zoom was applied.
+    // For example if we scroll a total delta of a+b in two events vs. one then
+    //     scale * e^a * e^b == scale * e^(a+b)
+    // while
+    //     scale * a * b != scale * (a+b)
+    // So this constant is ln(1.2) = 0.1823216 to make the default zoom 1.2x
+    ZoomToMouse(zoomMultiplyer);
 }
 
 void GraphicsWindow::MouseLeave() {

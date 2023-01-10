@@ -1,4 +1,5 @@
 # cmake configuration
+cmake_minimum_required(VERSION 3.9...3.19)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR
@@ -7,12 +8,9 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
             "    mkdir build && cd build && cmake ..")
 endif()
 
-cmake_minimum_required(VERSION 3.7.2 FATAL_ERROR)
-if(NOT CMAKE_VERSION VERSION_LESS 3.11.0)
-    cmake_policy(VERSION 3.11.0)
-endif()
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+list(APPEND CMAKE_MODULE_PATH
     "${CMAKE_SOURCE_DIR}/cmake/")
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
@@ -21,6 +19,15 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE
    "${CMAKE_SOURCE_DIR}/cmake/c_flag_overrides.cmake")
 set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
    "${CMAKE_SOURCE_DIR}/cmake/cxx_flag_overrides.cmake")
+
+if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+endif()
+
+if (APPLE)
+    # Docs say this must be set before the first project() call
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.12" CACHE STRING "macOS minimum supported version")
+endif()
 
 # project
 
@@ -31,10 +38,10 @@ include(GetGitCommitHash)
 # and instead uncomment the following, adding the complete git hash of the checkout you are using:
 # set(GIT_COMMIT_HASH 0000000000000000000000000000000000000000)
 
-project(solvespace)
-set(solvespace_VERSION_MAJOR 3)
-set(solvespace_VERSION_MINOR 0)
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
+project(solvespace
+    VERSION 3.1
+    LANGUAGES C CXX ASM)
 
 set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
@@ -48,6 +55,11 @@ set(ENABLE_SANITIZERS OFF CACHE BOOL
     "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
 set(ENABLE_OPENMP     OFF CACHE BOOL
     "Whether geometric operations will be parallelized using OpenMP")
+set(ENABLE_LTO        OFF CACHE BOOL
+    "Whether interprocedural (global) optimizations are enabled")
+option(FORCE_VENDORED_Eigen3
+    "Whether we should use our bundled Eigen even in the presence of a system copy"
+    OFF)
 
 set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
@@ -55,10 +67,6 @@ set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/bin)
 if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY $<1:${CMAKE_BINARY_DIR}/bin>)
-endif()
-
-if(NOT CMAKE_C_COMPILER_ID STREQUAL CMAKE_CXX_COMPILER_ID)
-    message(FATAL_ERROR "C and C++ compilers should be supplied by the same vendor")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
@@ -69,19 +77,24 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 # common compiler flags
-
 include(CheckCXXCompilerFlag)
 
-set(FILE_PREFIX_MAP "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
-check_cxx_compiler_flag("${FILE_PREFIX_MAP}" HAS_FILE_PREFIX_MAP)
-if(HAS_FILE_PREFIX_MAP)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${FILE_PREFIX_MAP}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FILE_PREFIX_MAP}")
+if (NOT APPLE)
+    set(FILE_PREFIX_MAP "-ffile-prefix-map=${CMAKE_CURRENT_SOURCE_DIR}=.")
+    check_cxx_compiler_flag("${FILE_PREFIX_MAP}" HAS_FILE_PREFIX_MAP)
+    if(HAS_FILE_PREFIX_MAP)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${FILE_PREFIX_MAP}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FILE_PREFIX_MAP}")
+    endif()
 endif()
 
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+    # Link 32 bit SolveSpace with --large-address-aware which allows it to access
+    # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
+    # See https://msdn.microsoft.com/en-us/library/aa366778
+    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--large-address-aware")
 endif()
 
 # Ensure that all platforms use 64-bit IEEE floating point operations for consistency;
@@ -99,18 +112,22 @@ if(CMAKE_SYSTEM_PROCESSOR STREQUAL "i686" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "X8
 endif()
 
 if(ENABLE_LTO)
+    include(CheckIPOSupported)
+    check_ipo_supported()
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
 if(ENABLE_OPENMP)
-    include(FindOpenMP)
-    if(OpenMP_FOUND)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    find_package( OpenMP REQUIRED )
+    if(OPENMP_FOUND)
+        add_library(slvs_openmp INTERFACE)
+        target_compile_options(slvs_openmp INTERFACE ${OpenMP_CXX_FLAGS})
+        target_link_libraries(slvs_openmp INTERFACE
+            ${OpenMP_CXX_LIBRARIES})
+        target_include_directories(slvs_openmp INTERFACE SYSTEM
+            ${OpenMP_CXX_INCLUDE_DIRS})
+        message(STATUS "found OpenMP, compiling with flags: " ${OpenMP_CXX_FLAGS} )
     endif()
-endif()
-
-if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -144,8 +161,12 @@ if(ENABLE_SANITIZERS)
     endif()
 
     string(REPLACE ";" "," SANITIZE_OPTIONS "${SANITIZE_OPTIONS}")
-    set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS}")
-    set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-sanitize-recover=address,undefined")
+
+    if (NOT APPLE)
+        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS} -fno-sanitize-recover=address,undefined")
+    else()
+        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS}")
+    endif()
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-omit-frame-pointer -fno-optimize-sibling-calls")
@@ -165,19 +186,12 @@ if(APPLE)
     set(CMAKE_FIND_FRAMEWORK LAST)
 endif()
 
+if(EMSCRIPTEN)
+    set(M_LIBRARY "" CACHE STRING "libm (not necessary)" FORCE)
+endif()
+
 message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
-
-message(STATUS "Using in-tree flatbuffers")
-set(FLATBUFFERS_BUILD_FLATLIB ON CACHE BOOL "")
-set(FLATBUFFERS_BUILD_FLATC ON CACHE BOOL "")
-set(FLATBUFFERS_BUILD_FLATHASH OFF CACHE BOOL "")
-set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
-add_subdirectory(extlib/flatbuffers EXCLUDE_FROM_ALL)
-
-message(STATUS "Using in-tree q3d")
-add_subdirectory(extlib/q3d)
-set(Q3D_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/q3d)
 
 message(STATUS "Using in-tree mimalloc")
 set(MI_OVERRIDE OFF CACHE BOOL "")
@@ -187,7 +201,22 @@ set(MI_BUILD_TESTS OFF CACHE BOOL "")
 add_subdirectory(extlib/mimalloc EXCLUDE_FROM_ALL)
 set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
 
-if(WIN32 OR APPLE)
+if(NOT FORCE_VENDORED_Eigen3)
+    find_package(Eigen3 CONFIG)
+endif()
+if(FORCE_VENDORED_Eigen3 OR NOT EIGEN3_INCLUDE_DIRS)
+    message(STATUS "Using in-tree Eigen")
+    set(EIGEN3_FOUND             YES)
+    set(EIGEN3_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/eigen)
+else()
+    message(STATUS "Using system Eigen: ${EIGEN3_INCLUDE_DIRS}")
+endif()
+if(NOT EXISTS "${EIGEN3_INCLUDE_DIRS}")
+    message(FATAL_ERROR "Eigen 3 not found on system or in-tree")
+endif()
+
+
+if(WIN32 OR APPLE OR EMSCRIPTEN)
     # On Win32 and macOS we use vendored packages, since there is little to no benefit
     # to trying to find system versions. In particular, trying to link to libraries from
     # Homebrew or macOS system libraries into the .app file is highly likely to result
@@ -208,6 +237,12 @@ if(WIN32 OR APPLE)
     find_vendored_package(PNG libpng
         SKIP_INSTALL_ALL        ON
         PNG_LIBRARY             png_static
+        PNG_ARM_NEON            "off"
+        PNG_SHARED              OFF
+        PNG_STATIC              ON
+        PNG_EXECUTABLES         OFF
+        PNG_TESTS               OFF
+        PNG_FRAMEWORK           OFF
         PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
     list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
@@ -220,11 +255,14 @@ if(WIN32 OR APPLE)
         FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
 
     message(STATUS "Using in-tree pixman")
-    add_vendored_subdirectory(extlib/pixman)
     set(PIXMAN_FOUND            YES)
     set(PIXMAN_LIBRARY          pixman)
+    set(PIXMAN_BUILD_TESTS      OFF CACHE BOOL "")
+    set(PIXMAN_BUILD_DEMOS      OFF CACHE BOOL "")
+
     set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
     list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
+    add_vendored_subdirectory(extlib/pixman)
 
     message(STATUS "Using in-tree cairo")
     add_vendored_subdirectory(extlib/cairo)
@@ -239,7 +277,7 @@ else()
     find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
-    pkg_check_modules(CAIRO REQUIRED cairo)
+    find_package(Cairo REQUIRED)
 endif()
 
 # GUI dependencies
@@ -273,6 +311,8 @@ if(ENABLE_GUI)
     elseif(APPLE)
         find_package(OpenGL REQUIRED)
         find_library(APPKIT_LIBRARY AppKit REQUIRED)
+    elseif(EMSCRIPTEN)
+        # Everything is built in
     else()
         find_package(OpenGL REQUIRED)
         find_package(SpaceWare)
@@ -343,9 +383,19 @@ if(MSVC)
     # Same for the (C99) __func__ special variable; we use it only in C++ code.
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D__func__=__FUNCTION__")
 
+    # Multi-processor Compilation
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+
     # We rely on these /we flags. They correspond to the GNU-style flags below as
     # follows: /w4062=-Wswitch
     set(WARNING_FLAGS   "${WARNING_FLAGS} /we4062")
+
+    # Link 32 bit SolveSpace with /LARGEADDRESSAWARE which allows it to access
+    # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
+    # See https://msdn.microsoft.com/en-us/library/aa366778
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /LARGEADDRESSAWARE")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")

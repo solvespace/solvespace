@@ -203,7 +203,7 @@ const TextWindow::Color TextWindow::fgColors[] = {
     { 'r', RGBi(  0,   0,   0) },  // Reverse   : black
     { 'x', RGBi(255,  20,  20) },  // Error     : red
     { 'i', RGBi(  0, 255, 255) },  // Info      : cyan
-    { 'g', RGBi(160, 160, 160) },
+    { 'g', RGBi(128, 128, 128) },  // Disabled  : gray
     { 'b', RGBi(200, 200, 200) },
     { 0,   RGBi(  0,   0,   0) }
 };
@@ -235,6 +235,7 @@ void TextWindow::Init() {
 
             using namespace std::placeholders;
             window->onClose = []() {
+                SS.TW.HideEditControl();
                 SS.GW.showTextWindow = false;
                 SS.GW.EnsureValidActives();
             };
@@ -252,8 +253,18 @@ void TextWindow::Init() {
                     MouseLeave();
                     return true;
                 } else if(event.type == MouseEvent::Type::SCROLL_VERT) {
-                    window->SetScrollbarPosition(window->GetScrollbarPosition() -
-                                                 LINE_HEIGHT / 2 * event.scrollDelta);
+                    if (event.scrollDelta == 0) {
+                        return true;
+                    }
+                    if (abs(event.scrollDelta) < 0.2) {
+                        if (event.scrollDelta > 0) {
+                            event.scrollDelta = 0.2;
+                        } else {
+                            event.scrollDelta = -0.2;
+                        }
+                    }
+                    double offset = LINE_HEIGHT / 2 * event.scrollDelta;
+                    ScrollbarEvent(window->GetScrollbarPosition() - offset);
                 }
                 return false;
             };
@@ -338,11 +349,22 @@ void TextWindow::ClearScreen() {
     rows = 0;
 }
 
+// This message was added when someone had too many fonts for the text window
+// Scrolling seemed to be broken, but was actually at the MAX_ROWS.
+static const char* endString = "    **** End of Text Screen ****";
+
 void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     if(!canvas) return;
 
     if(rows >= MAX_ROWS) return;
 
+    if(rows >= MAX_ROWS-2 && (fmt != endString)) {
+        // twice due to some half-row issues on resizing
+        Printf(halfLine, endString);
+        Printf(halfLine, endString);
+        return;
+    }
+    
     va_list vl;
     va_start(vl, fmt);
 
@@ -1130,16 +1152,16 @@ void TextWindow::MouseLeave() {
 
 void TextWindow::ScrollbarEvent(double newPos) {
     if(window->IsEditorVisible()) {
-        window->SetScrollbarPosition(scrollPos);
+        // An edit field is active. Do not move the scrollbar.
         return;
     }
 
     int bottom = top[rows-1] + 2;
     newPos = min((int)newPos, bottom - halfRows);
     newPos = max((int)newPos, 0);
-
     if(newPos != scrollPos) {
         scrollPos = (int)newPos;
+        window->SetScrollbarPosition(scrollPos);
         window->Invalidate();
     }
 }

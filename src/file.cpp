@@ -354,19 +354,18 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     }
 
     SShell *s = &g->runningShell;
-    SSurface *srf;
-    for(srf = s->surface.First(); srf; srf = s->surface.NextAfter(srf)) {
+    for(SSurface &srf : s->surface) {
         fprintf(fh, "Surface %08x %08x %08x %d %d\n",
-            srf->h.v, srf->color.ToPackedInt(), srf->face, srf->degm, srf->degn);
-        for(i = 0; i <= srf->degm; i++) {
-            for(j = 0; j <= srf->degn; j++) {
+            srf.h.v, srf.color.ToPackedInt(), srf.face, srf.degm, srf.degn);
+        for(i = 0; i <= srf.degm; i++) {
+            for(j = 0; j <= srf.degn; j++) {
                 fprintf(fh, "SCtrl %d %d %.20f %.20f %.20f Weight %20.20f\n",
-                    i, j, CO(srf->ctrl[i][j]), srf->weight[i][j]);
+                    i, j, CO(srf.ctrl[i][j]), srf.weight[i][j]);
             }
         }
 
         STrimBy *stb;
-        for(stb = srf->trim.First(); stb; stb = srf->trim.NextAfter(stb)) {
+        for(stb = srf.trim.First(); stb; stb = srf.trim.NextAfter(stb)) {
             fprintf(fh, "TrimBy %08x %d %.20f %.20f %.20f  %.20f %.20f %.20f\n",
                 stb->curve.v, stb->backwards ? 1 : 0,
                 CO(stb->start), CO(stb->finish));
@@ -374,21 +373,20 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
 
         fprintf(fh, "AddSurface\n");
     }
-    SCurve *sc;
-    for(sc = s->curve.First(); sc; sc = s->curve.NextAfter(sc)) {
+    for(SCurve &sc : s->curve) {
         fprintf(fh, "Curve %08x %d %d %08x %08x\n",
-            sc->h.v,
-            sc->isExact ? 1 : 0, sc->exact.deg,
-            sc->surfA.v, sc->surfB.v);
+            sc.h.v,
+            sc.isExact ? 1 : 0, sc.exact.deg,
+            sc.surfA.v, sc.surfB.v);
 
-        if(sc->isExact) {
-            for(i = 0; i <= sc->exact.deg; i++) {
+        if(sc.isExact) {
+            for(i = 0; i <= sc.exact.deg; i++) {
                 fprintf(fh, "CCtrl %d %.20f %.20f %.20f Weight %.20f\n",
-                    i, CO(sc->exact.ctrl[i]), sc->exact.weight[i]);
+                    i, CO(sc.exact.ctrl[i]), sc.exact.weight[i]);
             }
         }
         SCurvePt *scpt;
-        for(scpt = sc->pts.First(); scpt; scpt = sc->pts.NextAfter(scpt)) {
+        for(scpt = sc.pts.First(); scpt; scpt = sc.pts.NextAfter(scpt)) {
             fprintf(fh, "CurvePt %d %.20f %.20f %.20f\n",
                 scpt->vertex ? 1 : 0, CO(scpt->p));
         }
@@ -468,6 +466,7 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
 }
 
 bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) {
+    bool fileIsEmpty = true;
     allConsistent = false;
     fileLoadError = false;
 
@@ -485,6 +484,8 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
 
     char line[1024];
     while(fgets(line, (int)sizeof(line), fh)) {
+        fileIsEmpty = false;
+
         char *s = strchr(line, '\n');
         if(s) *s = '\0';
         // We should never get files with \r characters in them, but mailers
@@ -544,6 +545,11 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
     }
 
     fclose(fh);
+
+    if(fileIsEmpty) {
+        Error(_("The file is empty. It may be corrupt."));
+        NewFile();
+    }
 
     if(fileLoadError) {
         Error(_("Unrecognized data in file. This file may be corrupt, or "
@@ -701,6 +707,18 @@ void SolveSpaceUI::UpgradeLegacyData() {
 }
 
 bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
+                                        SMesh *m, SShell *sh)
+{
+    if(strcmp(filename.Extension().c_str(), "emn")==0) {
+        return LinkIDF(filename, le, m, sh);
+    } else if(strcmp(filename.Extension().c_str(), "stl")==0) {
+        return LinkStl(filename, le, m, sh);    
+    } else {
+        return LoadEntitiesFromSlvs(filename, le, m, sh);
+    }
+}
+
+bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
                                         SMesh *m, SShell *sh)
 {
     SSurface srf = {};
@@ -891,14 +909,18 @@ try_again:
                     return false;
                 }
             }
+            if(g.IsTriangleMeshAssembly())
+                g.forceToMesh = true;
         } else if(linkMap.count(g.linkFile) == 0) {
             dbp("Missing file for group: %s", g.name.c_str());
             // The file was moved; prompt the user for its new location.
-            switch(LocateImportedFile(g.linkFile.RelativeTo(saveFile), canCancel)) {
+            const auto linkFileRelative = g.linkFile.RelativeTo(saveFile);
+            switch(LocateImportedFile(linkFileRelative, canCancel)) {
                 case Platform::MessageDialog::Response::YES: {
                     Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
-                    dialog->AddFilters(Platform::SolveSpaceModelFileFilters);
+                    dialog->AddFilters(Platform::SolveSpaceLinkFileFilters);
                     dialog->ThawChoices(settings, "LinkSketch");
+                    dialog->SuggestFilename(linkFileRelative);
                     if(dialog->RunModal()) {
                         dialog->FreezeChoices(settings, "LinkSketch");
                         linkMap[g.linkFile] = dialog->GetFilename();
@@ -975,6 +997,7 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
         Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
         dialog->AddFilters(Platform::RasterFileFilters);
         dialog->ThawChoices(settings, "LinkImage");
+        dialog->SuggestFilename(filename->RelativeTo(saveFile));
         if(dialog->RunModal()) {
             dialog->FreezeChoices(settings, "LinkImage");
             *filename = dialog->GetFilename();

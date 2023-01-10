@@ -26,6 +26,9 @@ bool EntityBase::HasVector() const {
 }
 
 ExprVector EntityBase::VectorGetExprsInWorkplane(hEntity wrkpl) const {
+    if(IsFace()) {
+        return FaceGetNormalExprs();
+    }
     switch(type) {
         case Type::LINE_SEGMENT:
             return (SK.GetEntity(point[0])->PointGetExprsInWorkplane(wrkpl)).Minus(
@@ -62,6 +65,9 @@ ExprVector EntityBase::VectorGetExprs() const {
 }
 
 Vector EntityBase::VectorGetNum() const {
+    if(IsFace()) {
+        return FaceGetNormalNum();
+    }
     switch(type) {
         case Type::LINE_SEGMENT:
             return (SK.GetEntity(point[0])->PointGetNum()).Minus(
@@ -79,6 +85,9 @@ Vector EntityBase::VectorGetNum() const {
 }
 
 Vector EntityBase::VectorGetRefPoint() const {
+    if(IsFace()) {
+        return FaceGetPointNum();
+    }
     switch(type) {
         case Type::LINE_SEGMENT:
             return ((SK.GetEntity(point[0])->PointGetNum()).Plus(

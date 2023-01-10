@@ -817,7 +817,7 @@ void SCurve::RemoveShortSegments(SSurface *srfA, SSurface *srfB) {
             continue;
         }
 
-        // if the curve is exact and points are >0.05 appart wrt t, point is there
+        // if the curve is exact and points are >0.05 apart wrt t, point is there
         // deliberately regardless of chord tolerance (ex: small circles)
         tprev = t = tnext = 0;
         if (isExact) {

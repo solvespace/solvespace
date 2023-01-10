@@ -7,6 +7,7 @@
 #ifndef SOLVESPACE_PLATFORM_H
 #define SOLVESPACE_PLATFORM_H
 
+namespace SolveSpace {
 namespace Platform {
 
 // UTF-8 ⟷ UTF-16 conversion, for Windows.
@@ -15,6 +16,12 @@ std::string Narrow(const wchar_t *s);
 std::wstring Widen(const char *s);
 std::string Narrow(const std::wstring &s);
 std::wstring Widen(const std::string &s);
+#endif
+
+#if defined(_WIN32)
+    const std::string embeddedFont = "res://fonts/BitstreamVeraSans-Roman-builtin.ttf";
+#else   // Linux and macOS
+    const std::string embeddedFont = "BitstreamVeraSans-Roman-builtin.ttf";
 #endif
 
 // A filesystem path, respecting the conventions of the current platform.
@@ -74,6 +81,7 @@ void DebugPrint(const char *fmt, ...);
 void *AllocTemporary(size_t size);
 void FreeAllTemporary();
 
-}
+} // namespace Platform
+} // namespace SolveSpace
 
 #endif

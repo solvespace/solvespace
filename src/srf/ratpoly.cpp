@@ -13,8 +13,7 @@
 // and convergence should be fast by now.
 #define RATPOLY_EPS (LENGTH_EPS/(1e2))
 
-static double Bernstein(int k, int deg, double t)
-{
+static inline double Bernstein(int k, int deg, double t) {
 // indexed by [degree][k][exponent]
     static const double bernstein_coeff[4][4][4] = {
     { { 1.0,0.0,0.0,0.0 },  { 1.0,0.0,0.0,0.0 }, { 1.0,0.0,0.0,0.0 }, { 1.0,0.0,0.0,0.0 } },
@@ -22,21 +21,18 @@ static double Bernstein(int k, int deg, double t)
     { { 1.0,-2.0,1.0,0.0 }, { 0.0,2.0,-2.0,0.0 },{ 0.0,0.0,1.0,0.0 }, { 0.0,0.0,0.0,0.0 } },
     { { 1.0,-3.0,3.0,-1.0 },{ 0.0,3.0,-6.0,3.0 },{ 0.0,0.0,3.0,-3.0}, { 0.0,0.0,0.0,1.0 } } };
 
-    const double *c;
-    c = bernstein_coeff[deg][k];
+    const double *c = bernstein_coeff[deg][k];
     return (((c[3]*t+c[2])*t)+c[1])*t+c[0];
 }
 
-static double BernsteinDerivative(int k, int deg, double t)
-{
+static inline double BernsteinDerivative(int k, int deg, double t) {
     static const double bernstein_derivative_coeff[4][4][3] = {
     { { 0.0,0.0,0.0 },  { 0.0,0.0,0.0 }, { 0.0,0.0,0.0 }, { 0.0,0.0,0.0 } },
     { { -1.0,0.0,0.0 }, { 1.0,0.0,0.0 }, { 0.0,0.0,0.0 }, { 0.0,0.0,0.0 } },
     { { -2.0,2.0,0.0 }, { 2.0,-4.0,0.0 },{ 0.0,2.0,0.0 }, { 0.0,0.0,0.0 } },
     { { -3.0,6.0,-3.0 },{ 3.0,-12.0,9.0 },{ 0.0,6.0,-9.0}, { 0.0,0.0,3.0 } } };
 
-    const double *c;
-    c = bernstein_derivative_coeff[deg][k];
+    const double *c = bernstein_derivative_coeff[deg][k];
     return ((c[2]*t)+c[1])*t+c[0];
 }
 
@@ -332,7 +328,7 @@ Vector SSurface::PointAt(double u, double v) const {
     return num;
 }
 
-void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) const {
+void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv, bool retry) const {
     Vector num   = Vector::From(0, 0, 0),
            num_u = Vector::From(0, 0, 0),
            num_v = Vector::From(0, 0, 0);
@@ -364,6 +360,12 @@ void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) const {
 
     *tv = ((num_v.ScaledBy(den)).Minus(num.ScaledBy(den_v)));
     *tv = tv->ScaledBy(1.0/(den*den));
+    
+    // Tangent is zero at sungularities like the north pole. Move away a bit and retry. 
+    if(tv->Equals(Vector::From(0,0,0)) && retry)
+        TangentsAt(u+(0.5-u)*0.00001, v, tu, tv, false);
+    if(tu->Equals(Vector::From(0,0,0)) && retry)
+        TangentsAt(u, v+(0.5-v)*0.00001, tu, tv, false);
 }
 
 Vector SSurface::NormalAt(Point2d puv) const {
