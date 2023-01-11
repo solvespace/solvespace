@@ -368,7 +368,7 @@ void Constraint::MenuConstrain(Command id) {
                                 "(equal point-line distances)\n"
                         "    * a line segment, and a point and line segment "
                                 "(point-line distance equals length)\n"
-                        "    * two circles or arcs (equal radius)\n"
+                        "    * two or more circles or arcs (equal radius)\n"
                         "    * a line segment and an arc "
                                 "(line segment length equals arc length)\n"));
                 return;
@@ -716,9 +716,9 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityB = gs.vector[1];
                 c.valA = 0;
             } else {
-                Error(_("Bad selection for (equal) angle constraint. This constraint "
+                Error(_("Bad selection for angle constraint. This constraint "
                         "can apply to:\n\n"
-                        "Angle:\n"
+                        "Angle between:\n"
                         "    * two line segments\n"
                         "    * a line segment and a normal\n"
                         "    * two normals\n"
