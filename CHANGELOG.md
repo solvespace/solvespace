@@ -8,12 +8,23 @@ Constraints (new and improved):
 
 * Allow Parallel and Perpendicular constraints for 2 faces.
 
-Allow these existing constraints to be applied to more entities
-* 2 or more line Segments - equal length
-* 2 or more Arcs and/or circles - equal diameter/ratius
-* Any number of Lines H/V horizontal and vertical
-* 2 or more pointe H/V horzontal or vertical
-* Point on face can be applied a point and 1-3 faces at once.
+Allow these constraints to be applied to more entities at once:
+* 2 *or more* line Segments - equal length
+* 2 *or more* Arcs and/or circles - equal diameter/radius
+* Any number of Lines H/V horizontal or vertical
+* 2 *or more* points H/V horzontal or vertical
+* Point on face can be applied to a point and 1-3 faces at once.
+
+Translations (now in 10 languages!)
+* Added czech  cs_CZ
+* Added Japanese ja_JP
+* Better translation for French fr_FR and Russian ru_RU
+
+Other:
+* Merged and improved the experimental emscripten port (web version).
+* Better Flatpack support
+* More entity types described in the text screens
+* Several bug fixes and usability improvements
 
 3.1
 ---
