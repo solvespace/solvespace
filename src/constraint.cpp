@@ -304,7 +304,7 @@ void Constraint::MenuConstrain(Command id) {
                         "    * a point and a workplane (point in plane)\n"
                         "    * a point and a line segment (point on line)\n"
                         "    * a point and a circle or arc (point on curve)\n"
-                        "    * a point and a plane face (point on face)\n"));
+                        "    * a point and one to three plane faces (point on face(s))\n"));
                 return;
             }
             for (auto&& nc : newcons)
@@ -361,17 +361,13 @@ void Constraint::MenuConstrain(Command id) {
             } else {
                 Error(_("Bad selection for equal length / radius constraint. "
                         "This constraint can apply to:\n\n"
-                        "    * two line segments (equal length)\n"
+                        "    * two or more line segments (equal length)\n"
                         "    * two line segments and two points "
                                 "(equal point-line distances)\n"
                         "    * a line segment and two points "
                                 "(equal point-line distances)\n"
                         "    * a line segment, and a point and line segment "
                                 "(point-line distance equals length)\n"
-                        "    * four line segments or normals "
-                                "(equal angle between A,B and C,D)\n"
-                        "    * three line segments or normals "
-                                "(equal angle between A,B and B,C)\n"
                         "    * two circles or arcs (equal radius)\n"
                         "    * a line segment and an arc "
                                 "(line segment length equals arc length)\n"));
@@ -617,8 +613,8 @@ void Constraint::MenuConstrain(Command id) {
             } else {
                 Error(_("Bad selection for horizontal / vertical constraint. "
                         "This constraint can apply to:\n\n"
-                        "    * two points\n"
-                        "    * a line segment\n"));
+                        "    * two or more points\n"
+                        "    * one or more line segments\n"));
                 return;
             }
             SS.UndoRemember();
@@ -720,11 +716,17 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityB = gs.vector[1];
                 c.valA = 0;
             } else {
-                Error(_("Bad selection for angle constraint. This constraint "
+                Error(_("Bad selection for (equal) angle constraint. This constraint "
                         "can apply to:\n\n"
+                        "Angle:\n"
                         "    * two line segments\n"
                         "    * a line segment and a normal\n"
-                        "    * two normals\n"));
+                        "    * two normals\n"
+                        "\nEqaual angles:\n"
+                        "    * four line segments or normals "
+                        "(equal angle between A,B and C,D)\n"
+                        "    * three line segments or normals "
+                        "(equal angle between A,B and B,C)\n"));
                 return;
             }
 
@@ -814,9 +816,9 @@ void Constraint::MenuConstrain(Command id) {
                 Error(_("Bad selection for parallel / tangent constraint. This "
                         "constraint can apply to:\n\n"
                         "    * two faces\n"
-                        "    * two line segments (parallel)\n"
-                        "    * a line segment and a normal (parallel)\n"
-                        "    * two normals (parallel)\n"
+                        "    * two or more line segments (parallel)\n"
+                        "    * one or more line segments and one or more normals (parallel)\n"
+                        "    * two or more normals (parallel)\n"
                         "    * two line segments, arcs, or beziers, that share "
                               "an endpoint (tangent)\n"));
                 return;
