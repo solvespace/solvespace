@@ -1,6 +1,20 @@
 Changelog
 =========
 
+3.x - development
+---
+
+Constraints (new and improved):
+
+* Allow Parallel and Perpendicular constraints for 2 faces.
+
+Allow these existing constraints to be applied to more entities
+* 2 or more line Segments - equal length
+* 2 or more Arcs and/or circles - equal diameter/ratius
+* Any number of Lines H/V horizontal and vertical
+* 2 or more pointe H/V horzontal or vertical
+* Point on face can be applied a point and 1-3 faces at once.
+
 3.1
 ---
 
