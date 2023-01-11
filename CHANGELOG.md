@@ -6,25 +6,28 @@ Changelog
 
 Constraints (new and improved):
 
-* Allow Parallel and Perpendicular constraints for 2 faces.
+* Add Parallel and Perpendicular constraints for 2 faces.
+* The equal angle constraint is moved to the `N` shortcut and menu item to allow equal length (`Q`) to be applied to three or four lines.
 
 Allow these constraints to be applied to more entities at once:
-* 2 *or more* line Segments - equal length
-* 2 *or more* Arcs and/or circles - equal diameter/radius
-* Any number of Lines H/V horizontal or vertical
-* 2 *or more* points H/V horzontal or vertical
+* More than two line Segments - equal length.
+* More than two Arcs and/or circles - equal diameter/radius.
+* Any number of Lines - horizontal or vertical.
+* More than two points - horizontal or vertical.
 * Point on face can be applied to a point and 1-3 faces at once.
+* More than two points coincident.
 
 Translations (now in 10 languages!)
-* Added czech  cs_CZ
-* Added Japanese ja_JP
-* Better translation for French fr_FR and Russian ru_RU
+* Added Czech  cs_CZ.
+* Added Japanese ja_JP.
+* Update translation for French fr_FR and Russian ru_RU.
 
 Other:
-* Merged and improved the experimental emscripten port (web version).
-* Better Flatpack support
-* More entity types described in the text screens
-* Several bug fixes and usability improvements
+* Merged and improved the experimental Emscripten port (web version).
+* Better Flatpack support.
+* More entity types described in the text screens.
+* Several bug fixes and usability improvements.
+* Allow 32 bit SolveSpace to access up to 4GB of RAM to allow working on larger projects.
 
 3.1
 ---
