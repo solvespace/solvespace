@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""'python_solvespace' module is a wrapper of
+"""'solvespace' module is a wrapper of
 Python binding Solvespace solver libraries.
 """
 

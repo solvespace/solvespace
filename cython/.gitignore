@@ -13,10 +13,10 @@
 /debian/libslvs1-dev/
 /obj-*/
 /*.slvs
-python_solvespace/*.cpp
-python_solvespace/src/
-python_solvespace/include/
-python_solvespace/extlib/
+solvespace/*.cpp
+solvespace/src/
+solvespace/include/
+solvespace/extlib/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

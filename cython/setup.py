@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""Compile the Cython libraries of Python-Solvespace."""
+"""Compile the Cython libraries of Solvespace."""
 
 __author__ = "Yuan Chang"
 __copyright__ = "Copyright (C) 2016-2019"
@@ -16,7 +16,7 @@ from setuptools.command.sdist import sdist
 from distutils import file_util, dir_util
 from platform import system
 
-m_path = 'python_solvespace'
+m_path = 'solvespace'
 include_path = join(m_path, 'include')
 src_path = join(m_path, 'src')
 platform_path = join(src_path, 'platform')
@@ -172,7 +172,7 @@ class PackSource(sdist):
 
 
 setup(ext_modules=[Extension(
-    "python_solvespace.slvs",
+    "solvespace.slvs",
     sources,
     language="c++",
     include_dirs=[include_path, src_path, mimalloc_include_path,
