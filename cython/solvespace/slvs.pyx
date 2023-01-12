@@ -344,7 +344,7 @@ cdef class Entity:
 
 cdef class SolverSystem:
 
-    """A solver system of Python-Solvespace.
+    """A solver system of Solvespace.
 
     The operation of entities and constraints are using the methods of this class.
     """
