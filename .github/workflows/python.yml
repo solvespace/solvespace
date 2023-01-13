@@ -95,6 +95,15 @@ jobs:
         with:
           fetch-depth: 0
       - run: git submodule update --init extlib/mimalloc extlib/eigen
+      - name: Set version
+        shell: bash
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            version="${GITHUB_REF##*/}"
+          else
+            version="$(git describe --tags).dev${GITHUB_RUN_NUMBER}"
+          fi
+          cd cython && sed -i.bak "s/^version = .*/version = \"${version}\"/g" pyproject.toml && rm pyproject.toml.bak
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         if: matrix.architecture == 'aarch64'
@@ -113,9 +122,6 @@ jobs:
             CMAKE_GENERATOR="Visual Studio 17 2022"
             CMAKE_GENERATOR_PLATFORM="${{ matrix.cmake_generator_platform }}"
           CIBW_ENVIRONMENT_PASS_WINDOWS: "CMAKE_GENERATOR CMAKE_GENERATOR_PLATFORM"
-          CIBW_ENVIRONMENT_MACOS: >
-            OPENMP_PREFIX_MACOS="/tmp/libomp/libomp/fixed"
-          CIBW_ENVIRONMENT_PASS_MACOS: "OPENMP_PREFIX_MACOS"
           CIBW_ENVIRONMENT_LINUX: >
             CMAKE_GENERATOR="Unix Makefiles"
           CIBW_ENVIRONMENT_PASS_LINUX: "CMAKE_GENERATOR"
