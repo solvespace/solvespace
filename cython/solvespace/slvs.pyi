@@ -239,10 +239,10 @@ class SolverSystem:
         e4: Entity = Entity.NONE,
         other: int = 0,
         other2: int = 0
-    ) -> None:
+    ) -> int:
         ...
 
-    def coincident(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> None:
+    def coincident(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> int:
         ...
 
     def distance(
@@ -251,10 +251,10 @@ class SolverSystem:
         e2: Entity,
         value: float,
         wp: Entity = Entity.FREE_IN_3D
-    ) -> None:
+    ) -> int:
         ...
 
-    def equal(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> None:
+    def equal(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> int:
         ...
 
     def equal_angle(
@@ -264,7 +264,7 @@ class SolverSystem:
         e3: Entity,
         e4: Entity,
         wp: Entity = Entity.FREE_IN_3D
-    ) -> None:
+    ) -> int:
         ...
 
     def equal_point_to_line(
@@ -274,50 +274,50 @@ class SolverSystem:
         e3: Entity,
         e4: Entity,
         wp: Entity = Entity.FREE_IN_3D
-    ) -> None:
+    ) -> int:
         ...
 
-    def ratio(self, e1: Entity, e2: Entity, value: float, wp: Entity = Entity.FREE_IN_3D) -> None:
+    def ratio(self, e1: Entity, e2: Entity, value: float, wp: Entity = Entity.FREE_IN_3D) -> int:
         ...
 
-    def symmetric(self, e1: Entity, e2: Entity, e3: Entity = Entity.NONE, wp: Entity = Entity.FREE_IN_3D) -> None:
+    def symmetric(self, e1: Entity, e2: Entity, e3: Entity = Entity.NONE, wp: Entity = Entity.FREE_IN_3D) -> int:
         ...
 
-    def symmetric_h(self, e1: Entity, e2: Entity, wp: Entity) -> None:
+    def symmetric_h(self, e1: Entity, e2: Entity, wp: Entity) -> int:
         ...
 
-    def symmetric_v(self, e1: Entity, e2: Entity, wp: Entity) -> None:
+    def symmetric_v(self, e1: Entity, e2: Entity, wp: Entity) -> int:
         ...
 
-    def midpoint(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> None:
+    def midpoint(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> int:
         ...
 
-    def horizontal(self, e1: Entity, wp: Entity) -> None:
+    def horizontal(self, e1: Entity, wp: Entity) -> int:
         ...
 
-    def vertical(self, e1: Entity, wp: Entity) -> None:
+    def vertical(self, e1: Entity, wp: Entity) -> int:
         ...
 
-    def diameter(self, e1: Entity, value: float) -> None:
+    def diameter(self, e1: Entity, value: float) -> int:
         ...
 
-    def same_orientation(self, e1: Entity, e2: Entity) -> None:
+    def same_orientation(self, e1: Entity, e2: Entity) -> int:
         ...
 
-    def angle(self, e1: Entity, e2: Entity, value: float, wp: Entity = Entity.FREE_IN_3D, inverse: bool = False) -> None:
+    def angle(self, e1: Entity, e2: Entity, value: float, wp: Entity = Entity.FREE_IN_3D, inverse: bool = False) -> int:
         ...
 
-    def perpendicular(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D, inverse: bool = False) -> None:
+    def perpendicular(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D, inverse: bool = False) -> int:
         ...
 
-    def parallel(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> None:
+    def parallel(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> int:
         ...
 
-    def tangent(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> None:
+    def tangent(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> int:
         ...
 
-    def distance_proj(self, e1: Entity, e2: Entity, value: float) -> None:
+    def distance_proj(self, e1: Entity, e2: Entity, value: float) -> int:
         ...
 
-    def dragged(self, e1: Entity, wp: Entity = Entity.FREE_IN_3D) -> None:
+    def dragged(self, e1: Entity, wp: Entity = Entity.FREE_IN_3D) -> int:
         ...
