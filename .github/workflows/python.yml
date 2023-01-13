@@ -101,7 +101,8 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             version="${GITHUB_REF##*/}"
           else
-            version="$(git describe --tags).dev${GITHUB_RUN_NUMBER}"
+            # version="$(git describe --tags).dev${GITHUB_RUN_NUMBER}"
+            version="3.1.0.dev${GITHUB_RUN_NUMBER}"
           fi
           cd cython && sed -i.bak "s/^version = .*/version = \"${version}\"/g" pyproject.toml && rm pyproject.toml.bak
       - name: Set up QEMU
