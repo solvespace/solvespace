@@ -17,7 +17,15 @@ jobs:
           python-version: "3.10"
       - name: Pack
         working-directory: cython
+        shell: bash
         run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            version="${GITHUB_REF##*/}"
+          else
+            # version="$(git describe --tags).dev${GITHUB_RUN_NUMBER}"
+            version="3.1.0.dev${GITHUB_RUN_NUMBER}"
+          fi
+          sed -i.bak "s/^version = .*/version = \"${version}\"/g" pyproject.toml && rm pyproject.toml.bak
           python -m pip install -U setuptools build
           python -m build --sdist
       - name: Upload artifact
