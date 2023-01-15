@@ -292,10 +292,10 @@ class SolverSystem:
     def midpoint(self, e1: Entity, e2: Entity, wp: Entity = Entity.FREE_IN_3D) -> int:
         ...
 
-    def horizontal(self, e1: Entity, wp: Entity) -> int:
+    def horizontal(self, e1: Entity, wp: Entity, e2: Entity = Entity.NONE) -> int:
         ...
 
-    def vertical(self, e1: Entity, wp: Entity) -> int:
+    def vertical(self, e1: Entity, wp: Entity, e2: Entity = Entity.NONE) -> int:
         ...
 
     def diameter(self, e1: Entity, value: float) -> int:

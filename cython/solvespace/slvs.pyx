@@ -887,25 +887,29 @@ cdef class SolverSystem:
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
 
-    cpdef int horizontal(self, Entity e1, Entity wp):
-        """Vertical constraint of a 2d point (`e1`) on
-        work plane (`wp` can not be [Entity.FREE_IN_3D]).
+    cpdef int horizontal(self, Entity e1, Entity wp, Entity e2 = _E_NONE):
+        """Horizontal constraint of a 2d point (`e1`), multiple 2d points (`e1` and `e2`) or a line (`e1`)
+        on work plane (`wp` can not be [Entity.FREE_IN_3D]).
         """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_line_2d():
             return self.add_constraint(SLVS_C_HORIZONTAL, wp, 0., _E_NONE, _E_NONE, e1, _E_NONE)
+        if e1.is_point_2d() and e2.is_point_2d():
+            return self.add_constraint(SLVS_C_HORIZONTAL, wp, 0., e1, e2, _E_NONE, _E_NONE)
         else:
             raise TypeError(f"unsupported entities: {e1}, {wp}")
 
-    cpdef int vertical(self, Entity e1, Entity wp):
-        """Vertical constraint of a 2d point (`e1`) on
-        work plane (`wp` can not be [Entity.FREE_IN_3D]).
+    cpdef int vertical(self, Entity e1, Entity wp, Entity e2 = _E_NONE):
+        """Vertical constraint of a 2d point (`e1`), multiple 2d points (`e1` and `e2`) or a line (`e1`)
+        on work plane (`wp` can not be [Entity.FREE_IN_3D]).
         """
         if wp is _E_FREE_IN_3D:
             raise ValueError("this is a 2d constraint")
         if e1.is_line_2d():
             return self.add_constraint(SLVS_C_VERTICAL, wp, 0., _E_NONE, _E_NONE, e1, _E_NONE)
+        if e1.is_point_2d() and e2.is_point_2d():
+            return self.add_constraint(SLVS_C_VERTICAL, wp, 0., e1, e2, _E_NONE, _E_NONE)
         else:
             raise TypeError(f"unsupported entities: {e1}, {wp}")
 
