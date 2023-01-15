@@ -719,6 +719,7 @@ cdef class SolverSystem:
         | [is_point] | [is_work_plane] | [Entity.FREE_IN_3D] |
         | [is_point] | [is_line] | Optional |
         | [is_point] | [is_circle] | Optional |
+        | [is_point] | [is_arc] | Optional |
         """
         if e1.is_point() and e2.is_point():
             return self.add_constraint(SLVS_C_POINTS_COINCIDENT, wp, 0., e1, e2, _E_NONE, _E_NONE)
@@ -726,7 +727,7 @@ cdef class SolverSystem:
             return self.add_constraint(SLVS_C_PT_IN_PLANE, _E_FREE_IN_3D, 0., e1, _E_NONE, e2, _E_NONE)
         elif e1.is_point() and e2.is_line():
             return self.add_constraint(SLVS_C_PT_ON_LINE, wp, 0., e1, _E_NONE, e2, _E_NONE)
-        elif e1.is_point() and e2.is_circle():
+        elif e1.is_point() and (e2.is_circle() or e2.is_arc()):
             return self.add_constraint(SLVS_C_PT_ON_CIRCLE, _E_FREE_IN_3D, 0., e1, _E_NONE, e2, _E_NONE)
         else:
             raise TypeError(f"unsupported entities: {e1}, {e2}, {wp}")
