@@ -449,19 +449,18 @@ void Constraint::DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
 }
 
 bool Constraint::IsVisible() const {
- if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_NOSHOW ) return false;    
+    if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_NOSHOW) 
+        return false;
     bool isDim = false;
 
-    if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_SHOW_DIM )
-        switch (type){
+    if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_SHOW_DIM)
+        switch(type) {
         case ConstraintBase::Type::ANGLE:
         case ConstraintBase::Type::DIAMETER:
         case ConstraintBase::Type::PT_PT_DISTANCE:
         case ConstraintBase::Type::PT_FACE_DISTANCE:
         case ConstraintBase::Type::PT_LINE_DISTANCE:
-        case ConstraintBase::Type::PT_PLANE_DISTANCE:
-            isDim = true;
-            break;
+        case ConstraintBase::Type::PT_PLANE_DISTANCE: isDim = true; break;
         default:;
         }
 

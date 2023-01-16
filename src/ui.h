@@ -801,14 +801,16 @@ public:
     bool ToolbarMouseDown(int x, int y);
     Command toolbarHovered;
 
-    enum    class ShowConstraintMode{SCM_NOSHOW,SCM_SHOW_ALL,SCM_SHOW_DIM};
 
     // This sets what gets displayed.
     bool    showWorkplanes;
     bool    showNormals;
     bool    showPoints;
     bool    showConstruction;
-    ShowConstraintMode    showConstraints;
+
+    enum class ShowConstraintMode : unsigned { SCM_NOSHOW, SCM_SHOW_ALL, SCM_SHOW_DIM };
+    ShowConstraintMode showConstraints;
+
     bool    showTextWindow;
     bool    showShaded;
     bool    showEdges;
@@ -819,7 +821,7 @@ public:
     bool    showMesh;
     void ToggleBool(bool *v);
 
-    enum class DrawOccludedAs { INVISIBLE, STIPPLED, VISIBLE };
+    enum class DrawOccludedAs : unsigned { INVISIBLE, STIPPLED, VISIBLE };
     DrawOccludedAs drawOccludedAs;
 
     bool    showSnapGrid;
