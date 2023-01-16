@@ -720,9 +720,7 @@ void SolveSpaceUI::MenuFile(Command id) {
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
             if(SS.GW.showConstraints != GraphicsWindow::ShowConstraintMode::SCM_NOSHOW &&
-                (dialog->GetFilename().HasExtension("txt") ||
-                 fabs(SS.exportOffset) > LENGTH_EPS))
-            {
+               (dialog->GetFilename().HasExtension("txt") || fabs(SS.exportOffset) > LENGTH_EPS)) {
                 Message(_("Constraints are currently shown, and will be exported "
                           "in the toolpath. This is probably not what you want; "
                           "hide them by clicking the link at the top of the "
