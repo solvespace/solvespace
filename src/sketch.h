@@ -576,7 +576,7 @@ public:
     bool IsStylable() const;
     bool IsVisible() const;
     bool CanBeDragged() const;
-
+    
     enum class DrawAs { DEFAULT, OVERLAY, HIDDEN, HOVERED, SELECTED };
     void Draw(DrawAs how, Canvas *canvas);
     void GetReferencePoints(std::vector<Vector> *refs);
