@@ -210,7 +210,7 @@ if(HAVE_GETTEXT)
                 --package-name=SolveSpace
                 --package-version=${PROJECT_VERSION}
                 "--copyright-holder=the PACKAGE authors"
-                --msgid-bugs-address=whitequark@whitequark.org
+                --msgid-bugs-address=phkahler@gmail.com
                 --from-code=utf-8 --output=${gen_output_pot} ${inputs}
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${gen_output_pot} ${output_pot}
         DEPENDS ${inputs}
