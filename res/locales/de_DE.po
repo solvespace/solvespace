@@ -762,7 +762,7 @@ msgstr "Exportiere Oberflächen…"
 
 #: graphicswin.cpp:54
 msgid "Im&port..."
-msgstr "Im&port…"
+msgstr "Im&portiere…"
 
 #: graphicswin.cpp:57
 msgid "E&xit"
