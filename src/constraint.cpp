@@ -724,7 +724,7 @@ void Constraint::MenuConstrain(Command id) {
                         "    * two line segments\n"
                         "    * a line segment and a normal\n"
                         "    * two normals\n"
-                        "\nEqaual angles:\n"
+                        "\nEqual angles:\n"
                         "    * four line segments or normals "
                         "(equal angle between A,B and C,D)\n"
                         "    * three line segments or normals "
