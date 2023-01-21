@@ -305,12 +305,14 @@ void SolveSpaceUI::Exit() {
 void SolveSpaceUI::Refresh() {
     // generateAll must happen bfore updating displays
     if(scheduledGenerateAll) {
-        GenerateAll(Generate::DIRTY, /*andFindFree=*/false, /*genForBBox=*/false);
+		// Clear the flag so that if the call to GenerateAll is blocked by a Message or Error, 
+		// subsequent refreshes do not try to Generate again.
         scheduledGenerateAll = false;
+        GenerateAll(Generate::DIRTY, /*andFindFree=*/false, /*genForBBox=*/false);   
     }
     if(scheduledShowTW) {
-        TW.Show();
         scheduledShowTW = false;
+        TW.Show();
     }
 }
 
