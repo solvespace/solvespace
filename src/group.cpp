@@ -412,7 +412,9 @@ bool Group::IsForcedToMesh() const {
 }
 
 bool Group::IsTriangleMeshAssembly() const {
-    return type == Type::LINKED && linkFile.Extension() == "stl";
+    if (type != Type::LINKED) return false;
+    if (!impMesh.IsEmpty() && impShell.IsEmpty()) return true;
+    return false;
 }
 
 std::string Group::DescriptionString() {
