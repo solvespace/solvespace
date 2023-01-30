@@ -14,23 +14,34 @@ void SolveSpace::Platform::FatalError(const std::string &message) {
 namespace py = pybind11;
 
 PYBIND11_MODULE(slvs, m) {
-    py::class_<hGroup>(m, "hGroup")
+    py::class_<hGroup> hg(m, "hGroup");
+    py::class_<hEntity> he(m, "hEntity");
+    py::class_<hConstraint> hc(m, "hConstraint");
+    py::class_<hEquation> heq(m, "hEquation");
+    py::class_<hParam> hp(m, "hParam");
+
+    hg
         .def_readwrite("v", &hGroup::v)
         .def("entity", &hGroup::entity)
         .def("param", &hGroup::param)
         .def("equation", &hGroup::equation);
 
-    py::class_<hEntity>(m, "hEntity")
+    he
         .def_readwrite("v", &hEntity::v)
         .def("group", &hEntity::group)
         .def("equation", &hEntity::equation);
 
-    py::class_<hConstraint>(m, "hConstraint")
+    hc
         .def_readwrite("v", &hConstraint::v)
         .def("equation", &hConstraint::equation)
         .def("param", &hConstraint::param);
 
-    py::class_<hParam>(m, "hParam")
+    heq
+        .def_readwrite("v", &hEquation::v)
+        .def("is_from_constraint", &hEquation::isFromConstraint)
+        .def("constraint", &hEquation::constraint);
+
+    hp
         .def_readwrite("v", &hParam::v)
         .def("__repr__", [](const hParam &ph) {
             return "<solvespace.hParam v=" + std::to_string(ph.v) + ">";
@@ -56,51 +67,36 @@ PYBIND11_MODULE(slvs, m) {
                        : "0") + " val=" + std::to_string(p.val) + ">";
         });
 
-    py::class_<IdList<Param, hParam>>(m, "IdListParam")
+    py::class_<GroupBase>(m, "Group")
         .def(py::init<>())
-        .def("add", &IdList<Param, hParam>::Add);
+        .def_readwrite("all_dims_referenc", &GroupBase::allDimsReference)
+        .def_readwrite("relax_constraints", &GroupBase::relaxConstraints)
+        // .def_readwrite("solved", &GroupBase::solved)
+        .def_readwrite("suppress_dof_calculation", &GroupBase::suppressDofCalculation)
+        .def_readwrite("allow_redundant", &GroupBase::allowRedundant)
+        .def_readwrite("h", &GroupBase::h)
+        .def("__repr__", [](const GroupBase &g) {
+            return "<solvespace.Group id=" + std::to_string(g.h.v) + ">";
+        });
 
-    py::class_<IdList<Equation, hEquation>>(m, "IdListEquation")
-        .def(py::init<>())
-        .def("add", &IdList<Equation, hEquation>::Add);
-
-    py::class_<List<hGroup>>(m, "ListhGroup")
-        .def(py::init<>())
-        .def("is_empty", &List<hGroup>::IsEmpty)
-        .def("add", &List<hGroup>::Add);
-
-    py::class_<List<hConstraint>>(m, "ListhConstraint")
-        .def(py::init<>())
-        .def("is_empty", &List<hConstraint>::IsEmpty)
-        .def("add", &List<hConstraint>::Add);
-
-    py::class_<List<hParam>>(m, "ListhParam")
-        .def(py::init<>())
-        .def("is_empty", &List<hParam>::IsEmpty)
-        .def("add", &List<hParam>::Add);
-
-    py::class_<Expr> expr(m, "Expr");
-    expr.def(py::init<>()).def(py::init<double>());
-    py::enum_<Expr::Op>(expr, "Op")
-        .value("PARAM", Expr::Op::PARAM)
-        .value("PARAM_PTR", Expr::Op::PARAM_PTR)
-        .value("CONSTANT", Expr::Op::CONSTANT)
-        .value("VARIABLE", Expr::Op::VARIABLE)
-        .value("PLUS", Expr::Op::PLUS)
-        .value("MINUS", Expr::Op::MINUS)
-        .value("TIMES", Expr::Op::TIMES)
-        .value("DIV", Expr::Op::DIV)
-        .value("NEGATE", Expr::Op::NEGATE)
-        .value("SQRT", Expr::Op::SQRT)
-        .value("SQUARE", Expr::Op::SQUARE)
-        .value("SIN", Expr::Op::SIN)
-        .value("COS", Expr::Op::COS)
-        .value("ASIN", Expr::Op::ASIN)
-        .value("ACOS", Expr::Op::ACOS);
-
-    // def("make", py::overload_cast<hParam>(&Expr::From))
-    // def("make", py::overload_cast<double>(&Expr::From))
-    // def("any_op", &Expr::AnyOp);
+    // py::class_<Expr> expr(m, "Expr");
+    // expr.def(py::init<>()).def(py::init<double>());
+    // py::enum_<Expr::Op>(expr, "Op")
+    //     .value("PARAM", Expr::Op::PARAM)
+    //     .value("PARAM_PTR", Expr::Op::PARAM_PTR)
+    //     .value("CONSTANT", Expr::Op::CONSTANT)
+    //     .value("VARIABLE", Expr::Op::VARIABLE)
+    //     .value("PLUS", Expr::Op::PLUS)
+    //     .value("MINUS", Expr::Op::MINUS)
+    //     .value("TIMES", Expr::Op::TIMES)
+    //     .value("DIV", Expr::Op::DIV)
+    //     .value("NEGATE", Expr::Op::NEGATE)
+    //     .value("SQRT", Expr::Op::SQRT)
+    //     .value("SQUARE", Expr::Op::SQUARE)
+    //     .value("SIN", Expr::Op::SIN)
+    //     .value("COS", Expr::Op::COS)
+    //     .value("ASIN", Expr::Op::ASIN)
+    //     .value("ACOS", Expr::Op::ACOS);
 
     py::class_<Vector>(m, "Vector")
         .def_readwrite("x", &Vector::x)
@@ -147,9 +143,9 @@ PYBIND11_MODULE(slvs, m) {
         .def_static("bounding_boxes_disjoint", &Vector::BoundingBoxesDisjoint)
         .def_static("bounding_box_intersects_line", &Vector::BoundingBoxIntersectsLine)
         .def("outside_and_not_on", &Vector::OutsideAndNotOn)
-        .def("in_perspective", &Vector::InPerspective)
-        .def("project_2d", &Vector::Project2d)
-        .def("project_xy", &Vector::ProjectXy);
+        .def("in_perspective", &Vector::InPerspective);
+        // .def("project_2d", &Vector::Project2d)
+        // .def("project_xy", &Vector::ProjectXy);
 
     py::class_<Quaternion>(m, "Quaternion")
         .def_readwrite("w", &Quaternion::w)
@@ -188,39 +184,39 @@ PYBIND11_MODULE(slvs, m) {
         .def_readwrite("num_normal", &EntityBase::numNormal)
         .def_readwrite("num_distance", &EntityBase::numDistance)
         .def_readwrite("str", &EntityBase::str)
-        .def_readwrite("font", &EntityBase::font)
+        // .def_readwrite("font", &EntityBase::font)
         .def_readwrite("aspect_ratio", &EntityBase::aspectRatio)
         .def_readwrite("times_applied", &EntityBase::timesApplied)
         // .def("quaternion_from_params", &EntityBase::QuaternionFromParams)
         .def("get_axis_angle_quaternion", &EntityBase::GetAxisAngleQuaternion)
         .def("is_circle", &EntityBase::IsCircle)
-        .def("circle_get_radius_expr", &EntityBase::CircleGetRadiusExpr)
+        // .def("circle_get_radius_expr", &EntityBase::CircleGetRadiusExpr)
         .def("circle_get_radius_num", &EntityBase::CircleGetRadiusNum)
         .def("arc_get_angles", &EntityBase::ArcGetAngles)
         .def("has_vector", &EntityBase::HasVector)
-        .def("vector_get_exprs", &EntityBase::VectorGetExprs)
-        .def("vector_get_exprs_in_workplane", &EntityBase::VectorGetExprsInWorkplane)
+        // .def("vector_get_exprs", &EntityBase::VectorGetExprs)
+        // .def("vector_get_exprs_in_workplane", &EntityBase::VectorGetExprsInWorkplane)
         .def("vector_get_num", &EntityBase::VectorGetNum)
         .def("vector_get_ref_point", &EntityBase::VectorGetRefPoint)
         .def("vector_get_start_point", &EntityBase::VectorGetStartPoint)
         .def("is_distance", &EntityBase::IsDistance)
         .def("distance_get_num", &EntityBase::DistanceGetNum)
-        .def("distance_get_expr", &EntityBase::DistanceGetExpr)
+        // .def("distance_get_expr", &EntityBase::DistanceGetExpr)
         .def("distance_force_to", &EntityBase::DistanceForceTo)
         .def("is_workplane", &EntityBase::IsWorkplane)
         // .def("workplane_get_plane_exprs", py::overload_cast<ExprVector*,
         // Expr*>(&EntityBase::WorkplaneGetPlaneExprs))
-        .def("workplane_get_offset_exprs", &EntityBase::WorkplaneGetOffsetExprs)
+        // .def("workplane_get_offset_exprs", &EntityBase::WorkplaneGetOffsetExprs)
         .def("workplane_get_offset", &EntityBase::WorkplaneGetOffset)
         .def("normal", &EntityBase::Normal)
         .def("is_face", &EntityBase::IsFace)
-        .def("face_get_normal_exprs", &EntityBase::FaceGetNormalExprs)
+        // .def("face_get_normal_exprs", &EntityBase::FaceGetNormalExprs)
         .def("face_get_normal_num", &EntityBase::FaceGetNormalNum)
-        .def("face_get_point_exprs", &EntityBase::FaceGetPointExprs)
+        // .def("face_get_point_exprs", &EntityBase::FaceGetPointExprs)
         .def("face_get_point_num", &EntityBase::FaceGetPointNum)
         .def("is_point", &EntityBase::IsPoint)
         .def("point_get_num", &EntityBase::PointGetNum)
-        .def("point_get_exprs", &EntityBase::PointGetExprs)
+        // .def("point_get_exprs", &EntityBase::PointGetExprs)
         // .def("point_get_exprs_in_workplane", py::overload_cast<hEntity*, Expr**,
         // Expr**>(&EntityBase::PointGetExprsInWorkplane)) .def("point_get_exprs_in_workplane",
         // py::overload_cast<hEntity>(&EntityBase::PointGetExprsInWorkplane))
@@ -230,27 +226,27 @@ PYBIND11_MODULE(slvs, m) {
         .def("point_force_quaternion_to", &EntityBase::PointForceQuaternionTo)
         .def("is_normal", &EntityBase::IsNormal)
         .def("normal_get_num", &EntityBase::NormalGetNum)
-        .def("normal_get_exprs", &EntityBase::NormalGetExprs)
+        // .def("normal_get_exprs", &EntityBase::NormalGetExprs)
         .def("normal_force_to", &EntityBase::NormalForceTo)
         .def("normal_u", &EntityBase::NormalU)
         .def("normal_v", &EntityBase::NormalV)
         .def("normal_n", &EntityBase::NormalN)
-        .def("normal_exprs_u", &EntityBase::NormalExprsU)
-        .def("normal_exprs_v", &EntityBase::NormalExprsV)
-        .def("normal_exprs_n", &EntityBase::NormalExprsN)
+        // .def("normal_exprs_u", &EntityBase::NormalExprsU)
+        // .def("normal_exprs_v", &EntityBase::NormalExprsV)
+        // .def("normal_exprs_n", &EntityBase::NormalExprsN)
         .def("cubic_get_start_num", &EntityBase::CubicGetStartNum)
         .def("cubic_get_finish_num", &EntityBase::CubicGetFinishNum)
-        .def("cubic_get_start_tangent_exprs", &EntityBase::CubicGetStartTangentExprs)
-        .def("cubic_get_finish_tangent_exprs", &EntityBase::CubicGetFinishTangentExprs)
+        // .def("cubic_get_start_tangent_exprs", &EntityBase::CubicGetStartTangentExprs)
+        // .def("cubic_get_finish_tangent_exprs", &EntityBase::CubicGetFinishTangentExprs)
         .def("cubic_get_start_tangent_num", &EntityBase::CubicGetStartTangentNum)
         .def("cubic_get_finish_tangent_num", &EntityBase::CubicGetFinishTangentNum)
         .def("has_endpoints", &EntityBase::HasEndpoints)
         .def("endpoint_start", &EntityBase::EndpointStart)
         .def("endpoint_finish", &EntityBase::EndpointFinish)
         .def("is_in_plane", &EntityBase::IsInPlane)
-        .def("rect_get_points_exprs", &EntityBase::RectGetPointsExprs)
-        .def("add_eq", &EntityBase::AddEq)
-        .def("generate_equations", &EntityBase::GenerateEquations)
+        // .def("rect_get_points_exprs", &EntityBase::RectGetPointsExprs)
+        // .def("add_eq", &EntityBase::AddEq)
+        // .def("generate_equations", &EntityBase::GenerateEquations)
         .def("clear", &EntityBase::Clear)
 
         .def("params", &EntityBase::GetParams)
@@ -324,8 +320,8 @@ PYBIND11_MODULE(slvs, m) {
         .def("has_label", &ConstraintBase::HasLabel)
         .def("has_label", &ConstraintBase::HasLabel)
         .def("is_projectible", &ConstraintBase::IsProjectible)
-        .def("generate", &ConstraintBase::Generate)
-        .def("generate_equations", &ConstraintBase::GenerateEquations)
+        // .def("generate", &ConstraintBase::Generate)
+        // .def("generate_equations", &ConstraintBase::GenerateEquations)
         // .def("project_vector_into", &ConstraintBase::ProjectVectorInto)
         // .def("project_into", &ConstraintBase::ProjectInto)
         .def("modify_to_satisfy", &ConstraintBase::ModifyToSatisfy)
@@ -335,12 +331,12 @@ PYBIND11_MODULE(slvs, m) {
         // int>(&ConstraintBase::AddEq)) .def("add_eq",
         // py::overload_cast<IdList<Equation,hEquation>*, const ExprVector&,
         // int>(&ConstraintBase::AddEq))
-        .def("direction_cosine", &ConstraintBase::DirectionCosine)
-        .def("distance", &ConstraintBase::Distance)
-        .def("point_line_distance", &ConstraintBase::PointLineDistance)
-        .def("point_plane_distance", &ConstraintBase::PointPlaneDistance)
-        .def("vectors_parallel_3d", &ConstraintBase::VectorsParallel3d)
-        .def("point_in_three_space", &ConstraintBase::PointInThreeSpace)
+        // .def("direction_cosine", &ConstraintBase::DirectionCosine)
+        // .def("distance", &ConstraintBase::Distance)
+        // .def("point_line_distance", &ConstraintBase::PointLineDistance)
+        // .def("point_plane_distance", &ConstraintBase::PointPlaneDistance)
+        // .def("vectors_parallel_3d", &ConstraintBase::VectorsParallel3d)
+        // .def("point_in_three_space", &ConstraintBase::PointInThreeSpace)
         .def("clear", &ConstraintBase::Clear)
         .def("__repr__", [](const ConstraintBase &c) {
             return "<solvespace.Constraint id=" + std::to_string(c.h.v) + " type=" +
@@ -456,18 +452,6 @@ PYBIND11_MODULE(slvs, m) {
         .def_readonly("bad", &SolverResult::bad)
         .def_readonly("rank", &SolverResult::rank)
         .def_readonly("dof", &SolverResult::dof);
-
-    py::class_<GroupBase>(m, "Group")
-        .def(py::init<>())
-        .def_readwrite("allDimsReference", &GroupBase::allDimsReference)
-        .def_readwrite("relaxConstraints", &GroupBase::relaxConstraints)
-        // .def_readwrite("solved", &GroupBase::solved)
-        .def_readwrite("suppressDofCalculation", &GroupBase::suppressDofCalculation)
-        .def_readwrite("allowRedundant", &GroupBase::allowRedundant)
-        .def_readwrite("h", &GroupBase::h)
-        .def("__repr__", [](const GroupBase &g) {
-            return "<solvespace.Group id=" + std::to_string(g.h.v) + ">";
-        });
 
     py::class_<SolverSystem>(m, "SolverSystem")
         .def(py::init<>())
