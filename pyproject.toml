@@ -26,9 +26,39 @@ classifiers = [
 wheel.expand-macos-universal-tags = true
 cmake.verbose = true
 cmake.build-type = "Debug"
+sdist.exclude = [
+  "res",
+  "pkg",
+  "dist",
+  "extlib",
+  "exposed",
+  "bench",
+  "src/srf",
+  "src/render",
+  "test",
+  "src"
+]
 sdist.include = [
   ".git/HEAD",
-  ".git/refs"
+  ".git/refs",
+  "extlib/eigen",
+  "extlib/mimalloc",
+  "src/util.cpp",
+  "src/entity.cpp",
+  "src/expr.cpp",
+  "src/constrainteq.cpp",
+  "src/system.cpp",
+  "src/groupbase.cpp",
+  "src/platform/platform.cpp",
+  "src/solversystem.cpp",
+  "src/sketch.cpp",
+  "src/config.h.in",
+  "src/solvespace.h",
+  "src/dsc.h",
+  "src/platform/platform.h",
+  "src/sketch.h",
+  "src/expr.h",
+  "src/solversystem.h",
 ]
 wheel.packages = ["python/solvespace"]
 

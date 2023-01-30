@@ -130,7 +130,7 @@ Expr *EntityBase::CircleGetRadiusExpr() const {
     if(type == Type::CIRCLE) {
         return SK.GetEntity(distance)->DistanceGetExpr();
     } else if(type == Type::ARC_OF_CIRCLE) {
-        return Constraint::Distance(workplane, point[0], point[1]);
+        return ConstraintBase::Distance(workplane, point[0], point[1]);
     } else ssassert(false, "Unexpected entity type");
 }
 
@@ -650,7 +650,7 @@ void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) con
 }
 
 ExprVector EntityBase::PointGetExprsInWorkplane(hEntity wrkpl) const {
-    if(wrkpl == Entity::FREE_IN_3D) {
+    if(wrkpl == EntityBase::FREE_IN_3D) {
         return PointGetExprs();
     }
 
@@ -955,7 +955,7 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             auto it = std::find_if(SK.constraint.begin(), SK.constraint.end(),
                                    [&](ConstraintBase const &con) {
                                        return (con.group == group) &&
-                                              (con.type == Constraint::Type::POINTS_COINCIDENT) &&
+                                              (con.type == ConstraintBase::Type::POINTS_COINCIDENT) &&
                                               ((con.ptA == point[1] && con.ptB == point[2]) ||
                                                (con.ptA == point[2] && con.ptB == point[1]));
                                    });
@@ -963,8 +963,8 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
                 break;
             }
 
-            Expr *ra = Constraint::Distance(workplane, point[0], point[1]);
-            Expr *rb = Constraint::Distance(workplane, point[0], point[2]);
+            Expr *ra = ConstraintBase::Distance(workplane, point[0], point[1]);
+            Expr *rb = ConstraintBase::Distance(workplane, point[0], point[2]);
             AddEq(l, ra->Minus(rb), 0);
             break;
         }

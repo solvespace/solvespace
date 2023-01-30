@@ -28,7 +28,6 @@ MODULE
     ${CMAKE_SOURCE_DIR}/src/util.cpp
     ${CMAKE_SOURCE_DIR}/src/entity.cpp
     ${CMAKE_SOURCE_DIR}/src/expr.cpp
-    ${CMAKE_SOURCE_DIR}/src/constraint.cpp
     ${CMAKE_SOURCE_DIR}/src/constrainteq.cpp
     ${CMAKE_SOURCE_DIR}/src/system.cpp
     ${CMAKE_SOURCE_DIR}/src/groupbase.cpp

@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+#ifndef LIBRARY
+
 std::string Constraint::DescriptionString() const {
     std::string s;
     switch(type) {
@@ -53,8 +55,6 @@ std::string Constraint::DescriptionString() const {
 
     return ssprintf("c%03x-%s", h.v, s.c_str());
 }
-
-#ifndef LIBRARY
 
 //-----------------------------------------------------------------------------
 // Delete all constraints with the specified type, entityA, ptA. We use this

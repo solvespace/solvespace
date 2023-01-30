@@ -161,6 +161,7 @@ class GroupBase {
     void Clear();
 };
 
+#ifndef LIBRARY
 // A set of requests. Every request must have an associated group.
 class Group : public GroupBase {
 public:
@@ -358,6 +359,7 @@ public:
     static void MenuGroup(Command id);
     static void MenuGroup(Command id, Platform::Path linkFile);
 };
+#endif
 
 // A user request for some primitive or derived operation; for example a
 // line, or a step and repeat.
@@ -653,6 +655,7 @@ public:
     void Clear() {}
 };
 
+#ifndef LIBRARY
 class Entity : public EntityBase {
 public:
     // Necessary for Entity e = {} to zero-initialize, since
@@ -718,6 +721,7 @@ public:
     Vector ExplodeOffset() const;
     Vector PointGetDrawNum() const;
 };
+#endif
 
 class EntReqTable {
 public:
@@ -882,6 +886,7 @@ public:
     void Clear() {}
 };
 
+#ifndef LIBRARY
 class Constraint : public ConstraintBase {
 public:
     // See Entity::Entity().
@@ -951,6 +956,7 @@ public:
     static bool ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic);
     static bool ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB);
 };
+#endif
 
 class hEquation {
 public:
@@ -974,6 +980,7 @@ public:
 };
 
 
+#ifndef LIBRARY
 class Style {
 public:
     int         tag;
@@ -1088,7 +1095,7 @@ public:
 
     void Clear() {}
 };
-
+#endif
 
 inline hEntity hGroup::entity(int i) const
     { hEntity r; r.v = 0x80000000 | (v << 16) | (uint32_t)i; return r; }
@@ -1131,6 +1138,7 @@ inline bool hEquation::isFromConstraint() const
 inline hConstraint hEquation::constraint() const
     { hConstraint r; r.v = (v >> 16); return r; }
 
+#ifndef LIBRARY
 // The format for entities stored on the clipboard.
 class ClipboardRequest {
 public:
@@ -1149,5 +1157,6 @@ public:
     hEntity     oldPointEnt[MAX_POINTS_IN_ENTITY];
     hRequest    newReq;
 };
+#endif
 
 #endif

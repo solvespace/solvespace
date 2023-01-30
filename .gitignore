@@ -22,3 +22,5 @@ out/
 CMakeSettings.json
 
 __pycache__/
+dist/
+.DS_Store

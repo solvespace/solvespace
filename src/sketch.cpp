@@ -4,8 +4,10 @@ void Sketch::Clear() {
     group.Clear();
     groupOrder.Clear();
     constraint.Clear();
+#ifndef LIBRARY
     request.Clear();
     style.Clear();
+#endif
     entity.Clear();
     param.Clear();
 }

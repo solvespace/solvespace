@@ -7,9 +7,22 @@
 #ifndef SOLVESPACE_H
 #define SOLVESPACE_H
 
+#ifndef LIBRARY
 #include "resource.h"
+#endif
 #include "platform/platform.h"
+#ifndef LIBRARY
 #include "platform/gui.h"
+#else
+#include <string>
+namespace SolveSpace {
+namespace Platform {
+// Handling fatal errors.
+[[noreturn]]
+void FatalError(const std::string &message);
+}
+}
+#endif
 
 #include <cctype>
 #include <climits>
@@ -153,26 +166,18 @@ using handle_map = std::map<Key, T>;
 class Group;
 class SSurface;
 #include "dsc.h"
+
+#ifndef LIBRARY
 #include "polygon.h"
 #include "srf/surface.h"
 #include "render/render.h"
+#endif
 
 class Entity;
+class EntityBase;
 class hEntity;
 class Param;
 class hParam;
-typedef IdList<Entity,hEntity> EntityList;
-typedef IdList<Param,hParam> ParamList;
-
-enum class SolveResult : uint32_t {
-    OKAY                     = 0,
-    DIDNT_CONVERGE           = 10,
-    REDUNDANT_OKAY           = 11,
-    REDUNDANT_DIDNT_CONVERGE = 12,
-    TOO_MANY_UNKNOWNS        = 20
-};
-
-#include "sketch.h"
 
 #ifdef LIBRARY
 #   define ENTITY EntityBase
@@ -184,7 +189,21 @@ enum class SolveResult : uint32_t {
 #   define GROUP Group
 #endif
 
+typedef IdList<Param,hParam> ParamList;
+typedef IdList<ENTITY,hEntity> EntityList;
+
+enum class SolveResult : uint32_t {
+    OKAY                     = 0,
+    DIDNT_CONVERGE           = 10,
+    REDUNDANT_OKAY           = 11,
+    REDUNDANT_DIDNT_CONVERGE = 12,
+    TOO_MANY_UNKNOWNS        = 20
+};
+
+#include "sketch.h"
+#ifndef LIBRARY
 #include "ui.h"
+#endif
 #include "expr.h"
 
 // Utility functions that are provided in the platform-independent code.
@@ -310,6 +329,7 @@ public:
     void SortSubstitutionByDragged(Param *p);
 };
 
+#ifndef LIBRARY
 #include "ttf.h"
 
 class StepFileWriter {
@@ -488,6 +508,7 @@ public:
     bool HasCanvasSize() const override { return false; }
     bool CanOutputMesh() const override { return false; }
 };
+#endif
 
 class Sketch {
 public:
@@ -495,8 +516,10 @@ public:
     IdList<GROUP,hGroup>            group;
     List<hGroup>                    groupOrder;
     IdList<CONSTRAINT,hConstraint>  constraint;
+#ifndef LIBRARY
     IdList<Request,hRequest>        request;
     IdList<Style,hStyle>            style;
+#endif
 
     // These are generated from the above.
     IdList<ENTITY,hEntity>          entity;
@@ -506,7 +529,9 @@ public:
         { return constraint.FindById(h); }
     inline ENTITY  *GetEntity (hEntity  h) { return entity. FindById(h); }
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
+#ifndef LIBRARY
     inline Request *GetRequest(hRequest h) { return request.FindById(h); }
+#endif
     inline GROUP   *GetGroup  (hGroup   h) { return group.  FindById(h); }
     // Styles are handled a bit differently.
 
@@ -1127,6 +1152,7 @@ public:
 #undef CONSTRAINT
 #undef GROUP
 
+#ifndef LIBRARY
 class SolveSpaceUI {
 public:
     TextWindow                 *pTW;
@@ -1442,6 +1468,8 @@ bool LinkIDF(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *s
 bool LinkStl(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh);
 
 extern SolveSpaceUI SS;
+#endif
+
 extern Sketch SK;
 
 }

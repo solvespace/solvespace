@@ -781,7 +781,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
         case Type::SYMMETRIC_HORIZ:
         case Type::SYMMETRIC_VERT: {
-            ssassert(workplane != Entity::FREE_IN_3D,
+            ssassert(workplane != EntityBase::FREE_IN_3D,
                      "Unexpected horizontal/vertical symmetric constraint in 3d");
 
             EntityBase *a = SK.GetEntity(ptA);
@@ -836,7 +836,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
         case Type::HORIZONTAL:
         case Type::VERTICAL: {
-            ssassert(workplane != Entity::FREE_IN_3D,
+            ssassert(workplane != EntityBase::FREE_IN_3D,
                      "Unexpected horizontal/vertical constraint in 3d");
 
             hEntity ha, hb;
@@ -980,7 +980,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                 EntityBase *e = SK.GetEntity((i == 0) ? entityA : entityB);
                 bool oth = (i == 0) ? other : other2;
 
-                if(e->type == Entity::Type::ARC_OF_CIRCLE) {
+                if(e->type == EntityBase::Type::ARC_OF_CIRCLE) {
                     ExprVector center, endpoint;
                     center = SK.GetEntity(e->point[0])->PointGetExprs();
                     endpoint =
@@ -990,7 +990,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                     // an endpoint; so that's normal to the tangent, not
                     // parallel.
                     parallel = !parallel;
-                } else if(e->type == Entity::Type::CUBIC) { // BRANCH_ALWAYS_TAKEN
+                } else if(e->type == EntityBase::Type::CUBIC) { // BRANCH_ALWAYS_TAKEN
                     if(oth) {
                         dir[i] = e->CubicGetFinishTangentExprs();
                     } else {
