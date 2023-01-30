@@ -38,17 +38,6 @@
 #undef Success
 #include <Eigen/SparseCore>
 
-
-#ifdef LIBRARY
-#   define ENTITY EntityBase
-#   define CONSTRAINT ConstraintBase
-#   define GROUP GroupBase
-#else
-#   define ENTITY Entity
-#   define CONSTRAINT Constraint
-#   define GROUP Group
-#endif
-
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including
 // freetype.h invokes indescribable horrors and we would like to avoid
@@ -161,7 +150,6 @@ enum class Unit : uint32_t {
 template<class Key, class T>
 using handle_map = std::map<Key, T>;
 
-class GROUP;
 class Group;
 class SSurface;
 #include "dsc.h"
@@ -184,16 +172,31 @@ enum class SolveResult : uint32_t {
     TOO_MANY_UNKNOWNS        = 20
 };
 
-
 #include "sketch.h"
+
+#ifdef LIBRARY
+#   define ENTITY EntityBase
+#   define CONSTRAINT ConstraintBase
+#   define GROUP GroupBase
+#else
+#   define ENTITY Entity
+#   define CONSTRAINT Constraint
+#   define GROUP Group
+#endif
+
 #include "ui.h"
 #include "expr.h"
 
 
 // Utility functions that are provided in the platform-independent code.
-class utf8_iterator : std::iterator<std::forward_iterator_tag, char32_t> {
+class utf8_iterator {
     const char *p, *n;
 public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = char32_t;
+    using difference_type = char32_t;
+    using pointer = char32_t*;
+    using reference = char32_t&;
     utf8_iterator(const char *p) : p(p), n(NULL) {}
     bool           operator==(const utf8_iterator &i) const { return p==i.p; }
     bool           operator!=(const utf8_iterator &i) const { return p!=i.p; }
@@ -1123,8 +1126,8 @@ public:
     Group *GetRunningMeshGroupFor(hGroup h);
 #endif
 };
-#undef ENTITY
-#undef CONSTRAINT
+// #undef ENTITY
+// #undef CONSTRAINT
 
 class SolveSpaceUI {
 public:
