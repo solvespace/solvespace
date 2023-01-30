@@ -26,3 +26,6 @@
 [submodule "extlib/eigen"]
 	path = extlib/eigen
 	url = https://gitlab.com/libeigen/eigen.git
+[submodule "python/pybind11"]
+	path = python/pybind11
+	url = https://github.com/pybind/pybind11.git

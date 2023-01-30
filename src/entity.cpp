@@ -9,6 +9,8 @@
 
 const hEntity  EntityBase::FREE_IN_3D = { 0 };
 const hEntity  EntityBase::NO_ENTITY = { 0 };
+const EntityBase EntityBase::_FREE_IN_3D = {0, {0}};
+const EntityBase EntityBase::_NO_ENTITY = {0, {0}};
 
 bool EntityBase::HasVector() const {
     switch(type) {

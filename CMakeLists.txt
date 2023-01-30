@@ -1,5 +1,26 @@
-# cmake configuration
 cmake_minimum_required(VERSION 3.9...3.19)
+
+set(ENABLE_GUI        ON CACHE BOOL
+    "Whether the graphical interface is enabled")
+set(ENABLE_CLI        ON CACHE BOOL
+    "Whether the command line interface is enabled")
+set(ENABLE_PYTHON_LIB  OFF CACHE BOOL
+    "Whether to build the python library")
+set(ENABLE_TESTS      ON  CACHE BOOL
+    "Whether the test suite will be built and run")
+set(ENABLE_COVERAGE   OFF CACHE BOOL
+    "Whether code coverage information will be collected")
+set(ENABLE_SANITIZERS OFF CACHE BOOL
+    "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
+set(ENABLE_OPENMP     OFF CACHE BOOL
+    "Whether geometric operations will be parallelized using OpenMP")
+set(ENABLE_LTO        OFF CACHE BOOL
+    "Whether interprocedural (global) optimizations are enabled")
+option(FORCE_VENDORED_Eigen3
+    "Whether we should use our bundled Eigen even in the presence of a system copy"
+    OFF)
+
+set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR
@@ -11,8 +32,10 @@ endif()
 list(APPEND CMAKE_MODULE_PATH
     "${CMAKE_SOURCE_DIR}/cmake/")
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED YES)
+if (NOT ENABLE_PYTHON_LIB)
+    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD_REQUIRED YES)
+endif()
 
 # for /MT on MSVC
 set(CMAKE_USER_MAKE_RULES_OVERRIDE
@@ -42,26 +65,6 @@ string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 project(solvespace
     VERSION 3.1
     LANGUAGES C CXX ASM)
-
-set(ENABLE_GUI        ON CACHE BOOL
-    "Whether the graphical interface is enabled")
-set(ENABLE_CLI        ON CACHE BOOL
-    "Whether the command line interface is enabled")
-set(ENABLE_TESTS      ON  CACHE BOOL
-    "Whether the test suite will be built and run")
-set(ENABLE_COVERAGE   OFF CACHE BOOL
-    "Whether code coverage information will be collected")
-set(ENABLE_SANITIZERS OFF CACHE BOOL
-    "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
-set(ENABLE_OPENMP     OFF CACHE BOOL
-    "Whether geometric operations will be parallelized using OpenMP")
-set(ENABLE_LTO        OFF CACHE BOOL
-    "Whether interprocedural (global) optimizations are enabled")
-option(FORCE_VENDORED_Eigen3
-    "Whether we should use our bundled Eigen even in the presence of a system copy"
-    OFF)
-
-set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/bin)
@@ -190,16 +193,18 @@ if(EMSCRIPTEN)
     set(M_LIBRARY "" CACHE STRING "libm (not necessary)" FORCE)
 endif()
 
-message(STATUS "Using in-tree libdxfrw")
-add_subdirectory(extlib/libdxfrw)
+if(NOT ENABLE_PYTHON_LIB)
+    message(STATUS "Using in-tree libdxfrw")
+    add_subdirectory(extlib/libdxfrw)
+endif()
 
-message(STATUS "Using in-tree mimalloc")
-set(MI_OVERRIDE OFF CACHE BOOL "")
-set(MI_BUILD_SHARED OFF CACHE BOOL "")
-set(MI_BUILD_OBJECT OFF CACHE BOOL "")
-set(MI_BUILD_TESTS OFF CACHE BOOL "")
-add_subdirectory(extlib/mimalloc EXCLUDE_FROM_ALL)
-set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
+# message(STATUS "Using in-tree mimalloc")
+# set(MI_OVERRIDE OFF CACHE BOOL "")
+# set(MI_BUILD_SHARED OFF CACHE BOOL "")
+# set(MI_BUILD_OBJECT OFF CACHE BOOL "")
+# set(MI_BUILD_TESTS OFF CACHE BOOL "")
+# add_subdirectory(extlib/mimalloc EXCLUDE_FROM_ALL)
+# set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
 
 if(NOT FORCE_VENDORED_Eigen3)
     find_package(Eigen3 CONFIG)
@@ -216,68 +221,70 @@ if(NOT EXISTS "${EIGEN3_INCLUDE_DIRS}")
 endif()
 
 
-if(WIN32 OR APPLE OR EMSCRIPTEN)
-    # On Win32 and macOS we use vendored packages, since there is little to no benefit
-    # to trying to find system versions. In particular, trying to link to libraries from
-    # Homebrew or macOS system libraries into the .app file is highly likely to result
-    # in incompatibilities after upgrades.
+if(NOT ENABLE_PYTHON_LIB)
+    if(WIN32 OR APPLE OR EMSCRIPTEN)
+        # On Win32 and macOS we use vendored packages, since there is little to no benefit
+        # to trying to find system versions. In particular, trying to link to libraries from
+        # Homebrew or macOS system libraries into the .app file is highly likely to result
+        # in incompatibilities after upgrades.
 
-    include(FindVendoredPackage)
-    include(AddVendoredSubdirectory)
+        include(FindVendoredPackage)
+        include(AddVendoredSubdirectory)
 
-    set(FORCE_VENDORED_ZLIB     ON)
-    set(FORCE_VENDORED_PNG      ON)
-    set(FORCE_VENDORED_Freetype ON)
+        set(FORCE_VENDORED_ZLIB     ON)
+        set(FORCE_VENDORED_PNG      ON)
+        set(FORCE_VENDORED_Freetype ON)
 
-    find_vendored_package(ZLIB zlib
-        ZLIB_LIBRARY            zlibstatic
-        ZLIB_INCLUDE_DIR        ${CMAKE_SOURCE_DIR}/extlib/zlib)
-    list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
+        find_vendored_package(ZLIB zlib
+            ZLIB_LIBRARY            zlibstatic
+            ZLIB_INCLUDE_DIR        ${CMAKE_SOURCE_DIR}/extlib/zlib)
+        list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
 
-    find_vendored_package(PNG libpng
-        SKIP_INSTALL_ALL        ON
-        PNG_LIBRARY             png_static
-        PNG_ARM_NEON            "off"
-        PNG_SHARED              OFF
-        PNG_STATIC              ON
-        PNG_EXECUTABLES         OFF
-        PNG_TESTS               OFF
-        PNG_FRAMEWORK           OFF
-        PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
-    list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
+        find_vendored_package(PNG libpng
+            SKIP_INSTALL_ALL        ON
+            PNG_LIBRARY             png_static
+            PNG_ARM_NEON            "off"
+            PNG_SHARED              OFF
+            PNG_STATIC              ON
+            PNG_EXECUTABLES         OFF
+            PNG_TESTS               OFF
+            PNG_FRAMEWORK           OFF
+            PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
+        list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
-    find_vendored_package(Freetype freetype
-        WITH_ZLIB               OFF
-        WITH_BZip2              OFF
-        WITH_PNG                OFF
-        WITH_HarfBuzz           OFF
-        FREETYPE_LIBRARY        freetype
-        FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
+        find_vendored_package(Freetype freetype
+            WITH_ZLIB               OFF
+            WITH_BZip2              OFF
+            WITH_PNG                OFF
+            WITH_HarfBuzz           OFF
+            FREETYPE_LIBRARY        freetype
+            FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
 
-    message(STATUS "Using in-tree pixman")
-    set(PIXMAN_FOUND            YES)
-    set(PIXMAN_LIBRARY          pixman)
-    set(PIXMAN_BUILD_TESTS      OFF CACHE BOOL "")
-    set(PIXMAN_BUILD_DEMOS      OFF CACHE BOOL "")
+        message(STATUS "Using in-tree pixman")
+        set(PIXMAN_FOUND            YES)
+        set(PIXMAN_LIBRARY          pixman)
+        set(PIXMAN_BUILD_TESTS      OFF CACHE BOOL "")
+        set(PIXMAN_BUILD_DEMOS      OFF CACHE BOOL "")
 
-    set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
-    list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
-    add_vendored_subdirectory(extlib/pixman)
+        set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
+        list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
+        add_vendored_subdirectory(extlib/pixman)
 
-    message(STATUS "Using in-tree cairo")
-    add_vendored_subdirectory(extlib/cairo)
-    set(CAIRO_FOUND             YES)
-    set(CAIRO_LIBRARIES         cairo)
-    set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
-    list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
-else()
-    # On Linux and BSDs we're a good citizen and link to system libraries.
-    find_package(Backtrace)
-    find_package(PkgConfig REQUIRED)
-    find_package(ZLIB REQUIRED)
-    find_package(PNG REQUIRED)
-    find_package(Freetype REQUIRED)
-    find_package(Cairo REQUIRED)
+        message(STATUS "Using in-tree cairo")
+        add_vendored_subdirectory(extlib/cairo)
+        set(CAIRO_FOUND             YES)
+        set(CAIRO_LIBRARIES         cairo)
+        set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
+        list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
+    else()
+        # On Linux and BSDs we're a good citizen and link to system libraries.
+        find_package(Backtrace)
+        find_package(PkgConfig REQUIRED)
+        find_package(ZLIB REQUIRED)
+        find_package(PNG REQUIRED)
+        find_package(Freetype REQUIRED)
+        find_package(Cairo REQUIRED)
+    endif()
 endif()
 
 # GUI dependencies
@@ -346,33 +353,44 @@ endif()
 
 # translations
 
-find_program(XGETTEXT xgettext)
-find_program(MSGINIT  msginit)
-find_program(MSGMERGE msgmerge)
-if(XGETTEXT AND MSGINIT AND MSGMERGE)
-    set(HAVE_GETTEXT TRUE)
-else()
-    message(WARNING "Gettext not found, translations will not be updated")
-    set(HAVE_GETTEXT FALSE)
+if(NOT ENABLE_PYTHON_LIB)
+    find_program(XGETTEXT xgettext)
+    find_program(MSGINIT  msginit)
+    find_program(MSGMERGE msgmerge)
+    if(XGETTEXT AND MSGINIT AND MSGMERGE)
+        set(HAVE_GETTEXT TRUE)
+    else()
+        message(WARNING "Gettext not found, translations will not be updated")
+        set(HAVE_GETTEXT FALSE)
+    endif()
 endif()
 
 # solvespace-only compiler flags
 
 if(WIN32)
-    add_definitions(
-        -D_CRT_SECURE_NO_DEPRECATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -D_SCL_SECURE_NO_WARNINGS
-        -DWINVER=0x0501
-        -D_WIN32_WINNT=0x0501
-        -D_WIN32_IE=_WIN32_WINNT
-        -DISOLATION_AWARE_ENABLED
-        -DWIN32
-        -DWIN32_LEAN_AND_MEAN
-        -DUNICODE
-        -D_UNICODE
-        -DNOMINMAX
-        -D_USE_MATH_DEFINES)
+    if(ENABLE_PYTHON_LIB)
+        add_definitions(
+            -D_CRT_SECURE_NO_WARNINGS
+            -DEXPORT_DLL
+            -DISOLATION_AWARE_ENABLED
+            -D_USE_MATH_DEFINES
+            -DM_PI)
+    else()
+        add_definitions(
+            -D_CRT_SECURE_NO_DEPRECATE
+            -D_CRT_SECURE_NO_WARNINGS
+            -D_SCL_SECURE_NO_WARNINGS
+            -DWINVER=0x0501
+            -D_WIN32_WINNT=0x0501
+            -D_WIN32_IE=_WIN32_WINNT
+            -DISOLATION_AWARE_ENABLED
+            -DWIN32
+            -DWIN32_LEAN_AND_MEAN
+            -DUNICODE
+            -D_UNICODE
+            -DNOMINMAX
+            -D_USE_MATH_DEFINES)
+    endif()
 endif()
 
 if(MSVC)
@@ -432,9 +450,13 @@ endif()
 
 # application components
 
-add_subdirectory(res)
-add_subdirectory(src)
-add_subdirectory(exposed)
+if(ENABLE_PYTHON_LIB)
+    add_subdirectory(python)
+else()
+    add_subdirectory(res)
+    add_subdirectory(src)
+    add_subdirectory(exposed)
+endif()
 if(ENABLE_TESTS)
     add_subdirectory(test)
 endif()

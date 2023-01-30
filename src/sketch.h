@@ -139,12 +139,39 @@ struct EntityKeyEqual {
 typedef std::unordered_map<EntityKey, EntityId, EntityKeyHash, EntityKeyEqual> EntityMap;
 
 // A set of requests. Every request must have an associated group.
-class Group {
+class GroupBase {
+  public:
+    static const hGroup HGROUP_REFERENCES;
+
+    hGroup h;
+
+    int order;
+
+    bool relaxConstraints;
+    bool allowRedundant;
+    bool suppressDofCalculation;
+    bool allDimsReference;
+
+    struct {
+        SolveResult how;
+        int dof;
+        int findToFixTimeout;
+        bool timeout;
+        List<hConstraint> remove;
+    } solved;
+
+    void Clear();
+
+    void GenerateEquations(IdList<Equation, hEquation> *l);
+};
+
+// A set of requests. Every request must have an associated group.
+class Group : public GroupBase {
 public:
-    static const hGroup     HGROUP_REFERENCES;
+    // static const hGroup     HGROUP_REFERENCES;
 
     int         tag;
-    hGroup      h;
+    // hGroup      h;
 
     enum class CopyAs {
         NUMERIC,
@@ -167,16 +194,16 @@ public:
     };
     Group::Type type;
 
-    int order;
+    // int order;
 
     hGroup      opA;
     hGroup      opB;
     bool        visible;
     bool        suppress;
-    bool        relaxConstraints;
-    bool        allowRedundant;
-    bool        suppressDofCalculation;
-    bool        allDimsReference;
+    // bool        relaxConstraints;
+    // bool        allowRedundant;
+    // bool        suppressDofCalculation;
+    // bool        allDimsReference;
     double      scale;
 
     bool        clean;
@@ -187,13 +214,13 @@ public:
     double      valC;
     RgbaColor   color;
 
-    struct {
-        SolveResult         how;
-        int                 dof;
-        int                 findToFixTimeout;
-        bool                timeout;
-        List<hConstraint>   remove;
-    } solved;
+    // struct {
+    //     SolveResult         how;
+    //     int                 dof;
+    //     int                 findToFixTimeout;
+    //     bool                timeout;
+    //     List<hConstraint>   remove;
+    // } solved;
 
     enum class Subtype : uint32_t {
         // For drawings in 2d
@@ -264,7 +291,7 @@ public:
 
     void Activate();
     std::string DescriptionString();
-    void Clear();
+    // void Clear();
 
     static void AddParam(ParamList *param, hParam hp, double v);
     void Generate(EntityList *entity, ParamList *param);
@@ -302,7 +329,7 @@ public:
                     CopyAs as);
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
-    void GenerateEquations(IdList<Equation,hEquation> *l);
+    // void GenerateEquations(IdList<Equation,hEquation> *l);
     bool IsVisible();
     size_t GetNumConstraints();
     Vector ExtrusionGetVector();
@@ -393,6 +420,8 @@ public:
 
     static const hEntity    FREE_IN_3D;
     static const hEntity    NO_ENTITY;
+    static const EntityBase _FREE_IN_3D;
+    static const EntityBase _NO_ENTITY;
 
     enum class Type : uint32_t {
         POINT_IN_3D            =  2000,
@@ -437,13 +466,13 @@ public:
 
     // When it comes time to draw an entity, we look here to get the
     // defining variables.
-    hEntity     point[MAX_POINTS_IN_ENTITY];
+    std::array<hEntity, MAX_POINTS_IN_ENTITY> point;
     int         extraPoints;
     hEntity     normal;
     hEntity     distance;
     // The only types that have their own params are points, normals,
     // and directions.
-    hParam      param[8];
+    std::array<hParam, 8> param;
 
     // Transformed points/normals/distances have their numerical base
     Vector      numPoint;
@@ -458,6 +487,74 @@ public:
     // For entities that are derived by a transformation, the number of
     // times to apply the transformation.
     int timesApplied;
+
+    inline std::vector<hParam> GetParams() const {
+        std::vector<hParam> params;
+        for (hParam p : param) {
+            if (p.v != 0) {
+                params.push_back(p);
+            }
+        }
+        return params;
+    }
+
+    inline std::vector<hEntity> GetPoints() const {
+        std::vector<hEntity> points;
+        for (hEntity p : point) {
+            if (p.v != 0) {
+                points.push_back(p);
+            }
+        }
+        return points;
+    }
+
+    inline bool IsFreeIn3D() {
+        return h == _FREE_IN_3D.h;
+    }
+
+    inline bool Is3D() {
+        return workplane == FREE_IN_3D;
+    }
+
+    inline bool IsNone() {
+        return h.v == 0;
+    }
+
+    inline bool IsPoint2D() {
+        return type == Type::POINT_IN_2D;
+    }
+
+    inline bool IsPoint3D() {
+        return type == Type::POINT_IN_3D;
+    }
+
+    inline bool IsNormal2D() {
+        return type == Type::NORMAL_IN_2D;
+    }
+
+    inline bool IsNormal3D() {
+        return type == Type::NORMAL_IN_3D;
+    }
+
+    inline bool IsLine() {
+        return type == Type::LINE_SEGMENT;
+    }
+
+    inline bool IsLine2D() {
+        return type == Type::LINE_SEGMENT && !Is3D();
+    }
+
+    inline bool IsLine3D() {
+        return type == Type::LINE_SEGMENT && Is3D();
+    }
+
+    inline bool IsCubic() {
+        return type == Type::CUBIC;
+    }
+
+    inline bool IsArc() {
+        return type == Type::ARC_OF_CIRCLE;
+    }
 
     Quaternion GetAxisAngleQuaternion(int param0) const;
     ExprQuaternion GetAxisAngleQuaternionExprs(int param0) const;
@@ -534,6 +631,28 @@ public:
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const;
     void GenerateEquations(IdList<Equation,hEquation> *l) const;
+
+    inline std::string ToString() const {
+        std::string repr = "";
+        std::string paramsStr      = "";
+        for(hParam &p : GetParams()) {
+            paramsStr += std::to_string(p.v) + ",";
+        }
+        std::string pointsStr      = "";
+        for(hEntity &p : GetPoints()) {
+            pointsStr += std::to_string(p.v) + ",";
+        }
+        repr +=
+            "h:" + std::to_string(h.v) +
+            " group:" + std::to_string(group.v) +
+            " workplane:" + std::to_string(workplane.v) +
+            " point: [" + pointsStr + "]"
+            " normal:" + std::to_string(normal.v) +
+            " distance:" + std::to_string(distance.v) +
+            " type: " + std::to_string(static_cast<std::underlying_type<EntityBase::Type>::type>(type)) +
+            " param: [" + paramsStr + "]";
+        return repr;
+    }
 
     void Clear() {}
 };
@@ -628,6 +747,13 @@ public:
     static const hParam NO_PARAM;
 
     void Clear() {}
+
+    inline std::string ToString() {
+        std::string repr = "";
+        repr += "h:" + std::to_string(h.v) +
+            " val:" + std::to_string(val);
+        return repr;
+    }
 };
 
 
@@ -737,6 +863,25 @@ public:
     static Expr *PointPlaneDistance(ExprVector p, hEntity plane);
     static ExprVector VectorsParallel3d(ExprVector a, ExprVector b, hParam p);
     static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
+
+    inline std::string ToString() {
+        std::string repr = "";
+        repr +=
+            "h:" + std::to_string(h.v) +
+            " group:" + std::to_string(group.v) +
+            " type:" + std::to_string(static_cast<std::underlying_type<ConstraintBase::Type>::type>(type)) +
+            " workplane:" + std::to_string(workplane.v) +
+            " valA:" + std::to_string(valA) +
+            " ptA:" + std::to_string(ptA.v) +
+            " ptB:" + std::to_string(ptB.v) +
+            " entityA:" + std::to_string(entityA.v) +
+            " entityB:" + std::to_string(entityB.v) +
+            " entityC:" + std::to_string(entityC.v) +
+            " entityD:" + std::to_string(entityD.v) +
+            " other:" + std::to_string(other) +
+            " other2:" + std::to_string(other2);
+        return repr;
+    }
 
     void Clear() {}
 };

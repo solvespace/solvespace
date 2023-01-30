@@ -15,3 +15,10 @@
 /*.slvs
 .vscode/
 .idea/
+
+# Visual Studio
+out/
+.vs/
+CMakeSettings.json
+
+__pycache__/

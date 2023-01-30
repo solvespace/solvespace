@@ -333,7 +333,7 @@ bool System::NewtonSolve(int tag) {
     return converged;
 }
 
-void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
+void System::WriteEquationsExceptFor(hConstraint hc, GROUP *g) {
     // Generate all the equations from constraints in this group
     for(auto &con : SK.constraint) {
         ConstraintBase *c = &con;
@@ -368,7 +368,7 @@ void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
     g->GenerateEquations(&eq);
 }
 
-void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bool forceDofCheck) {
+void System::FindWhichToRemoveToFixJacobian(GROUP *g, List<hConstraint> *bad, bool forceDofCheck) {
     auto time = GetMilliseconds();
     g->solved.timeout = false;
     int a;
@@ -414,7 +414,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bo
     }
 }
 
-SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
+SolveResult System::Solve(GROUP *g, int *rank, int *dof, List<hConstraint> *bad,
                           bool andFindBad, bool andFindFree, bool forceDofCheck)
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
@@ -532,7 +532,7 @@ didnt_converge:
     return rankOk ? SolveResult::DIDNT_CONVERGE : SolveResult::REDUNDANT_DIDNT_CONVERGE;
 }
 
-SolveResult System::SolveRank(Group *g, int *rank, int *dof, List<hConstraint> *bad,
+SolveResult System::SolveRank(GROUP *g, int *rank, int *dof, List<hConstraint> *bad,
                               bool andFindBad, bool andFindFree)
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
