@@ -8,6 +8,16 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+#ifdef LIBRARY
+#   define ENTITY EntityBase
+#   define CONSTRAINT ConstraintBase
+#   define GROUP GroupBase
+#else
+#   define ENTITY Entity
+#   define CONSTRAINT Constraint
+#   define GROUP Group
+#endif
+
 #include <Eigen/Core>
 #include <Eigen/SparseQR>
 
@@ -364,8 +374,10 @@ void System::WriteEquationsExceptFor(hConstraint hc, GROUP *g) {
 
         e->GenerateEquations(&eq);
     }
+#ifndef LIBRARY
     // And from the groups themselves
     g->GenerateEquations(&eq);
+#endif
 }
 
 void System::FindWhichToRemoveToFixJacobian(GROUP *g, List<hConstraint> *bad, bool forceDofCheck) {
@@ -591,3 +603,6 @@ void System::MarkParamsFree(bool find) {
     }
 }
 
+#undef ENTITY
+#undef CONSTRAINT
+#undef GROUP

@@ -141,8 +141,6 @@ typedef std::unordered_map<EntityKey, EntityId, EntityKeyHash, EntityKeyEqual> E
 // A set of requests. Every request must have an associated group.
 class GroupBase {
   public:
-    static const hGroup HGROUP_REFERENCES;
-
     hGroup h;
 
     int order;
@@ -161,14 +159,12 @@ class GroupBase {
     } solved;
 
     void Clear();
-
-    void GenerateEquations(IdList<Equation, hEquation> *l);
 };
 
 // A set of requests. Every request must have an associated group.
 class Group : public GroupBase {
 public:
-    // static const hGroup     HGROUP_REFERENCES;
+    static const hGroup     HGROUP_REFERENCES;
 
     int         tag;
     // hGroup      h;
@@ -291,7 +287,7 @@ public:
 
     void Activate();
     std::string DescriptionString();
-    // void Clear();
+    void Clear();
 
     static void AddParam(ParamList *param, hParam hp, double v);
     void Generate(EntityList *entity, ParamList *param);
@@ -329,7 +325,7 @@ public:
                     CopyAs as);
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
-    // void GenerateEquations(IdList<Equation,hEquation> *l);
+    void GenerateEquations(IdList<Equation,hEquation> *l);
     bool IsVisible();
     size_t GetNumConstraints();
     Vector ExtrusionGetVector();

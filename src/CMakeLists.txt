@@ -139,8 +139,10 @@ add_library(solvespace-core STATIC
     file.cpp
     generate.cpp
     graphicswin.cpp
+    groupbase.cpp
     group.cpp
     groupmesh.cpp
+    sketch.cpp
     importdxf.cpp
     importidf.cpp
     importmesh.cpp
