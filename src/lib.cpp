@@ -16,10 +16,6 @@ void SolveSpace::Platform::FatalError(const std::string &message) {
     abort();
 }
 
-void Group::GenerateEquations(IdList<Equation,hEquation> *) {
-    // Nothing to do for now.
-}
-
 extern "C" {
 
 void Slvs_QuaternionU(double qw, double qx, double qy, double qz,
@@ -85,16 +81,16 @@ void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)
         EntityBase e = {};
 
         switch(se->type) {
-case SLVS_E_POINT_IN_3D:        e.type = Entity::Type::POINT_IN_3D; break;
-case SLVS_E_POINT_IN_2D:        e.type = Entity::Type::POINT_IN_2D; break;
-case SLVS_E_NORMAL_IN_3D:       e.type = Entity::Type::NORMAL_IN_3D; break;
-case SLVS_E_NORMAL_IN_2D:       e.type = Entity::Type::NORMAL_IN_2D; break;
-case SLVS_E_DISTANCE:           e.type = Entity::Type::DISTANCE; break;
-case SLVS_E_WORKPLANE:          e.type = Entity::Type::WORKPLANE; break;
-case SLVS_E_LINE_SEGMENT:       e.type = Entity::Type::LINE_SEGMENT; break;
-case SLVS_E_CUBIC:              e.type = Entity::Type::CUBIC; break;
-case SLVS_E_CIRCLE:             e.type = Entity::Type::CIRCLE; break;
-case SLVS_E_ARC_OF_CIRCLE:      e.type = Entity::Type::ARC_OF_CIRCLE; break;
+case SLVS_E_POINT_IN_3D:        e.type = EntityBase::Type::POINT_IN_3D; break;
+case SLVS_E_POINT_IN_2D:        e.type = EntityBase::Type::POINT_IN_2D; break;
+case SLVS_E_NORMAL_IN_3D:       e.type = EntityBase::Type::NORMAL_IN_3D; break;
+case SLVS_E_NORMAL_IN_2D:       e.type = EntityBase::Type::NORMAL_IN_2D; break;
+case SLVS_E_DISTANCE:           e.type = EntityBase::Type::DISTANCE; break;
+case SLVS_E_WORKPLANE:          e.type = EntityBase::Type::WORKPLANE; break;
+case SLVS_E_LINE_SEGMENT:       e.type = EntityBase::Type::LINE_SEGMENT; break;
+case SLVS_E_CUBIC:              e.type = EntityBase::Type::CUBIC; break;
+case SLVS_E_CIRCLE:             e.type = EntityBase::Type::CIRCLE; break;
+case SLVS_E_ARC_OF_CIRCLE:      e.type = EntityBase::Type::ARC_OF_CIRCLE; break;
 
 default: dbp("bad entity type %d", se->type); return;
         }
@@ -119,46 +115,46 @@ default: dbp("bad entity type %d", se->type); return;
         Slvs_Constraint *sc = &(ssys->constraint[i]);
         ConstraintBase c = {};
 
-        Constraint::Type t;
+        ConstraintBase::Type t;
         switch(sc->type) {
-case SLVS_C_POINTS_COINCIDENT:  t = Constraint::Type::POINTS_COINCIDENT; break;
-case SLVS_C_PT_PT_DISTANCE:     t = Constraint::Type::PT_PT_DISTANCE; break;
-case SLVS_C_PT_PLANE_DISTANCE:  t = Constraint::Type::PT_PLANE_DISTANCE; break;
-case SLVS_C_PT_LINE_DISTANCE:   t = Constraint::Type::PT_LINE_DISTANCE; break;
-case SLVS_C_PT_FACE_DISTANCE:   t = Constraint::Type::PT_FACE_DISTANCE; break;
-case SLVS_C_PT_IN_PLANE:        t = Constraint::Type::PT_IN_PLANE; break;
-case SLVS_C_PT_ON_LINE:         t = Constraint::Type::PT_ON_LINE; break;
-case SLVS_C_PT_ON_FACE:         t = Constraint::Type::PT_ON_FACE; break;
-case SLVS_C_EQUAL_LENGTH_LINES: t = Constraint::Type::EQUAL_LENGTH_LINES; break;
-case SLVS_C_LENGTH_RATIO:       t = Constraint::Type::LENGTH_RATIO; break;
-case SLVS_C_ARC_ARC_LEN_RATIO:  t = Constraint::Type::ARC_ARC_LEN_RATIO; break;
-case SLVS_C_ARC_LINE_LEN_RATIO: t = Constraint::Type::ARC_LINE_LEN_RATIO; break;
-case SLVS_C_EQ_LEN_PT_LINE_D:   t = Constraint::Type::EQ_LEN_PT_LINE_D; break;
-case SLVS_C_EQ_PT_LN_DISTANCES: t = Constraint::Type::EQ_PT_LN_DISTANCES; break;
-case SLVS_C_EQUAL_ANGLE:        t = Constraint::Type::EQUAL_ANGLE; break;
-case SLVS_C_EQUAL_LINE_ARC_LEN: t = Constraint::Type::EQUAL_LINE_ARC_LEN; break;
-case SLVS_C_LENGTH_DIFFERENCE:  t = Constraint::Type::LENGTH_DIFFERENCE; break;
-case SLVS_C_ARC_ARC_DIFFERENCE: t = Constraint::Type::ARC_ARC_DIFFERENCE; break;
-case SLVS_C_ARC_LINE_DIFFERENCE:t = Constraint::Type::ARC_LINE_DIFFERENCE; break;
-case SLVS_C_SYMMETRIC:          t = Constraint::Type::SYMMETRIC; break;
-case SLVS_C_SYMMETRIC_HORIZ:    t = Constraint::Type::SYMMETRIC_HORIZ; break;
-case SLVS_C_SYMMETRIC_VERT:     t = Constraint::Type::SYMMETRIC_VERT; break;
-case SLVS_C_SYMMETRIC_LINE:     t = Constraint::Type::SYMMETRIC_LINE; break;
-case SLVS_C_AT_MIDPOINT:        t = Constraint::Type::AT_MIDPOINT; break;
-case SLVS_C_HORIZONTAL:         t = Constraint::Type::HORIZONTAL; break;
-case SLVS_C_VERTICAL:           t = Constraint::Type::VERTICAL; break;
-case SLVS_C_DIAMETER:           t = Constraint::Type::DIAMETER; break;
-case SLVS_C_PT_ON_CIRCLE:       t = Constraint::Type::PT_ON_CIRCLE; break;
-case SLVS_C_SAME_ORIENTATION:   t = Constraint::Type::SAME_ORIENTATION; break;
-case SLVS_C_ANGLE:              t = Constraint::Type::ANGLE; break;
-case SLVS_C_PARALLEL:           t = Constraint::Type::PARALLEL; break;
-case SLVS_C_PERPENDICULAR:      t = Constraint::Type::PERPENDICULAR; break;
-case SLVS_C_ARC_LINE_TANGENT:   t = Constraint::Type::ARC_LINE_TANGENT; break;
-case SLVS_C_CUBIC_LINE_TANGENT: t = Constraint::Type::CUBIC_LINE_TANGENT; break;
-case SLVS_C_EQUAL_RADIUS:       t = Constraint::Type::EQUAL_RADIUS; break;
-case SLVS_C_PROJ_PT_DISTANCE:   t = Constraint::Type::PROJ_PT_DISTANCE; break;
-case SLVS_C_WHERE_DRAGGED:      t = Constraint::Type::WHERE_DRAGGED; break;
-case SLVS_C_CURVE_CURVE_TANGENT:t = Constraint::Type::CURVE_CURVE_TANGENT; break;
+case SLVS_C_POINTS_COINCIDENT:  t = ConstraintBase::Type::POINTS_COINCIDENT; break;
+case SLVS_C_PT_PT_DISTANCE:     t = ConstraintBase::Type::PT_PT_DISTANCE; break;
+case SLVS_C_PT_PLANE_DISTANCE:  t = ConstraintBase::Type::PT_PLANE_DISTANCE; break;
+case SLVS_C_PT_LINE_DISTANCE:   t = ConstraintBase::Type::PT_LINE_DISTANCE; break;
+case SLVS_C_PT_FACE_DISTANCE:   t = ConstraintBase::Type::PT_FACE_DISTANCE; break;
+case SLVS_C_PT_IN_PLANE:        t = ConstraintBase::Type::PT_IN_PLANE; break;
+case SLVS_C_PT_ON_LINE:         t = ConstraintBase::Type::PT_ON_LINE; break;
+case SLVS_C_PT_ON_FACE:         t = ConstraintBase::Type::PT_ON_FACE; break;
+case SLVS_C_EQUAL_LENGTH_LINES: t = ConstraintBase::Type::EQUAL_LENGTH_LINES; break;
+case SLVS_C_LENGTH_RATIO:       t = ConstraintBase::Type::LENGTH_RATIO; break;
+case SLVS_C_ARC_ARC_LEN_RATIO:  t = ConstraintBase::Type::ARC_ARC_LEN_RATIO; break;
+case SLVS_C_ARC_LINE_LEN_RATIO: t = ConstraintBase::Type::ARC_LINE_LEN_RATIO; break;
+case SLVS_C_EQ_LEN_PT_LINE_D:   t = ConstraintBase::Type::EQ_LEN_PT_LINE_D; break;
+case SLVS_C_EQ_PT_LN_DISTANCES: t = ConstraintBase::Type::EQ_PT_LN_DISTANCES; break;
+case SLVS_C_EQUAL_ANGLE:        t = ConstraintBase::Type::EQUAL_ANGLE; break;
+case SLVS_C_EQUAL_LINE_ARC_LEN: t = ConstraintBase::Type::EQUAL_LINE_ARC_LEN; break;
+case SLVS_C_LENGTH_DIFFERENCE:  t = ConstraintBase::Type::LENGTH_DIFFERENCE; break;
+case SLVS_C_ARC_ARC_DIFFERENCE: t = ConstraintBase::Type::ARC_ARC_DIFFERENCE; break;
+case SLVS_C_ARC_LINE_DIFFERENCE:t = ConstraintBase::Type::ARC_LINE_DIFFERENCE; break;
+case SLVS_C_SYMMETRIC:          t = ConstraintBase::Type::SYMMETRIC; break;
+case SLVS_C_SYMMETRIC_HORIZ:    t = ConstraintBase::Type::SYMMETRIC_HORIZ; break;
+case SLVS_C_SYMMETRIC_VERT:     t = ConstraintBase::Type::SYMMETRIC_VERT; break;
+case SLVS_C_SYMMETRIC_LINE:     t = ConstraintBase::Type::SYMMETRIC_LINE; break;
+case SLVS_C_AT_MIDPOINT:        t = ConstraintBase::Type::AT_MIDPOINT; break;
+case SLVS_C_HORIZONTAL:         t = ConstraintBase::Type::HORIZONTAL; break;
+case SLVS_C_VERTICAL:           t = ConstraintBase::Type::VERTICAL; break;
+case SLVS_C_DIAMETER:           t = ConstraintBase::Type::DIAMETER; break;
+case SLVS_C_PT_ON_CIRCLE:       t = ConstraintBase::Type::PT_ON_CIRCLE; break;
+case SLVS_C_SAME_ORIENTATION:   t = ConstraintBase::Type::SAME_ORIENTATION; break;
+case SLVS_C_ANGLE:              t = ConstraintBase::Type::ANGLE; break;
+case SLVS_C_PARALLEL:           t = ConstraintBase::Type::PARALLEL; break;
+case SLVS_C_PERPENDICULAR:      t = ConstraintBase::Type::PERPENDICULAR; break;
+case SLVS_C_ARC_LINE_TANGENT:   t = ConstraintBase::Type::ARC_LINE_TANGENT; break;
+case SLVS_C_CUBIC_LINE_TANGENT: t = ConstraintBase::Type::CUBIC_LINE_TANGENT; break;
+case SLVS_C_EQUAL_RADIUS:       t = ConstraintBase::Type::EQUAL_RADIUS; break;
+case SLVS_C_PROJ_PT_DISTANCE:   t = ConstraintBase::Type::PROJ_PT_DISTANCE; break;
+case SLVS_C_WHERE_DRAGGED:      t = ConstraintBase::Type::WHERE_DRAGGED; break;
+case SLVS_C_CURVE_CURVE_TANGENT:t = ConstraintBase::Type::CURVE_CURVE_TANGENT; break;
 
 default: dbp("bad constraint type %d", sc->type); return;
         }
@@ -199,7 +195,7 @@ default: dbp("bad constraint type %d", sc->type); return;
         }
     }
 
-    Group g = {};
+    GroupBase g = {};
     g.h.v = shg;
 
     List<hConstraint> bad = {};

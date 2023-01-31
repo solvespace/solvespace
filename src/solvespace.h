@@ -178,19 +178,7 @@ class EntityBase;
 class hEntity;
 class Param;
 class hParam;
-
-#ifdef LIBRARY
-#   define ENTITY EntityBase
-#   define CONSTRAINT ConstraintBase
-#   define GROUP GroupBase
-#else
-#   define ENTITY Entity
-#   define CONSTRAINT Constraint
-#   define GROUP Group
-#endif
-
 typedef IdList<Param,hParam> ParamList;
-typedef IdList<ENTITY,hEntity> EntityList;
 
 enum class SolveResult : uint32_t {
     OKAY                     = 0,
@@ -200,7 +188,23 @@ enum class SolveResult : uint32_t {
     TOO_MANY_UNKNOWNS        = 20
 };
 
+#ifdef LIBRARY
+#   define ENTITY EntityBase
+#else
+#   define ENTITY Entity
+#endif
+
+typedef IdList<ENTITY,hEntity> EntityList;
 #include "sketch.h"
+
+#ifdef LIBRARY
+#   define CONSTRAINT ConstraintBase
+#   define GROUP GroupBase
+#else
+#   define CONSTRAINT Constraint
+#   define GROUP Group
+#endif
+
 #ifndef LIBRARY
 #include "ui.h"
 #endif
