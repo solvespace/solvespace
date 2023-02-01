@@ -626,7 +626,7 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
         hoveredButton = NULL;
     }
 
-    double hoveredX, hoveredY;
+    double hoveredX = 0, hoveredY = 0;
     for(Button *button : buttons) {
         if(how == PAINT) {
             button->Draw(uiCanvas, x, y, (button == hoveredButton));
