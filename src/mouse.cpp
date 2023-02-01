@@ -824,7 +824,7 @@ Vector GraphicsWindow::SnapToEntityByScreenPoint(Point2d pp, hEntity he) {
     SEdgeList *edges = e->GetOrGenerateEdges();
 
     double minD = -1.0f;
-    double k;
+    double k = 0.0;
     const SEdge *edge = NULL;
     for(const auto &e : edges->l) {
         Point2d p0 = ProjectPoint(e.a);
