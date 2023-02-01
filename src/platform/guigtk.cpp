@@ -1493,7 +1493,8 @@ std::vector<Platform::Path> GetFontFiles() {
 }
 
 void OpenInBrowser(const std::string &url) {
-    gtk_show_uri(Gdk::Screen::get_default()->gobj(), url.c_str(), GDK_CURRENT_TIME, NULL);
+    // first param should be our window?
+    gtk_show_uri_on_window(NULL, url.c_str(), GDK_CURRENT_TIME, NULL);
 }
 
 Gtk::Main *gtkMain;
