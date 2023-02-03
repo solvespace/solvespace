@@ -501,6 +501,7 @@ public:
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
     inline Request *GetRequest(hRequest h) { return request.FindById(h); }
     inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
+
     // Styles are handled a bit differently.
 
     void Clear();

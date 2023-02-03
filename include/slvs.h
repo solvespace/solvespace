@@ -38,7 +38,7 @@ typedef uint32_t Slvs_hGroup;
 /* To obtain the 3d (not projected into a workplane) of a constraint or
  * an entity, specify this instead of the workplane. */
 #define SLVS_FREE_IN_3D         0
-
+#define SLVS_NO_ENTITY          0
 
 typedef struct {
     Slvs_hParam     h;
@@ -196,8 +196,10 @@ typedef struct {
     int                 result;
 } Slvs_System;
 
-DLL void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
+DLL double Slvs_GetParamValue(Slvs_hEntity e, int i);
 
+DLL void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
+DLL void Slvs_SolveSketch(Slvs_hGroup hg);
 
 /* Our base coordinate system has basis vectors
  *     (1, 0, 0)  (0, 1, 0)  (0, 0, 1)
@@ -400,6 +402,68 @@ static inline Slvs_Constraint Slvs_MakeConstraint(Slvs_hConstraint h,
     r.entityB = entityB;
     return r;
 }
+
+Slvs_hEntity Slvs_AddPoint2D(Slvs_hGroup grouph, double u, double v, Slvs_hEntity workplaneh);
+Slvs_hEntity Slvs_AddPoint3D(Slvs_hGroup grouph, double x, double y, double z);
+Slvs_hEntity Slvs_AddNormal2D(Slvs_hGroup grouph, Slvs_hEntity workplaneh);
+Slvs_hEntity Slvs_AddNormal3D(Slvs_hGroup grouph, double qw, double qx, double qy, double qz);
+Slvs_hEntity Slvs_AddDistance(Slvs_hGroup grouph, double value, Slvs_hEntity workplaneh);
+Slvs_hEntity Slvs_AddLine2D(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh, Slvs_hEntity workplaneh);
+Slvs_hEntity Slvs_AddLine3D(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh);
+Slvs_hEntity Slvs_AddCubic(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh, Slvs_hEntity ptCh, Slvs_hEntity ptDh, Slvs_hEntity workplaneh);
+Slvs_hEntity Slvs_AddArc(Slvs_hGroup grouph, Slvs_hEntity normalh, Slvs_hEntity centerh, Slvs_hEntity starth, Slvs_hEntity endh, Slvs_hEntity workplaneh);
+Slvs_hEntity Slvs_AddCircle(Slvs_hGroup grouph, Slvs_hEntity normalh, Slvs_hEntity centerh, Slvs_hEntity radiush, Slvs_hEntity workplaneh);
+Slvs_hEntity Slvs_AddWorkplane(Slvs_hGroup grouph, Slvs_hEntity originh, Slvs_hEntity nmh);
+Slvs_hEntity Slvs_Add2DBase(Slvs_hGroup grouph);
+
+
+Slvs_hConstraint Slvs_AddConstraint(Slvs_hGroup grouph, int type, Slvs_hEntity workplaneh, double val, Slvs_hEntity ptAh,
+    Slvs_hEntity ptBh, Slvs_hEntity entityAh,
+    Slvs_hEntity entityBh, Slvs_hEntity entityCh,
+    Slvs_hEntity entityDh, int other, int other2);
+Slvs_hConstraint Slvs_Coincident(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_Distance(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_Equal(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_EqualAngle(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, Slvs_hEntity entityCh,
+                                    Slvs_hEntity entityDh,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_EqualPointToLine(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
+                                    Slvs_hEntity entityCh, Slvs_hEntity entityDh,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_Ratio(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
+                                    Slvs_hEntity entityCh  ,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_Midpoint(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_Horizontal(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity workplaneh,
+                                    Slvs_hEntity entityBh);
+Slvs_hConstraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity workplaneh,
+                                    Slvs_hEntity entityBh);
+Slvs_hConstraint Slvs_Diameter(Slvs_hGroup grouph, Slvs_hEntity entityAh, double value);
+Slvs_hConstraint Slvs_SameOrientation(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh);
+Slvs_hConstraint Slvs_Angle(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
+                                    Slvs_hEntity workplaneh,
+                                    int inverse);
+Slvs_hConstraint Slvs_Perpendicular(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
+                                    Slvs_hEntity workplaneh,
+                                    int inverse);
+Slvs_hConstraint Slvs_Parallel(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_DistanceProj(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh, double value);
+Slvs_hConstraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
+                                    Slvs_hEntity workplaneh);
+Slvs_hConstraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity workplaneh);
 
 #ifdef __cplusplus
 }

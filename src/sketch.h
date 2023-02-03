@@ -459,6 +459,54 @@ public:
     // times to apply the transformation.
     int timesApplied;
 
+    inline bool IsFreeIn3D() {
+        return h == FREE_IN_3D;
+    }
+
+    inline bool Is3D() {
+        return workplane == FREE_IN_3D;
+    }
+
+    inline bool IsNone() {
+        return h.v == 0;
+    }
+
+    inline bool IsPoint2D() {
+        return type == Type::POINT_IN_2D;
+    }
+
+    inline bool IsPoint3D() {
+        return type == Type::POINT_IN_3D;
+    }
+
+    inline bool IsNormal2D() {
+        return type == Type::NORMAL_IN_2D;
+    }
+
+    inline bool IsNormal3D() {
+        return type == Type::NORMAL_IN_3D;
+    }
+
+    inline bool IsLine() {
+        return type == Type::LINE_SEGMENT;
+    }
+
+    inline bool IsLine2D() {
+        return type == Type::LINE_SEGMENT && !Is3D();
+    }
+
+    inline bool IsLine3D() {
+        return type == Type::LINE_SEGMENT && Is3D();
+    }
+
+    inline bool IsCubic() {
+        return type == Type::CUBIC;
+    }
+
+    inline bool IsArc() {
+        return type == Type::ARC_OF_CIRCLE;
+    }
+
     Quaternion GetAxisAngleQuaternion(int param0) const;
     ExprQuaternion GetAxisAngleQuaternionExprs(int param0) const;
 

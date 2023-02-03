@@ -27,6 +27,32 @@ static void *CheckMalloc(size_t n)
     return r;
 }
 
+void ExampleStatefull()
+{
+    Slvs_hGroup g = 1;
+    printf("1\n");
+    Slvs_hEntity wp = Slvs_Add2DBase(g);
+    printf("2\n");
+    Slvs_hEntity p1 = Slvs_AddPoint2D(g, 0.0, 10.0, wp);
+    printf("3\n");
+    Slvs_hEntity p2 = Slvs_AddPoint2D(g, 5.0, 20.0, wp);
+    printf("4\n");
+    Slvs_hEntity l1 = Slvs_AddLine2D(g, p1, p2, wp);
+    printf("5\n");
+    Slvs_Vertical(g, p1, wp, p2);
+    printf("6\n");
+    Slvs_SolveSketch(g);
+    double p1x = Slvs_GetParamValue(p1, 0);
+    double p1y = Slvs_GetParamValue(p1, 1);
+    double p2x = Slvs_GetParamValue(p2, 0);
+    double p2y = Slvs_GetParamValue(p2, 1);
+    // Slvs_GetPoint(l1, 0);
+    printf("p1x:%.3f\n", p1x);
+    printf("p1y:%.3f\n", p1y);
+    printf("p2x:%.3f\n", p2x);
+    printf("p2y:%.3f\n", p2y);
+}
+
 /*-----------------------------------------------------------------------------
  * An example of a constraint in 3d. We create a single group, with some
  * entities and constraints.
@@ -251,19 +277,21 @@ void Example2d()
 
 int main()
 {
-    sys.param      = CheckMalloc(50*sizeof(sys.param[0]));
-    sys.entity     = CheckMalloc(50*sizeof(sys.entity[0]));
-    sys.constraint = CheckMalloc(50*sizeof(sys.constraint[0]));
+    ExampleStatefull();
 
-    sys.failed  = CheckMalloc(50*sizeof(sys.failed[0]));
-    sys.faileds = 50;
+    // sys.param      = CheckMalloc(50*sizeof(sys.param[0]));
+    // sys.entity     = CheckMalloc(50*sizeof(sys.entity[0]));
+    // sys.constraint = CheckMalloc(50*sizeof(sys.constraint[0]));
 
-    /*Example3d();*/
-    for(;;) {
-        Example2d();
-        sys.params = sys.constraints = sys.entities = 0;
-        break;
-    }
+    // sys.failed  = CheckMalloc(50*sizeof(sys.failed[0]));
+    // sys.faileds = 50;
+
+    // /*Example3d();*/
+    // for(;;) {
+    //     Example2d();
+    //     sys.params = sys.constraints = sys.entities = 0;
+    //     break;
+    // }
     return 0;
 }
 
