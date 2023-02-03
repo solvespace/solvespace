@@ -27,26 +27,32 @@ static void *CheckMalloc(size_t n)
     return r;
 }
 
-void ExampleStatefull()
+void ExampleStateful()
 {
     Slvs_hGroup g = 1;
-    printf("1\n");
     Slvs_hEntity wp = Slvs_Add2DBase(g);
-    printf("2\n");
     Slvs_hEntity p1 = Slvs_AddPoint2D(g, 0.0, 10.0, wp);
-    printf("3\n");
     Slvs_hEntity p2 = Slvs_AddPoint2D(g, 5.0, 20.0, wp);
-    printf("4\n");
     Slvs_hEntity l1 = Slvs_AddLine2D(g, p1, p2, wp);
-    printf("5\n");
+
+    // double w, vx, vy, vz;
+    // Slvs_MakeQuaternion(1, 0, 0, 0, 1, 0, &w, &vx, &vy, &vz);
+    // Slvs_hEntity n = Slvs_AddNormal3D(g, w, vx, vy, vz);
+    // Slvs_hEntity center = Slvs_AddPoint2D(g, 5.0, 5.0, wp);
+    // Slvs_hEntity radius = Slvs_AddDistance(g, 50.0, wp);
+    // Slvs_hEntity c1 = Slvs_AddCircle(g, n, center, radius, wp);
+
     Slvs_Vertical(g, p1, wp, p2);
-    printf("6\n");
-    Slvs_SolveSketch(g);
+    int rank, dof, bad;
+    int res = Slvs_SolveSketch(g, &rank, &dof, &bad, 0);
+    printf("res: %i\n", res);
+    printf("rank: %i\n", rank);
+    printf("dof: %i\n", dof);
     double p1x = Slvs_GetParamValue(p1, 0);
     double p1y = Slvs_GetParamValue(p1, 1);
-    double p2x = Slvs_GetParamValue(p2, 0);
-    double p2y = Slvs_GetParamValue(p2, 1);
-    // Slvs_GetPoint(l1, 0);
+    Slvs_hEntity l1p2 = Slvs_GetPoint(l1, 1);
+    double p2x = Slvs_GetParamValue(l1p2, 0);
+    double p2y = Slvs_GetParamValue(l1p2, 1);
     printf("p1x:%.3f\n", p1x);
     printf("p1y:%.3f\n", p1y);
     printf("p2x:%.3f\n", p2x);
@@ -277,21 +283,21 @@ void Example2d()
 
 int main()
 {
-    ExampleStatefull();
+    ExampleStateful();
 
-    // sys.param      = CheckMalloc(50*sizeof(sys.param[0]));
-    // sys.entity     = CheckMalloc(50*sizeof(sys.entity[0]));
-    // sys.constraint = CheckMalloc(50*sizeof(sys.constraint[0]));
+    sys.param      = CheckMalloc(50*sizeof(sys.param[0]));
+    sys.entity     = CheckMalloc(50*sizeof(sys.entity[0]));
+    sys.constraint = CheckMalloc(50*sizeof(sys.constraint[0]));
 
-    // sys.failed  = CheckMalloc(50*sizeof(sys.failed[0]));
-    // sys.faileds = 50;
+    sys.failed  = CheckMalloc(50*sizeof(sys.failed[0]));
+    sys.faileds = 50;
 
-    // /*Example3d();*/
-    // for(;;) {
-    //     Example2d();
-    //     sys.params = sys.constraints = sys.entities = 0;
-    //     break;
-    // }
+    /*Example3d();*/
+    for(;;) {
+        Example2d();
+        sys.params = sys.constraints = sys.entities = 0;
+        break;
+    }
     return 0;
 }
 
