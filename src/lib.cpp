@@ -470,7 +470,7 @@ Slvs_hConstraint Slvs_Horizontal(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs
                                     Slvs_hEntity entityBh = SLVS_NO_ENTITY) {
     EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
     EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
+    EntityBase* entityB = SK.entity.FindByIdNoOops(hEntity { entityBh });
     if(workplane->IsFreeIn3D()) {
         ssassert(false, "Horizontal constraint is not supported in 3D");
     } else if(entityA->IsLine2D()) {
@@ -486,7 +486,7 @@ Slvs_hConstraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_h
                                 Slvs_hEntity entityBh = SLVS_NO_ENTITY) {
     EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
     EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
+    EntityBase* entityB = SK.entity.FindByIdNoOops(hEntity { entityBh });
     if(workplane->IsFreeIn3D()) {
         ssassert(false, "Vertical constraint is not supported in 3D");
     } else if(entityA->IsLine2D()) {
@@ -701,7 +701,15 @@ void Slvs_MakeQuaternion(double ux, double uy, double uz,
     *qz = q.vz;
 }
 
-int Slvs_SolveSketch(Slvs_hGroup shg, int* rank, int* dof, int* badCount, int calculateFaileds = 0)
+void Slvs_ClearSketch()
+{
+    SYS.Clear();
+    SK.param.Clear();
+    SK.entity.Clear();
+    SK.constraint.Clear();
+}
+
+Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup shg, int calculateFaileds = 0)
 {
     SYS.Clear();
 
@@ -753,21 +761,26 @@ int Slvs_SolveSketch(Slvs_hGroup shg, int* rank, int* dof, int* badCount, int ca
 
     List<hConstraint> badList;
     bool andFindBad = calculateFaileds ? true : false;
-    SolveResult status = SYS.Solve(&g, rank, dof, &badList, andFindBad, false, false);
 
-    *badCount = badList.n;
+    int rank, dof;
+    SolveResult status = SYS.Solve(&g, &rank, &dof, &badList, andFindBad, false, false);
 
+    Slvs_SolveResult sr = {};
+    sr.rank = rank;
+    sr.dof = dof;
+    sr.bad = badList.n;
     switch(status) {
         case SolveResult::OKAY:
-            return SLVS_RESULT_OKAY;
+            sr.result = SLVS_RESULT_OKAY;
         case SolveResult::DIDNT_CONVERGE:
-            return SLVS_RESULT_DIDNT_CONVERGE;
+            sr.result = SLVS_RESULT_DIDNT_CONVERGE;
         case SolveResult::REDUNDANT_DIDNT_CONVERGE:
         case SolveResult::REDUNDANT_OKAY:
-            return SLVS_RESULT_INCONSISTENT;
+            sr.result = SLVS_RESULT_INCONSISTENT;
         case SolveResult::TOO_MANY_UNKNOWNS:
-            return SLVS_RESULT_TOO_MANY_UNKNOWNS;
+            sr.result = SLVS_RESULT_TOO_MANY_UNKNOWNS;
     }
+    return sr;
 }
 
 double Slvs_GetParamValue(Slvs_hEntity e, int i)

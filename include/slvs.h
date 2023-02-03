@@ -196,11 +196,19 @@ typedef struct {
     int                 result;
 } Slvs_System;
 
+typedef struct {
+    int                 result;
+    int                 dof;
+    int                 rank;
+    int                 bad;
+} Slvs_SolveResult;
+
 DLL double Slvs_GetParamValue(Slvs_hEntity e, int i);
 DLL Slvs_hEntity Slvs_GetPoint(Slvs_hParam e, int i);
 
 DLL void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
-DLL int Slvs_SolveSketch(Slvs_hGroup hg, int* rank, int* dof, int* badCount, int calculateFaileds);
+DLL Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup hg, int calculateFaileds);
+DLL void Slvs_ClearSketch();
 
 /* Our base coordinate system has basis vectors
  *     (1, 0, 0)  (0, 1, 0)  (0, 0, 1)

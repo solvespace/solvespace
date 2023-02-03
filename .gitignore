@@ -19,3 +19,4 @@
 out/
 .vs/
 CMakeSettings.json
+__pycache__/
