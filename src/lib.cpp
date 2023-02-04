@@ -22,6 +22,79 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *) {
 
 extern "C" {
 
+Slvs_Entity SLVS_NO_ENTITY_E = Slvs_Entity { 0 };
+Slvs_Entity SLVS_FREE_IN_3D_E = Slvs_Entity { 0 };
+
+bool Slvs_IsFreeIn3D(Slvs_Entity e) {
+    return e.h == SLVS_FREE_IN_3D;
+}
+
+bool Slvs_Is3D(Slvs_Entity e) {
+    return e.wrkpl == SLVS_FREE_IN_3D;
+}
+
+bool Slvs_IsNone(Slvs_Entity e) {
+    return e.h == 0;
+}
+
+bool Slvs_IsPoint2D(Slvs_Entity e) {
+    return e.type == SLVS_E_POINT_IN_2D;
+}
+
+bool Slvs_IsPoint3D(Slvs_Entity e) {
+    return e.type == SLVS_E_POINT_IN_3D;
+}
+
+bool Slvs_IsNormal2D(Slvs_Entity e) {
+    return e.type == SLVS_E_NORMAL_IN_2D;
+}
+
+bool Slvs_IsNormal3D(Slvs_Entity e) {
+    return e.type == SLVS_E_NORMAL_IN_3D;
+}
+
+bool Slvs_IsLine(Slvs_Entity e) {
+    return e.type == SLVS_E_LINE_SEGMENT;
+}
+
+bool Slvs_IsLine2D(Slvs_Entity e) {
+    return e.type == SLVS_E_LINE_SEGMENT && !Slvs_Is3D(e);
+}
+
+bool Slvs_IsLine3D(Slvs_Entity e) {
+    return e.type == SLVS_E_LINE_SEGMENT && Slvs_Is3D(e);
+}
+
+bool Slvs_IsCubic(Slvs_Entity e) {
+    return e.type == SLVS_E_CUBIC;
+}
+
+bool Slvs_IsArc(Slvs_Entity e) {
+    return e.type == SLVS_E_ARC_OF_CIRCLE;
+}
+
+bool Slvs_IsWorkplane(Slvs_Entity e) {
+    return e.type == SLVS_E_WORKPLANE;
+}
+
+bool Slvs_IsDistance(Slvs_Entity e) {
+    return e.type == SLVS_E_DISTANCE;
+}
+
+bool Slvs_IsPoint(Slvs_Entity e) {
+    switch(e.type) {
+        case SLVS_E_POINT_IN_3D:
+        case SLVS_E_POINT_IN_2D:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool Slvs_IsCircle(Slvs_Entity e) {
+    return e.type == SLVS_E_CIRCLE || e.type == SLVS_E_ARC_OF_CIRCLE;
+}
+
 Slvs_hParam Slvs_AddParam(double val) {
     Param pa = {};
     pa.val   = val;
@@ -30,20 +103,28 @@ Slvs_hParam Slvs_AddParam(double val) {
 }
 
 // entities
-Slvs_hEntity Slvs_AddPoint2D(Slvs_hGroup grouph, double u, double v, Slvs_hEntity workplaneh) {
+Slvs_Entity Slvs_AddPoint2D(Slvs_hGroup grouph, double u, double v, Slvs_Entity workplane) {
     Slvs_hParam uph      = Slvs_AddParam(u);
     Slvs_hParam vph      = Slvs_AddParam(v);
     EntityBase e  = {};
     e.type        = EntityBase::Type::POINT_IN_2D;
     e.group.v     = grouph;
-    e.workplane.v = workplaneh;
+    e.workplane.v = workplane.h;
     e.param[0].v  = uph;
     e.param[1].v  = vph;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_POINT_IN_2D;
+    ce.group = grouph;
+    ce.wrkpl = workplane.h;
+    ce.param[0] = uph;
+    ce.param[1] = vph;
+    return ce;
 }
 
-Slvs_hEntity Slvs_AddPoint3D(Slvs_hGroup grouph, double x, double y, double z) {
+Slvs_Entity Slvs_AddPoint3D(Slvs_hGroup grouph, double x, double y, double z) {
     Slvs_hParam xph      = Slvs_AddParam(x);
     Slvs_hParam yph      = Slvs_AddParam(y);
     Slvs_hParam zph      = Slvs_AddParam(z);
@@ -55,23 +136,37 @@ Slvs_hEntity Slvs_AddPoint3D(Slvs_hGroup grouph, double x, double y, double z) {
     e.param[1].v  = yph;
     e.param[2].v  = zph;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_POINT_IN_3D;
+    ce.group = grouph;
+    ce.wrkpl = SLVS_FREE_IN_3D;
+    ce.param[0] = xph;
+    ce.param[1] = yph;
+    ce.param[2] = zph;
+    return ce;
 }
 
-Slvs_hEntity Slvs_AddNormal2D(Slvs_hGroup grouph, Slvs_hEntity workplaneh) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    if(!workplane->IsWorkplane()) {
+Slvs_Entity Slvs_AddNormal2D(Slvs_hGroup grouph, Slvs_Entity workplane) {
+    if(!Slvs_IsWorkplane(workplane)) {
         ssassert(false, "workplane argument is not a workplane");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::NORMAL_IN_2D;
     e.group.v     = grouph;
-    e.workplane.v = workplaneh;
+    e.workplane.v = workplane.h;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_NORMAL_IN_2D;
+    ce.group = grouph;
+    ce.wrkpl = workplane.h;
+    return ce;
 }
 
-Slvs_hEntity Slvs_AddNormal3D(Slvs_hGroup grouph, double qw, double qx, double qy, double qz) {
+Slvs_Entity Slvs_AddNormal3D(Slvs_hGroup grouph, double qw, double qx, double qy, double qz) {
     Slvs_hParam wph      = Slvs_AddParam(qw);
     Slvs_hParam xph      = Slvs_AddParam(qx);
     Slvs_hParam yph      = Slvs_AddParam(qy);
@@ -85,175 +180,225 @@ Slvs_hEntity Slvs_AddNormal3D(Slvs_hGroup grouph, double qw, double qx, double q
     e.param[2].v  = yph;
     e.param[3].v  = zph;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_NORMAL_IN_3D;
+    ce.group = grouph;
+    ce.wrkpl = SLVS_FREE_IN_3D;
+    ce.param[0] = wph;
+    ce.param[1] = xph;
+    ce.param[2] = yph;
+    ce.param[3] = zph;
+    return ce;
 }
 
-Slvs_hEntity Slvs_AddDistance(Slvs_hGroup grouph, double value, Slvs_hEntity workplaneh) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    if(!workplane->IsWorkplane()) {
+Slvs_Entity Slvs_AddDistance(Slvs_hGroup grouph, double value, Slvs_Entity workplane) {
+    if(!Slvs_IsWorkplane(workplane)) {
         ssassert(false, "workplane argument is not a workplane");
     }
     Slvs_hParam valueph  = Slvs_AddParam(value);
     EntityBase e  = {};
     e.type        = EntityBase::Type::DISTANCE;
     e.group.v     = grouph;
-    e.workplane.v = workplaneh;
+    e.workplane.v = workplane.h;
     e.param[0].v  = valueph;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_DISTANCE;
+    ce.group = grouph;
+    ce.wrkpl = workplane.h;
+    ce.param[0] = valueph;
+    return ce;
 }
 
-Slvs_hEntity Slvs_AddLine2D(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh, Slvs_hEntity workplaneh) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* ptA = SK.entity.FindByHandleV(ptAh);
-    EntityBase* ptB = SK.entity.FindByHandleV(ptBh);
-    if(!workplane->IsWorkplane()) {
+Slvs_Entity Slvs_AddLine2D(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane) {
+    if(!Slvs_IsWorkplane(workplane)) {
         ssassert(false, "workplane argument is not a workplane");
-    } else if(!ptA->IsPoint2D()) {
+    } else if(!Slvs_IsPoint2D(ptA)) {
         ssassert(false, "ptA argument is not a 2d point");
-    } else if(!ptB->IsPoint2D()) {
+    } else if(!Slvs_IsPoint2D(ptB)) {
         ssassert(false, "ptB argument is not a 2d point");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::LINE_SEGMENT;
     e.group.v     = grouph;
-    e.workplane.v = workplaneh;
-    e.point[0].v  = ptAh;
-    e.point[1].v  = ptBh;
+    e.workplane.v = workplane.h;
+    e.point[0].v  = ptA.h;
+    e.point[1].v  = ptB.h;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_LINE_SEGMENT;
+    ce.group = grouph;
+    ce.wrkpl = workplane.h;
+    ce.point[0] = ptA.h;
+    ce.point[1] = ptB.h;
+    return ce;
 }
 
-Slvs_hEntity Slvs_AddLine3D(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh) {
-    EntityBase* ptA = SK.entity.FindByHandleV(ptAh);
-    EntityBase* ptB = SK.entity.FindByHandleV(ptBh);
-    if(!ptA->IsPoint3D()) {
+Slvs_Entity Slvs_AddLine3D(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB) {
+    if(!Slvs_IsPoint3D(ptA)) {
         ssassert(false, "ptA argument is not a 3d point");
-    } else if(!ptB->IsPoint3D()) {
+    } else if(!Slvs_IsPoint3D(ptB)) {
         ssassert(false, "ptB argument is not a 3d point");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::LINE_SEGMENT;
     e.group.v     = grouph;
     e.workplane.v = EntityBase::FREE_IN_3D.v;
-    e.point[0].v  = ptAh;
-    e.point[1].v  = ptBh;
+    e.point[0].v  = ptA.h;
+    e.point[1].v  = ptB.h;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_LINE_SEGMENT;
+    ce.group = grouph;
+    ce.wrkpl = SLVS_FREE_IN_3D;
+    ce.point[0] = ptA.h;
+    ce.point[1] = ptB.h;
+    return ce;
 }
 
-Slvs_hEntity Slvs_AddCubic(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh, Slvs_hEntity ptCh, Slvs_hEntity ptDh, Slvs_hEntity workplaneh) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* ptA = SK.entity.FindByHandleV(ptAh);
-    EntityBase* ptB = SK.entity.FindByHandleV(ptBh);
-    EntityBase* ptC = SK.entity.FindByHandleV(ptCh);
-    EntityBase* ptD = SK.entity.FindByHandleV(ptDh);
-    if(!workplane->IsWorkplane()) {
+Slvs_Entity Slvs_AddCubic(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity ptC, Slvs_Entity ptD, Slvs_Entity workplane) {
+    if(!Slvs_IsWorkplane(workplane)) {
         ssassert(false, "workplane argument is not a workplane");
-    } else if(!ptA->IsPoint2D()) {
+    } else if(!Slvs_IsPoint2D(ptA)) {
         ssassert(false, "ptA argument is not a 2d point");
-    } else if(!ptB->IsPoint2D()) {
+    } else if(!Slvs_IsPoint2D(ptB)) {
         ssassert(false, "ptB argument is not a 2d point");
-    } else if(!ptC->IsPoint2D()) {
+    } else if(!Slvs_IsPoint2D(ptC)) {
         ssassert(false, "ptC argument is not a 2d point");
-    } else if(!ptD->IsPoint2D()) {
+    } else if(!Slvs_IsPoint2D(ptD)) {
         ssassert(false, "ptD argument is not a 2d point");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::CUBIC;
     e.group.v     = grouph;
-    e.workplane.v = workplaneh;
-    e.point[0].v  = ptAh;
-    e.point[1].v  = ptBh;
-    e.point[2].v  = ptCh;
-    e.point[3].v  = ptDh;
+    e.workplane.v = workplane.h;
+    e.point[0].v  = ptA.h;
+    e.point[1].v  = ptB.h;
+    e.point[2].v  = ptC.h;
+    e.point[3].v  = ptD.h;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_CUBIC;
+    ce.group = grouph;
+    ce.wrkpl = workplane.h;
+    ce.point[0] = ptA.h;
+    ce.point[1] = ptB.h;
+    ce.point[2] = ptC.h;
+    ce.point[3] = ptD.h;
+    return ce;
 }
 
 
-Slvs_hEntity Slvs_AddArc(Slvs_hGroup grouph, Slvs_hEntity normalh, Slvs_hEntity centerh, Slvs_hEntity starth, Slvs_hEntity endh,
-                            Slvs_hEntity workplaneh) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* normal = SK.entity.FindByHandleV(normalh);
-    EntityBase* center = SK.entity.FindByHandleV(centerh);
-    EntityBase* start = SK.entity.FindByHandleV(starth);
-    EntityBase* end = SK.entity.FindByHandleV(endh);
-    if(!workplane->IsWorkplane()) {
+Slvs_Entity Slvs_AddArc(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity start, Slvs_Entity end,
+                            Slvs_Entity workplane) {
+    if(!Slvs_IsWorkplane(workplane)) {
         ssassert(false, "workplane argument is not a workplane");
-    } else if(!normal->IsNormal3D()) {
+    } else if(!Slvs_IsNormal3D(normal)) {
         ssassert(false, "normal argument is not a 3d normal");
-    } else if(!center->IsPoint2D()) {
+    } else if(!Slvs_IsPoint2D(center)) {
         ssassert(false, "center argument is not a 2d point");
-    } else if(!start->IsPoint2D()) {
+    } else if(!Slvs_IsPoint2D(start)) {
         ssassert(false, "start argument is not a 2d point");
-    } else if(!end->IsPoint2D()) {
+    } else if(!Slvs_IsPoint2D(end)) {
         ssassert(false, "end argument is not a 2d point");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::ARC_OF_CIRCLE;
     e.group.v     = grouph;
-    e.workplane.v = workplaneh;
-    e.normal.v    = normalh;
-    e.point[0].v  = centerh;
-    e.point[1].v  = starth;
-    e.point[2].v  = endh;
+    e.workplane.v = workplane.h;
+    e.normal.v    = normal.h;
+    e.point[0].v  = center.h;
+    e.point[1].v  = start.h;
+    e.point[2].v  = end.h;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_ARC_OF_CIRCLE;
+    ce.group = grouph;
+    ce.wrkpl = workplane.h;
+    ce.normal = normal.h;
+    ce.point[0] = center.h;
+    ce.point[1] = start.h;
+    ce.point[2] = end.h;
+    return ce;
 }
 
-Slvs_hEntity Slvs_AddCircle(Slvs_hGroup grouph, Slvs_hEntity normalh, Slvs_hEntity centerh, Slvs_hEntity radiush,
-                            Slvs_hEntity workplaneh) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* normal = SK.entity.FindByHandleV(normalh);
-    EntityBase* center = SK.entity.FindByHandleV(centerh);
-    EntityBase* radius = SK.entity.FindByHandleV(radiush);
-   if(!workplane->IsWorkplane()) {
+Slvs_Entity Slvs_AddCircle(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity radius,
+                            Slvs_Entity workplane) {
+    if(!Slvs_IsWorkplane(workplane)) {
         ssassert(false, "workplane argument is not a workplane");
-    } else if(!normal->IsNormal3D()) {
+    } else if(!Slvs_IsNormal3D(normal)) {
         ssassert(false, "normal argument is not a 3d normal");
-    } else if(!center->IsPoint2D()) {
+    } else if(!Slvs_IsPoint2D(center)) {
         ssassert(false, "center argument is not a 2d point");
-    } else if(!radius->IsDistance()) {
+    } else if(!Slvs_IsDistance(radius)) {
         ssassert(false, "radius argument is not a distance");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::CIRCLE;
     e.group.v     = grouph;
-    e.workplane.v = workplaneh;
-    e.normal.v    = normalh;
-    e.point[0].v  = centerh;
-    e.distance.v  = radiush;
+    e.workplane.v = workplane.h;
+    e.normal.v    = normal.h;
+    e.point[0].v  = center.h;
+    e.distance.v  = radius.h;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_CIRCLE;
+    ce.group = grouph;
+    ce.wrkpl = workplane.h;
+    ce.normal = normal.h;
+    ce.point[0] = center.h;
+    ce.distance = radius.h;
+    return ce;
 }
 
-Slvs_hEntity Slvs_AddWorkplane(Slvs_hGroup grouph, Slvs_hEntity originh, Slvs_hEntity nmh) {
+Slvs_Entity Slvs_AddWorkplane(Slvs_hGroup grouph, Slvs_Entity origin, Slvs_Entity nm) {
     EntityBase e  = {};
     e.type        = EntityBase::Type::WORKPLANE;
     e.group.v     = grouph;
     e.workplane.v = SLVS_FREE_IN_3D;
-    e.point[0].v  = originh;
-    e.normal.v    = nmh;
+    e.point[0].v  = origin.h;
+    e.normal.v    = nm.h;
     SK.entity.AddAndAssignId(&e);
-    return e.h.v;
+
+    Slvs_Entity ce = Slvs_Entity {};
+    ce.h = e.h.v;
+    ce.type = SLVS_E_WORKPLANE;
+    ce.group = grouph;
+    ce.wrkpl = SLVS_FREE_IN_3D;
+    ce.point[0] = origin.h;
+    ce.normal = nm.h;
+    return ce;
 }
 
-Slvs_hEntity Slvs_Add2DBase(Slvs_hGroup grouph) {
+Slvs_Entity Slvs_Add2DBase(Slvs_hGroup grouph) {
     Vector u      = Vector::From(1, 0, 0);
     Vector v      = Vector::From(0, 1, 0);
     Quaternion q  = Quaternion::From(u, v);
-    Slvs_hEntity nm = Slvs_AddNormal3D(grouph, q.w, q.vx, q.vy, q.vz);
+    Slvs_Entity nm = Slvs_AddNormal3D(grouph, q.w, q.vx, q.vy, q.vz);
     return Slvs_AddWorkplane(grouph, Slvs_AddPoint3D(grouph, 0, 0, 0), nm);
 }
 
 // constraints
 
-Slvs_hConstraint Slvs_AddConstraint(Slvs_hGroup grouph,
-    int type, Slvs_hEntity workplaneh, double val, Slvs_hEntity ptAh,
-    Slvs_hEntity ptBh = SLVS_NO_ENTITY, Slvs_hEntity entityAh = SLVS_NO_ENTITY,
-    Slvs_hEntity entityBh = SLVS_NO_ENTITY, Slvs_hEntity entityCh = SLVS_NO_ENTITY,
-    Slvs_hEntity entityDh = SLVS_NO_ENTITY, int other = 0, int other2 = 0) {
+Slvs_Constraint Slvs_AddConstraint(Slvs_hGroup grouph,
+    int type, Slvs_Entity workplane, double val, Slvs_Entity ptA,
+    Slvs_Entity ptB = SLVS_NO_ENTITY_E, Slvs_Entity entityA = SLVS_NO_ENTITY_E,
+    Slvs_Entity entityB = SLVS_NO_ENTITY_E, Slvs_Entity entityC = SLVS_NO_ENTITY_E,
+    Slvs_Entity entityD = SLVS_NO_ENTITY_E, int other = 0, int other2 = 0) {
     ConstraintBase c = {};
     ConstraintBase::Type t;
     switch(type) {
@@ -298,362 +443,272 @@ Slvs_hConstraint Slvs_AddConstraint(Slvs_hGroup grouph,
     }
     c.type           = t;
     c.group.v        = grouph;
-    c.workplane.v    = workplaneh;
+    c.workplane.v    = workplane.h;
     c.valA           = val;
-    c.ptA.v          = ptAh;
-    c.ptB.v          = ptBh;
-    c.entityA.v      = entityAh;
-    c.entityB.v      = entityBh;
-    c.entityC.v      = entityCh;
-    c.entityD.v      = entityDh;
+    c.ptA.v          = ptA.h;
+    c.ptB.v          = ptB.h;
+    c.entityA.v      = entityA.h;
+    c.entityB.v      = entityB.h;
+    c.entityC.v      = entityC.h;
+    c.entityD.v      = entityD.h;
     c.other          = other ? true : false;
     c.other2         = other2 ? true : false;
     SK.constraint.AddAndAssignId(&c);
-    return c.h.v;
+
+    Slvs_Constraint cc = Slvs_Constraint {};
+    cc.h = c.h.v;
+    cc.type = type;
+    cc.group = grouph;
+    cc.wrkpl = workplane.h;
+    cc.valA = val;
+    cc.ptA = ptA.h;
+    cc.ptB = ptB.h;
+    cc.entityA = entityA.h;
+    cc.entityB = entityB.h;
+    cc.entityC = entityC.h;
+    cc.entityD = entityD.h;
+    cc.other = other ? true : false;
+    cc.other2 = other2 ? true : false;
+    return cc;
 }
 
-Slvs_hConstraint Slvs_Coincident(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                    Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    if(entityA->IsPoint() && entityB->IsPoint()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_POINTS_COINCIDENT, workplaneh, 0., entityAh, entityBh);
-    } else if(entityA->IsPoint() && entityB->IsWorkplane()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_IN_PLANE, SLVS_FREE_IN_3D, 0., entityAh, SLVS_NO_ENTITY, entityBh);
-    } else if(entityA->IsPoint() && entityB->IsLine()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_ON_LINE, workplaneh, 0., entityAh, SLVS_NO_ENTITY, entityBh);
-    } else if(entityA->IsPoint() && (entityB->IsCircle() || entityB->IsArc())) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_ON_CIRCLE, workplaneh, 0., entityAh, SLVS_NO_ENTITY, entityBh);
+Slvs_Constraint Slvs_Coincident(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsPoint(entityA) && Slvs_IsPoint(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_POINTS_COINCIDENT, workplane, 0., entityA, entityB);
+    } else if(Slvs_IsPoint(entityA) && Slvs_IsWorkplane(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_IN_PLANE, SLVS_FREE_IN_3D_E, 0., entityA, SLVS_NO_ENTITY_E, entityB);
+    } else if(Slvs_IsPoint(entityA) && Slvs_IsLine(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_ON_LINE, workplane, 0., entityA, SLVS_NO_ENTITY_E, entityB);
+    } else if(Slvs_IsPoint(entityA) && (Slvs_IsCircle(entityB) || Slvs_IsArc(entityB))) {
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_ON_CIRCLE, workplane, 0., entityA, SLVS_NO_ENTITY_E, entityB);
     }
     ssassert(false, "Invalid arguments for coincident constraint");
 }
 
-Slvs_hConstraint Slvs_Distance(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
-                                Slvs_hEntity workplaneh) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    if(entityA->IsPoint() && entityB->IsPoint()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_PT_DISTANCE, workplaneh, value, entityAh,
-                                entityBh);
-    } else if(entityA->IsPoint() && entityB->IsWorkplane() && workplane->Is3D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_PLANE_DISTANCE, entityBh, value, entityAh,
-                                SLVS_NO_ENTITY, entityBh);
-    } else if(entityA->IsPoint() && entityB->IsLine()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_LINE_DISTANCE, workplaneh, value, entityAh,
-                                SLVS_NO_ENTITY, entityBh);
+Slvs_Constraint Slvs_Distance(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane) {
+    if(Slvs_IsPoint(entityA) && Slvs_IsPoint(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_PT_DISTANCE, workplane, value, entityA, entityB);
+    } else if(Slvs_IsPoint(entityA) && Slvs_IsWorkplane(entityB) && Slvs_Is3D(workplane)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_PLANE_DISTANCE, entityB, value, entityA, SLVS_NO_ENTITY_E, entityB);
+    } else if(Slvs_IsPoint(entityA) && Slvs_IsLine(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_LINE_DISTANCE, workplane, value, entityA, SLVS_NO_ENTITY_E, entityB);
     }
     ssassert(false, "Invalid arguments for distance constraint");
 }
 
-Slvs_hConstraint Slvs_Equal(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                            Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    if(entityA->IsLine() && entityB->IsLine()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_LENGTH_LINES, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh);
-    } else if(entityA->IsLine() && (entityB->IsArc() || entityB->IsCircle())) {
-        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_LINE_ARC_LEN, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh);
-    } else if((entityA->IsArc() || entityA->IsCircle()) &&
-                (entityB->IsArc() || entityB->IsCircle())) {
-        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_RADIUS, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh);
+Slvs_Constraint Slvs_Equal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsLine(entityA) && Slvs_IsLine(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_LENGTH_LINES, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
+    } else if(Slvs_IsLine(entityA) && (Slvs_IsArc(entityB) || Slvs_IsCircle(entityB))) {
+        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_LINE_ARC_LEN, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
+    } else if((Slvs_IsArc(entityA) || Slvs_IsCircle(entityA)) && (Slvs_IsArc(entityB) || Slvs_IsCircle(entityB))) {
+        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_RADIUS, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
     }
     ssassert(false, "Invalid arguments for equal constraint");
 }
 
-Slvs_hConstraint Slvs_EqualAngle(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, Slvs_hEntity entityCh,
-                                    Slvs_hEntity entityDh,
-                                    Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    EntityBase* entityC = SK.entity.FindByHandleV(entityCh);
-    EntityBase* entityD = SK.entity.FindByHandleV(entityDh);
-    if(entityA->IsLine2D() && entityB->IsLine2D() && entityC->IsLine2D() && entityD->IsLine2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_ANGLE, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh,
-                                entityCh, entityDh);
+Slvs_Constraint Slvs_EqualAngle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsLine2D(entityC) && Slvs_IsLine2D(entityD)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_ANGLE, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, entityC, entityD);
     }
     ssassert(false, "Invalid arguments for equal angle constraint");
 }
 
-Slvs_hConstraint Slvs_EqualPointToLine(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                        Slvs_hEntity entityCh, Slvs_hEntity entityDh,
-                                        Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    EntityBase* entityC = SK.entity.FindByHandleV(entityCh);
-    EntityBase* entityD = SK.entity.FindByHandleV(entityDh);
-    if(entityA->IsPoint2D() && entityB->IsLine2D() && entityC->IsPoint2D() && entityD->IsLine2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_EQ_PT_LN_DISTANCES, workplaneh, 0., entityAh,
-                                entityBh, entityCh, entityDh);
+Slvs_Constraint Slvs_EqualPointToLine(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsPoint2D(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsPoint2D(entityC) && Slvs_IsLine2D(entityD)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_EQ_PT_LN_DISTANCES, workplane, 0., entityA, entityB, entityC, entityD);
     }
     ssassert(false, "Invalid arguments for equal point to line constraint");
 }
 
-Slvs_hConstraint Slvs_Ratio(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
-                            Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    if(entityA->IsLine2D() && entityB->IsLine2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_RATIO, workplaneh, value,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh);
+Slvs_Constraint Slvs_Ratio(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_RATIO, workplane, value, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
     }
     ssassert(false, "Invalid arguments for ratio constraint");
 }
 
-Slvs_hConstraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                Slvs_hEntity entityCh   = SLVS_NO_ENTITY,
-                                Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    EntityBase* entityC = SK.entity.FindByHandleV(entityCh);
-    if(entityA->IsPoint3D() && entityB->IsPoint3D() && entityC->IsWorkplane() &&
-        workplane->IsFreeIn3D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC, workplaneh, 0., entityAh, entityBh,
-                                entityCh);
-    } else if(entityA->IsPoint2D() && entityB->IsPoint2D() && entityC->IsWorkplane() &&
-                workplane->IsFreeIn3D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC, entityCh, 0., entityAh, entityBh,
-                                entityCh);
-    } else if(entityA->IsPoint2D() && entityB->IsPoint2D() && entityC->IsLine()) {
-        if(workplane->IsFreeIn3D()) {
+Slvs_Constraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC = SLVS_NO_ENTITY_E, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsPoint3D(entityA) && Slvs_IsPoint3D(entityB) && Slvs_IsWorkplane(entityC) && Slvs_IsFreeIn3D(workplane)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC, workplane, 0., entityA, entityB, entityC);
+    } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB) && Slvs_IsWorkplane(entityC) && Slvs_IsFreeIn3D(workplane)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC, entityC, 0., entityA, entityB, entityC);
+    } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB) && Slvs_IsLine(entityC)) {
+        if(Slvs_IsFreeIn3D(workplane)) {
             ssassert(false, "3d workplane given for a 2d constraint");
         }
-        return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC_LINE, workplaneh, 0., entityAh,
-                                entityBh, entityCh);
+        return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC_LINE, workplane, 0., entityA, entityB, entityC);
     }
     ssassert(false, "Invalid arguments for symmetric constraint");
 }
 
-Slvs_hConstraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh,
-                                    Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* ptA = SK.entity.FindByHandleV(ptAh);
-    EntityBase* ptB = SK.entity.FindByHandleV(ptBh);
-    if(workplane->IsFreeIn3D()) {
+Slvs_Constraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsFreeIn3D(workplane)) {
         ssassert(false, "3d workplane given for a 2d constraint");
-    } else if(ptA->IsPoint2D() && ptB->IsPoint2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC_HORIZ, workplaneh, 0., ptAh, ptBh);
+    } else if(Slvs_IsPoint2D(ptA) && Slvs_IsPoint2D(ptB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC_HORIZ, workplane, 0., ptA, ptB);
     }
     ssassert(false, "Invalid arguments for symmetric horizontal constraint");
 }
 
-Slvs_hConstraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh,
-                                    Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* ptA = SK.entity.FindByHandleV(ptAh);
-    EntityBase* ptB = SK.entity.FindByHandleV(ptBh);
-    if(workplane->IsFreeIn3D()) {
+Slvs_Constraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsFreeIn3D(workplane)) {
         ssassert(false, "3d workplane given for a 2d constraint");
-    } else if(ptA->IsPoint2D() && ptB->IsPoint2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC_VERT, workplaneh, 0., ptAh, ptBh);
+    } else if(Slvs_IsPoint2D(ptA) && Slvs_IsPoint2D(ptB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC_VERT, workplane, 0., ptA, ptB);
     }
     ssassert(false, "Invalid arguments for symmetric vertical constraint");
 }
 
-Slvs_hConstraint Slvs_Midpoint(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh,
-                                Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* ptA = SK.entity.FindByHandleV(ptAh);
-    EntityBase* ptB = SK.entity.FindByHandleV(ptBh);
-    if(ptA->IsPoint() && ptB->IsLine()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_AT_MIDPOINT, workplaneh, 0., ptAh,
-                                SLVS_NO_ENTITY, ptBh);
+Slvs_Constraint Slvs_Midpoint(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsPoint(ptA) && Slvs_IsLine(ptB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_AT_MIDPOINT, workplane, 0., ptA, SLVS_NO_ENTITY_E, ptB);
     }
     ssassert(false, "Invalid arguments for midpoint constraint");
 }
 
-Slvs_hConstraint Slvs_Horizontal(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity workplaneh,
-                                    Slvs_hEntity entityBh = SLVS_NO_ENTITY) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByIdNoOops(hEntity { entityBh });
-    if(workplane->IsFreeIn3D()) {
+Slvs_Constraint Slvs_Horizontal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_NO_ENTITY_E) {
+    if(Slvs_IsFreeIn3D(workplane)) {
         ssassert(false, "Horizontal constraint is not supported in 3D");
-    } else if(entityA->IsLine2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_HORIZONTAL, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh);
-    } else if(entityA->IsPoint2D() && entityB->IsPoint2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_HORIZONTAL, workplaneh, 0., entityAh, entityBh);
+    } else if(Slvs_IsLine2D(entityA)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_HORIZONTAL, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA);
+    } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_HORIZONTAL, workplane, 0., entityA, entityB);
     }
     ssassert(false, "Invalid arguments for horizontal constraint");
 }
 
-Slvs_hConstraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity workplaneh,
-                                Slvs_hEntity entityBh = SLVS_NO_ENTITY) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByIdNoOops(hEntity { entityBh });
-    if(workplane->IsFreeIn3D()) {
+Slvs_Constraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_NO_ENTITY_E) {
+    if(Slvs_IsFreeIn3D(workplane)) {
         ssassert(false, "Vertical constraint is not supported in 3D");
-    } else if(entityA->IsLine2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_VERTICAL, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh);
-    } else if(entityA->IsPoint2D() && entityB->IsPoint2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_VERTICAL, workplaneh, 0., entityAh, entityBh);
+    } else if(Slvs_IsLine2D(entityA)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_VERTICAL, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA);
+    } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_VERTICAL, workplane, 0., entityA, entityB);
     }
     ssassert(false, "Invalid arguments for horizontal constraint");
 }
 
-Slvs_hConstraint Slvs_Diameter(Slvs_hGroup grouph, Slvs_hEntity entityAh, double value) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    if(entityA->IsArc() || entityA->IsCircle()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_DIAMETER, SLVS_FREE_IN_3D, value,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh);
+Slvs_Constraint Slvs_Diameter(Slvs_hGroup grouph, Slvs_Entity entityA, double value) {
+    if(Slvs_IsArc(entityA) || Slvs_IsCircle(entityA)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_DIAMETER, SLVS_FREE_IN_3D_E, value, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA);
     }
     ssassert(false, "Invalid arguments for diameter constraint");
 }
 
-Slvs_hConstraint Slvs_SameOrientation(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    if(entityA->IsNormal3D() && entityB->IsNormal3D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_SAME_ORIENTATION, SLVS_FREE_IN_3D,
-                                0., SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh,
-                                entityBh);
+Slvs_Constraint Slvs_SameOrientation(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB) {
+    if(Slvs_IsNormal3D(entityA) && Slvs_IsNormal3D(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_SAME_ORIENTATION, SLVS_FREE_IN_3D_E, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
     }
     ssassert(false, "Invalid arguments for same orientation constraint");
 }
 
-Slvs_hConstraint Slvs_Angle(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
-                            Slvs_hEntity workplaneh = SLVS_FREE_IN_3D,
-                            int inverse         = 0) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    if(entityA->IsLine2D() && entityB->IsLine2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_ANGLE, workplaneh, value,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh, inverse);
+Slvs_Constraint Slvs_Angle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_FREE_IN_3D_E, int inverse = 0) {
+    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_ANGLE, workplane, value, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, inverse);
     }
     ssassert(false, "Invalid arguments for angle constraint");
 }
 
-Slvs_hConstraint Slvs_Perpendicular(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                    Slvs_hEntity workplaneh = SLVS_FREE_IN_3D,
-                                    int inverse         = 0) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    if(entityA->IsLine2D() && entityB->IsLine2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PERPENDICULAR, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, inverse);
+Slvs_Constraint Slvs_Perpendicular(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E, int inverse = 0) {
+    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_PERPENDICULAR, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, inverse);
     }
     ssassert(false, "Invalid arguments for perpendicular constraint");
 }
 
-Slvs_hConstraint Slvs_Parallel(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    if(entityA->IsLine2D() && entityB->IsLine2D()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PARALLEL, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh);
+Slvs_Constraint Slvs_Parallel(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_PARALLEL, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
     }
     ssassert(false, "Invalid arguments for parallel constraint");
 }
 
-Slvs_hConstraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* workplane = SK.entity.FindByHandleV(workplaneh);
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    if(entityA->IsArc() && entityB->IsLine2D()) {
-        if(workplane->IsFreeIn3D()) {
+Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsArc(entityA) && Slvs_IsLine2D(entityB)) {
+        if(Slvs_IsFreeIn3D(workplane)) {
             ssassert(false, "3d workplane given for a 2d constraint");
         }
-        Vector a1 = SK.GetEntity(entityA->point[1])->PointGetNum(),
-                a2 = SK.GetEntity(entityA->point[2])->PointGetNum();
-        Vector l0 = SK.GetEntity(entityB->point[0])->PointGetNum(),
-                l1 = SK.GetEntity(entityB->point[1])->PointGetNum();
-        bool other;
+        Vector a1 = SK.entity.FindByHandleV(entityA.point[1])->PointGetNum(),
+               a2 = SK.entity.FindByHandleV(entityA.point[2])->PointGetNum();
+        Vector l0 = SK.entity.FindByHandleV(entityB.point[0])->PointGetNum(),
+               l1 = SK.entity.FindByHandleV(entityB.point[1])->PointGetNum();
+        int other;
         if(l0.Equals(a1) || l1.Equals(a1)) {
-            other = false;
+            other = 0;
         } else if(l0.Equals(a2) || l1.Equals(a2)) {
-            other = true;
+            other = 1;
         } else {
             ssassert(false, "The tangent arc and line segment must share an "
                                         "endpoint. Constrain them with Constrain -> "
                                         "On Point before constraining tangent.");
         }
-        return Slvs_AddConstraint(grouph, SLVS_C_ARC_LINE_TANGENT, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, other);
-    } else if(entityA->IsCubic() && entityB->IsLine2D() && workplane->IsFreeIn3D()) {
-        Vector as = entityA->CubicGetStartNum(), af = entityA->CubicGetFinishNum();
-        Vector l0 = SK.GetEntity(entityB->point[0])->PointGetNum(),
-                l1 = SK.GetEntity(entityB->point[1])->PointGetNum();
-        bool other;
+        return Slvs_AddConstraint(grouph, SLVS_C_ARC_LINE_TANGENT, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, other);
+    } else if(Slvs_IsCubic(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsFreeIn3D(workplane)) {
+        EntityBase* skEntityA = SK.entity.FindByHandleV(entityA.h);
+        Vector as = skEntityA->CubicGetStartNum(), af = skEntityA->CubicGetFinishNum();
+        Vector l0 = SK.entity.FindByHandleV(entityB.point[0])->PointGetNum(),
+               l1 = SK.entity.FindByHandleV(entityB.point[1])->PointGetNum();
+        int other;
         if(l0.Equals(as) || l1.Equals(as)) {
-            other = false;
+            other = 0;
         } else if(l0.Equals(af) || l1.Equals(af)) {
-            other = true;
+            other = 1;
         } else {
             ssassert(false, "The tangent cubic and line segment must share an "
                                         "endpoint. Constrain them with Constrain -> "
                                         "On Point before constraining tangent.");
         }
-        return Slvs_AddConstraint(grouph, SLVS_C_CUBIC_LINE_TANGENT, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, other);
-    } else if((entityA->IsArc() || entityA->IsCubic()) &&
-                (entityB->IsArc() || entityB->IsCubic())) {
-        if(workplane->IsFreeIn3D()) {
+        return Slvs_AddConstraint(grouph, SLVS_C_CUBIC_LINE_TANGENT, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, other);
+    } else if((Slvs_IsArc(entityA) || Slvs_IsCubic(entityA)) && (Slvs_IsArc(entityB) || Slvs_IsCubic(entityB))) {
+        if(Slvs_IsFreeIn3D(workplane)) {
             ssassert(false, "3d workplane given for a 2d constraint");
         }
-        Vector as = entityA->EndpointStart(), af = entityA->EndpointFinish(),
-                bs = entityB->EndpointStart(), bf = entityB->EndpointFinish();
-        bool other;
-        bool other2;
+        EntityBase* skEntityA = SK.entity.FindByHandleV(entityA.h);
+        EntityBase* skEntityB = SK.entity.FindByHandleV(entityB.h);
+        Vector as = skEntityA->EndpointStart(), af = skEntityA->EndpointFinish(),
+               bs = skEntityB->EndpointStart(), bf = skEntityB->EndpointFinish();
+        int other;
+        int other2;
         if(as.Equals(bs)) {
-            other  = false;
-            other2 = false;
+            other  = 0;
+            other2 = 0;
         } else if(as.Equals(bf)) {
-            other  = false;
-            other2 = true;
+            other  = 0;
+            other2 = 1;
         } else if(af.Equals(bs)) {
-            other  = true;
-            other2 = false;
+            other  = 1;
+            other2 = 0;
         } else if(af.Equals(bf)) {
-            other  = true;
-            other2 = true;
+            other  = 1;
+            other2 = 1;
         } else {
             ssassert(false, "The curves must share an endpoint. Constrain them "
                                         "with Constrain -> On Point before constraining "
                                         "tangent.");
         }
-        return Slvs_AddConstraint(grouph, SLVS_C_CURVE_CURVE_TANGENT, workplaneh, 0.,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh, other, other2);
+        return Slvs_AddConstraint(grouph, SLVS_C_CURVE_CURVE_TANGENT, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, other, other2);
     }
     ssassert(false, "Invalid arguments for tangent constraint");
 }
 
-Slvs_hConstraint Slvs_DistanceProj(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh, double value) {
-    EntityBase* ptA = SK.entity.FindByHandleV(ptAh);
-    EntityBase* ptB = SK.entity.FindByHandleV(ptBh);
-    if(ptA->IsPoint() && ptB->IsPoint()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PROJ_PT_DISTANCE, SLVS_FREE_IN_3D,
-                                value, ptAh, ptBh);
+Slvs_Constraint Slvs_DistanceProj(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, double value) {
+    if(Slvs_IsPoint(ptA) && Slvs_IsPoint(ptB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_PROJ_PT_DISTANCE, SLVS_FREE_IN_3D_E, value, ptA, ptB);
     }
     ssassert(false, "Invalid arguments for projected distance constraint");
 }
 
-Slvs_hConstraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
-                                    Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* entityA = SK.entity.FindByHandleV(entityAh);
-    EntityBase* entityB = SK.entity.FindByHandleV(entityBh);
-    if(entityA->IsLine() && entityB->IsLine()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_DIFFERENCE, workplaneh, value,
-                                SLVS_NO_ENTITY, SLVS_NO_ENTITY, entityAh, entityBh);
+Slvs_Constraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsLine(entityA) && Slvs_IsLine(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_DIFFERENCE, workplane, value, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
     }
     ssassert(false, "Invalid arguments for length difference constraint");
 }
 
-Slvs_hConstraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity workplaneh = SLVS_FREE_IN_3D) {
-    EntityBase* ptA = SK.entity.FindByHandleV(ptAh);
-    if(ptA->IsPoint()) {
-        return Slvs_AddConstraint(grouph, SLVS_C_WHERE_DRAGGED, workplaneh, 0., ptAh);
+Slvs_Constraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+    if(Slvs_IsPoint(ptA)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_WHERE_DRAGGED, workplane, 0., ptA);
     }
     ssassert(false, "Invalid arguments for dragged constraint");
 }
@@ -762,39 +817,40 @@ Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup shg, int calculateFaileds = 0)
     List<hConstraint> badList;
     bool andFindBad = calculateFaileds ? true : false;
 
-    int rank, dof;
+    int rank = 0, dof = 0;
     SolveResult status = SYS.Solve(&g, &rank, &dof, &badList, andFindBad, false, false);
-
     Slvs_SolveResult sr = {};
     sr.rank = rank;
     sr.dof = dof;
     sr.bad = badList.n;
+    sr.result = 0;
     switch(status) {
-        case SolveResult::OKAY:
+        case SolveResult::OKAY: {
             sr.result = SLVS_RESULT_OKAY;
-        case SolveResult::DIDNT_CONVERGE:
+            return sr;
+        }
+        case SolveResult::DIDNT_CONVERGE: {
             sr.result = SLVS_RESULT_DIDNT_CONVERGE;
+            return sr;
+        }
         case SolveResult::REDUNDANT_DIDNT_CONVERGE:
-        case SolveResult::REDUNDANT_OKAY:
+        case SolveResult::REDUNDANT_OKAY: {
             sr.result = SLVS_RESULT_INCONSISTENT;
-        case SolveResult::TOO_MANY_UNKNOWNS:
+            return sr;
+        }
+        case SolveResult::TOO_MANY_UNKNOWNS: {
             sr.result = SLVS_RESULT_TOO_MANY_UNKNOWNS;
+            return sr;
+        }
     }
     return sr;
 }
 
-double Slvs_GetParamValue(Slvs_hEntity e, int i)
+double Slvs_GetParamValue(Slvs_Entity e, int i)
 {
-    EntityBase* entity = SK.entity.FindByHandleV(e);
+    EntityBase* entity = SK.entity.FindByHandleV(e.h);
     Param* p = SK.param.FindById(entity->param[i]);
     return p->val;
-}
-
-Slvs_hEntity Slvs_GetPoint(Slvs_hParam e, int i)
-{
-    EntityBase* entity = SK.entity.FindByHandleV(e);
-    EntityBase* p = SK.entity.FindById(entity->point[i]);
-    return p->h.v;
 }
 
 void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)

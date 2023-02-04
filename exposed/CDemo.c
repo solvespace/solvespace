@@ -30,17 +30,17 @@ static void *CheckMalloc(size_t n)
 void ExampleStateful()
 {
     Slvs_hGroup g = 1;
-    Slvs_hEntity wp = Slvs_Add2DBase(g);
-    Slvs_hEntity p1 = Slvs_AddPoint2D(g, 0.0, 10.0, wp);
-    Slvs_hEntity p2 = Slvs_AddPoint2D(g, 5.0, 20.0, wp);
-    Slvs_hEntity l1 = Slvs_AddLine2D(g, p1, p2, wp);
+    Slvs_Entity wp = Slvs_Add2DBase(g);
+    Slvs_Entity p1 = Slvs_AddPoint2D(g, 0.0, 10.0, wp);
+    Slvs_Entity p2 = Slvs_AddPoint2D(g, 5.0, 20.0, wp);
+    Slvs_AddLine2D(g, p1, p2, wp);
 
     // double w, vx, vy, vz;
     // Slvs_MakeQuaternion(1, 0, 0, 0, 1, 0, &w, &vx, &vy, &vz);
-    // Slvs_hEntity n = Slvs_AddNormal3D(g, w, vx, vy, vz);
-    // Slvs_hEntity center = Slvs_AddPoint2D(g, 5.0, 5.0, wp);
-    // Slvs_hEntity radius = Slvs_AddDistance(g, 50.0, wp);
-    // Slvs_hEntity c1 = Slvs_AddCircle(g, n, center, radius, wp);
+    // Slvs_Entity n = Slvs_AddNormal3D(g, w, vx, vy, vz);
+    // Slvs_Entity center = Slvs_AddPoint2D(g, 5.0, 5.0, wp);
+    // Slvs_Entity radius = Slvs_AddDistance(g, 50.0, wp);
+    // Slvs_Entity c1 = Slvs_AddCircle(g, n, center, radius, wp);
 
     Slvs_Vertical(g, p1, wp, p2);
     Slvs_SolveResult res = Slvs_SolveSketch(g, 0);
@@ -49,9 +49,8 @@ void ExampleStateful()
     printf("dof: %i\n", res.dof);
     double p1x = Slvs_GetParamValue(p1, 0);
     double p1y = Slvs_GetParamValue(p1, 1);
-    Slvs_hEntity l1p2 = Slvs_GetPoint(l1, 1);
-    double p2x = Slvs_GetParamValue(l1p2, 0);
-    double p2y = Slvs_GetParamValue(l1p2, 1);
+    double p2x = Slvs_GetParamValue(p2, 0);
+    double p2y = Slvs_GetParamValue(p2, 1);
     printf("p1x:%.3f\n", p1x);
     printf("p1y:%.3f\n", p1y);
     printf("p2x:%.3f\n", p2x);

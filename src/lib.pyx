@@ -5,6 +5,78 @@ cdef extern from "slvs.h":
     ctypedef int Slvs_hGroup
     ctypedef int Slvs_hConstraint
     ctypedef int Slvs_hParam
+
+    int SLVS_E_POINT_IN_3D
+    int SLVS_E_POINT_IN_2D
+    int SLVS_E_NORMAL_IN_2D
+    int SLVS_E_NORMAL_IN_3D
+    int SLVS_E_DISTANCE
+    int SLVS_E_WORKPLANE
+    int SLVS_E_LINE_SEGMENT
+    int SLVS_E_CUBIC
+    int SLVS_E_CIRCLE
+    int SLVS_E_ARC_OF_CIRCLE
+
+    ctypedef struct Slvs_Entity:
+        Slvs_hEntity h
+        Slvs_hGroup group
+        int type
+        Slvs_hEntity wrkpl
+        Slvs_hEntity point[4]
+        Slvs_hEntity normal
+        Slvs_hEntity distance
+        Slvs_hParam param[4]
+
+    int SLVS_C_POINTS_COINCIDENT
+    int SLVS_C_PT_PT_DISTANCE
+    int SLVS_C_PT_PLANE_DISTANCE
+    int SLVS_C_PT_LINE_DISTANCE
+    int SLVS_C_PT_FACE_DISTANCE
+    int SLVS_C_PT_IN_PLANE
+    int SLVS_C_PT_ON_LINE
+    int SLVS_C_PT_ON_FACE
+    int SLVS_C_EQUAL_LENGTH_LINES
+    int SLVS_C_LENGTH_RATIO
+    int SLVS_C_EQ_LEN_PT_LINE_D
+    int SLVS_C_EQ_PT_LN_DISTANCES
+    int SLVS_C_EQUAL_ANGLE
+    int SLVS_C_EQUAL_LINE_ARC_LEN
+    int SLVS_C_SYMMETRIC
+    int SLVS_C_SYMMETRIC_HORIZ
+    int SLVS_C_SYMMETRIC_VERT
+    int SLVS_C_SYMMETRIC_LINE
+    int SLVS_C_AT_MIDPOINT
+    int SLVS_C_HORIZONTAL
+    int SLVS_C_VERTICAL
+    int SLVS_C_DIAMETER
+    int SLVS_C_PT_ON_CIRCLE
+    int SLVS_C_SAME_ORIENTATION
+    int SLVS_C_ANGLE
+    int SLVS_C_PARALLEL
+    int SLVS_C_PERPENDICULAR
+    int SLVS_C_ARC_LINE_TANGENT
+    int SLVS_C_CUBIC_LINE_TANGENT
+    int SLVS_C_EQUAL_RADIUS
+    int SLVS_C_PROJ_PT_DISTANCE
+    int SLVS_C_WHERE_DRAGGED
+    int SLVS_C_CURVE_CURVE_TANGENT
+    int SLVS_C_LENGTH_DIFFERENCE
+
+    ctypedef struct Slvs_Constraint:
+        Slvs_hConstraint h
+        Slvs_hGroup group
+        int type
+        Slvs_hEntity wrkpl
+        double valA
+        Slvs_hEntity ptA
+        Slvs_hEntity ptB
+        Slvs_hEntity entityA
+        Slvs_hEntity entityB
+        Slvs_hEntity entityC
+        Slvs_hEntity entityD
+        int other
+        int other2
+
     ctypedef struct Slvs_SolveResult:
         int result
         int dof
@@ -22,71 +94,48 @@ cdef extern from "slvs.h":
                              double vx, double vy, double vz,
                              double *qw, double *qx, double *qy, double *qz)
 
-    Slvs_hEntity Slvs_AddPoint2D(Slvs_hGroup grouph, double u, double v, Slvs_hEntity workplaneh)
-    Slvs_hEntity Slvs_AddPoint3D(Slvs_hGroup grouph, double x, double y, double z)
-    Slvs_hEntity Slvs_AddNormal2D(Slvs_hGroup grouph, Slvs_hEntity workplaneh)
-    Slvs_hEntity Slvs_AddNormal3D(Slvs_hGroup grouph, double qw, double qx, double qy, double qz)
-    Slvs_hEntity Slvs_AddDistance(Slvs_hGroup grouph, double value, Slvs_hEntity workplaneh)
-    Slvs_hEntity Slvs_AddLine2D(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh, Slvs_hEntity workplaneh)
-    Slvs_hEntity Slvs_AddLine3D(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh)
-    Slvs_hEntity Slvs_AddCubic(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh, Slvs_hEntity ptCh, Slvs_hEntity ptDh, Slvs_hEntity workplaneh)
-    Slvs_hEntity Slvs_AddArc(Slvs_hGroup grouph, Slvs_hEntity normalh, Slvs_hEntity centerh, Slvs_hEntity starth, Slvs_hEntity endh, Slvs_hEntity workplaneh)
-    Slvs_hEntity Slvs_AddCircle(Slvs_hGroup grouph, Slvs_hEntity normalh, Slvs_hEntity centerh, Slvs_hEntity radiush, Slvs_hEntity workplaneh)
-    Slvs_hEntity Slvs_AddWorkplane(Slvs_hGroup grouph, Slvs_hEntity originh, Slvs_hEntity nmh)
-    Slvs_hEntity Slvs_Add2DBase(Slvs_hGroup grouph)
+    Slvs_Entity Slvs_AddPoint2D(Slvs_hGroup grouph, double u, double v, Slvs_Entity workplane)
+    Slvs_Entity Slvs_AddPoint3D(Slvs_hGroup grouph, double x, double y, double z)
+    Slvs_Entity Slvs_AddNormal2D(Slvs_hGroup grouph, Slvs_Entity workplane)
+    Slvs_Entity Slvs_AddNormal3D(Slvs_hGroup grouph, double qw, double qx, double qy, double qz)
+    Slvs_Entity Slvs_AddDistance(Slvs_hGroup grouph, double value, Slvs_Entity workplane)
+    Slvs_Entity Slvs_AddLine2D(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane)
+    Slvs_Entity Slvs_AddLine3D(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB)
+    Slvs_Entity Slvs_AddCubic(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity ptC, Slvs_Entity ptD, Slvs_Entity workplane)
+    Slvs_Entity Slvs_AddArc(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity start, Slvs_Entity end, Slvs_Entity workplane)
+    Slvs_Entity Slvs_AddCircle(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity radius, Slvs_Entity workplane)
+    Slvs_Entity Slvs_AddWorkplane(Slvs_hGroup grouph, Slvs_Entity origin, Slvs_Entity nm)
+    Slvs_Entity Slvs_Add2DBase(Slvs_hGroup grouph)
 
-    Slvs_hConstraint Slvs_AddConstraint(Slvs_hGroup grouph, int type, Slvs_hEntity workplaneh, double val, Slvs_hEntity ptAh,
-        Slvs_hEntity ptBh, Slvs_hEntity entityAh,
-        Slvs_hEntity entityBh, Slvs_hEntity entityCh,
-        Slvs_hEntity entityDh, int other, int other2)
-    Slvs_hConstraint Slvs_Coincident(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_Distance(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_Equal(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_EqualAngle(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, Slvs_hEntity entityCh,
-                                        Slvs_hEntity entityDh,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_EqualPointToLine(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                        Slvs_hEntity entityCh, Slvs_hEntity entityDh,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_Ratio(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                        Slvs_hEntity entityCh  ,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_Midpoint(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_Horizontal(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity workplaneh,
-                                        Slvs_hEntity entityBh)
-    Slvs_hConstraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity workplaneh,
-                                        Slvs_hEntity entityBh)
-    Slvs_hConstraint Slvs_Diameter(Slvs_hGroup grouph, Slvs_hEntity entityAh, double value)
-    Slvs_hConstraint Slvs_SameOrientation(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh)
-    Slvs_hConstraint Slvs_Angle(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
-                                        Slvs_hEntity workplaneh,
-                                        int inverse)
-    Slvs_hConstraint Slvs_Perpendicular(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                        Slvs_hEntity workplaneh,
-                                        int inverse)
-    Slvs_hConstraint Slvs_Parallel(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_DistanceProj(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity ptBh, double value)
-    Slvs_hConstraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_hEntity entityAh, Slvs_hEntity entityBh, double value,
-                                        Slvs_hEntity workplaneh)
-    Slvs_hConstraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_hEntity ptAh, Slvs_hEntity workplaneh)
+    Slvs_Constraint Slvs_AddConstraint(Slvs_hGroup grouph, int type, Slvs_Entity workplane, double val, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, int other, int other2)
+    Slvs_Constraint Slvs_Coincident(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_Distance(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_Equal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_EqualAngle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_EqualPointToLine(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_Ratio(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_Midpoint(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_Horizontal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB)
+    Slvs_Constraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB)
+    Slvs_Constraint Slvs_Diameter(Slvs_hGroup grouph, Slvs_Entity entityA, double value)
+    Slvs_Constraint Slvs_SameOrientation(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB)
+    Slvs_Constraint Slvs_Angle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane, int inverse)
+    Slvs_Constraint Slvs_Perpendicular(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane, int inverse)
+    Slvs_Constraint Slvs_Parallel(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_DistanceProj(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, double value)
+    Slvs_Constraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane)
+    Slvs_Constraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity workplane)
 
     Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup hg, int calculateFaileds)
-    double Slvs_GetParamValue(Slvs_hEntity e, int i)
-    Slvs_hEntity Slvs_GetPoint(Slvs_hParam e, int i)
+    double Slvs_GetParamValue(Slvs_Entity e, int i)
     void Slvs_ClearSketch()
+
+cdef Slvs_Entity SLVS_NO_ENTITY_E
+cdef Slvs_Entity SLVS_FREE_IN_3D_E
 
 # quaternion
 cpdef tuple quaternion_u(double qw, double qx, double qy, double qz):
@@ -127,118 +176,115 @@ cpdef tuple make_quaternion(double ux, double uy, double uz, double vx, double v
     return qw, qx, qy, qz
 
 # entities
-def add_point_2d(grouph: Slvs_hGroup, u: double, v: double, workplaneh: Slvs_hEntity) -> Slvs_hEntity:
-    return Slvs_AddPoint2D(grouph, u, v, workplaneh)
+def add_point_2d(grouph: Slvs_hGroup, u: double, v: double, workplane: Slvs_Entity) -> Slvs_Entity:
+    return Slvs_AddPoint2D(grouph, u, v, workplane)
 
-def add_point_3d(grouph: Slvs_hGroup, x: double, y: double, z: double) -> Slvs_hEntity:
+def add_point_3d(grouph: Slvs_hGroup, x: double, y: double, z: double) -> Slvs_Entity:
     return Slvs_AddPoint3D(grouph, x, y, z)
 
-def add_normal_2d(grouph: Slvs_hGroup, workplaneh: Slvs_hEntity) -> Slvs_hEntity:
-    return Slvs_AddNormal2D(grouph, workplaneh)
+def add_normal_2d(grouph: Slvs_hGroup, workplane: Slvs_Entity) -> Slvs_Entity:
+    return Slvs_AddNormal2D(grouph, workplane)
 
-def add_normal_3d(grouph: Slvs_hGroup, qw: double, qx: double, qy: double, qz: double) -> Slvs_hEntity:
+def add_normal_3d(grouph: Slvs_hGroup, qw: double, qx: double, qy: double, qz: double) -> Slvs_Entity:
     return Slvs_AddNormal3D(grouph, qw, qx, qy, qz)
 
-def add_distance(grouph: Slvs_hGroup, value: double, workplaneh: Slvs_hEntity) -> Slvs_hEntity:
-    return Slvs_AddDistance(grouph, value, workplaneh)
+def add_distance(grouph: Slvs_hGroup, value: double, workplane: Slvs_Entity) -> Slvs_Entity:
+    return Slvs_AddDistance(grouph, value, workplane)
 
-def add_line_2d(grouph: Slvs_hGroup, ptAh: Slvs_hEntity, ptBh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hEntity:
-    return Slvs_AddLine2D(grouph, ptAh, ptBh, workplaneh)
+def add_line_2d(grouph: Slvs_hGroup, ptA: Slvs_Entity, ptB: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Entity:
+    return Slvs_AddLine2D(grouph, ptA, ptB, workplane)
 
-def add_line_3d(grouph: Slvs_hGroup, ptAh: Slvs_hEntity, ptBh: Slvs_hEntity) -> Slvs_hEntity:
-    return Slvs_AddLine3D(grouph, ptAh, ptBh)
+def add_line_3d(grouph: Slvs_hGroup, ptA: Slvs_Entity, ptB: Slvs_Entity) -> Slvs_Entity:
+    return Slvs_AddLine3D(grouph, ptA, ptB)
 
-def add_cubic(grouph: Slvs_hGroup, ptAh: Slvs_hEntity, ptBh: Slvs_hEntity, ptCh: Slvs_hEntity, ptDh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hEntity:
-    return Slvs_AddCubic(grouph, ptAh, ptBh, ptCh, ptDh, workplaneh)
+def add_cubic(grouph: Slvs_hGroup, ptA: Slvs_Entity, ptB: Slvs_Entity, ptC: Slvs_Entity, ptD: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Entity:
+    return Slvs_AddCubic(grouph, ptA, ptB, ptC, ptD, workplane)
 
-def add_arc(grouph: Slvs_hGroup, normalh: Slvs_hEntity, centerh: Slvs_hEntity, starth: Slvs_hEntity, endh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hEntity:
-    return Slvs_AddArc(grouph, normalh, centerh, starth, endh, workplaneh)
+def add_arc(grouph: Slvs_hGroup, normal: Slvs_Entity, center: Slvs_Entity, start: Slvs_Entity, end: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Entity:
+    return Slvs_AddArc(grouph, normal, center, start, end, workplane)
 
-def add_circle(grouph: Slvs_hGroup, normalh: Slvs_hEntity, centerh: Slvs_hEntity, radiush: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hEntity:
-    return Slvs_AddCircle(grouph, normalh, centerh, radiush, workplaneh)
+def add_circle(grouph: Slvs_hGroup, normal: Slvs_Entity, center: Slvs_Entity, radius: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Entity:
+    return Slvs_AddCircle(grouph, normal, center, radius, workplane)
 
-def add_workplane(grouph: Slvs_hGroup, originh: Slvs_hEntity, nmh: Slvs_hEntity) -> Slvs_hEntity:
-    return Slvs_AddWorkplane(grouph, originh, nmh)
+def add_workplane(grouph: Slvs_hGroup, origin: Slvs_Entity, nm: Slvs_Entity) -> Slvs_Entity:
+    return Slvs_AddWorkplane(grouph, origin, nm)
 
-def add_2d_base(grouph: Slvs_hGroup) -> Slvs_hEntity:
+def add_2d_base(grouph: Slvs_hGroup) -> Slvs_Entity:
     return Slvs_Add2DBase(grouph)
 
 # constraints
-def add_constraint(grouph: Slvs_hGroup, c_type: int, workplaneh: Slvs_hEntity, val: double, ptAh: Slvs_hEntity,
-        ptBh: Slvs_hEntity, entityAh: Slvs_hEntity,
-        entityBh: Slvs_hEntity, entityCh: Slvs_hEntity,
-        entityDh: Slvs_hEntity, other: int, other2: int) -> Slvs_hConstraint:
-    return Slvs_AddConstraint(grouph, c_type, workplaneh, val, ptAh,
-        ptBh, entityAh,
-        entityBh, entityCh,
-        entityDh, other, other2)
+def add_constraint(grouph: Slvs_hGroup, c_type: int, workplane: Slvs_Entity, val: double, ptA: Slvs_Entity,
+        ptB: Slvs_Entity, entityA: Slvs_Entity,
+        entityB: Slvs_Entity, entityC: Slvs_Entity,
+        entityD: Slvs_Entity, other: int, other2: int) -> Slvs_Constraint:
+    return Slvs_AddConstraint(grouph, c_type, workplane, val, ptA, ptB, entityA, entityB, entityC, entityD, other, other2)
 
-def coincident(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_Coincident(grouph, entityAh, entityBh, workplaneh)
+def coincident(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_Coincident(grouph, entityA, entityB, workplane)
 
-def distance(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, value: double, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_Distance(grouph, entityAh, entityBh, value, workplaneh)
+def distance(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, value: double, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_Distance(grouph, entityA, entityB, value, workplane)
 
-def equal(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_Equal(grouph, entityAh, entityBh, workplaneh)
+def equal(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_Equal(grouph, entityA, entityB, workplane)
 
-def equal_angle(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, entityCh: Slvs_hEntity,
-                                        entityDh: Slvs_hEntity,
-                                        workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_EqualAngle(grouph, entityAh, entityBh, entityCh, entityDh, workplaneh)
+def equal_angle(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, entityC: Slvs_Entity,
+                                        entityD: Slvs_Entity,
+                                        workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_EqualAngle(grouph, entityA, entityB, entityC, entityD, workplane)
 
-def equal_point_to_line(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity,
-                                        entityCh: Slvs_hEntity, entityDh: Slvs_hEntity,
-                                        workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_EqualPointToLine(grouph, entityAh, entityBh, entityCh, entityDh, workplaneh)
+def equal_point_to_line(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity,
+                                        entityC: Slvs_Entity, entityD: Slvs_Entity,
+                                        workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_EqualPointToLine(grouph, entityA, entityB, entityC, entityD, workplane)
 
-def ratio(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, value: double, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_Ratio(grouph, entityAh, entityBh, value, workplaneh)
+def ratio(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, value: double, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_Ratio(grouph, entityA, entityB, value, workplane)
 
-def symmetric(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, entityCh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_Symmetric(grouph, entityAh, entityBh, entityCh, workplaneh)
+def symmetric(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, entityC: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_Symmetric(grouph, entityA, entityB, entityC, workplane)
 
-def symmetric_h(grouph: Slvs_hGroup, ptAh: Slvs_hEntity, ptBh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_SymmetricH(grouph, ptAh, ptBh, workplaneh)
+def symmetric_h(grouph: Slvs_hGroup, ptA: Slvs_Entity, ptB: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_SymmetricH(grouph, ptA, ptB, workplane)
 
-def symmetric_v(grouph: Slvs_hGroup, ptAh: Slvs_hEntity, ptBh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_SymmetricV(grouph, ptAh, ptBh, workplaneh)
+def symmetric_v(grouph: Slvs_hGroup, ptA: Slvs_Entity, ptB: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_SymmetricV(grouph, ptA, ptB, workplane)
 
-def midpoint(grouph: Slvs_hGroup, ptAh: Slvs_hEntity, ptBh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_Midpoint(grouph, ptAh, ptBh, workplaneh)
+def midpoint(grouph: Slvs_hGroup, ptA: Slvs_Entity, ptB: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_Midpoint(grouph, ptA, ptB, workplane)
 
-def horizontal(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, workplaneh: Slvs_hEntity, entityBh: Slvs_hEntity = 0) -> Slvs_hConstraint:
-    return Slvs_Horizontal(grouph, entityAh, workplaneh, entityBh)
+def horizontal(grouph: Slvs_hGroup, entityA: Slvs_Entity, workplane: Slvs_Entity, entityB: Slvs_Entity = SLVS_NO_ENTITY_E) -> Slvs_Constraint:
+    return Slvs_Horizontal(grouph, entityA, workplane, entityB)
 
-def vertical(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, workplaneh: Slvs_hEntity, entityBh: Slvs_hEntity = 0) -> Slvs_hConstraint:
-    return Slvs_Vertical(grouph, entityAh, workplaneh, entityBh)
+def vertical(grouph: Slvs_hGroup, entityA: Slvs_Entity, workplane: Slvs_Entity, entityB: Slvs_Entity = SLVS_NO_ENTITY_E) -> Slvs_Constraint:
+    return Slvs_Vertical(grouph, entityA, workplane, entityB)
 
-def diameter(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, value: double) -> Slvs_hConstraint:
-    return Slvs_Diameter(grouph, entityAh, value)
+def diameter(grouph: Slvs_hGroup, entityA: Slvs_Entity, value: double) -> Slvs_Constraint:
+    return Slvs_Diameter(grouph, entityA, value)
 
-def same_orientation(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_SameOrientation(grouph, entityAh, entityBh)
+def same_orientation(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_SameOrientation(grouph, entityA, entityB)
 
-def angle(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, value: double, workplaneh: Slvs_hEntity, inverse: int) -> Slvs_hConstraint:
-    return Slvs_Angle(grouph, entityAh, entityBh, value, workplaneh, inverse)
+def angle(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, value: double, workplane: Slvs_Entity, inverse: int) -> Slvs_Constraint:
+    return Slvs_Angle(grouph, entityA, entityB, value, workplane, inverse)
 
-def perpendicular(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, workplaneh: Slvs_hEntity, inverse: int) -> Slvs_hConstraint:
-    return Slvs_Perpendicular(grouph, entityAh, entityBh, workplaneh, inverse)
+def perpendicular(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity, inverse: int) -> Slvs_Constraint:
+    return Slvs_Perpendicular(grouph, entityA, entityB, workplane, inverse)
 
-def parallel(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_Parallel(grouph, entityAh, entityBh, workplaneh)
+def parallel(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_Parallel(grouph, entityA, entityB, workplane)
 
-def tangent(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_Tangent(grouph, entityAh, entityBh, workplaneh)
+def tangent(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_Tangent(grouph, entityA, entityB, workplane)
 
-def distance_proj(grouph: Slvs_hGroup, ptAh: Slvs_hEntity, ptBh: Slvs_hEntity, value: double) -> Slvs_hConstraint:
-    return Slvs_DistanceProj(grouph, ptAh, ptBh, value)
+def distance_proj(grouph: Slvs_hGroup, ptA: Slvs_Entity, ptB: Slvs_Entity, value: double) -> Slvs_Constraint:
+    return Slvs_DistanceProj(grouph, ptA, ptB, value)
 
-def length_diff(grouph: Slvs_hGroup, entityAh: Slvs_hEntity, entityBh: Slvs_hEntity, value: double, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_LengthDiff(grouph, entityAh, entityBh, value, workplaneh)
+def length_diff(grouph: Slvs_hGroup, entityA: Slvs_Entity, entityB: Slvs_Entity, value: double, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_LengthDiff(grouph, entityA, entityB, value, workplane)
 
-def dragged(grouph: Slvs_hGroup, ptAh: Slvs_hEntity, workplaneh: Slvs_hEntity) -> Slvs_hConstraint:
-    return Slvs_Dragged(grouph, ptAh, workplaneh)
+def dragged(grouph: Slvs_hGroup, ptA: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Constraint:
+    return Slvs_Dragged(grouph, ptA, workplane)
 
 # solver
 class ResultFlag(IntEnum):
@@ -251,11 +297,8 @@ class ResultFlag(IntEnum):
 def solve_sketch(grouph: Slvs_hGroup, calculateFaileds: int):
     return Slvs_SolveSketch(grouph, calculateFaileds)
 
-def get_param(e: Slvs_hEntity, index: int):
+def get_param(e: Slvs_Entity, index: int):
     return Slvs_GetParamValue(e, index)
-
-def get_point(p: Slvs_hParam, index: int):
-    return Slvs_GetPoint(p, index)
 
 def clear():
     Slvs_ClearSketch()
