@@ -96,8 +96,8 @@ target_include_directories(slvs
 
 set_target_properties(slvs PROPERTIES
     PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/slvs.h
-    # VERSION ${PROJECT_VERSION}
-    # SOVERSION 1
+    VERSION ${PROJECT_VERSION}
+    SOVERSION 1
 )
 
 if(ENABLE_PYTHON_LIB)
@@ -119,6 +119,7 @@ if(ENABLE_PYTHON_LIB)
     if(SKBUILD)
         install(TARGETS solvespace DESTINATION ${SKBUILD_PROJECT_NAME})
     else()
+        install(TARGETS solvespace DESTINATION "solvespace")
         install(
             DIRECTORY ${CMAKE_SOURCE_DIR}/python/solvespace/
             DESTINATION "solvespace"

@@ -169,7 +169,7 @@ def add_workplane(grouph: int, origin: Slvs_Entity, nm: Slvs_Entity) -> Slvs_Ent
 
 def add_constraint(
     grouph: int,
-    c_type: int,
+    c_type: ConstraintType,
     wp: Slvs_Entity,
     v: float,
     p1: Slvs_Entity = E_NONE,
@@ -266,10 +266,8 @@ def length_diff(grouph: int, Slvs_entityA: Slvs_Entity, Slvs_entityB: Slvs_Entit
 def dragged(grouph: int, e1: Slvs_Entity, wp: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
     ...
 
-
 def clear() -> None:
     ...
-
 
 def solve_sketch(grouph: int, calculateFaileds: bool) -> Slvs_SolveResult:
     ...

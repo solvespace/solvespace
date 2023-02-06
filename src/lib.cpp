@@ -7,6 +7,7 @@
 #include "solvespace.h"
 #define EXPORT_DLL
 #include <slvs.h>
+#include <string>
 
 Sketch SolveSpace::SK = {};
 static System SYS;
@@ -62,7 +63,7 @@ case SLVS_C_EQUAL_RADIUS:        return ConstraintBase::Type::EQUAL_RADIUS;
 case SLVS_C_PROJ_PT_DISTANCE:    return ConstraintBase::Type::PROJ_PT_DISTANCE;
 case SLVS_C_WHERE_DRAGGED:       return ConstraintBase::Type::WHERE_DRAGGED;
 case SLVS_C_CURVE_CURVE_TANGENT: return ConstraintBase::Type::CURVE_CURVE_TANGENT;
-default: dbp("bad constraint type %d", type);
+default: SolveSpace::Platform::FatalError("bad constraint type " + std::to_string(type));
     }
 }
 
@@ -78,7 +79,7 @@ case SLVS_E_LINE_SEGMENT:       return EntityBase::Type::LINE_SEGMENT;
 case SLVS_E_CUBIC:              return EntityBase::Type::CUBIC;
 case SLVS_E_CIRCLE:             return EntityBase::Type::CIRCLE;
 case SLVS_E_ARC_OF_CIRCLE:      return EntityBase::Type::ARC_OF_CIRCLE;
-default: dbp("bad entity type %d", type);
+default: SolveSpace::Platform::FatalError("bad entity type " + std::to_string(type));
     }
 }
 
@@ -207,7 +208,7 @@ Slvs_Entity Slvs_AddPoint3D(Slvs_hGroup grouph, double x, double y, double z) {
 
 Slvs_Entity Slvs_AddNormal2D(Slvs_hGroup grouph, Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
-        ssassert(false, "workplane argument is not a workplane");
+        SolveSpace::Platform::FatalError("workplane argument is not a workplane");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::NORMAL_IN_2D;
@@ -252,7 +253,7 @@ Slvs_Entity Slvs_AddNormal3D(Slvs_hGroup grouph, double qw, double qx, double qy
 
 Slvs_Entity Slvs_AddDistance(Slvs_hGroup grouph, double value, Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
-        ssassert(false, "workplane argument is not a workplane");
+        SolveSpace::Platform::FatalError("workplane argument is not a workplane");
     }
     Slvs_hParam valueph  = Slvs_AddParam(value);
     EntityBase e  = {};
@@ -273,11 +274,11 @@ Slvs_Entity Slvs_AddDistance(Slvs_hGroup grouph, double value, Slvs_Entity workp
 
 Slvs_Entity Slvs_AddLine2D(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
-        ssassert(false, "workplane argument is not a workplane");
+        SolveSpace::Platform::FatalError("workplane argument is not a workplane");
     } else if(!Slvs_IsPoint2D(ptA)) {
-        ssassert(false, "ptA argument is not a 2d point");
+        SolveSpace::Platform::FatalError("ptA argument is not a 2d point");
     } else if(!Slvs_IsPoint2D(ptB)) {
-        ssassert(false, "ptB argument is not a 2d point");
+        SolveSpace::Platform::FatalError("ptB argument is not a 2d point");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::LINE_SEGMENT;
@@ -299,9 +300,9 @@ Slvs_Entity Slvs_AddLine2D(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB,
 
 Slvs_Entity Slvs_AddLine3D(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB) {
     if(!Slvs_IsPoint3D(ptA)) {
-        ssassert(false, "ptA argument is not a 3d point");
+        SolveSpace::Platform::FatalError("ptA argument is not a 3d point");
     } else if(!Slvs_IsPoint3D(ptB)) {
-        ssassert(false, "ptB argument is not a 3d point");
+        SolveSpace::Platform::FatalError("ptB argument is not a 3d point");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::LINE_SEGMENT;
@@ -323,15 +324,15 @@ Slvs_Entity Slvs_AddLine3D(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB)
 
 Slvs_Entity Slvs_AddCubic(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity ptC, Slvs_Entity ptD, Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
-        ssassert(false, "workplane argument is not a workplane");
+        SolveSpace::Platform::FatalError("workplane argument is not a workplane");
     } else if(!Slvs_IsPoint2D(ptA)) {
-        ssassert(false, "ptA argument is not a 2d point");
+        SolveSpace::Platform::FatalError("ptA argument is not a 2d point");
     } else if(!Slvs_IsPoint2D(ptB)) {
-        ssassert(false, "ptB argument is not a 2d point");
+        SolveSpace::Platform::FatalError("ptB argument is not a 2d point");
     } else if(!Slvs_IsPoint2D(ptC)) {
-        ssassert(false, "ptC argument is not a 2d point");
+        SolveSpace::Platform::FatalError("ptC argument is not a 2d point");
     } else if(!Slvs_IsPoint2D(ptD)) {
-        ssassert(false, "ptD argument is not a 2d point");
+        SolveSpace::Platform::FatalError("ptD argument is not a 2d point");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::CUBIC;
@@ -359,15 +360,15 @@ Slvs_Entity Slvs_AddCubic(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, 
 Slvs_Entity Slvs_AddArc(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity start, Slvs_Entity end,
                             Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
-        ssassert(false, "workplane argument is not a workplane");
+        SolveSpace::Platform::FatalError("workplane argument is not a workplane");
     } else if(!Slvs_IsNormal3D(normal)) {
-        ssassert(false, "normal argument is not a 3d normal");
+        SolveSpace::Platform::FatalError("normal argument is not a 3d normal");
     } else if(!Slvs_IsPoint2D(center)) {
-        ssassert(false, "center argument is not a 2d point");
+        SolveSpace::Platform::FatalError("center argument is not a 2d point");
     } else if(!Slvs_IsPoint2D(start)) {
-        ssassert(false, "start argument is not a 2d point");
+        SolveSpace::Platform::FatalError("start argument is not a 2d point");
     } else if(!Slvs_IsPoint2D(end)) {
-        ssassert(false, "end argument is not a 2d point");
+        SolveSpace::Platform::FatalError("end argument is not a 2d point");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::ARC_OF_CIRCLE;
@@ -394,13 +395,13 @@ Slvs_Entity Slvs_AddArc(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity cent
 Slvs_Entity Slvs_AddCircle(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity radius,
                             Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
-        ssassert(false, "workplane argument is not a workplane");
+        SolveSpace::Platform::FatalError("workplane argument is not a workplane");
     } else if(!Slvs_IsNormal3D(normal)) {
-        ssassert(false, "normal argument is not a 3d normal");
+        SolveSpace::Platform::FatalError("normal argument is not a 3d normal");
     } else if(!Slvs_IsPoint2D(center)) {
-        ssassert(false, "center argument is not a 2d point");
+        SolveSpace::Platform::FatalError("center argument is not a 2d point");
     } else if(!Slvs_IsDistance(radius)) {
-        ssassert(false, "radius argument is not a distance");
+        SolveSpace::Platform::FatalError("radius argument is not a distance");
     }
     EntityBase e  = {};
     e.type        = EntityBase::Type::CIRCLE;
@@ -498,7 +499,7 @@ Slvs_Constraint Slvs_Coincident(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_En
     } else if(Slvs_IsPoint(entityA) && (Slvs_IsCircle(entityB) || Slvs_IsArc(entityB))) {
         return Slvs_AddConstraint(grouph, SLVS_C_PT_ON_CIRCLE, workplane, 0., entityA, SLVS_E_NONE, entityB);
     }
-    ssassert(false, "Invalid arguments for coincident constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for coincident constraint");
 }
 
 Slvs_Constraint Slvs_Distance(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane) {
@@ -509,7 +510,7 @@ Slvs_Constraint Slvs_Distance(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Enti
     } else if(Slvs_IsPoint(entityA) && Slvs_IsLine(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_PT_LINE_DISTANCE, workplane, value, entityA, SLVS_E_NONE, entityB);
     }
-    ssassert(false, "Invalid arguments for distance constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for distance constraint");
 }
 
 Slvs_Constraint Slvs_Equal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
@@ -520,28 +521,28 @@ Slvs_Constraint Slvs_Equal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity 
     } else if((Slvs_IsArc(entityA) || Slvs_IsCircle(entityA)) && (Slvs_IsArc(entityB) || Slvs_IsCircle(entityB))) {
         return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_RADIUS, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
-    ssassert(false, "Invalid arguments for equal constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for equal constraint");
 }
 
 Slvs_Constraint Slvs_EqualAngle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
-    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsLine2D(entityC) && Slvs_IsLine2D(entityD)) {
+    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsLine2D(entityC) && Slvs_IsLine2D(entityD) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_ANGLE, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, entityC, entityD);
     }
-    ssassert(false, "Invalid arguments for equal angle constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for equal angle constraint");
 }
 
 Slvs_Constraint Slvs_EqualPointToLine(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
-    if(Slvs_IsPoint2D(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsPoint2D(entityC) && Slvs_IsLine2D(entityD)) {
+    if(Slvs_IsPoint2D(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsPoint2D(entityC) && Slvs_IsLine2D(entityD) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_EQ_PT_LN_DISTANCES, workplane, 0., entityA, entityB, entityC, entityD);
     }
-    ssassert(false, "Invalid arguments for equal point to line constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for equal point to line constraint");
 }
 
 Slvs_Constraint Slvs_Ratio(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
-    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
+    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_RATIO, workplane, value, SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
-    ssassert(false, "Invalid arguments for ratio constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for ratio constraint");
 }
 
 Slvs_Constraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC = SLVS_E_NONE, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
@@ -551,99 +552,99 @@ Slvs_Constraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Ent
         return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC, entityC, 0., entityA, entityB, entityC);
     } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB) && Slvs_IsLine(entityC)) {
         if(Slvs_IsFreeIn3D(workplane)) {
-            ssassert(false, "3d workplane given for a 2d constraint");
+            SolveSpace::Platform::FatalError("3d workplane given for a 2d constraint");
         }
         return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC_LINE, workplane, 0., entityA, entityB, entityC);
     }
-    ssassert(false, "Invalid arguments for symmetric constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for symmetric constraint");
 }
 
-Slvs_Constraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane) {
     if(Slvs_IsFreeIn3D(workplane)) {
-        ssassert(false, "3d workplane given for a 2d constraint");
+        SolveSpace::Platform::FatalError("3d workplane given for a 2d constraint");
     } else if(Slvs_IsPoint2D(ptA) && Slvs_IsPoint2D(ptB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC_HORIZ, workplane, 0., ptA, ptB);
     }
-    ssassert(false, "Invalid arguments for symmetric horizontal constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for symmetric horizontal constraint");
 }
 
-Slvs_Constraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane) {
     if(Slvs_IsFreeIn3D(workplane)) {
-        ssassert(false, "3d workplane given for a 2d constraint");
+        SolveSpace::Platform::FatalError("3d workplane given for a 2d constraint");
     } else if(Slvs_IsPoint2D(ptA) && Slvs_IsPoint2D(ptB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC_VERT, workplane, 0., ptA, ptB);
     }
-    ssassert(false, "Invalid arguments for symmetric vertical constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for symmetric vertical constraint");
 }
 
 Slvs_Constraint Slvs_Midpoint(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
-    if(Slvs_IsPoint(ptA) && Slvs_IsLine(ptB)) {
+    if(Slvs_IsPoint(ptA) && Slvs_IsLine(ptB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_AT_MIDPOINT, workplane, 0., ptA, SLVS_E_NONE, ptB);
     }
-    ssassert(false, "Invalid arguments for midpoint constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for midpoint constraint");
 }
 
 Slvs_Constraint Slvs_Horizontal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_E_NONE) {
     if(Slvs_IsFreeIn3D(workplane)) {
-        ssassert(false, "Horizontal constraint is not supported in 3D");
+        SolveSpace::Platform::FatalError("Horizontal constraint is not supported in 3D");
     } else if(Slvs_IsLine2D(entityA)) {
         return Slvs_AddConstraint(grouph, SLVS_C_HORIZONTAL, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA);
     } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_HORIZONTAL, workplane, 0., entityA, entityB);
     }
-    ssassert(false, "Invalid arguments for horizontal constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for horizontal constraint");
 }
 
 Slvs_Constraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_E_NONE) {
     if(Slvs_IsFreeIn3D(workplane)) {
-        ssassert(false, "Vertical constraint is not supported in 3D");
+        SolveSpace::Platform::FatalError("Vertical constraint is not supported in 3D");
     } else if(Slvs_IsLine2D(entityA)) {
         return Slvs_AddConstraint(grouph, SLVS_C_VERTICAL, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA);
     } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_VERTICAL, workplane, 0., entityA, entityB);
     }
-    ssassert(false, "Invalid arguments for horizontal constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for horizontal constraint");
 }
 
 Slvs_Constraint Slvs_Diameter(Slvs_hGroup grouph, Slvs_Entity entityA, double value) {
     if(Slvs_IsArc(entityA) || Slvs_IsCircle(entityA)) {
         return Slvs_AddConstraint(grouph, SLVS_C_DIAMETER, SLVS_E_FREE_IN_3D, value, SLVS_E_NONE, SLVS_E_NONE, entityA);
     }
-    ssassert(false, "Invalid arguments for diameter constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for diameter constraint");
 }
 
 Slvs_Constraint Slvs_SameOrientation(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB) {
     if(Slvs_IsNormal3D(entityA) && Slvs_IsNormal3D(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_SAME_ORIENTATION, SLVS_E_FREE_IN_3D, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
-    ssassert(false, "Invalid arguments for same orientation constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for same orientation constraint");
 }
 
 Slvs_Constraint Slvs_Angle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D, int inverse = 0) {
-    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
+    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_ANGLE, workplane, value, SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, inverse);
     }
-    ssassert(false, "Invalid arguments for angle constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for angle constraint");
 }
 
 Slvs_Constraint Slvs_Perpendicular(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D, int inverse = 0) {
-    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
+    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_PERPENDICULAR, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, inverse);
     }
-    ssassert(false, "Invalid arguments for perpendicular constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for perpendicular constraint");
 }
 
 Slvs_Constraint Slvs_Parallel(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
-    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
+    if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_PARALLEL, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
-    ssassert(false, "Invalid arguments for parallel constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for parallel constraint");
 }
 
 Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsArc(entityA) && Slvs_IsLine2D(entityB)) {
         if(Slvs_IsFreeIn3D(workplane)) {
-            ssassert(false, "3d workplane given for a 2d constraint");
+            SolveSpace::Platform::FatalError("3d workplane given for a 2d constraint");
         }
         Vector a1 = SK.entity.FindById(hEntity { entityA.point[1] })->PointGetNum(),
                a2 = SK.entity.FindById(hEntity { entityA.point[2] })->PointGetNum();
@@ -655,7 +656,7 @@ Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entit
         } else if(l0.Equals(a2) || l1.Equals(a2)) {
             other = 1;
         } else {
-            ssassert(false, "The tangent arc and line segment must share an "
+            SolveSpace::Platform::FatalError("The tangent arc and line segment must share an "
                                         "endpoint. Constrain them with Constrain -> "
                                         "On Point before constraining tangent.");
         }
@@ -671,14 +672,14 @@ Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entit
         } else if(l0.Equals(af) || l1.Equals(af)) {
             other = 1;
         } else {
-            ssassert(false, "The tangent cubic and line segment must share an "
+            SolveSpace::Platform::FatalError("The tangent cubic and line segment must share an "
                                         "endpoint. Constrain them with Constrain -> "
                                         "On Point before constraining tangent.");
         }
         return Slvs_AddConstraint(grouph, SLVS_C_CUBIC_LINE_TANGENT, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, other);
     } else if((Slvs_IsArc(entityA) || Slvs_IsCubic(entityA)) && (Slvs_IsArc(entityB) || Slvs_IsCubic(entityB))) {
         if(Slvs_IsFreeIn3D(workplane)) {
-            ssassert(false, "3d workplane given for a 2d constraint");
+            SolveSpace::Platform::FatalError("3d workplane given for a 2d constraint");
         }
         EntityBase* skEntityA = SK.entity.FindById(hEntity { entityA.h });
         EntityBase* skEntityB = SK.entity.FindById(hEntity { entityB.h });
@@ -699,34 +700,34 @@ Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entit
             other  = 1;
             other2 = 1;
         } else {
-            ssassert(false, "The curves must share an endpoint. Constrain them "
+            SolveSpace::Platform::FatalError("The curves must share an endpoint. Constrain them "
                                         "with Constrain -> On Point before constraining "
                                         "tangent.");
         }
         return Slvs_AddConstraint(grouph, SLVS_C_CURVE_CURVE_TANGENT, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, other, other2);
     }
-    ssassert(false, "Invalid arguments for tangent constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for tangent constraint");
 }
 
 Slvs_Constraint Slvs_DistanceProj(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, double value) {
     if(Slvs_IsPoint(ptA) && Slvs_IsPoint(ptB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_PROJ_PT_DISTANCE, SLVS_E_FREE_IN_3D, value, ptA, ptB);
     }
-    ssassert(false, "Invalid arguments for projected distance constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for projected distance constraint");
 }
 
 Slvs_Constraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
-    if(Slvs_IsLine(entityA) && Slvs_IsLine(entityB)) {
+    if(Slvs_IsLine(entityA) && Slvs_IsLine(entityB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_DIFFERENCE, workplane, value, SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
-    ssassert(false, "Invalid arguments for length difference constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for length difference constraint");
 }
 
 Slvs_Constraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
-    if(Slvs_IsPoint(ptA)) {
+    if(Slvs_IsPoint(ptA) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_WHERE_DRAGGED, workplane, 0., ptA);
     }
-    ssassert(false, "Invalid arguments for dragged constraint");
+    SolveSpace::Platform::FatalError("Invalid arguments for dragged constraint");
 }
 
 void Slvs_QuaternionU(double qw, double qx, double qy, double qz,

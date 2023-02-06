@@ -41,18 +41,12 @@ from .solvespace import (
     tangent,
     vertical,
     ResultFlag,
-    EntityType,
     ConstraintType,
     E_NONE,
     E_FREE_IN_3D
 )
 
 __all__ = [
-    "ResultFlag",
-    "EntityType",
-    "ConstraintType",
-    "E_NONE",
-    "E_FREE_IN_3D",
     "add_2d_base",
     "add_arc",
     "add_circle",
@@ -93,8 +87,11 @@ __all__ = [
     "symmetric_h",
     "symmetric_v",
     "tangent",
-    "vertical"
+    "vertical",
+    "ResultFlag",
+    "ConstraintType",
+    "E_NONE",
+    "E_FREE_IN_3D",
 ]
-
 
 __test__ = {}
