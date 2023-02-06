@@ -1,6 +1,6 @@
 from unittest import TestCase
 import solvespace as slvs
-from solvespace import ConstraintType, EntityType, E_NONE
+from solvespace import ConstraintType, E_NONE
 from math import radians
 
 class CoreTest(TestCase):

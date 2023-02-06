@@ -645,10 +645,10 @@ Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entit
         if(Slvs_IsFreeIn3D(workplane)) {
             ssassert(false, "3d workplane given for a 2d constraint");
         }
-        Vector a1 = SK.entity.FindByHandleV(entityA.point[1])->PointGetNum(),
-               a2 = SK.entity.FindByHandleV(entityA.point[2])->PointGetNum();
-        Vector l0 = SK.entity.FindByHandleV(entityB.point[0])->PointGetNum(),
-               l1 = SK.entity.FindByHandleV(entityB.point[1])->PointGetNum();
+        Vector a1 = SK.entity.FindById(hEntity { entityA.point[1] })->PointGetNum(),
+               a2 = SK.entity.FindById(hEntity { entityA.point[2] })->PointGetNum();
+        Vector l0 = SK.entity.FindById(hEntity { entityB.point[0] })->PointGetNum(),
+               l1 = SK.entity.FindById(hEntity { entityB.point[1] })->PointGetNum();
         int other;
         if(l0.Equals(a1) || l1.Equals(a1)) {
             other = 0;
@@ -661,10 +661,10 @@ Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entit
         }
         return Slvs_AddConstraint(grouph, SLVS_C_ARC_LINE_TANGENT, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, other);
     } else if(Slvs_IsCubic(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsFreeIn3D(workplane)) {
-        EntityBase* skEntityA = SK.entity.FindByHandleV(entityA.h);
+        EntityBase* skEntityA = SK.entity.FindById(hEntity { entityA.h });
         Vector as = skEntityA->CubicGetStartNum(), af = skEntityA->CubicGetFinishNum();
-        Vector l0 = SK.entity.FindByHandleV(entityB.point[0])->PointGetNum(),
-               l1 = SK.entity.FindByHandleV(entityB.point[1])->PointGetNum();
+        Vector l0 = SK.entity.FindById(hEntity { entityB.point[0] })->PointGetNum(),
+               l1 = SK.entity.FindById(hEntity { entityB.point[1] })->PointGetNum();
         int other;
         if(l0.Equals(as) || l1.Equals(as)) {
             other = 0;
@@ -680,8 +680,8 @@ Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entit
         if(Slvs_IsFreeIn3D(workplane)) {
             ssassert(false, "3d workplane given for a 2d constraint");
         }
-        EntityBase* skEntityA = SK.entity.FindByHandleV(entityA.h);
-        EntityBase* skEntityB = SK.entity.FindByHandleV(entityB.h);
+        EntityBase* skEntityA = SK.entity.FindById(hEntity { entityA.h });
+        EntityBase* skEntityB = SK.entity.FindById(hEntity { entityB.h });
         Vector as = skEntityA->EndpointStart(), af = skEntityA->EndpointFinish(),
                bs = skEntityB->EndpointStart(), bf = skEntityB->EndpointFinish();
         int other;
@@ -869,7 +869,7 @@ Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup shg, int calculateFaileds = 0)
 
 double Slvs_GetParamValue(Slvs_Entity e, int i)
 {
-    EntityBase* entity = SK.entity.FindByHandleV(e.h);
+    EntityBase* entity = SK.entity.FindById(hEntity { e.h });
     Param* p = SK.param.FindById(entity->param[i]);
     return p->val;
 }

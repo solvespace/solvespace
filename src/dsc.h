@@ -521,13 +521,6 @@ public:
         ++n;
     }
 
-    T *FindByHandleV(uint32_t v) {
-        H h = H { v };
-        T *t = FindByIdNoOops(h);
-        ssassert(t != nullptr, ("Cannot find handle: " + std::to_string(h.v)).c_str());
-        return t;
-    }
-
     T *FindById(H h) {
         T *t = FindByIdNoOops(h);
         ssassert(t != nullptr, "Cannot find handle");
