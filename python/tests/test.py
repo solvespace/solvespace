@@ -1,5 +1,6 @@
 from unittest import TestCase
 import solvespace as slvs
+from solvespace import ConstraintType, EntityType, E_NONE
 from math import radians
 
 class CoreTest(TestCase):
@@ -24,8 +25,9 @@ class CoreTest(TestCase):
     slvs.distance(g, p1, p4, 70, wp)
     line1 = slvs.add_line_2d(g, p0, p3, wp)
     slvs.angle(g, line0, line1, 45, wp, False)
+    # slvs.add_constraint(g, ConstraintType.ANGLE, wp, 45.0, E_NONE, E_NONE, line0, line1)
 
-    result = slvs.solve_sketch(g, 0)
+    result = slvs.solve_sketch(g, False)
     self.assertEqual(result['result'], slvs.ResultFlag.OKAY)
     x = slvs.get_param(p2, 0)
     y = slvs.get_param(p2, 1)
@@ -56,7 +58,7 @@ class CoreTest(TestCase):
     line_base = slvs.add_line_2d(g, p0, p3, wp)
     slvs.angle(g, line0, line_base, angle, wp, False)
 
-    result = slvs.solve_sketch(g, 0)
+    result = slvs.solve_sketch(g, False)
     print("result", result)
     self.assertEqual(result['result'], slvs.ResultFlag.OKAY)
     x = slvs.get_param(p2, 0)
@@ -100,7 +102,7 @@ class CoreTest(TestCase):
     line_base = slvs.add_line_2d(g, p0, p8, wp)
     slvs.angle(g, line0, line_base, 45, wp, False)
 
-    result = slvs.solve_sketch(g, 0)
+    result = slvs.solve_sketch(g, False)
     print("result", result)
     self.assertEqual(result['result'], slvs.ResultFlag.OKAY)
     x = slvs.get_param(p8, 0)
@@ -135,7 +137,7 @@ class CoreTest(TestCase):
     slvs.distance(g, p0, p1, n1, wp)
     slvs.distance(g, p1, p2, n2, wp)
 
-    result = slvs.solve_sketch(g, 0)
+    result = slvs.solve_sketch(g, False)
     print("result", result)
     self.assertEqual(result['result'], slvs.ResultFlag.OKAY)
     x = slvs.get_param(p2, 0)
@@ -219,8 +221,8 @@ class CoreTest(TestCase):
     # the problem.
 
     # And solve.
-    g1result = slvs.solve_sketch(g1, 0)
-    g2result = slvs.solve_sketch(g2, 0)
+    g1result = slvs.solve_sketch(g1, False)
+    g2result = slvs.solve_sketch(g2, False)
     self.assertEqual(g2result['result'], slvs.ResultFlag.OKAY)
     x = slvs.get_param(p301, 0)
     y = slvs.get_param(p301, 1)

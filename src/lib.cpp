@@ -22,8 +22,65 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *) {
 
 extern "C" {
 
-Slvs_Entity SLVS_NO_ENTITY_E = Slvs_Entity { 0 };
-Slvs_Entity SLVS_FREE_IN_3D_E = Slvs_Entity { 0 };
+ConstraintBase::Type Slvs_CTypeToConstraintBaseType(int type) {
+    switch(type) {
+case SLVS_C_POINTS_COINCIDENT:   return ConstraintBase::Type::POINTS_COINCIDENT;
+case SLVS_C_PT_PT_DISTANCE:      return ConstraintBase::Type::PT_PT_DISTANCE;
+case SLVS_C_PT_PLANE_DISTANCE:   return ConstraintBase::Type::PT_PLANE_DISTANCE;
+case SLVS_C_PT_LINE_DISTANCE:    return ConstraintBase::Type::PT_LINE_DISTANCE;
+case SLVS_C_PT_FACE_DISTANCE:    return ConstraintBase::Type::PT_FACE_DISTANCE;
+case SLVS_C_PT_IN_PLANE:         return ConstraintBase::Type::PT_IN_PLANE;
+case SLVS_C_PT_ON_LINE:          return ConstraintBase::Type::PT_ON_LINE;
+case SLVS_C_PT_ON_FACE:          return ConstraintBase::Type::PT_ON_FACE;
+case SLVS_C_EQUAL_LENGTH_LINES:  return ConstraintBase::Type::EQUAL_LENGTH_LINES;
+case SLVS_C_LENGTH_RATIO:        return ConstraintBase::Type::LENGTH_RATIO;
+case SLVS_C_ARC_ARC_LEN_RATIO:   return ConstraintBase::Type::ARC_ARC_LEN_RATIO;
+case SLVS_C_ARC_LINE_LEN_RATIO:  return ConstraintBase::Type::ARC_LINE_LEN_RATIO;
+case SLVS_C_EQ_LEN_PT_LINE_D:    return ConstraintBase::Type::EQ_LEN_PT_LINE_D;
+case SLVS_C_EQ_PT_LN_DISTANCES:  return ConstraintBase::Type::EQ_PT_LN_DISTANCES;
+case SLVS_C_EQUAL_ANGLE:         return ConstraintBase::Type::EQUAL_ANGLE;
+case SLVS_C_EQUAL_LINE_ARC_LEN:  return ConstraintBase::Type::EQUAL_LINE_ARC_LEN;
+case SLVS_C_LENGTH_DIFFERENCE:   return ConstraintBase::Type::LENGTH_DIFFERENCE;
+case SLVS_C_ARC_ARC_DIFFERENCE:  return ConstraintBase::Type::ARC_ARC_DIFFERENCE;
+case SLVS_C_ARC_LINE_DIFFERENCE: return ConstraintBase::Type::ARC_LINE_DIFFERENCE;
+case SLVS_C_SYMMETRIC:           return ConstraintBase::Type::SYMMETRIC;
+case SLVS_C_SYMMETRIC_HORIZ:     return ConstraintBase::Type::SYMMETRIC_HORIZ;
+case SLVS_C_SYMMETRIC_VERT:      return ConstraintBase::Type::SYMMETRIC_VERT;
+case SLVS_C_SYMMETRIC_LINE:      return ConstraintBase::Type::SYMMETRIC_LINE;
+case SLVS_C_AT_MIDPOINT:         return ConstraintBase::Type::AT_MIDPOINT;
+case SLVS_C_HORIZONTAL:          return ConstraintBase::Type::HORIZONTAL;
+case SLVS_C_VERTICAL:            return ConstraintBase::Type::VERTICAL;
+case SLVS_C_DIAMETER:            return ConstraintBase::Type::DIAMETER;
+case SLVS_C_PT_ON_CIRCLE:        return ConstraintBase::Type::PT_ON_CIRCLE;
+case SLVS_C_SAME_ORIENTATION:    return ConstraintBase::Type::SAME_ORIENTATION;
+case SLVS_C_ANGLE:               return ConstraintBase::Type::ANGLE;
+case SLVS_C_PARALLEL:            return ConstraintBase::Type::PARALLEL;
+case SLVS_C_PERPENDICULAR:       return ConstraintBase::Type::PERPENDICULAR;
+case SLVS_C_ARC_LINE_TANGENT:    return ConstraintBase::Type::ARC_LINE_TANGENT;
+case SLVS_C_CUBIC_LINE_TANGENT:  return ConstraintBase::Type::CUBIC_LINE_TANGENT;
+case SLVS_C_EQUAL_RADIUS:        return ConstraintBase::Type::EQUAL_RADIUS;
+case SLVS_C_PROJ_PT_DISTANCE:    return ConstraintBase::Type::PROJ_PT_DISTANCE;
+case SLVS_C_WHERE_DRAGGED:       return ConstraintBase::Type::WHERE_DRAGGED;
+case SLVS_C_CURVE_CURVE_TANGENT: return ConstraintBase::Type::CURVE_CURVE_TANGENT;
+default: dbp("bad constraint type %d", type);
+    }
+}
+
+EntityBase::Type Slvs_CTypeToEntityBaseType(int type) {
+    switch(type) {
+case SLVS_E_POINT_IN_3D:        return EntityBase::Type::POINT_IN_3D;
+case SLVS_E_POINT_IN_2D:        return EntityBase::Type::POINT_IN_2D;
+case SLVS_E_NORMAL_IN_3D:       return EntityBase::Type::NORMAL_IN_3D;
+case SLVS_E_NORMAL_IN_2D:       return EntityBase::Type::NORMAL_IN_2D;
+case SLVS_E_DISTANCE:           return EntityBase::Type::DISTANCE;
+case SLVS_E_WORKPLANE:          return EntityBase::Type::WORKPLANE;
+case SLVS_E_LINE_SEGMENT:       return EntityBase::Type::LINE_SEGMENT;
+case SLVS_E_CUBIC:              return EntityBase::Type::CUBIC;
+case SLVS_E_CIRCLE:             return EntityBase::Type::CIRCLE;
+case SLVS_E_ARC_OF_CIRCLE:      return EntityBase::Type::ARC_OF_CIRCLE;
+default: dbp("bad entity type %d", type);
+    }
+}
 
 bool Slvs_IsFreeIn3D(Slvs_Entity e) {
     return e.h == SLVS_FREE_IN_3D;
@@ -396,52 +453,11 @@ Slvs_Entity Slvs_Add2DBase(Slvs_hGroup grouph) {
 
 Slvs_Constraint Slvs_AddConstraint(Slvs_hGroup grouph,
     int type, Slvs_Entity workplane, double val, Slvs_Entity ptA,
-    Slvs_Entity ptB = SLVS_NO_ENTITY_E, Slvs_Entity entityA = SLVS_NO_ENTITY_E,
-    Slvs_Entity entityB = SLVS_NO_ENTITY_E, Slvs_Entity entityC = SLVS_NO_ENTITY_E,
-    Slvs_Entity entityD = SLVS_NO_ENTITY_E, int other = 0, int other2 = 0) {
+    Slvs_Entity ptB = SLVS_E_NONE, Slvs_Entity entityA = SLVS_E_NONE,
+    Slvs_Entity entityB = SLVS_E_NONE, Slvs_Entity entityC = SLVS_E_NONE,
+    Slvs_Entity entityD = SLVS_E_NONE, int other = 0, int other2 = 0) {
     ConstraintBase c = {};
-    ConstraintBase::Type t;
-    switch(type) {
-        case SLVS_C_POINTS_COINCIDENT:  t = ConstraintBase::Type::POINTS_COINCIDENT; break;
-        case SLVS_C_PT_PT_DISTANCE:     t = ConstraintBase::Type::PT_PT_DISTANCE; break;
-        case SLVS_C_PT_PLANE_DISTANCE:  t = ConstraintBase::Type::PT_PLANE_DISTANCE; break;
-        case SLVS_C_PT_LINE_DISTANCE:   t = ConstraintBase::Type::PT_LINE_DISTANCE; break;
-        case SLVS_C_PT_FACE_DISTANCE:   t = ConstraintBase::Type::PT_FACE_DISTANCE; break;
-        case SLVS_C_PT_IN_PLANE:        t = ConstraintBase::Type::PT_IN_PLANE; break;
-        case SLVS_C_PT_ON_LINE:         t = ConstraintBase::Type::PT_ON_LINE; break;
-        case SLVS_C_PT_ON_FACE:         t = ConstraintBase::Type::PT_ON_FACE; break;
-        case SLVS_C_EQUAL_LENGTH_LINES: t = ConstraintBase::Type::EQUAL_LENGTH_LINES; break;
-        case SLVS_C_LENGTH_RATIO:       t = ConstraintBase::Type::LENGTH_RATIO; break;
-        case SLVS_C_ARC_ARC_LEN_RATIO:  t = ConstraintBase::Type::ARC_ARC_LEN_RATIO; break;
-        case SLVS_C_ARC_LINE_LEN_RATIO: t = ConstraintBase::Type::ARC_LINE_LEN_RATIO; break;
-        case SLVS_C_EQ_LEN_PT_LINE_D:   t = ConstraintBase::Type::EQ_LEN_PT_LINE_D; break;
-        case SLVS_C_EQ_PT_LN_DISTANCES: t = ConstraintBase::Type::EQ_PT_LN_DISTANCES; break;
-        case SLVS_C_EQUAL_ANGLE:        t = ConstraintBase::Type::EQUAL_ANGLE; break;
-        case SLVS_C_EQUAL_LINE_ARC_LEN: t = ConstraintBase::Type::EQUAL_LINE_ARC_LEN; break;
-        case SLVS_C_LENGTH_DIFFERENCE:  t = ConstraintBase::Type::LENGTH_DIFFERENCE; break;
-        case SLVS_C_ARC_ARC_DIFFERENCE: t = ConstraintBase::Type::ARC_ARC_DIFFERENCE; break;
-        case SLVS_C_ARC_LINE_DIFFERENCE:t = ConstraintBase::Type::ARC_LINE_DIFFERENCE; break;
-        case SLVS_C_SYMMETRIC:          t = ConstraintBase::Type::SYMMETRIC; break;
-        case SLVS_C_SYMMETRIC_HORIZ:    t = ConstraintBase::Type::SYMMETRIC_HORIZ; break;
-        case SLVS_C_SYMMETRIC_VERT:     t = ConstraintBase::Type::SYMMETRIC_VERT; break;
-        case SLVS_C_SYMMETRIC_LINE:     t = ConstraintBase::Type::SYMMETRIC_LINE; break;
-        case SLVS_C_AT_MIDPOINT:        t = ConstraintBase::Type::AT_MIDPOINT; break;
-        case SLVS_C_HORIZONTAL:         t = ConstraintBase::Type::HORIZONTAL; break;
-        case SLVS_C_VERTICAL:           t = ConstraintBase::Type::VERTICAL; break;
-        case SLVS_C_DIAMETER:           t = ConstraintBase::Type::DIAMETER; break;
-        case SLVS_C_PT_ON_CIRCLE:       t = ConstraintBase::Type::PT_ON_CIRCLE; break;
-        case SLVS_C_SAME_ORIENTATION:   t = ConstraintBase::Type::SAME_ORIENTATION; break;
-        case SLVS_C_ANGLE:              t = ConstraintBase::Type::ANGLE; break;
-        case SLVS_C_PARALLEL:           t = ConstraintBase::Type::PARALLEL; break;
-        case SLVS_C_PERPENDICULAR:      t = ConstraintBase::Type::PERPENDICULAR; break;
-        case SLVS_C_ARC_LINE_TANGENT:   t = ConstraintBase::Type::ARC_LINE_TANGENT; break;
-        case SLVS_C_CUBIC_LINE_TANGENT: t = ConstraintBase::Type::CUBIC_LINE_TANGENT; break;
-        case SLVS_C_EQUAL_RADIUS:       t = ConstraintBase::Type::EQUAL_RADIUS; break;
-        case SLVS_C_PROJ_PT_DISTANCE:   t = ConstraintBase::Type::PROJ_PT_DISTANCE; break;
-        case SLVS_C_WHERE_DRAGGED:      t = ConstraintBase::Type::WHERE_DRAGGED; break;
-        case SLVS_C_CURVE_CURVE_TANGENT:t = ConstraintBase::Type::CURVE_CURVE_TANGENT; break;
-    }
-    c.type           = t;
+    c.type           = Slvs_CTypeToConstraintBaseType(type);
     c.group.v        = grouph;
     c.workplane.v    = workplane.h;
     c.valA           = val;
@@ -472,15 +488,15 @@ Slvs_Constraint Slvs_AddConstraint(Slvs_hGroup grouph,
     return cc;
 }
 
-Slvs_Constraint Slvs_Coincident(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_Coincident(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsPoint(entityA) && Slvs_IsPoint(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_POINTS_COINCIDENT, workplane, 0., entityA, entityB);
     } else if(Slvs_IsPoint(entityA) && Slvs_IsWorkplane(entityB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_IN_PLANE, SLVS_FREE_IN_3D_E, 0., entityA, SLVS_NO_ENTITY_E, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_IN_PLANE, SLVS_E_FREE_IN_3D, 0., entityA, SLVS_E_NONE, entityB);
     } else if(Slvs_IsPoint(entityA) && Slvs_IsLine(entityB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_ON_LINE, workplane, 0., entityA, SLVS_NO_ENTITY_E, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_ON_LINE, workplane, 0., entityA, SLVS_E_NONE, entityB);
     } else if(Slvs_IsPoint(entityA) && (Slvs_IsCircle(entityB) || Slvs_IsArc(entityB))) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_ON_CIRCLE, workplane, 0., entityA, SLVS_NO_ENTITY_E, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_ON_CIRCLE, workplane, 0., entityA, SLVS_E_NONE, entityB);
     }
     ssassert(false, "Invalid arguments for coincident constraint");
 }
@@ -489,46 +505,46 @@ Slvs_Constraint Slvs_Distance(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Enti
     if(Slvs_IsPoint(entityA) && Slvs_IsPoint(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_PT_PT_DISTANCE, workplane, value, entityA, entityB);
     } else if(Slvs_IsPoint(entityA) && Slvs_IsWorkplane(entityB) && Slvs_Is3D(workplane)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_PLANE_DISTANCE, entityB, value, entityA, SLVS_NO_ENTITY_E, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_PLANE_DISTANCE, entityB, value, entityA, SLVS_E_NONE, entityB);
     } else if(Slvs_IsPoint(entityA) && Slvs_IsLine(entityB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PT_LINE_DISTANCE, workplane, value, entityA, SLVS_NO_ENTITY_E, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_PT_LINE_DISTANCE, workplane, value, entityA, SLVS_E_NONE, entityB);
     }
     ssassert(false, "Invalid arguments for distance constraint");
 }
 
-Slvs_Constraint Slvs_Equal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_Equal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsLine(entityA) && Slvs_IsLine(entityB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_LENGTH_LINES, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_LENGTH_LINES, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     } else if(Slvs_IsLine(entityA) && (Slvs_IsArc(entityB) || Slvs_IsCircle(entityB))) {
-        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_LINE_ARC_LEN, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_LINE_ARC_LEN, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     } else if((Slvs_IsArc(entityA) || Slvs_IsCircle(entityA)) && (Slvs_IsArc(entityB) || Slvs_IsCircle(entityB))) {
-        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_RADIUS, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_RADIUS, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
     ssassert(false, "Invalid arguments for equal constraint");
 }
 
-Slvs_Constraint Slvs_EqualAngle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_EqualAngle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsLine2D(entityC) && Slvs_IsLine2D(entityD)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_ANGLE, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, entityC, entityD);
+        return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_ANGLE, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, entityC, entityD);
     }
     ssassert(false, "Invalid arguments for equal angle constraint");
 }
 
-Slvs_Constraint Slvs_EqualPointToLine(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_EqualPointToLine(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsPoint2D(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsPoint2D(entityC) && Slvs_IsLine2D(entityD)) {
         return Slvs_AddConstraint(grouph, SLVS_C_EQ_PT_LN_DISTANCES, workplane, 0., entityA, entityB, entityC, entityD);
     }
     ssassert(false, "Invalid arguments for equal point to line constraint");
 }
 
-Slvs_Constraint Slvs_Ratio(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_Ratio(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_RATIO, workplane, value, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_RATIO, workplane, value, SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
     ssassert(false, "Invalid arguments for ratio constraint");
 }
 
-Slvs_Constraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC = SLVS_NO_ENTITY_E, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC = SLVS_E_NONE, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsPoint3D(entityA) && Slvs_IsPoint3D(entityB) && Slvs_IsWorkplane(entityC) && Slvs_IsFreeIn3D(workplane)) {
         return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC, workplane, 0., entityA, entityB, entityC);
     } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB) && Slvs_IsWorkplane(entityC) && Slvs_IsFreeIn3D(workplane)) {
@@ -542,7 +558,7 @@ Slvs_Constraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Ent
     ssassert(false, "Invalid arguments for symmetric constraint");
 }
 
-Slvs_Constraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsFreeIn3D(workplane)) {
         ssassert(false, "3d workplane given for a 2d constraint");
     } else if(Slvs_IsPoint2D(ptA) && Slvs_IsPoint2D(ptB)) {
@@ -551,7 +567,7 @@ Slvs_Constraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity
     ssassert(false, "Invalid arguments for symmetric horizontal constraint");
 }
 
-Slvs_Constraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsFreeIn3D(workplane)) {
         ssassert(false, "3d workplane given for a 2d constraint");
     } else if(Slvs_IsPoint2D(ptA) && Slvs_IsPoint2D(ptB)) {
@@ -560,29 +576,29 @@ Slvs_Constraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity
     ssassert(false, "Invalid arguments for symmetric vertical constraint");
 }
 
-Slvs_Constraint Slvs_Midpoint(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_Midpoint(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsPoint(ptA) && Slvs_IsLine(ptB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_AT_MIDPOINT, workplane, 0., ptA, SLVS_NO_ENTITY_E, ptB);
+        return Slvs_AddConstraint(grouph, SLVS_C_AT_MIDPOINT, workplane, 0., ptA, SLVS_E_NONE, ptB);
     }
     ssassert(false, "Invalid arguments for midpoint constraint");
 }
 
-Slvs_Constraint Slvs_Horizontal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_NO_ENTITY_E) {
+Slvs_Constraint Slvs_Horizontal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_E_NONE) {
     if(Slvs_IsFreeIn3D(workplane)) {
         ssassert(false, "Horizontal constraint is not supported in 3D");
     } else if(Slvs_IsLine2D(entityA)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_HORIZONTAL, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA);
+        return Slvs_AddConstraint(grouph, SLVS_C_HORIZONTAL, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA);
     } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_HORIZONTAL, workplane, 0., entityA, entityB);
     }
     ssassert(false, "Invalid arguments for horizontal constraint");
 }
 
-Slvs_Constraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_NO_ENTITY_E) {
+Slvs_Constraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_E_NONE) {
     if(Slvs_IsFreeIn3D(workplane)) {
         ssassert(false, "Vertical constraint is not supported in 3D");
     } else if(Slvs_IsLine2D(entityA)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_VERTICAL, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA);
+        return Slvs_AddConstraint(grouph, SLVS_C_VERTICAL, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA);
     } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_VERTICAL, workplane, 0., entityA, entityB);
     }
@@ -591,40 +607,40 @@ Slvs_Constraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Enti
 
 Slvs_Constraint Slvs_Diameter(Slvs_hGroup grouph, Slvs_Entity entityA, double value) {
     if(Slvs_IsArc(entityA) || Slvs_IsCircle(entityA)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_DIAMETER, SLVS_FREE_IN_3D_E, value, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA);
+        return Slvs_AddConstraint(grouph, SLVS_C_DIAMETER, SLVS_E_FREE_IN_3D, value, SLVS_E_NONE, SLVS_E_NONE, entityA);
     }
     ssassert(false, "Invalid arguments for diameter constraint");
 }
 
 Slvs_Constraint Slvs_SameOrientation(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB) {
     if(Slvs_IsNormal3D(entityA) && Slvs_IsNormal3D(entityB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_SAME_ORIENTATION, SLVS_FREE_IN_3D_E, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_SAME_ORIENTATION, SLVS_E_FREE_IN_3D, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
     ssassert(false, "Invalid arguments for same orientation constraint");
 }
 
-Slvs_Constraint Slvs_Angle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_FREE_IN_3D_E, int inverse = 0) {
+Slvs_Constraint Slvs_Angle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D, int inverse = 0) {
     if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_ANGLE, workplane, value, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, inverse);
+        return Slvs_AddConstraint(grouph, SLVS_C_ANGLE, workplane, value, SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, inverse);
     }
     ssassert(false, "Invalid arguments for angle constraint");
 }
 
-Slvs_Constraint Slvs_Perpendicular(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E, int inverse = 0) {
+Slvs_Constraint Slvs_Perpendicular(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D, int inverse = 0) {
     if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PERPENDICULAR, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, inverse);
+        return Slvs_AddConstraint(grouph, SLVS_C_PERPENDICULAR, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, inverse);
     }
     ssassert(false, "Invalid arguments for perpendicular constraint");
 }
 
-Slvs_Constraint Slvs_Parallel(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_Parallel(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PARALLEL, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_PARALLEL, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
     ssassert(false, "Invalid arguments for parallel constraint");
 }
 
-Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsArc(entityA) && Slvs_IsLine2D(entityB)) {
         if(Slvs_IsFreeIn3D(workplane)) {
             ssassert(false, "3d workplane given for a 2d constraint");
@@ -643,7 +659,7 @@ Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entit
                                         "endpoint. Constrain them with Constrain -> "
                                         "On Point before constraining tangent.");
         }
-        return Slvs_AddConstraint(grouph, SLVS_C_ARC_LINE_TANGENT, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, other);
+        return Slvs_AddConstraint(grouph, SLVS_C_ARC_LINE_TANGENT, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, other);
     } else if(Slvs_IsCubic(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsFreeIn3D(workplane)) {
         EntityBase* skEntityA = SK.entity.FindByHandleV(entityA.h);
         Vector as = skEntityA->CubicGetStartNum(), af = skEntityA->CubicGetFinishNum();
@@ -659,7 +675,7 @@ Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entit
                                         "endpoint. Constrain them with Constrain -> "
                                         "On Point before constraining tangent.");
         }
-        return Slvs_AddConstraint(grouph, SLVS_C_CUBIC_LINE_TANGENT, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, other);
+        return Slvs_AddConstraint(grouph, SLVS_C_CUBIC_LINE_TANGENT, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, other);
     } else if((Slvs_IsArc(entityA) || Slvs_IsCubic(entityA)) && (Slvs_IsArc(entityB) || Slvs_IsCubic(entityB))) {
         if(Slvs_IsFreeIn3D(workplane)) {
             ssassert(false, "3d workplane given for a 2d constraint");
@@ -687,26 +703,26 @@ Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entit
                                         "with Constrain -> On Point before constraining "
                                         "tangent.");
         }
-        return Slvs_AddConstraint(grouph, SLVS_C_CURVE_CURVE_TANGENT, workplane, 0., SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, other, other2);
+        return Slvs_AddConstraint(grouph, SLVS_C_CURVE_CURVE_TANGENT, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, other, other2);
     }
     ssassert(false, "Invalid arguments for tangent constraint");
 }
 
 Slvs_Constraint Slvs_DistanceProj(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, double value) {
     if(Slvs_IsPoint(ptA) && Slvs_IsPoint(ptB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_PROJ_PT_DISTANCE, SLVS_FREE_IN_3D_E, value, ptA, ptB);
+        return Slvs_AddConstraint(grouph, SLVS_C_PROJ_PT_DISTANCE, SLVS_E_FREE_IN_3D, value, ptA, ptB);
     }
     ssassert(false, "Invalid arguments for projected distance constraint");
 }
 
-Slvs_Constraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsLine(entityA) && Slvs_IsLine(entityB)) {
-        return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_DIFFERENCE, workplane, value, SLVS_NO_ENTITY_E, SLVS_NO_ENTITY_E, entityA, entityB);
+        return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_DIFFERENCE, workplane, value, SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
     ssassert(false, "Invalid arguments for length difference constraint");
 }
 
-Slvs_Constraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity workplane = SLVS_FREE_IN_3D_E) {
+Slvs_Constraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsPoint(ptA)) {
         return Slvs_AddConstraint(grouph, SLVS_C_WHERE_DRAGGED, workplane, 0., ptA);
     }
@@ -771,13 +787,16 @@ Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup shg, int calculateFaileds = 0)
     Group g;
     g.h.v = shg;
 
+    // add params from entities on sketch
     for(EntityBase &ent : SK.entity) {
         EntityBase *e = &ent;
+        // skip entities from other groups
         if (e->group.v != shg) {
             continue;
         }
         for (hParam &parh : e->param) {
             if (parh.v != 0) {
+                // get params for this entity and add it to the system
                 Param *p = SK.GetParam(parh);
                 p->known = false;
                 SYS.param.Add(p);
@@ -785,6 +804,7 @@ Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup shg, int calculateFaileds = 0)
         }
     }
 
+    // add params from constraints
     IdList<Param, hParam> constraintParams = {};
     for(ConstraintBase &con : SK.constraint) {
         ConstraintBase *c = &con;
@@ -802,6 +822,7 @@ Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup shg, int calculateFaileds = 0)
         }
     }
 
+    // mark dragged params
     for(ConstraintBase &con : SK.constraint) {
         ConstraintBase *c = &con;
         if(c->type == ConstraintBase::Type::WHERE_DRAGGED) {
@@ -875,21 +896,7 @@ void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)
     for(i = 0; i < ssys->entities; i++) {
         Slvs_Entity *se = &(ssys->entity[i]);
         EntityBase e = {};
-
-        switch(se->type) {
-case SLVS_E_POINT_IN_3D:        e.type = Entity::Type::POINT_IN_3D; break;
-case SLVS_E_POINT_IN_2D:        e.type = Entity::Type::POINT_IN_2D; break;
-case SLVS_E_NORMAL_IN_3D:       e.type = Entity::Type::NORMAL_IN_3D; break;
-case SLVS_E_NORMAL_IN_2D:       e.type = Entity::Type::NORMAL_IN_2D; break;
-case SLVS_E_DISTANCE:           e.type = Entity::Type::DISTANCE; break;
-case SLVS_E_WORKPLANE:          e.type = Entity::Type::WORKPLANE; break;
-case SLVS_E_LINE_SEGMENT:       e.type = Entity::Type::LINE_SEGMENT; break;
-case SLVS_E_CUBIC:              e.type = Entity::Type::CUBIC; break;
-case SLVS_E_CIRCLE:             e.type = Entity::Type::CIRCLE; break;
-case SLVS_E_ARC_OF_CIRCLE:      e.type = Entity::Type::ARC_OF_CIRCLE; break;
-
-default: dbp("bad entity type %d", se->type); return;
-        }
+        e.type = Slvs_CTypeToEntityBaseType(se->type);
         e.h.v           = se->h;
         e.group.v       = se->group;
         e.workplane.v   = se->wrkpl;
@@ -910,53 +917,7 @@ default: dbp("bad entity type %d", se->type); return;
     for(i = 0; i < ssys->constraints; i++) {
         Slvs_Constraint *sc = &(ssys->constraint[i]);
         ConstraintBase c = {};
-
-        ConstraintBase::Type t;
-        switch(sc->type) {
-case SLVS_C_POINTS_COINCIDENT:  t = ConstraintBase::Type::POINTS_COINCIDENT; break;
-case SLVS_C_PT_PT_DISTANCE:     t = ConstraintBase::Type::PT_PT_DISTANCE; break;
-case SLVS_C_PT_PLANE_DISTANCE:  t = ConstraintBase::Type::PT_PLANE_DISTANCE; break;
-case SLVS_C_PT_LINE_DISTANCE:   t = ConstraintBase::Type::PT_LINE_DISTANCE; break;
-case SLVS_C_PT_FACE_DISTANCE:   t = ConstraintBase::Type::PT_FACE_DISTANCE; break;
-case SLVS_C_PT_IN_PLANE:        t = ConstraintBase::Type::PT_IN_PLANE; break;
-case SLVS_C_PT_ON_LINE:         t = ConstraintBase::Type::PT_ON_LINE; break;
-case SLVS_C_PT_ON_FACE:         t = ConstraintBase::Type::PT_ON_FACE; break;
-case SLVS_C_EQUAL_LENGTH_LINES: t = ConstraintBase::Type::EQUAL_LENGTH_LINES; break;
-case SLVS_C_LENGTH_RATIO:       t = ConstraintBase::Type::LENGTH_RATIO; break;
-case SLVS_C_ARC_ARC_LEN_RATIO:  t = ConstraintBase::Type::ARC_ARC_LEN_RATIO; break;
-case SLVS_C_ARC_LINE_LEN_RATIO: t = ConstraintBase::Type::ARC_LINE_LEN_RATIO; break;
-case SLVS_C_EQ_LEN_PT_LINE_D:   t = ConstraintBase::Type::EQ_LEN_PT_LINE_D; break;
-case SLVS_C_EQ_PT_LN_DISTANCES: t = ConstraintBase::Type::EQ_PT_LN_DISTANCES; break;
-case SLVS_C_EQUAL_ANGLE:        t = ConstraintBase::Type::EQUAL_ANGLE; break;
-case SLVS_C_EQUAL_LINE_ARC_LEN: t = ConstraintBase::Type::EQUAL_LINE_ARC_LEN; break;
-case SLVS_C_LENGTH_DIFFERENCE:  t = ConstraintBase::Type::LENGTH_DIFFERENCE; break;
-case SLVS_C_ARC_ARC_DIFFERENCE: t = ConstraintBase::Type::ARC_ARC_DIFFERENCE; break;
-case SLVS_C_ARC_LINE_DIFFERENCE:t = ConstraintBase::Type::ARC_LINE_DIFFERENCE; break;
-case SLVS_C_SYMMETRIC:          t = ConstraintBase::Type::SYMMETRIC; break;
-case SLVS_C_SYMMETRIC_HORIZ:    t = ConstraintBase::Type::SYMMETRIC_HORIZ; break;
-case SLVS_C_SYMMETRIC_VERT:     t = ConstraintBase::Type::SYMMETRIC_VERT; break;
-case SLVS_C_SYMMETRIC_LINE:     t = ConstraintBase::Type::SYMMETRIC_LINE; break;
-case SLVS_C_AT_MIDPOINT:        t = ConstraintBase::Type::AT_MIDPOINT; break;
-case SLVS_C_HORIZONTAL:         t = ConstraintBase::Type::HORIZONTAL; break;
-case SLVS_C_VERTICAL:           t = ConstraintBase::Type::VERTICAL; break;
-case SLVS_C_DIAMETER:           t = ConstraintBase::Type::DIAMETER; break;
-case SLVS_C_PT_ON_CIRCLE:       t = ConstraintBase::Type::PT_ON_CIRCLE; break;
-case SLVS_C_SAME_ORIENTATION:   t = ConstraintBase::Type::SAME_ORIENTATION; break;
-case SLVS_C_ANGLE:              t = ConstraintBase::Type::ANGLE; break;
-case SLVS_C_PARALLEL:           t = ConstraintBase::Type::PARALLEL; break;
-case SLVS_C_PERPENDICULAR:      t = ConstraintBase::Type::PERPENDICULAR; break;
-case SLVS_C_ARC_LINE_TANGENT:   t = ConstraintBase::Type::ARC_LINE_TANGENT; break;
-case SLVS_C_CUBIC_LINE_TANGENT: t = ConstraintBase::Type::CUBIC_LINE_TANGENT; break;
-case SLVS_C_EQUAL_RADIUS:       t = ConstraintBase::Type::EQUAL_RADIUS; break;
-case SLVS_C_PROJ_PT_DISTANCE:   t = ConstraintBase::Type::PROJ_PT_DISTANCE; break;
-case SLVS_C_WHERE_DRAGGED:      t = ConstraintBase::Type::WHERE_DRAGGED; break;
-case SLVS_C_CURVE_CURVE_TANGENT:t = ConstraintBase::Type::CURVE_CURVE_TANGENT; break;
-
-default: dbp("bad constraint type %d", sc->type); return;
-        }
-
-        c.type = t;
-
+        c.type = Slvs_CTypeToConstraintBaseType(sc->type);
         c.h.v           = sc->h;
         c.group.v       = sc->group;
         c.workplane.v   = sc->wrkpl;

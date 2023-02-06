@@ -203,12 +203,6 @@ typedef struct {
     int                 bad;
 } Slvs_SolveResult;
 
-DLL double Slvs_GetParamValue(Slvs_Entity e, int i);
-
-DLL void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
-DLL Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup hg, int calculateFaileds);
-DLL void Slvs_ClearSketch();
-
 /* Our base coordinate system has basis vectors
  *     (1, 0, 0)  (0, 1, 0)  (0, 0, 1)
  * A unit quaternion defines a rotation to a new coordinate system with
@@ -411,6 +405,9 @@ static inline Slvs_Constraint Slvs_MakeConstraint(Slvs_hConstraint h,
     return r;
 }
 
+static Slvs_Entity SLVS_E_NONE = { 0 };
+static Slvs_Entity SLVS_E_FREE_IN_3D = { 0 };
+
 Slvs_Entity Slvs_AddPoint2D(Slvs_hGroup grouph, double u, double v, Slvs_Entity workplane);
 Slvs_Entity Slvs_AddPoint3D(Slvs_hGroup grouph, double x, double y, double z);
 Slvs_Entity Slvs_AddNormal2D(Slvs_hGroup grouph, Slvs_Entity workplane);
@@ -472,6 +469,12 @@ Slvs_Constraint Slvs_DistanceProj(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Enti
 Slvs_Constraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
                                     Slvs_Entity workplane);
 Slvs_Constraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity workplane);
+
+DLL double Slvs_GetParamValue(Slvs_Entity e, int i);
+
+DLL void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
+DLL Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup hg, int calculateFaileds);
+DLL void Slvs_ClearSketch();
 
 #ifdef __cplusplus
 }

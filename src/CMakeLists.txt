@@ -59,204 +59,240 @@ target_compile_options(slvs_deps
     INTERFACE ${COVERAGE_FLAGS})
 
 # platform utilities
-
 if(APPLE)
     target_link_libraries(slvs_deps INTERFACE
         ${APPKIT_LIBRARY})
 endif()
 
 # libslvs
-add_library(slvs SHARED
+set(libslvs_sources
     solvespace.h
     platform/platform.h
     util.cpp
     entity.cpp
     expr.cpp
-    constraint.cpp
     constrainteq.cpp
     system.cpp
-    platform/platform.cpp
-    lib.cpp)
+    platform/platformbase.cpp
+    lib.cpp
+)
+if(ENABLE_PYTHON_LIB)
+    add_library(slvs STATIC ${libslvs_sources})
+    set_property(TARGET slvs PROPERTY POSITION_INDEPENDENT_CODE ON)
+else()
+    add_library(slvs SHARED ${libslvs_sources})
+endif()
 
-target_compile_definitions(slvs
-    PRIVATE -DLIBRARY)
+target_compile_definitions(slvs PRIVATE -DLIBRARY)
+
+target_link_libraries(slvs PRIVATE mimalloc-static)
 
 target_include_directories(slvs
+    PRIVATE
+        ${MIMALLOC_INCLUDE_DIR}
+        ${EIGEN3_INCLUDE_DIRS}
     PUBLIC
-        ${CMAKE_SOURCE_DIR}/include
-        ${EIGEN3_INCLUDE_DIRS})
-
-target_link_libraries(slvs PRIVATE slvs_deps)
+        ${CMAKE_SOURCE_DIR}/include)
 
 set_target_properties(slvs PROPERTIES
     PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/slvs.h
-    VERSION ${PROJECT_VERSION}
-    SOVERSION 1)
+    # VERSION ${PROJECT_VERSION}
+    # SOVERSION 1
+)
 
-if(NOT WIN32)
-    install(TARGETS slvs
-        LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+if(ENABLE_PYTHON_LIB)
+    add_custom_command(
+        OUTPUT lib.c
+        COMMAND cython lib.pyx -o ${CMAKE_CURRENT_BINARY_DIR}/lib.c --module-name solvespace
+        DEPENDS lib.pyx
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    find_package(Python3 COMPONENTS Development.Module)
+    Python3_add_library(solvespace MODULE lib.c)
+    set_target_properties(solvespace PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    target_link_libraries(
+        solvespace
+    PRIVATE
+        slvs
+        Python3::Module
+    )
+    if(SKBUILD)
+        install(TARGETS solvespace DESTINATION ${SKBUILD_PROJECT_NAME})
+    else()
+        install(
+            DIRECTORY ${CMAKE_SOURCE_DIR}/python/solvespace/
+            DESTINATION "solvespace"
+        )
+    endif()
+else()
+    if(NOT WIN32)
+        install(TARGETS slvs
+            LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    endif()
 endif()
 
-set(every_platform_SOURCES
-    platform/guiwin.cpp
-    platform/guigtk.cpp
-    platform/guimac.mm
-    platform/guihtml.cpp)
 
-# solvespace library
+if(ENALBE_GUI OR ENABLE_CLI)
+    set(every_platform_SOURCES
+        platform/guiwin.cpp
+        platform/guigtk.cpp
+        platform/guimac.mm
+        platform/guihtml.cpp)
 
-set(solvespace_core_gl_SOURCES
-    solvespace.cpp)
+    # solvespace library
 
-add_library(solvespace-core STATIC
-    dsc.h
-    expr.h
-    polygon.h
-    sketch.h
-    solvespace.h
-    ui.h
-    platform/platform.h
-    render/render.h
-    render/gl3shader.h
-    srf/surface.h
-    bsp.cpp
-    clipboard.cpp
-    confscreen.cpp
-    constraint.cpp
-    constrainteq.cpp
-    describescreen.cpp
-    draw.cpp
-    drawconstraint.cpp
-    drawentity.cpp
-    entity.cpp
-    export.cpp
-    exportstep.cpp
-    exportvector.cpp
-    expr.cpp
-    file.cpp
-    generate.cpp
-    graphicswin.cpp
-    group.cpp
-    groupmesh.cpp
-    importdxf.cpp
-    importidf.cpp
-    importmesh.cpp
-    mesh.cpp
-    modify.cpp
-    mouse.cpp
-    polyline.cpp
-    polygon.cpp
-    resource.cpp
-    request.cpp
-    style.cpp
-    system.cpp
-    textscreens.cpp
-    textwin.cpp
-    toolbar.cpp
-    ttf.cpp
-    undoredo.cpp
-    util.cpp
-    view.cpp
-    platform/platform.cpp
-    platform/gui.cpp
-    render/render.cpp
-    render/render2d.cpp
-    srf/boolean.cpp
-    srf/curve.cpp
-    srf/merge.cpp
-    srf/ratpoly.cpp
-    srf/raycast.cpp
-    srf/shell.cpp
-    srf/surface.cpp
-    srf/surfinter.cpp
-    srf/triangulate.cpp)
+    set(solvespace_core_gl_SOURCES
+        solvespace.cpp)
 
-target_link_libraries(solvespace-core PUBLIC slvs_deps)
+    add_library(solvespace-core STATIC
+        dsc.h
+        expr.h
+        polygon.h
+        sketch.h
+        solvespace.h
+        ui.h
+        platform/platform.h
+        render/render.h
+        render/gl3shader.h
+        srf/surface.h
+        bsp.cpp
+        clipboard.cpp
+        confscreen.cpp
+        constraint.cpp
+        constrainteq.cpp
+        describescreen.cpp
+        draw.cpp
+        drawconstraint.cpp
+        drawentity.cpp
+        entity.cpp
+        export.cpp
+        exportstep.cpp
+        exportvector.cpp
+        expr.cpp
+        file.cpp
+        generate.cpp
+        graphicswin.cpp
+        group.cpp
+        groupmesh.cpp
+        importdxf.cpp
+        importidf.cpp
+        importmesh.cpp
+        mesh.cpp
+        modify.cpp
+        mouse.cpp
+        polyline.cpp
+        polygon.cpp
+        resource.cpp
+        request.cpp
+        style.cpp
+        system.cpp
+        textscreens.cpp
+        textwin.cpp
+        toolbar.cpp
+        ttf.cpp
+        undoredo.cpp
+        util.cpp
+        view.cpp
+        platform/platform.cpp
+        platform/gui.cpp
+        render/render.cpp
+        render/render2d.cpp
+        srf/boolean.cpp
+        srf/curve.cpp
+        srf/merge.cpp
+        srf/ratpoly.cpp
+        srf/raycast.cpp
+        srf/shell.cpp
+        srf/surface.cpp
+        srf/surfinter.cpp
+        srf/triangulate.cpp)
 
-# solvespace translations
+    target_link_libraries(solvespace-core PUBLIC slvs_deps)
 
-if(HAVE_GETTEXT)
-    get_target_property(solvespace_core_SOURCES solvespace-core SOURCES)
-    set(inputs
-        ${solvespace_core_SOURCES}
-        ${every_platform_SOURCES}
-        ${solvespace_core_gl_SOURCES})
+    # solvespace translations
 
-    set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/../res/messages.po)
+    if(HAVE_GETTEXT)
+        get_target_property(solvespace_core_SOURCES solvespace-core SOURCES)
+        set(inputs
+            ${solvespace_core_SOURCES}
+            ${every_platform_SOURCES}
+            ${solvespace_core_gl_SOURCES})
 
-    set(output_pot ${CMAKE_CURRENT_SOURCE_DIR}/../res/messages.pot)
-    set(output_po  ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/en_US.po)
-    file(GLOB locale_pos ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/*.po)
+        set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/../res/messages.po)
 
-    string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-           gen_output_pot ${output_pot}.gen)
-    string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-           gen_output_po ${output_po}.gen)
-    foreach(locale_po ${locale_pos})
+        set(output_pot ${CMAKE_CURRENT_SOURCE_DIR}/../res/messages.pot)
+        set(output_po  ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/en_US.po)
+        file(GLOB locale_pos ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/*.po)
+
         string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-               gen_locale_po ${locale_po}.gen)
-        list(APPEND gen_locale_pos ${gen_locale_po})
-    endforeach()
-
-    add_custom_command(
-        OUTPUT  ${gen_output_pot}
-        COMMAND ${XGETTEXT}
-                --language=C++
-                --keyword --keyword=_ --keyword=N_ --keyword=C_:2,1c --keyword=CN_:2,1c
-                --force-po --width=100 --sort-by-file
-                --package-name=SolveSpace
-                --package-version=${PROJECT_VERSION}
-                "--copyright-holder=the PACKAGE authors"
-                --msgid-bugs-address=phkahler@gmail.com
-                --from-code=utf-8 --output=${gen_output_pot} ${inputs}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${gen_output_pot} ${output_pot}
-        DEPENDS ${inputs}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMENT "Extracting translations"
-        VERBATIM)
-
-    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../res/locales)
-
-    # en_US is a bit special; we pre-fill the msgstrs from msgids, instead of (as would normally
-    # happen) leaving them empty.
-    add_custom_command(
-        OUTPUT  ${gen_output_po}
-        COMMAND ${MSGINIT}
-                --locale=en_US --no-translator
-                --output=${templ_po} --input=${gen_output_pot}
-        COMMAND ${MSGMERGE}
-                --force-po --no-fuzzy-matching
-                --output=${gen_output_po} ${output_po} ${templ_po}
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${gen_output_po} ${output_po}
-        DEPENDS ${gen_output_pot}
-        COMMENT "Updating en_US translations"
-        VERBATIM)
-
-    foreach(locale_po ${locale_pos})
+            gen_output_pot ${output_pot}.gen)
         string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-               gen_locale_po ${locale_po}.gen)
-
-        get_filename_component(locale_name ${locale_po} NAME_WE)
-        if(locale_name STREQUAL "en_US")
-            continue()
-        endif()
+            gen_output_po ${output_po}.gen)
+        foreach(locale_po ${locale_pos})
+            string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+                gen_locale_po ${locale_po}.gen)
+            list(APPEND gen_locale_pos ${gen_locale_po})
+        endforeach()
 
         add_custom_command(
-            OUTPUT  ${gen_locale_po}
-            COMMAND ${MSGMERGE}
-                    --no-fuzzy-matching
-                    --output=${gen_locale_po} ${locale_po} ${gen_output_pot}
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${gen_locale_po} ${locale_po}
-            DEPENDS ${gen_output_pot}
-            COMMENT "Updating ${locale_name} translations"
+            OUTPUT  ${gen_output_pot}
+            COMMAND ${XGETTEXT}
+                    --language=C++
+                    --keyword --keyword=_ --keyword=N_ --keyword=C_:2,1c --keyword=CN_:2,1c
+                    --force-po --width=100 --sort-by-file
+                    --package-name=SolveSpace
+                    --package-version=${PROJECT_VERSION}
+                    "--copyright-holder=the PACKAGE authors"
+                    --msgid-bugs-address=phkahler@gmail.com
+                    --from-code=utf-8 --output=${gen_output_pot} ${inputs}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${gen_output_pot} ${output_pot}
+            DEPENDS ${inputs}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Extracting translations"
             VERBATIM)
-    endforeach()
 
-    add_custom_target(translate_solvespace
-        DEPENDS ${gen_output_pot} ${gen_output_po} ${gen_locale_pos})
+        file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../res/locales)
+
+        # en_US is a bit special; we pre-fill the msgstrs from msgids, instead of (as would normally
+        # happen) leaving them empty.
+        add_custom_command(
+            OUTPUT  ${gen_output_po}
+            COMMAND ${MSGINIT}
+                    --locale=en_US --no-translator
+                    --output=${templ_po} --input=${gen_output_pot}
+            COMMAND ${MSGMERGE}
+                    --force-po --no-fuzzy-matching
+                    --output=${gen_output_po} ${output_po} ${templ_po}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${gen_output_po} ${output_po}
+            DEPENDS ${gen_output_pot}
+            COMMENT "Updating en_US translations"
+            VERBATIM)
+
+        foreach(locale_po ${locale_pos})
+            string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+                gen_locale_po ${locale_po}.gen)
+
+            get_filename_component(locale_name ${locale_po} NAME_WE)
+            if(locale_name STREQUAL "en_US")
+                continue()
+            endif()
+
+            add_custom_command(
+                OUTPUT  ${gen_locale_po}
+                COMMAND ${MSGMERGE}
+                        --no-fuzzy-matching
+                        --output=${gen_locale_po} ${locale_po} ${gen_output_pot}
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different ${gen_locale_po} ${locale_po}
+                DEPENDS ${gen_output_pot}
+                COMMENT "Updating ${locale_name} translations"
+                VERBATIM)
+        endforeach()
+
+        add_custom_target(translate_solvespace
+            DEPENDS ${gen_output_pot} ${gen_output_po} ${gen_locale_pos})
+    endif()
 endif()
 
 # solvespace graphical executable
