@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "Cython", "ninja"]
+requires = ["scikit-build-core", "Cython", "cmake", "ninja"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -25,7 +25,7 @@ classifiers = [
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
 cmake.verbose = true
-cmake.build-type = "Debug"
+cmake.build-type = "RelWithDebInfo"
 sdist.include = [
   ".git/HEAD",
   ".git/refs"
