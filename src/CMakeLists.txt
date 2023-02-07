@@ -107,14 +107,14 @@ if(ENABLE_PYTHON_LIB)
         DEPENDS lib.pyx
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
-    find_package(Python3 REQUIRED COMPONENTS Development.Module)
-    Python3_add_library(solvespace MODULE lib.c)
+    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+    Python_add_library(solvespace MODULE lib.c)
     set_target_properties(solvespace PROPERTIES POSITION_INDEPENDENT_CODE ON)
     target_link_libraries(
         solvespace
     PRIVATE
         slvs
-        Python3::Module
+        Python::Module
     )
     if(SKBUILD)
         install(TARGETS solvespace DESTINATION ${SKBUILD_PROJECT_NAME})
