@@ -149,17 +149,17 @@ class CoreTest(TestCase):
 
   def test_pydemo(self):
     """Some sample code for slvs.dll.
-        We draw some geometric entities, provide initial guesses for their positions,
-        and then constrain them. The solver calculates their new positions,
-        in order to satisfy the constraints.
+    We draw some geometric entities, provide initial guesses for their positions,
+    and then constrain them. The solver calculates their new positions,
+    in order to satisfy the constraints.
 
-        Copyright 2008-2013 Jonathan Westhues.
-        Copyright 2016-2017 Yuan Chang [pyslvs@gmail.com] Solvespace bundled.
+    Copyright 2008-2013 Jonathan Westhues.
+    Copyright 2016-2017 Yuan Chang [pyslvs@gmail.com] Solvespace bundled.
 
-        An example of a constraint in 2d. In our first group, we create a workplane
-        along the reference frame's xy plane. In a second group, we create some
-        entities in that group and dimension them.
-        """
+    An example of a constraint in 2d. In our first group, we create a workplane
+    along the reference frame's xy plane. In a second group, we create some
+    entities in that group and dimension them.
+    """
 
     slvs.clear()
     g1 = 1

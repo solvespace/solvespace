@@ -41,7 +41,6 @@ ENABLE_OPENMP = "OFF"
 FORCE_VENDORED_Eigen3 = "ON"
 ENABLE_LTO = "ON"
 ENABLE_PYTHON_LIB = "ON"
-Python3_EXECUTABLE = "python"
 
 [tool.cibuildwheel]
 build-verbosity = 1

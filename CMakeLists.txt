@@ -1,5 +1,5 @@
 # cmake configuration
-cmake_minimum_required(VERSION 3.9...3.19)
+cmake_minimum_required(VERSION 3.18...3.25)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR
