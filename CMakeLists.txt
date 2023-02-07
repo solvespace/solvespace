@@ -1,6 +1,8 @@
 # cmake configuration
 cmake_minimum_required(VERSION 3.18...3.25)
 
+cmake_policy(SET CMP0094 NEW) # for Python*_FIND_STRATEGY=LOCATION
+
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR
             "In-tree builds are not supported; please perform an out-of-tree build:\n"
