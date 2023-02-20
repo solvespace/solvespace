@@ -455,6 +455,7 @@ public:
     static void ScreenChangeCanvasSizeAuto(int link, uint32_t v);
     static void ScreenChangeCanvasSize(int link, uint32_t v);
     static void ScreenChangeShadedTriangles(int link, uint32_t v);
+    static void ScreenChangeMouseScrollAction(int link, uint32_t v);
 
     static void ScreenAllowRedundant(int link, uint32_t v);
 

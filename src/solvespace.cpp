@@ -95,6 +95,8 @@ void SolveSpaceUI::Init() {
     backgroundColor = settings->ThawColor("BackgroundColor", RGBi(0, 0, 0));
     // Whether export canvas size is fixed or derived from bbox
     exportCanvasSizeAuto = settings->ThawBool("ExportCanvasSizeAuto", true);
+    // Mouse scroll action
+    mouseScrollAction = (MouseScrollAction)settings->ThawInt("MouseScrollAction", (uint32_t)MouseScrollAction::AUTO);
     // Margins for automatic canvas size
     exportMargin.left   = settings->ThawFloat("ExportMargin_Left",   5.0);
     exportMargin.right  = settings->ThawFloat("ExportMargin_Right",  5.0);
@@ -295,6 +297,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeBool("ShowToolbar", showToolbar);
     // Autosave timer
     settings->FreezeInt("AutosaveInterval", autosaveInterval);
+    // Mouse scroll action
+    settings->FreezeInt("MouseScrollAction", (uint32_t)mouseScrollAction);
 
     // And the default styles, colors and line widths and such.
     Style::FreezeDefaultStyles(settings);
