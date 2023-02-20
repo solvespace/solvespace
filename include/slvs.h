@@ -29,6 +29,8 @@ typedef unsigned __int32 uint32_t;
 #else
 #include <stdint.h>
 #endif
+#include <stdbool.h>
+#include <string.h>
 
 typedef uint32_t Slvs_hParam;
 typedef uint32_t Slvs_hEntity;
@@ -405,75 +407,92 @@ static inline Slvs_Constraint Slvs_MakeConstraint(Slvs_hConstraint h,
     return r;
 }
 
+DLL bool Slvs_IsFreeIn3D(Slvs_Entity e);
+DLL bool Slvs_Is3D(Slvs_Entity e);
+DLL bool Slvs_IsNone(Slvs_Entity e);
+DLL bool Slvs_IsPoint2D(Slvs_Entity e);
+DLL bool Slvs_IsPoint3D(Slvs_Entity e);
+DLL bool Slvs_IsNormal2D(Slvs_Entity e);
+DLL bool Slvs_IsNormal3D(Slvs_Entity e);
+DLL bool Slvs_IsLine(Slvs_Entity e);
+DLL bool Slvs_IsLine2D(Slvs_Entity e);
+DLL bool Slvs_IsLine3D(Slvs_Entity e);
+DLL bool Slvs_IsCubic(Slvs_Entity e);
+DLL bool Slvs_IsArc(Slvs_Entity e);
+DLL bool Slvs_IsWorkplane(Slvs_Entity e);
+DLL bool Slvs_IsDistance(Slvs_Entity e);
+DLL bool Slvs_IsPoint(Slvs_Entity e);
+DLL bool Slvs_IsCircle(Slvs_Entity e);
+
 static Slvs_Entity SLVS_E_NONE = { 0 };
 static Slvs_Entity SLVS_E_FREE_IN_3D = { 0 };
 
-DLL Slvs_Entity Slvs_AddPoint2D(Slvs_hGroup grouph, double u, double v, Slvs_Entity workplane);
-DLL Slvs_Entity Slvs_AddPoint3D(Slvs_hGroup grouph, double x, double y, double z);
-DLL Slvs_Entity Slvs_AddNormal2D(Slvs_hGroup grouph, Slvs_Entity workplane);
-DLL Slvs_Entity Slvs_AddNormal3D(Slvs_hGroup grouph, double qw, double qx, double qy, double qz);
-DLL Slvs_Entity Slvs_AddDistance(Slvs_hGroup grouph, double value, Slvs_Entity workplane);
-DLL Slvs_Entity Slvs_AddLine2D(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane);
-DLL Slvs_Entity Slvs_AddLine3D(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB);
-DLL Slvs_Entity Slvs_AddCubic(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity ptC, Slvs_Entity ptD, Slvs_Entity workplane);
-DLL Slvs_Entity Slvs_AddArc(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity start, Slvs_Entity end, Slvs_Entity workplane);
-DLL Slvs_Entity Slvs_AddCircle(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity radius, Slvs_Entity workplane);
-DLL Slvs_Entity Slvs_AddWorkplane(Slvs_hGroup grouph, Slvs_Entity origin, Slvs_Entity nm);
-DLL Slvs_Entity Slvs_Add2DBase(Slvs_hGroup grouph);
+DLL Slvs_Entity Slvs_AddPoint2D(uint32_t grouph, double u, double v, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddPoint3D(uint32_t grouph, double x, double y, double z);
+DLL Slvs_Entity Slvs_AddNormal2D(uint32_t grouph, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddNormal3D(uint32_t grouph, double qw, double qx, double qy, double qz);
+DLL Slvs_Entity Slvs_AddDistance(uint32_t grouph, double value, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddLine2D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddLine3D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB);
+DLL Slvs_Entity Slvs_AddCubic(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity ptC, Slvs_Entity ptD, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddArc(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity start, Slvs_Entity end, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddCircle(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity radius, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddWorkplane(uint32_t grouph, Slvs_Entity origin, Slvs_Entity nm);
+DLL Slvs_Entity Slvs_Add2DBase(uint32_t grouph);
 
 
-DLL Slvs_Constraint Slvs_AddConstraint(Slvs_hGroup grouph, int type, Slvs_Entity workplane, double val, Slvs_Entity ptA,
+DLL Slvs_Constraint Slvs_AddConstraint(uint32_t grouph, int type, Slvs_Entity workplane, double val, Slvs_Entity ptA,
     Slvs_Entity ptB, Slvs_Entity entityA,
     Slvs_Entity entityB, Slvs_Entity entityC,
     Slvs_Entity entityD, int other, int other2);
-DLL Slvs_Constraint Slvs_Coincident(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+DLL Slvs_Constraint Slvs_Coincident(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_Distance(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
+DLL Slvs_Constraint Slvs_Distance(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_Equal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+DLL Slvs_Constraint Slvs_Equal(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_EqualAngle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC,
+DLL Slvs_Constraint Slvs_EqualAngle(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC,
                                     Slvs_Entity entityD,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_EqualPointToLine(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+DLL Slvs_Constraint Slvs_EqualPointToLine(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
                                     Slvs_Entity entityC, Slvs_Entity entityD,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_Ratio(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
+DLL Slvs_Constraint Slvs_Ratio(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_Symmetric(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+DLL Slvs_Constraint Slvs_Symmetric(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
                                     Slvs_Entity entityC  ,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_SymmetricH(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB,
+DLL Slvs_Constraint Slvs_SymmetricH(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_SymmetricV(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB,
+DLL Slvs_Constraint Slvs_SymmetricV(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_Midpoint(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB,
+DLL Slvs_Constraint Slvs_Midpoint(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_Horizontal(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane,
+DLL Slvs_Constraint Slvs_Horizontal(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity workplane,
                                     Slvs_Entity entityB);
-DLL Slvs_Constraint Slvs_Vertical(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity workplane,
+DLL Slvs_Constraint Slvs_Vertical(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity workplane,
                                     Slvs_Entity entityB);
-DLL Slvs_Constraint Slvs_Diameter(Slvs_hGroup grouph, Slvs_Entity entityA, double value);
-DLL Slvs_Constraint Slvs_SameOrientation(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB);
-DLL Slvs_Constraint Slvs_Angle(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
+DLL Slvs_Constraint Slvs_Diameter(uint32_t grouph, Slvs_Entity entityA, double value);
+DLL Slvs_Constraint Slvs_SameOrientation(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB);
+DLL Slvs_Constraint Slvs_Angle(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
                                     Slvs_Entity workplane,
                                     int inverse);
-DLL Slvs_Constraint Slvs_Perpendicular(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+DLL Slvs_Constraint Slvs_Perpendicular(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
                                     Slvs_Entity workplane,
                                     int inverse);
-DLL Slvs_Constraint Slvs_Parallel(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+DLL Slvs_Constraint Slvs_Parallel(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_Tangent(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+DLL Slvs_Constraint Slvs_Tangent(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_DistanceProj(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity ptB, double value);
-DLL Slvs_Constraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
+DLL Slvs_Constraint Slvs_DistanceProj(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, double value);
+DLL Slvs_Constraint Slvs_LengthDiff(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
                                     Slvs_Entity workplane);
-DLL Slvs_Constraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_Dragged(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity workplane);
 
 DLL double Slvs_GetParamValue(Slvs_Entity e, int i);
 
-DLL void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
-DLL Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup hg, int calculateFaileds);
+DLL void Slvs_Solve(Slvs_System *sys, uint32_t hg);
+DLL Slvs_SolveResult Slvs_SolveSketch(uint32_t hg, int calculateFaileds);
 DLL void Slvs_ClearSketch();
 
 #ifdef __cplusplus

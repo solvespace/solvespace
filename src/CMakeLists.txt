@@ -76,9 +76,13 @@ set(libslvs_sources
     platform/platformbase.cpp
     lib.cpp
 )
+
 if(ENABLE_PYTHON_LIB)
     add_library(slvs STATIC ${libslvs_sources})
     set_property(TARGET slvs PROPERTY POSITION_INDEPENDENT_CODE ON)
+elseif(ENABLE_EMSCRIPTEN_LIB)
+    set(CMAKE_EXECUTABLE_SUFFIX ".js")
+    add_executable(slvs ${libslvs_sources} jslib.cpp)
 else()
     add_library(slvs SHARED ${libslvs_sources})
 endif()
@@ -99,6 +103,10 @@ set_target_properties(slvs PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
 )
+
+if(ENABLE_EMSCRIPTEN_LIB)
+    set_target_properties(slvs PROPERTIES LINK_FLAGS "-l embind")
+endif()
 
 if(ENABLE_PYTHON_LIB)
     add_custom_command(
