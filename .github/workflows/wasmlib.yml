@@ -35,11 +35,13 @@ jobs:
             -DENABLE_LTO="ON" \
             -DENABLE_EMSCRIPTEN_LIB="ON"
           cmake --build . -j$(nproc)
+          cd bin
+          zip -r slvs-wasm.zip .
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: build-emscripten/bin
-          path: dist/*.tar.gz
+          name: slvs-wasm
+          path: build-emscripten/bin/slvs-wasm.zip
   publish-wasmlib:
     name: publish WASM library
     needs: [
