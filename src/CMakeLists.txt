@@ -105,7 +105,7 @@ set_target_properties(slvs PROPERTIES
 )
 
 if(ENABLE_EMSCRIPTEN_LIB)
-    set_target_properties(slvs PROPERTIES LINK_FLAGS "-l embind")
+    set_target_properties(slvs PROPERTIES LINK_FLAGS "-l embind -s INITIAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH")
 endif()
 
 if(ENABLE_PYTHON_LIB)
