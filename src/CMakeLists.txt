@@ -79,21 +79,17 @@ set(libslvs_sources
 
 if(ENABLE_PYTHON_LIB)
     add_library(slvs STATIC ${libslvs_sources})
-    set_property(TARGET slvs PROPERTY POSITION_INDEPENDENT_CODE ON)
+    target_compile_definitions(slvs PRIVATE -DSTATIC_LIB)
 elseif(ENABLE_EMSCRIPTEN_LIB)
     set(CMAKE_EXECUTABLE_SUFFIX ".js")
     add_executable(slvs ${libslvs_sources} jslib.cpp)
 else()
     add_library(slvs SHARED ${libslvs_sources})
-endif()
-
-target_compile_definitions(slvs PRIVATE -DLIBRARY)
-if(ENABLE_PYTHON_LIB)
-    target_compile_definitions(slvs PRIVATE -DSTATIC_LIB)
-else()
     target_compile_definitions(slvs PRIVATE -DEXPORT_DLL)
 endif()
 
+set_target_properties(slvs PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_compile_definitions(slvs PRIVATE -DLIBRARY)
 target_link_libraries(slvs PRIVATE mimalloc-static)
 
 target_include_directories(slvs
@@ -123,6 +119,7 @@ if(ENABLE_PYTHON_LIB)
     find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
     Python_add_library(solvespace MODULE lib.c)
     set_target_properties(solvespace PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    target_compile_definitions(solvespace PRIVATE -DEXPORT_DLL)
     target_link_libraries(
         solvespace
     PRIVATE
@@ -139,12 +136,12 @@ if(ENABLE_PYTHON_LIB)
         )
     endif()
 else()
-    if(NOT WIN32)
-        install(TARGETS slvs
-            LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
-            PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-    endif()
+    # if(NOT WIN32)
+    install(TARGETS slvs
+        LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    # endif()
 endif()
 
 

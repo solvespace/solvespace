@@ -10,15 +10,11 @@
 #ifndef __SLVS_H
 #define __SLVS_H
 
-#ifndef STATIC_LIB
-#   ifdef WIN32
-#       ifdef EXPORT_DLL
-#           define DLL __declspec( dllexport )
-#       else
-#           define DLL __declspec( dllimport )
-#       endif
+#ifdef WIN32
+#   ifdef EXPORT_DLL
+#       define DLL __declspec( dllexport )
 #   else
-#       define DLL
+#       define DLL __declspec( dllimport )
 #   endif
 #else
 #   define DLL
