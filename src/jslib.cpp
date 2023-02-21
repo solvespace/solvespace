@@ -2,14 +2,74 @@
 #include <emscripten/bind.h>
 
 EMSCRIPTEN_BINDINGS(slvs) {
+  emscripten::constant("C_POINTS_COINCIDENT",   100000);
+  emscripten::constant("C_PT_PT_DISTANCE",      100001);
+  emscripten::constant("C_PT_PLANE_DISTANCE",   100002);
+  emscripten::constant("C_PT_LINE_DISTANCE",    100003);
+  emscripten::constant("C_PT_FACE_DISTANCE",    100004);
+  emscripten::constant("C_PT_IN_PLANE",         100005);
+  emscripten::constant("C_PT_ON_LINE",          100006);
+  emscripten::constant("C_PT_ON_FACE",          100007);
+  emscripten::constant("C_EQUAL_LENGTH_LINES",  100008);
+  emscripten::constant("C_LENGTH_RATIO",        100009);
+  emscripten::constant("C_EQ_LEN_PT_LINE_D",    100010);
+  emscripten::constant("C_EQ_PT_LN_DISTANCES",  100011);
+  emscripten::constant("C_EQUAL_ANGLE",         100012);
+  emscripten::constant("C_EQUAL_LINE_ARC_LEN",  100013);
+  emscripten::constant("C_SYMMETRIC",           100014);
+  emscripten::constant("C_SYMMETRIC_HORIZ",     100015);
+  emscripten::constant("C_SYMMETRIC_VERT",      100016);
+  emscripten::constant("C_SYMMETRIC_LINE",      100017);
+  emscripten::constant("C_AT_MIDPOINT",         100018);
+  emscripten::constant("C_HORIZONTAL",          100019);
+  emscripten::constant("C_VERTICAL",            100020);
+  emscripten::constant("C_DIAMETER",            100021);
+  emscripten::constant("C_PT_ON_CIRCLE",        100022);
+  emscripten::constant("C_SAME_ORIENTATION",    100023);
+  emscripten::constant("C_ANGLE",               100024);
+  emscripten::constant("C_PARALLEL",            100025);
+  emscripten::constant("C_PERPENDICULAR",       100026);
+  emscripten::constant("C_ARC_LINE_TANGENT",    100027);
+  emscripten::constant("C_CUBIC_LINE_TANGENT",  100028);
+  emscripten::constant("C_EQUAL_RADIUS",        100029);
+  emscripten::constant("C_PROJ_PT_DISTANCE",    100030);
+  emscripten::constant("C_WHERE_DRAGGED",       100031);
+  emscripten::constant("C_CURVE_CURVE_TANGENT", 100032);
+  emscripten::constant("C_LENGTH_DIFFERENCE",   100033);
+  emscripten::constant("C_ARC_ARC_LEN_RATIO",   100034);
+  emscripten::constant("C_ARC_LINE_LEN_RATIO",  100035);
+  emscripten::constant("C_ARC_ARC_DIFFERENCE",  100036);
+  emscripten::constant("C_ARC_LINE_DIFFERENCE", 100037);
+
+  emscripten::constant("E_FREE_IN_3D",              0);
+  emscripten::constant("E_POINT_IN_3D",         50000);
+  emscripten::constant("E_POINT_IN_2D",         50001);
+  emscripten::constant("E_NORMAL_IN_3D",        60000);
+  emscripten::constant("E_NORMAL_IN_2D",        60001);
+  emscripten::constant("E_DISTANCE",            70000);
+  emscripten::constant("E_WORKPLANE",           80000);
+  emscripten::constant("E_LINE_SEGMENT",        80001);
+  emscripten::constant("E_CUBIC",               80002);
+  emscripten::constant("E_CIRCLE",              80003);
+  emscripten::constant("E_ARC_OF_CIRCLE",       80004);
+
+  emscripten::constant("E_NONE", SLVS_E_NONE);
+  emscripten::constant("E_FREE_IN_3D", SLVS_E_FREE_IN_3D);
+
+  emscripten::value_array<std::array<uint32_t, 4>>("array_uint32_4")
+    .element(emscripten::index<0>())
+    .element(emscripten::index<1>())
+    .element(emscripten::index<3>())
+    .element(emscripten::index<4>());
+
   emscripten::value_object<Slvs_Entity>("Slvs_Entity")
     .field("h", &Slvs_Entity::h)
     .field("group", &Slvs_Entity::group)
     .field("type", &Slvs_Entity::type)
     .field("wrkpl", &Slvs_Entity::wrkpl)
     .field("normal", &Slvs_Entity::normal)
-    .field("distance", &Slvs_Entity::distance);
-    // .field("param", &Slvs_Entity::param);
+    .field("distance", &Slvs_Entity::distance)
+    .field("param", &Slvs_Entity::param);
 
   emscripten::value_object<Slvs_Constraint>("Slvs_Constraint")
     .field("h", &Slvs_Constraint::h)
