@@ -35,6 +35,10 @@ jobs:
       - uses: actions/download-artifact@v3
         with:
           path: artifacts
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14.x'
       - name: prepare
         shell: bash
         env:

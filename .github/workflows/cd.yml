@@ -19,7 +19,7 @@ jobs:
 
   test_ubuntu:
     needs: [cancel_previous_runs]
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     name: Test Ubuntu
     steps:
     - uses: actions/checkout@v2
