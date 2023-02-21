@@ -1,0 +1,60 @@
+name: WASM Library
+
+on:
+  push:
+    branches: [ master, python, experiments, stateful-c-lib ]
+    tags: [ v* ]
+
+jobs:
+  build-wasmlib:
+    name: WASM library
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: git submodule update --init extlib/mimalloc extlib/eigen
+      - name: Pack
+        shell: bash
+        run: |
+          cd ..
+          git clone https://github.com/emscripten-core/emsdk.git --depth 1
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          cd ../solvespace
+          source ../emsdk/emsdk_env.sh
+          mkdir build-emscripten || true
+          cd build-emscripten
+          emcmake cmake .. \
+            -DCMAKE_RELEASE_TYPE=Debug \
+            -DENABLE_GUI="OFF" \
+            -DENABLE_CLI="OFF" \
+            -DENABLE_TESTS="OFF" \
+            -DENABLE_COVERAGE="OFF" \
+            -DENABLE_OPENMP="OFF" \
+            -DFORCE_VENDORED_Eigen3="ON" \
+            -DENABLE_LTO="ON" \
+            -DENABLE_EMSCRIPTEN_LIB="ON"
+          cmake --build . -j$(nproc)
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-emscripten/bin
+          path: dist/*.tar.gz
+  publish-wasmlib:
+    name: publish WASM library
+    needs: [
+      build-wasmlib,
+    ]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          path: artifacts
+      - name: prepare
+        shell: bash
+        run: |
+          mkdir dist
+          ls artifacts
+          mv artifacts/*/* dist
+          ls dist
+          // @todo publish to npm
