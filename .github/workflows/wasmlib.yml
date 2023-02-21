@@ -57,7 +57,7 @@ jobs:
           mv package.json.tmp dist/package.json
           cd dist
           if [ "${is_dev}" == "1" ]; then
-            npm publish --dry-run --access public --tag dev
+            npm publish --access public --tag dev
           else
-            npm publish --dry-run --access public
+            npm publish --access public
           fi
