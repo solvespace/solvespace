@@ -30,7 +30,7 @@ static void *CheckMalloc(size_t n)
 void ExampleStateful()
 {
     Slvs_hGroup g = 1;
-    Slvs_Entity wp = Slvs_Add2DBase(g);
+    Slvs_Entity wp = Slvs_AddBase2D(g);
     Slvs_Entity p1 = Slvs_AddPoint2D(g, 0.0, 10.0, wp);
     Slvs_Entity p2 = Slvs_AddPoint2D(g, 5.0, 20.0, wp);
     Slvs_AddLine2D(g, p1, p2, wp);

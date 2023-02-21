@@ -18,7 +18,7 @@ cat << EOF > index.html
 
     slvs.clearSketch()
     var g = 1
-    var wp = slvs.add2DBase(g)
+    var wp = slvs.addBase2D(g)
     var p0 = slvs.addPoint2D(g, 0, 0, wp)
     slvs.dragged(g, p0, wp)
     var p1 = slvs.addPoint2D(g, 90, 0, wp)
@@ -60,7 +60,7 @@ cat << EOF > index.html
     angle = 45
     slvs.clearSketch()
     var g = 1
-    var wp = slvs.add2DBase(g)
+    var wp = slvs.addBase2D(g)
     var p0 = slvs.addPoint2D(g, 0, 0, wp)
     slvs.dragged(g, p0, wp)
     var p1 = slvs.addPoint2D(g, 0, 10, wp)
@@ -83,6 +83,10 @@ cat << EOF > index.html
     var y = slvs.getParamValue(p2, 1)
     console.log(12.62467, x)
     console.log(1.51746, y)
+
+    q1 = slvs.Quaternion.from(1, 2, 3, 4)
+    q2 = slvs.Quaternion.from(1, 2, 3, 4)
+    console.log(q1.times(q2).rotationU().x)
   }
 </script>
 EOF

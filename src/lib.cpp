@@ -442,7 +442,7 @@ Slvs_Entity Slvs_AddWorkplane(uint32_t grouph, Slvs_Entity origin, Slvs_Entity n
     return ce;
 }
 
-Slvs_Entity Slvs_Add2DBase(uint32_t grouph) {
+Slvs_Entity Slvs_AddBase2D(uint32_t grouph) {
     Vector u      = Vector::From(1, 0, 0);
     Vector v      = Vector::From(0, 1, 0);
     Quaternion q  = Quaternion::From(u, v);

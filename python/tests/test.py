@@ -9,7 +9,7 @@ class CoreTest(TestCase):
     print("Crank rocker")
     slvs.clear()
     g = 1
-    wp = slvs.add_2d_base(g)
+    wp = slvs.add_base_2d(g)
     p0 = slvs.add_point_2d(g, 0, 0, wp)
     slvs.dragged(g, p0, wp)
     p1 = slvs.add_point_2d(g, 90, 0, wp)
@@ -41,7 +41,7 @@ class CoreTest(TestCase):
     angle = 45
     slvs.clear()
     g = 1
-    wp = slvs.add_2d_base(g)
+    wp = slvs.add_base_2d(g)
     p0 = slvs.add_point_2d(g, 0, 0, wp)
     slvs.dragged(g, p0, wp)
     p1 = slvs.add_point_2d(g, 0, 10, wp)
@@ -72,7 +72,7 @@ class CoreTest(TestCase):
     print("Jansen's linkage")
     slvs.clear()
     g = 1
-    wp = slvs.add_2d_base(g)
+    wp = slvs.add_base_2d(g)
     p0 = slvs.add_point_2d(g, 0, 0, wp)
     slvs.dragged(g, p0, wp)
 
@@ -122,7 +122,7 @@ class CoreTest(TestCase):
 
     slvs.clear()
     g = 1
-    wp = slvs.add_2d_base(g)
+    wp = slvs.add_base_2d(g)
     p0 = slvs.add_point_2d(g, 0, 0, wp)
     slvs.dragged(g, p0, wp)
 

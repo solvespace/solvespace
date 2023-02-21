@@ -131,7 +131,7 @@ def make_quaternion(
 ) -> Tuple[float, float, float, float]:
     ...
 
-def add_2d_base(grouph: int) -> Slvs_Entity:
+def add_base_2d(grouph: int) -> Slvs_Entity:
     ...
 
 def add_point_2d(grouph: int, u: float, v: float, wp: Slvs_Entity) -> Slvs_Entity:

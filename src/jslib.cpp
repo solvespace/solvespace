@@ -1,4 +1,5 @@
-#include <slvs.h>
+#include "solvespace.h"
+#include "slvs.h"
 #include <emscripten/bind.h>
 
 EMSCRIPTEN_BINDINGS(slvs) {
@@ -92,6 +93,32 @@ EMSCRIPTEN_BINDINGS(slvs) {
     .field("rank", &Slvs_SolveResult::rank)
     .field("bad", &Slvs_SolveResult::bad);
 
+  emscripten::class_<Quaternion>("Quaternion")
+    .constructor<>()
+    .function("plus", &Quaternion::Plus)
+    .function("minus", &Quaternion::Minus)
+    .function("scaledBy", &Quaternion::ScaledBy)
+    .function("magnitude", &Quaternion::Magnitude)
+    .function("withMagnitude", &Quaternion::WithMagnitude)
+    .function("toThe", &Quaternion::ToThe)
+    .function("inverse", &Quaternion::Inverse)
+    .function("times", &Quaternion::Times)
+    .function("mirror", &Quaternion::Mirror)
+    .function("rotationU", &Quaternion::RotationU)
+    .function("rotationV", &Quaternion::RotationV)
+    .function("rotationN", &Quaternion::RotationN)
+    .property("w", &Quaternion::w)
+    .property("vx", &Quaternion::vx)
+    .property("vy", &Quaternion::vy)
+    .property("vz", &Quaternion::vz)
+    .class_function("from", emscripten::select_overload<Quaternion(double, double, double, double)>(&Quaternion::From));
+
+  emscripten::class_<Vector>("Vector")
+    .constructor<>()
+    .property("x", &Vector::x)
+    .property("y", &Vector::y)
+    .property("z", &Vector::z);
+
   emscripten::function("quaternionU", &Slvs_QuaternionU, emscripten::allow_raw_pointers());
   emscripten::function("quaternionV", &Slvs_QuaternionV, emscripten::allow_raw_pointers());
   emscripten::function("quaternionN", &Slvs_QuaternionN, emscripten::allow_raw_pointers());
@@ -124,7 +151,7 @@ EMSCRIPTEN_BINDINGS(slvs) {
   emscripten::function("addArc", &Slvs_AddArc);
   emscripten::function("addCircle", &Slvs_AddCircle);
   emscripten::function("addWorkplane", &Slvs_AddWorkplane);
-  emscripten::function("add2DBase", &Slvs_Add2DBase);
+  emscripten::function("addBase2D", &Slvs_AddBase2D);
 
   emscripten::function("addConstraint", &Slvs_AddConstraint);
   emscripten::function("coincident", &Slvs_Coincident);
@@ -150,7 +177,6 @@ EMSCRIPTEN_BINDINGS(slvs) {
   emscripten::function("dragged", &Slvs_Dragged);
 
   emscripten::function("getParamValue", &Slvs_GetParamValue);
-  emscripten::function("solve", &Slvs_Solve, emscripten::allow_raw_pointers());
   emscripten::function("solveSketch", &Slvs_SolveSketch);
   emscripten::function("clearSketch", &Slvs_ClearSketch);
 }

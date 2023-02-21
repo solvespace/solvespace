@@ -1,5 +1,5 @@
 from .solvespace import (
-    add_2d_base,
+    add_base_2d,
     add_arc,
     add_circle,
     add_constraint,
@@ -47,7 +47,7 @@ from .solvespace import (
 )
 
 __all__ = [
-    "add_2d_base",
+    "add_base_2d",
     "add_arc",
     "add_circle",
     "add_constraint",

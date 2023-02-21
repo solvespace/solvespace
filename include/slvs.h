@@ -438,7 +438,7 @@ DLL Slvs_Entity Slvs_AddCubic(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB,
 DLL Slvs_Entity Slvs_AddArc(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity start, Slvs_Entity end, Slvs_Entity workplane);
 DLL Slvs_Entity Slvs_AddCircle(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity radius, Slvs_Entity workplane);
 DLL Slvs_Entity Slvs_AddWorkplane(uint32_t grouph, Slvs_Entity origin, Slvs_Entity nm);
-DLL Slvs_Entity Slvs_Add2DBase(uint32_t grouph);
+DLL Slvs_Entity Slvs_AddBase2D(uint32_t grouph);
 
 
 DLL Slvs_Constraint Slvs_AddConstraint(uint32_t grouph, int type, Slvs_Entity workplane, double val, Slvs_Entity ptA,

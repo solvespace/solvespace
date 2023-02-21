@@ -60,7 +60,7 @@ cdef extern from "slvs.h" nogil:
     Slvs_Entity Slvs_AddArc(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity start, Slvs_Entity end, Slvs_Entity workplane)
     Slvs_Entity Slvs_AddCircle(Slvs_hGroup grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity radius, Slvs_Entity workplane)
     Slvs_Entity Slvs_AddWorkplane(Slvs_hGroup grouph, Slvs_Entity origin, Slvs_Entity nm)
-    Slvs_Entity Slvs_Add2DBase(Slvs_hGroup grouph)
+    Slvs_Entity Slvs_AddBase2D(Slvs_hGroup grouph)
 
     Slvs_Constraint Slvs_AddConstraint(Slvs_hGroup grouph, int type, Slvs_Entity workplane, double val, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, int other, int other2)
     Slvs_Constraint Slvs_Coincident(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane)
@@ -167,8 +167,8 @@ def add_circle(grouph: int, normal: Slvs_Entity, center: Slvs_Entity, radius: Sl
 def add_workplane(grouph: int, origin: Slvs_Entity, nm: Slvs_Entity) -> Slvs_Entity:
     return Slvs_AddWorkplane(grouph, origin, nm)
 
-def add_2d_base(grouph: int) -> Slvs_Entity:
-    return Slvs_Add2DBase(grouph)
+def add_base_2d(grouph: int) -> Slvs_Entity:
+    return Slvs_AddBase2D(grouph)
 
 # constraints
 def add_constraint(grouph: int, c_type: int, workplane: Slvs_Entity, val: double, ptA: Slvs_Entity = E_NONE,
