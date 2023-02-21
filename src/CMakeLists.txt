@@ -88,6 +88,11 @@ else()
 endif()
 
 target_compile_definitions(slvs PRIVATE -DLIBRARY)
+if(ENABLE_PYTHON_LIB)
+    target_compile_definitions(slvs PRIVATE -DSTATIC_LIB)
+else()
+    target_compile_definitions(slvs PRIVATE -DEXPORT_DLL)
+endif()
 
 target_link_libraries(slvs PRIVATE mimalloc-static)
 

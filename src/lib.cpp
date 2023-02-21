@@ -5,7 +5,6 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#define EXPORT_DLL
 #include <slvs.h>
 #include <string>
 
@@ -83,63 +82,63 @@ default: SolveSpace::Platform::FatalError("bad entity type " + std::to_string(ty
     }
 }
 
-DLL bool Slvs_IsFreeIn3D(Slvs_Entity e) {
+bool Slvs_IsFreeIn3D(Slvs_Entity e) {
     return e.h == SLVS_FREE_IN_3D;
 }
 
-DLL bool Slvs_Is3D(Slvs_Entity e) {
+bool Slvs_Is3D(Slvs_Entity e) {
     return e.wrkpl == SLVS_FREE_IN_3D;
 }
 
-DLL bool Slvs_IsNone(Slvs_Entity e) {
+bool Slvs_IsNone(Slvs_Entity e) {
     return e.h == 0;
 }
 
-DLL bool Slvs_IsPoint2D(Slvs_Entity e) {
+bool Slvs_IsPoint2D(Slvs_Entity e) {
     return e.type == SLVS_E_POINT_IN_2D;
 }
 
-DLL bool Slvs_IsPoint3D(Slvs_Entity e) {
+bool Slvs_IsPoint3D(Slvs_Entity e) {
     return e.type == SLVS_E_POINT_IN_3D;
 }
 
-DLL bool Slvs_IsNormal2D(Slvs_Entity e) {
+bool Slvs_IsNormal2D(Slvs_Entity e) {
     return e.type == SLVS_E_NORMAL_IN_2D;
 }
 
-DLL bool Slvs_IsNormal3D(Slvs_Entity e) {
+bool Slvs_IsNormal3D(Slvs_Entity e) {
     return e.type == SLVS_E_NORMAL_IN_3D;
 }
 
-DLL bool Slvs_IsLine(Slvs_Entity e) {
+bool Slvs_IsLine(Slvs_Entity e) {
     return e.type == SLVS_E_LINE_SEGMENT;
 }
 
-DLL bool Slvs_IsLine2D(Slvs_Entity e) {
+bool Slvs_IsLine2D(Slvs_Entity e) {
     return e.type == SLVS_E_LINE_SEGMENT && !Slvs_Is3D(e);
 }
 
-DLL bool Slvs_IsLine3D(Slvs_Entity e) {
+bool Slvs_IsLine3D(Slvs_Entity e) {
     return e.type == SLVS_E_LINE_SEGMENT && Slvs_Is3D(e);
 }
 
-DLL bool Slvs_IsCubic(Slvs_Entity e) {
+bool Slvs_IsCubic(Slvs_Entity e) {
     return e.type == SLVS_E_CUBIC;
 }
 
-DLL bool Slvs_IsArc(Slvs_Entity e) {
+bool Slvs_IsArc(Slvs_Entity e) {
     return e.type == SLVS_E_ARC_OF_CIRCLE;
 }
 
-DLL bool Slvs_IsWorkplane(Slvs_Entity e) {
+bool Slvs_IsWorkplane(Slvs_Entity e) {
     return e.type == SLVS_E_WORKPLANE;
 }
 
-DLL bool Slvs_IsDistance(Slvs_Entity e) {
+bool Slvs_IsDistance(Slvs_Entity e) {
     return e.type == SLVS_E_DISTANCE;
 }
 
-DLL bool Slvs_IsPoint(Slvs_Entity e) {
+bool Slvs_IsPoint(Slvs_Entity e) {
     switch(e.type) {
         case SLVS_E_POINT_IN_3D:
         case SLVS_E_POINT_IN_2D:
@@ -149,7 +148,7 @@ DLL bool Slvs_IsPoint(Slvs_Entity e) {
     }
 }
 
-DLL bool Slvs_IsCircle(Slvs_Entity e) {
+bool Slvs_IsCircle(Slvs_Entity e) {
     return e.type == SLVS_E_CIRCLE || e.type == SLVS_E_ARC_OF_CIRCLE;
 }
 
@@ -161,7 +160,7 @@ Slvs_hParam Slvs_AddParam(double val) {
 }
 
 // entities
-DLL Slvs_Entity Slvs_AddPoint2D(uint32_t grouph, double u, double v, Slvs_Entity workplane) {
+Slvs_Entity Slvs_AddPoint2D(uint32_t grouph, double u, double v, Slvs_Entity workplane) {
     Slvs_hParam uph      = Slvs_AddParam(u);
     Slvs_hParam vph      = Slvs_AddParam(v);
     EntityBase e  = {};
@@ -182,7 +181,7 @@ DLL Slvs_Entity Slvs_AddPoint2D(uint32_t grouph, double u, double v, Slvs_Entity
     return ce;
 }
 
-DLL Slvs_Entity Slvs_AddPoint3D(uint32_t grouph, double x, double y, double z) {
+Slvs_Entity Slvs_AddPoint3D(uint32_t grouph, double x, double y, double z) {
     Slvs_hParam xph      = Slvs_AddParam(x);
     Slvs_hParam yph      = Slvs_AddParam(y);
     Slvs_hParam zph      = Slvs_AddParam(z);
@@ -206,7 +205,7 @@ DLL Slvs_Entity Slvs_AddPoint3D(uint32_t grouph, double x, double y, double z) {
     return ce;
 }
 
-DLL Slvs_Entity Slvs_AddNormal2D(uint32_t grouph, Slvs_Entity workplane) {
+Slvs_Entity Slvs_AddNormal2D(uint32_t grouph, Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
         SolveSpace::Platform::FatalError("workplane argument is not a workplane");
     }
@@ -224,7 +223,7 @@ DLL Slvs_Entity Slvs_AddNormal2D(uint32_t grouph, Slvs_Entity workplane) {
     return ce;
 }
 
-DLL Slvs_Entity Slvs_AddNormal3D(uint32_t grouph, double qw, double qx, double qy, double qz) {
+Slvs_Entity Slvs_AddNormal3D(uint32_t grouph, double qw, double qx, double qy, double qz) {
     Slvs_hParam wph      = Slvs_AddParam(qw);
     Slvs_hParam xph      = Slvs_AddParam(qx);
     Slvs_hParam yph      = Slvs_AddParam(qy);
@@ -251,7 +250,7 @@ DLL Slvs_Entity Slvs_AddNormal3D(uint32_t grouph, double qw, double qx, double q
     return ce;
 }
 
-DLL Slvs_Entity Slvs_AddDistance(uint32_t grouph, double value, Slvs_Entity workplane) {
+Slvs_Entity Slvs_AddDistance(uint32_t grouph, double value, Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
         SolveSpace::Platform::FatalError("workplane argument is not a workplane");
     }
@@ -272,7 +271,7 @@ DLL Slvs_Entity Slvs_AddDistance(uint32_t grouph, double value, Slvs_Entity work
     return ce;
 }
 
-DLL Slvs_Entity Slvs_AddLine2D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane) {
+Slvs_Entity Slvs_AddLine2D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
         SolveSpace::Platform::FatalError("workplane argument is not a workplane");
     } else if(!Slvs_IsPoint2D(ptA)) {
@@ -298,7 +297,7 @@ DLL Slvs_Entity Slvs_AddLine2D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB
     return ce;
 }
 
-DLL Slvs_Entity Slvs_AddLine3D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB) {
+Slvs_Entity Slvs_AddLine3D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB) {
     if(!Slvs_IsPoint3D(ptA)) {
         SolveSpace::Platform::FatalError("ptA argument is not a 3d point");
     } else if(!Slvs_IsPoint3D(ptB)) {
@@ -322,7 +321,7 @@ DLL Slvs_Entity Slvs_AddLine3D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB
     return ce;
 }
 
-DLL Slvs_Entity Slvs_AddCubic(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity ptC, Slvs_Entity ptD, Slvs_Entity workplane) {
+Slvs_Entity Slvs_AddCubic(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity ptC, Slvs_Entity ptD, Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
         SolveSpace::Platform::FatalError("workplane argument is not a workplane");
     } else if(!Slvs_IsPoint2D(ptA)) {
@@ -357,7 +356,7 @@ DLL Slvs_Entity Slvs_AddCubic(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB,
 }
 
 
-DLL Slvs_Entity Slvs_AddArc(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity start, Slvs_Entity end,
+Slvs_Entity Slvs_AddArc(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity start, Slvs_Entity end,
                             Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
         SolveSpace::Platform::FatalError("workplane argument is not a workplane");
@@ -392,7 +391,7 @@ DLL Slvs_Entity Slvs_AddArc(uint32_t grouph, Slvs_Entity normal, Slvs_Entity cen
     return ce;
 }
 
-DLL Slvs_Entity Slvs_AddCircle(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity radius,
+Slvs_Entity Slvs_AddCircle(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity radius,
                             Slvs_Entity workplane) {
     if(!Slvs_IsWorkplane(workplane)) {
         SolveSpace::Platform::FatalError("workplane argument is not a workplane");
@@ -423,7 +422,7 @@ DLL Slvs_Entity Slvs_AddCircle(uint32_t grouph, Slvs_Entity normal, Slvs_Entity 
     return ce;
 }
 
-DLL Slvs_Entity Slvs_AddWorkplane(uint32_t grouph, Slvs_Entity origin, Slvs_Entity nm) {
+Slvs_Entity Slvs_AddWorkplane(uint32_t grouph, Slvs_Entity origin, Slvs_Entity nm) {
     EntityBase e  = {};
     e.type        = EntityBase::Type::WORKPLANE;
     e.group.v     = grouph;
@@ -442,7 +441,7 @@ DLL Slvs_Entity Slvs_AddWorkplane(uint32_t grouph, Slvs_Entity origin, Slvs_Enti
     return ce;
 }
 
-DLL Slvs_Entity Slvs_AddBase2D(uint32_t grouph) {
+Slvs_Entity Slvs_AddBase2D(uint32_t grouph) {
     Vector u      = Vector::From(1, 0, 0);
     Vector v      = Vector::From(0, 1, 0);
     Quaternion q  = Quaternion::From(u, v);
@@ -452,7 +451,7 @@ DLL Slvs_Entity Slvs_AddBase2D(uint32_t grouph) {
 
 // constraints
 
-DLL Slvs_Constraint Slvs_AddConstraint(uint32_t grouph,
+Slvs_Constraint Slvs_AddConstraint(uint32_t grouph,
     int type, Slvs_Entity workplane, double val, Slvs_Entity ptA,
     Slvs_Entity ptB = SLVS_E_NONE, Slvs_Entity entityA = SLVS_E_NONE,
     Slvs_Entity entityB = SLVS_E_NONE, Slvs_Entity entityC = SLVS_E_NONE,
@@ -489,7 +488,7 @@ DLL Slvs_Constraint Slvs_AddConstraint(uint32_t grouph,
     return cc;
 }
 
-DLL Slvs_Constraint Slvs_Coincident(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_Coincident(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsPoint(entityA) && Slvs_IsPoint(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_POINTS_COINCIDENT, workplane, 0., entityA, entityB);
     } else if(Slvs_IsPoint(entityA) && Slvs_IsWorkplane(entityB)) {
@@ -502,7 +501,7 @@ DLL Slvs_Constraint Slvs_Coincident(uint32_t grouph, Slvs_Entity entityA, Slvs_E
     SolveSpace::Platform::FatalError("Invalid arguments for coincident constraint");
 }
 
-DLL Slvs_Constraint Slvs_Distance(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane) {
+Slvs_Constraint Slvs_Distance(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane) {
     if(Slvs_IsPoint(entityA) && Slvs_IsPoint(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_PT_PT_DISTANCE, workplane, value, entityA, entityB);
     } else if(Slvs_IsPoint(entityA) && Slvs_IsWorkplane(entityB) && Slvs_Is3D(workplane)) {
@@ -513,7 +512,7 @@ DLL Slvs_Constraint Slvs_Distance(uint32_t grouph, Slvs_Entity entityA, Slvs_Ent
     SolveSpace::Platform::FatalError("Invalid arguments for distance constraint");
 }
 
-DLL Slvs_Constraint Slvs_Equal(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_Equal(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsLine(entityA) && Slvs_IsLine(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_LENGTH_LINES, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     } else if(Slvs_IsLine(entityA) && (Slvs_IsArc(entityB) || Slvs_IsCircle(entityB))) {
@@ -524,28 +523,28 @@ DLL Slvs_Constraint Slvs_Equal(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity
     SolveSpace::Platform::FatalError("Invalid arguments for equal constraint");
 }
 
-DLL Slvs_Constraint Slvs_EqualAngle(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_EqualAngle(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsLine2D(entityC) && Slvs_IsLine2D(entityD) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_EQUAL_ANGLE, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, entityC, entityD);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for equal angle constraint");
 }
 
-DLL Slvs_Constraint Slvs_EqualPointToLine(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_EqualPointToLine(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC, Slvs_Entity entityD, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsPoint2D(entityA) && Slvs_IsLine2D(entityB) && Slvs_IsPoint2D(entityC) && Slvs_IsLine2D(entityD) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_EQ_PT_LN_DISTANCES, workplane, 0., entityA, entityB, entityC, entityD);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for equal point to line constraint");
 }
 
-DLL Slvs_Constraint Slvs_Ratio(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_Ratio(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_RATIO, workplane, value, SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for ratio constraint");
 }
 
-DLL Slvs_Constraint Slvs_Symmetric(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC = SLVS_E_NONE, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_Symmetric(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC = SLVS_E_NONE, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsPoint3D(entityA) && Slvs_IsPoint3D(entityB) && Slvs_IsWorkplane(entityC) && Slvs_IsFreeIn3D(workplane)) {
         return Slvs_AddConstraint(grouph, SLVS_C_SYMMETRIC, workplane, 0., entityA, entityB, entityC);
     } else if(Slvs_IsPoint2D(entityA) && Slvs_IsPoint2D(entityB) && Slvs_IsWorkplane(entityC) && Slvs_IsFreeIn3D(workplane)) {
@@ -559,7 +558,7 @@ DLL Slvs_Constraint Slvs_Symmetric(uint32_t grouph, Slvs_Entity entityA, Slvs_En
     SolveSpace::Platform::FatalError("Invalid arguments for symmetric constraint");
 }
 
-DLL Slvs_Constraint Slvs_SymmetricH(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane) {
+Slvs_Constraint Slvs_SymmetricH(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane) {
     if(Slvs_IsFreeIn3D(workplane)) {
         SolveSpace::Platform::FatalError("3d workplane given for a 2d constraint");
     } else if(Slvs_IsPoint2D(ptA) && Slvs_IsPoint2D(ptB)) {
@@ -568,7 +567,7 @@ DLL Slvs_Constraint Slvs_SymmetricH(uint32_t grouph, Slvs_Entity ptA, Slvs_Entit
     SolveSpace::Platform::FatalError("Invalid arguments for symmetric horizontal constraint");
 }
 
-DLL Slvs_Constraint Slvs_SymmetricV(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane) {
+Slvs_Constraint Slvs_SymmetricV(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane) {
     if(Slvs_IsFreeIn3D(workplane)) {
         SolveSpace::Platform::FatalError("3d workplane given for a 2d constraint");
     } else if(Slvs_IsPoint2D(ptA) && Slvs_IsPoint2D(ptB)) {
@@ -577,14 +576,14 @@ DLL Slvs_Constraint Slvs_SymmetricV(uint32_t grouph, Slvs_Entity ptA, Slvs_Entit
     SolveSpace::Platform::FatalError("Invalid arguments for symmetric vertical constraint");
 }
 
-DLL Slvs_Constraint Slvs_Midpoint(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_Midpoint(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsPoint(ptA) && Slvs_IsLine(ptB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_AT_MIDPOINT, workplane, 0., ptA, SLVS_E_NONE, ptB);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for midpoint constraint");
 }
 
-DLL Slvs_Constraint Slvs_Horizontal(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_E_NONE) {
+Slvs_Constraint Slvs_Horizontal(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_E_NONE) {
     if(Slvs_IsFreeIn3D(workplane)) {
         SolveSpace::Platform::FatalError("Horizontal constraint is not supported in 3D");
     } else if(Slvs_IsLine2D(entityA)) {
@@ -595,7 +594,7 @@ DLL Slvs_Constraint Slvs_Horizontal(uint32_t grouph, Slvs_Entity entityA, Slvs_E
     SolveSpace::Platform::FatalError("Invalid arguments for horizontal constraint");
 }
 
-DLL Slvs_Constraint Slvs_Vertical(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_E_NONE) {
+Slvs_Constraint Slvs_Vertical(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity workplane, Slvs_Entity entityB = SLVS_E_NONE) {
     if(Slvs_IsFreeIn3D(workplane)) {
         SolveSpace::Platform::FatalError("Vertical constraint is not supported in 3D");
     } else if(Slvs_IsLine2D(entityA)) {
@@ -606,42 +605,42 @@ DLL Slvs_Constraint Slvs_Vertical(uint32_t grouph, Slvs_Entity entityA, Slvs_Ent
     SolveSpace::Platform::FatalError("Invalid arguments for horizontal constraint");
 }
 
-DLL Slvs_Constraint Slvs_Diameter(uint32_t grouph, Slvs_Entity entityA, double value) {
+Slvs_Constraint Slvs_Diameter(uint32_t grouph, Slvs_Entity entityA, double value) {
     if(Slvs_IsArc(entityA) || Slvs_IsCircle(entityA)) {
         return Slvs_AddConstraint(grouph, SLVS_C_DIAMETER, SLVS_E_FREE_IN_3D, value, SLVS_E_NONE, SLVS_E_NONE, entityA);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for diameter constraint");
 }
 
-DLL Slvs_Constraint Slvs_SameOrientation(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB) {
+Slvs_Constraint Slvs_SameOrientation(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB) {
     if(Slvs_IsNormal3D(entityA) && Slvs_IsNormal3D(entityB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_SAME_ORIENTATION, SLVS_E_FREE_IN_3D, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for same orientation constraint");
 }
 
-DLL Slvs_Constraint Slvs_Angle(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D, int inverse = 0) {
+Slvs_Constraint Slvs_Angle(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D, int inverse = 0) {
     if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_ANGLE, workplane, value, SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, inverse);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for angle constraint");
 }
 
-DLL Slvs_Constraint Slvs_Perpendicular(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D, int inverse = 0) {
+Slvs_Constraint Slvs_Perpendicular(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D, int inverse = 0) {
     if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_PERPENDICULAR, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE, inverse);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for perpendicular constraint");
 }
 
-DLL Slvs_Constraint Slvs_Parallel(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_Parallel(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsLine2D(entityA) && Slvs_IsLine2D(entityB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_PARALLEL, workplane, 0., SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for parallel constraint");
 }
 
-DLL Slvs_Constraint Slvs_Tangent(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_Tangent(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsArc(entityA) && Slvs_IsLine2D(entityB)) {
         if(Slvs_IsFreeIn3D(workplane)) {
             SolveSpace::Platform::FatalError("3d workplane given for a 2d constraint");
@@ -709,28 +708,28 @@ DLL Slvs_Constraint Slvs_Tangent(uint32_t grouph, Slvs_Entity entityA, Slvs_Enti
     SolveSpace::Platform::FatalError("Invalid arguments for tangent constraint");
 }
 
-DLL Slvs_Constraint Slvs_DistanceProj(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, double value) {
+Slvs_Constraint Slvs_DistanceProj(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, double value) {
     if(Slvs_IsPoint(ptA) && Slvs_IsPoint(ptB)) {
         return Slvs_AddConstraint(grouph, SLVS_C_PROJ_PT_DISTANCE, SLVS_E_FREE_IN_3D, value, ptA, ptB);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for projected distance constraint");
 }
 
-DLL Slvs_Constraint Slvs_LengthDiff(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_LengthDiff(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsLine(entityA) && Slvs_IsLine(entityB) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_LENGTH_DIFFERENCE, workplane, value, SLVS_E_NONE, SLVS_E_NONE, entityA, entityB);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for length difference constraint");
 }
 
-DLL Slvs_Constraint Slvs_Dragged(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
+Slvs_Constraint Slvs_Dragged(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
     if(Slvs_IsPoint(ptA) && (Slvs_IsWorkplane(workplane) || Slvs_IsFreeIn3D(workplane))) {
         return Slvs_AddConstraint(grouph, SLVS_C_WHERE_DRAGGED, workplane, 0., ptA);
     }
     SolveSpace::Platform::FatalError("Invalid arguments for dragged constraint");
 }
 
-DLL void Slvs_QuaternionU(double qw, double qx, double qy, double qz,
+void Slvs_QuaternionU(double qw, double qx, double qy, double qz,
                          double *x, double *y, double *z)
 {
     Quaternion q = Quaternion::From(qw, qx, qy, qz);
@@ -740,7 +739,7 @@ DLL void Slvs_QuaternionU(double qw, double qx, double qy, double qz,
     *z = v.z;
 }
 
-DLL void Slvs_QuaternionV(double qw, double qx, double qy, double qz,
+void Slvs_QuaternionV(double qw, double qx, double qy, double qz,
                          double *x, double *y, double *z)
 {
     Quaternion q = Quaternion::From(qw, qx, qy, qz);
@@ -750,7 +749,7 @@ DLL void Slvs_QuaternionV(double qw, double qx, double qy, double qz,
     *z = v.z;
 }
 
-DLL void Slvs_QuaternionN(double qw, double qx, double qy, double qz,
+void Slvs_QuaternionN(double qw, double qx, double qy, double qz,
                          double *x, double *y, double *z)
 {
     Quaternion q = Quaternion::From(qw, qx, qy, qz);
@@ -760,7 +759,7 @@ DLL void Slvs_QuaternionN(double qw, double qx, double qy, double qz,
     *z = v.z;
 }
 
-DLL void Slvs_MakeQuaternion(double ux, double uy, double uz,
+void Slvs_MakeQuaternion(double ux, double uy, double uz,
                          double vx, double vy, double vz,
                          double *qw, double *qx, double *qy, double *qz)
 {
@@ -773,7 +772,7 @@ DLL void Slvs_MakeQuaternion(double ux, double uy, double uz,
     *qz = q.vz;
 }
 
-DLL void Slvs_ClearSketch()
+void Slvs_ClearSketch()
 {
     SYS.Clear();
     SK.param.Clear();
@@ -781,7 +780,7 @@ DLL void Slvs_ClearSketch()
     SK.constraint.Clear();
 }
 
-DLL Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
+Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
 {
     SYS.Clear();
 
@@ -868,14 +867,14 @@ DLL Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
     return sr;
 }
 
-DLL double Slvs_GetParamValue(Slvs_Entity e, int i)
+double Slvs_GetParamValue(Slvs_Entity e, int i)
 {
     EntityBase* entity = SK.entity.FindById(hEntity { e.h });
     Param* p = SK.param.FindById(entity->param[i]);
     return p->val;
 }
 
-DLL void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
+void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
 {
     SYS.Clear();
     SK.param.Clear();
