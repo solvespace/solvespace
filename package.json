@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "<img src=\"res/freedesktop/solvespace-scalable.svg\" width=\"70\" height=\"70\" alt=\"SolveSpace Logo\" align=\"left\">",
   "main": "slvs.js",
+  "types": "slvs.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

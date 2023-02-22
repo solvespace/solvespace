@@ -42,7 +42,6 @@ EMSCRIPTEN_BINDINGS(slvs) {
   emscripten::constant("C_ARC_ARC_DIFFERENCE",  100036);
   emscripten::constant("C_ARC_LINE_DIFFERENCE", 100037);
 
-  emscripten::constant("E_FREE_IN_3D",              0);
   emscripten::constant("E_POINT_IN_3D",         50000);
   emscripten::constant("E_POINT_IN_2D",         50001);
   emscripten::constant("E_NORMAL_IN_3D",        60000);
@@ -118,11 +117,6 @@ EMSCRIPTEN_BINDINGS(slvs) {
     .property("x", &Vector::x)
     .property("y", &Vector::y)
     .property("z", &Vector::z);
-
-  emscripten::function("quaternionU", &Slvs_QuaternionU, emscripten::allow_raw_pointers());
-  emscripten::function("quaternionV", &Slvs_QuaternionV, emscripten::allow_raw_pointers());
-  emscripten::function("quaternionN", &Slvs_QuaternionN, emscripten::allow_raw_pointers());
-  emscripten::function("makeQuaternion", &Slvs_MakeQuaternion, emscripten::allow_raw_pointers());
 
   emscripten::function("isFreeIn3D", &Slvs_IsFreeIn3D);
   emscripten::function("is3D", &Slvs_Is3D);
