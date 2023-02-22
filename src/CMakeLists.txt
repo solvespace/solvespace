@@ -106,7 +106,16 @@ set_target_properties(slvs PROPERTIES
 )
 
 if(ENABLE_EMSCRIPTEN_LIB)
-    set_target_properties(slvs PROPERTIES LINK_FLAGS "-O3 -flto --closure 1 -s EXPORT_NAME=\"solvespace\" -l embind -s INITIAL_MEMORY=536870912 -s ALLOW_MEMORY_GROWTH -s MODULARIZE=1")
+    set_target_properties(slvs PROPERTIES LINK_FLAGS "\
+        -l embind \
+        -s MODULARIZE=1\
+        -s EXPORT_NAME=\"solvespace\" \
+        -s SINGLE_FILE=1 \
+        -s INITIAL_MEMORY=536870912 \
+        -s ALLOW_MEMORY_GROWTH \
+        -O3 \
+        -flto \
+        --closure 1")
 endif()
 
 if(ENABLE_PYTHON_LIB)
