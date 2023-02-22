@@ -1,4 +1,4 @@
-interface Entity {
+export interface Entity {
   h: number;
   group: number;
   type: number;
@@ -8,7 +8,7 @@ interface Entity {
   param: [number, number, number, number];
 }
 
-interface Constraint {
+export interface Constraint {
   h: number;
   group: number;
   type: number;
@@ -24,20 +24,20 @@ interface Constraint {
   other2: boolean;
 }
 
-interface SolveResult {
+export interface SolveResult {
   result: number;
   dof: number;
   rank: number;
   bad: number;
 }
 
-interface Vector {
+export interface Vector {
   x: number
   y: number
   z: number
 }
 
-interface Quaternion {
+export interface Quaternion {
   w: number
   vx: number
   vy: number
@@ -57,13 +57,13 @@ interface Quaternion {
   mirror(): Quaternion;
 }
 
-interface QuaternionConstructor {
+export interface QuaternionConstructor {
   new(): Quaternion;
   prototype: Quaternion;
   from(w: number, vx: number, vy: number, vz: number): Quaternion;
 }
 
-interface SlvsModule {
+export interface SlvsModule {
   C_POINTS_COINCIDENT: 100000;
   C_PT_PT_DISTANCE: 100001;
   C_PT_PLANE_DISTANCE: 100002;
@@ -189,4 +189,5 @@ interface SlvsModule {
 }
 
 declare function ModuleLoader(): Promise<SlvsModule>;
-export = ModuleLoader;
+
+export default ModuleLoader;

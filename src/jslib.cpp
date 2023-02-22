@@ -171,6 +171,7 @@ EMSCRIPTEN_BINDINGS(slvs) {
   emscripten::function("dragged", &Slvs_Dragged);
 
   emscripten::function("getParamValue", &Slvs_GetParamValue);
+  emscripten::function("setParamValue", &Slvs_SetParamValue);
   emscripten::function("solveSketch", &Slvs_SolveSketch);
   emscripten::function("clearSketch", &Slvs_ClearSketch);
 }

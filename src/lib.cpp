@@ -874,6 +874,13 @@ double Slvs_GetParamValue(Slvs_Entity e, int i)
     return p->val;
 }
 
+void Slvs_SetParamValue(Slvs_Entity e, int i, double value)
+{
+    EntityBase* entity = SK.entity.FindById(hEntity { e.h });
+    Param* p = SK.param.FindById(entity->param[i]);
+    p->val = value;
+}
+
 void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
 {
     SYS.Clear();
