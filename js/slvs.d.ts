@@ -188,4 +188,5 @@ interface SlvsModule {
   clearSketch(): void;
 }
 
-export default function ModuleLoader(): Promise<SlvsModule>
+declare function ModuleLoader(): Promise<SlvsModule>;
+export = ModuleLoader;
