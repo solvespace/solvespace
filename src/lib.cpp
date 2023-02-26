@@ -835,6 +835,22 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
         }
     }
 
+    for(hParam &par : SYS.dragged) {
+        std::cout << "DraggedParam( h:" << par.v << " )\n";
+    }
+
+    for(Param &par : SYS.param) {
+        std::cout << "Param( " << par.ToString() << " )\n";
+    }
+
+    for(EntityBase &ent : SK.entity) {
+        std::cout << "EntityBase( " << ent.ToString() << " )\n";
+    }
+
+    for(ConstraintBase &con : SK.constraint) {
+        std::cout << "ConstraintBase( " << con.ToString() << " )\n";
+    }
+
     List<hConstraint> badList;
     bool andFindBad = calculateFaileds ? true : false;
 
