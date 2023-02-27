@@ -266,11 +266,11 @@ def length_diff(grouph: int, Slvs_entityA: Slvs_Entity, Slvs_entityB: Slvs_Entit
 def dragged(grouph: int, e1: Slvs_Entity, wp: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
     ...
 
-def clear() -> None:
+def clear_sketch() -> None:
     ...
 
 def solve_sketch(grouph: int, calculateFaileds: bool) -> Slvs_SolveResult:
     ...
 
-def get_param(e: Slvs_Entity, index: int) -> float:
+def get_param_value(e: Slvs_Entity, index: int) -> float:
     ...

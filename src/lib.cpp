@@ -786,6 +786,10 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
 
     Group g;
     g.h.v = shg;
+    g.suppressDofCalculation = 0;
+    g.allowRedundant = 0;
+    g.allDimsReference = 0;
+    g.relaxConstraints = 0;
 
     // add params from entities on sketch
     for(EntityBase &ent : SK.entity) {
@@ -835,21 +839,21 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
         }
     }
 
-    for(hParam &par : SYS.dragged) {
-        std::cout << "DraggedParam( h:" << par.v << " )\n";
-    }
+    // for(hParam &par : SYS.dragged) {
+    //     std::cout << "DraggedParam( h:" << par.v << " )\n";
+    // }
 
-    for(Param &par : SYS.param) {
-        std::cout << "Param( " << par.ToString() << " )\n";
-    }
+    // for(Param &par : SYS.param) {
+    //     std::cout << "SysParam( " << par.ToString() << " )\n";
+    // }
 
-    for(EntityBase &ent : SK.entity) {
-        std::cout << "EntityBase( " << ent.ToString() << " )\n";
-    }
+    // for(EntityBase &ent : SK.entity) {
+    //     std::cout << "SketchEntityBase( " << ent.ToString() << " )\n";
+    // }
 
-    for(ConstraintBase &con : SK.constraint) {
-        std::cout << "ConstraintBase( " << con.ToString() << " )\n";
-    }
+    // for(ConstraintBase &con : SK.constraint) {
+    //     std::cout << "SketchConstraintBase( " << con.ToString() << " )\n";
+    // }
 
     List<hConstraint> badList;
     bool andFindBad = calculateFaileds ? true : false;

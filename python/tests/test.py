@@ -7,7 +7,7 @@ class CoreTest(TestCase):
   def test_crank_rocker(self):
     """Crank rocker example."""
     print("Crank rocker")
-    slvs.clear()
+    slvs.clear_sketch()
     g = 1
     wp = slvs.add_base_2d(g)
     p0 = slvs.add_point_2d(g, 0, 0, wp)
@@ -29,8 +29,8 @@ class CoreTest(TestCase):
 
     result = slvs.solve_sketch(g, False)
     self.assertEqual(result['result'], slvs.ResultFlag.OKAY)
-    x = slvs.get_param(p2, 0)
-    y = slvs.get_param(p2, 1)
+    x = slvs.get_param_value(p2, 0)
+    y = slvs.get_param_value(p2, 1)
     self.assertAlmostEqual(39.54852, x, 4)
     self.assertAlmostEqual(61.91009, y, 4)
 
@@ -39,7 +39,7 @@ class CoreTest(TestCase):
     print("Involute")
     r = 10
     angle = 45
-    slvs.clear()
+    slvs.clear_sketch()
     g = 1
     wp = slvs.add_base_2d(g)
     p0 = slvs.add_point_2d(g, 0, 0, wp)
@@ -61,8 +61,8 @@ class CoreTest(TestCase):
     result = slvs.solve_sketch(g, False)
     print("result", result)
     self.assertEqual(result['result'], slvs.ResultFlag.OKAY)
-    x = slvs.get_param(p2, 0)
-    y = slvs.get_param(p2, 1)
+    x = slvs.get_param_value(p2, 0)
+    y = slvs.get_param_value(p2, 1)
     self.assertAlmostEqual(12.62467, x, 4)
     self.assertAlmostEqual(1.51746, y, 4)
 
@@ -70,7 +70,7 @@ class CoreTest(TestCase):
     """Jansen's linkage example."""
 
     print("Jansen's linkage")
-    slvs.clear()
+    slvs.clear_sketch()
     g = 1
     wp = slvs.add_base_2d(g)
     p0 = slvs.add_point_2d(g, 0, 0, wp)
@@ -105,8 +105,8 @@ class CoreTest(TestCase):
     result = slvs.solve_sketch(g, False)
     print("result", result)
     self.assertEqual(result['result'], slvs.ResultFlag.OKAY)
-    x = slvs.get_param(p8, 0)
-    y = slvs.get_param(p8, 1)
+    x = slvs.get_param_value(p8, 0)
+    y = slvs.get_param_value(p8, 1)
     self.assertAlmostEqual(18.93036, x, 4)
     self.assertAlmostEqual(13.63778, y, 4)
 
@@ -120,7 +120,7 @@ class CoreTest(TestCase):
     n2 = 2.3
     l0 = 3.25
 
-    slvs.clear()
+    slvs.clear_sketch()
     g = 1
     wp = slvs.add_base_2d(g)
     p0 = slvs.add_point_2d(g, 0, 0, wp)
@@ -140,7 +140,7 @@ class CoreTest(TestCase):
     result = slvs.solve_sketch(g, False)
     print("result", result)
     self.assertEqual(result['result'], slvs.ResultFlag.OKAY)
-    x = slvs.get_param(p2, 0)
+    x = slvs.get_param_value(p2, 0)
     print("x", x)
     ans_min = x - b0 / 2
     ans_max = l0 - r0 - b0 / 2
@@ -161,7 +161,7 @@ class CoreTest(TestCase):
     entities in that group and dimension them.
     """
 
-    slvs.clear()
+    slvs.clear_sketch()
     g1 = 1
     g2 = 2
     # First, we create our workplane. Its origin corresponds to the origin
@@ -224,30 +224,30 @@ class CoreTest(TestCase):
     g1result = slvs.solve_sketch(g1, False)
     g2result = slvs.solve_sketch(g2, False)
     self.assertEqual(g2result['result'], slvs.ResultFlag.OKAY)
-    x = slvs.get_param(p301, 0)
-    y = slvs.get_param(p301, 1)
+    x = slvs.get_param_value(p301, 0)
+    y = slvs.get_param_value(p301, 1)
     self.assertAlmostEqual(10, x, 4)
     self.assertAlmostEqual(11.18030, y, 4)
-    x = slvs.get_param(p302, 0)
-    y = slvs.get_param(p302, 1)
+    x = slvs.get_param_value(p302, 0)
+    y = slvs.get_param_value(p302, 1)
     self.assertAlmostEqual(10, x, 4)
     self.assertAlmostEqual(-18.81966, y, 4)
-    x = slvs.get_param(p303, 0)
-    y = slvs.get_param(p303, 1)
+    x = slvs.get_param_value(p303, 0)
+    y = slvs.get_param_value(p303, 1)
     self.assertAlmostEqual(101.11418, x, 4)
     self.assertAlmostEqual(119.04153, y, 4)
-    x = slvs.get_param(p304, 0)
-    y = slvs.get_param(p304, 1)
+    x = slvs.get_param_value(p304, 0)
+    y = slvs.get_param_value(p304, 1)
     self.assertAlmostEqual(116.47661, x, 4)
     self.assertAlmostEqual(111.76171, y, 4)
-    x = slvs.get_param(p305, 0)
-    y = slvs.get_param(p305, 1)
+    x = slvs.get_param_value(p305, 0)
+    y = slvs.get_param_value(p305, 1)
     self.assertAlmostEqual(117.40922, x, 4)
     self.assertAlmostEqual(114.19676, y, 4)
-    x = slvs.get_param(p306, 0)
-    y = slvs.get_param(p306, 1)
+    x = slvs.get_param_value(p306, 0)
+    y = slvs.get_param_value(p306, 1)
     self.assertAlmostEqual(200, x, 4)
     self.assertAlmostEqual(200, y, 4)
-    x = slvs.get_param(d307, 0)
+    x = slvs.get_param_value(d307, 0)
     self.assertAlmostEqual(17, x, 4)
-    # self.assertEqual(6, g2result['dof'])
+    self.assertEqual(6, g2result['dof'])

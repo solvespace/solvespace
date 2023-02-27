@@ -67,6 +67,7 @@ EMSCRIPTEN_BINDINGS(slvs) {
     .field("group", &Slvs_Entity::group)
     .field("type", &Slvs_Entity::type)
     .field("wrkpl", &Slvs_Entity::wrkpl)
+    .field("point", &Slvs_Entity::point)
     .field("normal", &Slvs_Entity::normal)
     .field("distance", &Slvs_Entity::distance)
     .field("param", &Slvs_Entity::param);

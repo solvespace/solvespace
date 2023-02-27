@@ -121,7 +121,7 @@ endif()
 if(ENABLE_PYTHON_LIB)
     add_custom_command(
         OUTPUT lib.c
-        COMMAND cython lib.pyx -o ${CMAKE_CURRENT_BINARY_DIR}/lib.c --module-name solvespace
+        COMMAND cython lib.pyx -o ${CMAKE_CURRENT_BINARY_DIR}/lib.c --include-dir ${CMAKE_SOURCE_DIR}/include --module-name solvespace
         DEPENDS lib.pyx
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )

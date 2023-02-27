@@ -87,6 +87,7 @@ cdef extern from "slvs.h" nogil:
 
     Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup hg, int calculateFaileds) nogil
     double Slvs_GetParamValue(Slvs_Entity e, int i)
+    double Slvs_SetParamValue(Slvs_Entity e, int i, double value)
     void Slvs_ClearSketch()
 
     cdef Slvs_Entity _E_NONE "SLVS_E_NONE"
@@ -308,8 +309,11 @@ class EntityType(IntEnum):
 def solve_sketch(grouph: int, calculateFaileds: int):
     return Slvs_SolveSketch(grouph, calculateFaileds)
 
-def get_param(e: Slvs_Entity, index: int):
+def get_param_value(e: Slvs_Entity, index: int):
     return Slvs_GetParamValue(e, index)
 
-def clear():
+def set_param_value(e: Slvs_Entity, index: int, value: double):
+    Slvs_SetParamValue(e, index, value)
+
+def clear_sketch():
     Slvs_ClearSketch()
