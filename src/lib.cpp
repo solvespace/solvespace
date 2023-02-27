@@ -784,12 +784,8 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
 {
     SYS.Clear();
 
-    Group g;
+    Group g = {};
     g.h.v = shg;
-    g.suppressDofCalculation = 0;
-    g.allowRedundant = 0;
-    g.allDimsReference = 0;
-    g.relaxConstraints = 0;
 
     // add params from entities on sketch
     for(EntityBase &ent : SK.entity) {
