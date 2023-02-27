@@ -55,7 +55,12 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
             version="${GITHUB_REF##*/}"
           else
-            version="3.1.0-dev.${GITHUB_RUN_NUMBER}"
+            mkdir empty-build
+            cd empty-build
+            cmake .. -DENABLE_GUI=OFF -DENABLE_CLI=OFF -DENABLE_TESTS=OFF -DENABLE_COVERAGE=OFF -DENABLE_SANITIZERS=OFF -DENABLE_OPENMP=OFF
+            source version.env
+            cd ..
+            version="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-dev.${GITHUB_RUN_NUMBER}"
             is_dev="1"
           fi
           jq --arg version "${version}" '.version = $version' package.json > package.json.tmp

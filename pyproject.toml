@@ -4,8 +4,8 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "solvespace"
-version = "3.1.0"
-description="A minimal example package (with pybind11)"
+version = "0.0.0"
+description="SolveSpace solver wrapped with Cython"
 readme = "README.md"
 authors = [
   { name = "Koen Schmeets", email = "koen@schmeets.de" },

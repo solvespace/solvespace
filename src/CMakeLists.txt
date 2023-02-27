@@ -118,6 +118,13 @@ if(ENABLE_EMSCRIPTEN_LIB)
         --closure 1")
 endif()
 
+file(WRITE ${CMAKE_BINARY_DIR}/version.env "\
+VERSION_MAJOR=${PROJECT_VERSION_MAJOR}\n\
+VERSION_MINOR=${PROJECT_VERSION_MINOR}\n\
+VERSION_PATCH=0\n\
+VERSION_GIT_HASH=${solvespace_GIT_HASH}\n\
+")
+
 if(ENABLE_PYTHON_LIB)
     add_custom_command(
         OUTPUT lib.c

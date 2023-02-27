@@ -1,6 +1,6 @@
 {
   "name": "slvs",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "<img src=\"res/freedesktop/solvespace-scalable.svg\" width=\"70\" height=\"70\" alt=\"SolveSpace Logo\" align=\"left\">",
   "main": "slvs.js",
   "types": "slvs.d.ts",
