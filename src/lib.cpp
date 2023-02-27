@@ -887,17 +887,15 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
     return sr;
 }
 
-double Slvs_GetParamValue(Slvs_Entity e, int i)
+double Slvs_GetParamValue(uint32_t ph)
 {
-    EntityBase* entity = SK.entity.FindById(hEntity { e.h });
-    Param* p = SK.param.FindById(entity->param[i]);
+    Param* p = SK.param.FindById(hParam { ph });
     return p->val;
 }
 
-void Slvs_SetParamValue(Slvs_Entity e, int i, double value)
+void Slvs_SetParamValue(uint32_t ph, double value)
 {
-    EntityBase* entity = SK.entity.FindById(hEntity { e.h });
-    Param* p = SK.param.FindById(entity->param[i]);
+    Param* p = SK.param.FindById(hParam { ph });
     p->val = value;
 }
 

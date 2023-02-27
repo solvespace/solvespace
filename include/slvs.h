@@ -489,8 +489,8 @@ DLL Slvs_Constraint Slvs_LengthDiff(uint32_t grouph, Slvs_Entity entityA, Slvs_E
                                     Slvs_Entity workplane);
 DLL Slvs_Constraint Slvs_Dragged(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity workplane);
 
-DLL double Slvs_GetParamValue(Slvs_Entity e, int i);
-DLL void Slvs_SetParamValue(Slvs_Entity e, int i, double value);
+DLL double Slvs_GetParamValue(uint32_t ph);
+DLL void Slvs_SetParamValue(uint32_t ph, double value);
 
 DLL void Slvs_Solve(Slvs_System *sys, uint32_t hg);
 DLL Slvs_SolveResult Slvs_SolveSketch(uint32_t hg, int calculateFaileds);

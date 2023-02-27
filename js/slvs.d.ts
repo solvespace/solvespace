@@ -183,7 +183,8 @@ export interface SlvsModule {
   lengthDiff(grouph: number, entityA: Entity, entityB: Entity, value: number, workplane: Entity): Constraint;
   dragged(grouph: number, ptA: Entity, workplane: Entity): Constraint;
 
-  getParamValue(entity: Entity, index: number): number;
+  getParamValue(ph: number): number;
+  setParamValue(ph: number, value: number): number;
   solveSketch(hgroup: number, calculateFaileds: boolean): SolveResult;
   clearSketch(): void;
 }

@@ -48,8 +48,8 @@ solvespace().then(function (slvs) {
   )
   var result = slvs.solveSketch(g, false)
   console.log(result['result'])
-  var x = slvs.getParamValue(p2, 0)
-  var y = slvs.getParamValue(p2, 1)
+  var x = slvs.getParamValue(p2.param[0])
+  var y = slvs.getParamValue(p2.param[1])
   console.log(39.54852, x)
   console.log(61.91009, y)
 
@@ -77,8 +77,8 @@ solvespace().then(function (slvs) {
 
   var result = slvs.solveSketch(g, false)
   console.log("result", result['result'])
-  var x = slvs.getParamValue(p2, 0)
-  var y = slvs.getParamValue(p2, 1)
+  var x = slvs.getParamValue(p2.param[0])
+  var y = slvs.getParamValue(p2.param[1])
   console.log(12.62467, x)
   console.log(1.51746, y)
 

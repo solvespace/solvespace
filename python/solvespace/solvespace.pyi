@@ -44,17 +44,17 @@ class ConstraintType(IntEnum):
     ARC_ARC_DIFFERENCE = 100036
     ARC_LINE_DIFFERENCE = 100037
 
-# class EntityType(IntEnum):
-#     POINT_IN_3D = 50000
-#     POINT_IN_2D = 50001
-#     NORMAL_IN_3D = 60000
-#     NORMAL_IN_2D = 60001
-#     DISTANCE = 70000
-#     WORKPLANE = 80000
-#     LINE_SEGMENT = 80001
-#     CUBIC = 80002
-#     CIRCLE = 80003
-#     ARC_OF_CIRCLE = 80004
+class EntityType(IntEnum):
+    POINT_IN_3D = 50000
+    POINT_IN_2D = 50001
+    NORMAL_IN_3D = 60000
+    NORMAL_IN_2D = 60001
+    DISTANCE = 70000
+    WORKPLANE = 80000
+    LINE_SEGMENT = 80001
+    CUBIC = 80002
+    CIRCLE = 80003
+    ARC_OF_CIRCLE = 80004
 
 class ResultFlag(IntEnum):
     """Symbol of the result flags."""
@@ -272,5 +272,8 @@ def clear_sketch() -> None:
 def solve_sketch(grouph: int, calculateFaileds: bool) -> Slvs_SolveResult:
     ...
 
-def get_param_value(e: Slvs_Entity, index: int) -> float:
+def get_param_value(ph: int) -> float:
+    ...
+
+def set_param_value(ph: int, value: float) -> None:
     ...

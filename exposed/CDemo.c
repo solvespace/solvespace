@@ -47,10 +47,10 @@ void ExampleStateful()
     printf("res: %i\n", res.result);
     printf("rank: %i\n", res.rank);
     printf("dof: %i\n", res.dof);
-    double p1x = Slvs_GetParamValue(p1, 0);
-    double p1y = Slvs_GetParamValue(p1, 1);
-    double p2x = Slvs_GetParamValue(p2, 0);
-    double p2y = Slvs_GetParamValue(p2, 1);
+    double p1x = Slvs_GetParamValue(p1.param[0]);
+    double p1y = Slvs_GetParamValue(p1.param[1]);
+    double p2x = Slvs_GetParamValue(p2.param[0]);
+    double p2y = Slvs_GetParamValue(p2.param[1]);
     printf("p1x:%.3f\n", p1x);
     printf("p1y:%.3f\n", p1y);
     printf("p2x:%.3f\n", p2x);
