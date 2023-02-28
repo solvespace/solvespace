@@ -580,8 +580,8 @@ void Constraint::MenuConstrain(Command id) {
                         Entity::NO_ENTITY);
                     DeleteAllConstraintsFor(Type::VERTICAL, (gs.entity[0]),
                         Entity::NO_ENTITY);
-                    newcons.push_back(c);
                     AddConstraint(&c, /*rememberForUndo=*/false);
+                    newcons.push_back(c);
                     break;
                 }
             }
