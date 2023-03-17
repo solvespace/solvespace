@@ -19,7 +19,7 @@
         <key>CFBundleShortVersionString</key>
         <string>${PROJECT_VERSION}</string>
         <key>NSHumanReadableCopyright</key>
-        <string>© 2008-2022 Jonathan Westhues and other authors</string>
+        <string>© 2008-2023 Jonathan Westhues and other authors</string>
         <key>NSPrincipalClass</key>
         <string>NSApplication</string>
         <key>NSMainNibFile</key>
