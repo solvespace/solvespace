@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
 "POT-Creation-Date: 2023-01-20 16:45+0200\n"
-"PO-Revision-Date: 2023-04-03 02:52+0200\n"
+"PO-Revision-Date: 2023-04-04 19:17+0200\n"
 "Last-Translator: Alexandre Prokoudine <alexandre.prokoudine@gmail.com>\n"
 "Language-Team: Russian <gnome-cyr@lists.gnome.org>\n"
 "Language: ru\n"
@@ -27,9 +27,9 @@ msgid ""
 "\n"
 "Activate one with Sketch -> In Workplane."
 msgstr ""
-"Копировать, вставить или вырезать\n"
-"можно только находясь в рабочей плоскости.\n"
-"Активируйте рабочую плоскость через Эскиз->В Рабочей Плоскости"
+"Копировать, вставить или вырезать можно\n"
+"только находясь в рабочей плоскости.\n"
+"Активируйте ее через Эскиз->В рабочей плоскости"
 
 #: clipboard.cpp:326
 msgid "Clipboard is empty; nothing to paste."
@@ -742,15 +742,15 @@ msgstr "Экспортировать и&зображение…"
 
 #: graphicswin.cpp:49
 msgid "Export 2d &View..."
-msgstr "Экспортировать &2D-вид…"
+msgstr "Экспортировать &2d-вид…"
 
 #: graphicswin.cpp:50
 msgid "Export 2d &Section..."
-msgstr "Экспортировать 2D-се&чение…"
+msgstr "Экспортировать 2d-се&чение…"
 
 #: graphicswin.cpp:51
 msgid "Export 3d &Wireframe..."
-msgstr "Экспортировать &3D-каркас…"
+msgstr "Экспортировать &3d-каркас…"
 
 #: graphicswin.cpp:52
 msgid "Export Triangle &Mesh..."
@@ -918,11 +918,11 @@ msgstr "Полно&экранный режим"
 
 #: graphicswin.cpp:109
 msgid "&New Group"
-msgstr "Создать &группу"
+msgstr "&Новая группа"
 
 #: graphicswin.cpp:110
 msgid "Sketch In &3d"
-msgstr "Создать эскиз в &3D"
+msgstr "Создать эскиз в &3d"
 
 #: graphicswin.cpp:111
 msgid "Sketch In New &Workplane"
@@ -942,7 +942,7 @@ msgstr "Тело &выдавливания"
 
 #: graphicswin.cpp:117
 msgid "&Helix"
-msgstr "Тело винтовое"
+msgstr "Тело в&интовое"
 
 #: graphicswin.cpp:118
 msgid "&Lathe"
@@ -954,11 +954,11 @@ msgstr "Тело в&ращения на угол"
 
 #: graphicswin.cpp:121
 msgid "Link / Assemble..."
-msgstr "&Импорт детали / Сборка…"
+msgstr "&Импортировать деталь/сборку…"
 
 #: graphicswin.cpp:122
 msgid "Link Recent"
-msgstr ""
+msgstr "Импортировать недавний файл"
 
 #: graphicswin.cpp:124
 msgid "&Sketch"
@@ -970,7 +970,7 @@ msgstr "В &рабочей плоскости"
 
 #: graphicswin.cpp:126
 msgid "Anywhere In &3d"
-msgstr "Режим &3D"
+msgstr "Режим &3d"
 
 #: graphicswin.cpp:128
 msgid "Datum &Point"
@@ -1034,7 +1034,7 @@ msgstr "&Расстояние / Диаметр"
 
 #: graphicswin.cpp:147
 msgid "Re&ference Dimension"
-msgstr ""
+msgstr "Справочный ра&змер"
 
 #: graphicswin.cpp:148
 msgid "A&ngle / Equal Angle"
@@ -1042,7 +1042,7 @@ msgstr "&Угол / Равенство углов"
 
 #: graphicswin.cpp:149
 msgid "Reference An&gle"
-msgstr ""
+msgstr "Справочный &угол"
 
 #: graphicswin.cpp:150
 msgid "Other S&upplementary Angle"
@@ -1050,7 +1050,7 @@ msgstr "Переключить сме&жный угол"
 
 #: graphicswin.cpp:151
 msgid "Toggle R&eference Dim"
-msgstr ""
+msgstr "Переключить &режим справочного размера"
 
 #: graphicswin.cpp:153
 msgid "&Horizontal"
@@ -1477,7 +1477,7 @@ msgstr "контур имеет самопересечения!"
 
 #: groupmesh.cpp:727
 msgid "zero-length edge!"
-msgstr "ребро нулевой длины!"
+msgstr "отрезок нулевой длины!"
 
 #: importmesh.cpp:136
 msgid "Text-formated STL files are not currently supported"
@@ -1550,11 +1550,11 @@ msgstr "Настройки стиля"
 
 #: mouse.cpp:623
 msgid "Select Edge Chain"
-msgstr "Выделить последовательность граней"
+msgstr "Выделить последовательность ребер"
 
 #: mouse.cpp:629
 msgid "Toggle Reference Dimension"
-msgstr ""
+msgstr "Переключить справочный размер"
 
 #: mouse.cpp:635
 msgid "Other Supplementary Angle"
@@ -2257,7 +2257,7 @@ msgstr "Создать группу в новой рабочей плоскос�
 
 #: toolbar.cpp:82
 msgid "New group in 3d"
-msgstr "Новая группа в 3D"
+msgstr "Новая группа в 3d"
 
 #: toolbar.cpp:84
 msgid "New group linking / assembling file"
