@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
 "POT-Creation-Date: 2023-01-20 16:45+0200\n"
-"PO-Revision-Date: 2023-04-04 22:35+0200\n"
+"PO-Revision-Date: 2023-04-04 22:39+0200\n"
 "Last-Translator: Alexandre Prokoudine <alexandre.prokoudine@gmail.com>\n"
 "Language-Team: Russian <gnome-cyr@lists.gnome.org>\n"
 "Language: ru\n"
@@ -1477,7 +1477,7 @@ msgstr "контур имеет самопересечения!"
 
 #: groupmesh.cpp:727
 msgid "zero-length edge!"
-msgstr "отрезок нулевой длины!"
+msgstr "ребро нулевой длины!"
 
 #: importmesh.cpp:136
 msgid "Text-formated STL files are not currently supported"
