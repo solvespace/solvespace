@@ -365,7 +365,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
         Printf(halfLine, endString);
         return;
     }
-    
+
     va_list vl;
     va_start(vl, fmt);
 
@@ -397,32 +397,32 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
             switch(*fmt) {
                 case 'd': {
                     int v = va_arg(vl, int);
-                    sprintf(buf, "%d", v);
+                    snprintf(buf, sizeof(buf), "%d", v);
                     break;
                 }
                 case 'x': {
                     unsigned int v = va_arg(vl, unsigned int);
-                    sprintf(buf, "%08x", v);
+                    snprintf(buf, sizeof(buf), "%08x", v);
                     break;
                 }
                 case '@': {
                     double v = va_arg(vl, double);
-                    sprintf(buf, "%.2f", v);
+                    snprintf(buf, sizeof(buf), "%.2f", v);
                     break;
                 }
                 case '2': {
                     double v = va_arg(vl, double);
-                    sprintf(buf, "%s%.2f", v < 0 ? "" : " ", v);
+                    snprintf(buf, sizeof(buf), "%s%.2f", v < 0 ? "" : " ", v);
                     break;
                 }
                 case '3': {
                     double v = va_arg(vl, double);
-                    sprintf(buf, "%s%.3f", v < 0 ? "" : " ", v);
+                    snprintf(buf, sizeof(buf), "%s%.3f", v < 0 ? "" : " ", v);
                     break;
                 }
                 case '#': {
                     double v = va_arg(vl, double);
-                    sprintf(buf, "%.3f", v);
+                    snprintf(buf, sizeof(buf), "%.3f", v);
                     break;
                 }
                 case 's': {
@@ -436,7 +436,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     if(v == 0) {
                         strcpy(buf, "");
                     } else {
-                        sprintf(buf, "%c", v);
+                        snprintf(buf, sizeof(buf), "%c", v);
                     }
                     break;
                 }

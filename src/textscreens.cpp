@@ -120,7 +120,7 @@ void TextWindow::ShowListOfGroups() {
             if(dof > 999) {
               strcpy(sdof, "###");
             } else {
-              sprintf(sdof, "%-3d", dof);
+              snprintf(sdof, sizeof(sdof), "%-3d", dof);
             }
         }
         std::string suffix;
@@ -440,7 +440,7 @@ void TextWindow::ShowGroupInfo() {
             &TextWindow::ScreenChangePitchOption,
             g->valB != 0 ? CHECK_TRUE : CHECK_FALSE);
 
-        Printf(false, ""); // blank line    
+        Printf(false, ""); // blank line
     }
 
     if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
