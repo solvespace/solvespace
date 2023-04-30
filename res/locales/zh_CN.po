@@ -1109,7 +1109,7 @@ msgstr "语言(&L)"
 
 #: graphicswin.cpp:185
 msgid "&Website / Manual"
-msgstr "网页/手册(&W)"
+msgstr "网站/手册(&W)"
 
 #: graphicswin.cpp:186
 msgid "&Go to GitHub commit"
