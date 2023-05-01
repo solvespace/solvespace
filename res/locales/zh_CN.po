@@ -500,8 +500,8 @@ msgstr ""
 "角度约束的选择错误。此约束可用于：\n"
 "\n"
 "    * 两条线段\n"
-"    * 一条线段和一条法线\n"
 "    * 两条法线\n"
+"    * 一条线段和一条法线\n"
 "之间的角度\n"
 "    * 四条线段或法线（AB之间与CD之间角度相等）\n"
 "    * 三条线段或法线（AB之间与BC之间角度相等）\n"
@@ -1723,7 +1723,7 @@ msgstr "文件已修改"
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
-msgstr "是否保存您对草图“%s”的修改？"
+msgstr "是否保存您对草图\n“%s”\n的修改？"
 
 #: solvespace.cpp:627
 msgctxt "dialog"
@@ -1761,7 +1761,7 @@ msgid ""
 "is probably not what you want; hide them by clicking the link at the top of "
 "the text window."
 msgstr ""
-"当前显示约束，并将导出至刀具路径。这可能不是你想要的；点击文本窗口顶部的按钮来隐藏它们"
+"当前显示约束，并将导出至刀具路径。这可能不是你想要的；点击文本窗口顶部的按钮来隐藏它们。"
 
 #: solvespace.cpp:812
 #, c-format
