@@ -1366,7 +1366,7 @@ msgstr "(未命名)"
 
 #: groupmesh.cpp:710
 msgid "not closed contour, or not all same style!"
-msgstr "轮廓未闭合, 或样式不一致!"
+msgstr "轮廓未闭合，或样式不一致！"
 
 #: groupmesh.cpp:723
 msgid "points not all coplanar!"
