@@ -270,10 +270,10 @@ void SSurface::TrimFromEdgeList(SEdgeList *el, bool asUv) {
 
 static bool KeepRegion(SSurface::CombineAs type, bool opA, SShell::Class shell, SShell::Class orig)
 {
-    bool inShell = (shell == SShell::Class::INSIDE),
-         outSide = (shell == SShell::Class::OUTSIDE),
-         inSame  = (shell == SShell::Class::COINC_SAME),
-         inOrig  = (orig == SShell::Class::INSIDE);
+    bool inShell = (shell == SShell::Class::SURF_INSIDE),
+         outSide = (shell == SShell::Class::SURF_OUTSIDE),
+         inSame  = (shell == SShell::Class::SURF_COINC_SAME),
+         inOrig  = (orig == SShell::Class::SURF_INSIDE);
 
     if(!inOrig) return false;
     switch(type) {
@@ -318,29 +318,29 @@ static void TagByClassifiedEdge(SBspUv::Class bspclass, SShell::Class *indir, SS
 {
     switch(bspclass) {
         case SBspUv::Class::INSIDE:
-            *indir  = SShell::Class::INSIDE;
-            *outdir = SShell::Class::INSIDE;
+            *indir  = SShell::Class::SURF_INSIDE;
+            *outdir = SShell::Class::SURF_INSIDE;
             break;
 
         case SBspUv::Class::OUTSIDE:
-            *indir  = SShell::Class::OUTSIDE;
-            *outdir = SShell::Class::OUTSIDE;
+            *indir  = SShell::Class::SURF_OUTSIDE;
+            *outdir = SShell::Class::SURF_OUTSIDE;
             break;
 
         case SBspUv::Class::EDGE_PARALLEL:
-            *indir  = SShell::Class::INSIDE;
-            *outdir = SShell::Class::OUTSIDE;
+            *indir  = SShell::Class::SURF_INSIDE;
+            *outdir = SShell::Class::SURF_OUTSIDE;
             break;
 
         case SBspUv::Class::EDGE_ANTIPARALLEL:
-            *indir  = SShell::Class::OUTSIDE;
-            *outdir = SShell::Class::INSIDE;
+            *indir  = SShell::Class::SURF_OUTSIDE;
+            *outdir = SShell::Class::SURF_INSIDE;
             break;
 
         default:
             dbp("TagByClassifiedEdge: fail!");
-            *indir  = SShell::Class::OUTSIDE;
-            *outdir = SShell::Class::OUTSIDE;
+            *indir  = SShell::Class::SURF_OUTSIDE;
+            *outdir = SShell::Class::SURF_OUTSIDE;
             break;
     }
 }
@@ -612,8 +612,8 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
         SShell::Class indir_shell, outdir_shell, indir_orig, outdir_orig;
 
-        indir_orig  = SShell::Class::INSIDE;
-        outdir_orig = SShell::Class::OUTSIDE;
+        indir_orig  = SShell::Class::SURF_INSIDE;
+        outdir_orig = SShell::Class::SURF_OUTSIDE;
 
         agnst->ClassifyEdge(&indir_shell, &outdir_shell,
                             ret.PointAt(auv), ret.PointAt(buv), pt,
