@@ -456,13 +456,11 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                     }
                 }
 
+                Vector dp = nb.Cross(na).WithMagnitude(1.0);
+                if(!fwd) dp = dp.ScaledBy(-1.0);
                 int i;
                 for(i = 0; i < 20; i++) {
-                    Vector dp = nb.Cross(na);
-                    if(!fwd) dp = dp.ScaledBy(-1);
-                    dp = dp.WithMagnitude(step);
-
-                    np = start.Plus(dp);
+                    np = start.Plus(dp.ScaledBy(step));
                     npc = ClosestPointOnThisAndSurface(b, np);
                     tol = (npc.Minus(np)).Magnitude();
 
