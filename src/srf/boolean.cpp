@@ -438,13 +438,12 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
         double t;
         sc->exact.ClosestPointTo(*pt, &t, /*mustConverge=*/false);
         *pt = sc->exact.PointAt(t);
-        ClosestPointTo(*pt, &muv);
     } else if(!sc->isExact) {
         SSurface *trimmedA = sc->GetSurfaceA(sha, shb),
                        *trimmedB = sc->GetSurfaceB(sha, shb);
         *pt = trimmedA->ClosestPointOnThisAndSurface(trimmedB, *pt);
-        ClosestPointTo(*pt, &muv);
     }
+    ClosestPointTo(*pt, &muv);
 
     *surfn = NormalAt(muv.x, muv.y);
 
@@ -472,6 +471,9 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
            pout  = PointAt(muv.Plus(enuv));
     *enin  = pin.Minus(*pt),
     *enout = pout.Minus(*pt);
+// ideally this should work (fail screwdriver file)    
+//    *enin = enxyz.ScaledBy(-1.0);
+//    *enout = enxyz;
 }
 
 //-----------------------------------------------------------------------------
