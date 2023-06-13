@@ -53,6 +53,20 @@ static std::vector <std::string> splitString(const std::string line) {
     return v;
 }
 
+static bool isHoleDuplicate(EntityList *el, double x, double y, double r) {
+    bool duplicate = false;
+    for(int i = 0; i < el->n && !duplicate; i++) {
+        Entity &en = el->Get(i);
+        if(en.type != Entity::Type::CIRCLE)
+            continue;
+        Entity *distance = el->FindById(en.distance);
+        Entity *center   = el->FindById(en.point[0]);
+        duplicate =
+            center->actPoint.x == x && center->actPoint.y == y && distance->actDistance == r;
+    }
+    return duplicate;
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // Functions for linking an IDF file - we need to create entities that
 // get remapped into a linked group similar to linking .slvs files
@@ -462,9 +476,10 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
                     double d = stof(values[0]);
                     double x = stof(values[1]);
                     double y = stof(values[2]);
+                    bool duplicate = isHoleDuplicate(el, x, y, d / 2);
                     // Only show holes likely to be useful in MCAD to reduce complexity.
-                    if((d > 1.7) || (values[5].compare(0,3,"PIN") == 0)
-                         || (values[5].compare(0,3,"MTG") == 0)) {
+                    if(((d > 1.7) || (values[5].compare(0,3,"PIN") == 0)
+                         || (values[5].compare(0,3,"MTG") == 0)) && !duplicate) {
                         // create the entity
                         Vector cent = Vector::From(x,y,0.0);
                         hEntity hcent = newPoint(el, &entityCount, cent);
