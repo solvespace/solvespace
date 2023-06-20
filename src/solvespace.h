@@ -550,7 +550,7 @@ public:
 
     void UndoEnableMenus();
     void UndoRemember();
-    void UndoUndo();
+    void UndoUndo(bool save_undo = true);
     void UndoRedo();
     void PushFromCurrentOnto(UndoStack *uk);
     void PopOntoCurrentFrom(UndoStack *uk);
