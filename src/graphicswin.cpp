@@ -43,7 +43,7 @@ const MenuEntry Menu[] = {
 { 1, N_("&Open..."),                    Command::OPEN,             C|'o',   KN, mFile  },
 { 1, N_("Open &Recent"),                Command::OPEN_RECENT,      0,       KN, mFile  },
 { 1, N_("&Save"),                       Command::SAVE,             C|'s',   KN, mFile  },
-{ 1, N_("Save &As..."),                 Command::SAVE_AS,          0,       KN, mFile  },
+{ 1, N_("Save &As..."),                 Command::SAVE_AS,          C|S|'s', KN, mFile  },
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Export &Image..."),            Command::EXPORT_IMAGE,     0,       KN, mFile  },
 { 1, N_("Export 2d &View..."),          Command::EXPORT_VIEW,      0,       KN, mFile  },
