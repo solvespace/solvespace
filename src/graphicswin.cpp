@@ -1102,6 +1102,16 @@ void GraphicsWindow::MenuEdit(Command id) {
                     }
                 }
             }
+            // some pending operations need an Undo to properly clean up on ESC
+            if ( (SS.GW.pending.operation == Pending::DRAGGING_NEW_POINT)
+              || (SS.GW.pending.operation == Pending::DRAGGING_NEW_LINE_POINT)
+              || (SS.GW.pending.operation == Pending::DRAGGING_NEW_ARC_POINT)
+              || (SS.GW.pending.operation == Pending::DRAGGING_NEW_CUBIC_POINT)
+              || (SS.GW.pending.operation == Pending::DRAGGING_NEW_RADIUS) )
+            {
+              SS.GW.ClearSuper();
+              SS.UndoUndo();
+            }
             SS.GW.ClearSuper();
             SS.TW.HideEditControl();
             SS.nakedEdges.Clear();
