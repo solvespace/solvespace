@@ -23,6 +23,7 @@ Translations (now in 10 languages!)
 * Update translation for French fr_FR and Russian ru_RU.
 
 Other:
+* Pressing ESC while drawing a sketch entity now deletes the entity rather than completing it.
 * Merged and improved the experimental Emscripten port (web version).
 * Better Flatpack support.
 * More entity types described in the text screens.
