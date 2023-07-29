@@ -1,0 +1,21 @@
+{
+  "name": "slvs",
+  "version": "0.0.0",
+  "description": "<img src=\"res/freedesktop/solvespace-scalable.svg\" width=\"70\" height=\"70\" alt=\"SolveSpace Logo\" align=\"left\">",
+  "main": "slvs.js",
+  "types": "slvs.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/solvespace/solvespace.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "GNU GPL V3",
+  "bugs": {
+    "url": "https://github.com/solvespace/solvespace/issues"
+  },
+  "homepage": "http://solvespace.com"
+}

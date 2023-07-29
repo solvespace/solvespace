@@ -421,16 +421,15 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
 
     bool rankOk;
 
-/*
-    int x;
-    dbp("%d equations", eq.n);
-    for(x = 0; x < eq.n; x++) {
-        dbp("  %.3f = %s = 0", eq[x].e->Eval(), eq[x].e->Print());
-    }
-    dbp("%d parameters", param.n);
-    for(x = 0; x < param.n; x++) {
-        dbp("   param %08x at %.3f", param[x].h.v, param[x].val);
-    } */
+    // int x;
+    // printf("%d equations", eq.n);
+    // for(x = 0; x < eq.n; x++) {
+    //     printf("  %.3f = %s = 0", eq[x].e->Eval(), eq[x].e->Print().c_str());
+    // }
+    // printf("%d parameters", param.n);
+    // for(x = 0; x < param.n; x++) {
+    //     printf("   param %08x at %.3f", param[x].h.v, param[x].val);
+    // }
 
     // All params and equations are assigned to group zero.
     param.ClearTags();
