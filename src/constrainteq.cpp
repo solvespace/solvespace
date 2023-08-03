@@ -248,6 +248,9 @@ void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, const ExprVector &v,
 }
 
 void ConstraintBase::Generate(IdList<Param,hParam> *l) {
+    if(expression != "") {
+        Expr::From(expression.c_str(), false, l);
+    }
     switch(type) {
         case Type::PARALLEL:
         case Type::CUBIC_LINE_TANGENT:
@@ -270,9 +273,17 @@ void ConstraintBase::Generate(IdList<Param,hParam> *l) {
 
 void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                                        bool forReference) const {
-    if(reference && !forReference) return;
+    Expr *exA = {};
+    if(reference && !forReference) {
+        return;
+    } else {
+        if(expression != "") {
+            exA = Expr::From(expression.c_str(), false, &SK.param, NULL);
+        } else {
+            exA = Expr::From(valA);
+        }
+    }
 
-    Expr *exA = Expr::From(valA);
     switch(type) {
         case Type::PT_PT_DISTANCE:
             AddEq(l, Distance(workplane, ptA, ptB)->Minus(exA), 0);

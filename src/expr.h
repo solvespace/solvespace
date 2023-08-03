@@ -98,7 +98,8 @@ public:
                                        IdList<Param,hParam> *thenTry) const;
 
     static Expr *Parse(const std::string &input, std::string *error);
-    static Expr *From(const std::string &input, bool popUpError);
+    static Expr *From(const std::string &input, bool popUpError,
+        IdList<Param, hParam> *params = NULL, int *paramsCount = NULL, hConstraint hc = {0});
 };
 
 class ExprVector {

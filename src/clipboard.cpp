@@ -244,6 +244,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         c.reference = cc->reference;
         c.disp = cc->disp;
         c.comment = cc->comment;
+        c.expression = cc->expression;
         bool dontAddConstraint = false;
         switch(c.type) {
             case Constraint::Type::COMMENT:

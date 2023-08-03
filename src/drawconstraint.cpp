@@ -26,6 +26,9 @@ std::string Constraint::Label() const {
         // valA has units of distance
         result = SS.MmToStringSI(fabs(valA));
     }
+    if(expression != "") {
+        result = expression;
+    }
     if(reference) {
         result += " REF";
     }
