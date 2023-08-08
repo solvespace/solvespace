@@ -10,7 +10,7 @@ on:
 
 jobs:
   cancel_previous_runs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     name: Cancel Previous Runs
     permissions:
       actions: write
