@@ -12,14 +12,16 @@ jobs:
   cancel_previous_runs:
     runs-on: ubuntu-latest
     name: Cancel Previous Runs
+    permissions:
+      actions: write
     steps:
-    - uses: styfle/cancel-workflow-action@0.8.0
+    - uses: styfle/cancel-workflow-action@0.9.1
       with:
         access_token: ${{ github.token }}
 
   test_ubuntu:
     needs: [cancel_previous_runs]
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     name: Test Ubuntu
     steps:
     - uses: actions/checkout@v2
@@ -43,7 +45,7 @@ jobs:
 
   test_macos:
     needs: [cancel_previous_runs]
-    runs-on: macos-10.15
+    runs-on: macos-latest
     name: Test macOS
     steps:
     - uses: actions/checkout@v2
@@ -91,7 +93,7 @@ jobs:
   build_release_macos:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Build Release macOS
-    runs-on: macos-10.15
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
     - name: Install Dependencies
