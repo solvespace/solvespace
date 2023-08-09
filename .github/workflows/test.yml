@@ -12,7 +12,7 @@ on:
 
 jobs:
   test_ubuntu:
-      runs-on: ubuntu-18.04
+      runs-on: ubuntu-latest
       name: Test Ubuntu
       steps:
       - uses: actions/checkout@v2
@@ -34,7 +34,7 @@ jobs:
       shell: bash
 
   test_macos:
-    runs-on: macos-10.15
+    runs-on: macos-latest
     name: Test macOS
     steps:
     - uses: actions/checkout@v2
