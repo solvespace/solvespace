@@ -1398,6 +1398,9 @@ public:
         gtkDialog.add_button(isSave ? C_("button", "_Save")
                                     : C_("button", "_Open"), Gtk::RESPONSE_OK);
         gtkDialog.set_default_response(Gtk::RESPONSE_OK);
+        if(isSave) {
+            gtkDialog.set_do_overwrite_confirmation(true);
+        }
         InitFileChooser(gtkDialog);
     }
 
@@ -1431,6 +1434,9 @@ public:
             isSave ? C_("button", "_Save")
                    : C_("button", "_Open"),
             C_("button", "_Cancel"));
+        if(isSave) {
+            gtkNative->set_do_overwrite_confirmation(true);
+        }
         // Seriously, GTK?!
         InitFileChooser(*gtkNative.operator->());
     }
