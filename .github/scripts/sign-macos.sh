@@ -59,7 +59,7 @@ hdiutil create -srcfolder "${app}" "${dmg}"
 codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${dmg}"
 
 # notarize and store request uuid in variable
-notarize_uuid=$(xcrun altool --notarize-app --primary-bundle-id "${bundle_id}" --username "${MACOS_APPSTORE_USERNAME}" --password "${MACOS_APPSTORE_APP_PASSWORD}" --file "${dmg}" 2>&1 | grep RequestUUID | awk '{print $3'})
+notarize_uuid=$(xcrun altool --notarize-app --primary-bundle-id "${bundle_id}" --username "${MACOS_APPSTORE_USERNAME}" --password "${MACOS_APPSTORE_APP_PASSWORD}" --file "${dmg}" | grep RequestUUID | awk '{print $3'})
 
 echo $notarize_uuid
 
