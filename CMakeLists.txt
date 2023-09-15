@@ -1,5 +1,42 @@
 # cmake configuration
+
 cmake_minimum_required(VERSION 3.9...3.19)
+
+if (USE_QT_GUI)
+	message("defined gen_user pror")
+	function(GenUserProp ProjName DebugLibraries ReleaseLibraries QTPluginPath)
+	if(WIN32)
+		set (DebugOutput "PATH=${DebugLibraries}%PATH%\nQT_PLUGIN_PATH=${QTPluginPath}")
+		set (ReleaseOutput "PATH=${ReleaseLibraries}%PATH%\nQT_PLUGIN_PATH=${QTPluginPath}")
+		set (Output 
+		"<?xml version=\"1.0\" encoding=\"utf-8\"?> \n"
+		"<Project ToolsVersion=\"14.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\"> \n"
+		"  <PropertyGroup Condition=\"\'$(Configuration)|$(Platform)\'==\'Debug|x64\'\"> \n"
+		"    <LocalDebuggerEnvironment>" "${DebugOutput}" "</LocalDebuggerEnvironment> \n"
+		"  </PropertyGroup> \n"
+		"  <PropertyGroup Condition=\"\'$(Configuration)|$(Platform)\'==\'Release|x64\'\"> \n"
+		"    <LocalDebuggerEnvironment>" "${ReleaseOutput}" "</LocalDebuggerEnvironment> \n"
+		"  </PropertyGroup> \n"
+		"</Project>")
+		file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/${ProjName}.Cpp.user.props" ${Output})
+		set_target_properties(${ProjName} PROPERTIES VS_USER_PROPS "${ProjName}.Cpp.user.props")
+	endif(WIN32)
+	endfunction()
+endif()
+
+#find_package(Qt5 COMPONENTS Core Gui Widgets OpenGL  REQUIRED)
+#qt5_wrap_ui(ui_TestDialogfrms forms/TestDialog.ui)
+
+#include_directories(${CMAKE_CURRENT_LIST_DIR}/include)
+
+#add_executable(TestDialog 
+#	forms/TestDialog.ui
+#	include/platform.h
+#	include/SolveSpaceFatalErrorFun.h
+#	include/SolveSpaceFileDialog.h
+#	include/SolveSpaceMessageDialog.h
+#	${ui_TestDialogfrms}
+#)
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR
@@ -34,34 +71,36 @@ endif()
 # NOTE TO PACKAGERS: The embedded git commit hash is critical for rapid bug triage when the builds
 # can come from a variety of sources. If you are mirroring the sources or otherwise build when
 # the .git directory is not present, please comment the following line:
-include(GetGitCommitHash)
+#include(GetGitCommitHash)
 # and instead uncomment the following, adding the complete git hash of the checkout you are using:
 # set(GIT_COMMIT_HASH 0000000000000000000000000000000000000000)
 
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
-project(solvespace
+project(solvespaceQt
     VERSION 3.1
     LANGUAGES C CXX ASM)
 
+set(USE_QT_GUI        ON CACHE BOOL
+    "Whether the Qt library used to build graphical interface")
 set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
-set(ENABLE_CLI        ON CACHE BOOL
-    "Whether the command line interface is enabled")
-set(ENABLE_TESTS      ON  CACHE BOOL
-    "Whether the test suite will be built and run")
-set(ENABLE_COVERAGE   OFF CACHE BOOL
-    "Whether code coverage information will be collected")
-set(ENABLE_SANITIZERS OFF CACHE BOOL
-    "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
-set(ENABLE_OPENMP     OFF CACHE BOOL
-    "Whether geometric operations will be parallelized using OpenMP")
-set(ENABLE_LTO        OFF CACHE BOOL
-    "Whether interprocedural (global) optimizations are enabled")
+#set(ENABLE_CLI        ON CACHE BOOL
+#    "Whether the command line interface is enabled")
+#set(ENABLE_TESTS      ON  CACHE BOOL
+#    "Whether the test suite will be built and run")
+#set(ENABLE_COVERAGE   OFF CACHE BOOL
+#    "Whether code coverage information will be collected")
+#set(ENABLE_SANITIZERS OFF CACHE BOOL
+#    "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
+#set(ENABLE_OPENMP     OFF CACHE BOOL
+#    "Whether geometric operations will be parallelized using OpenMP")
+#set(ENABLE_LTO        OFF CACHE BOOL
+#    "Whether interprocedural (global) optimizations are enabled")
 option(FORCE_VENDORED_Eigen3
     "Whether we should use our bundled Eigen even in the presence of a system copy"
     OFF)
 
-set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
+set(OPENGL 1 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/bin)
@@ -111,75 +150,75 @@ if(CMAKE_SYSTEM_PROCESSOR STREQUAL "i686" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "X8
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${FLOAT_FLAGS}")
 endif()
 
-if(ENABLE_LTO)
-    include(CheckIPOSupported)
-    check_ipo_supported()
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
-endif()
-
-if(ENABLE_OPENMP)
-    find_package( OpenMP REQUIRED )
-    if(OPENMP_FOUND)
-        add_library(slvs_openmp INTERFACE)
-        target_compile_options(slvs_openmp INTERFACE ${OpenMP_CXX_FLAGS})
-        target_link_libraries(slvs_openmp INTERFACE
-            ${OpenMP_CXX_LIBRARIES})
-        target_include_directories(slvs_openmp INTERFACE SYSTEM
-            ${OpenMP_CXX_INCLUDE_DIRS})
-        message(STATUS "found OpenMP, compiling with flags: " ${OpenMP_CXX_FLAGS} )
-    endif()
-endif()
-
+#if(ENABLE_LTO)
+#    include(CheckIPOSupported)
+#    check_ipo_supported()
+#    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+#endif()
+#
+#if(ENABLE_OPENMP)
+#    find_package( OpenMP REQUIRED )
+#    if(OPENMP_FOUND)
+#        add_library(slvs_openmp INTERFACE)
+#        target_compile_options(slvs_openmp INTERFACE ${OpenMP_CXX_FLAGS})
+#        target_link_libraries(slvs_openmp INTERFACE
+#            ${OpenMP_CXX_LIBRARIES})
+#        target_include_directories(slvs_openmp INTERFACE SYSTEM
+#            ${OpenMP_CXX_INCLUDE_DIRS})
+#        message(STATUS "found OpenMP, compiling with flags: " ${OpenMP_CXX_FLAGS} )
+#    endif()
+#endif()
+#
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     set(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_EXE_LINKER_FLAGS}")
 endif()
 
-if(ENABLE_SANITIZERS)
-    if(NOT SANITIZERS)
-        set(SANITIZERS "address;undefined")
-    endif()
-
-    if("thread" IN_LIST SANITIZERS)
-        list(REMOVE_ITEM SANITIZERS "thread")
-        list(APPEND SANITIZE_OPTIONS thread)
-    endif()
-    if("address" IN_LIST SANITIZERS)
-        list(REMOVE_ITEM SANITIZERS "address")
-        list(APPEND SANITIZE_OPTIONS address)
-    endif()
-    if("undefined" IN_LIST SANITIZERS)
-        list(REMOVE_ITEM SANITIZERS "undefined")
-        list(APPEND SANITIZE_OPTIONS alignment bounds)
-        list(APPEND SANITIZE_OPTIONS shift signed-integer-overflow integer-divide-by-zero)
-        list(APPEND SANITIZE_OPTIONS null bool enum)
-        list(APPEND SANITIZE_OPTIONS return)
-    endif()
-    if(SANITIZERS)
-        message(FATAL_ERROR "Unknown sanitizer(s) ${SANITIZERS}")
-    else()
-        message(STATUS "Using sanitizer options ${SANITIZE_OPTIONS}")
-    endif()
-
-    string(REPLACE ";" "," SANITIZE_OPTIONS "${SANITIZE_OPTIONS}")
-
-    if (NOT APPLE)
-        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS} -fno-sanitize-recover=address,undefined")
-    else()
-        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS}")
-    endif()
-
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fuse-ld=gold")
-    else()
-        message(FATAL_ERROR "Sanitizers are only available when using GCC or Clang")
-    endif()
-
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZE_FLAGS}")
-endif()
-
+#if(ENABLE_SANITIZERS)
+#    if(NOT SANITIZERS)
+#        set(SANITIZERS "address;undefined")
+#    endif()
+#
+#    if("thread" IN_LIST SANITIZERS)
+#        list(REMOVE_ITEM SANITIZERS "thread")
+#        list(APPEND SANITIZE_OPTIONS thread)
+#    endif()
+#    if("address" IN_LIST SANITIZERS)
+#        list(REMOVE_ITEM SANITIZERS "address")
+#        list(APPEND SANITIZE_OPTIONS address)
+#    endif()
+#    if("undefined" IN_LIST SANITIZERS)
+#        list(REMOVE_ITEM SANITIZERS "undefined")
+#        list(APPEND SANITIZE_OPTIONS alignment bounds)
+#        list(APPEND SANITIZE_OPTIONS shift signed-integer-overflow integer-divide-by-zero)
+#        list(APPEND SANITIZE_OPTIONS null bool enum)
+#        list(APPEND SANITIZE_OPTIONS return)
+#    endif()
+#    if(SANITIZERS)
+#        message(FATAL_ERROR "Unknown sanitizer(s) ${SANITIZERS}")
+#    else()
+#        message(STATUS "Using sanitizer options ${SANITIZE_OPTIONS}")
+#    endif()
+#
+#    string(REPLACE ";" "," SANITIZE_OPTIONS "${SANITIZE_OPTIONS}")
+#
+#    if (NOT APPLE)
+#        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS} -fno-sanitize-recover=address,undefined")
+#    else()
+#        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS}")
+#    endif()
+#
+#    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+#        set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+#    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+#        set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fuse-ld=gold")
+#    else()
+#        message(FATAL_ERROR "Sanitizers are only available when using GCC or Clang")
+#    endif()
+#
+#    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
+#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZE_FLAGS}")
+#endif()
+#
 # common dependencies
 
 if(APPLE)
@@ -215,134 +254,198 @@ if(NOT EXISTS "${EIGEN3_INCLUDE_DIRS}")
     message(FATAL_ERROR "Eigen 3 not found on system or in-tree")
 endif()
 
+if(NOT USE_QT_GUI)
+	if(WIN32 OR APPLE OR EMSCRIPTEN)
+		# On Win32 and macOS we use vendored packages, since there is little to no benefit
+		# to trying to find system versions. In particular, trying to link to libraries from
+		# Homebrew or macOS system libraries into the .app file is highly likely to result
+		# in incompatibilities after upgrades.
 
-if(WIN32 OR APPLE OR EMSCRIPTEN)
-    # On Win32 and macOS we use vendored packages, since there is little to no benefit
-    # to trying to find system versions. In particular, trying to link to libraries from
-    # Homebrew or macOS system libraries into the .app file is highly likely to result
-    # in incompatibilities after upgrades.
+		include(FindVendoredPackage)
+		include(AddVendoredSubdirectory)
 
-    include(FindVendoredPackage)
-    include(AddVendoredSubdirectory)
+		set(FORCE_VENDORED_ZLIB     ON)
+		set(FORCE_VENDORED_PNG      ON)
+		set(FORCE_VENDORED_Freetype ON)
 
-    set(FORCE_VENDORED_ZLIB     ON)
-    set(FORCE_VENDORED_PNG      ON)
-    set(FORCE_VENDORED_Freetype ON)
+		find_vendored_package(ZLIB zlib
+			ZLIB_LIBRARY            zlibstatic
+			ZLIB_INCLUDE_DIR        ${CMAKE_SOURCE_DIR}/extlib/zlib)
+		list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
 
-    find_vendored_package(ZLIB zlib
-        ZLIB_LIBRARY            zlibstatic
-        ZLIB_INCLUDE_DIR        ${CMAKE_SOURCE_DIR}/extlib/zlib)
-    list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
+		find_vendored_package(PNG libpng
+			SKIP_INSTALL_ALL        ON
+			PNG_LIBRARY             png_static
+			PNG_ARM_NEON            "off"
+			PNG_SHARED              OFF
+			PNG_STATIC              ON
+			PNG_EXECUTABLES         OFF
+			PNG_TESTS               OFF
+			PNG_FRAMEWORK           OFF
+			PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
+		list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
-    find_vendored_package(PNG libpng
-        SKIP_INSTALL_ALL        ON
-        PNG_LIBRARY             png_static
-        PNG_ARM_NEON            "off"
-        PNG_SHARED              OFF
-        PNG_STATIC              ON
-        PNG_EXECUTABLES         OFF
-        PNG_TESTS               OFF
-        PNG_FRAMEWORK           OFF
-        PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
-    list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
+		find_vendored_package(Freetype freetype
+			WITH_ZLIB               OFF
+			WITH_BZip2              OFF
+			WITH_PNG                OFF
+			WITH_HarfBuzz           OFF
+			FREETYPE_LIBRARY        freetype
+			FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
 
-    find_vendored_package(Freetype freetype
-        WITH_ZLIB               OFF
-        WITH_BZip2              OFF
-        WITH_PNG                OFF
-        WITH_HarfBuzz           OFF
-        FREETYPE_LIBRARY        freetype
-        FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
+		#    message(STATUS "Using in-tree pixman")
+		#set(PIXMAN_FOUND            YES)
+		#set(PIXMAN_LIBRARY          pixman)
+		#set(PIXMAN_BUILD_TESTS      OFF CACHE BOOL "")
+		#set(PIXMAN_BUILD_DEMOS      OFF CACHE BOOL "")
 
-    message(STATUS "Using in-tree pixman")
-    set(PIXMAN_FOUND            YES)
-    set(PIXMAN_LIBRARY          pixman)
-    set(PIXMAN_BUILD_TESTS      OFF CACHE BOOL "")
-    set(PIXMAN_BUILD_DEMOS      OFF CACHE BOOL "")
+		#set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
+		#list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
+		#add_vendored_subdirectory(extlib/pixman)
 
-    set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
-    list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
-    add_vendored_subdirectory(extlib/pixman)
+		#    message(STATUS "Using in-tree cairo")
+		#add_vendored_subdirectory(extlib/cairo)
+		#set(CAIRO_FOUND             YES)
+		#set(CAIRO_LIBRARIES         cairo)
+		#    set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
+		#list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
+	else()
+		# On Linux and BSDs we're a good citizen and link to system libraries.
+		find_package(Backtrace)
+		find_package(PkgConfig REQUIRED)
+		find_package(ZLIB REQUIRED)
+		find_package(PNG REQUIRED)
+		find_package(Freetype REQUIRED)
+		find_package(Cairo REQUIRED)
+	endif()
 
-    message(STATUS "Using in-tree cairo")
-    add_vendored_subdirectory(extlib/cairo)
-    set(CAIRO_FOUND             YES)
-    set(CAIRO_LIBRARIES         cairo)
-    set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
-    list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
+	# GUI dependencies
+
+	if(ENABLE_GUI)
+		if(WIN32)
+			if(OPENGL STREQUAL "3")
+				message(STATUS "Using in-tree ANGLE")
+				set(ANGLE_STATIC            ON  CACHE INTERNAL "")
+				set(ANGLE_ENABLE_D3D9       ON  CACHE INTERNAL "")
+				set(ANGLE_ENABLE_D3D11      ON  CACHE INTERNAL "")
+				set(ANGLE_ENABLE_OPENGL     ON  CACHE INTERNAL "")
+				set(ANGLE_ENABLE_ESSL       ON  CACHE INTERNAL "")
+				set(ANGLE_ENABLE_GLSL       ON  CACHE INTERNAL "")
+				set(ANGLE_ENABLE_HLSL       ON  CACHE INTERNAL "")
+				add_vendored_subdirectory(extlib/angle)
+				set(OPENGL_LIBRARIES        EGL GLESv2)
+				set(OPENGL_INCLUDE_DIR      ${CMAKE_SOURCE_DIR}/extlib/angle/include)
+			else()
+				find_package(OpenGL REQUIRED)
+			endif()
+
+			if(MSVC AND ${CMAKE_SIZEOF_VOID_P} EQUAL 4)
+				message(STATUS "Using prebuilt SpaceWare")
+				set(SPACEWARE_FOUND TRUE)
+				set(SPACEWARE_INCLUDE_DIR
+					"${CMAKE_SOURCE_DIR}/extlib/si")
+				set(SPACEWARE_LIBRARIES
+					"${CMAKE_SOURCE_DIR}/extlib/si/siapp.lib")
+			endif()
+		elseif(APPLE)
+			find_package(OpenGL REQUIRED)
+			find_library(APPKIT_LIBRARY AppKit REQUIRED)
+		elseif(EMSCRIPTEN)
+			# Everything is built in
+		else()
+			find_package(OpenGL REQUIRED)
+			find_package(SpaceWare)
+			pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
+			pkg_check_modules(JSONC REQUIRED json-c)
+			pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.18 pangomm-1.4 x11)
+		endif()
+	endif()
 else()
-    # On Linux and BSDs we're a good citizen and link to system libraries.
-    find_package(Backtrace)
-    find_package(PkgConfig REQUIRED)
-    find_package(ZLIB REQUIRED)
-    find_package(PNG REQUIRED)
-    find_package(Freetype REQUIRED)
-    find_package(Cairo REQUIRED)
+	if(WIN32)
+		# On Win32 and macOS we use vendored packages, since there is little to no benefit
+		# to trying to find system versions. In particular, trying to link to libraries from
+		# Homebrew or macOS system libraries into the .app file is highly likely to result
+		# in incompatibilities after upgrades.
+
+		include(FindVendoredPackage)
+		include(AddVendoredSubdirectory)
+
+		set(FORCE_VENDORED_ZLIB     ON)
+		set(FORCE_VENDORED_PNG      ON)
+		set(FORCE_VENDORED_Freetype ON)
+
+		find_vendored_package(ZLIB zlib
+			ZLIB_LIBRARY            zlibstatic
+			ZLIB_INCLUDE_DIR        ${CMAKE_SOURCE_DIR}/extlib/zlib)
+		list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
+
+		find_vendored_package(PNG libpng
+			SKIP_INSTALL_ALL        ON
+			PNG_LIBRARY             png_static
+			PNG_ARM_NEON            "off"
+			PNG_SHARED              OFF
+			PNG_STATIC              ON
+			PNG_EXECUTABLES         OFF
+			PNG_TESTS               OFF
+			PNG_FRAMEWORK           OFF
+			PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
+		list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
+
+		find_vendored_package(Freetype freetype
+			WITH_ZLIB               OFF
+			WITH_BZip2              OFF
+			WITH_PNG                OFF
+			WITH_HarfBuzz           OFF
+			FREETYPE_LIBRARY        freetype
+			FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
+	else()
+		# On Linux and BSDs we're a good citizen and link to system libraries.
+		find_package(Backtrace)
+		find_package(PkgConfig REQUIRED)
+		find_package(ZLIB REQUIRED)
+		find_package(PNG REQUIRED)
+		find_package(Freetype REQUIRED)
+	endif()
+		# GUI dependencies
+	if(ENABLE_GUI)
+		if(WIN32)
+			find_package(OpenGL REQUIRED)
+			if(MSVC AND ${CMAKE_SIZEOF_VOID_P} EQUAL 4)
+				message(STATUS "Using prebuilt SpaceWare")
+				set(SPACEWARE_FOUND TRUE)
+				set(SPACEWARE_INCLUDE_DIR
+					"${CMAKE_SOURCE_DIR}/extlib/si")
+				set(SPACEWARE_LIBRARIES
+					"${CMAKE_SOURCE_DIR}/extlib/si/siapp.lib")
+			endif()
+		else()
+			find_package(OpenGL REQUIRED)
+			find_package(SpaceWare)
+			pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
+		endif()
+	endif()
 endif()
-
-# GUI dependencies
-
-if(ENABLE_GUI)
-    if(WIN32)
-        if(OPENGL STREQUAL "3")
-            message(STATUS "Using in-tree ANGLE")
-            set(ANGLE_STATIC            ON  CACHE INTERNAL "")
-            set(ANGLE_ENABLE_D3D9       ON  CACHE INTERNAL "")
-            set(ANGLE_ENABLE_D3D11      ON  CACHE INTERNAL "")
-            set(ANGLE_ENABLE_OPENGL     ON  CACHE INTERNAL "")
-            set(ANGLE_ENABLE_ESSL       ON  CACHE INTERNAL "")
-            set(ANGLE_ENABLE_GLSL       ON  CACHE INTERNAL "")
-            set(ANGLE_ENABLE_HLSL       ON  CACHE INTERNAL "")
-            add_vendored_subdirectory(extlib/angle)
-            set(OPENGL_LIBRARIES        EGL GLESv2)
-            set(OPENGL_INCLUDE_DIR      ${CMAKE_SOURCE_DIR}/extlib/angle/include)
-        else()
-            find_package(OpenGL REQUIRED)
-        endif()
-
-        if(MSVC AND ${CMAKE_SIZEOF_VOID_P} EQUAL 4)
-            message(STATUS "Using prebuilt SpaceWare")
-            set(SPACEWARE_FOUND TRUE)
-            set(SPACEWARE_INCLUDE_DIR
-                "${CMAKE_SOURCE_DIR}/extlib/si")
-            set(SPACEWARE_LIBRARIES
-                "${CMAKE_SOURCE_DIR}/extlib/si/siapp.lib")
-        endif()
-    elseif(APPLE)
-        find_package(OpenGL REQUIRED)
-        find_library(APPKIT_LIBRARY AppKit REQUIRED)
-    elseif(EMSCRIPTEN)
-        # Everything is built in
-    else()
-        find_package(OpenGL REQUIRED)
-        find_package(SpaceWare)
-        pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
-        pkg_check_modules(JSONC REQUIRED json-c)
-        pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.18 pangomm-1.4 x11)
-    endif()
-endif()
-
 # code coverage
 
-if(ENABLE_COVERAGE)
-    if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
-        find_program(GCOV gcov)
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES Clang)
-        find_program(LLVM_COV llvm-cov)
-
-        if(LLVM_COV)
-            set(GCOV ${CMAKE_CURRENT_BINARY_DIR}/llvm-gcov.sh)
-            file(WRITE ${GCOV} "#!/bin/sh -e\n${LLVM_COV} gcov $*")
-            execute_process(COMMAND chmod +x ${GCOV})
-        endif()
-    endif()
-
-    find_program(LCOV lcov)
-    find_program(GENHTML genhtml)
-    if(NOT GCOV OR NOT LCOV OR NOT GENHTML)
-        message(FATAL_ERROR "gcov/llvm-cov and lcov are required for producing coverage reports")
-    endif()
-endif()
+#if(ENABLE_COVERAGE)
+#    if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+#        find_program(GCOV gcov)
+#    elseif(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+#        find_program(LLVM_COV llvm-cov)
+#
+#        if(LLVM_COV)
+#            set(GCOV ${CMAKE_CURRENT_BINARY_DIR}/llvm-gcov.sh)
+#            file(WRITE ${GCOV} "#!/bin/sh -e\n${LLVM_COV} gcov $*")
+#            execute_process(COMMAND chmod +x ${GCOV})
+#        endif()
+#    endif()
+#
+#    find_program(LCOV lcov)
+#    find_program(GENHTML genhtml)
+#    if(NOT GCOV OR NOT LCOV OR NOT GENHTML)
+#        message(FATAL_ERROR "gcov/llvm-cov and lcov are required for producing coverage reports")
+#    endif()
+#endif()
 
 # translations
 
@@ -435,11 +538,13 @@ endif()
 add_subdirectory(res)
 add_subdirectory(src)
 add_subdirectory(exposed)
-if(ENABLE_TESTS)
-    add_subdirectory(test)
-endif()
+#if(ENABLE_TESTS)
+#    add_subdirectory(test)
+#endif()
 if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     add_subdirectory(bench)
 else()
     message(STATUS "Benchmarking disabled in debug builds.")
 endif()
+
+

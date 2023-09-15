@@ -537,22 +537,9 @@ namespace SolveSpace
             void menuAboutToShowEvent()
             {
                 std::cout.imbue(std::locale::classic());
-                std::setlocale(LC_ALL, "ja_JP.UTF-8");
-                std::cout << "Menu " << this->menuQ->title().toStdString() << " *** about to show" << std::endl;
                 this->menuQ->repaint();
                 QRect rect = this->menuQ->geometry();
-                QRect rect2 = rect;
-                std::cout << "Geometry of Menu ;" << rect.x() << "," << rect.y() << "," << rect.width() << "," << rect.height() << std::endl;
-                
-                if (true == this->menuQ->isVisible())
-                {
-                    std::cout << " MENU VISIBLE " << std::endl;
-                }
-                else
-                {
-                    std::cout << "CALLING SHOW" << std::endl;
-                    this->menuQ->show();
-                }
+                QRect rect2 = rect;                
             }
         };
 
