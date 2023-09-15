@@ -19,6 +19,16 @@ endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
+if(USE_QT_GUI)
+	#Including QT
+	set(CMAKE_AUTOMOC ON)
+	find_package(Qt5 COMPONENTS Core Gui Widgets OpenGL  REQUIRED)
+	include (../extlib/tinyxml2/CMakeLists.txt)
+
+	#including code from PoCAE
+	set(GitPath ${CMAKE_CURRENT_LIST_DIR}/../..)
+endif()
+
 # solvespace dependencies
 add_library(slvs_deps INTERFACE)
 target_include_directories(slvs_deps INTERFACE SYSTEM
@@ -34,7 +44,7 @@ target_link_libraries(slvs_deps INTERFACE
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
     ${FREETYPE_LIBRARY}
-    ${CAIRO_LIBRARIES}
+    #${CAIRO_LIBRARIES}
     mimalloc-static)
 
 if(Backtrace_FOUND)
@@ -111,68 +121,131 @@ set(every_platform_SOURCES
 set(solvespace_core_gl_SOURCES
     solvespace.cpp)
 
-add_library(solvespace-core STATIC
-    dsc.h
-    expr.h
-    polygon.h
-    sketch.h
-    solvespace.h
-    ui.h
-    platform/platform.h
-    render/render.h
-    render/gl3shader.h
-    srf/surface.h
-    bsp.cpp
-    clipboard.cpp
-    confscreen.cpp
-    constraint.cpp
-    constrainteq.cpp
-    describescreen.cpp
-    draw.cpp
-    drawconstraint.cpp
-    drawentity.cpp
-    entity.cpp
-    export.cpp
-    exportstep.cpp
-    exportvector.cpp
-    expr.cpp
-    file.cpp
-    generate.cpp
-    graphicswin.cpp
-    group.cpp
-    groupmesh.cpp
-    importdxf.cpp
-    importidf.cpp
-    importmesh.cpp
-    mesh.cpp
-    modify.cpp
-    mouse.cpp
-    polyline.cpp
-    polygon.cpp
-    resource.cpp
-    request.cpp
-    style.cpp
-    system.cpp
-    textscreens.cpp
-    textwin.cpp
-    toolbar.cpp
-    ttf.cpp
-    undoredo.cpp
-    util.cpp
-    view.cpp
-    platform/platform.cpp
-    platform/gui.cpp
-    render/render.cpp
-    render/render2d.cpp
-    srf/boolean.cpp
-    srf/curve.cpp
-    srf/merge.cpp
-    srf/ratpoly.cpp
-    srf/raycast.cpp
-    srf/shell.cpp
-    srf/surface.cpp
-    srf/surfinter.cpp
-    srf/triangulate.cpp)
+if (NOT USE_QT_GUI)
+	add_library(solvespace-core STATIC
+		dsc.h
+		expr.h
+		polygon.h
+		sketch.h
+		solvespace.h
+		ui.h
+		platform/platform.h
+		render/render.h
+	   render/gl3shader.h
+	   render/render2d.cpp
+		srf/surface.h
+		bsp.cpp
+		clipboard.cpp
+		confscreen.cpp
+		constraint.cpp
+		constrainteq.cpp
+		describescreen.cpp
+		draw.cpp
+		drawconstraint.cpp
+		drawentity.cpp
+		entity.cpp
+		export.cpp
+		exportstep.cpp
+		exportvector.cpp
+		expr.cpp
+		file.cpp
+		generate.cpp
+		graphicswin.cpp
+		group.cpp
+		groupmesh.cpp
+		importdxf.cpp
+		importidf.cpp
+		importmesh.cpp
+		mesh.cpp
+		modify.cpp
+		mouse.cpp
+		polyline.cpp
+		polygon.cpp
+		resource.cpp
+		request.cpp
+		style.cpp
+		system.cpp
+		textscreens.cpp
+		textwin.cpp
+		toolbar.cpp
+		ttf.cpp
+		undoredo.cpp
+		util.cpp
+		view.cpp
+		platform/platform.cpp
+		platform/gui.cpp
+		render/render.cpp
+		srf/boolean.cpp
+		srf/curve.cpp
+		srf/merge.cpp
+		srf/ratpoly.cpp
+		srf/raycast.cpp
+		srf/shell.cpp
+		srf/surface.cpp
+		srf/surfinter.cpp
+		srf/triangulate.cpp)
+else()
+	add_library(solvespace-core STATIC
+		dsc.h
+		expr.h
+		polygon.h
+		sketch.h
+		solvespace.h
+		ui.h
+		platform/platform.h
+		render/render.h
+		srf/surface.h
+		bsp.cpp
+		clipboard.cpp
+		confscreen.cpp
+		constraint.cpp
+		constrainteq.cpp
+		describescreen.cpp
+		draw.cpp
+		drawconstraint.cpp
+		drawentity.cpp
+		entity.cpp
+		export.cpp
+		exportstep.cpp
+		exportvector.cpp
+		expr.cpp
+		file.cpp
+		generate.cpp
+		graphicswin.cpp
+		group.cpp
+		groupmesh.cpp
+		importdxf.cpp
+		importidf.cpp
+		importmesh.cpp
+		mesh.cpp
+		modify.cpp
+		mouse.cpp
+		polyline.cpp
+		polygon.cpp
+		resource.cpp
+		request.cpp
+		style.cpp
+		system.cpp
+		textscreens.cpp
+		textwin.cpp
+		toolbar.cpp
+		ttf.cpp
+		undoredo.cpp
+		util.cpp
+		view.cpp
+		platform/platform.cpp
+		platform/gui.cpp
+		render/render.cpp
+		srf/boolean.cpp
+		srf/curve.cpp
+		srf/merge.cpp
+		srf/ratpoly.cpp
+		srf/raycast.cpp
+		srf/shell.cpp
+		srf/surface.cpp
+		srf/surfinter.cpp
+		srf/triangulate.cpp)
+endif()
 
 target_link_libraries(solvespace-core PUBLIC slvs_deps)
 
@@ -262,128 +335,188 @@ endif()
 # solvespace graphical executable
 
 if(ENABLE_GUI)
-    add_executable(solvespace WIN32 MACOSX_BUNDLE
-        ${solvespace_core_gl_SOURCES}
-        platform/entrygui.cpp
-        $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+    if(NOT USE_QT_GUI)
+	    add_executable(solvespace WIN32 MACOSX_BUNDLE
+		${solvespace_core_gl_SOURCES}
+		platform/entrygui.cpp
+		$<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
-    add_dependencies(solvespace
-        resources)
+	    add_dependencies(solvespace
+		resources)
 
-    target_link_libraries(solvespace
-        PRIVATE
-        solvespace-core
-        ${OPENGL_LIBRARIES})
+	    target_link_libraries(solvespace
+		PRIVATE
+		solvespace-core
+		${OPENGL_LIBRARIES})
 
-    # OpenGL version
-    if(OPENGL STREQUAL 3)
-        target_sources(solvespace PRIVATE
-            render/gl3shader.cpp
-            render/rendergl3.cpp)
-    elseif(OPENGL STREQUAL 1)
-        target_sources(solvespace PRIVATE
-            render/rendergl1.cpp)
-    else()
-        message(FATAL_ERROR "Unsupported OpenGL version ${OPENGL}")
-    endif()
+	    # OpenGL version
+	    if(OPENGL STREQUAL 3)
+		target_sources(solvespace PRIVATE
+		    render/gl3shader.cpp
+		    render/rendergl3.cpp)
+	    elseif(OPENGL STREQUAL 1)
+		target_sources(solvespace PRIVATE
+		    render/rendergl1.cpp)
+	    else()
+		message(FATAL_ERROR "Unsupported OpenGL version ${OPENGL}")
+	    endif()
 
-    # Platform-specific
-    if(WIN32)
-        target_sources(solvespace PRIVATE
-            platform/guiwin.cpp)
+	    # Platform-specific
+	    if(WIN32)
+		target_sources(solvespace PRIVATE
+		    platform/guiwin.cpp)
 
-        target_link_libraries(solvespace PRIVATE comctl32)
-    elseif(APPLE)
-        target_compile_options(solvespace PRIVATE -fobjc-arc)
-        target_compile_definitions(solvespace PRIVATE GL_SILENCE_DEPRECATION)
+		target_link_libraries(solvespace PRIVATE comctl32)
+	    elseif(APPLE)
+		target_compile_options(solvespace PRIVATE -fobjc-arc)
+		target_compile_definitions(solvespace PRIVATE GL_SILENCE_DEPRECATION)
 
-        target_sources(solvespace PRIVATE
-            platform/guimac.mm)
-        set_target_properties(solvespace PROPERTIES
-            OUTPUT_NAME SolveSpace
-            XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES"
-            XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.solvespace"
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-    elseif(EMSCRIPTEN)
-        set(SHELL ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/emshell.html)
-        set(LINK_FLAGS
-            --bind --shell-file ${SHELL}
-            --no-heap-copy -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s ASYNCIFY=1
-            -s DYNCALLS=1 -s ASSERTIONS=1
-            -s TOTAL_STACK=33554432 -s TOTAL_MEMORY=134217728)
+		target_sources(solvespace PRIVATE
+		    platform/guimac.mm)
+		set_target_properties(solvespace PROPERTIES
+		    OUTPUT_NAME SolveSpace
+		    XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME "YES"
+		    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.solvespace"
+		    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+	    elseif(EMSCRIPTEN)
+		set(SHELL ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/emshell.html)
+		set(LINK_FLAGS
+		    --bind --shell-file ${SHELL}
+		    --no-heap-copy -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s ASYNCIFY=1
+		    -s DYNCALLS=1 -s ASSERTIONS=1
+		    -s TOTAL_STACK=33554432 -s TOTAL_MEMORY=134217728)
 
-        get_target_property(resource_names resources NAMES)
-        foreach(resource ${resource_names})
-            list(APPEND LINK_FLAGS --preload-file ${resource})
-        endforeach()
+		get_target_property(resource_names resources NAMES)
+		foreach(resource ${resource_names})
+		    list(APPEND LINK_FLAGS --preload-file ${resource})
+		endforeach()
 
-        if(CMAKE_BUILD_TYPE STREQUAL Debug)
-            list(APPEND LINK_FLAGS
-                --emrun --emit-symbol-map
-                -s DEMANGLE_SUPPORT=1
-                -s SAFE_HEAP=1)
-        endif()
+		if(CMAKE_BUILD_TYPE STREQUAL Debug)
+		    list(APPEND LINK_FLAGS
+			--emrun --emit-symbol-map
+			-s DEMANGLE_SUPPORT=1
+			-s SAFE_HEAP=1)
+		endif()
 
-        target_sources(solvespace PRIVATE
-            platform/guihtml.cpp)
+		target_sources(solvespace PRIVATE
+		    platform/guihtml.cpp)
 
-        string(REPLACE ";" " " LINK_FLAGS "${LINK_FLAGS}")
-        set_target_properties(solvespace PROPERTIES
-            LINK_FLAGS "${LINK_FLAGS}")
-        set_source_files_properties(platform/guihtml.cpp PROPERTIES
-            OBJECT_DEPENDS ${SHELL})
+		string(REPLACE ";" " " LINK_FLAGS "${LINK_FLAGS}")
+		set_target_properties(solvespace PROPERTIES
+		    LINK_FLAGS "${LINK_FLAGS}")
+		set_source_files_properties(platform/guihtml.cpp PROPERTIES
+		    OBJECT_DEPENDS ${SHELL})
 
-        add_custom_command(
-            TARGET solvespace POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/solvespaceui.css
-                    ${EXECUTABLE_OUTPUT_PATH}/solvespaceui.css
-            COMMENT "Copying UI stylesheet"
-            VERBATIM)
-        add_custom_command(
-            TARGET solvespace POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/solvespaceui.js
-                    ${EXECUTABLE_OUTPUT_PATH}/solvespaceui.js
-            COMMENT "Copying UI script solvespaceui.js"
-            VERBATIM)
-        add_custom_command(
-            TARGET solvespace POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/filemanagerui.js
-                    ${EXECUTABLE_OUTPUT_PATH}/filemanagerui.js
-            COMMENT "Copying UI script filemanagerui.sj"
-            VERBATIM)
-    else()
-        target_sources(solvespace PRIVATE
-            platform/guigtk.cpp)
+		add_custom_command(
+		    TARGET solvespace POST_BUILD
+		    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			    ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/solvespaceui.css
+			    ${EXECUTABLE_OUTPUT_PATH}/solvespaceui.css
+		    COMMENT "Copying UI stylesheet"
+		    VERBATIM)
+		add_custom_command(
+		    TARGET solvespace POST_BUILD
+		    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			    ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/solvespaceui.js
+			    ${EXECUTABLE_OUTPUT_PATH}/solvespaceui.js
+		    COMMENT "Copying UI script solvespaceui.js"
+		    VERBATIM)
+		add_custom_command(
+		    TARGET solvespace POST_BUILD
+		    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			    ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/filemanagerui.js
+			    ${EXECUTABLE_OUTPUT_PATH}/filemanagerui.js
+		    COMMENT "Copying UI script filemanagerui.sj"
+		    VERBATIM)
+	    else()
+		target_sources(solvespace PRIVATE
+		    platform/guigtk.cpp)
 
-        target_include_directories(solvespace PRIVATE SYSTEM
-            ${GTKMM_INCLUDE_DIRS}
-            ${JSONC_INCLUDE_DIRS}
-            ${FONTCONFIG_INCLUDE_DIRS})
-        target_link_directories(solvespace PRIVATE
-            ${GTKMM_LIBRARY_DIRS}
-            ${JSONC_LIBRARY_DIRS}
-            ${FONTCONFIG_LIBRARY_DIRS})
-        target_link_libraries(solvespace PRIVATE
-            ${GTKMM_LIBRARIES}
-            ${JSONC_LIBRARIES}
-            ${FONTCONFIG_LIBRARIES})
-    endif()
+		target_include_directories(solvespace PRIVATE SYSTEM
+		    ${GTKMM_INCLUDE_DIRS}
+		    ${JSONC_INCLUDE_DIRS}
+		    ${FONTCONFIG_INCLUDE_DIRS})
+		target_link_directories(solvespace PRIVATE
+		    ${GTKMM_LIBRARY_DIRS}
+		    ${JSONC_LIBRARY_DIRS}
+		    ${FONTCONFIG_LIBRARY_DIRS})
+		target_link_libraries(solvespace PRIVATE
+		    ${GTKMM_LIBRARIES}
+		    ${JSONC_LIBRARIES}
+		    ${FONTCONFIG_LIBRARIES})
+	    endif()
 
-    if(MSVC)
-        set_target_properties(solvespace PROPERTIES
-            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
-    endif()
+	    if(MSVC)
+		set_target_properties(solvespace PROPERTIES
+		    LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+	    endif()
+	endif()
+	if(USE_QT_GUI)
+	    add_executable(solvespaceQt WIN32 MACOSX_BUNDLE
+		${solvespace_core_gl_SOURCES}
+		platform/entrygui.cpp
+		$<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+
+	    add_dependencies(solvespaceQt
+		resources)
+
+	    target_link_libraries(solvespaceQt
+		PRIVATE
+		solvespace-core
+		${OPENGL_LIBRARIES})
+
+	    # OpenGL version
+	    if(OPENGL STREQUAL 3)
+		target_sources(solvespaceQt PRIVATE
+		    render/gl3shader.cpp
+		    render/rendergl3.cpp)
+	    elseif(OPENGL STREQUAL 1)
+		target_sources(solvespaceQt PRIVATE
+		    render/rendergl1.cpp)
+	    else()
+		message(FATAL_ERROR "Unsupported OpenGL version ${OPENGL}")
+	    endif()
+
+	    # Platform-specific
+		target_sources(solvespaceQt PRIVATE
+		    #platform/guiwin.cpp
+		    platform/guiqt.cpp
+		    platform/QGLMainWindow.h
+		    ${TinyXmlIncludes}
+		    )
+
+		target_link_libraries(solvespaceQt PRIVATE #comctl32
+		    Qt5::Core
+		    Qt5::Gui
+		    Qt5::Widgets
+		    Qt5::OpenGL
+		    )
+		set(QT_DEBUG_ENV "${_qt5_install_prefix}/../../bin\\\;")
+		set(QT_RELEASE_ENV "${_qt5_install_prefix}/../../bin\\\;")
+		set(QT_PLUGIN_PATH "${_qt5_install_prefix}/../../plugins\\\;")
+		GenUserProp(solvespaceQt ${QT_DEBUG_ENV} ${QT_RELEASE_ENV} ${QT_PLUGIN_PATH})
+	    if(MSVC)
+		set_target_properties(solvespaceQt PROPERTIES
+		    LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+	    endif()
+	endif()
 endif()
 
 # solvespace headless library
 
-add_library(solvespace-headless STATIC EXCLUDE_FROM_ALL
-    ${solvespace_core_gl_SOURCES}
-    platform/guinone.cpp
-    render/rendercairo.cpp)
+if(NOT USE_QT_GUI)
+	add_library(solvespace-headless STATIC EXCLUDE_FROM_ALL
+		${solvespace_core_gl_SOURCES}
+		platform/guinone.cpp
+		render/rendercairo.cpp
+		)
+else()
+	add_library(solvespace-headless STATIC EXCLUDE_FROM_ALL
+		${solvespace_core_gl_SOURCES}
+		)
+endif()
+
+
 
 target_compile_definitions(solvespace-headless
     PRIVATE HEADLESS)
@@ -419,10 +552,18 @@ endif()
 # solvespace unix package
 
 if(NOT (WIN32 OR APPLE OR EMSCRIPTEN))
-    if(ENABLE_GUI)
-        install(TARGETS solvespace
-            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    if(NOT USE_QT_GUI)
+        if(ENABLE_GUI)
+            install(TARGETS solvespace
+                RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+        endif()
+    else()
+        if(ENABLE_GUI)
+            install(TARGETS solvespaceQt
+                RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+        endif()
     endif()
+
     if(ENABLE_CLI)
         install(TARGETS solvespace-cli
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
