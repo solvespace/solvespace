@@ -80,7 +80,7 @@ project(solvespaceQt
     VERSION 3.1
     LANGUAGES C CXX ASM)
 
-set(USE_QT_GUI        ON CACHE BOOL
+set(USE_QT_GUI        OFF CACHE BOOL
     "Whether the Qt library used to build graphical interface")
 set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
