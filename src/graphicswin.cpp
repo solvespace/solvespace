@@ -300,7 +300,7 @@ void GraphicsWindow::PopulateMainMenu() {
 
                     SS.UpdateWindowTitles();
                     PopulateMainMenu();
-                    EnsureValidActives();
+                    SS.GW.EnsureValidActives();
                 });
             }
         } else if(Menu[i].fn == NULL) {
