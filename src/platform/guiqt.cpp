@@ -1,6 +1,6 @@
 
 #include <tinyxml2.h>
-#include <platform/qglmainwindow.>
+#include <platform/qglmainwindow.h>
 #include "solvespace.h"
 #include "platform.h"
 

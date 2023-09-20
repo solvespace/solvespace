@@ -481,7 +481,7 @@ if(ENABLE_GUI)
 		target_sources(solvespaceQt PRIVATE
 		    #platform/guiwin.cpp
 		    platform/guiqt.cpp
-		    platform/qglmainwindow.
+		    platform/qglmainwindow.h
 		    ${TinyXmlIncludes}
 		    )
 
