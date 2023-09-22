@@ -272,30 +272,33 @@ static bool KeepRegion(SSurface::CombineAs type, bool opA, SShell::Class shell, 
 {
     bool inShell = (shell == SShell::Class::SURF_INSIDE),
          outSide = (shell == SShell::Class::SURF_OUTSIDE),
-         inSame  = (shell == SShell::Class::SURF_COINC_SAME),
+         coincSame  = (shell == SShell::Class::SURF_COINC_SAME),
+         coincOpp  = (shell == SShell::Class::SURF_COINC_OPP),
          inOrig  = (orig == SShell::Class::SURF_INSIDE);
 
+    // This one line is not really part of this functions logic
     if(!inOrig) return false;
+
     switch(type) {
         case SSurface::CombineAs::UNION:
             if(opA) {
                 return outSide;
             } else {
-                return outSide || inSame;
+                return outSide || coincSame;
             }
 
         case SSurface::CombineAs::DIFFERENCE:
             if(opA) {
-                return outSide;
+                return outSide || coincOpp;
             } else {
-                return inShell || inSame;
+                return inShell;
             }
 
         case SSurface::CombineAs::INTERSECTION:
             if(opA) {
                 return inShell;
             } else {
-                return inShell || inSame;
+                return inShell || coincSame;
             }
 
         default: ssassert(false, "Unexpected combine type");
