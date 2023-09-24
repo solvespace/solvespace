@@ -220,6 +220,21 @@ void GraphicsWindow::SelectByMarquee() {
         bool entityHasBBox;
         BBox entityBBox = e.GetOrGenerateScreenBBox(&entityHasBBox);
         if(entityHasBBox && entityBBox.Overlaps(marqueeBBox)) {
+            if(e.type == Entity::Type::LINE_SEGMENT) {
+                Vector p0 = SS.GW.ProjectPoint3(e.EndpointStart());
+                Vector p1 = SS.GW.ProjectPoint3(e.EndpointFinish());
+                if((!marqueeBBox.Contains({p0.x, p0.y}, 0)) &&
+                   (!marqueeBBox.Contains({p1.x, p1.y}, 0))) {
+                    // The selection marquee does not contain either of the line segment end points.
+                    // This means that either the segment is entirely outside the marquee or that
+                    // it intersects it. Check if it does...
+                    if(!Vector::BoundingBoxIntersectsLine(marqueeBBox.maxp, marqueeBBox.minp, p0,
+                                                          p1, true)) {
+                        // ... it does not so it is outside.
+                        continue;
+                    }
+                }
+            }
             MakeSelected(e.h);
         }
     }
