@@ -504,11 +504,11 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     // Animate transition, unless it's a tiny move.
     int64_t t0 = GetMilliseconds();
     int32_t dt = (mp < 0.01 && mo < 10) ? (-20) :
-                     (int32_t)(100 + 1000*mp + 0.4*mo);
-    // Don't ever animate for longer than 2000 ms; we can get absurdly
+                     (int32_t)(100 + 600*mp + 0.4*mo);
+    // Don't ever animate for longer than 800 ms; we can get absurdly
     // long translations (as measured in pixels) if the user zooms out, moves,
     // and then zooms in again.
-    if(dt > 2000) dt = 2000;
+    if(dt > 800) dt = 800;
     Quaternion dq = quatf.Times(quat0.Inverse());
 
     if(!animateTimer) {
