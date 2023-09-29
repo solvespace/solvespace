@@ -645,6 +645,12 @@ std::vector<std::string> InitCli(int argc, char **argv) {
 
 #if defined(WIN32)
 
+#if !defined(_alloca)
+// Fix for compiling with MinGW.org GCC-6.3.0-1
+#define _alloca alloca
+#include <malloc.h>
+#endif
+
 void DebugPrint(const char *fmt, ...)
 {
     va_list va;
