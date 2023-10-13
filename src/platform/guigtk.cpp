@@ -517,8 +517,12 @@ protected:
     }
 
     bool on_motion_notify_event(GdkEventMotion *gdk_event) override {
-        if(process_pointer_event(MouseEvent::Type::MOTION,
-                                 gdk_event->x, gdk_event->y, gdk_event->state))
+        double x,y;
+        GdkModifierType state;
+        gdk_event_get_coords((GdkEvent*)gdk_event, &x, &y);
+        gdk_event_get_state((GdkEvent*)gdk_event, &state);
+        
+        if(process_pointer_event(MouseEvent::Type::MOTION, x, y, state))
             return true;
 
         return Gtk::GLArea::on_motion_notify_event(gdk_event);
@@ -526,51 +530,79 @@ protected:
 
     bool on_button_press_event(GdkEventButton *gdk_event) override {
         MouseEvent::Type type;
-        if(gdk_event->type == GDK_BUTTON_PRESS) {
+        GdkEventType gdk_type;
+        gdk_type = gdk_event_get_event_type((GdkEvent*)gdk_event);
+        
+        if(gdk_type == GDK_BUTTON_PRESS) {
             type = MouseEvent::Type::PRESS;
-        } else if(gdk_event->type == GDK_2BUTTON_PRESS) {
+        } else if(gdk_type == GDK_2BUTTON_PRESS) {
             type = MouseEvent::Type::DBL_PRESS;
         } else {
             return Gtk::GLArea::on_button_press_event(gdk_event);
         }
+        double x,y;
+        gdk_event_get_coords((GdkEvent*)gdk_event, &x, &y);
+        GdkModifierType state;
+        gdk_event_get_state((GdkEvent*)gdk_event, &state);
+        guint button;
+        gdk_event_get_button((GdkEvent*)gdk_event, &button);
 
-        if(process_pointer_event(type, gdk_event->x, gdk_event->y,
-                                 gdk_event->state, gdk_event->button))
+        if(process_pointer_event(type, x, y, state, button))
             return true;
 
         return Gtk::GLArea::on_button_press_event(gdk_event);
     }
 
     bool on_button_release_event(GdkEventButton *gdk_event) override {
-        if(process_pointer_event(MouseEvent::Type::RELEASE,
-                                 gdk_event->x, gdk_event->y,
-                                 gdk_event->state, gdk_event->button))
+        double x,y;
+        gdk_event_get_coords((GdkEvent*)gdk_event, &x, &y);
+        GdkModifierType state;
+        gdk_event_get_state((GdkEvent*)gdk_event, &state);
+        guint button;
+        gdk_event_get_button((GdkEvent*)gdk_event, &button);
+        if(process_pointer_event(MouseEvent::Type::RELEASE, x, y, state, button))
             return true;
 
         return Gtk::GLArea::on_button_release_event(gdk_event);
     }
 
     bool on_scroll_event(GdkEventScroll *gdk_event) override {
+        double dx, dy;
+        GdkScrollDirection dir;
+// for gtk4 ??
+//        gdk_scroll_event_get_deltas((GdkEvent*)gdk_event, &dx, &dy);
+//        gdk_scroll_event_get_direction((GdkEvent*)gdk_event, &dir);
+        gdk_event_get_scroll_direction((GdkEvent*)gdk_event, &dir);
+        gdk_event_get_scroll_deltas((GdkEvent*)gdk_event, &dx, &dy);
+        
         double delta;
-        if(gdk_event->delta_y < 0 || gdk_event->direction == GDK_SCROLL_UP) {
+        if(dy < 0 || dir == GDK_SCROLL_UP) {
             delta = 1;
-        } else if(gdk_event->delta_y > 0 || gdk_event->direction == GDK_SCROLL_DOWN) {
+        } else if(dy > 0 || dir == GDK_SCROLL_DOWN) {
             delta = -1;
         } else {
             return false;
         }
 
+        double x,y;
+        gdk_event_get_coords((GdkEvent*)gdk_event, &x, &y);
+        GdkModifierType state;
+        gdk_event_get_state((GdkEvent*)gdk_event, &state);
+
         if(process_pointer_event(MouseEvent::Type::SCROLL_VERT,
-                                 gdk_event->x, gdk_event->y,
-                                 gdk_event->state, 0, delta))
+                                 x, y, state, 0, delta))
             return true;
 
         return Gtk::GLArea::on_scroll_event(gdk_event);
     }
 
     bool on_leave_notify_event(GdkEventCrossing *gdk_event) override {
-        if(process_pointer_event(MouseEvent::Type::LEAVE,
-                                 gdk_event->x, gdk_event->y, gdk_event->state))
+        double x,y;
+        gdk_event_get_coords((GdkEvent*)gdk_event, &x, &y);
+        GdkModifierType state;
+        gdk_event_get_state((GdkEvent*)gdk_event, &state);
+        
+        if(process_pointer_event(MouseEvent::Type::LEAVE, x, y, state))
             return true;
 
         return Gtk::GLArea::on_leave_notify_event(gdk_event);
@@ -580,22 +612,28 @@ protected:
         KeyboardEvent event = {};
         event.type = type;
 
+        GdkModifierType state;
+        gdk_event_get_state((GdkEvent*)gdk_event, &state);
+
         Gdk::ModifierType mod_mask = get_modifier_mask(Gdk::MODIFIER_INTENT_DEFAULT_MOD_MASK);
-        if((gdk_event->state & mod_mask) & ~(GDK_SHIFT_MASK|GDK_CONTROL_MASK)) {
+        if((state & mod_mask) & ~(GDK_SHIFT_MASK|GDK_CONTROL_MASK)) {
             return false;
         }
 
-        event.shiftDown   = (gdk_event->state & GDK_SHIFT_MASK)   != 0;
-        event.controlDown = (gdk_event->state & GDK_CONTROL_MASK) != 0;
+        event.shiftDown   = (state & GDK_SHIFT_MASK)   != 0;
+        event.controlDown = (state & GDK_CONTROL_MASK) != 0;
+        
+        guint keyval;
+        gdk_event_get_keyval((GdkEvent*)gdk_event, &keyval);
 
-        char32_t chr = gdk_keyval_to_unicode(gdk_keyval_to_lower(gdk_event->keyval));
+        char32_t chr = gdk_keyval_to_unicode(gdk_keyval_to_lower(keyval));
         if(chr != 0) {
             event.key = KeyboardEvent::Key::CHARACTER;
             event.chr = chr;
-        } else if(gdk_event->keyval >= GDK_KEY_F1 &&
-                  gdk_event->keyval <= GDK_KEY_F12) {
+        } else if(keyval >= GDK_KEY_F1 &&
+                  keyval <= GDK_KEY_F12) {
             event.key = KeyboardEvent::Key::FUNCTION;
-            event.num = gdk_event->keyval - GDK_KEY_F1 + 1;
+            event.num = keyval - GDK_KEY_F1 + 1;
         } else {
             return false;
         }
@@ -697,8 +735,11 @@ public:
 
 protected:
     bool on_key_press_event(GdkEventKey *gdk_event) override {
+        guint keyval;
+        gdk_event_get_keyval((GdkEvent*)gdk_event, &keyval);
+
         if(is_editing()) {
-            if(gdk_event->keyval == GDK_KEY_Escape) {
+            if(keyval == GDK_KEY_Escape) {
                 return _gl_widget.event((GdkEvent *)gdk_event);
             } else {
                 _entry.event((GdkEvent *)gdk_event);
@@ -841,7 +882,11 @@ protected:
     }
 
     bool on_window_state_event(GdkEventWindowState *gdk_event) override {
-        _is_fullscreen = gdk_event->new_window_state & GDK_WINDOW_STATE_FULLSCREEN;
+        // window state event is superseded by GdkWindow::state on GTK4
+        GdkWindowState new_window_state;
+        new_window_state = gdk_event->new_window_state;
+        
+        _is_fullscreen = new_window_state & GDK_WINDOW_STATE_FULLSCREEN;
         if(_receiver->onFullScreen) {
             _receiver->onFullScreen(_is_fullscreen);
         }
