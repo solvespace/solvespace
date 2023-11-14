@@ -1068,6 +1068,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
 
     switch(ep->type) {
         case Entity::Type::WORKPLANE:
+        case Entity::Type::IMAGE:
             // Don't copy these.
             return;
 
