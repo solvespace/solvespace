@@ -239,7 +239,8 @@ Path Path::Parent() const {
 }
 
 // Concatenates a component to this path.
-// Returns an empty path if this path or the component is empty.
+// Returns a relative path if this path is empty.
+// Returns an empty path if the component is absolute.
 Path Path::Join(const std::string &component) const {
     ssassert(component.find(SEPARATOR) == std::string::npos,
              "Use the Path::Join(const Path &) overload to append an entire path");
@@ -247,13 +248,20 @@ Path Path::Join(const std::string &component) const {
 }
 
 // Concatenates a relative path to this path.
-// Returns an empty path if either path is empty, or the other path is absolute.
+// Returns a relative path if this path is empty.
+// Returns an empty path if the other path is absolute.
 Path Path::Join(const Path &other) const {
-    if(IsEmpty() || other.IsEmpty() || other.IsAbsolute()) {
+    if(other.IsAbsolute()) {
         return From("");
     }
 
-    Path joined = { raw };
+    Path joined;
+    if(IsEmpty()) {
+        joined.raw = ".";
+    } else {
+        joined.raw = raw;
+    }
+
     if(joined.raw.back() != SEPARATOR) {
         joined.raw += SEPARATOR;
     }
