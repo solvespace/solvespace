@@ -93,9 +93,7 @@ static std::vector<std::string> Split(const std::string &joined, char separator)
         pos += 1;
     }
 
-    if(oldpos != joined.length() - 1) {
-        parts.push_back(joined.substr(oldpos));
-    }
+    parts.push_back(joined.substr(oldpos));
 
     return parts;
 }
