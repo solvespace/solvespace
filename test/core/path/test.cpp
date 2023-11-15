@@ -125,11 +125,13 @@ TEST_CASE(join) {
     CHECK_EQ_STR(path.Join(Path::From("bar")).raw, "foo" S "bar");
 
     path = Path::From("");
-    CHECK_TRUE(path.Join(Path::From("bar")).IsEmpty());
+    CHECK_EQ_STR(path.Join(Path::From("bar")).raw, "." S "bar");
     path = Path::From("foo");
-    CHECK_TRUE(path.Join(Path::From("")).IsEmpty());
+    CHECK_EQ_STR(path.Join(Path::From("")).raw, "foo" S);
     path = Path::From("foo");
     CHECK_TRUE(path.Join(Path::From(R S "bar")).IsEmpty());
+    path = Path::From("");
+    CHECK_EQ_STR(path.Join(Path::From("")).raw, "." S);
 }
 
 TEST_CASE(expand) {
