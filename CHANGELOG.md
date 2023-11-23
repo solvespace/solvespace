@@ -4,6 +4,10 @@ Changelog
 3.x - development
 ---
 
+Geometric Modelling Kernel (NURBS)
+
+* Improve the difference boolean operations.
+
 Constraints (new and improved):
 
 * Add Parallel and Perpendicular constraints for 2 faces.
@@ -17,16 +21,29 @@ Allow these constraints to be applied to more entities at once:
 * Point on face can be applied to a point and 1-3 faces at once.
 * More than two points coincident.
 
+Sketching
+
+* `Image` sketch elements are not copied in 3d groups (extrude, lathe, revolve, helix) by default. `Toggle Construction` for an image to get the old behavior.
+
 Translations (now in 10 languages!)
 * Added Czech  cs_CZ.
 * Added Japanese ja_JP.
-* Update translation for French fr_FR and Russian ru_RU.
+* Update translation for French fr_FR, Russian ru_RU and Chinese zh_CN.
 
-Other:
+Other User interface changes:
+* `CTRL+Tab` hides/shows the toolbar.
+* Marquee selection of line segments is now precise.
+* Speed up the animation when moving the view, for example when pressing `F2` or `F3`.
 * Pressing ESC while drawing a sketch entity now deletes the entity rather than completing it.
-* Merged and improved the experimental Emscripten port (web version).
-* Better Flatpack support.
+* `CTRL+Shift+S` shortcut for "Save As..."
+* New option "use camera mouse navigation" for camera (instead of the default model) rotation navigation.
+* Sketches can be displayed with only dimensions visible (the button controlling visibility of constraints in the Property Browser has a new state).
 * More entity types described in the text screens.
+
+Other
+
+* Merged and improved the experimental Web version (Emscripten port).
+* Better Flatpack support.
 * Several bug fixes and usability improvements.
 * Allow 32 bit SolveSpace to access up to 4GB of RAM to allow working on larger projects.
 
