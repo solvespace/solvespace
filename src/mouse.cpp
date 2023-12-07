@@ -1372,26 +1372,49 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
         default: {
             double value = fabs(c->valA);
 
-            // If displayed as radius, also edit as radius.
-            if(c->type == Constraint::Type::DIAMETER && c->other)
-                value /= 2;
+						// True if the quantity represented by this constraint is dimensionless (ratios, angles etc.)
+						bool dimless = c->type == Constraint::Type::LENGTH_RATIO || c->type == Constraint::Type::ARC_ARC_LEN_RATIO || c->type == Constraint::Type::ARC_LINE_LEN_RATIO || c->type == Constraint::Type::ANGLE;
 
-            // Try showing value with default number of digits after decimal first.
-            if(c->type == Constraint::Type::LENGTH_RATIO || c->type == Constraint::Type::ARC_ARC_LEN_RATIO || c->type == Constraint::Type::ARC_LINE_LEN_RATIO) {
-                editValue = ssprintf("%.3f", value);
-            } else if(c->type == Constraint::Type::ANGLE) {
-                editValue = SS.DegreeToString(value);
-            } else {
-                editValue = SS.MmToString(value, true);
-                value /= SS.MmPerUnit();
-            }
-            // If that's not enough to represent it exactly, show the value with as many
-            // digits after decimal as required, up to 10.
-            int digits = 0;
-            while(fabs(std::stod(editValue) - value) > 1e-10) {
-                editValue = ssprintf("%.*f", digits, value);
-                digits++;
-            }
+						// Render a value, or render an expression
+						if(!c->expression.empty()) {
+							// Try showing value with default number of digits after decimal first.
+							if(dimless) {
+								// these ratios are dimensionless, so should not be scaled (not a length value)
+								if(c->type == Constraint::Type::ANGLE) {
+									editValue = SS.DegreeToString(value);
+								} else {
+									editValue = ssprintf("%.3f", value);
+								}
+							} else {
+									// If displayed as radius, also edit as radius.
+									if(c->type == Constraint::Type::DIAMETER && c->other)
+											value /= 2;
+
+									editValue = SS.MmToString(value, true);
+									value /= SS.MmPerUnit();
+							}
+
+							// If that's not enough to represent it exactly, show the value with as many
+							// digits after decimal as required, up to 10.
+							int digits = 0;
+							while(fabs(std::stod(editValue) - value) > 1e-10) {
+									editValue = ssprintf("%.*f", digits, value);
+									digits++;
+							}
+						} else {
+							if(c->type == Constraint::Type::DIAMETER && c->other) {
+								// Edit as radius instead of diameter due to user config
+								editValue = ssprintf("%s/%d", c->expression.c_str(), 2*SS.MmPerUnit());
+
+							} else if(SS.MmPerUnit() == 1 || dimless) {
+								// Unit does not need scaling
+								editValue = c->expression;
+							} else {
+								// Unit needs dimension scaling
+								editValue = ssprintf("%s/%d", c->expression.c_str(), SS.MmPerUnit());
+							}
+						}
+
             editPlaceholder = "10.000000";
             break;
         }
