@@ -185,6 +185,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'c',  "Constraint.other2",        'b',    &(SS.sv.c.other2)             },
     { 'c',  "Constraint.reference",     'b',    &(SS.sv.c.reference)          },
     { 'c',  "Constraint.comment",       'S',    &(SS.sv.c.comment)            },
+    { 'c',  "Constraint.expression",    'S',    &(SS.sv.c.expression)         },
     { 'c',  "Constraint.disp.offset.x", 'f',    &(SS.sv.c.disp.offset.x)      },
     { 'c',  "Constraint.disp.offset.y", 'f',    &(SS.sv.c.disp.offset.y)      },
     { 'c',  "Constraint.disp.offset.z", 'f',    &(SS.sv.c.disp.offset.z)      },
