@@ -482,9 +482,11 @@ std::string SolveSpaceUI::DegreeToString(double v) {
     }
 }
 double SolveSpaceUI::ExprToMm(Expr *e) {
+	//TODO: This function is wrong for constraints, remove all uses of it
     return (e->Eval()) * MmPerUnit();
 }
 double SolveSpaceUI::StringToMm(const std::string &str) {
+	  // we scale constants like this because we directly store values in Mm
     return std::stod(str) * MmPerUnit();
 }
 double SolveSpaceUI::ChordTolMm() {

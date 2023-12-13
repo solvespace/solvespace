@@ -927,6 +927,7 @@ bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
 }
 
 void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ctrlDown) {
+	//TODO: put scaling factor back if abandon editing constraint
     orig.mouseDown = true;
 
     if(window->IsEditorVisible()) {
@@ -1377,7 +1378,7 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
 						bool dimless = c->type == Constraint::Type::LENGTH_RATIO || c->type == Constraint::Type::ARC_ARC_LEN_RATIO || c->type == Constraint::Type::ARC_LINE_LEN_RATIO || c->type == Constraint::Type::ANGLE;
 
 						// Render a value, or render an expression
-						if(!c->expression.empty()) {
+						if(c->expression.empty()) {
 							// Try showing value with default number of digits after decimal first.
 							if(dimless) {
 								// these ratios are dimensionless, so should not be scaled (not a length value)
@@ -1403,16 +1404,17 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
 									digits++;
 							}
 						} else {
+							// Appears to be the wrong approach
+							// TODO: Simplify so that we don't have *25.4/25.4 in a bunch of expressions
 							if(c->type == Constraint::Type::DIAMETER && c->other) {
 								// Edit as radius instead of diameter due to user config
-								editValue = ssprintf("%s/%d", c->expression.c_str(), 2*SS.MmPerUnit());
-
-							} else if(SS.MmPerUnit() == 1 || dimless) {
+								editValue = ssprintf("%s*%f", c->expression.c_str(), c->expr_scaling_to_base/2*SS.MmPerUnit());
+							} else if(dimless || c->expr_scaling_to_base == SS.MmPerUnit()) {
 								// Unit does not need scaling
 								editValue = c->expression;
 							} else {
 								// Unit needs dimension scaling
-								editValue = ssprintf("%s/%d", c->expression.c_str(), SS.MmPerUnit());
+								editValue = ssprintf("%s*%f", c->expression.c_str(), c->expr_scaling_to_base/SS.MmPerUnit());
 							}
 						}
 
@@ -1443,6 +1445,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
 }
 
 void GraphicsWindow::EditControlDone(const std::string &s) {
+		//TODO: convert inch expessions back into mm
     window->HideEditor();
     window->Invalidate();
 
@@ -1460,7 +1463,13 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
     if(e) {
         SS.UndoRemember();
         if(usedParams > 0) {
+					// TODO: special cases for dimless, angles
+					c->expr_scaling_to_base = SS.MmPerUnit(); 
+					// Suppose something was designed in inches but edited in mm. The click handler will put the scaling in
+					// The user will choose to leave the scaling alone. So we put the 
           c->expression = s;
+
+					e->SimplifyInverses();
         }
 
         switch(c->type) {
@@ -1471,14 +1480,15 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
             case Constraint::Type::LENGTH_DIFFERENCE:
             case Constraint::Type::ARC_ARC_DIFFERENCE:
             case Constraint::Type::ARC_LINE_DIFFERENCE: {
+
                 // The sign is not displayed to the user, but this is a signed
                 // distance internally. To flip the sign, the user enters a
                 // negative distance.
                 bool wasNeg = (c->valA < 0);
                 if(wasNeg) {
-                    c->valA = -SS.ExprToMm(e);
+                    c->valA = -(e->Eval());
                 } else {
-                    c->valA = SS.ExprToMm(e);
+                    c->valA = (e->Eval());
                 }
                 break;
             }
@@ -1492,7 +1502,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
                 break;
 
             case Constraint::Type::DIAMETER:
-                c->valA = fabs(SS.ExprToMm(e));
+                c->valA = fabs((e->Eval()) * c->expr_scaling_to_base);
 
                 // If displayed and edited as radius, convert back
                 // to diameter
@@ -1502,6 +1512,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
 
             default:
                 // These are always positive, and they get the units conversion.
+								// Use ExprToMm since this unparameterized expressions simplify down
                 c->valA = fabs(SS.ExprToMm(e));
                 break;
         }

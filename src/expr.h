@@ -74,6 +74,7 @@ public:
     bool DependsOn(hParam p) const;
     static bool Tol(double a, double b);
     bool IsZeroConst() const;
+    Expr *SimplifyInverses();
     Expr *FoldConstants();
     void Substitute(hParam oldh, hParam newh);
 

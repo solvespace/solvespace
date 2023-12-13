@@ -6,6 +6,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <string>
 
 const hConstraint ConstraintBase::NO_CONSTRAINT = { 0 };
 
@@ -249,7 +250,8 @@ void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, const ExprVector &v,
 
 void ConstraintBase::Generate(IdList<Param,hParam> *l) {
     if(expression != "") {
-        Expr::From(expression.c_str(), false, l);
+			//TODO order of ops/move to AST
+        Expr::From((expression+"*"+std::to_string(expr_scaling_to_base)).c_str(), false, l);
     }
     switch(type) {
         case Type::PARALLEL:
@@ -278,7 +280,8 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
         return;
     } else {
         if(expression != "") {
-            exA = Expr::From(expression.c_str(), false, &SK.param, NULL);
+					//TODO order of ops/move to AST
+            exA = Expr::From((expression+"*"+std::to_string(expr_scaling_to_base)).c_str(), false, &SK.param, NULL);
         } else {
             exA = Expr::From(valA);
         }

@@ -7,6 +7,9 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <stack>
+#include <utility>
+#include <vector>
 
 ExprVector ExprVector::From(Expr *x, Expr *y, Expr *z) {
     ExprVector r = { x, y, z};
@@ -438,6 +441,113 @@ bool Expr::IsZeroConst() const {
     return op == Op::CONSTANT && EXACT(v == 0.0);
 }
 
+//TODO naming
+void remove_redundant(std::vector<Expr*>& exprs) {
+	for(long i=0; i<exprs.size(); i++) {
+		for(long k=i+1; k < exprs.size(); k++) {
+			if(exprs[i]->v == 1/exprs[k]->v) { //TODO: tol
+
+				exprs[k] = exprs[exprs.size()-1];
+				exprs.pop_back();
+
+				exprs[i] = exprs[exprs.size()-1];
+				exprs.pop_back();
+			}
+		}
+	}
+}
+
+void remove_inverses(std::vector<Expr*>& exprs1, std::vector<Expr*>& exprs2) {
+	for(long i=0; i<exprs1.size(); i++) {
+		for(long k=0; k<exprs2.size(); k++) {
+			if(exprs1[i]->v == exprs2[k]->v) {
+				exprs1[i] = exprs1[exprs1.size()-1];
+				exprs1.pop_back();
+
+				exprs2[i] = exprs2[exprs2.size()-1];
+				exprs2.pop_back();
+			}
+		}
+	}
+}
+
+// TODO: should this function be made part of FoldConstants? Seems be OK based on how FoldConstants is used
+// This routine cancels constants that multiplicative inverses, that act at on the entire expression.
+// Contract: this function may cancel ALL multiplicative inverses in the future, regardless of where they appear in tree
+Expr* Expr::SimplifyInverses() {
+	//TODO: include string slices in expr to allow for smart string rebuilding
+	//intent: be able to switch between inches and mm a few times without getting huge daisy chains
+	std::vector<Expr*> numerators = std::vector<Expr*>();
+	std::vector<Expr*> denominators = std::vector<Expr*>();
+	
+	// bool indicates if we are in the numerator of the expression
+	std::stack<std::pair<Expr*, bool>> iter = std::stack<std::pair<Expr*,bool>>();
+
+	if(this->op == Op::TIMES || this->op == Op::DIV) {
+		iter.push(std::make_pair(this,true));
+	} else {
+		return nullptr;
+	}
+
+	while(!iter.empty()) {
+		Expr* head = iter.top().first;
+		bool is_numerator = iter.top().second;
+		iter.pop();
+
+		std::vector<Expr*>* local_numerators = is_numerator ? &numerators : &denominators;
+		std::vector<Expr*>* local_denominators = is_numerator ? &denominators : &numerators;
+
+		switch(head->a->op) {
+			case Op::CONSTANT:
+				local_numerators->push_back(head->a); //TODO: this would be an opportune time to handle deletion
+
+				// is there another numerator that is our inverse?
+				// is there a denominoator that is equal to us?
+
+				// if sibling is to be removed...
+
+				// if removed item is not our sibling...
+				// delete self, make sibling into parent
+				break;
+			case Op::DIV:
+			case Op::TIMES:
+				iter.push(std::make_pair(head->a, is_numerator));
+				break;
+			default:
+				break;
+		}
+		
+		switch(head->b->op) {
+			case Op::CONSTANT:
+				if(head->op == Op::DIV)
+					local_denominators->push_back(head->b);
+				else
+				 	local_numerators->push_back(head->b);
+				break;
+			case Op::DIV:
+			case Op::TIMES:
+				if(head->op == Op::DIV)
+				 	iter.push(std::make_pair(head->b, !is_numerator));
+				else 
+					iter.push(std::make_pair(head->b, is_numerator));
+
+				break;
+			default:
+				break;
+		}
+	}
+
+	remove_redundant(numerators);
+	remove_redundant(denominators);
+	remove_inverses(numerators,denominators);
+
+	// delete constants in the tree (leaf nodes). 
+	// All deleted constants have a parent that is TIMES or DIV that their non-deleted siblings should replace
+	// TODO: what if sibling is also deleted?
+
+	return nullptr;
+}
+
 Expr *Expr::FoldConstants() {
     Expr *n = AllocExpr();
     *n = *this;
@@ -613,6 +723,10 @@ public:
     public:
         TokenType  type;
         Expr      *expr;
+
+				// string indicies to show where the token started and ended
+				int slice_start;
+				int slice_end;
 
         static Token From(TokenType type = TokenType::ERROR, Expr *expr = NULL);
         static Token From(TokenType type, Expr::Op op);
