@@ -699,3 +699,11 @@ void SSurface::PointOnCurve(const SBezier *curve, double *up, double *vp)
     dbp("didn't converge (surface and curve intersecting)");
 }
 
+// return the curvature of a surface at a given point in a specific direction
+double SSurface::CurvatureAt(Vector point, Vector dir) {
+  double u,v;
+  Vector tu, tv;
+  ClosestPointTo(point, &u, &v);
+  TangentsAt(u, v, &tu, &tv);
+  
+}
