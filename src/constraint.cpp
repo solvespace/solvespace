@@ -237,7 +237,9 @@ void Constraint::MenuConstrain(Command id) {
                 c.type = Type::DIAMETER;
                 c.entityA = gs.entity[0];
                 Entity* arc = SK.GetEntity(gs.entity[0]);
-                if (arc->type == EntityBase::Type::ARC_OF_CIRCLE) {
+                if ((arc->type == EntityBase::Type::ARC_OF_CIRCLE)
+                    && (!SS.arcDimDefaultDiameter))
+                {
                   c.other = true;
                 }
             } else {
