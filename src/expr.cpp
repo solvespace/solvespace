@@ -441,7 +441,7 @@ bool Expr::IsZeroConst() const {
     return op == Op::CONSTANT && EXACT(v == 0.0);
 }
 
-//TODO naming
+//TODO naming/scope
 void remove_redundant(std::vector<Expr*>& exprs) {
 	for(long i=0; i<exprs.size(); i++) {
 		for(long k=i+1; k < exprs.size(); k++) {
@@ -469,6 +469,21 @@ void remove_inverses(std::vector<Expr*>& exprs1, std::vector<Expr*>& exprs2) {
 			}
 		}
 	}
+}
+
+void bubble_delete(Expr* root) {
+    if(root->a != nullptr) {
+        bubble_delete(root->a);
+        root->to_delete = true;
+    }
+
+    // this checks for enum variants that imply the union in Expr has Expr* b
+    if((uint32_t)root->op >= 100 && (uint32_t)root->op <=103) {
+        bubble_delete(root->b);
+        root->to_delete = true;
+    }
+
+    // just because a parent is deleted doesn't mean its children are deleted
 }
 
 // TODO: should this function be made part of FoldConstants? Seems be OK based on how FoldConstants is used
@@ -540,6 +555,7 @@ Expr* Expr::SimplifyInverses() {
 	remove_redundant(numerators);
 	remove_redundant(denominators);
 	remove_inverses(numerators,denominators);
+    bubble_delete(this);
 
 	// delete constants in the tree (leaf nodes). 
 	// All deleted constants have a parent that is TIMES or DIV that their non-deleted siblings should replace

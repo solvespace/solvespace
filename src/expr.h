@@ -37,12 +37,12 @@ public:
     };
 
     Op      op;
-    Expr    *a;
+    Expr    *a; //nullptr if this is a PARAM, PARAM_PTR, CONSTANT, VARIABLE
     union {
-        double  v;
-        hParam  parh;
-        Param  *parp;
-        Expr    *b;
+        double  v; // this variant if CONSTANT
+        hParam  parh; // this variant if PARAM
+        Param  *parp; // this variant if PARAM_PTR
+        Expr    *b; // nullptr if this is a unary op, 
     };
 
     bool to_delete;
