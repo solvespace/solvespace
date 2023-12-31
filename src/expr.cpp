@@ -724,17 +724,14 @@ public:
         TokenType  type;
         Expr      *expr;
 
-				// string indicies to show where the token started and ended
-				int slice_start;
-				int slice_end;
-
-        static Token From(TokenType type = TokenType::ERROR, Expr *expr = NULL);
-        static Token From(TokenType type, Expr::Op op);
+        static Token* From(TokenType type = TokenType::ERROR, Expr *expr = NULL);
+        static Token* From(TokenType type, Expr::Op op);
         bool IsError() const { return type == TokenType::ERROR; }
     };
 
     std::string::const_iterator it, end;
-    std::vector<Token> stack;
+    std::vector<Token*> stack;
+    std::vector<Token*> tokens; //TODO: free tokens when done - problem: this vector reallocates and the pointers all become trash. Use a destructor?
     std::set<uint32_t> newParams;
     IdList<Param, hParam> *params;
     hConstraint hc;
@@ -745,12 +742,12 @@ public:
     std::string ReadWord();
     void SkipSpace();
 
-    Token PopOperator(std::string *error);
-    Token PopOperand(std::string *error);
+    Token* PopOperator(std::string *error);
+    Token* PopOperand(std::string *error);
 
-    int Precedence(Token token);
-    Token LexNumber(std::string *error);
-    Token Lex(std::string *error);
+    int Precedence(Token* token);
+    Token* LexNumber(std::string *error);
+    Token* Lex(std::string *error);
     bool Reduce(std::string *error);
     bool Parse(std::string *error, size_t reduceUntil = 0);
 
@@ -758,18 +755,20 @@ public:
                         hParam> *params = NULL, int *paramsCount = 0, hConstraint hc = {0});
 };
 
-ExprParser::Token ExprParser::Token::From(TokenType type, Expr *expr) {
-    Token t;
-    t.type = type;
-    t.expr = expr;
+// allocates
+ExprParser::Token* ExprParser::Token::From(TokenType type, Expr *expr) {
+    Token* t = new Token();
+    t->type = type;
+    t->expr = expr;
     return t;
 }
 
-ExprParser::Token ExprParser::Token::From(TokenType type, Expr::Op op) {
-    Token t;
-    t.type = type;
-    t.expr = Expr::AllocExpr();
-    t.expr->op = op;
+// allocates
+ExprParser::Token* ExprParser::Token::From(TokenType type, Expr::Op op) {
+    Token* t = new Token();
+    t->type = type;
+    t->expr = Expr::AllocExpr();
+    t->expr->op = op;
     return t;
 }
 
@@ -803,7 +802,7 @@ void ExprParser::SkipSpace() {
     }
 }
 
-ExprParser::Token ExprParser::LexNumber(std::string *error) {
+ExprParser::Token* ExprParser::LexNumber(std::string *error) {
     std::string s;
 
     while(char c = PeekChar()) {
@@ -818,20 +817,20 @@ ExprParser::Token ExprParser::LexNumber(std::string *error) {
     char *endptr;
     double d = strtod(s.c_str(), &endptr);
 
-    Token t = Token::From();
+    Token* t = Token::From();
     if(endptr == s.c_str() + s.size()) {
         t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
-        t.expr->v = d;
+        t->expr->v = d;
     } else {
         *error = "'" + s + "' is not a valid number";
     }
     return t;
 }
 
-ExprParser::Token ExprParser::Lex(std::string *error) {
+ExprParser::Token* ExprParser::Lex(std::string *error) {
     SkipSpace();
 
-    Token t = Token::From();
+    Token* t = nullptr;
     char c = PeekChar();
     if(isupper(c)) {
         std::string n = ReadWord();
@@ -852,13 +851,13 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
             t = Token::From(TokenType::UNARY_OP, Expr::Op::ACOS);
         } else if(s == "pi") {
             t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
-            t.expr->v = PI;
+            t->expr->v = PI;
         } else if(params != NULL) {
             bool found = false;
             for(const Param &p : *params) {
                 if(p.name != s) continue;
                 t = Token::From(TokenType::OPERAND, Expr::Op::PARAM);
-                t.expr->parh = p.h;
+                t->expr->parh = p.h;
                 newParams.insert(p.h.v);
                 found = true;
             }
@@ -875,7 +874,7 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
                 params->Add(&p);
                 newParams.insert(p.h.v);
                 t = Token::From(TokenType::OPERAND, Expr::Op::PARAM);
-                t.expr->parh = p.h;
+                t->expr->parh = p.h;
             }
         } else {
             *error = "'" + s + "' is not a valid variable, function or constant";
@@ -908,9 +907,9 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
     return t;
 }
 
-ExprParser::Token ExprParser::PopOperand(std::string *error) {
-    Token t = Token::From();
-    if(stack.empty() || stack.back().type != TokenType::OPERAND) {
+ExprParser::Token* ExprParser::PopOperand(std::string *error) {
+    Token* t = nullptr;
+    if(stack.empty() || stack.back()->type != TokenType::OPERAND) {
         *error = "Expected an operand";
     } else {
         t = stack.back();
@@ -919,10 +918,10 @@ ExprParser::Token ExprParser::PopOperand(std::string *error) {
     return t;
 }
 
-ExprParser::Token ExprParser::PopOperator(std::string *error) {
-    Token t = Token::From();
-    if(stack.empty() || (stack.back().type != TokenType::UNARY_OP &&
-                         stack.back().type != TokenType::BINARY_OP)) {
+ExprParser::Token* ExprParser::PopOperator(std::string *error) {
+    Token* t = nullptr;
+    if(stack.empty() || (stack.back()->type != TokenType::UNARY_OP &&
+                         stack.back()->type != TokenType::BINARY_OP)) {
         *error = "Expected an operator";
     } else {
         t = stack.back();
@@ -931,44 +930,45 @@ ExprParser::Token ExprParser::PopOperator(std::string *error) {
     return t;
 }
 
-int ExprParser::Precedence(Token t) {
-    ssassert(t.type == TokenType::BINARY_OP ||
-             t.type == TokenType::UNARY_OP ||
-             t.type == TokenType::OPERAND,
+int ExprParser::Precedence(Token* t) {
+    ssassert(t->type == TokenType::BINARY_OP ||
+             t->type == TokenType::UNARY_OP ||
+             t->type == TokenType::OPERAND,
              "Unexpected token type");
 
-    if(t.type == TokenType::UNARY_OP) {
+    if(t->type == TokenType::UNARY_OP) {
         return 30;
-    } else if(t.expr->op == Expr::Op::TIMES ||
-              t.expr->op == Expr::Op::DIV) {
+    } else if(t->expr->op == Expr::Op::TIMES ||
+              t->expr->op == Expr::Op::DIV) {
         return 20;
-    } else if(t.expr->op == Expr::Op::PLUS ||
-              t.expr->op == Expr::Op::MINUS) {
+    } else if(t->expr->op == Expr::Op::PLUS ||
+              t->expr->op == Expr::Op::MINUS) {
         return 10;
-    } else if(t.type == TokenType::OPERAND) {
+    } else if(t->type == TokenType::OPERAND) {
         return 0;
     } else ssassert(false, "Unexpected operator");
 }
 
 bool ExprParser::Reduce(std::string *error) {
-    Token a = PopOperand(error);
-    if(a.IsError()) return false;
+    Token* a = PopOperand(error);
+    if(a->IsError()) return false;
 
-    Token op = PopOperator(error);
-    if(op.IsError()) return false;
+    Token* op = PopOperator(error);
+    if(op->IsError()) return false;
 
-    Token r = Token::From(TokenType::OPERAND);
-    switch(op.type) {
+    //Token r = Token::From(TokenType::OPERAND);
+    switch(op->type) {
         case TokenType::BINARY_OP: {
-            Token b = PopOperand(error);
-            if(b.IsError()) return false;
-            r.expr = b.expr->AnyOp(op.expr->op, a.expr);
+            Token* b = PopOperand(error);
+            if(b->IsError()) return false;
+            b->expr = b->expr->AnyOp(op->expr->op, a->expr);
+            stack.push_back(b);
             break;
         }
 
         case TokenType::UNARY_OP: {
-            Expr *e = a.expr;
-            switch(op.expr->op) {
+            Expr *e = a->expr;
+            switch(op->expr->op) {
                 case Expr::Op::NEGATE: e = e->Negate(); break;
                 case Expr::Op::SQRT:   e = e->Sqrt(); break;
                 case Expr::Op::SQUARE: e = e->Times(e); break;
@@ -978,21 +978,22 @@ bool ExprParser::Reduce(std::string *error) {
                 case Expr::Op::ACOS:   e = e->ACos()->Times(Expr::From(180/PI)); break;
                 default: ssassert(false, "Unexpected unary operator");
             }
-            r.expr = e;
+            a->expr = e;
+            stack.push_back(a);
             break;
         }
 
         default: ssassert(false, "Unexpected operator");
     }
-    stack.push_back(r);
 
     return true;
 }
 
 bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
     while(true) {
-        Token t = Lex(error);
-        switch(t.type) {
+        Token* t = Lex(error);
+        tokens.push_back(t);
+        switch(t->type) {
             case TokenType::ERROR:
                 return false;
 
@@ -1002,7 +1003,7 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
                     if(!Reduce(error)) return false;
                 }
 
-                if(t.type == TokenType::PAREN_RIGHT) {
+                if(t->type == TokenType::PAREN_RIGHT) {
                     stack.push_back(t);
                 }
                 return true;
@@ -1011,7 +1012,7 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
                 // sub-expression
                 if(!Parse(error, /*reduceUntil=*/stack.size())) return false;
 
-                if(stack.empty() || stack.back().type != TokenType::PAREN_RIGHT) {
+                if(stack.empty() || stack.back()->type != TokenType::PAREN_RIGHT) {
                     *error = "Expected ')'";
                     return false;
                 }
@@ -1020,11 +1021,11 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
             }
 
             case TokenType::BINARY_OP:
-                if((stack.size() > reduceUntil && stack.back().type != TokenType::OPERAND) ||
+                if((stack.size() > reduceUntil && stack.back()->type != TokenType::OPERAND) ||
                    stack.size() == reduceUntil) {
-                    if(t.expr->op == Expr::Op::MINUS) {
-                        t.type = TokenType::UNARY_OP;
-                        t.expr->op = Expr::Op::NEGATE;
+                    if(t->expr->op == Expr::Op::MINUS) {
+                        t->type = TokenType::UNARY_OP;
+                        t->expr->op = Expr::Op::NEGATE;
                         stack.push_back(t);
                         break;
                     }
@@ -1058,10 +1059,10 @@ Expr *ExprParser::Parse(const std::string &input, std::string *error,
     parser.hc = hc;
     if(!parser.Parse(error)) return NULL;
 
-    Token r = parser.PopOperand(error);
-    if(r.IsError()) return NULL;
+    Token* r = parser.PopOperand(error);
+    if(r->IsError()) return NULL;
     if(paramsCount != NULL) *paramsCount = parser.newParams.size();
-    return r.expr;
+    return r->expr;
 }
 
 Expr *Expr::Parse(const std::string &input, std::string *error) {
