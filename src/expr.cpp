@@ -441,6 +441,7 @@ bool Expr::IsZeroConst() const {
     return op == Op::CONSTANT && EXACT(v == 0.0);
 }
 
+
 //TODO naming/scope
 void remove_redundant(std::vector<Expr*>& exprs) {
 	for(long i=0; i<exprs.size(); i++) {
@@ -471,19 +472,42 @@ void remove_inverses(std::vector<Expr*>& exprs1, std::vector<Expr*>& exprs2) {
 	}
 }
 
-void bubble_delete(Expr* root) {
-    if(root->a != nullptr) {
-        bubble_delete(root->a);
-        root->to_delete = true;
-    }
+//TODO: fix parenthesis edge case: 2*c/(2*3*4) because 2*c/3*4
+void bubble_delete(Expr** parent) {
+    Expr* a_ptr = nullptr;
+    bool del_a = false;
+    Expr* b_ptr = nullptr;
+    bool del_b = false;
+
+    if((*parent)->a != nullptr) {
+        bubble_delete(&(*parent)->a);
+        if(!(*parent)->a->to_delete) {
+            a_ptr = (*parent)->a;
+        } else {
+            del_a = true;
+        }
+    } 
 
     // this checks for enum variants that imply the union in Expr has Expr* b
-    if((uint32_t)root->op >= 100 && (uint32_t)root->op <=103) {
-        bubble_delete(root->b);
-        root->to_delete = true;
-    }
+    if((uint32_t)(*parent)->op >= 100 && (uint32_t)(*parent)->op <=103) {
+        bubble_delete(&(*parent)->b);
+        if(!(*parent)->b->to_delete) {
+            b_ptr = (*parent)->b;
+        } else {
+            del_b = true;
+        }
+    } 
 
-    // just because a parent is deleted doesn't mean its children are deleted
+    if(del_a && del_b) {
+        (*parent)->to_delete = true;
+        //TODO: conditionally free a & b
+    } else if(del_a && b_ptr != nullptr) { //TODO: check if uni-operato
+        (*parent)->to_delete = true;
+        (*parent) = b_ptr;
+    } else if(del_b && a_ptr != nullptr) {
+        (*parent)->to_delete = true;
+        (*parent) = a_ptr;
+    }
 }
 
 // TODO: should this function be made part of FoldConstants? Seems be OK based on how FoldConstants is used
@@ -555,13 +579,15 @@ Expr* Expr::SimplifyInverses() {
 	remove_redundant(numerators);
 	remove_redundant(denominators);
 	remove_inverses(numerators,denominators);
-    bubble_delete(this);
+
+    Expr* new_expr = this;
+    bubble_delete(&new_expr);
 
 	// delete constants in the tree (leaf nodes). 
 	// All deleted constants have a parent that is TIMES or DIV that their non-deleted siblings should replace
 	// TODO: what if sibling is also deleted?
 
-	return nullptr;
+	return new_expr;
 }
 
 Expr *Expr::FoldConstants() {
@@ -1072,6 +1098,56 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
     return true;
 }
 
+//TODO: clean this up, make this auto edit the original string, fix auto-added scale factors in the expressions in tokens so they print properly or are fully suppressed depending on mode
+void print_tokens(std::vector<ExprParser::Token*> tokens) {
+    std::string* str = new std::string();
+
+    for(ExprParser::Token* token : tokens) {
+
+        if(token->type == ExprParser::TokenType::PAREN_LEFT) {
+            str->append("(");
+            continue;
+        } else if(token->type == ExprParser::TokenType::PAREN_RIGHT) {
+            str->append(")");
+            continue;
+        } else if(token->expr != nullptr) {
+            if(token->expr->to_delete) {
+                continue;
+            }
+
+
+            switch(token->expr->op) {
+                case Expr::Op::PARAM:
+                case Expr::Op::PARAM_PTR:
+                case Expr::Op::VARIABLE:
+                    str->append("param");
+                    break;
+                case Expr::Op::CONSTANT:
+                    str->append(std::to_string(token->expr->v));
+                    break;
+                case Expr::Op::PLUS:
+                    str->append("+");
+                    break;
+                case Expr::Op::MINUS:
+                    str->append("-");
+                    break;
+                case Expr::Op::TIMES:
+                    str->append("*");
+                    break;
+                case Expr::Op::DIV:
+                    str->append("/");
+                    break;
+                    //TODO: UNARY OPS
+                default:
+                    str->append("?");
+            }
+        }
+    }
+
+    dbp("%s", str->c_str());
+    delete str;
+}
+
 Expr *ExprParser::Parse(const std::string &input, std::string *error,
                         IdList<Param, hParam> *params, int *paramsCount, hConstraint hc) {
     ExprParser parser;
@@ -1087,6 +1163,8 @@ Expr *ExprParser::Parse(const std::string &input, std::string *error,
     if(paramsCount != NULL) *paramsCount = parser.newParams.size();
 
     r->expr->SimplifyInverses();
+
+    print_tokens(parser.tokens);
 
     return r->expr;
 }
