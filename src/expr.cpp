@@ -909,7 +909,12 @@ ExprParser::Token* ExprParser::Lex(std::string *error) {
 
 ExprParser::Token* ExprParser::PopOperand(std::string *error) {
     Token* t = nullptr;
-    if(stack.empty() || stack.back()->type != TokenType::OPERAND) {
+    if(stack.empty() 
+            || ( 
+                stack.back()->type != TokenType::OPERAND
+                && (stack.back()->expr == nullptr)
+               )
+            ) {
         *error = "Expected an operand";
     } else {
         t = stack.back();
@@ -963,7 +968,6 @@ bool ExprParser::Reduce(std::string *error) {
 
             // gives the operand children:
             // semantically this subtree represents an operand, so we change the token type accordingly
-            op->type = TokenType::OPERAND;
             op->expr = b->expr->AnyOp(op->expr->op, a->expr);
             stack.push_back(op);
             break;
@@ -981,7 +985,6 @@ bool ExprParser::Reduce(std::string *error) {
                 case Expr::Op::ACOS:   e = e->ACos()->Times(Expr::From(180/PI)); break;
                 default: ssassert(false, "Unexpected unary operator");
             }
-            op->type = TokenType::OPERAND;
             op->expr = e;
             stack.push_back(op);
             break;
