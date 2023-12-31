@@ -45,6 +45,8 @@ public:
         Expr    *b;
     };
 
+    bool to_delete;
+
     Expr() = default;
     Expr(double val) : op(Op::CONSTANT) { v = val; }
 

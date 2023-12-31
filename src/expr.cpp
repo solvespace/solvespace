@@ -447,10 +447,10 @@ void remove_redundant(std::vector<Expr*>& exprs) {
 		for(long k=i+1; k < exprs.size(); k++) {
 			if(exprs[i]->v == 1/exprs[k]->v) { //TODO: tol
 
-				exprs[k] = exprs[exprs.size()-1];
+                exprs[k]->to_delete = true;
 				exprs.pop_back();
 
-				exprs[i] = exprs[exprs.size()-1];
+				exprs[i]->to_delete = true;
 				exprs.pop_back();
 			}
 		}
@@ -461,10 +461,10 @@ void remove_inverses(std::vector<Expr*>& exprs1, std::vector<Expr*>& exprs2) {
 	for(long i=0; i<exprs1.size(); i++) {
 		for(long k=0; k<exprs2.size(); k++) {
 			if(exprs1[i]->v == exprs2[k]->v) {
-				exprs1[i] = exprs1[exprs1.size()-1];
+				exprs1[i]->to_delete = true;
 				exprs1.pop_back();
 
-				exprs2[i] = exprs2[exprs2.size()-1];
+				exprs2[k]->to_delete = true;
 				exprs2.pop_back();
 			}
 		}
@@ -956,13 +956,16 @@ bool ExprParser::Reduce(std::string *error) {
     Token* op = PopOperator(error);
     if(op->IsError()) return false;
 
-    //Token r = Token::From(TokenType::OPERAND);
     switch(op->type) {
         case TokenType::BINARY_OP: {
             Token* b = PopOperand(error);
             if(b->IsError()) return false;
-            b->expr = b->expr->AnyOp(op->expr->op, a->expr);
-            stack.push_back(b);
+
+            // gives the operand children:
+            // semantically this subtree represents an operand, so we change the token type accordingly
+            op->type = TokenType::OPERAND;
+            op->expr = b->expr->AnyOp(op->expr->op, a->expr);
+            stack.push_back(op);
             break;
         }
 
@@ -978,8 +981,9 @@ bool ExprParser::Reduce(std::string *error) {
                 case Expr::Op::ACOS:   e = e->ACos()->Times(Expr::From(180/PI)); break;
                 default: ssassert(false, "Unexpected unary operator");
             }
-            a->expr = e;
-            stack.push_back(a);
+            op->type = TokenType::OPERAND;
+            op->expr = e;
+            stack.push_back(op);
             break;
         }
 
@@ -1062,6 +1066,9 @@ Expr *ExprParser::Parse(const std::string &input, std::string *error,
     Token* r = parser.PopOperand(error);
     if(r->IsError()) return NULL;
     if(paramsCount != NULL) *paramsCount = parser.newParams.size();
+
+    r->expr->SimplifyInverses();
+
     return r->expr;
 }
 
