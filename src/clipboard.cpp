@@ -249,8 +249,10 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             case Constraint::Type::COMMENT:
                 c.disp.offset = c.disp.offset.Plus(trans);
                 break;
-            case Constraint::Type::PT_PT_DISTANCE:
             case Constraint::Type::PT_LINE_DISTANCE:
+                c.valA *= scale;
+                break;
+            case Constraint::Type::PT_PT_DISTANCE:
             case Constraint::Type::PROJ_PT_DISTANCE:
             case Constraint::Type::DIAMETER:
                 c.valA *= fabs(scale);
