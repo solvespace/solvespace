@@ -586,8 +586,9 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
             nsEvent.subtype == NSEventSubtypeTabletPoint &&
             kind == Platform::Window::Kind::TOPLEVEL;
     }
-    // Check if we are scrolling on trackpad and handle things differently.
-    if(scrollFromTrackpadTouch) {
+    // Check if we are scrolling on trackpad or asked to always pan and then handle things differently.
+    if((SS.mouseScrollAction == SolveSpaceUI::MouseScrollAction::AUTO && scrollFromTrackpadTouch) ||
+       (SS.mouseScrollAction == SolveSpaceUI::MouseScrollAction::PAN && kind == Platform::Window::Kind::TOPLEVEL)) {
         // This is how Cocoa represents 2 finger trackpad drag gestures, rather than going via
         // NSPanGestureRecognizer which is how you might expect this to work... We complicate this
         // further by also handling shift-two-finger-drag to mean rotate. Fortunately we're using
