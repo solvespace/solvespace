@@ -449,10 +449,21 @@ void Constraint::DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
 }
 
 bool Constraint::IsVisible() const {
-    if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_NOSHOW) 
-        return false;
-    bool isDim = false;
+    if (type == Type::COMMENT && disp.style.v){
+        Style *s = Style::Get(disp.style);
+        if(s->visible && (s->h.v >= Style::FIRST_CUSTOM)) {
+            return true;
+        }
+        else if (!s->visible && (s->h.v >= Style::FIRST_CUSTOM)) {
+            return false;
+        }
+    }
 
+    if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_NOSHOW) {
+        return false;
+    }
+
+    bool isDim = false;
     if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_SHOW_DIM)
         switch(type) {
         case ConstraintBase::Type::ANGLE:
