@@ -449,18 +449,13 @@ void Constraint::DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
 }
 
 bool Constraint::IsVisible() const {
-    if (type == Type::COMMENT && disp.style.v){
-        Style *s = Style::Get(disp.style);
-        if(s->visible && (s->h.v >= Style::FIRST_CUSTOM)) {
-            return true;
-        }
-        else if (!s->visible && (s->h.v >= Style::FIRST_CUSTOM)) {
+   bool evalShowCustomComment = false;
+    if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_NOSHOW){
+        if (type == Type::COMMENT && disp.style.v >= Style::FIRST_CUSTOM) {
+            evalShowCustomComment = true;
+        } else {
             return false;
         }
-    }
-
-    if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_NOSHOW) {
-        return false;
     }
 
     bool isDim = false;
@@ -475,7 +470,8 @@ bool Constraint::IsVisible() const {
         default:;
         }
 
-    if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_SHOW_ALL || isDim ) {
+    if(SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_SHOW_ALL ||
+       isDim || evalShowCustomComment) {
         Group *g = SK.GetGroup(group);
         // If the group is hidden, then the constraints are hidden and not
         // able to be selected.
