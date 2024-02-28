@@ -118,21 +118,15 @@ protected:
 	}
 
 	void mouseReleaseEvent(QMouseEvent* event) override{
-		this->updateSlvSpaceMouseEvent(event);
-        QWidget::mouseReleaseEvent(event);
+		updateSlvSpaceMouseEvent(event);
 	}
 
-	virtual void mousePressEvent(QMouseEvent* event) override{
-
-		this->updateSlvSpaceMouseEvent(event);        
-		QWidget::mousePressEvent(event);
-		
+	void mousePressEvent(QMouseEvent* event) override{
+		updateSlvSpaceMouseEvent(event);
 	}
 
 	void mouseMoveEvent(QMouseEvent* event) override{
-
-		this->updateSlvSpaceMouseEvent(event);
-        QWidget::mouseMoveEvent(event);
+		updateSlvSpaceMouseEvent(event);
 	}
 
 	void updateSlvSpaceMouseEvent(QMouseEvent* event)
