@@ -20,12 +20,6 @@
 #include <QSettings>
 
 
-#include <fstream>
-
-// FOR TESTING
-#include <iostream>
-
-
 namespace SolveSpace {
 namespace Platform {
 
@@ -950,10 +944,8 @@ void OpenInBrowser(const std::string& url) {
     }
 }
 
-QApplication* gQApp;
-
 std::vector<std::string> InitGui(int argc, char** argv) {
-    gQApp = new QApplication(argc, argv);
+    new QApplication(argc, argv);
     std::vector<std::string> args = SolveSpace::Platform::InitCli(argc, argv);
     return args;
 }
@@ -967,18 +959,17 @@ void RunGui() {
         std::cout << "failed to open qss" << std::endl;
     } else {
         QString StyleSheet = QLatin1String(File.readAll());
-        gQApp->setStyleSheet(StyleSheet);
+        qApp->setStyleSheet(StyleSheet);
     }
-    gQApp->exec();
+    qApp->exec();
 }
 
 void ExitGui() {
-//          gQApp->exit;
-    gQApp->quit();
+    qApp->quit();
 }
 
 void ClearGui() {
-    delete gQApp;
+    delete qApp;
 }
 
 }
