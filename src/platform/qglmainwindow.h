@@ -108,11 +108,10 @@ protected:
 	//----Mouse Events--------
 	void wheelEvent(QWheelEvent* event)
 	{
-                 int wheelDelta=120; 
+         const double wheelDelta=120.0;
 		 slvMouseEvent.button = MouseEvent::Button::NONE;
 		 slvMouseEvent.type = MouseEvent::Type::SCROLL_VERT;
-		 if (!event->angleDelta().isNull())
-            slvMouseEvent.scrollDelta = (double)event->delta() / (double)wheelDelta;
+         slvMouseEvent.scrollDelta = (double)event->angleDelta().y() / wheelDelta;
 
 		 emit mouseEventOccuredSignal(slvMouseEvent);
 	}
@@ -300,8 +299,6 @@ public:
 		//scrollArea->setWidgetResizable(true);
 		this->setCentralWidget(glWidget);
 		//void QLayout::setContentsMargins(int left, int top, int right, int bottom)
-		this->wheelDelta=120;
-		
 	}
 
 	~QtGLMainWindow()
@@ -471,8 +468,6 @@ private:
 	GLWidget* glWidget;
 	QScrollArea* scrollArea;
 	QGridLayout* gridLayout;
-        double wheelDelta; 
-
 };
 
 
