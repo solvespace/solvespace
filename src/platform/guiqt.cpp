@@ -31,7 +31,7 @@ namespace SolveSpace
         
         void FatalError(const std::string& message)
         {
-            QMessageBox::StandardButton buttonPressed = (QMessageBox::StandardButton)QMessageBox::critical(NULL, QString("Fatal Error"), QString::fromStdString(message),
+            QMessageBox::critical(NULL, QString("Fatal Error"), QString::fromStdString(message),
                 QMessageBox::StandardButton::Ok);
 
             abort();
@@ -538,8 +538,6 @@ namespace SolveSpace
             {
                 std::cout.imbue(std::locale::classic());
                 this->menuQ->repaint();
-                QRect rect = this->menuQ->geometry();
-                QRect rect2 = rect;                
             }
         };
 
