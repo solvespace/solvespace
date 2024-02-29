@@ -1,5 +1,4 @@
 
-#include <tinyxml2.h>
 #include <platform/qglmainwindow.h>
 #include "solvespace.h"
 #include "platform.h"
@@ -15,6 +14,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QDesktopServices>
+#include <QSettings>
 
 
 #include <fstream>
@@ -305,6 +305,58 @@ namespace SolveSpace
             dialog->isSaveDialog = true;
             return dialog;
         }
+
+//-----------------------------------------------------------------------------
+// Settings
+//-----------------------------------------------------------------------------
+
+class SettingsImplQt final : public Settings {
+public:
+    QSettings* _qset;
+
+    SettingsImplQt() {
+        _qset = new QSettings("SolveSpace", "solvespace");
+    }
+
+    ~SettingsImplQt() {
+        delete _qset;
+    }
+
+    void FreezeInt(const std::string& key, uint32_t value) override {
+        _qset->setValue(QString::fromStdString(key), value);
+    }
+
+    uint32_t ThawInt(const std::string& key, uint32_t defaultValue = 0) override {
+        return _qset->value(QString::fromStdString(key), defaultValue).toInt();
+    }
+
+    void FreezeFloat(const std::string& key, double value) override{
+        _qset->setValue(QString::fromStdString(key), value);
+    }
+
+    double ThawFloat(const std::string& key, double defaultValue = 0.0) override {
+        return _qset->value(QString::fromStdString(key), defaultValue).toDouble();
+    }
+
+    void FreezeString(const std::string& key, const std::string& value) override {
+        _qset->setValue(QString::fromStdString(key),
+                        QString::fromStdString(value));
+    }
+
+    std::string ThawString(const std::string& key, const std::string& defaultValue = "") override {
+        return _qset->value(QString::fromStdString(key),
+                            QString::fromStdString(defaultValue)).toString().toStdString();
+    }
+};
+
+SettingsRef GetSettings()
+{
+    static std::shared_ptr<SettingsImplQt> settings;
+    if (!settings) {
+        settings = std::make_shared<SettingsImplQt>();
+    }
+    return settings;
+}
 
         /*******Timer Class ***************************/
 
@@ -876,143 +928,6 @@ namespace SolveSpace
         }
         void Request3DConnexionEventsForWindow(WindowRef window) {
 
-        }
-
-        /************** Settings *******************************/
-//#ifndef XMLCheckResult
-//  #define XMLCheckResult(a_eResult) if (a_eResult != tinyxml2::XMLError::XML_SUCCESS) { printf("Error: %i\n", a_eResult); }
-//#endif
-
-        class SettingsImpTinyXml final : public Settings {
-        public:
-            tinyxml2::XMLDocument xmlDoc;
-            tinyxml2::XMLNode* pRoot;
-
-            SettingsImpTinyXml(){
-                tinyxml2::XMLError eResult = xmlDoc.LoadFile("solvespace.conf");
- //               XMLCheckResult(eResult);
-                if (eResult != tinyxml2::XMLError::XML_SUCCESS) {
-                    pRoot = xmlDoc.NewElement("Root");
-                    xmlDoc.InsertFirstChild(pRoot);
-                    tinyxml2::XMLError eResult = xmlDoc.SaveFile("solvespace.conf");
-                }
-                else
-                    pRoot = xmlDoc.FirstChild();
-            }
-
-            
-            ~SettingsImpTinyXml(){
-            }
-
-            void FreezeInt(const std::string& key, uint32_t value) override {
-                tinyxml2::XMLElement* pElement = pRoot->FirstChildElement(key.c_str());
-                if (pElement == nullptr) {
-                    pElement = xmlDoc.NewElement(key.c_str());
-                    pRoot->InsertEndChild(pElement);
-                }
-                pElement->SetText(value);
-                tinyxml2::XMLError eResult = xmlDoc.SaveFile("solvespace.conf");
-  //              XMLCheckResult(eResult);
-            }
-
-            uint32_t ThawInt(const std::string& key, uint32_t defaultValue = 0) override {
-                int iOutInt = defaultValue;
-                tinyxml2::XMLNode* pRoot2 = xmlDoc.FirstChild();
-                if(pRoot2 != nullptr) {
-                    tinyxml2::XMLElement* pElement2 = pRoot2->FirstChildElement(key.c_str());
-                    if (pElement2 != nullptr) {
-                        tinyxml2::XMLError eResult = pElement2->QueryIntText(&iOutInt);
-                    } 
-                    else {
-        //                std::cout << "Error: " << tinyxml2::XMLError::XML_ERROR_PARSING_ELEMENT;
-        //             XMLCheckResult(eResult);
-                    }
-                }
-                else {
-       //             std::cout << "Error: " << tinyxml2::XMLError::XML_ERROR_FILE_READ_ERROR;
-                }
-                return iOutInt;
-            }
-
-            void FreezeFloat(const std::string& key, double value) override{
-                tinyxml2::XMLElement* pElement = pRoot->FirstChildElement(key.c_str());
-                if (pElement == nullptr) {
-                    pElement = xmlDoc.NewElement(key.c_str());
-                    pRoot->InsertEndChild(pElement);
-                }
-                pElement->SetText(value);
-                tinyxml2::XMLError eResult = xmlDoc.SaveFile("solvespace.conf");
-  //              XMLCheckResult(eResult);
-            }
-
-            double ThawFloat(const std::string& key, double defaultValue = 0.0) override {
-                double iOutFloat = defaultValue;
-                tinyxml2::XMLNode* pRoot2 = xmlDoc.FirstChild();
-                if(pRoot2 != nullptr) {
-                    tinyxml2::XMLElement* pElement2 = pRoot2->FirstChildElement(key.c_str());
-                    if (pElement2 != nullptr) {
-                        tinyxml2::XMLError eResult = pElement2->QueryDoubleText(&iOutFloat);
-                    } 
-                    else {
-        //                std::cout << "Error: " << tinyxml2::XMLError::XML_ERROR_PARSING_ELEMENT;
-        //             XMLCheckResult(eResult);
-                    }
-                }
-                else {
-       //             std::cout << "Error: " << tinyxml2::XMLError::XML_ERROR_FILE_READ_ERROR;
-                }
-                return iOutFloat;
-            }
-
-            void FreezeString(const std::string& key, const std::string& value) override {
-                tinyxml2::XMLElement* pElement = pRoot->FirstChildElement(key.c_str());
-                if (pElement == nullptr) {
-                    pElement = xmlDoc.NewElement(key.c_str());
-                    pRoot->InsertEndChild(pElement);
-                }
-                pElement->SetText(value.c_str());
-                tinyxml2::XMLError eResult = xmlDoc.SaveFile("solvespace.conf");
-  //              XMLCheckResult(eResult);
-            }
-
-            std::string ThawString(const std::string& key, const std::string& defaultValue = "") override {
-                std::string iOutString = defaultValue;
-                tinyxml2::XMLNode* pRoot2 = xmlDoc.FirstChild();
-                if(pRoot2 != nullptr) {
-                    tinyxml2::XMLElement* pElement2 = pRoot2->FirstChildElement(key.c_str());
-                    if(pElement2 != nullptr && pElement2->GetText() != nullptr) {
-                        iOutString = pElement2->GetText();
-                    } 
-                    else {
-                        //std::cout << "Error: " << tinyxml2::XMLError::XML_ERROR_PARSING_ELEMENT;
-                    }
-                }
-                else {
-                  //  std::cout << "Error: " << tinyxml2::XMLError::XML_ERROR_FILE_READ_ERROR;
-                }
-                return iOutString;
-                #if 0
-                std::string iOutString = defaultValue;
-                tinyxml2::XMLNode* pRoot2 = xmlDoc.FirstChild();
-                if (pRoot2 == nullptr)
-                    std::cout << "Error: " << tinyxml2::XMLError::XML_ERROR_FILE_READ_ERROR;
-                tinyxml2::XMLElement* pElement2 = pRoot2->FirstChildElement(key.c_str());
-                if (pElement2 == nullptr)
-                    std::cout << "Error: " << tinyxml2::XMLError::XML_ERROR_PARSING_ELEMENT;
-                iOutString = pElement2->GetText();
-                return iOutString;
-                #endif
-            }
-
-        };
-
-        SettingsRef GetSettings()
-        {
-            static std::shared_ptr<SettingsImpTinyXml> settings;
-            if (!settings) {
-                settings = std::make_shared<SettingsImpTinyXml>();
-            }
-            return settings;
         }
 
         std::vector<Platform::Path> GetFontFiles() {

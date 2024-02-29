@@ -23,7 +23,6 @@ if(USE_QT_GUI)
 	#Including QT
 	set(CMAKE_AUTOMOC ON)
 	find_package(Qt5 COMPONENTS Core Gui Widgets OpenGL  REQUIRED)
-	include (../extlib/tinyxml2/CMakeLists.txt)
 
 	#including code from PoCAE
 	set(GitPath ${CMAKE_CURRENT_LIST_DIR}/../..)
@@ -479,10 +478,8 @@ if(ENABLE_GUI)
 
 	    # Platform-specific
 		target_sources(solvespaceQt PRIVATE
-		    #platform/guiwin.cpp
 		    platform/guiqt.cpp
 		    platform/qglmainwindow.h
-		    ${TinyXmlIncludes}
 		    )
 
 		target_link_libraries(solvespaceQt PRIVATE #comctl32
