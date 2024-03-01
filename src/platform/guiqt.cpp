@@ -419,7 +419,7 @@ public:
             } else if (accel.chr == '\x7f') {
                 accelKey = "Del";
             } else {
-                accelKey = accel.chr;
+                accelKey = QChar(uint(accel.chr));
             }
         } else if (accel.key == KeyboardEvent::Key::FUNCTION) {
             accelKey = "F" + QString::number(accel.num );
@@ -714,7 +714,7 @@ void SSView::updateSlvSpaceMouseEvent(QMouseEvent* event)
     case Qt::MouseButton::RightButton:
         slvMouseEvent.button = MouseEvent::Button::RIGHT;
         break;
-    case Qt::MouseButton::MidButton:
+    case Qt::MouseButton::MiddleButton:
         slvMouseEvent.button = MouseEvent::Button::MIDDLE;
         break;
     default:
