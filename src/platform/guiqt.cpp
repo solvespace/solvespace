@@ -2,6 +2,7 @@
 // The Qt-based implementation of platform-dependent GUI functionality.
 //-----------------------------------------------------------------------------
 
+#include <iostream>
 #include <platform/qglmainwindow.h>
 #include "solvespace.h"
 #include "platform.h"
@@ -577,7 +578,7 @@ public:
 
     MenuBarImpQt() {
         menuBarQ = new QMenuBar;
-        this->menuBarQ->setNativeMenuBar(false);
+        menuBarQ->setNativeMenuBar(false);
         showPropertyBrowserMenuItem = nullptr;
     }
 
@@ -649,13 +650,15 @@ public:
         : windowKind(kind),
           parentWindow(parent)
     {
-        windowGLQ = new QtGLMainWindow((parentWindow == nullptr)? nullptr : parentWindow->windowGLQ);
-        connect(windowGLQ->GetGlWidget(), &GLWidget::mouseEventOccuredSignal, this, &WindowImplQt::runOnMouseEvent);
-        connect(windowGLQ->GetGlWidget(), &GLWidget::keyEventOccuredSignal, this, &WindowImplQt::runOnKeyboardEvent);
-        connect(windowGLQ->GetGlWidget(), &GLWidget::renderOccuredSignal, this, &WindowImplQt::runOnRender);
-        connect(windowGLQ->GetGlWidget(), &GLWidget::editingDoneSignal, this, &WindowImplQt::runOnEditingDone);
+        windowGLQ = new QtGLMainWindow(this, kind, parentWindow ? parentWindow->windowGLQ : nullptr);
         connect(windowGLQ, &QtGLMainWindow::windowClosedSignal, this, &WindowImplQt::runOnClose);
-        connect(windowGLQ->GetGlWidget(), &GLWidget::tabKeyPressed, this, &WindowImplQt::processTabKeyPressed);
+
+        GLWidget* view = windowGLQ->GetGlWidget();
+        connect(view, &GLWidget::mouseEventOccuredSignal, this, &WindowImplQt::runOnMouseEvent);
+        connect(view, &GLWidget::keyEventOccuredSignal, this, &WindowImplQt::runOnKeyboardEvent);
+        connect(view, &GLWidget::renderOccuredSignal, this, &WindowImplQt::runOnRender);
+        connect(view, &GLWidget::editingDoneSignal, this, &WindowImplQt::runOnEditingDone);
+        connect(view, &GLWidget::tabKeyPressed, this, &WindowImplQt::processTabKeyPressed);
     }
 
     ~WindowImplQt() {
@@ -823,10 +826,12 @@ public:
     }
 
     void SetScrollbarVisible(bool visible) override {
+        //printf("Scroll vis %d\n", int(visible));
         windowGLQ->SetScrollbarVisible(visible);
     }
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
+        //printf("Scroll bar %f %f %f\n", min, max, pageSize);
         windowGLQ->ConfigureScrollbar(min, max, pageSize);
     }
 
@@ -835,6 +840,7 @@ public:
     }
 
     void SetScrollbarPosition(double pos) override {
+        //printf("Scroll pos %f\n", pos);
         windowGLQ->SetScrollbarPosition(pos);
     }
 
@@ -858,16 +864,14 @@ public slots:
 
 std::shared_ptr<WindowImplQt> gGrahicWindowQt = nullptr;
 
-#undef CreateWindow
-WindowRef CreateWindow(Window::Kind kind,
-    WindowRef parentWindow) {
+WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     std::shared_ptr<Window> window;
 
     if(Window::Kind::TOOL == kind) {
         window = std::make_shared<WindowImplQt>(kind, gGrahicWindowQt);
     } else {
         window = std::make_shared<WindowImplQt>(kind, nullptr);
-        gGrahicWindowQt =std::static_pointer_cast<WindowImplQt>(window);
+        gGrahicWindowQt = std::static_pointer_cast<WindowImplQt>(window);
     }
     return window;
 }

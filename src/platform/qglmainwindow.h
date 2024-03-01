@@ -10,13 +10,11 @@
 #include <QMainWindow>
 #include <QHBoxLayout>
 #include <QMouseEvent>
-#include <QScrollArea>
 #include <QScrollBar>
 #include <QLineEdit>
 #include <QToolTip>
 #include <QMessageBox>
 #include <QScreen>
-#include <iostream>
 
 
 using namespace SolveSpace::Platform;
@@ -35,8 +33,8 @@ public:
         entry->setFont(entryFont);
         entry->setVisible(false);
         connect(entry, SIGNAL(returnPressed()), this, SLOT(entryFinished()));
-        this->setFocusPolicy(Qt::FocusPolicy::StrongFocus);
-        this->setMouseTracking(true);
+        setFocusPolicy(Qt::FocusPolicy::StrongFocus);
+        setMouseTracking(true);
     }
 
     ~GLWidget()
@@ -61,7 +59,7 @@ public:
 
         if (entry->isVisible()) {
             entry->hide();
-            this->setFocus();
+            setFocus();
         }
     }
 
@@ -81,7 +79,6 @@ protected slots:
         std::string entryText =  entry->text().toStdString();
         emit editingDoneSignal(entryText);
     }
-
 
 protected:
     //void initializeGL() {}
@@ -197,18 +194,13 @@ protected:
     bool event(QEvent* e)
     {
         if(e->type() == QEvent::KeyPress) {
-
             QKeyEvent* keyEvent = static_cast<QKeyEvent*>(e);
-
             if(keyEvent->key() == Qt::Key_Tab) {
                 emit tabKeyPressed();
             }
         } else {
-
            QWidget::event(e);
         }
-
-
         return true;
     }
 
@@ -275,60 +267,53 @@ class QtGLMainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    QtGLMainWindow(QWidget* parent = 0)
-        :QMainWindow(parent) {
-
+    QtGLMainWindow(Platform::Window* pwin, Platform::Window::Kind kind, QWidget* parent = 0)
+        : QMainWindow(parent), receiver(pwin)
+    {
         glWidget = new GLWidget;
-        scrollArea = new QScrollArea(this);
-        gridLayout = new QGridLayout();
-        glWidget->setLayout(gridLayout);
-        //scrollArea->setWidget(glWidget);
-        //scrollArea->setWidgetResizable(true);
-        this->setCentralWidget(glWidget);
-        //void QLayout::setContentsMargins(int left, int top, int right, int bottom)
+        if (kind == Platform::Window::Kind::TOOL) {
+            QWidget* group = new QWidget;
+            scrollBar = new QScrollBar(Qt::Vertical, group);
+            connect(scrollBar, SIGNAL(valueChanged(int)), SLOT(sliderSlot(int)));
+
+            QHBoxLayout* lo = new QHBoxLayout(group);
+            lo->setContentsMargins(0, 0, 0, 0);
+            lo->setSpacing(2);
+            lo->addWidget(glWidget);
+            lo->addWidget(scrollBar);
+            group->setLayout(lo);
+
+            setCentralWidget(group);
+            //setWindowFlags(Qt::Tool);
+        } else {
+            scrollBar = nullptr;
+            setCentralWidget(glWidget);
+        }
     }
 
-    ~QtGLMainWindow()
-    {
-        delete glWidget;
-        delete scrollArea;
-    }
-
-    #if 0 //ADAM CHECK SCROLL
-    void resizeEvent(QResizeEvent* event)
-    {
-        int glWidth = glWidget->size().width();
-        int glHeight = glWidget->size().height();
-        int scrollAreaWidth = scrollArea->size().width();
-        int scrollAreaHeight = scrollArea->size().height();
-
-        QWidget::resizeEvent(event);
-    }
-    #endif
+    ~QtGLMainWindow() {}
 
     void SetScrollbarVisible(bool visible) {
-        //bool resizable = scrollArea->widgetResizable();
-        #if 1
-        if (true == visible)
-            scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-        else
-            scrollArea->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-        #endif
+        if (scrollBar)
+            scrollBar->setVisible(visible);
     }
 
     void ConfigureScrollbar(double min, double max, double pageSize) {
-
-        scrollArea->verticalScrollBar()->setMinimum((int)min);
-        scrollArea->verticalScrollBar()->setMaximum((int)max);
-        scrollArea->verticalScrollBar()->setPageStep((int)pageSize);
+        if (scrollBar) {
+            scrollBar->setRange(int(min), int(max - pageSize));
+            scrollBar->setPageStep(int(pageSize));
+        }
     }
 
     double GetScrollbarPosition() {
-        return (double) scrollArea->verticalScrollBar()->value();
+        if (scrollBar)
+            return (double) scrollBar->value();
+        return 0.0;
     }
 
     void SetScrollbarPosition(double pos) {
-        return scrollArea->verticalScrollBar()->setValue((int)pos);
+        if (scrollBar)
+            scrollBar->setValue((int) pos);
     }
 
     void Invalidate() {
@@ -337,7 +322,6 @@ public:
 
     void StartEditing(int x, int y, int fontHeight, int minWidth, bool isMonoSpace,
         const std::string& val) {
-
         glWidget->startEditing(x, y, fontHeight, minWidth, isMonoSpace, val);
     }
 
@@ -346,9 +330,8 @@ public:
     }
 
     GLWidget* GetGlWidget() {
-        return this->glWidget;
+        return glWidget;
     }
-
 
     // Returns physical display DPI.
     double GetPixelDensity() {
@@ -358,7 +341,7 @@ public:
     // Returns raster graphics and coordinate scale (already applied on the platform side),
     // i.e. size of logical pixel in physical pixels, or device pixel ratio.
     double GetDevicePixelRatio() {
-        return this->GetGlWidget()->devicePixelRatio();
+        return glWidget->devicePixelRatio();
     }
 
     // Returns (fractional) font scale, to be applied on top of (integral) device pixel ratio.
@@ -384,37 +367,34 @@ public:
 
     void SetFullScreen(bool fullScreen) {
         if (true == fullScreen)
-            this->setWindowState(Qt::WindowFullScreen);
+            setWindowState(Qt::WindowFullScreen);
         else
-            this->setWindowState(Qt::WindowNoState); //The window has no state set (in normal state).
-
+            setWindowState(Qt::WindowNoState); //The window has no state set (in normal state).
     }
 
     void SetTitle(const std::string& title) {
-        this->setWindowTitle(QString::fromStdString(title));
+        setWindowTitle(QString::fromStdString(title));
     }
 
     void GetContentSize(double* width, double* height) {
-
         double pixelRatio = GetDevicePixelRatio();
-        QRect rc = this->GetGlWidget()->geometry();
+        QRect rc = glWidget->geometry();
         *width = rc.width() / pixelRatio;
         *height = rc.height() / pixelRatio;
     }
 
     void SetMinContentSize(double width, double height) {
-        this->resize((int)width, (int)height);
-        this->GetGlWidget()->resize(width, height);
+        resize((int)width, (int)height);
+        glWidget->resize(width, height);
     }
 
     void SetTooltip(const std::string& text, double x, double y,
         double width, double height) {
-        this->glWidget->setToolTip(QString::fromStdString(text));
+        glWidget->setToolTip(QString::fromStdString(text));
     }
 
     bool IsEditorVisible() {
-
-        return this->glWidget->entry->isVisible();
+        return glWidget->entry->isVisible();
     }
 
     void ShowEditor(double x, double y, double fontHeight, double minWidth,
@@ -425,11 +405,18 @@ public:
         // using Arial font of size 16
         // font decalred and set to the entry QLabel in the constructor
         // Raed Marwan
-        this->glWidget->startEditing(x, y, 20, 100, isMonospace, text);
+        glWidget->startEditing(x, y, 20, 100, isMonospace, text);
     }
 
     void HideEditor() {
-        this->glWidget->stopEditing();
+        glWidget->stopEditing();
+    }
+
+protected slots:
+
+    void sliderSlot(int value) {
+        if (receiver->onScrollbarAdjusted)
+            receiver->onScrollbarAdjusted(double(value));
     }
 
 protected:
@@ -444,9 +431,9 @@ signals:
     void windowClosedSignal();
 
 private:
+    Platform::Window* receiver;
     GLWidget* glWidget;
-    QScrollArea* scrollArea;
-    QGridLayout* gridLayout;
+    QScrollBar* scrollBar;
 };
 
 
