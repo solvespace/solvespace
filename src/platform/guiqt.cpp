@@ -7,15 +7,18 @@
 #include "platform.h"
 #include "guiqt.h"
 
+#include <QApplication>
 #include <QAction>
 #include <QActionGroup>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QEventLoop>
+#include <QHBoxLayout>
 #include <QKeySequence>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QScreen>
 #include <QSettings>
 #include <QTimer>
 
@@ -638,9 +641,186 @@ MenuBarRef GetOrCreateMainMenu(bool* unique) {
 // Windows
 //-----------------------------------------------------------------------------
 
+void SSView::startEditing(int x, int y, int fontHeight, int minWidth,
+                          bool isMonoSpace, const std::string& val)
+{
+    entry->setGeometry(QRect(x, y, minWidth, fontHeight));
+    entry->setText(QString::fromStdString(val));
+
+    if (!entry->isVisible()) {
+        entry->show();
+        entry->setFocus();
+        entry->setCursorPosition(0);
+    }
+}
+
+void SSView::stopEditing() {
+    if (entry->isVisible()) {
+        entry->hide();
+        setFocus();
+    }
+}
+
+void SSView::wheelEvent(QWheelEvent* event)
+{
+     const double wheelDelta=120.0;
+     slvMouseEvent.button = MouseEvent::Button::NONE;
+     slvMouseEvent.type = MouseEvent::Type::SCROLL_VERT;
+     slvMouseEvent.scrollDelta = (double)event->angleDelta().y() / wheelDelta;
+
+     emit mouseEventOccuredSignal(slvMouseEvent);
+}
+
+void SSView::updateSlvSpaceMouseEvent(QMouseEvent* event)
+{
+    slvMouseEvent.shiftDown = false;
+    slvMouseEvent.controlDown = false;
+
+    switch (event->type())
+    {
+    case QEvent::MouseMove:
+        slvMouseEvent.type = MouseEvent::Type::MOTION;
+        break;
+    case QEvent::MouseButtonPress:
+        slvMouseEvent.type = MouseEvent::Type::PRESS;
+        break;
+    case QEvent::MouseButtonDblClick:
+        slvMouseEvent.type = MouseEvent::Type::DBL_PRESS;
+        break;
+    case QEvent::MouseButtonRelease:
+        slvMouseEvent.type = MouseEvent::Type::RELEASE;
+        slvMouseEvent.button = MouseEvent::Button::NONE;
+        break;
+    case QEvent::Wheel:
+        slvMouseEvent.type = MouseEvent::Type::SCROLL_VERT;
+        //slvMouseEvent.scrollDelta = event->
+        break;
+    case QEvent::Leave:
+        slvMouseEvent.type = MouseEvent::Type::LEAVE;
+        slvMouseEvent.button = MouseEvent::Button::NONE;
+        break;
+    default:
+        slvMouseEvent.type = MouseEvent::Type::RELEASE;
+        slvMouseEvent.button = MouseEvent::Button::NONE;
+    }
+
+    Qt::MouseButtons buttonState = (slvMouseEvent.type == MouseEvent::Type::MOTION) ? event->buttons() : event->button();
+
+    switch (buttonState)
+    {
+    case Qt::MouseButton::LeftButton:
+        slvMouseEvent.button = MouseEvent::Button::LEFT;
+        break;
+    case Qt::MouseButton::RightButton:
+        slvMouseEvent.button = MouseEvent::Button::RIGHT;
+        break;
+    case Qt::MouseButton::MidButton:
+        slvMouseEvent.button = MouseEvent::Button::MIDDLE;
+        break;
+    default:
+        slvMouseEvent.button = MouseEvent::Button::NONE;
+        //slvMouseEvent.button = slvMouseEvent.button;
+    }
+
+
+    slvMouseEvent.x = event->pos().x();
+    slvMouseEvent.y = event->pos().y();
+    Qt::KeyboardModifiers keyModifier = QGuiApplication::keyboardModifiers();
+
+    switch (keyModifier)
+    {
+    case Qt::ShiftModifier:
+        slvMouseEvent.shiftDown = true;
+        break;
+    case Qt::ControlModifier:
+        slvMouseEvent.controlDown = true;
+        break;
+    }
+
+    emit mouseEventOccuredSignal(slvMouseEvent);
+}
+
+/*
+* Need to override the event method to catch the tab key during a key press event
+* Qt does not send a key press event when the tab key is presed. To get that
+* we need to overwrite the event functon and check if the tab key was presed during a key press event
+* otherwise we send the rest of the event back to the widget for further processes
+*/
+bool SSView::event(QEvent* e)
+{
+    if(e->type() == QEvent::KeyPress) {
+        QKeyEvent* keyEvent = static_cast<QKeyEvent*>(e);
+        if(keyEvent->key() == Qt::Key_Tab)
+            emit tabKeyPressed();
+    } else {
+       QWidget::event(e);
+    }
+    return true;
+}
+
+void SSView::updateSlvSpaceKeyEvent(QKeyEvent* event)
+{
+    slvKeyEvent.key = KeyboardEvent::Key(-1);
+    slvKeyEvent.shiftDown = false;
+    slvKeyEvent.controlDown = false;
+    if (event->modifiers() == Qt::ShiftModifier)
+        slvKeyEvent.shiftDown = true;
+    if (event->modifiers() == Qt::ControlModifier)
+        slvKeyEvent.controlDown = true;
+
+    if (event->key() >= Qt::Key_F1 && event->key() <= Qt::Key_F35) {
+        slvKeyEvent.key = KeyboardEvent::Key::FUNCTION;
+        slvKeyEvent.num = event->key() - Qt::Key_F1 + 1;
+    }
+    if (event->key() >= Qt::Key_Space && event->key() <= Qt::Key_yen) {
+        slvKeyEvent.key = KeyboardEvent::Key::CHARACTER;
+        QString keyLower = event->text().toLower();
+        slvKeyEvent.chr = keyLower.toUcs4().at(0);
+    }
+
+    emit keyEventOccuredSignal(slvKeyEvent);
+}
+
+SSMainWindow::SSMainWindow(Platform::Window* pwin,
+                           Platform::Window::Kind kind, QWidget* parent)
+        : QMainWindow(parent), receiver(pwin)
+{
+    ssView = new SSView;
+    if (kind == Platform::Window::Kind::TOOL) {
+        QWidget* group = new QWidget;
+        scrollBar = new QScrollBar(Qt::Vertical, group);
+        connect(scrollBar, SIGNAL(valueChanged(int)), SLOT(sliderSlot(int)));
+
+        QHBoxLayout* lo = new QHBoxLayout(group);
+        lo->setContentsMargins(0, 0, 0, 0);
+        lo->setSpacing(2);
+        lo->addWidget(ssView);
+        lo->addWidget(scrollBar);
+        group->setLayout(lo);
+
+        setCentralWidget(group);
+        //setWindowFlags(Qt::Tool);
+    } else {
+        scrollBar = nullptr;
+        setCentralWidget(ssView);
+    }
+}
+
+void SSMainWindow::sliderSlot(int value)
+{
+    if (receiver->onScrollbarAdjusted)
+        receiver->onScrollbarAdjusted(double(value));
+}
+
+void SSMainWindow::closeEvent(QCloseEvent* ev)
+{
+    emit windowClosedSignal();
+    ev->ignore();
+}
+
 class WindowImplQt final : public Window, public QObject {
 public:
-    QtGLMainWindow* windowGLQ;
+    SSMainWindow* ssWindow;
     Window::Kind windowKind;
     std::shared_ptr<WindowImplQt> parentWindow;
     //std::shared_ptr<MenuBarImpQt> menuBarQt;
@@ -649,15 +829,15 @@ public:
         : windowKind(kind),
           parentWindow(parent)
     {
-        windowGLQ = new QtGLMainWindow(this, kind, parentWindow ? parentWindow->windowGLQ : nullptr);
-        connect(windowGLQ, &QtGLMainWindow::windowClosedSignal, this, &WindowImplQt::runOnClose);
+        ssWindow = new SSMainWindow(this, kind, parentWindow ? parentWindow->ssWindow : nullptr);
+        connect(ssWindow, &SSMainWindow::windowClosedSignal, this, &WindowImplQt::runOnClose);
 
-        GLWidget* view = windowGLQ->GetGlWidget();
-        connect(view, &GLWidget::mouseEventOccuredSignal, this, &WindowImplQt::runOnMouseEvent);
-        connect(view, &GLWidget::keyEventOccuredSignal, this, &WindowImplQt::runOnKeyboardEvent);
-        connect(view, &GLWidget::renderOccuredSignal, this, &WindowImplQt::runOnRender);
-        connect(view, &GLWidget::editingDoneSignal, this, &WindowImplQt::runOnEditingDone);
-        connect(view, &GLWidget::tabKeyPressed, this, &WindowImplQt::processTabKeyPressed);
+        SSView* view = ssWindow->ssView;
+        connect(view, &SSView::mouseEventOccuredSignal, this, &WindowImplQt::runOnMouseEvent);
+        connect(view, &SSView::keyEventOccuredSignal, this, &WindowImplQt::runOnKeyboardEvent);
+        connect(view, &SSView::renderOccuredSignal, this, &WindowImplQt::runOnRender);
+        connect(view, &SSView::editingDoneSignal, this, &WindowImplQt::runOnEditingDone);
+        connect(view, &SSView::tabKeyPressed, this, &WindowImplQt::processTabKeyPressed);
     }
 
     ~WindowImplQt() {
@@ -685,13 +865,13 @@ public:
 
     // Returns physical display DPI.
     double GetPixelDensity() override {
-        return windowGLQ->GetPixelDensity();
+        return QGuiApplication::primaryScreen()->logicalDotsPerInch();
     }
 
     // Returns raster graphics and coordinate scale (already applied on the platform side),
     // i.e. size of logical pixel in physical pixels, or device pixel ratio.
     double GetDevicePixelRatio() override {
-        return windowGLQ->GetDevicePixelRatio();
+        return ssWindow->ssView->devicePixelRatio();
     }
 
     // Returns (fractional) font scale, to be applied on top of (integral) device pixel ratio.
@@ -700,70 +880,69 @@ public:
     }
 
     bool IsVisible() override {
-        return windowGLQ->IsVisible();
+        return ssWindow->isVisible();
     }
 
     void SetVisible(bool visible) override {
-        windowGLQ->setVisible(visible);
-        windowGLQ->raise();
+        ssWindow->setVisible(visible);
+        ssWindow->raise();
     }
 
     void Focus() override {
-        windowGLQ->setFocus();
+        ssWindow->setFocus();
     }
 
     bool IsFullScreen() override {
-        return windowGLQ->isFullScreen();
+        return ssWindow->isFullScreen();
     }
 
     void SetFullScreen(bool fullScreen) override {
-        if (true == fullScreen)
-            windowGLQ->setWindowState(Qt::WindowFullScreen);
-        else
-            windowGLQ->setWindowState(Qt::WindowNoState); //The window has no state set (in normal state).
-
+        // Qt::WindowNoState is "normal".
+        ssWindow->setWindowState(fullScreen ? Qt::WindowFullScreen
+                                            : Qt::WindowNoState);
     }
 
     void SetTitle(const std::string& title) override {
-        windowGLQ->setWindowTitle(QString::fromStdString(title));
+        ssWindow->setWindowTitle(QString::fromStdString(title));
     }
 
     void SetMenuBar(MenuBarRef menuBar) override {
         // Cast this menu bar to a Qt
         //menuBarQt = std::static_pointer_cast<MenuBarImpQt>(menuBar);
-        //windowGLQ->setMenuBar(menuBarQt->menuBarQ);
+        //ssWindow->setMenuBar(menuBarQt->menuBarQ);
 
-        if(windowGLQ->menuBar() != gMenuBarQt->menuBarQ) {
-            windowGLQ->setMenuBar(gMenuBarQt->menuBarQ);
+        if(ssWindow->menuBar() != gMenuBarQt->menuBarQ) {
+            ssWindow->setMenuBar(gMenuBarQt->menuBarQ);
             gMenuBarQt->findShowPropertyBrowserMenuItem();
         }
     }
 
     void GetContentSize(double* width, double* height) override {
-        windowGLQ->GetContentSize(width, height);
+        double pixelRatio = GetDevicePixelRatio();
+        QSize rc = ssWindow->ssView->size();
+        *width = rc.width() / pixelRatio;
+        *height = rc.height() / pixelRatio;
     }
 
     void SetMinContentSize(double width, double height) override {
-        int w = width;
-        int h = height;
-        windowGLQ->setGeometry(50,50,w, h);
+        ssWindow->resize(int(width), int(height));
     }
 
     void FreezePosition(SettingsRef settings, const std::string& key) override {
-        if (!(windowGLQ->isVisible())) return;
+        if (!(ssWindow->isVisible())) return;
 
         int left, top, width, height;
         #if 0
-        QPoint topLeftPoint = windowGLQ->geometry().topLeft();
+        QPoint topLeftPoint = ssWindow->geometry().topLeft();
         left = topLeftPoint.x();
         top = topLeftPoint.y();
         #endif
-        QPoint windowPos = windowGLQ->pos();
+        QPoint windowPos = ssWindow->pos();
         left = windowPos.x();
         top = windowPos.y();
-        width = windowGLQ->geometry().width();
-        height = windowGLQ->geometry().height();
-        bool isMaximized = windowGLQ->isMaximized();
+        width = ssWindow->geometry().width();
+        height = ssWindow->geometry().height();
+        bool isMaximized = ssWindow->isMaximized();
 
         settings->FreezeInt(key + "_Left", left);
         settings->FreezeInt(key + "_Top", top);
@@ -781,13 +960,13 @@ public:
         height = settings->ThawInt(key + "_Height", height);
 
         if(width != 0 && height != 0) {
-            windowGLQ->move(left, top);
-            windowGLQ->resize(width, height);
+            ssWindow->move(left, top);
+            ssWindow->resize(width, height);
         }
 
         if (settings->ThawBool(key + "_Maximized", false)) {
-//                  windowGLQ->SetFullScreen(true);
-            windowGLQ->setWindowState(Qt::WindowMaximized);
+//                  ssWindow->SetFullScreen(true);
+            ssWindow->setWindowState(Qt::WindowMaximized);
         }
     }
 
@@ -796,65 +975,81 @@ public:
         switch (cursor)
         {
         case Cursor::POINTER:
-            windowGLQ->setCursor(Qt::ArrowCursor);
+            ssWindow->setCursor(Qt::ArrowCursor);
             break;
         case Cursor::HAND:
-            windowGLQ->setCursor(Qt::PointingHandCursor);
+            ssWindow->setCursor(Qt::PointingHandCursor);
             break;
         default:
-            windowGLQ->setCursor(Qt::ArrowCursor);
+            ssWindow->setCursor(Qt::ArrowCursor);
         }
     }
 
     void SetTooltip(const std::string& text, double x, double y,
         double width, double height) override {
-        windowGLQ->SetTooltip(text, x, y, width, height);
+        ssWindow->ssView->setToolTip(QString::fromStdString(text));
     }
 
     bool IsEditorVisible() override {
-        return windowGLQ->IsEditorVisible();
+        return ssWindow->ssView->entry->isVisible();
     }
 
     void ShowEditor(double x, double y, double fontHeight, double minWidth,
         bool isMonospace, const std::string& text) override {
-        windowGLQ->ShowEditor(x, y, fontHeight, minWidth, isMonospace, text);
+        // font size from Solvespace is very small and hard to see
+        // hard coded 20 for height and 100 for width
+        // using Arial font of size 16
+        // font decalred and set to the entry QLabel in the constructor
+        // Raed Marwan
+        ssWindow->ssView->startEditing(x, y, 20, 100, isMonospace, text);
     }
 
     void HideEditor() override {
-        windowGLQ->HideEditor();
+        ssWindow->ssView->stopEditing();
     }
 
     void SetScrollbarVisible(bool visible) override {
         //printf("Scroll vis %d\n", int(visible));
-        windowGLQ->SetScrollbarVisible(visible);
+        QScrollBar* scrollBar = ssWindow->scrollBar;
+        if (scrollBar)
+            scrollBar->setVisible(visible);
     }
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
         //printf("Scroll bar %f %f %f\n", min, max, pageSize);
-        windowGLQ->ConfigureScrollbar(min, max, pageSize);
+        QScrollBar* scrollBar = ssWindow->scrollBar;
+        if (scrollBar) {
+            scrollBar->setRange(int(min), int(max - pageSize));
+            scrollBar->setPageStep(int(pageSize));
+        }
     }
 
     double GetScrollbarPosition() override {
-        return windowGLQ->GetScrollbarPosition();
+        QScrollBar* scrollBar = ssWindow->scrollBar;
+        if (scrollBar)
+            return (double) scrollBar->value();
+        return 0.0;
     }
 
     void SetScrollbarPosition(double pos) override {
         //printf("Scroll pos %f\n", pos);
-        windowGLQ->SetScrollbarPosition(pos);
+        QScrollBar* scrollBar = ssWindow->scrollBar;
+        if (scrollBar)
+            scrollBar->setValue((int) pos);
     }
 
     void Invalidate() override {
-        windowGLQ->Invalidate();
+        ssWindow->ssView->update();
     }
 
-    QtGLMainWindow* getQtGLMainWindow() {
-        return windowGLQ;
+    SSMainWindow* getQtGLMainWindow() {
+        return ssWindow;
     }
 
 public slots:
     void processTabKeyPressed() {
 
-        if(windowGLQ->menuBar() != gMenuBarQt->menuBarQ && gMenuBarQt->showPropertyBrowserMenuItem != nullptr) {
+        if(ssWindow->menuBar() != gMenuBarQt->menuBarQ && gMenuBarQt->showPropertyBrowserMenuItem != nullptr) {
               gMenuBarQt->showPropertyBrowserMenuItem->actionItemQ->setChecked(false);
               gMenuBarQt->showPropertyBrowserMenuItem->onTriggered(false);
         }

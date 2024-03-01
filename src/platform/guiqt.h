@@ -4,25 +4,22 @@
 
 #include <solvespace.h>
 
-#include <QApplication>
-#include <QHBoxLayout>
 #include <QLineEdit>
 #include <QMainWindow>
 #include <QMouseEvent>
 #include <QOpenGLWidget>
-#include <QScreen>
 #include <QScrollBar>
-#include <QToolTip>
 
 
-using namespace SolveSpace::Platform;
+namespace SolveSpace {
+namespace Platform {
 
-class GLWidget : public QOpenGLWidget
+class SSView : public QOpenGLWidget
 {
     Q_OBJECT
 
 public:
-    GLWidget(QWidget* parent = 0)
+    SSView(QWidget* parent = 0)
         : QOpenGLWidget(parent) {
 
         entry = new QLineEdit(this);
@@ -35,32 +32,14 @@ public:
         setMouseTracking(true);
     }
 
-    ~GLWidget()
+    ~SSView()
     {
         delete entry;
     }
 
-    void startEditing(int x, int y, int fontHeight, int minWidth, bool isMonoSpace,
-        const std::string& val) {
-
-        entry->setGeometry(QRect(x, y, minWidth, fontHeight));
-        entry->setText(QString::fromStdString(val));
-
-        if (!entry->isVisible()) {
-            entry->show();
-            entry->setFocus();
-            entry->setCursorPosition(0);
-        }
-    }
-
-    void stopEditing() {
-
-        if (entry->isVisible()) {
-            entry->hide();
-            setFocus();
-        }
-    }
-
+    void startEditing(int x, int y, int fontHeight, int minWidth,
+                      bool isMonoSpace, const std::string& val);
+    void stopEditing();
 
     QSize minimumSizeHint() const {
         return QSize(50, 50);
@@ -90,15 +69,7 @@ protected:
     }
 
     //----Mouse Events--------
-    void wheelEvent(QWheelEvent* event)
-    {
-         const double wheelDelta=120.0;
-         slvMouseEvent.button = MouseEvent::Button::NONE;
-         slvMouseEvent.type = MouseEvent::Type::SCROLL_VERT;
-         slvMouseEvent.scrollDelta = (double)event->angleDelta().y() / wheelDelta;
-
-         emit mouseEventOccuredSignal(slvMouseEvent);
-    }
+    void wheelEvent(QWheelEvent* event);
 
     void mouseReleaseEvent(QMouseEvent* event) override{
         updateSlvSpaceMouseEvent(event);
@@ -112,95 +83,11 @@ protected:
         updateSlvSpaceMouseEvent(event);
     }
 
-    void updateSlvSpaceMouseEvent(QMouseEvent* event)
-    {
-        slvMouseEvent.shiftDown = false;
-        slvMouseEvent.controlDown = false;
+    void updateSlvSpaceMouseEvent(QMouseEvent* event);
 
-        switch (event->type())
-        {
-        case QEvent::MouseMove:
-            slvMouseEvent.type = MouseEvent::Type::MOTION;
-            break;
-        case QEvent::MouseButtonPress:
-            slvMouseEvent.type = MouseEvent::Type::PRESS;
-            break;
-        case QEvent::MouseButtonDblClick:
-            slvMouseEvent.type = MouseEvent::Type::DBL_PRESS;
-            break;
-        case QEvent::MouseButtonRelease:
-            slvMouseEvent.type = MouseEvent::Type::RELEASE;
-            slvMouseEvent.button = MouseEvent::Button::NONE;
-            break;
-        case QEvent::Wheel:
-            slvMouseEvent.type = MouseEvent::Type::SCROLL_VERT;
-            //slvMouseEvent.scrollDelta = event->
-            break;
-        case QEvent::Leave:
-            slvMouseEvent.type = MouseEvent::Type::LEAVE;
-            slvMouseEvent.button = MouseEvent::Button::NONE;
-            break;
-        default: 
-            slvMouseEvent.type = MouseEvent::Type::RELEASE;
-            slvMouseEvent.button = MouseEvent::Button::NONE;
-        }
-
-        Qt::MouseButtons buttonState = (slvMouseEvent.type == MouseEvent::Type::MOTION) ? event->buttons() : event->button();
-
-        switch (buttonState)
-        {
-        case Qt::MouseButton::LeftButton:
-            slvMouseEvent.button = MouseEvent::Button::LEFT;
-            break;
-        case Qt::MouseButton::RightButton:
-            slvMouseEvent.button = MouseEvent::Button::RIGHT;
-            break;
-        case Qt::MouseButton::MidButton:
-            slvMouseEvent.button = MouseEvent::Button::MIDDLE;
-            break;
-        default:
-            slvMouseEvent.button = MouseEvent::Button::NONE;
-            //slvMouseEvent.button = slvMouseEvent.button;
-        }
-
-
-        slvMouseEvent.x = event->pos().x();
-        slvMouseEvent.y = event->pos().y();
-        Qt::KeyboardModifiers keyModifier = QGuiApplication::keyboardModifiers();
-
-        switch (keyModifier)
-        {
-        case Qt::ShiftModifier:
-            slvMouseEvent.shiftDown = true;
-            break;
-        case Qt::ControlModifier:
-            slvMouseEvent.controlDown = true;
-            break;
-        }
-
-        emit mouseEventOccuredSignal(slvMouseEvent);
-    }
     //----Keyboard Events--------
 
-    /*
-    * Need to override the event method to catch the tab key during a key press event
-    * Qt does not send a key press event when the tab key is presed. To get that 
-    * we need to overwrite the event functon and check if the tab key was presed during a key press event
-    * otherwise we send the rest of the event back to the widget for further processes
-    */
-
-    bool event(QEvent* e)
-    {
-        if(e->type() == QEvent::KeyPress) {
-            QKeyEvent* keyEvent = static_cast<QKeyEvent*>(e);
-            if(keyEvent->key() == Qt::Key_Tab) {
-                emit tabKeyPressed();
-            }
-        } else {
-           QWidget::event(e);
-        }
-        return true;
-    }
+    bool event(QEvent* e);
 
     void keyPressEvent(QKeyEvent* keyEvent)
     {
@@ -216,38 +103,11 @@ protected:
         QWidget::keyReleaseEvent(keyEvent);
     }
 
-    void updateSlvSpaceKeyEvent(QKeyEvent* event)
-    {
-        slvKeyEvent.key = KeyboardEvent::Key(-1);
-        slvKeyEvent.shiftDown = false;
-        slvKeyEvent.controlDown = false;
-        if (event->modifiers() == Qt::ShiftModifier)
-            slvKeyEvent.shiftDown = true;
-        if (event->modifiers() == Qt::ControlModifier)
-            slvKeyEvent.controlDown = true;
+    void updateSlvSpaceKeyEvent(QKeyEvent* event);
 
-        if (event->key() >= Qt::Key_F1 && event->key() <= Qt::Key_F35) {
-            slvKeyEvent.key = KeyboardEvent::Key::FUNCTION;
-            slvKeyEvent.num = event->key() - Qt::Key_F1 + 1;
-        }
-        if (event->key() >= Qt::Key_Space && event->key() <= Qt::Key_yen) {
-            slvKeyEvent.key = KeyboardEvent::Key::CHARACTER;
-            QString keyLower = event->text().toLower();
-            slvKeyEvent.chr = keyLower.toUcs4().at(0);
-        }
-
-        emit keyEventOccuredSignal(slvKeyEvent);
-    }
-
-    void SetTooltip(const std::string& text, double x, double y,
-        double width, double height) {
-        this->setToolTip(QString::fromStdString(text));
-        QPoint pos(x, y);
-        QToolTip::showText(pos, toolTip());
-    }
 signals:
-    void mouseEventOccuredSignal(SolveSpace::Platform::MouseEvent mouseEvent);
-    void keyEventOccuredSignal(SolveSpace::Platform::KeyboardEvent keyEvent);
+    void mouseEventOccuredSignal(MouseEvent mouseEvent);
+    void keyEventOccuredSignal(KeyboardEvent keyEvent);
     void renderOccuredSignal();
     void editingDoneSignal(std::string);
     void tabKeyPressed();
@@ -255,184 +115,35 @@ signals:
 public:
 
     QLineEdit* entry;
-    SolveSpace::Platform::MouseEvent   slvMouseEvent;
-    SolveSpace::Platform::KeyboardEvent slvKeyEvent;
+    MouseEvent    slvMouseEvent;
+    KeyboardEvent slvKeyEvent;
 };
 
 
-class QtGLMainWindow : public QMainWindow
+class SSMainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    QtGLMainWindow(Platform::Window* pwin, Platform::Window::Kind kind, QWidget* parent = 0)
-        : QMainWindow(parent), receiver(pwin)
-    {
-        glWidget = new GLWidget;
-        if (kind == Platform::Window::Kind::TOOL) {
-            QWidget* group = new QWidget;
-            scrollBar = new QScrollBar(Qt::Vertical, group);
-            connect(scrollBar, SIGNAL(valueChanged(int)), SLOT(sliderSlot(int)));
-
-            QHBoxLayout* lo = new QHBoxLayout(group);
-            lo->setContentsMargins(0, 0, 0, 0);
-            lo->setSpacing(2);
-            lo->addWidget(glWidget);
-            lo->addWidget(scrollBar);
-            group->setLayout(lo);
-
-            setCentralWidget(group);
-            //setWindowFlags(Qt::Tool);
-        } else {
-            scrollBar = nullptr;
-            setCentralWidget(glWidget);
-        }
-    }
-
-    ~QtGLMainWindow() {}
-
-    void SetScrollbarVisible(bool visible) {
-        if (scrollBar)
-            scrollBar->setVisible(visible);
-    }
-
-    void ConfigureScrollbar(double min, double max, double pageSize) {
-        if (scrollBar) {
-            scrollBar->setRange(int(min), int(max - pageSize));
-            scrollBar->setPageStep(int(pageSize));
-        }
-    }
-
-    double GetScrollbarPosition() {
-        if (scrollBar)
-            return (double) scrollBar->value();
-        return 0.0;
-    }
-
-    void SetScrollbarPosition(double pos) {
-        if (scrollBar)
-            scrollBar->setValue((int) pos);
-    }
-
-    void Invalidate() {
-        glWidget->update();
-    }
-
-    void StartEditing(int x, int y, int fontHeight, int minWidth, bool isMonoSpace,
-        const std::string& val) {
-        glWidget->startEditing(x, y, fontHeight, minWidth, isMonoSpace, val);
-    }
-
-    void StopEditing(){
-        glWidget->stopEditing();
-    }
-
-    GLWidget* GetGlWidget() {
-        return glWidget;
-    }
-
-    // Returns physical display DPI.
-    double GetPixelDensity() {
-        return QGuiApplication::primaryScreen()->logicalDotsPerInch();
-    }
-
-    // Returns raster graphics and coordinate scale (already applied on the platform side),
-    // i.e. size of logical pixel in physical pixels, or device pixel ratio.
-    double GetDevicePixelRatio() {
-        return glWidget->devicePixelRatio();
-    }
-
-    // Returns (fractional) font scale, to be applied on top of (integral) device pixel ratio.
-    double GetDeviceFontScale() {
-        return GetPixelDensity() / GetDevicePixelRatio() / 96.0;
-    }
-
-    bool IsVisible() {
-        return this->isVisible();
-    }
-
-    void SetVisible(bool visible) {
-        this->setVisible(visible);
-    }
-
-    void Focus() {
-        this->setFocus();
-    }
-
-    bool IsFullScreen() {
-        return this->isFullScreen();
-    }
-
-    void SetFullScreen(bool fullScreen) {
-        if (true == fullScreen)
-            setWindowState(Qt::WindowFullScreen);
-        else
-            setWindowState(Qt::WindowNoState); //The window has no state set (in normal state).
-    }
-
-    void SetTitle(const std::string& title) {
-        setWindowTitle(QString::fromStdString(title));
-    }
-
-    void GetContentSize(double* width, double* height) {
-        double pixelRatio = GetDevicePixelRatio();
-        QRect rc = glWidget->geometry();
-        *width = rc.width() / pixelRatio;
-        *height = rc.height() / pixelRatio;
-    }
-
-    void SetMinContentSize(double width, double height) {
-        resize((int)width, (int)height);
-        glWidget->resize(width, height);
-    }
-
-    void SetTooltip(const std::string& text, double x, double y,
-        double width, double height) {
-        glWidget->setToolTip(QString::fromStdString(text));
-    }
-
-    bool IsEditorVisible() {
-        return glWidget->entry->isVisible();
-    }
-
-    void ShowEditor(double x, double y, double fontHeight, double minWidth,
-        bool isMonospace, const std::string& text) {
-
-        // font size from Solvespace is very small and hard to see
-        // hard coded 20 for height and 100 for width
-        // using Arial font of size 16
-        // font decalred and set to the entry QLabel in the constructor
-        // Raed Marwan
-        glWidget->startEditing(x, y, 20, 100, isMonospace, text);
-    }
-
-    void HideEditor() {
-        glWidget->stopEditing();
-    }
+    SSMainWindow(Platform::Window* pwin, Platform::Window::Kind kind,
+                 QWidget* parent = 0);
 
 protected slots:
-
-    void sliderSlot(int value) {
-        if (receiver->onScrollbarAdjusted)
-            receiver->onScrollbarAdjusted(double(value));
-    }
+    void sliderSlot(int value);
 
 protected:
-
-    void closeEvent(QCloseEvent* ev)
-    {
-        emit windowClosedSignal();
-        ev->ignore();
-    }
+    void closeEvent(QCloseEvent* ev);
 
 signals:
     void windowClosedSignal();
 
-private:
+public:
     Platform::Window* receiver;
-    GLWidget* glWidget;
+    SSView* ssView;
     QScrollBar* scrollBar;
 };
 
+}
+}
 
 #endif
