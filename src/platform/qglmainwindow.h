@@ -7,11 +7,6 @@
 #include <QApplication>
 #include <QWidget>
 #include <QOpenGLWidget>
-#include <QOpenGLFunctions_1_0>
-//#include <gl/GLU.h>
-//#include <gl/GL.h>
-
-
 #include <QMainWindow>
 #include <QHBoxLayout>
 #include <QMouseEvent>
@@ -26,7 +21,7 @@
 
 using namespace SolveSpace::Platform;
 
-class GLWidget : public QOpenGLWidget, public QOpenGLFunctions_1_0
+class GLWidget : public QOpenGLWidget
 {
     Q_OBJECT
 
@@ -89,20 +84,14 @@ protected slots:
 
 
 protected:
-    void initializeGL() {
-        initializeOpenGLFunctions();
-    }
+    //void initializeGL() {}
 
     void paintGL() {
-
-        if(true == QOpenGLContext::currentContext()->isValid())
-            emit renderOccuredSignal();
+        emit renderOccuredSignal();
     }
 
     void resizeGL(int width, int height) {
-        // end of remove
-       if(true == QOpenGLContext::currentContext()->isValid())
-          emit renderOccuredSignal();
+        emit renderOccuredSignal();
     }
 
     //----Mouse Events--------
