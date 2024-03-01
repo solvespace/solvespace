@@ -453,7 +453,6 @@ if(ENABLE_GUI)
 	if(USE_QT_GUI)
 	    add_executable(solvespaceQt WIN32 MACOSX_BUNDLE
 		${solvespace_core_gl_SOURCES}
-		platform/entrygui.cpp
 		$<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
 	    add_dependencies(solvespaceQt

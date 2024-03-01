@@ -944,33 +944,31 @@ void OpenInBrowser(const std::string& url) {
     }
 }
 
-std::vector<std::string> InitGui(int argc, char** argv) {
-    new QApplication(argc, argv);
-    std::vector<std::string> args = SolveSpace::Platform::InitCli(argc, argv);
-    return args;
-}
-
-void RunGui() {
-    QString filePath = QString("./styleSheets/darkorange.qss");
-    QFile File(filePath);
-    bool opened = File.open(QFile::ReadOnly);
-
-    if (opened == false) {
-        std::cout << "failed to open qss" << std::endl;
-    } else {
-        QString StyleSheet = QLatin1String(File.readAll());
-        qApp->setStyleSheet(StyleSheet);
-    }
-    qApp->exec();
-}
-
 void ExitGui() {
     qApp->quit();
 }
 
-void ClearGui() {
-    delete qApp;
+}
 }
 
-}
+using namespace SolveSpace;
+
+int main(int argc, char** argv) {
+    QApplication app(argc, argv);
+    Platform::Open3DConnexion();
+    SS.Init();
+
+    if(argc >= 2) {
+        if(argc > 2) {
+            dbp("Only the first file passed on command line will be opened.");
+        }
+        SS.Load(Platform::Path::From(argv[1]));
+    }
+
+    app.exec();
+
+    Platform::Close3DConnexion();
+    SS.Clear();
+    SK.Clear();
+    return 0;
 }
