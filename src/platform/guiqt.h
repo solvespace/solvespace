@@ -1,20 +1,18 @@
-#ifndef QGlMainWindow_h
-#define QGlMainWindow_h
+#ifndef SOLVESPACE_GUIQT_H
+#define SOLVESPACE_GUIQT_H
 
 
 #include <solvespace.h>
 
 #include <QApplication>
-#include <QWidget>
-#include <QOpenGLWidget>
-#include <QMainWindow>
 #include <QHBoxLayout>
-#include <QMouseEvent>
-#include <QScrollBar>
 #include <QLineEdit>
-#include <QToolTip>
-#include <QMessageBox>
+#include <QMainWindow>
+#include <QMouseEvent>
+#include <QOpenGLWidget>
 #include <QScreen>
+#include <QScrollBar>
+#include <QToolTip>
 
 
 using namespace SolveSpace::Platform;

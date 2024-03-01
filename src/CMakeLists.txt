@@ -478,7 +478,7 @@ if(ENABLE_GUI)
 	    # Platform-specific
 		target_sources(solvespaceQt PRIVATE
 		    platform/guiqt.cpp
-		    platform/qglmainwindow.h
+		    platform/guiqt.h
 		    )
 
 		target_link_libraries(solvespaceQt PRIVATE #comctl32

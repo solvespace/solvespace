@@ -3,22 +3,21 @@
 //-----------------------------------------------------------------------------
 
 #include <iostream>
-#include <platform/qglmainwindow.h>
 #include "solvespace.h"
 #include "platform.h"
+#include "guiqt.h"
 
-#include <QFileDialog>
-#include <QTimer>
-#include <QEventLoop>
 #include <QAction>
 #include <QActionGroup>
+#include <QDesktopServices>
+#include <QFileDialog>
+#include <QEventLoop>
 #include <QKeySequence>
 #include <QMenu>
 #include <QMenuBar>
-#include <QApplication>
 #include <QMessageBox>
-#include <QDesktopServices>
 #include <QSettings>
+#include <QTimer>
 
 
 namespace SolveSpace {
