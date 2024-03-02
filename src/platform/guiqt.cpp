@@ -409,41 +409,29 @@ public:
      }
 
     void SetAccelerator(KeyboardEvent accel) override {
-        QString accelKey;
+        int key;
 
         if (accel.key == KeyboardEvent::Key::CHARACTER) {
             if (accel.chr == '\t') {
-                accelKey = "Tab";
+                key = Qt::Key_Tab;
             } else if (accel.chr == '\x1b') {
-                accelKey = "Escape";
+                key = Qt::Key_Escape;
             } else if (accel.chr == '\x7f') {
-                accelKey = "Del";
+                key = Qt::Key_Delete;
             } else {
-                accelKey = QChar(uint(accel.chr));
+                key = std::toupper(accel.chr);
             }
         } else if (accel.key == KeyboardEvent::Key::FUNCTION) {
-            accelKey = "F" + QString::number(accel.num );
+            key = Qt::Key_F1 + accel.num - 1;
         }
-
-        QString accelMods;
 
         if (accel.controlDown) {
-            accelMods = "Ctrl";
+            key |= Qt::CTRL;
         }
-
         if (accel.shiftDown) {
-            accelMods += (true == accelMods.isEmpty()) ? "Shift" : "+Shift";
+            key |= Qt::SHIFT;
         }
-
-        QKeySequence keySequence;
-
-        if (false == accelMods.isEmpty()) {
-            keySequence = QString(accelMods + "+" + accelKey);
-        } else {
-            keySequence = QString(accelKey);
-        }
-
-        actionItemQ->setShortcut(keySequence);
+        actionItemQ->setShortcut(key);
     }
 
     void SetIndicator(Indicator type) override {
