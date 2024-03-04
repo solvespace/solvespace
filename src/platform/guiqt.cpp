@@ -391,26 +391,16 @@ TimerRef CreateTimer() {
 // Menus
 //-----------------------------------------------------------------------------
 
-class MenuItemImplQt final : public MenuItem , public QObject {
+class MenuItemImplQt final : public MenuItem, public QObject {
 public:
-    QAction* actionItemQ;
+    QAction action;
     // MenuItemImplQt must set this pointer in order to control exculsivity
     QActionGroup* actionGroupItemQ;
 
     MenuItemImplQt() {
-        actionItemQ = new QAction;
         actionGroupItemQ = 0;
-        connect(actionItemQ, &QAction::triggered, this, &MenuItemImplQt:: onTriggered);
+        connect(&action, &QAction::triggered, this, &MenuItemImplQt::onTriggered);
     }
-
-    ~MenuItemImplQt() {
-        actionItemQ->disconnect();
-        onTrigger = nullptr;
-    }
-
-    void Clear() {
-        actionItemQ->disconnect();
-     }
 
     void SetAccelerator(KeyboardEvent accel) override {
         int key;
@@ -435,47 +425,47 @@ public:
         if (accel.shiftDown) {
             key |= Qt::SHIFT;
         }
-        actionItemQ->setShortcut(key);
+        action.setShortcut(key);
     }
 
     void SetIndicator(Indicator type) override {
         switch (type)
         {
         case Indicator::NONE:
-            actionItemQ->setCheckable(false);
-            actionGroupItemQ->removeAction(actionItemQ);
+            action.setCheckable(false);
+            actionGroupItemQ->removeAction(&action);
             break;
         case Indicator::CHECK_MARK:
-            actionItemQ->setCheckable(true);
+            action.setCheckable(true);
             actionGroupItemQ->setExclusive(false);
-            actionGroupItemQ->addAction(actionItemQ);
+            actionGroupItemQ->addAction(&action);
             break;
         case Indicator::RADIO_MARK:
-            actionItemQ->setCheckable(true);
+            action.setCheckable(true);
             actionGroupItemQ->setExclusive(true);
-            actionGroupItemQ->addAction(actionItemQ);
+            actionGroupItemQ->addAction(&action);
             break;
 
         }
     }
 
     void SetEnabled(bool enabled) override {
-        actionItemQ->setEnabled(enabled);
+        action.setEnabled(enabled);
     }
 
     void SetActive(bool active) override {
-        actionItemQ->setChecked(active);
+        action.setChecked(active);
     }
 
 public slots:
     void onTriggered(bool value)
     {
         if (onTrigger)
-            this->onTrigger();
+            onTrigger();
     }
 };
 
-class MenuImplQt final : public Menu, public QObject {
+class MenuImplQt final : public Menu {
 public:
     QMenu* menuQ;
     QActionGroup* menuActionGroupQ;
@@ -485,8 +475,6 @@ public:
 
     MenuImplQt(bool hasParentParam = true) {
         menuQ = new QMenu();
-
-        connect(menuQ, &QMenu::aboutToShow, this, &MenuImplQt::menuAboutToShowEvent);
 
         // The menu action group is needed for menu items that are checkable and are exclusive
         // The exclusive ( radio button like check, only one the group can be checked at a time)
@@ -502,23 +490,20 @@ public:
         hasParent = true;
     }
 
-    ~MenuImplQt() {
-        menuQ->disconnect();
-        this->Clear();
-    }
-
     std::shared_ptr<MenuItem> AddItem(const std::string& label, std::function<void()> onTrigger,
         bool /*mnemonics*/) override {
 
         std::shared_ptr<MenuItemImplQt> menuItem = std::make_shared<MenuItemImplQt>();
         menuItem->actionGroupItemQ = menuActionGroupQ;
         menuItem->onTrigger = onTrigger;
-        menuItem->actionItemQ->setText(QString::fromStdString(label));
+        menuItem->action.setText(QString::fromStdString(label));
         // I do not think anything is needed for mnemonics flag.
         // the shortcut key sequence is set in the menuItem class and Qt acts
         // accordingly with no further activation ... I think
         menuItems.push_back(menuItem);
-        menuQ->addAction(menuItem->actionItemQ);
+
+        // The QWidget::addAction method does not take ownership of the action.
+        menuQ->addAction(&menuItem->action);
         return menuItem;
     }
 
@@ -541,22 +526,9 @@ public:
     }
 
     void Clear() override {
-        menuQ->disconnect();
         menuQ->clear();
-
-        for(auto menuItem : menuItems) {
-           menuItem->Clear();
-        }
-
-        for(auto subMenu : subMenus) {
-           subMenu->Clear();
-        }
-    }
-
-public slots:
-    void menuAboutToShowEvent() {
-        std::cout.imbue(std::locale::classic());
-        this->menuQ->repaint();
+        menuItems.clear();
+        subMenus.clear();
     }
 };
 
