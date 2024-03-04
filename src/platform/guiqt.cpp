@@ -539,15 +539,12 @@ MenuRef CreateMenu() {
 class MenuBarImpQt final : public MenuBar {
 public:
     QMenuBar* menuBarQ;
-    std::vector<std::shared_ptr<MenuImplQt>>  subMenus;
+    std::vector<std::shared_ptr<MenuImplQt>> subMenus;
 
     MenuBarImpQt() {
+        // The QMenuBar is deleted by the QMainWindow its attached to.
         menuBarQ = new QMenuBar;
         menuBarQ->setNativeMenuBar(false);
-    }
-
-    ~MenuBarImpQt() {
-        this->Clear();
     }
 
     std::shared_ptr<Menu> AddSubMenu(const std::string& label) override {
@@ -560,9 +557,7 @@ public:
 
     void Clear() override {
         menuBarQ->clear();
-        for(auto subMenu : subMenus) {
-            subMenu->Clear();
-        }
+        subMenus.clear();
     }
 };
 
