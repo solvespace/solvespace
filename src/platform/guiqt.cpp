@@ -308,40 +308,35 @@ FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
 
 class SettingsImplQt final : public Settings {
 public:
-    QSettings* _qset;
+    QSettings qset;
 
-    SettingsImplQt() {
-        _qset = new QSettings("SolveSpace", "solvespace");
-    }
-
-    ~SettingsImplQt() {
-        delete _qset;
+    SettingsImplQt() : qset("SolveSpace", "solvespace") {
     }
 
     void FreezeInt(const std::string& key, uint32_t value) override {
-        _qset->setValue(QString::fromStdString(key), value);
+        qset.setValue(QString::fromStdString(key), value);
     }
 
     uint32_t ThawInt(const std::string& key, uint32_t defaultValue = 0) override {
-        return _qset->value(QString::fromStdString(key), defaultValue).toInt();
+        return qset.value(QString::fromStdString(key), defaultValue).toInt();
     }
 
     void FreezeFloat(const std::string& key, double value) override{
-        _qset->setValue(QString::fromStdString(key), value);
+        qset.setValue(QString::fromStdString(key), value);
     }
 
     double ThawFloat(const std::string& key, double defaultValue = 0.0) override {
-        return _qset->value(QString::fromStdString(key), defaultValue).toDouble();
+        return qset.value(QString::fromStdString(key), defaultValue).toDouble();
     }
 
     void FreezeString(const std::string& key, const std::string& value) override {
-        _qset->setValue(QString::fromStdString(key),
-                        QString::fromStdString(value));
+        qset.setValue(QString::fromStdString(key),
+                      QString::fromStdString(value));
     }
 
     std::string ThawString(const std::string& key, const std::string& defaultValue = "") override {
-        return _qset->value(QString::fromStdString(key),
-                            QString::fromStdString(defaultValue)).toString().toStdString();
+        return qset.value(QString::fromStdString(key),
+                          QString::fromStdString(defaultValue)).toString().toStdString();
     }
 };
 
@@ -792,6 +787,9 @@ public:
             scrollBar = twin->scrollBar;
             view = twin->ssView;
 
+            // Set object name for saveState settings.
+            twin->setObjectName("TextWindow");
+
             QMainWindow* mwin = qobject_cast<QMainWindow*>(qparent);
             if(mwin) {
                 mwin->addDockWidget(Qt::RightDockWidgetArea, twin);
@@ -873,44 +871,24 @@ public:
     }
 
     void FreezePosition(SettingsRef settings, const std::string& key) override {
-        if (!(ssWindow->isVisible())) return;
-
-        int left, top, width, height;
-        #if 0
-        QPoint topLeftPoint = ssWindow->geometry().topLeft();
-        left = topLeftPoint.x();
-        top = topLeftPoint.y();
-        #endif
-        QPoint windowPos = ssWindow->pos();
-        left = windowPos.x();
-        top = windowPos.y();
-        width = ssWindow->geometry().width();
-        height = ssWindow->geometry().height();
-        bool isMaximized = ssWindow->isMaximized();
-
-        settings->FreezeInt(key + "_Left", left);
-        settings->FreezeInt(key + "_Top", top);
-        settings->FreezeInt(key + "_Width", width);
-        settings->FreezeInt(key + "_Height", height);
-        settings->FreezeBool(key + "_Maximized", isMaximized);
+        // Geometry is only saved for the main window; the TextWindow dock
+        // widget is part of the saveState().
+        QMainWindow* mwin = qobject_cast<QMainWindow*>(ssWindow);
+        if (mwin) {
+            QSettings& qset = std::static_pointer_cast<SettingsImplQt>(settings)->qset;
+            QString qkey = QString::fromStdString(key);
+            qset.setValue(qkey + "_Geometry", mwin->saveGeometry());
+            qset.setValue(qkey + "_State", mwin->saveState());
+        }
     }
 
     void ThawPosition(SettingsRef settings, const std::string& key) override {
-        int left = 100, top = 100, width = 0, height = 0;
-
-        left = settings->ThawInt(key + "_Left", left);
-        top = settings->ThawInt(key + "_Top", top);
-        width = settings->ThawInt(key + "_Width", width);
-        height = settings->ThawInt(key + "_Height", height);
-
-        if(width != 0 && height != 0) {
-            ssWindow->move(left, top);
-            ssWindow->resize(width, height);
-        }
-
-        if (settings->ThawBool(key + "_Maximized", false)) {
-//                  ssWindow->SetFullScreen(true);
-            ssWindow->setWindowState(Qt::WindowMaximized);
+        QMainWindow* mwin = qobject_cast<QMainWindow*>(ssWindow);
+        if (mwin) {
+            QSettings& qset = std::static_pointer_cast<SettingsImplQt>(settings)->qset;
+            QString qkey = QString::fromStdString(key);
+            mwin->restoreGeometry(qset.value(qkey + "_Geometry").toByteArray());
+            mwin->restoreState(qset.value(qkey + "_State").toByteArray());
         }
     }
 
