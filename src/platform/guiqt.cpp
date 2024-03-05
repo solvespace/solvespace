@@ -394,11 +394,8 @@ TimerRef CreateTimer() {
 class MenuItemImplQt final : public MenuItem, public QObject {
 public:
     QAction action;
-    // MenuItemImplQt must set this pointer in order to control exculsivity
-    QActionGroup* actionGroupItemQ;
 
     MenuItemImplQt() {
-        actionGroupItemQ = 0;
         connect(&action, &QAction::triggered, this, &MenuItemImplQt::onTriggered);
     }
 
@@ -428,24 +425,27 @@ public:
         action.setShortcut(key);
     }
 
+    /*
+    RADIO_MARK must be implemented using QActionGroup so we scan for
+    sequential actions with the "radio_mark" property to form these groups.
+    It would be safer if the Indicator type was an argument to
+    Platform::Menu::AddItem rather than a set by a separate method to guarantee
+    that the Indicator type can never change.
+    */
     void SetIndicator(Indicator type) override {
         switch (type)
         {
         case Indicator::NONE:
             action.setCheckable(false);
-            actionGroupItemQ->removeAction(&action);
             break;
         case Indicator::CHECK_MARK:
             action.setCheckable(true);
-            actionGroupItemQ->setExclusive(false);
-            actionGroupItemQ->addAction(&action);
             break;
         case Indicator::RADIO_MARK:
             action.setCheckable(true);
-            actionGroupItemQ->setExclusive(true);
-            actionGroupItemQ->addAction(&action);
+            // Added to QActionGroup later by formActionGroups().
+            action.setProperty("radio_mark", true);
             break;
-
         }
     }
 
@@ -468,25 +468,17 @@ public slots:
 class MenuImplQt final : public Menu {
 public:
     QMenu* menuQ;
-    QActionGroup* menuActionGroupQ;
     bool  hasParent;
     std::vector<std::shared_ptr<MenuItemImplQt>>   menuItems;
     std::vector<std::shared_ptr<MenuImplQt>>       subMenus;
 
     MenuImplQt(bool hasParentParam = true) {
         menuQ = new QMenu();
-
-        // The menu action group is needed for menu items that are checkable and are exclusive
-        // The exclusive ( radio button like check, only one the group can be checked at a time)
-        menuActionGroupQ = new QActionGroup(menuQ);
         hasParent = hasParentParam;
     }
 
     MenuImplQt(QMenu* menuQParam) {
         menuQ = menuQParam;
-        // The menu action group is needed for menu items that are checkable and are exclusive
-        // The exclusive ( radio button like check, only one the group can be checked at a time)
-        menuActionGroupQ = new QActionGroup(menuQ);
         hasParent = true;
     }
 
@@ -494,7 +486,6 @@ public:
         bool /*mnemonics*/) override {
 
         std::shared_ptr<MenuItemImplQt> menuItem = std::make_shared<MenuItemImplQt>();
-        menuItem->actionGroupItemQ = menuActionGroupQ;
         menuItem->onTrigger = onTrigger;
         menuItem->action.setText(QString::fromStdString(label));
         // I do not think anything is needed for mnemonics flag.
@@ -558,6 +549,33 @@ public:
     void Clear() override {
         menuBarQ->clear();
         subMenus.clear();
+    }
+
+    static void _formActionGroups(QMenu *menu) {
+        QActionGroup* group = nullptr;
+        foreach (QAction* act, menu->actions()) {
+            if(act->menu()) {
+                _formActionGroups(act->menu());
+            } else {
+                QVariant var = act->property("radio_mark");
+                if(var.isValid()) {
+                    if(! group)
+                        group = new QActionGroup(menu);
+                    //printf("radio_mark on menu %p\n", menu);
+                    group->addAction(act);
+                } else {
+                    group = nullptr;    // End current group.
+                }
+            }
+        }
+    }
+
+    void formActionGroups() {
+        foreach (QAction* act, menuBarQ->actions()) {
+            if (act->menu()) {
+                _formActionGroups(act->menu());
+            }
+        }
     }
 };
 
@@ -837,6 +855,7 @@ public:
         if (mwin) {
             // We must take ownership of the new menus.
             menuBar = std::static_pointer_cast<MenuBarImpQt>(menus);
+            menuBar->formActionGroups();
 
             mwin->setMenuBar(menuBar->menuBarQ);
         }
