@@ -1053,6 +1053,12 @@ int main(int argc, char** argv) {
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
 
     QApplication app(argc, argv);
+
+#ifdef __linux
+    QIcon icon("/usr/share/icons/hicolor/48x48/apps/solvespace.png");
+    app.setWindowIcon(icon);
+#endif
+
     Platform::Open3DConnexion();
     SS.Init();
 
