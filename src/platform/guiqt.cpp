@@ -16,7 +16,7 @@
 #include <QActionGroup>
 #include <QDesktopServices>
 #include <QFileDialog>
-#include <QEventLoop>
+#include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QKeySequence>
 #include <QMenu>
@@ -583,13 +583,33 @@ MenuBarRef GetOrCreateMainMenu(bool* unique) {
 // Windows
 //-----------------------------------------------------------------------------
 
+class SSApplication : public QApplication {
+public:
+    SSApplication(int &argc, char **argv) : QApplication(argc, argv)
+    {
+        // Setup fonts once for SSView QLineEdit.
+#ifdef _WIN32
+        fontEdit     = QFont("Arial");
+        fontEditMono = QFont("Lucida Console");
+#else
+        fontEdit     = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
+        fontEditMono = QFontDatabase::systemFont(QFontDatabase::FixedFont);
+        /*
+        printf("Font general %s\n", fontEdit.family().toLocal8Bit().data());
+        printf("Font mono %s\n", fontEditMono.family().toLocal8Bit().data());
+        */
+#endif
+    }
+
+    QFont fontEdit;
+    QFont fontEditMono;
+};
+
 SSView::SSView(QWidget* parent) : QOpenGLWidget(parent) {
     entry = new QLineEdit(this);
-    entry->setGeometry(QRect(0, 0, 200, 40));
-    QFont entryFont("Arial", 16);
-    entry->setFont(entryFont);
     entry->setVisible(false);
-    connect(entry, SIGNAL(returnPressed()), this, SLOT(entryFinished()));
+    connect(entry, SIGNAL(returnPressed()), SLOT(entryFinished()));
+
     setFocusPolicy(Qt::FocusPolicy::StrongFocus);
     setMouseTracking(true);
 }
@@ -597,13 +617,27 @@ SSView::SSView(QWidget* parent) : QOpenGLWidget(parent) {
 void SSView::startEditing(int x, int y, int fontHeight, int minWidth,
                           bool isMonoSpace, const std::string& val)
 {
-    entry->setGeometry(QRect(x, y, minWidth, fontHeight));
+    //printf("startEditing %d,%d, %d,%d %d\n", x, y, fontHeight, minWidth, isMonoSpace);
+
+    SSApplication* app = static_cast<SSApplication*>(qApp);
+    QFont font = isMonoSpace ? app->fontEditMono : app->fontEdit;
+    font.setPixelSize(fontHeight);
+    entry->setFont(font);
+
+    QFontMetrics fm(font);
+    int valWidth = fm.averageCharWidth() * val.size();
+    if (minWidth < valWidth)
+        minWidth = valWidth;
+    if (x < 0)
+        x = 0;
+
+    entry->setGeometry(QRect(x, y - fm.ascent(), minWidth, fm.height()));
     entry->setText(QString::fromStdString(val));
 
-    if (!entry->isVisible()) {
+    if (! entry->isVisible()) {
+        entry->selectAll();
         entry->show();
         entry->setFocus();
-        entry->setCursorPosition(0);
     }
 }
 
@@ -918,12 +952,7 @@ public:
 
     void ShowEditor(double x, double y, double fontHeight, double minWidth,
         bool isMonospace, const std::string& text) override {
-        // font size from Solvespace is very small and hard to see
-        // hard coded 20 for height and 100 for width
-        // using Arial font of size 16
-        // font decalred and set to the entry QLabel in the constructor
-        // Raed Marwan
-        view->startEditing(x, y, 20, 100, isMonospace, text);
+        view->startEditing(x, y, fontHeight, minWidth, isMonospace, text);
     }
 
     void HideEditor() override {
@@ -1052,7 +1081,7 @@ int main(int argc, char** argv) {
     // See https://bugreports.qt.io/browse/QTBUG-89812
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
 
-    QApplication app(argc, argv);
+    Platform::SSApplication app(argc, argv);
 
 #ifdef __linux
     QIcon icon("/usr/share/icons/hicolor/48x48/apps/solvespace.png");
