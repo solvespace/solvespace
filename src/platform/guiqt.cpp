@@ -141,166 +141,94 @@ MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
 // File dialogs
 //-----------------------------------------------------------------------------
 
-class FileDialogImplQt final : public FileDialog, public QObject {
+class FileDialogImplQt final : public FileDialog {
 public:
-    bool isSaveDialog;
-    QStringList  filters;
-    QFileDialog* fileDialogQ;
+    QFileDialog fileDialogQ;
+    QStringList filters;
+    bool filtersMod;
 
-    FileDialogImplQt() {
-        fileDialogQ = new QFileDialog(0);
-        connect(fileDialogQ, &QFileDialog::filterSelected, this, &FileDialogImplQt::updateDefaultSuffix);
-        isSaveDialog = false;
-    }
+    FileDialogImplQt(QWidget* parent, bool save) : filtersMod(false) {
+        fileDialogQ.setParent(parent);
+        fileDialogQ.setWindowFlags(Qt::Dialog); // Reset after setParent.
 
-    ~FileDialogImplQt() {
-        fileDialogQ->disconnect();
-        delete fileDialogQ;
-    }
+        // NOTE: The file extension is automatically set by the KDE native
+        // dialog but not with the Qt one.
+#if 0
+        fileDialogQ.setOption(QFileDialog::DontUseNativeDialog);
+#endif
 
-    void updateDefaultSuffix(QString filter) {
-        fileDialogQ->setDefaultSuffix(filter);
-    }
-
-    std::string replaceSubstringInString(std::string str, std::string substr1,
-                        std::string substr2) {
-        for(size_t index = str.find(substr1, 0);
-            index != std::string::npos && substr1.length();
-            index = str.find(substr1, index + substr2.length()))
-            str.replace(index, substr1.length(), substr2);
-        return str;
-    }
-
-    std::vector<std::string> tokanize(const std::string& str, const std::string& delimeters)
-    {
-        std::vector<std::string>tokens;
-
-        // Skip delimeters at begining
-        std::string::size_type lastPos = str.find_first_not_of(delimeters, 0);
-        // first non delimeter
-        std::string::size_type pos = str.find_first_of(delimeters, lastPos);
-
-        while (pos != std::string::npos || lastPos != std::string::npos)
-        {
-            // Token found, insert into tokens
-            tokens.push_back(str.substr(lastPos, pos - lastPos));
-            // Skip delimeters
-            lastPos = str.find_first_not_of(delimeters, pos);
-            // find the next non delimeter
-            pos = str.find_first_of(delimeters, lastPos);
+        if (save) {
+            fileDialogQ.setAcceptMode(QFileDialog::AcceptSave);
         }
-        return tokens;
     }
 
     void SetTitle(std::string title) {
-        fileDialogQ->setWindowTitle(QString::fromStdString(title));
+        fileDialogQ.setWindowTitle(QString::fromStdString(title));
     }
 
     void SetCurrentName(std::string name) {
-        fileDialogQ->selectFile(QString::fromStdString(name));
+        fileDialogQ.selectFile(QString::fromStdString(name));
     }
 
     Platform::Path GetFilename() {
-#if defined WIN32
-        std::cout << "IN WINDOWS" << std::endl;
-#endif
-#if defined UNIX 
-        std::cout << "IN UNIX" << std::endl;
-#endif
-        Platform::Path filePath;
-        QString suffix = tokanize(filters[0].toStdString(), ".")[1].c_str();
-        fileDialogQ->setDefaultSuffix(suffix);
-        QStringList selectedFiles = fileDialogQ->selectedFiles();
-
-        if (true == selectedFiles.isEmpty())
-            return filePath;
-
-        std::string pathUnixStyle = selectedFiles.at(0).toStdString(); // return first selection.
-        if ('\\' == QDir::separator())
-            filePath.raw = replaceSubstringInString(pathUnixStyle, "/", "\\");
-        else {
-            filePath.raw = pathUnixStyle;
-        }
-        return filePath;
+        QStringList files = fileDialogQ.selectedFiles();
+        return Path::From(files.at(0).toStdString());
     }
 
     void SetFilename(Platform::Path path) {
-        fileDialogQ->selectFile(QString::fromStdString(path.raw));
+        fileDialogQ.selectFile(QString::fromStdString(path.raw));
     }
 
     void SuggestFilename(Platform::Path path) {
-        fileDialogQ->selectFile(QString::fromStdString(path.FileStem()));
+        fileDialogQ.selectFile(QString::fromStdString(path.FileStem()));
     }
 
     void AddFilter(std::string name, std::vector<std::string> extensions) override {
-        std::string desc, patterns;
-        for (auto& extension : extensions) {
-            std::string pattern = "*." + extension;
-            if (!desc.empty()) desc += " ";
-            desc += pattern;
+        QString fline(name.c_str());
+        int count = 0;
+        for (auto& ext : extensions) {
+            fline.append(count ? " *." : " (*.");
+            fline.append(ext.c_str());
+            ++count;
         }
-        filters.append(QString::fromStdString(desc));
+        fline.append(")");
+
+        //printf("AddFilter \"%s\"\n", fline.toLocal8Bit().data());
+        filters.append(fline);
+        filtersMod = true;
     }
 
-    void AddFilter(const FileFilter& filter) {
-        AddFilter(filter.name, filter.extensions);
-    }
-
-    void AddFilters(const std::vector<FileFilter>& filters) {
-        for (auto& filter : filters)
-        {
-            AddFilter(filter);
+    void updateFilters() {
+        if (filtersMod) {
+            filtersMod = false;
+            fileDialogQ.setNameFilters(filters);
         }
-    }
-
-    std::string GetExtension()
-    {
-        return fileDialogQ->selectedNameFilter().toStdString();
-    }
-
-    void SetExtension(std::string extension)
-    {
-        fileDialogQ->selectNameFilter(QString::fromStdString(extension));
     }
 
     void FreezeChoices(SettingsRef settings, const std::string& key)
     {
         settings->FreezeString("Dialog_" + key + "_Folder",
-            fileDialogQ->directory().absolutePath().toStdString());
-        settings->FreezeString("Dialog_" + key + "_Filter",GetExtension());
+                fileDialogQ.directory().absolutePath().toStdString());
+        settings->FreezeString("Dialog_" + key + "_Filter",
+                fileDialogQ.selectedNameFilter().toStdString());
     }
 
     void ThawChoices(SettingsRef settings, const std::string &key)
     {
-        fileDialogQ->setDirectory(QDir(QString::fromStdString(settings->ThawString("Dialog_" + key + "_Folder"))));
-        SetExtension(settings->ThawString("Dialog_" + key + "_Filter"));
+        updateFilters();
+
+        std::string val;
+        val = settings->ThawString("Dialog_" + key + "_Folder");
+        fileDialogQ.setDirectory(QDir(QString::fromStdString(val)));
+        val = settings->ThawString("Dialog_" + key + "_Filter");
+        fileDialogQ.selectNameFilter(QString::fromStdString(val));
     }
 
     bool RunModal() override {
-        if (isSaveDialog) {
-            SetTitle("Save file");
-            fileDialogQ->setAcceptMode(QFileDialog::AcceptSave);
-        } else {
-            SetTitle("Open file");
-            fileDialogQ->setAcceptMode(QFileDialog::AcceptOpen);
-        }
-
-        fileDialogQ->setNameFilters(filters);
-        return(fileDialogQ->exec());
+        updateFilters();
+        return fileDialogQ.exec();
     }
 };
-
-FileDialogRef CreateOpenFileDialog(WindowRef parentWindow) {
-    std::shared_ptr<FileDialogImplQt> dialog = std::make_shared<FileDialogImplQt>();
-    dialog->isSaveDialog = false;
-    return dialog;
-}
-
-FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
-    std::shared_ptr<FileDialogImplQt> dialog = std::make_shared<FileDialogImplQt>();
-    dialog->isSaveDialog = true;
-    return dialog;
-}
 
 //-----------------------------------------------------------------------------
 // Settings
@@ -993,6 +921,18 @@ public:
 WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     return std::make_shared<WindowImplQt>(kind,
                 std::static_pointer_cast<WindowImplQt>(parentWindow));
+}
+
+FileDialogRef CreateOpenFileDialog(WindowRef parentWindow) {
+    return std::make_shared<FileDialogImplQt>(
+                std::static_pointer_cast<WindowImplQt>(parentWindow)->ssWindow,
+                false);
+}
+
+FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
+    return std::make_shared<FileDialogImplQt>(
+                std::static_pointer_cast<WindowImplQt>(parentWindow)->ssWindow,
+                true);
 }
 
 //-----------------------------------------------------------------------------
