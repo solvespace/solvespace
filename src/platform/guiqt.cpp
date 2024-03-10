@@ -33,7 +33,7 @@ namespace Platform {
 //-----------------------------------------------------------------------------
 // Fatal errors
 //-----------------------------------------------------------------------------
-        
+
 void FatalError(const std::string& message)
 {
     QMessageBox::critical(NULL, QString("Fatal Error"),
@@ -48,72 +48,69 @@ void FatalError(const std::string& message)
 
 class MessageDialogImplQt final : public MessageDialog {
 public:
-    QMessageBox* messageBoxQ;
+    QMessageBox messageBoxQ;
 
-    MessageDialogImplQt() {
-        messageBoxQ = new QMessageBox(0);
-    }
-
-    ~MessageDialogImplQt() {
-        delete messageBoxQ;
+    MessageDialogImplQt(QWidget* parent) : messageBoxQ(parent) {
     }
 
 #undef ERROR 
     void SetType(Type type) override {
         switch (type) {
         case Type::INFORMATION:
-            messageBoxQ->setIcon(QMessageBox::Information);
+            messageBoxQ.setIcon(QMessageBox::Information);
             break;
         case Type::QUESTION:
-            messageBoxQ->setIcon(QMessageBox::Question);
+            messageBoxQ.setIcon(QMessageBox::Question);
             break;
         case Type::WARNING:
-            messageBoxQ->setIcon(QMessageBox::Warning);
+            messageBoxQ.setIcon(QMessageBox::Warning);
             break;
         case Type::ERROR:
-            messageBoxQ->setIcon(QMessageBox::Critical);
+            messageBoxQ.setIcon(QMessageBox::Critical);
             break;
         }
     }
 
     void SetTitle(std::string title) override {
-        messageBoxQ->setWindowTitle(QString::fromStdString(title));
+        messageBoxQ.setWindowTitle(QString::fromStdString(title));
     }
 
     void SetMessage(std::string message) override {
-        messageBoxQ->setText(QString::fromStdString(message));
+        messageBoxQ.setText(QString::fromStdString(message));
     }
 
     void SetDescription(std::string description) override {
-        messageBoxQ->setInformativeText(QString::fromStdString(description));
+        messageBoxQ.setInformativeText(QString::fromStdString(description));
     }
 
-    void AddButton(std::string label, Response response, bool isDefault = false) override {
+    void AddButton(std::string label, Response response, bool isDefault) override {
+        QMessageBox::StandardButton std;
         switch (response)
         {
         case Response::CANCEL:
-            messageBoxQ->addButton(QMessageBox::StandardButton::Cancel);
+            std = QMessageBox::StandardButton::Cancel;
             break;
         case Response::NO:
-            messageBoxQ->addButton(QMessageBox::StandardButton::No);
+            std = QMessageBox::StandardButton::No;
             break;
         case Response::YES:
-            messageBoxQ->addButton(QMessageBox::StandardButton::Yes);
+            std = QMessageBox::StandardButton::Yes;
             break;
         case Response::OK:
-            messageBoxQ->addButton(QMessageBox::StandardButton::Ok);
+            std = QMessageBox::StandardButton::Ok;
             break;
         case Response::NONE:
-            messageBoxQ->addButton(QMessageBox::StandardButton::Ignore);
+        default:
+            std = QMessageBox::StandardButton::Ignore;
             break;
         }
+        QPushButton* button = messageBoxQ.addButton(std);
+        if (isDefault)
+            messageBoxQ.setDefaultButton(button);
     }
 
     Response RunModal() {
-        //return Response::CANCEL;
-        QMessageBox::StandardButton responseQ = (QMessageBox::StandardButton)messageBoxQ->exec();
-
-        switch (responseQ)
+        switch (messageBoxQ.exec())
         {
         case QMessageBox::StandardButton::Cancel:
             return Response::CANCEL;
@@ -126,16 +123,8 @@ public:
         default: // NONE
             return Response::NONE;
         }
-
-        return Response::NONE;
     }
 };
-
-MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
-    std::shared_ptr<MessageDialogImplQt> dialog = std::make_shared<MessageDialogImplQt>();
-    //dialog->mbp.hwndOwner = std::static_pointer_cast<WindowImplWin32>(parentWindow)->hWindow;
-    return dialog;
-}
 
 //-----------------------------------------------------------------------------
 // File dialogs
@@ -287,14 +276,6 @@ public:
     TimerImplQt() {}
 
     void RunAfter(unsigned milliseconds) override {
-        #if 0
-        QEventLoop loop;
-        QTimer::singleShot(milliseconds, &loop, &QEventLoop::quit);
-        loop.exec();
-        if (onTimeout) {
-            onTimeout();
-        }
-        #endif
         QTimer::singleShot(milliseconds, this, &TimerImplQt::runOnTimeOut);
     }
 
@@ -921,6 +902,11 @@ public:
 WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     return std::make_shared<WindowImplQt>(kind,
                 std::static_pointer_cast<WindowImplQt>(parentWindow));
+}
+
+MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
+    return std::make_shared<MessageDialogImplQt>(
+                std::static_pointer_cast<WindowImplQt>(parentWindow)->ssWindow);
 }
 
 FileDialogRef CreateOpenFileDialog(WindowRef parentWindow) {
