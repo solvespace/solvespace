@@ -574,6 +574,7 @@ public:
     double   exportScale;
     double   exportOffset;
     bool     arcDimDefaultDiameter;
+    bool     showFullFilePath;
     bool     fixExportColors;
     bool     exportBackgroundColor;
     bool     drawBackFaces;

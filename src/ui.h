@@ -443,6 +443,7 @@ public:
     static void ScreenGoToWebsite(int link, uint32_t v);
 
     static void ScreenChangeArcDimDefault(int link, uint32_t v);
+    static void ScreenChangeShowFullFilePath(int link, uint32_t v);
     static void ScreenChangeFixExportColors(int link, uint32_t v);
     static void ScreenChangeExportBackgroundColor(int link, uint32_t v);
     static void ScreenChangeBackFaces(int link, uint32_t v);

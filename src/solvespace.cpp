@@ -71,6 +71,8 @@ void SolveSpaceUI::Init() {
     exportOffset = settings->ThawFloat("ExportOffset", 0.0);
     // Dimensions on arcs default to diameter vs radius
     arcDimDefaultDiameter = settings->ThawBool("ArcDimDefaultDiameter", false);
+    // Show full file path in the menu bar
+    showFullFilePath = settings->ThawBool("ShowFullFilePath", true);
     // Rewrite exported colors close to white into black (assuming white bg)
     fixExportColors = settings->ThawBool("FixExportColors", true);
     // Export background color
@@ -254,6 +256,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeFloat("ExportOffset", exportOffset);
     // Rewrite the default arc dimension setting
     settings->FreezeBool("ArcDimDefaultDiameter", arcDimDefaultDiameter);
+    // Show full file path in the menu bar
+    settings->FreezeBool("ShowFullFilePath", showFullFilePath);
     // Rewrite exported colors close to white into black (assuming white bg)
     settings->FreezeBool("FixExportColors", fixExportColors);
     // Export background color
@@ -664,7 +668,11 @@ void SolveSpaceUI::UpdateWindowTitles() {
         GW.window->SetTitle(C_("title", "(new sketch)"));
     } else {
         if(!GW.window->SetTitleForFilename(saveFile)) {
-            GW.window->SetTitle(saveFile.raw);
+            if(SS.showFullFilePath) {
+                GW.window->SetTitle(saveFile.raw);
+            } else {
+                GW.window->SetTitle(saveFile.raw.substr(saveFile.raw.find_last_of("/\\") + 1));
+            }
         }
     }
 
