@@ -508,6 +508,23 @@ public:
         printf("Font mono %s\n", fontEditMono.family().toLocal8Bit().data());
         */
 #endif
+
+        // Set language locale.
+        std::string localeStr("en_US");
+        QStringList list = QLocale::system().uiLanguages();
+        if (! list.empty()) {
+            QString lang = list[0];
+            if (lang.size() == 5 && lang[2] == '-') {
+                lang[2] = '_';
+                localeStr = lang.toStdString();
+            }
+        }
+        SetLocale(localeStr);
+
+#ifdef __linux
+        QIcon icon("/usr/share/icons/hicolor/48x48/apps/solvespace.png");
+        setWindowIcon(icon);
+#endif
     }
 
     QFont fontEdit;
@@ -1008,12 +1025,6 @@ int main(int argc, char** argv) {
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
 
     Platform::SSApplication app(argc, argv);
-
-#ifdef __linux
-    QIcon icon("/usr/share/icons/hicolor/48x48/apps/solvespace.png");
-    app.setWindowIcon(icon);
-#endif
-
     Platform::Open3DConnexion();
     SS.Init();
 
