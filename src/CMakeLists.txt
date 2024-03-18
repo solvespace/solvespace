@@ -21,7 +21,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 if(USE_QT_GUI)
 	set(CMAKE_AUTOMOC ON)
-	find_package(Qt5 COMPONENTS Core Gui Widgets OpenGL REQUIRED)
+	find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
 endif()
 
 # solvespace dependencies
@@ -299,7 +299,7 @@ if(ENABLE_GUI)
     endif()
 
     # Platform-specific
-    if(WIN32)
+    if(WIN32 AND NOT USE_QT_GUI)
         target_sources(solvespace PRIVATE
             platform/guiwin.cpp)
 
@@ -376,7 +376,7 @@ if(ENABLE_GUI)
             ${FONTCONFIG_LIBRARY_DIRS})
         target_link_libraries(solvespace PRIVATE
             ${FONTCONFIG_LIBRARIES}
-            Qt5::Core Qt5::Gui Qt5::Widgets Qt5::OpenGL)
+            Qt5::Core Qt5::Gui Qt5::Widgets)
     else()
         target_sources(solvespace PRIVATE
             platform/guigtk.cpp)
@@ -401,9 +401,9 @@ if(ENABLE_GUI)
     endif()
 endif()
 
+if(ENABLE_CLI)
 # solvespace headless library
 
-if(ENABLE_CLI)
 add_library(solvespace-headless STATIC EXCLUDE_FROM_ALL
     ${solvespace_core_gl_SOURCES}
     platform/guinone.cpp

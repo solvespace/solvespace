@@ -916,6 +916,11 @@ public:
     }
 };
 
+#if defined(WIN32)
+// This interferes with our identifier.
+#    undef CreateWindow
+#endif
+
 WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     return std::make_shared<WindowImplQt>(kind,
                 std::static_pointer_cast<WindowImplQt>(parentWindow));
