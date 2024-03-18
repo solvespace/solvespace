@@ -302,7 +302,13 @@ static int RoundUpToPowerOfTwo(int v)
 void OpenGl1Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
     if(current.texture.lock() == pm) return;
 
-    glBindTexture(GL_TEXTURE_2D, 1);
+    
+    /*
+       Shingen75 It seems that texture id 1 is used by Qt OpenGL framework
+       changed to 2 
+    */
+    //glBindTexture(GL_TEXTURE_2D, 1);
+    glBindTexture(GL_TEXTURE_2D, 2);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
