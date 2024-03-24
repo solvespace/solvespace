@@ -1463,13 +1463,12 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
     if(e) {
         SS.UndoRemember();
         if(usedParams > 0) {
-					// TODO: special cases for dimless, angles
-					c->expr_scaling_to_base = SS.MmPerUnit(); 
-					// Suppose something was designed in inches but edited in mm. The click handler will put the scaling in
-					// The user will choose to leave the scaling alone. So we put the 
-          c->expression = s;
-
-					e->SimplifyInverses();
+            // TODO: special cases for dimless, angles
+            c->expr_scaling_to_base = SS.MmPerUnit(); 
+            // Suppose something was designed in inches but edited in mm. The click handler will put the scaling in
+            // The user will choose to leave the scaling alone. So we put the 
+            c->expression = s;
+            e->SimplifyInverses();
         }
 
         switch(c->type) {

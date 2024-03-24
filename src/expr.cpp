@@ -792,6 +792,7 @@ public:
     Token* Lex(std::string *error);
     bool Reduce(std::string *error);
     bool Parse(std::string *error, size_t reduceUntil = 0);
+    void PrintTokens();
 
     static Expr *Parse(const std::string &input, std::string *error, IdList<Param,
                         hParam> *params = NULL, int *paramsCount = 0, hConstraint hc = {0});
@@ -1099,7 +1100,7 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
 }
 
 //TODO: clean this up, make this auto edit the original string, fix auto-added scale factors in the expressions in tokens so they print properly or are fully suppressed depending on mode
-void print_tokens(std::vector<ExprParser::Token*> tokens) {
+void ExprParser::PrintTokens() {
     std::string* str = new std::string();
 
     for(ExprParser::Token* token : tokens) {
@@ -1118,9 +1119,11 @@ void print_tokens(std::vector<ExprParser::Token*> tokens) {
 
             switch(token->expr->op) {
                 case Expr::Op::PARAM:
+                    str->append(this->params->FindById(token->expr->parh)->name);
+                    break;
                 case Expr::Op::PARAM_PTR:
                 case Expr::Op::VARIABLE:
-                    str->append("param");
+                    str->append("?param");
                     break;
                 case Expr::Op::CONSTANT:
                     str->append(std::to_string(token->expr->v));
@@ -1164,7 +1167,7 @@ Expr *ExprParser::Parse(const std::string &input, std::string *error,
 
     r->expr->SimplifyInverses();
 
-    print_tokens(parser.tokens);
+    parser.PrintTokens();
 
     return r->expr;
 }

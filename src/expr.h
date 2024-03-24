@@ -40,8 +40,8 @@ public:
     Expr    *a; //nullptr if this is a PARAM, PARAM_PTR, CONSTANT, VARIABLE
     union {
         double  v; // this variant if CONSTANT
-        hParam  parh; // this variant if PARAM
-        Param  *parp; // this variant if PARAM_PTR
+        hParam  parh;
+        Param  *parp; 
         Expr    *b; // nullptr if this is a unary op, 
     };
 
