@@ -1362,6 +1362,7 @@ hStyle Constraint::GetStyle() const {
 bool Constraint::HasLabel() const {
     switch(type) {
         case Type::COMMENT:
+        case Type::RELATION:
         case Type::PT_PT_DISTANCE:
         case Type::PT_PLANE_DISTANCE:
         case Type::PT_LINE_DISTANCE:

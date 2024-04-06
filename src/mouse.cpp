@@ -1164,14 +1164,13 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                 }
 
                 case Command::RELATION: {
-                    //TODO
                     ClearSuper();
                     Constraint c = {};
                     c.group       = SS.GW.activeGroup;
                     c.workplane   = SS.GW.ActiveWorkplane();
                     c.type        = Constraint::Type::RELATION;
                     c.disp.offset = v;
-                    c.expression     = _("x");
+                    c.expression  = _("x");
                     hc = Constraint::AddConstraint(&c);
                     break;
                 }
@@ -1366,6 +1365,7 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
     Constraint *c = SK.GetConstraint(constraintBeingEdited);
     if(!c->HasLabel()) {
         // Not meaningful to edit a constraint without a dimension
+        fprintf(stderr, "Wont edit without label");
         return;
     }
     if(c->reference) {
@@ -1387,49 +1387,49 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
         default: {
             double value = fabs(c->valA);
 
-						// True if the quantity represented by this constraint is dimensionless (ratios, angles etc.)
-						bool dimless = c->type == Constraint::Type::LENGTH_RATIO || c->type == Constraint::Type::ARC_ARC_LEN_RATIO || c->type == Constraint::Type::ARC_LINE_LEN_RATIO || c->type == Constraint::Type::ANGLE;
+            // True if the quantity represented by this constraint is dimensionless (ratios, angles etc.)
+            bool dimless = c->type == Constraint::Type::LENGTH_RATIO || c->type == Constraint::Type::ARC_ARC_LEN_RATIO || c->type == Constraint::Type::ARC_LINE_LEN_RATIO || c->type == Constraint::Type::ANGLE || c->type == Constraint::Type::RELATION;
 
-						// Render a value, or render an expression
-						if(c->expression.empty()) {
-							// Try showing value with default number of digits after decimal first.
-							if(dimless) {
-								// these ratios are dimensionless, so should not be scaled (not a length value)
-								if(c->type == Constraint::Type::ANGLE) {
-									editValue = SS.DegreeToString(value);
-								} else {
-									editValue = ssprintf("%.3f", value);
-								}
-							} else {
-									// If displayed as radius, also edit as radius.
-									if(c->type == Constraint::Type::DIAMETER && c->other)
-											value /= 2;
+            // Render a value, or render an expression
+            if(c->expression.empty()) {
+                // Try showing value with default number of digits after decimal first.
+                if(dimless) {
+                    // these ratios are dimensionless, so should not be scaled (not a length value)
+                    if(c->type == Constraint::Type::ANGLE) {
+                        editValue = SS.DegreeToString(value);
+                    } else {
+                        editValue = ssprintf("%.3f", value);
+                    }
+                } else {
+                        // If displayed as radius, also edit as radius.
+                        if(c->type == Constraint::Type::DIAMETER && c->other)
+                                value /= 2;
 
-									editValue = SS.MmToString(value, true);
-									value /= SS.MmPerUnit();
-							}
+                        editValue = SS.MmToString(value, true);
+                        value /= SS.MmPerUnit();
+                }
 
-							// If that's not enough to represent it exactly, show the value with as many
-							// digits after decimal as required, up to 10.
-							int digits = 0;
-							while(fabs(std::stod(editValue) - value) > 1e-10) {
-									editValue = ssprintf("%.*f", digits, value);
-									digits++;
-							}
-						} else {
-							// Appears to be the wrong approach
-							// TODO: Simplify so that we don't have *25.4/25.4 in a bunch of expressions
-							if(c->type == Constraint::Type::DIAMETER && c->other) {
-								// Edit as radius instead of diameter due to user config
-								editValue = ssprintf("%s*%f", c->expression.c_str(), c->expr_scaling_to_base/2*SS.MmPerUnit());
-							} else if(dimless || c->expr_scaling_to_base == SS.MmPerUnit()) {
-								// Unit does not need scaling
-								editValue = c->expression;
-							} else {
-								// Unit needs dimension scaling
-								editValue = ssprintf("%s*%f", c->expression.c_str(), c->expr_scaling_to_base/SS.MmPerUnit());
-							}
-						}
+                // If that's not enough to represent it exactly, show the value with as many
+                // digits after decimal as required, up to 10.
+                int digits = 0;
+                while(fabs(std::stod(editValue) - value) > 1e-10) {
+                    editValue = ssprintf("%.*f", digits, value);
+                    digits++;
+                }
+            } else {
+                // Appears to be the wrong approach
+                // TODO: Simplify so that we don't have *25.4/25.4 in a bunch of expressions
+                if(c->type == Constraint::Type::DIAMETER && c->other) {
+                    // Edit as radius instead of diameter due to user config
+                    editValue = ssprintf("%s*%f", c->expression.c_str(), c->expr_scaling_to_base/2*SS.MmPerUnit());
+                } else if(dimless || c->expr_scaling_to_base == SS.MmPerUnit()) {
+                    // Unit does not need scaling
+                    editValue = c->expression;
+                } else {
+                    // Unit needs dimension scaling
+                    editValue = ssprintf("%s*%f", c->expression.c_str(), c->expr_scaling_to_base/SS.MmPerUnit());
+                }
+            }
 
             editPlaceholder = "10.000000";
             break;
