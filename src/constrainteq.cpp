@@ -256,9 +256,11 @@ void ConstraintBase::Generate(IdList<Param,hParam> *l) {
             size_t eqpos = expression.find_first_of("=");
             //TODO: validation that only one equals sign appears, or give up on having this pattern plastered everywhere and move into expression parser etc.
             Expr::From(expression.substr(0, eqpos), false, &SK.param, NULL)->Minus(Expr::From(expression.substr(eqpos+1, SIZE_T_MAX), false, &SK.param, NULL));
-    } else if(expression != "") {
+    } else if(expression != "" && expr_scaling_to_base != 0) {
 			//TODO order of ops/move to AST
         Expr::From((expression+"*"+std::to_string(expr_scaling_to_base)).c_str(), false, l);
+    } else if(expression != "") {
+        Expr::From(expression.c_str(), false, l);
     }
     switch(type) {
         case Type::PARALLEL:
@@ -290,9 +292,11 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
             size_t eqpos = expression.find_first_of("=");
             //TODO: validation that only one equals sign appears, or give up on having this pattern plastered everywhere and move into expression parser etc.
             exA = Expr::From(expression.substr(0, eqpos), false, &SK.param, NULL)->Minus(Expr::From(expression.substr(eqpos+1, SIZE_T_MAX), false, &SK.param, NULL));
-        } else if(expression != "") {
+        } else if(expression != "" && expr_scaling_to_base != 0) {
             //TODO order of ops/move to AST
             exA = Expr::From((expression+"*"+std::to_string(expr_scaling_to_base)).c_str(), false, &SK.param, NULL);
+        } else if(expression != "") {
+            exA = Expr::From(expression.c_str(), false, &SK.param, NULL);
         } else {
             exA = Expr::From(valA);
         }
