@@ -252,7 +252,11 @@ void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, const ExprVector &v,
 }
 
 void ConstraintBase::Generate(IdList<Param,hParam> *l) {
-    if(expression != "") {
+    if(type == Constraint::Type::RELATION) {
+            size_t eqpos = expression.find_first_of("=");
+            //TODO: validation that only one equals sign appears, or give up on having this pattern plastered everywhere and move into expression parser etc.
+            Expr::From(expression.substr(0, eqpos), false, &SK.param, NULL)->Minus(Expr::From(expression.substr(eqpos+1, SIZE_T_MAX), false, &SK.param, NULL));
+    } else if(expression != "") {
 			//TODO order of ops/move to AST
         Expr::From((expression+"*"+std::to_string(expr_scaling_to_base)).c_str(), false, l);
     }
@@ -282,8 +286,12 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
     if(reference && !forReference) {
         return;
     } else {
-        if(expression != "") {
-					//TODO order of ops/move to AST
+        if(type == Constraint::Type::RELATION) {
+            size_t eqpos = expression.find_first_of("=");
+            //TODO: validation that only one equals sign appears, or give up on having this pattern plastered everywhere and move into expression parser etc.
+            exA = Expr::From(expression.substr(0, eqpos), false, &SK.param, NULL)->Minus(Expr::From(expression.substr(eqpos+1, SIZE_T_MAX), false, &SK.param, NULL));
+        } else if(expression != "") {
+            //TODO order of ops/move to AST
             exA = Expr::From((expression+"*"+std::to_string(expr_scaling_to_base)).c_str(), false, &SK.param, NULL);
         } else {
             exA = Expr::From(valA);

@@ -26,6 +26,7 @@ public:
         MINUS          = 101,
         TIMES          = 102,
         DIV            = 103,
+
         // Unary ops
         NEGATE         = 104,
         SQRT           = 105,

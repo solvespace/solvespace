@@ -896,7 +896,7 @@ void Constraint::MenuConstrain(Command id) {
                 c.ptA = gs.point[0];
                 c.group       = SS.GW.activeGroup;
                 c.workplane   = SS.GW.ActiveWorkplane();
-                c.expression     = _("x");
+                c.expression     = _("x=5");
                 AddConstraint(&c);
                 newcons.push_back(c);
             } else {

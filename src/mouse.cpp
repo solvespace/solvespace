@@ -1170,7 +1170,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     c.workplane   = SS.GW.ActiveWorkplane();
                     c.type        = Constraint::Type::RELATION;
                     c.disp.offset = v;
-                    c.expression  = _("x");
+                    c.expression  = _("x=5");
                     hc = Constraint::AddConstraint(&c);
                     break;
                 }
@@ -1458,7 +1458,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
 }
 
 void GraphicsWindow::EditControlDone(const std::string &s) {
-		//TODO: convert inch expessions back into mm
+    //TODO: convert inch expessions back into mm
     window->HideEditor();
     window->Invalidate();
 
@@ -1470,8 +1470,37 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         return;
     }
 
+    // decided not to parse equals signs in expressions since
+    // 1) A relation isn't an expression since it has no meaningful reducable value
+    // 2) There can only be one occurrence of an assignment in an expression, and this may only be in a relation
+    // To enforce #2 after future changes and to to not break implicit invariant #1, we process the assignment operation here
+    // Since "equations" are just expressions = 0, we just "subtract everything after the equals sign from both sides of the equation"
+    //
+    // TODO:
+    // if this doesn't work out, figure out alternative strategy, modify ExprParser::Precendence on line 981, add the operator, and have it basically be a lazy minus
+    Expr *e = NULL;
     int usedParams;
-    Expr *e = Expr::From(s, true, &SK.param, &usedParams);
+    if(c->type == Constraint::Type::RELATION) {
+        size_t eqpos = s.find_first_of("=");
+        if(eqpos != -1 && eqpos != s.find_last_of("=")) {
+            fprintf(stderr, "reject change 1");
+            return;
+        }
+        else if(eqpos == 0) {
+            fprintf(stderr, "reject change2");
+            return;
+        } else if(eqpos == s.length() - 1) {
+            fprintf(stderr, "reject change3");
+            return;
+        }
+
+        // (left_side) - (right_side) (... implicitly = 0)
+        e = Expr::From(s.substr(0, eqpos), true, &SK.param, &usedParams)->Minus(Expr::From(s.substr(eqpos+1, SIZE_T_MAX), true, &SK.param, &usedParams));
+
+    } else {
+        e = Expr::From(s, true, &SK.param, &usedParams);
+    }
+
 
     if(e) {
         SS.UndoRemember();
@@ -1485,6 +1514,11 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         }
 
         switch(c->type) {
+            case Constraint::Type::RELATION:
+                c->expr_scaling_to_base = 1; 
+                c->expression = s;
+                break;
+
             case Constraint::Type::PROJ_PT_DISTANCE:
             case Constraint::Type::PT_LINE_DISTANCE:
             case Constraint::Type::PT_FACE_DISTANCE:
@@ -1505,7 +1539,6 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
                 break;
             }
             case Constraint::Type::ANGLE:
-            case Constraint::Type::RELATION:
             case Constraint::Type::LENGTH_RATIO:
             case Constraint::Type::ARC_ARC_LEN_RATIO:
             case Constraint::Type::ARC_LINE_LEN_RATIO:
