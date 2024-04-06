@@ -165,6 +165,7 @@ const MenuEntry Menu[] = {
 { 1, N_("Lock Point Where &Dragged"),   Command::WHERE_DRAGGED,    ']',     KN, mCon   },
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
 { 1, N_("Comment"),                     Command::COMMENT,          ';',     KN, mCon   },
+{ 1, N_("Relation"),                    Command::RELATION,         ':',     KN, mCon   },
 
 { 0, N_("&Analyze"),                    Command::NONE,             0,       KN, mAna   },
 { 1, N_("Measure &Volume"),             Command::VOLUME,           C|S|'v', KN, mAna   },

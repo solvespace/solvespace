@@ -6,6 +6,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <cstdio>
 #include <string>
 
 const hConstraint ConstraintBase::NO_CONSTRAINT = { 0 };
@@ -26,6 +27,7 @@ bool ConstraintBase::HasLabel() const {
         case Type::ARC_LINE_DIFFERENCE:
         case Type::ANGLE:
         case Type::COMMENT:
+        case Type::RELATION:
             return true;
 
         default:
@@ -61,6 +63,7 @@ bool ConstraintBase::IsProjectible() const {
         case Type::PERPENDICULAR:
         case Type::WHERE_DRAGGED:
         case Type::COMMENT:
+        case Type::RELATION:
             return true;
 
         case Type::PT_PLANE_DISTANCE:
@@ -1067,6 +1070,12 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
         case Type::COMMENT:
             return;
+
+        case Type::RELATION:
+            std::fprintf(stderr, "adding relation with expr! %s", exA->Print().c_str());
+            AddEq(l, exA, 0); //TODO
+            return;
+
     }
     ssassert(false, "Unexpected constraint ID");
 }

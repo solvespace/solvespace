@@ -1042,6 +1042,9 @@ bool ExprParser::Reduce(std::string *error) {
 bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
     while(true) {
         Token* t = Lex(error);
+        if(error != NULL && error->length() != 0) {
+            printf("Error %s", error);
+        }
         tokens.push_back(t);
         switch(t->type) {
             case TokenType::ERROR:

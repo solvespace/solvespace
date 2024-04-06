@@ -689,7 +689,9 @@ public:
         ARC_LINE_LEN_RATIO     = 211,
         ARC_ARC_DIFFERENCE     = 212,
         ARC_LINE_DIFFERENCE    = 213,
-        COMMENT                = 1000
+        COMMENT                = 1000,
+        //like COMMENT, but its contents are an equation (in particular, a relation). 
+        RELATION                     = 1001 
     };
 
     Type        type;
@@ -709,9 +711,9 @@ public:
     bool        other;
     bool        other2;
 
-    bool        reference;          // a ref dimension, that generates no eqs
-    std::string comment;            // since comments are represented as constraints
-    std::string expression;         // user-defined, may not be in mm (if entered in inch mode for example)
+    bool        reference;            // a ref dimension, that generates no eqs
+    std::string comment;              // since comments are represented as constraints
+    std::string expression;           // user-defined, may not be in mm (if entered in inch mode for example)
     double      expr_scaling_to_base; // scales expression to put in solvespace base units (like mm for distance). 
 
     bool Equals(const ConstraintBase &c) const {

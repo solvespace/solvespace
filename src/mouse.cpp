@@ -1162,6 +1162,19 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     hc = Constraint::AddConstraint(&c);
                     break;
                 }
+
+                case Command::RELATION: {
+                    //TODO
+                    ClearSuper();
+                    Constraint c = {};
+                    c.group       = SS.GW.activeGroup;
+                    c.workplane   = SS.GW.ActiveWorkplane();
+                    c.type        = Constraint::Type::RELATION;
+                    c.disp.offset = v;
+                    c.expression     = _("x");
+                    hc = Constraint::AddConstraint(&c);
+                    break;
+                }
                 default: ssassert(false, "Unexpected pending menu id");
             }
             break;
@@ -1492,6 +1505,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
                 break;
             }
             case Constraint::Type::ANGLE:
+            case Constraint::Type::RELATION:
             case Constraint::Type::LENGTH_RATIO:
             case Constraint::Type::ARC_ARC_LEN_RATIO:
             case Constraint::Type::ARC_LINE_LEN_RATIO:
@@ -1511,7 +1525,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
 
             default:
                 // These are always positive, and they get the units conversion.
-								// Use ExprToMm since this unparameterized expressions simplify down
+                // Use ExprToMm since this unparameterized expressions simplify down
                 c->valA = fabs(SS.ExprToMm(e));
                 break;
         }

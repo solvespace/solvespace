@@ -1293,6 +1293,7 @@ s:
             }
             return;
 
+        case Type::RELATION: 
         case Type::COMMENT: {
             Vector u, v;
             if(workplane == Entity::FREE_IN_3D) {
