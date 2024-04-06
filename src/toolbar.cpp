@@ -62,6 +62,8 @@ static ToolIcon Toolbar[] = {
       N_("Other supplementary angle"),                        {} },
     { "ref",             Command::REFERENCE,
       N_("Toggle reference dimension"),                       {} },
+    { "relation",        Command::RELATION,
+      N_("Constrain variables with equation"),                {} },
     { "",                Command::NONE, "",                   {} },
 
     { "extrude",         Command::GROUP_EXTRUDE,

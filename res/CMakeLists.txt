@@ -255,6 +255,7 @@ add_resources(
     icons/graphics-window/pointonx.png
     icons/graphics-window/point.png
     icons/graphics-window/rectangle.png
+    icons/graphics-window/relation.png
     icons/graphics-window/ref.png
     icons/graphics-window/revolve.png
     icons/graphics-window/same-orientation.png
