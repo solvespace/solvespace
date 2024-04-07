@@ -187,7 +187,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'c',  "Constraint.reference",     'b',    &(SS.sv.c.reference)          },
     { 'c',  "Constraint.comment",       'S',    &(SS.sv.c.comment)            },
     { 'c',  "Constraint.expression",    'S',    &(SS.sv.c.expression)         },
-    { 'c',  "Constraint.expr_scaling_to_base",    'd',    &(SS.sv.c.expr_scaling_to_base)         },
+    { 'c',  "Constraint.expr_scaling_to_base",    'f',    &(SS.sv.c.expr_scaling_to_base)         },
     { 'c',  "Constraint.disp.offset.x", 'f',    &(SS.sv.c.disp.offset.x)      },
     { 'c',  "Constraint.disp.offset.y", 'f',    &(SS.sv.c.disp.offset.y)      },
     { 'c',  "Constraint.disp.offset.z", 'f',    &(SS.sv.c.disp.offset.z)      },

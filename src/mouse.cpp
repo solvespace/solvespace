@@ -1419,15 +1419,15 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
             } else {
                 // Appears to be the wrong approach
                 // TODO: Simplify so that we don't have *25.4/25.4 in a bunch of expressions
-                if(c->type == Constraint::Type::DIAMETER && c->other) {
+                if(c->type == Constraint::Type::DIAMETER && c->other && c->expr_scaling_to_base != 0) {
                     // Edit as radius instead of diameter due to user config
                     editValue = ssprintf("%s*%f", c->expression.c_str(), c->expr_scaling_to_base/2*SS.MmPerUnit());
-                } else if(dimless || c->expr_scaling_to_base == SS.MmPerUnit()) {
-                    // Unit does not need scaling
-                    editValue = c->expression;
-                } else {
+                } else if(!dimless && c->expr_scaling_to_base != SS.MmPerUnit() && c->expr_scaling_to_base != 0) {
                     // Unit needs dimension scaling
                     editValue = ssprintf("%s*%f", c->expression.c_str(), c->expr_scaling_to_base/SS.MmPerUnit());
+                } else {
+                    // Unit does not need scaling
+                    editValue = c->expression;
                 }
             }
 
