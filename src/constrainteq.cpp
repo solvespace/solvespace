@@ -1088,7 +1088,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
         case Type::RELATION:
             std::fprintf(stderr, "adding relation with expr! %s", exA->Print().c_str());
-            AddEq(l, exA, 0); //TODO
+            AddEq(l, exA, 0); 
             return;
 
     }

@@ -4,6 +4,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include "ui.h"
 
 void GraphicsWindow::UpdateDraggedPoint(hEntity hp, double mx, double my) {
     Entity *p = SK.GetEntity(hp);
@@ -1482,17 +1483,14 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
     int usedParams;
     if(c->type == Constraint::Type::RELATION) {
         size_t eqpos = s.find_first_of("=");
-        if(eqpos != -1 && eqpos != s.find_last_of("=")) {
-            fprintf(stderr, "reject change 1");
+        if(eqpos == std::string::npos || eqpos != s.find_last_of("=")) {
+            dbp("Only exactly one equals sing allowed");
             return;
         }
         else if(eqpos == 0) {
-            fprintf(stderr, "reject change2");
+            dbp("Nothing left on the left-hand side of the = sign");
             return;
-        } else if(eqpos == s.length() - 1) {
-            fprintf(stderr, "reject change3");
-            return;
-        }
+        } 
 
         // (left_side) - (right_side) (... implicitly = 0)
         e = Expr::From(s.substr(0, eqpos), true, &SK.param, &usedParams)->Minus(Expr::From(s.substr(eqpos+1, SIZE_T_MAX), true, &SK.param, &usedParams));
@@ -1562,7 +1560,9 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
                 c->valA = fabs(SS.ExprToMm(e));
                 break;
         }
+        SK.GetGroup(c->group)->dofCheckOk = false; // if an named param was used in the constraint, the DoF may have changed
         SS.MarkGroupDirty(c->group);
+        SS.TW.HideEditControl();
     }
 }
 
