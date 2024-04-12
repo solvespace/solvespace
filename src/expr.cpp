@@ -848,14 +848,25 @@ int ExprParser::Precedence(Token t) {
 
 bool ExprParser::Reduce(std::string *error) {
     Token a = PopOperand(error);
+    if(error != NULL && !error->empty()) return false;
     if(a.IsError()) return false;
 
     Token op = PopOperator(error);
+
+    // support for multiplicaiton shorthand (i.e. 2x instead of 2*x)
+    if(op.IsError()) {
+        op = Token::From(TokenType::BINARY_OP, Expr::Op::TIMES);
+        error = NULL;
+    } 
+    //redundant in current setup, since if there's an error op is likely to be null. keeping to preseve error handing in future changes
+    else if(error != NULL && !error->empty()) return false; 
+
     if(op.IsError()) return false;
 
     switch(op.type) {
         case TokenType::BINARY_OP: {
             Token b = PopOperand(error);
+            if(error != NULL && !error->empty()) return false;
             if(b.IsError()) return false;
 
             // gives the operand children:
