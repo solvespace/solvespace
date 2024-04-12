@@ -441,155 +441,6 @@ bool Expr::IsZeroConst() const {
     return op == Op::CONSTANT && EXACT(v == 0.0);
 }
 
-
-//TODO naming/scope
-void remove_redundant(std::vector<Expr*>& exprs) {
-	for(long i=0; i<exprs.size(); i++) {
-		for(long k=i+1; k < exprs.size(); k++) {
-			if(exprs[i]->v == 1/exprs[k]->v) { //TODO: tol
-
-                exprs[k]->to_delete = true;
-				exprs.pop_back();
-
-				exprs[i]->to_delete = true;
-				exprs.pop_back();
-			}
-		}
-	}
-}
-
-void remove_inverses(std::vector<Expr*>& exprs1, std::vector<Expr*>& exprs2) {
-	for(long i=0; i<exprs1.size(); i++) {
-		for(long k=0; k<exprs2.size(); k++) {
-			if(exprs1[i]->v == exprs2[k]->v) {
-				exprs1[i]->to_delete = true;
-				exprs1.pop_back();
-
-				exprs2[k]->to_delete = true;
-				exprs2.pop_back();
-			}
-		}
-	}
-}
-
-//TODO: fix parenthesis edge case: 2*c/(2*3*4) because 2*c/3*4
-void bubble_delete(Expr** parent) {
-    Expr* a_ptr = nullptr;
-    bool del_a = false;
-    Expr* b_ptr = nullptr;
-    bool del_b = false;
-
-    if((*parent)->a != nullptr) {
-        bubble_delete(&(*parent)->a);
-        if(!(*parent)->a->to_delete) {
-            a_ptr = (*parent)->a;
-        } else {
-            del_a = true;
-        }
-    } 
-
-    // this checks for enum variants that imply the union in Expr has Expr* b
-    if((uint32_t)(*parent)->op >= 100 && (uint32_t)(*parent)->op <=103) {
-        bubble_delete(&(*parent)->b);
-        if(!(*parent)->b->to_delete) {
-            b_ptr = (*parent)->b;
-        } else {
-            del_b = true;
-        }
-    } 
-
-    if(del_a && del_b) {
-        (*parent)->to_delete = true;
-        //TODO: conditionally free a & b
-    } else if(del_a && b_ptr != nullptr) { //TODO: check if uni-operato
-        (*parent)->to_delete = true;
-        (*parent) = b_ptr;
-    } else if(del_b && a_ptr != nullptr) {
-        (*parent)->to_delete = true;
-        (*parent) = a_ptr;
-    }
-}
-
-// TODO: should this function be made part of FoldConstants? Seems be OK based on how FoldConstants is used
-// This routine cancels constants that multiplicative inverses, that act at on the entire expression.
-// Contract: this function may cancel ALL multiplicative inverses in the future, regardless of where they appear in tree
-Expr* Expr::SimplifyInverses() {
-	//TODO: include string slices in expr to allow for smart string rebuilding
-	//intent: be able to switch between inches and mm a few times without getting huge daisy chains
-	std::vector<Expr*> numerators = std::vector<Expr*>();
-	std::vector<Expr*> denominators = std::vector<Expr*>();
-	
-	// bool indicates if we are in the numerator of the expression
-	std::stack<std::pair<Expr*, bool>> iter = std::stack<std::pair<Expr*,bool>>();
-
-	if(this->op == Op::TIMES || this->op == Op::DIV) {
-		iter.push(std::make_pair(this,true));
-	} else {
-		return this;
-	}
-
-	while(!iter.empty()) {
-		Expr* head = iter.top().first;
-		bool is_numerator = iter.top().second;
-		iter.pop();
-
-		std::vector<Expr*>* local_numerators = is_numerator ? &numerators : &denominators;
-		std::vector<Expr*>* local_denominators = is_numerator ? &denominators : &numerators;
-
-		switch(head->a->op) {
-			case Op::CONSTANT:
-				local_numerators->push_back(head->a); //TODO: this would be an opportune time to handle deletion
-
-				// is there another numerator that is our inverse?
-				// is there a denominoator that is equal to us?
-
-				// if sibling is to be removed...
-
-				// if removed item is not our sibling...
-				// delete self, make sibling into parent
-				break;
-			case Op::DIV:
-			case Op::TIMES:
-				iter.push(std::make_pair(head->a, is_numerator));
-				break;
-			default:
-				break;
-		}
-		
-		switch(head->b->op) {
-			case Op::CONSTANT:
-				if(head->op == Op::DIV)
-					local_denominators->push_back(head->b);
-				else
-				 	local_numerators->push_back(head->b);
-				break;
-			case Op::DIV:
-			case Op::TIMES:
-				if(head->op == Op::DIV)
-				 	iter.push(std::make_pair(head->b, !is_numerator));
-				else 
-					iter.push(std::make_pair(head->b, is_numerator));
-
-				break;
-			default:
-				break;
-		}
-	}
-
-	remove_redundant(numerators);
-	remove_redundant(denominators);
-	remove_inverses(numerators,denominators);
-
-    Expr* new_expr = this;
-    bubble_delete(&new_expr);
-
-	// delete constants in the tree (leaf nodes). 
-	// All deleted constants have a parent that is TIMES or DIV that their non-deleted siblings should replace
-	// TODO: what if sibling is also deleted?
-
-	return new_expr;
-}
-
 Expr *Expr::FoldConstants() {
     Expr *n = AllocExpr();
     *n = *this;
@@ -766,14 +617,13 @@ public:
         TokenType  type;
         Expr      *expr;
 
-        static Token* From(TokenType type = TokenType::ERROR, Expr *expr = NULL);
-        static Token* From(TokenType type, Expr::Op op);
+        static Token From(TokenType type = TokenType::ERROR, Expr *expr = NULL);
+        static Token From(TokenType type, Expr::Op op);
         bool IsError() const { return type == TokenType::ERROR; }
     };
 
     std::string::const_iterator it, end;
-    std::vector<Token*> stack;
-    std::vector<Token*> tokens; //TODO: free tokens when done - problem: this vector reallocates and the pointers all become trash. Use a destructor?
+    std::vector<Token> stack;
     std::set<uint32_t> newParams;
     IdList<Param, hParam> *params;
     hConstraint hc;
@@ -784,34 +634,33 @@ public:
     std::string ReadWord();
     void SkipSpace();
 
-    Token* PopOperator(std::string *error);
-    Token* PopOperand(std::string *error);
+    Token PopOperator(std::string *error);
+    Token PopOperand(std::string *error);
 
-    int Precedence(Token* token);
-    Token* LexNumber(std::string *error);
-    Token* Lex(std::string *error);
+    int Precedence(Token token);
+    Token LexNumber(std::string *error);
+    Token Lex(std::string *error);
     bool Reduce(std::string *error);
     bool Parse(std::string *error, size_t reduceUntil = 0);
-    void PrintTokens();
 
     static Expr *Parse(const std::string &input, std::string *error, IdList<Param,
                         hParam> *params = NULL, int *paramsCount = 0, hConstraint hc = {0});
 };
 
 // allocates
-ExprParser::Token* ExprParser::Token::From(TokenType type, Expr *expr) {
-    Token* t = new Token();
-    t->type = type;
-    t->expr = expr;
+ExprParser::Token ExprParser::Token::From(TokenType type, Expr *expr) {
+    Token t;
+    t.type = type;
+    t.expr = expr;
     return t;
 }
 
 // allocates
-ExprParser::Token* ExprParser::Token::From(TokenType type, Expr::Op op) {
-    Token* t = new Token();
-    t->type = type;
-    t->expr = Expr::AllocExpr();
-    t->expr->op = op;
+ExprParser::Token ExprParser::Token::From(TokenType type, Expr::Op op) {
+    Token t;
+    t.type = type;
+    t.expr = Expr::AllocExpr();
+    t.expr->op = op;
     return t;
 }
 
@@ -845,7 +694,7 @@ void ExprParser::SkipSpace() {
     }
 }
 
-ExprParser::Token* ExprParser::LexNumber(std::string *error) {
+ExprParser::Token ExprParser::LexNumber(std::string *error) {
     std::string s;
 
     while(char c = PeekChar()) {
@@ -860,20 +709,20 @@ ExprParser::Token* ExprParser::LexNumber(std::string *error) {
     char *endptr;
     double d = strtod(s.c_str(), &endptr);
 
-    Token* t = Token::From();
+    Token t = Token::From();
     if(endptr == s.c_str() + s.size()) {
         t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
-        t->expr->v = d;
+        t.expr->v = d;
     } else {
         *error = "'" + s + "' is not a valid number";
     }
     return t;
 }
 
-ExprParser::Token* ExprParser::Lex(std::string *error) {
+ExprParser::Token ExprParser::Lex(std::string *error) {
     SkipSpace();
 
-    Token* t = nullptr;
+    Token t;
     char c = PeekChar();
     if(isupper(c)) {
         std::string n = ReadWord();
@@ -894,13 +743,13 @@ ExprParser::Token* ExprParser::Lex(std::string *error) {
             t = Token::From(TokenType::UNARY_OP, Expr::Op::ACOS);
         } else if(s == "pi") {
             t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
-            t->expr->v = PI;
+            t.expr->v = PI;
         } else if(params != NULL) {
             bool found = false;
             for(const Param &p : *params) {
                 if(p.name != s) continue;
                 t = Token::From(TokenType::OPERAND, Expr::Op::PARAM);
-                t->expr->parh = p.h;
+                t.expr->parh = p.h;
                 newParams.insert(p.h.v);
                 found = true;
             }
@@ -917,7 +766,7 @@ ExprParser::Token* ExprParser::Lex(std::string *error) {
                 params->Add(&p);
                 newParams.insert(p.h.v);
                 t = Token::From(TokenType::OPERAND, Expr::Op::PARAM);
-                t->expr->parh = p.h;
+                t.expr->parh = p.h;
             }
         } else {
             *error = "'" + s + "' is not a valid variable, function or constant";
@@ -950,12 +799,12 @@ ExprParser::Token* ExprParser::Lex(std::string *error) {
     return t;
 }
 
-ExprParser::Token* ExprParser::PopOperand(std::string *error) {
-    Token* t = nullptr;
+ExprParser::Token ExprParser::PopOperand(std::string *error) {
+    Token t;
     if(stack.empty() 
             || ( 
-                stack.back()->type != TokenType::OPERAND
-                && (stack.back()->expr == nullptr)
+                stack.back().type != TokenType::OPERAND
+                && (stack.back().expr == nullptr)
                )
             ) {
         *error = "Expected an operand";
@@ -966,10 +815,10 @@ ExprParser::Token* ExprParser::PopOperand(std::string *error) {
     return t;
 }
 
-ExprParser::Token* ExprParser::PopOperator(std::string *error) {
-    Token* t = nullptr;
-    if(stack.empty() || (stack.back()->type != TokenType::UNARY_OP &&
-                         stack.back()->type != TokenType::BINARY_OP)) {
+ExprParser::Token ExprParser::PopOperator(std::string *error) {
+    Token t;
+    if(stack.empty() || (stack.back().type != TokenType::UNARY_OP &&
+                         stack.back().type != TokenType::BINARY_OP)) {
         *error = "Expected an operator";
     } else {
         t = stack.back();
@@ -978,47 +827,47 @@ ExprParser::Token* ExprParser::PopOperator(std::string *error) {
     return t;
 }
 
-int ExprParser::Precedence(Token* t) {
-    ssassert(t->type == TokenType::BINARY_OP ||
-             t->type == TokenType::UNARY_OP ||
-             t->type == TokenType::OPERAND,
+int ExprParser::Precedence(Token t) {
+    ssassert(t.type == TokenType::BINARY_OP ||
+             t.type == TokenType::UNARY_OP ||
+             t.type == TokenType::OPERAND,
              "Unexpected token type");
 
-    if(t->type == TokenType::UNARY_OP) {
+    if(t.type == TokenType::UNARY_OP) {
         return 30;
-    } else if(t->expr->op == Expr::Op::TIMES ||
-              t->expr->op == Expr::Op::DIV) {
+    } else if(t.expr->op == Expr::Op::TIMES ||
+              t.expr->op == Expr::Op::DIV) {
         return 20;
-    } else if(t->expr->op == Expr::Op::PLUS ||
-              t->expr->op == Expr::Op::MINUS) {
+    } else if(t.expr->op == Expr::Op::PLUS ||
+              t.expr->op == Expr::Op::MINUS) {
         return 10;
-    } else if(t->type == TokenType::OPERAND) {
+    } else if(t.type == TokenType::OPERAND) {
         return 0;
     } else ssassert(false, "Unexpected operator");
 }
 
 bool ExprParser::Reduce(std::string *error) {
-    Token* a = PopOperand(error);
-    if(a->IsError()) return false;
+    Token a = PopOperand(error);
+    if(a.IsError()) return false;
 
-    Token* op = PopOperator(error);
-    if(op->IsError()) return false;
+    Token op = PopOperator(error);
+    if(op.IsError()) return false;
 
-    switch(op->type) {
+    switch(op.type) {
         case TokenType::BINARY_OP: {
-            Token* b = PopOperand(error);
-            if(b->IsError()) return false;
+            Token b = PopOperand(error);
+            if(b.IsError()) return false;
 
             // gives the operand children:
             // semantically this subtree represents an operand, so we change the token type accordingly
-            op->expr = b->expr->AnyOp(op->expr->op, a->expr);
+            op.expr = b.expr->AnyOp(op.expr->op, a.expr);
             stack.push_back(op);
             break;
         }
 
         case TokenType::UNARY_OP: {
-            Expr *e = a->expr;
-            switch(op->expr->op) {
+            Expr *e = a.expr;
+            switch(op.expr->op) {
                 case Expr::Op::NEGATE: e = e->Negate(); break;
                 case Expr::Op::SQRT:   e = e->Sqrt(); break;
                 case Expr::Op::SQUARE: e = e->Times(e); break;
@@ -1028,7 +877,7 @@ bool ExprParser::Reduce(std::string *error) {
                 case Expr::Op::ACOS:   e = e->ACos()->Times(Expr::From(180/PI)); break;
                 default: ssassert(false, "Unexpected unary operator");
             }
-            op->expr = e;
+            op.expr = e;
             stack.push_back(op);
             break;
         }
@@ -1041,12 +890,11 @@ bool ExprParser::Reduce(std::string *error) {
 
 bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
     while(true) {
-        Token* t = Lex(error);
+        Token t = Lex(error);
         if(error != NULL && error->length() != 0) {
             printf("Error %s", error);
         }
-        tokens.push_back(t);
-        switch(t->type) {
+        switch(t.type) {
             case TokenType::ERROR:
                 return false;
 
@@ -1056,7 +904,7 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
                     if(!Reduce(error)) return false;
                 }
 
-                if(t->type == TokenType::PAREN_RIGHT) {
+                if(t.type == TokenType::PAREN_RIGHT) {
                     stack.push_back(t);
                 }
                 return true;
@@ -1065,7 +913,7 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
                 // sub-expression
                 if(!Parse(error, /*reduceUntil=*/stack.size())) return false;
 
-                if(stack.empty() || stack.back()->type != TokenType::PAREN_RIGHT) {
+                if(stack.empty() || stack.back().type != TokenType::PAREN_RIGHT) {
                     *error = "Expected ')'";
                     return false;
                 }
@@ -1074,11 +922,11 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
             }
 
             case TokenType::BINARY_OP:
-                if((stack.size() > reduceUntil && stack.back()->type != TokenType::OPERAND) ||
+                if((stack.size() > reduceUntil && stack.back().type != TokenType::OPERAND) ||
                    stack.size() == reduceUntil) {
-                    if(t->expr->op == Expr::Op::MINUS) {
-                        t->type = TokenType::UNARY_OP;
-                        t->expr->op = Expr::Op::NEGATE;
+                    if(t.expr->op == Expr::Op::MINUS) {
+                        t.type = TokenType::UNARY_OP;
+                        t.expr->op = Expr::Op::NEGATE;
                         stack.push_back(t);
                         break;
                     }
@@ -1102,58 +950,6 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
     return true;
 }
 
-//TODO: clean this up, make this auto edit the original string, fix auto-added scale factors in the expressions in tokens so they print properly or are fully suppressed depending on mode
-void ExprParser::PrintTokens() {
-    std::string* str = new std::string();
-
-    for(ExprParser::Token* token : tokens) {
-
-        if(token->type == ExprParser::TokenType::PAREN_LEFT) {
-            str->append("(");
-            continue;
-        } else if(token->type == ExprParser::TokenType::PAREN_RIGHT) {
-            str->append(")");
-            continue;
-        } else if(token->expr != nullptr) {
-            if(token->expr->to_delete) {
-                continue;
-            }
-
-
-            switch(token->expr->op) {
-                case Expr::Op::PARAM:
-                    str->append(this->params->FindById(token->expr->parh)->name);
-                    break;
-                case Expr::Op::PARAM_PTR:
-                case Expr::Op::VARIABLE:
-                    str->append("?param");
-                    break;
-                case Expr::Op::CONSTANT:
-                    str->append(std::to_string(token->expr->v));
-                    break;
-                case Expr::Op::PLUS:
-                    str->append("+");
-                    break;
-                case Expr::Op::MINUS:
-                    str->append("-");
-                    break;
-                case Expr::Op::TIMES:
-                    str->append("*");
-                    break;
-                case Expr::Op::DIV:
-                    str->append("/");
-                    break;
-                    //TODO: UNARY OPS
-                default:
-                    str->append("?");
-            }
-        }
-    }
-
-    dbp("%s", str->c_str());
-    delete str;
-}
-
 Expr *ExprParser::Parse(const std::string &input, std::string *error,
                         IdList<Param, hParam> *params, int *paramsCount, hConstraint hc) {
     ExprParser parser;
@@ -1164,15 +960,11 @@ Expr *ExprParser::Parse(const std::string &input, std::string *error,
     parser.hc = hc;
     if(!parser.Parse(error)) return NULL;
 
-    Token* r = parser.PopOperand(error);
-    if(r->IsError()) return NULL;
+    Token r = parser.PopOperand(error);
+    if(r.IsError()) return NULL;
     if(paramsCount != NULL) *paramsCount = parser.newParams.size();
 
-    r->expr->SimplifyInverses();
-
-    parser.PrintTokens();
-
-    return r->expr;
+    return r.expr;
 }
 
 Expr *Expr::Parse(const std::string &input, std::string *error) {

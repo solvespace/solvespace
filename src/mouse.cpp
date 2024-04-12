@@ -1508,8 +1508,6 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
             // Suppose something was designed in inches but edited in mm. The click handler will put the scaling in
             // The user will choose to leave the scaling alone. So we put the 
             c->expression = s;
-            //e = e->SimplifyInverses(); // this causes null deref later
-            //c->expression = e->Print();
         }
 
         switch(c->type) {
