@@ -1554,8 +1554,8 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
 
             default:
                 // These are always positive, and they get the units conversion.
-                // Use ExprToMm since this unparameterized expressions simplify down
-                c->valA = fabs(SS.ExprToMm(e));
+                // Use ExprToMm since this unparameterized expression will simplify immediately, and the dimension transformation is irrelevant
+                c->valA = fabs(SS.NonConstraintExprToMm(e));
                 break;
         }
         SK.GetGroup(c->group)->dofCheckOk = false; // if an named param was used in the constraint, the DoF may have changed

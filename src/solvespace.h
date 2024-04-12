@@ -623,7 +623,7 @@ public:
     std::string MmToString(double v, bool editable=false);
     std::string MmToStringSI(double v, int dim = 0);
     std::string DegreeToString(double v);
-    double ExprToMm(Expr *e);
+    double NonConstraintExprToMm(Expr *e);
     double StringToMm(const std::string &s);
     const char *UnitName();
     double MmPerUnit();

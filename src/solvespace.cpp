@@ -481,8 +481,9 @@ std::string SolveSpaceUI::DegreeToString(double v) {
         return ssprintf("%.0f", v);
     }
 }
-double SolveSpaceUI::ExprToMm(Expr *e) {
-	//TODO: This function is wrong for constraints, since constraints with expressions may have their own scaling to base (for example since they were specified in a different system)
+
+// Invariant: This function is wrong for constraints, since constraints with expressions may have their own scaling to base (for example since they were specified in a different system)
+double SolveSpaceUI::NonConstraintExprToMm(Expr *e) {
     return (e->Eval()) * MmPerUnit();
 }
 double SolveSpaceUI::StringToMm(const std::string &str) {

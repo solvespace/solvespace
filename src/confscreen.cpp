@@ -484,7 +484,7 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         case Edit::EXPORT_OFFSET: {
             Expr *e = Expr::From(s, /*popUpError=*/true);
             if(e) {
-                double ev = SS.ExprToMm(e);
+                double ev = SS.NonConstraintExprToMm(e);
                 if(IsReasonable(ev) || ev < 0) {
                     Error(_("Cutter radius offset must not be negative!"));
                 } else {
@@ -498,7 +498,7 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
             if(!e) {
                 break;
             }
-            float d = (float)SS.ExprToMm(e);
+            float d = (float)SS.NonConstraintExprToMm(e);
             switch(edit.i) {
                 case  0: SS.exportMargin.left   = d;    break;
                 case  1: SS.exportMargin.right  = d;    break;
@@ -514,12 +514,12 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         }
         case Edit::G_CODE_DEPTH: {
             Expr *e = Expr::From(s, /*popUpError=*/true);
-            if(e) SS.gCode.depth = (float)SS.ExprToMm(e);
+            if(e) SS.gCode.depth = (float)SS.NonConstraintExprToMm(e);
             break;
         }
         case Edit::G_CODE_SAFE_HEIGHT: {
             Expr *e = Expr::From(s, /*popUpError=*/true);
-            if(e) SS.gCode.safeHeight = (float)SS.ExprToMm(e);
+            if(e) SS.gCode.safeHeight = (float)SS.NonConstraintExprToMm(e);
             break;
         }
         case Edit::G_CODE_PASSES: {
@@ -530,12 +530,12 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         }
         case Edit::G_CODE_FEED: {
             Expr *e = Expr::From(s, /*popUpError=*/true);
-            if(e) SS.gCode.feed = (float)SS.ExprToMm(e);
+            if(e) SS.gCode.feed = (float)SS.NonConstraintExprToMm(e);
             break;
         }
         case Edit::G_CODE_PLUNGE_FEED: {
             Expr *e = Expr::From(s, /*popUpError=*/true);
-            if(e) SS.gCode.plungeFeed = (float)SS.ExprToMm(e);
+            if(e) SS.gCode.plungeFeed = (float)SS.NonConstraintExprToMm(e);
             break;
         }
         case Edit::AUTOSAVE_INTERVAL: {
