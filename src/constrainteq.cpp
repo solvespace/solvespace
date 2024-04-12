@@ -259,7 +259,6 @@ void ConstraintBase::Generate(IdList<Param,hParam> *l) {
         ssassert(eqpos != std::string::npos, "There is at least one equals sign in the relation \"expression\"");
         Expr::From(expression.substr(0, eqpos), false, &SK.param, NULL)->Minus(Expr::From(expression.substr(eqpos+1, SIZE_T_MAX), false, &SK.param, NULL));
     } else if(expression != "" && expr_scaling_to_base != 0) {
-        //TODO order of ops/move to AST
         Expr::From(expression.c_str(), false, l, NULL)->Times(Expr::From(std::to_string(expr_scaling_to_base).c_str(), false, l, NULL));
     } else if(expression != "") {
         Expr::From(expression.c_str(), false, l);

@@ -1417,8 +1417,6 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
                     digits++;
                 }
             } else {
-                // Appears to be the wrong approach
-                // TODO: Simplify so that we don't have *25.4/25.4 in a bunch of expressions
                 if(c->type == Constraint::Type::DIAMETER && c->other && c->expr_scaling_to_base != 0) {
                     // Edit as radius instead of diameter due to user config
                     editValue = ssprintf("(%s)*%f", c->expression.c_str(), c->expr_scaling_to_base/2*SS.MmPerUnit());
@@ -1484,11 +1482,14 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
     if(c->type == Constraint::Type::RELATION) {
         size_t eqpos = s.find_first_of("=");
         if(eqpos == std::string::npos || eqpos != s.find_last_of("=")) {
-            dbp("Only exactly one equals sing allowed");
+            Error("Relation constraints must have exactly one '=': '%s'", s.c_str());
             return;
         }
         else if(eqpos == 0) {
-            dbp("Nothing left on the left-hand side of the = sign");
+            Error("Relation constraints must have a left-hand-side (\?\?%s)", s.c_str());
+            return;
+        } else if(eqpos == s.length() - 1) {
+            Error("Relation constraints must have a right-hand-side (%s\?\?)", s.c_str());
             return;
         } 
 
@@ -1503,10 +1504,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
     if(e) {
         SS.UndoRemember();
         if(usedParams > 0) {
-            // TODO: special cases for dimless, angles
             c->expr_scaling_to_base = SS.MmPerUnit(); 
-            // Suppose something was designed in inches but edited in mm. The click handler will put the scaling in
-            // The user will choose to leave the scaling alone. So we put the 
             c->expression = s;
         }
 
