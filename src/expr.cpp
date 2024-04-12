@@ -525,7 +525,7 @@ Expr* Expr::SimplifyInverses() {
 	if(this->op == Op::TIMES || this->op == Op::DIV) {
 		iter.push(std::make_pair(this,true));
 	} else {
-		return nullptr;
+		return this;
 	}
 
 	while(!iter.empty()) {

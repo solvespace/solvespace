@@ -928,7 +928,6 @@ bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
 }
 
 void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ctrlDown) {
-	//TODO: put scaling factor back if abandon editing constraint
     orig.mouseDown = true;
 
     if(window->IsEditorVisible()) {
@@ -1422,10 +1421,10 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
                 // TODO: Simplify so that we don't have *25.4/25.4 in a bunch of expressions
                 if(c->type == Constraint::Type::DIAMETER && c->other && c->expr_scaling_to_base != 0) {
                     // Edit as radius instead of diameter due to user config
-                    editValue = ssprintf("%s*%f", c->expression.c_str(), c->expr_scaling_to_base/2*SS.MmPerUnit());
+                    editValue = ssprintf("(%s)*%f", c->expression.c_str(), c->expr_scaling_to_base/2*SS.MmPerUnit());
                 } else if(!dimless && c->expr_scaling_to_base != SS.MmPerUnit() && c->expr_scaling_to_base != 0) {
                     // Unit needs dimension scaling
-                    editValue = ssprintf("%s*%f", c->expression.c_str(), c->expr_scaling_to_base/SS.MmPerUnit());
+                    editValue = ssprintf("(%s)*%f", c->expression.c_str(), c->expr_scaling_to_base/SS.MmPerUnit());
                 } else {
                     // Unit does not need scaling
                     editValue = c->expression;
@@ -1459,7 +1458,6 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
 }
 
 void GraphicsWindow::EditControlDone(const std::string &s) {
-    //TODO: convert inch expessions back into mm
     window->HideEditor();
     window->Invalidate();
 
@@ -1470,15 +1468,17 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         c->comment = s;
         return;
     }
+    
+    // after a user finishes editing an expression in a constraint that has a different scaling_to_base, we can assume that they intend for the expression to be in the currently selected units
+    if(c->expr_scaling_to_base != SS.MmPerUnit()) {
+        c->expr_scaling_to_base = SS.MmPerUnit();
+    }
 
-    // decided not to parse equals signs in expressions since
+    // decided not to parse equals signs in expressions for now since
     // 1) A relation isn't an expression since it has no meaningful reducable value
     // 2) There can only be one occurrence of an assignment in an expression, and this may only be in a relation
-    // To enforce #2 after future changes and to to not break implicit invariant #1, we process the assignment operation here
+    // To enforce #2 after future changes and to to not break implicit invariant #1, we process the assignment operation as a special case
     // Since "equations" are just expressions = 0, we just "subtract everything after the equals sign from both sides of the equation"
-    //
-    // TODO:
-    // if this doesn't work out, figure out alternative strategy, modify ExprParser::Precendence on line 981, add the operator, and have it basically be a lazy minus
     Expr *e = NULL;
     int usedParams;
     if(c->type == Constraint::Type::RELATION) {
@@ -1508,11 +1508,13 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
             // Suppose something was designed in inches but edited in mm. The click handler will put the scaling in
             // The user will choose to leave the scaling alone. So we put the 
             c->expression = s;
-            e->SimplifyInverses();
+            //e = e->SimplifyInverses(); // this causes null deref later
+            //c->expression = e->Print();
         }
 
         switch(c->type) {
             case Constraint::Type::RELATION:
+                // on relation, expr_scaling_to_base should be ignored, since the scaling is done on constraints that directly constrain some entity
                 c->expr_scaling_to_base = 1; 
                 c->expression = s;
                 break;

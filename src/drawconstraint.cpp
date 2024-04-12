@@ -29,7 +29,7 @@ std::string Constraint::Label() const {
     if(expression != "") {
         result = expression ;
         if(SS.MmPerUnit() != expr_scaling_to_base && expr_scaling_to_base != 0) {
-            result += "*" + std::to_string(expr_scaling_to_base/SS.MmPerUnit());
+            result = "("+result+")" + "*" + std::to_string(expr_scaling_to_base/SS.MmPerUnit());
         }
     }
     if(reference) {
