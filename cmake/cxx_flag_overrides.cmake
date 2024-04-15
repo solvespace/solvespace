@@ -8,5 +8,3 @@ endif()
 if(EMSCRIPTEN)
     set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g4")
 endif()
-
-set(CMAKE_CXX_FLAGS_DEBUG_INIT "-g")

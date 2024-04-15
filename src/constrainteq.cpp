@@ -6,8 +6,6 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include <cstdio>
-#include <string>
 
 const hConstraint ConstraintBase::NO_CONSTRAINT = { 0 };
 

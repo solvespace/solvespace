@@ -1365,7 +1365,7 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
     Constraint *c = SK.GetConstraint(constraintBeingEdited);
     if(!c->HasLabel()) {
         // Not meaningful to edit a constraint without a dimension
-        fprintf(stderr, "Wont edit without label");
+        dbp("Wont edit without label");
         return;
     }
     if(c->reference) {
@@ -1528,9 +1528,9 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
                 // negative distance.
                 bool wasNeg = (c->valA < 0);
                 if(wasNeg) {
-                    c->valA = -(e->Eval());
+                    c->valA = -(e->Eval()) * c->expr_scaling_to_base;
                 } else {
-                    c->valA = (e->Eval());
+                    c->valA = (e->Eval()) * c->expr_scaling_to_base;
                 }
                 break;
             }

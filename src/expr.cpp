@@ -7,9 +7,6 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include <stack>
-#include <utility>
-#include <vector>
 
 ExprVector ExprVector::From(Expr *x, Expr *y, Expr *z) {
     ExprVector r = { x, y, z};
@@ -722,7 +719,7 @@ ExprParser::Token ExprParser::LexNumber(std::string *error) {
 ExprParser::Token ExprParser::Lex(std::string *error) {
     SkipSpace();
 
-    Token t;
+    Token t = Token::From();
     char c = PeekChar();
     if(isupper(c)) {
         std::string n = ReadWord();
@@ -902,9 +899,6 @@ bool ExprParser::Reduce(std::string *error) {
 bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
     while(true) {
         Token t = Lex(error);
-        if(error != NULL && error->length() != 0) {
-            printf("Error %s", error);
-        }
         switch(t.type) {
             case TokenType::ERROR:
                 return false;
@@ -974,7 +968,6 @@ Expr *ExprParser::Parse(const std::string &input, std::string *error,
     Token r = parser.PopOperand(error);
     if(r.IsError()) return NULL;
     if(paramsCount != NULL) *paramsCount = parser.newParams.size();
-
     return r.expr;
 }
 

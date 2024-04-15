@@ -902,7 +902,7 @@ void Constraint::MenuConstrain(Command id) {
             } else {
                 SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
                 SS.GW.pending.command = Command::RELATION;
-                SS.GW.pending.description = _("click center of comment text");
+                SS.GW.pending.description = _("click center of relation text");
                 SS.ScheduleShowTW();
             }
             break;

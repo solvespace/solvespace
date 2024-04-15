@@ -26,7 +26,6 @@ public:
         MINUS          = 101,
         TIMES          = 102,
         DIV            = 103,
-
         // Unary ops
         NEGATE         = 104,
         SQRT           = 105,
@@ -45,8 +44,6 @@ public:
         Param  *parp; 
         Expr    *b; // nullptr if this is a unary op, 
     };
-
-    bool to_delete;
 
     Expr() = default;
     Expr(double val) : op(Op::CONSTANT) { v = val; }
