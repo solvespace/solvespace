@@ -432,7 +432,7 @@ void GraphicsWindow::Init() {
             using namespace std::placeholders;
             // Do this first, so that if it causes an onRender event we don't try to paint without
             // a canvas.
-            window->SetMinContentSize(720, /*ToolbarDrawOrHitTest 636*/ 32 * 18 + 3 * 16 + 8 + 4);
+            window->SetMinContentSize(720, /*ToolbarDrawOrHitTest 636*/ 32 * 19 + 3 * 16 + 8 + 4);
             window->onClose = std::bind(&SolveSpaceUI::MenuFile, Command::EXIT);
             window->onContextLost = [&] {
                 canvas = NULL;
