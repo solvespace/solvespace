@@ -1494,7 +1494,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         } 
 
         // (left_side) - (right_side) (... implicitly = 0)
-        e = Expr::From(s.substr(0, eqpos), true, &SK.param, &usedParams)->Minus(Expr::From(s.substr(eqpos+1, SIZE_T_MAX), true, &SK.param, &usedParams));
+        e = Expr::From(s.substr(0, eqpos), true, &SK.param, &usedParams)->Minus(Expr::From(s.substr(eqpos+1, SIZE_MAX), true, &SK.param, &usedParams));
 
     } else {
         e = Expr::From(s, true, &SK.param, &usedParams);
