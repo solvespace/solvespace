@@ -677,7 +677,7 @@ std::string ExprParser::ReadWord() {
     std::string s;
 
     while(char c = PeekChar()) {
-        if(!isalnum(c)) break;
+        if(!isalnum(c) && c != '_') break;
         s.push_back(ReadChar());
     }
 
