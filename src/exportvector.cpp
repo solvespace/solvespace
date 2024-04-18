@@ -290,6 +290,7 @@ public:
                         break;
                     }
 
+                    case Constraint::Type::RELATION:
                     case Constraint::Type::COMMENT: {
                         Style *st = SK.style.FindById(c.GetStyle());
                         writeText(xfrm(c.disp.offset), c.Label(),
@@ -605,6 +606,7 @@ bool DxfFileWriter::NeedToOutput(Constraint *c) {
         case Constraint::Type::DIAMETER:
         case Constraint::Type::ANGLE:
         case Constraint::Type::COMMENT:
+        case Constraint::Type::RELATION:
             return c->IsVisible();
 
         default: // See writeEntities().

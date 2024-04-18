@@ -66,7 +66,7 @@ void Constraint::DoLabel(Canvas *canvas, Canvas::hStroke hcs,
     // By default, the reference is from the center; but the style could
     // specify otherwise if one is present, and it could also specify a
     // rotation.
-    if(type == Type::COMMENT && disp.style.v) {
+    if(((type == Type::COMMENT) || (type == Type::RELATION)) && disp.style.v) {
         Style *st = Style::Get(disp.style);
         // rotation first
         double rads = st->textAngle*PI/180;
@@ -1350,7 +1350,7 @@ void Constraint::GetReferencePoints(const Camera &camera, std::vector<Vector> *r
 }
 
 bool Constraint::IsStylable() const {
-    if(type == Type::COMMENT) return true;
+    if((type == Type::COMMENT) || (type == Type::RELATION)) return true;
     return false;
 }
 
