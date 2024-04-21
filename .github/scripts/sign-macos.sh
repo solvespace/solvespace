@@ -66,7 +66,7 @@ fi
 # Submit the package for notarization
 notarization_output=$(
     xcrun notarytool submit "${dmg}" \
-        --apple-id "@env:MACOS_APPSTORE_USERNAME" \
+        --apple-id "hello@koenschmeets.nl" \
         --password "@env:MACOS_APPSTORE_APP_PASSWORD" \
         --team-id "8X77K9NDG3" \
         --wait 2>&1)
