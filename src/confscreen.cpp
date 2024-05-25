@@ -70,6 +70,10 @@ void TextWindow::ScreenChangeExportOffset(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::EXPORT_OFFSET;
 }
 
+void TextWindow::ScreenChangeArcDimDefault(int link, uint32_t v) {
+    SS.arcDimDefaultDiameter = !SS.arcDimDefaultDiameter;
+}
+
 void TextWindow::ScreenChangeFixExportColors(int link, uint32_t v) {
     SS.fixExportColors = !SS.fixExportColors;
 }
@@ -344,6 +348,9 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "  %Fd%f%Ll%s  edit newly added dimensions%E",
         &ScreenChangeImmediatelyEditDimension,
         SS.immediatelyEditDimension ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%s  arc default is diameter%E",
+        &ScreenChangeArcDimDefault,
+        SS.arcDimDefaultDiameter ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "");
     Printf(false, "%Ft autosave interval (in minutes)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",

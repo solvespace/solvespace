@@ -130,7 +130,7 @@ class FileManagerUI {
         dialog.appendChild(filelist);
 
         const dummyfilelistitem = document.createElement('li');
-        dummyfilelistitem.textContent = "(No file in psuedo filesystem)";
+        dummyfilelistitem.textContent = "(No file in pseudo filesystem)";
         filelist.appendChild(dummyfilelistitem);
 
         if (this.__isOpenDialog) {
@@ -341,7 +341,7 @@ class FileManagerUI {
         const files = this.__getFileEntries_recurse(this.__basePathInFilesystem);
         if (files.length < 1) {
             const dummyfilelistitem = document.createElement('li');
-            dummyfilelistitem.textContent = "(No file in psuedo filesystem)";
+            dummyfilelistitem.textContent = "(No file in pseudo filesystem)";
             this.__filelistElement.appendChild(dummyfilelistitem);
 
         } else {

@@ -58,34 +58,29 @@ hdiutil create -srcfolder "${app}" "${dmg}"
 # sign the .dmg
 codesign -s "${MACOS_DEVELOPER_ID}" --timestamp --options runtime -f --deep "${dmg}"
 
-# notarize and store request uuid in variable
-notarize_uuid=$(xcrun altool --notarize-app --primary-bundle-id "${bundle_id}" --username "${MACOS_APPSTORE_USERNAME}" --password "${MACOS_APPSTORE_APP_PASSWORD}" --file "${dmg}" | grep RequestUUID | awk '{print $3'})
+if ! command -v xcrun >/dev/null || ! xcrun --find notarytool >/dev/null; then
+    echo "Notarytool is not present in the system. Notarization has failed."
+    exit 1
+fi
 
-echo $notarize_uuid
+# Submit the package for notarization
+notarization_output=$(
+    xcrun notarytool submit "${dmg}" \
+        --apple-id "hello@koenschmeets.nl" \
+        --password "${MACOS_APPSTORE_APP_PASSWORD}" \
+        --team-id "8X77K9NDG3" \
+        --wait 2>&1)
 
-# wait a bit so we don't get errors during checking
-sleep 10
-
-success=0
-for (( ; ; ))
-do
-    echo "Checking progress..."
-    progress=$(xcrun altool --notarization-info "${notarize_uuid}" -u "${MACOS_APPSTORE_USERNAME}" -p "${MACOS_APPSTORE_APP_PASSWORD}" 2>&1)
-    # echo "${progress}"
-
-    if [ $? -ne 0 ] || [[  "${progress}" =~ "Invalid" ]] ; then
-        echo "Error with notarization. Exiting"
-        break
-    fi
-
-    if [[  "${progress}" =~ "success" ]]; then
-        success=1
-        break
-    else
-        echo "Not completed yet. Sleeping for 10 seconds"
-    fi
-    sleep 10
-done
+if [ $? -eq 0 ]; then
+    # Extract the operation ID from the output
+    operation_id=$(echo "$notarization_output" | awk '/RequestUUID/ {print $NF}')
+    echo "Notarization submitted. Operation ID: $operation_id"
+    exit 0
+  else
+    echo "Notarization failed. Error: $notarization_output"
+    exit 1
+  fi
+fi
 
 # staple
 xcrun stapler staple "${dmg}"

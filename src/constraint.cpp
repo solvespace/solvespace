@@ -236,6 +236,12 @@ void Constraint::MenuConstrain(Command id) {
             } else if(gs.circlesOrArcs == 1 && gs.n == 1) {
                 c.type = Type::DIAMETER;
                 c.entityA = gs.entity[0];
+                Entity* arc = SK.GetEntity(gs.entity[0]);
+                if ((arc->type == EntityBase::Type::ARC_OF_CIRCLE)
+                    && (!SS.arcDimDefaultDiameter))
+                {
+                  c.other = true;
+                }
             } else {
                 Error(_("Bad selection for distance / diameter constraint. This "
                         "constraint can apply to:\n\n"

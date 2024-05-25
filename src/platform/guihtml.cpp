@@ -1270,7 +1270,7 @@ MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
 // File dialogs
 //-----------------------------------------------------------------------------
 
-// In emscripten psuedo filesystem, all userdata will be stored in this directory.
+// In emscripten pseudo filesystem, all userdata will be stored in this directory.
 static std::string basePathInFilesystem = "/data/";
 
 

@@ -69,6 +69,8 @@ void SolveSpaceUI::Init() {
     exportScale = settings->ThawFloat("ExportScale", 1.0);
     // Export offset (cutter radius comp)
     exportOffset = settings->ThawFloat("ExportOffset", 0.0);
+    // Dimensions on arcs default to diameter vs radius
+    arcDimDefaultDiameter = settings->ThawBool("ArcDimDefaultDiameter", false);
     // Rewrite exported colors close to white into black (assuming white bg)
     fixExportColors = settings->ThawBool("FixExportColors", true);
     // Export background color
@@ -250,6 +252,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeFloat("ExportScale", exportScale);
     // Export offset (cutter radius comp)
     settings->FreezeFloat("ExportOffset", exportOffset);
+    // Rewrite the default arc dimension setting
+    settings->FreezeBool("ArcDimDefaultDiameter", arcDimDefaultDiameter);
     // Rewrite exported colors close to white into black (assuming white bg)
     settings->FreezeBool("FixExportColors", fixExportColors);
     // Export background color
@@ -1099,7 +1103,7 @@ void SolveSpaceUI::MenuHelp(Command id) {
 "law. For details, visit http://gnu.org/licenses/\n"
 "\n"
 "© 2008-%d Jonathan Westhues and other authors.\n"),
-PACKAGE_VERSION, 2023);
+PACKAGE_VERSION, 2024);
             break;
 
         case Command::GITHUB:

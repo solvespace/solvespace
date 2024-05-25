@@ -573,6 +573,7 @@ public:
     double   gridSpacing;
     double   exportScale;
     double   exportOffset;
+    bool     arcDimDefaultDiameter;
     bool     fixExportColors;
     bool     exportBackgroundColor;
     bool     drawBackFaces;
