@@ -7,7 +7,7 @@
 [![solvespace](https://snapcraft.io/solvespace/trending.svg?name=0)](https://snapcraft.io/solvespace)
 
 This repository contains the source code of [SolveSpace][], a parametric
-2d/3d CAD.
+2d/3d CAD tool.
 
 [solvespace]: https://solvespace.com
 
