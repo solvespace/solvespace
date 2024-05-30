@@ -19,6 +19,17 @@ void TextWindow::ScreenEditTtfText(int link, uint32_t v) {
     SS.TW.edit.request = hr;
 }
 
+void TextWindow::ScreenToggleTtfKerning(int link, uint32_t v) {
+    hRequest hr = { v };
+    Request *r = SK.GetRequest(hr);
+
+    SS.UndoRemember();
+    r->extraPoints = !r->extraPoints;
+
+    SS.MarkGroupDirty(r->group);
+    SS.ScheduleShowTW();
+}
+
 void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
     int i = (int)v;
     if(i < 0) return;
@@ -205,8 +216,11 @@ void TextWindow::DescribeSelection() {
                 Printf(false, "%FtTRUETYPE FONT TEXT%E");
                 Printf(true, "  font = '%Fi%s%E'", e->font.c_str());
                 if(e->h.isFromRequest()) {
-                    Printf(false, "  text = '%Fi%s%E' %Fl%Ll%f%D[change]%E",
+                    Printf(true, "  text = '%Fi%s%E' %Fl%Ll%f%D[change]%E",
                         e->str.c_str(), &ScreenEditTtfText, e->h.request().v);
+                    Printf(true, "  %Fd%f%D%Ll%s  apply kerning",
+                           &ScreenToggleTtfKerning, e->h.request().v,
+                           e->extraPoints ? CHECK_TRUE : CHECK_FALSE);
                     Printf(true, "  select new font");
                     SS.fonts.LoadAll();
                     // Not using range-for here because we use i inside the output.
