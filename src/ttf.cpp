@@ -108,11 +108,11 @@ TtfFont *TtfFontList::LoadFont(const std::string &font)
 }
 
 void TtfFontList::PlotString(const std::string &font, const std::string &str,
-                             SBezierList *sbl, Vector origin, Vector u, Vector v)
+                             SBezierList *sbl, bool kerning, Vector origin, Vector u, Vector v)
 {
     TtfFont *tf = LoadFont(font);
     if(!str.empty() && tf != NULL) {
-        tf->PlotString(str, sbl, origin, u, v);
+        tf->PlotString(str, sbl, kerning, origin, u, v);
     } else {
         // No text or no font; so draw a big X for an error marker.
         SBezier sb;
@@ -123,11 +123,11 @@ void TtfFontList::PlotString(const std::string &font, const std::string &str,
     }
 }
 
-double TtfFontList::AspectRatio(const std::string &font, const std::string &str)
+double TtfFontList::AspectRatio(const std::string &font, const std::string &str, bool kerning)
 {
     TtfFont *tf = LoadFont(font);
     if(tf != NULL) {
-        return tf->AspectRatio(str);
+        return tf->AspectRatio(str, kerning);
     }
 
     return 0.0;
@@ -331,7 +331,7 @@ static int CubicTo(const FT_Vector *c1, const FT_Vector *c2, const FT_Vector *p,
 }
 
 void TtfFont::PlotString(const std::string &str,
-                         SBezierList *sbl, Vector origin, Vector u, Vector v)
+                         SBezierList *sbl, bool kerning, Vector origin, Vector u, Vector v)
 {
     ssassert(fontFace != NULL, "Expected font face to be loaded");
 
@@ -344,6 +344,7 @@ void TtfFont::PlotString(const std::string &str,
     outlineFuncs.delta    = 0;
 
     FT_Pos dx = 0;
+    uint32_t prevGid = 0;
     for(char32_t cid : ReadUTF8(str)) {
         uint32_t gid = FT_Get_Char_Index(fontFace, cid);
         if (gid == 0) {
@@ -382,6 +383,13 @@ void TtfFont::PlotString(const std::string &str,
          */
         FT_BBox cbox;
         FT_Outline_Get_CBox(&fontFace->glyph->outline, &cbox);
+
+        // Apply Kerning, if any:
+        FT_Vector kernVector;
+        if(kerning && FT_Get_Kerning(fontFace, prevGid, gid, FT_KERNING_DEFAULT, &kernVector) == 0) {
+            dx += kernVector.x;
+        }
+
         FT_Pos bx = dx - cbox.xMin;
         // Yes, this is what FreeType calls left-side bearing.
         // Then interchangeably uses that with "left-side bearing". Sigh.
@@ -402,14 +410,16 @@ void TtfFont::PlotString(const std::string &str,
         // And we're done, so advance our position by the requested advance
         // width, plus the user-requested extra advance.
         dx += fontFace->glyph->advance.x;
+        prevGid = gid;
     }
 }
 
-double TtfFont::AspectRatio(const std::string &str) {
+double TtfFont::AspectRatio(const std::string &str, bool kerning) {
     ssassert(fontFace != NULL, "Expected font face to be loaded");
 
     // We always request a unit size character, so the aspect ratio is the same as advance length.
     double dx = 0;
+    uint32_t prevGid = 0;
     for(char32_t chr : ReadUTF8(str)) {
         uint32_t gid = FT_Get_Char_Index(fontFace, chr);
         if (gid == 0) {
@@ -424,7 +434,14 @@ double TtfFont::AspectRatio(const std::string &str) {
             break;
         }
 
+        // Apply Kerning, if any:
+        FT_Vector kernVector;
+        if(kerning && FT_Get_Kerning(fontFace, prevGid, gid, FT_KERNING_DEFAULT, &kernVector) == 0) {
+            dx += (double)kernVector.x / capHeight;
+        }
+
         dx += (double)fontFace->glyph->advance.x / capHeight;
+        prevGid = gid;
     }
 
     return dx;
