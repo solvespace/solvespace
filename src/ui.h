@@ -402,6 +402,7 @@ public:
     // All of these are callbacks from the GUI code; first from when
     // we're describing an entity
     static void ScreenEditTtfText(int link, uint32_t v);
+    static void ScreenToggleTtfKerning(int link, uint32_t v);
     static void ScreenSetTtfFont(int link, uint32_t v);
     static void ScreenUnselectAll(int link, uint32_t v);
 

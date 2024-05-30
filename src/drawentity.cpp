@@ -475,7 +475,8 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
             Vector v = topLeft.Minus(botLeft);
             Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
 
-            SS.fonts.PlotString(font, str, sbl, botLeft, u, v);
+            // `extraPoints` is storing kerning boolean
+            SS.fonts.PlotString(font, str, sbl, extraPoints, botLeft, u, v);
             break;
         }
 

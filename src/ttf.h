@@ -24,8 +24,8 @@ public:
     bool LoadFromResource(FT_LibraryRec_ *fontLibrary, bool keepOpen = false);
 
     void PlotString(const std::string &str,
-                    SBezierList *sbl, Vector origin, Vector u, Vector v);
-    double AspectRatio(const std::string &str);
+                    SBezierList *sbl, bool kerning, Vector origin, Vector u, Vector v);
+    double AspectRatio(const std::string &str, bool kerning);
 
     bool ExtractTTFData(bool keepOpen);
 };
@@ -43,8 +43,8 @@ public:
     TtfFont *LoadFont(const std::string &font);
 
     void PlotString(const std::string &font, const std::string &str,
-                    SBezierList *sbl, Vector origin, Vector u, Vector v);
-    double AspectRatio(const std::string &font, const std::string &str);
+                    SBezierList *sbl, bool kerning, Vector origin, Vector u, Vector v);
+    double AspectRatio(const std::string &font, const std::string &str, bool kerning);
 };
 
 #endif
