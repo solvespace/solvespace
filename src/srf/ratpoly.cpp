@@ -700,10 +700,20 @@ void SSurface::PointOnCurve(const SBezier *curve, double *up, double *vp)
 }
 
 // return the curvature of a surface at a given point in a specific direction
+// this is hackish. Positive if the surface curves "up" toward the normal.
 double SSurface::CurvatureAt(Vector point, Vector dir) {
   double u,v;
-  Vector tu, tv;
+  Vector tu, tv, normal;
   ClosestPointTo(point, &u, &v);
   TangentsAt(u, v, &tu, &tv);
+  normal = tu.Cross(tv);
   
+  double dir_u = dir.Dot(tu)/tu.Magnitude();
+  double dir_v = dir.Dot(tv)/tv.Magnitude();
+  
+  Vector tu2, tv2;
+  TangentsAt(u+0.05*dir_u,v+0.05*dir_v, &tu2, &tv2);
+  Vector dt = tu2.Minus(tu).Plus(tv2.Minus(tv)).ScaledBy(20);
+  
+  return dt.Dot(normal);
 }
