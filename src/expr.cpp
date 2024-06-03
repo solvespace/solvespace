@@ -644,7 +644,6 @@ public:
                         hParam> *params = NULL, int *paramsCount = 0, hConstraint hc = {0});
 };
 
-// allocates
 ExprParser::Token ExprParser::Token::From(TokenType type, Expr *expr) {
     Token t;
     t.type = type;
@@ -652,7 +651,6 @@ ExprParser::Token ExprParser::Token::From(TokenType type, Expr *expr) {
     return t;
 }
 
-// allocates
 ExprParser::Token ExprParser::Token::From(TokenType type, Expr::Op op) {
     Token t;
     t.type = type;
@@ -845,7 +843,7 @@ int ExprParser::Precedence(Token t) {
 
 bool ExprParser::Reduce(std::string *error) {
     Token a = PopOperand(error);
-    if(error != NULL && !error->empty()) return false;
+    if((error != NULL) && (!error->empty())) return false;
     if(a.IsError()) return false;
 
     Token op = PopOperator(error);
@@ -856,14 +854,14 @@ bool ExprParser::Reduce(std::string *error) {
         error = NULL;
     } 
     //redundant in current setup, since if there's an error op is likely to be null. keeping to preseve error handing in future changes
-    else if(error != NULL && !error->empty()) return false; 
+    else if((error != NULL) && (!error->empty())) return false; 
 
     if(op.IsError()) return false;
 
     switch(op.type) {
         case TokenType::BINARY_OP: {
             Token b = PopOperand(error);
-            if(error != NULL && !error->empty()) return false;
+            if((error != NULL) && (!error->empty())) return false;
             if(b.IsError()) return false;
 
             // gives the operand children:

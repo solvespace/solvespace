@@ -27,8 +27,8 @@ std::string Constraint::Label() const {
         result = SS.MmToStringSI(fabs(valA));
     }
     if(expression != "") {
-        result = expression ;
-        if(SS.MmPerUnit() != expr_scaling_to_base && expr_scaling_to_base != 0) {
+        result = expression;
+        if((SS.MmPerUnit() != expr_scaling_to_base) && (expr_scaling_to_base != 0)) {
             result = "("+result+")" + "*" + std::to_string(expr_scaling_to_base/SS.MmPerUnit());
         }
     }

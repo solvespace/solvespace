@@ -1467,11 +1467,6 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         return;
     }
     
-    // after a user finishes editing an expression in a constraint that has a different scaling_to_base, we can assume that they intend for the expression to be in the currently selected units
-    if(c->expr_scaling_to_base != SS.MmPerUnit()) {
-        c->expr_scaling_to_base = SS.MmPerUnit();
-    }
-
     // decided not to parse equals signs in expressions for now since
     // 1) A relation isn't an expression since it has no meaningful reducable value
     // 2) There can only be one occurrence of an assignment in an expression, and this may only be in a relation
@@ -1504,6 +1499,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
     if(e) {
         SS.UndoRemember();
         if(usedParams > 0) {
+            // after a user finishes editing an expression in a constraint that has a different scaling_to_base, we can assume that they intend for the expression to be in the currently selected units
             c->expr_scaling_to_base = SS.MmPerUnit(); 
             c->expression = s;
         }
@@ -1560,7 +1556,6 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         }
         SK.GetGroup(c->group)->dofCheckOk = false; // if an named param was used in the constraint, the DoF may have changed
         SS.MarkGroupDirty(c->group);
-        SS.TW.HideEditControl();
     }
 }
 
