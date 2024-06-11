@@ -356,7 +356,7 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "  %Fd%f%Ll%s  arc default is diameter%E",
         &ScreenChangeArcDimDefault,
         SS.arcDimDefaultDiameter ? CHECK_TRUE : CHECK_FALSE);
-    Printf(false, "  %Fd%f%Ll%s  show full file path in the window title%E",
+    Printf(false, "  %Fd%f%Ll%s  display the full path in the title bar%E",
            &ScreenChangeShowFullFilePath, SS.showFullFilePath ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "");
     Printf(false, "%Ft autosave interval (in minutes)%E");
