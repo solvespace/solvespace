@@ -15,7 +15,7 @@ jobs:
     permissions:
       actions: write
     steps:
-    - uses: styfle/cancel-workflow-action@0.9.1
+    - uses: styfle/cancel-workflow-action
       with:
         access_token: ${{ github.token }}
 
@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Test Ubuntu
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Dependencies
       run: .github/scripts/install-ubuntu.sh
     - name: Build & Test
@@ -35,7 +35,7 @@ jobs:
     runs-on: windows-2019
     name: Test Windows
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Dependencies
       run: .github/scripts/install-windows.sh
       shell: bash
@@ -48,7 +48,7 @@ jobs:
     runs-on: macos-latest
     name: Test macOS
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Dependencies
       run: .github/scripts/install-macos.sh ci
     - name: Build & Test
@@ -59,7 +59,7 @@ jobs:
     name: Build Release Windows
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Dependencies
         run: .github/scripts/install-windows.sh
         shell: bash
@@ -67,7 +67,7 @@ jobs:
         run: .github/scripts/build-windows.sh release
         shell: bash
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: windows
           path: build/bin/RelWithDebInfo/solvespace.exe
@@ -77,7 +77,7 @@ jobs:
     name: Build Release Windows (OpenMP)
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Dependencies
         run: .github/scripts/install-windows.sh
         shell: bash
@@ -85,7 +85,7 @@ jobs:
         run: .github/scripts/build-windows.sh release openmp
         shell: bash
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: windows-openmp
           path: build/bin/RelWithDebInfo/solvespace-openmp.exe
@@ -95,7 +95,7 @@ jobs:
     name: Build Release macOS
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Dependencies
       run: .github/scripts/install-macos.sh ci
     - name: Build & Test
@@ -109,7 +109,7 @@ jobs:
         MACOS_APPSTORE_USERNAME: ${{ secrets.MACOS_APPSTORE_USERNAME }}
         MACOS_DEVELOPER_ID: ${{ secrets.MACOS_DEVELOPER_ID }}
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: macos
         path: build/bin/SolveSpace.dmg
@@ -119,7 +119,7 @@ jobs:
   #   name: Deploy AMD64 Snap
   #   runs-on: ubuntu-latest
   #   steps:
-  #   - uses: actions/checkout@v2
+  #   - uses: actions/checkout@v4
   #   - name: Fetch Tags
   #     run: git fetch --force --tags
   #   - name: Set Up Source
@@ -152,7 +152,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download All Workflow Artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
     - name: Get Release Upload URL
       id: get_upload_url
       env:
