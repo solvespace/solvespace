@@ -795,7 +795,7 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
 }
 
 ExprParser::Token ExprParser::PopOperand(std::string *error) {
-    Token t;
+    Token t = Token::From();
     if(stack.empty() 
             || ( 
                 stack.back().type != TokenType::OPERAND
@@ -811,7 +811,7 @@ ExprParser::Token ExprParser::PopOperand(std::string *error) {
 }
 
 ExprParser::Token ExprParser::PopOperator(std::string *error) {
-    Token t;
+    Token t = Token::From();
     if(stack.empty() || (stack.back().type != TokenType::UNARY_OP &&
                          stack.back().type != TokenType::BINARY_OP)) {
         *error = "Expected an operator";
