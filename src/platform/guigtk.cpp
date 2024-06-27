@@ -467,6 +467,8 @@ public:
                    Gdk::BUTTON_RELEASE_MASK |
                    Gdk::BUTTON_MOTION_MASK |
                    Gdk::SCROLL_MASK |
+                   Gdk::SMOOTH_SCROLL_MASK |
+                   Gdk::TOUCHPAD_GESTURE_MASK |
                    Gdk::LEAVE_NOTIFY_MASK |
                    Gdk::KEY_PRESS_MASK |
                    Gdk::KEY_RELEASE_MASK);
@@ -576,9 +578,11 @@ protected:
         gdk_event_get_scroll_deltas((GdkEvent*)gdk_event, &dx, &dy);
         
         double delta;
-        if(dy < 0 || dir == GDK_SCROLL_UP) {
+        if(abs(dy) > 0) {
+            delta = dy;
+        } else if(dir == GDK_SCROLL_UP) {
             delta = 1;
-        } else if(dy > 0 || dir == GDK_SCROLL_DOWN) {
+        } else if(dir == GDK_SCROLL_DOWN) {
             delta = -1;
         } else {
             return false;
