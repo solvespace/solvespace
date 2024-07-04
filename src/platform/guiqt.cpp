@@ -22,6 +22,7 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QScreen>
 #include <QSettings>
 #include <QTimer>
@@ -85,26 +86,23 @@ public:
 
     void AddButton(std::string label, Response response, bool isDefault) override {
         QMessageBox::StandardButton std;
-        switch (response)
-        {
-        case Response::CANCEL:
-            std = QMessageBox::StandardButton::Cancel;
-            break;
-        case Response::NO:
-            std = QMessageBox::StandardButton::No;
-            break;
-        case Response::YES:
-            std = QMessageBox::StandardButton::Yes;
-            break;
-        case Response::OK:
-            std = QMessageBox::StandardButton::Ok;
-            break;
-        case Response::NONE:
-        default:
-            std = QMessageBox::StandardButton::Ignore;
-            break;
+        switch (response) {
+            case Response::NONE:   ssassert(false, "Invalid response");
+            case Response::OK:
+                std = QMessageBox::StandardButton::Ok;
+                break;
+            case Response::YES:
+                std = QMessageBox::StandardButton::Yes;
+                break;
+            case Response::NO:
+                std = QMessageBox::StandardButton::No;
+                break;
+            case Response::CANCEL:
+                std = QMessageBox::StandardButton::Cancel;
+                break;
         }
         QPushButton* button = messageBoxQ.addButton(std);
+        button->setText(QString::fromStdString(label));
         if (isDefault)
             messageBoxQ.setDefaultButton(button);
     }
