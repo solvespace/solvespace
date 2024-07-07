@@ -571,19 +571,22 @@ protected:
     bool on_scroll_event(GdkEventScroll *gdk_event) override {
         double dx, dy;
         GdkScrollDirection dir;
+        double delta;
+
 // for gtk4 ??
 //        gdk_scroll_event_get_deltas((GdkEvent*)gdk_event, &dx, &dy);
 //        gdk_scroll_event_get_direction((GdkEvent*)gdk_event, &dir);
-        gdk_event_get_scroll_direction((GdkEvent*)gdk_event, &dir);
-        gdk_event_get_scroll_deltas((GdkEvent*)gdk_event, &dx, &dy);
-        
-        double delta;
-        if(abs(dy) > 0) {
+
+        if(gdk_event_get_scroll_deltas((GdkEvent*)gdk_event, &dx, &dy)) {
             delta = dy;
-        } else if(dir == GDK_SCROLL_UP) {
-            delta = 1;
-        } else if(dir == GDK_SCROLL_DOWN) {
-            delta = -1;
+        } else if(gdk_event_get_scroll_direction((GdkEvent*)gdk_event, &dir)) {
+            if(dir == GDK_SCROLL_UP) {
+                delta = 1;
+            } else if(dir == GDK_SCROLL_DOWN) {
+                delta = -1;
+            } else {
+                return false;
+            }
         } else {
             return false;
         }
