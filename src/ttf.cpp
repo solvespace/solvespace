@@ -81,9 +81,6 @@ void TtfFontList::LoadAll() {
                               [](const TtfFont &a, const TtfFont &b) { return a.name == b.name; });
     l.RemoveLast(&l[l.n] - it);
 
-    //! @todo identify fonts by their name and not filename, which may change
-    //! between OSes.
-
     loaded = true;
 }
 
