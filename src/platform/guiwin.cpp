@@ -1185,7 +1185,7 @@ public:
         *height = (rc.bottom - rc.top) / pixelRatio;
     }
 
-    void SetMinContentSize(double width, double height) {
+    void SetMinContentSize(double width, double height) override {
         minWidth  = (int)width;
         minHeight = (int)height;
 
