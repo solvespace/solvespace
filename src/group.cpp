@@ -709,7 +709,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(1), gp.y);
             AddParam(param, h.param(2), gp.z);
 
-            int usedParams = 0;
             int n = valA;
             if(expressionA != "") {
                 n = Expr::From(expressionA, false, &SK.param, NULL)->Eval();

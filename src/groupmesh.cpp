@@ -6,6 +6,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <cstdlib>
 
 void Group::AssembleLoops(bool *allClosed,
                           bool *allCoplanar,
@@ -111,6 +112,9 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat
     if(expressionA != "") {
         int usedParams = 0;
         n = Expr::From(expressionA, true, &SK.param, &usedParams)->Eval();
+    }
+    if(n==0) {
+        return;
     }
 
     int a0 = 0;
