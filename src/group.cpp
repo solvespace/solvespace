@@ -705,7 +705,14 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(1), gp.y);
             AddParam(param, h.param(2), gp.z);
 
-            int n = (int)valA, a0 = 0;
+            int usedParams = 0;
+            //TODO(dgramop) should popuperror here be false?
+            //TODO(dgramop) find a way to get this to "backprop" and be optimized over in solver?
+            int n = 1;
+            if(expression != "") {
+                n = Expr::From(expression, true, &SK.param, &usedParams)->Eval();
+            }
+            int a0 = 0;
             if(subtype == Subtype::ONE_SIDED && skipFirst) {
                 a0++; n++;
             }

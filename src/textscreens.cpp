@@ -5,6 +5,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <string>
 
 //-----------------------------------------------------------------------------
 // A navigation bar that always appears at the top of the window, with a
@@ -290,7 +291,7 @@ void TextWindow::ScreenOpacity(int link, uint32_t v) {
 void TextWindow::ScreenChangeExprA(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
-    SS.TW.ShowEditControl(10, ssprintf("%d", (int)g->valA));
+    SS.TW.ShowEditControl(10, ssprintf("%s", g->expression.c_str()));
     SS.TW.edit.meaning = Edit::TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
@@ -397,10 +398,10 @@ void TextWindow::ShowGroupInfo() {
                     skip ? RADIO_TRUE : RADIO_FALSE);
             }
 
-            int times = (int)(g->valA);
-            Printf(false, "%Bp   %Ftrepeat%E %d time%s %Fl%Ll%D%f[change]%E",
+            std::string times = g->expression;
+            Printf(false, "%Bp   %Ftrepeat%E %s time%s %Fl%Ll%D%f[change]%E",
                 (g->subtype == Group::Subtype::ONE_SIDED) ? 'a' : 'd',
-                times, times == 1 ? "" : "s",
+                times.c_str(), times[0] == '1' ? "" : "s",
                 g->h.v, &TextWindow::ScreenChangeExprA);
         }
     } else if(g->type == Group::Type::LINKED) {
@@ -780,14 +781,17 @@ void TextWindow::ShowTangentArc() {
 void TextWindow::EditControlDone(std::string s) {
     edit.showAgain = false;
 
+    int usedParams = 0;
     switch(edit.meaning) {
         case Edit::TIMES_REPEATED:
-            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
+            
+            if(Expr *e = Expr::From(s, /*popUpError=*/true, &SK.param, &usedParams)) {
                 SS.UndoRemember();
 
                 double ev = e->Eval();
+                dbp("evals to: %lf", ev);
                 if((int)ev < 1) {
-                    Error(_("Can't repeat fewer than 1 time."));
+                    dbp("Can't repeat fewer than 1 time: %lf", ev);
                     break;
                 }
                 if((int)ev > 999) {
@@ -797,6 +801,7 @@ void TextWindow::EditControlDone(std::string s) {
 
                 Group *g = SK.GetGroup(edit.group);
                 g->valA = ev;
+                g->expression = s;
 
                 if(g->type == Group::Type::ROTATE) {
                     // If the group does not contain any constraints, then

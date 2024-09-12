@@ -185,6 +185,9 @@ public:
     double      valA;
     double      valB;
     double      valC;
+    //TODO(dgramop): make sure this makes it to the savefile
+    std::string expression;           // user-defined, may not be in mm (if entered in inch mode for example)
+                                      // NOTE(dgramop): there is no expr scaling to base, since all the groups that support this currently have unitless values (like repeat groups)
     RgbaColor   color;
 
     struct {
