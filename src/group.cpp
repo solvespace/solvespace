@@ -291,6 +291,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
         case Command::GROUP_TRANS:
             g.type = Type::TRANSLATE;
             g.opA = SS.GW.activeGroup;
+            g.expression = "3";
             g.valA = 3;
             g.subtype = Subtype::ONE_SIDED;
             g.predef.entityB = SS.GW.ActiveWorkplane();
@@ -708,10 +709,11 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             int usedParams = 0;
             //TODO(dgramop) should popuperror here be false?
             //TODO(dgramop) find a way to get this to "backprop" and be optimized over in solver?
-            int n = 1;
+            int n = valA;
             if(expression != "") {
                 n = Expr::From(expression, true, &SK.param, &usedParams)->Eval();
             }
+
             int a0 = 0;
             if(subtype == Subtype::ONE_SIDED && skipFirst) {
                 a0++; n++;

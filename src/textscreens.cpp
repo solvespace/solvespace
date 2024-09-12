@@ -399,9 +399,13 @@ void TextWindow::ShowGroupInfo() {
             }
 
             std::string times = g->expression;
+            if(g->expression.size() == 0) {
+                times = std::to_string(g->valA).c_str();
+            }
+
             Printf(false, "%Bp   %Ftrepeat%E %s time%s %Fl%Ll%D%f[change]%E",
                 (g->subtype == Group::Subtype::ONE_SIDED) ? 'a' : 'd',
-                times.c_str(), times[0] == '1' ? "" : "s",
+                times.c_str(), times == "1" ? "" : "s",
                 g->h.v, &TextWindow::ScreenChangeExprA);
         }
     } else if(g->type == Group::Type::LINKED) {
