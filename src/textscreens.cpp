@@ -291,7 +291,7 @@ void TextWindow::ScreenOpacity(int link, uint32_t v) {
 void TextWindow::ScreenChangeExprA(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
-    SS.TW.ShowEditControl(10, ssprintf("%s", g->expression.c_str()));
+    SS.TW.ShowEditControl(10, ssprintf("%s", g->expressionA.c_str()));
     SS.TW.edit.meaning = Edit::TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
@@ -398,8 +398,8 @@ void TextWindow::ShowGroupInfo() {
                     skip ? RADIO_TRUE : RADIO_FALSE);
             }
 
-            std::string times = g->expression;
-            if(g->expression.size() == 0) {
+            std::string times = g->expressionA;
+            if(g->expressionA.size() == 0) {
                 times = std::to_string(g->valA).c_str();
             }
 
@@ -793,7 +793,6 @@ void TextWindow::EditControlDone(std::string s) {
                 SS.UndoRemember();
 
                 double ev = e->Eval();
-                dbp("evals to: %lf", ev);
                 if((int)ev < 1) {
                     dbp("Can't repeat fewer than 1 time: %lf", ev);
                     break;
@@ -805,7 +804,7 @@ void TextWindow::EditControlDone(std::string s) {
 
                 Group *g = SK.GetGroup(edit.group);
                 g->valA = ev;
-                g->expression = s;
+                g->expressionA = s;
 
                 if(g->type == Group::Type::ROTATE) {
                     // If the group does not contain any constraints, then
@@ -848,10 +847,14 @@ void TextWindow::EditControlDone(std::string s) {
             break;
 
         case Edit::HELIX_PITCH:  // stored in valB
+            // TODO(dgramop) for performance, check usedParameters > 0. otherwise set expression to be an empty string and just use valA. Do this everywhere for Group. Already done for Constraint
             if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
                 double ev = e->Eval();
                 Group *g = SK.GetGroup(edit.group);
                 g->valB = ev * SS.MmPerUnit();
+                //TODO(dgramop) avoid re-parsing expressions every single time. store them in their tree state, ideally after some simplification.
+                g->expressionB = s;
+                g->exprBScalingToBase = SS.MmPerUnit();
                 SS.MarkGroupDirty(g->h);
             }
             break;

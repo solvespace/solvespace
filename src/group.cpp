@@ -228,6 +228,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             }
             g.type    = Type::REVOLVE;
             g.opA     = SS.GW.activeGroup;
+            g.expressionA    = "2";
             g.valA    = 2;
             g.subtype = Subtype::ONE_SIDED;
             g.name    = C_("group-name", "revolve");
@@ -256,6 +257,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             }
             g.type    = Type::HELIX;
             g.opA     = SS.GW.activeGroup;
+            g.expressionA    = "2";
             g.valA    = 2;
             g.subtype = Subtype::ONE_SIDED;
             g.name    = C_("group-name", "helix");
@@ -282,6 +284,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             }
             g.type = Type::ROTATE;
             g.opA = SS.GW.activeGroup;
+            g.expressionA = "3";
             g.valA = 3;
             g.subtype = Subtype::ONE_SIDED;
             g.name = C_("group-name", "rotate");
@@ -291,7 +294,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
         case Command::GROUP_TRANS:
             g.type = Type::TRANSLATE;
             g.opA = SS.GW.activeGroup;
-            g.expression = "3";
+            g.expressionA = "3";
             g.valA = 3;
             g.subtype = Subtype::ONE_SIDED;
             g.predef.entityB = SS.GW.ActiveWorkplane();
@@ -707,11 +710,9 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(2), gp.z);
 
             int usedParams = 0;
-            //TODO(dgramop) should popuperror here be false?
-            //TODO(dgramop) find a way to get this to "backprop" and be optimized over in solver?
             int n = valA;
-            if(expression != "") {
-                n = Expr::From(expression, true, &SK.param, &usedParams)->Eval();
+            if(expressionA != "") {
+                n = Expr::From(expressionA, false, &SK.param, NULL)->Eval();
             }
 
             int a0 = 0;
@@ -750,7 +751,12 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(5), gn.y);
             AddParam(param, h.param(6), gn.z);
 
-            int n = (int)valA, a0 = 0;
+            int n = valA;
+            if(expressionA != "") {
+                n = Expr::From(expressionA, true, &SK.param, NULL)->Eval();
+            }
+
+            int a0 = 0;
             if(subtype == Subtype::ONE_SIDED && skipFirst) {
                 a0++; n++;
             }

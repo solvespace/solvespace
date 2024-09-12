@@ -106,7 +106,14 @@ void SMesh::RemapFaces(Group *g, int remap) {
 template<class T>
 void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat) {
 
-    int n = (int)valA, a0 = 0;
+    //TODO(dgramop): solve expression here
+    int n = valA;
+    if(expressionA != "") {
+        int usedParams = 0;
+        n = Expr::From(expressionA, true, &SK.param, &usedParams)->Eval();
+    }
+
+    int a0 = 0;
     if(subtype == Subtype::ONE_SIDED && skipFirst) {
         a0++; n++;
     }

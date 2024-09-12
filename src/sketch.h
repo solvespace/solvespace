@@ -182,12 +182,20 @@ public:
     bool        clean;
     bool        dofCheckOk;
     hEntity     activeWorkplane;
+    //TODO(dgramop): perhaps group val, expression, and scaling to base as its own class
     double      valA;
     double      valB;
     double      valC;
-    //TODO(dgramop): make sure this makes it to the savefile
-    std::string expression;           // user-defined, may not be in mm (if entered in inch mode for example)
-                                      // NOTE(dgramop): there is no expr scaling to base, since all the groups that support this currently have unitless values (like repeat groups)
+    std::string expressionA;
+    std::string expressionB;
+    std::string expressionC;
+    double exprAScalingToBase;
+    double exprBScalingToBase;
+    double exprCScalingToBase;
+    //TODO: correct below NOTE
+    // NOTE(dgramop): there is no expr scaling to base, since all the groups that support this currently have unitless values (like repeat groups)
+    // user-defined, may not be in mm (if entered in inch mode for example)
+                                      
     RgbaColor   color;
 
     struct {
