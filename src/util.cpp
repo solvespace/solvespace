@@ -182,7 +182,8 @@ void SolveSpace::Error(const char *fmt, ...)
 {
     va_list f;
     va_start(f, fmt);
-    MessageBox(fmt, f, /*error=*/true);
+    dbp(fmt, f);
+    //MessageBox(fmt, f, /*error=*/true);
     va_end(f);
 }
 void SolveSpace::Message(const char *fmt, ...)

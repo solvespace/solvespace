@@ -5,6 +5,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <string>
 
 //-----------------------------------------------------------------------------
 // A navigation bar that always appears at the top of the window, with a
@@ -290,7 +291,7 @@ void TextWindow::ScreenOpacity(int link, uint32_t v) {
 void TextWindow::ScreenChangeExprA(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
-    SS.TW.ShowEditControl(10, ssprintf("%d", (int)g->valA));
+    SS.TW.ShowEditControl(10, ssprintf("%s", g->expressionA.c_str()));
     SS.TW.edit.meaning = Edit::TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
@@ -310,7 +311,7 @@ void TextWindow::ScreenChangeGroupScale(int link, uint32_t v) {
 void TextWindow::ScreenChangeHelixPitch(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
     double pitch = g->valB/SS.MmPerUnit();
-    SS.TW.ShowEditControl(3, ssprintf("%.8f", pitch));
+    SS.TW.ShowEditControl(3, g->expressionB.c_str());
     SS.TW.edit.meaning = Edit::HELIX_PITCH;
     SS.TW.edit.group.v = v;
 }
@@ -397,10 +398,14 @@ void TextWindow::ShowGroupInfo() {
                     skip ? RADIO_TRUE : RADIO_FALSE);
             }
 
-            int times = (int)(g->valA);
-            Printf(false, "%Bp   %Ftrepeat%E %d time%s %Fl%Ll%D%f[change]%E",
+            std::string times = g->expressionA;
+            if(g->expressionA.size() == 0) {
+                times = std::to_string(g->valA).c_str();
+            }
+
+            Printf(false, "%Bp   %Ftrepeat%E %s time%s %Fl%Ll%D%f[change]%E",
                 (g->subtype == Group::Subtype::ONE_SIDED) ? 'a' : 'd',
-                times, times == 1 ? "" : "s",
+                times.c_str(), times == "1" ? "" : "s",
                 g->h.v, &TextWindow::ScreenChangeExprA);
         }
     } else if(g->type == Group::Type::LINKED) {
@@ -426,10 +431,10 @@ void TextWindow::ShowGroupInfo() {
     if(g->type == Group::Type::HELIX) {
         Printf(false, "%Ft pitch - length per turn%E");
 
-        if (fabs(g->valB) != 0.0) {
-            Printf(false, "  %Ba %# %Fl%Ll%f%D[change]%E",
-            g->valB / SS.MmPerUnit(),
-            &TextWindow::ScreenChangeHelixPitch, g->h.v);
+        if(g->expressionB.size() > 0) {
+            Printf(false, "  %Ba %s %Fl%Ll%f%D[change]%E", g->expressionB.c_str(), &TextWindow::ScreenChangeHelixPitch, g->h.v);
+        } else if (fabs(g->valB) != 0.0) {
+            Printf(false, "  %Ba %# %Fl%Ll%f%D[change]%E", g->valB / SS.MmPerUnit(), &TextWindow::ScreenChangeHelixPitch, g->h.v);
         } else {
             Printf(false, "  %Ba %# %E",
               SK.GetParam(g->h.param(7))->val * PI /
@@ -780,14 +785,16 @@ void TextWindow::ShowTangentArc() {
 void TextWindow::EditControlDone(std::string s) {
     edit.showAgain = false;
 
+    int usedParams = 0;
     switch(edit.meaning) {
         case Edit::TIMES_REPEATED:
-            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
+            
+            if(Expr *e = Expr::From(s, /*popUpError=*/true, &SK.param, &usedParams)) {
                 SS.UndoRemember();
 
                 double ev = e->Eval();
                 if((int)ev < 1) {
-                    Error(_("Can't repeat fewer than 1 time."));
+                    dbp("Can't repeat fewer than 1 time: %lf", ev);
                     break;
                 }
                 if((int)ev > 999) {
@@ -797,6 +804,7 @@ void TextWindow::EditControlDone(std::string s) {
 
                 Group *g = SK.GetGroup(edit.group);
                 g->valA = ev;
+                g->expressionA = s;
 
                 if(g->type == Group::Type::ROTATE) {
                     // If the group does not contain any constraints, then
@@ -839,10 +847,12 @@ void TextWindow::EditControlDone(std::string s) {
             break;
 
         case Edit::HELIX_PITCH:  // stored in valB
-            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
+            if(Expr *e = Expr::From(s, true, &SK.param, &usedParams)) {
                 double ev = e->Eval();
                 Group *g = SK.GetGroup(edit.group);
                 g->valB = ev * SS.MmPerUnit();
+                g->expressionB = s;
+                g->exprBScalingToBase = SS.MmPerUnit();
                 SS.MarkGroupDirty(g->h);
             }
             break;

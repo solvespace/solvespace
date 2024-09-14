@@ -6,6 +6,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <cstdlib>
 
 void Group::AssembleLoops(bool *allClosed,
                           bool *allCoplanar,
@@ -106,7 +107,17 @@ void SMesh::RemapFaces(Group *g, int remap) {
 template<class T>
 void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat) {
 
-    int n = (int)valA, a0 = 0;
+    //TODO(dgramop): solve expression here
+    int n = valA;
+    if(expressionA != "") {
+        int usedParams = 0;
+        n = Expr::From(expressionA, true, &SK.param, &usedParams)->Eval();
+    }
+    if(n==0) {
+        return;
+    }
+
+    int a0 = 0;
     if(subtype == Subtype::ONE_SIDED && skipFirst) {
         a0++; n++;
     }

@@ -228,6 +228,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             }
             g.type    = Type::REVOLVE;
             g.opA     = SS.GW.activeGroup;
+            g.expressionA    = "2";
             g.valA    = 2;
             g.subtype = Subtype::ONE_SIDED;
             g.name    = C_("group-name", "revolve");
@@ -256,7 +257,14 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             }
             g.type    = Type::HELIX;
             g.opA     = SS.GW.activeGroup;
+            g.expressionA    = "2";
             g.valA    = 2;
+            
+            // this is necessary for the default case of a helix that allows its pitch to be forced by the user in the GUI
+            // i.e. the checkbox is not checked. In previous versions of solvespace, this was signified bt valB = 0.0
+            g.expressionB = "";
+            g.valB = 0.0;
+
             g.subtype = Subtype::ONE_SIDED;
             g.name    = C_("group-name", "helix");
             break;
@@ -282,6 +290,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             }
             g.type = Type::ROTATE;
             g.opA = SS.GW.activeGroup;
+            g.expressionA = "3";
             g.valA = 3;
             g.subtype = Subtype::ONE_SIDED;
             g.name = C_("group-name", "rotate");
@@ -291,6 +300,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
         case Command::GROUP_TRANS:
             g.type = Type::TRANSLATE;
             g.opA = SS.GW.activeGroup;
+            g.expressionA = "3";
             g.valA = 3;
             g.subtype = Subtype::ONE_SIDED;
             g.predef.entityB = SS.GW.ActiveWorkplane();
@@ -705,7 +715,12 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(1), gp.y);
             AddParam(param, h.param(2), gp.z);
 
-            int n = (int)valA, a0 = 0;
+            int n = valA;
+            if(expressionA != "") {
+                n = Expr::From(expressionA, false, &SK.param, NULL)->Eval();
+            }
+
+            int a0 = 0;
             if(subtype == Subtype::ONE_SIDED && skipFirst) {
                 a0++; n++;
             }
@@ -741,7 +756,12 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(5), gn.y);
             AddParam(param, h.param(6), gn.z);
 
-            int n = (int)valA, a0 = 0;
+            int n = valA;
+            if(expressionA != "") {
+                n = Expr::From(expressionA, true, &SK.param, NULL)->Eval();
+            }
+
+            int a0 = 0;
             if(subtype == Subtype::ONE_SIDED && skipFirst) {
                 a0++; n++;
             }
@@ -825,9 +845,18 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
 #undef EC
 #undef EP
         if(type == Type::HELIX) {
-            if(valB != 0.0) {
+
+            
+            Expr* pitchExpr;
+            if(expressionB.size() > 0) {
+                pitchExpr = Expr::From(expressionB, false, &SK.param, NULL);
+            } else {
+                pitchExpr = Expr::From(valB);
+            }
+            
+            if(valB != 0.0 || expressionB.size() > 0) {
                 AddEq(l, Expr::From(h.param(7))->Times(Expr::From(PI))->
-                Minus(Expr::From(h.param(3))->Times(Expr::From(valB))), 6);
+                Minus(Expr::From(h.param(3))->Times(pitchExpr)), 6);
             }
         }
     } else if(type == Type::EXTRUDE) {
