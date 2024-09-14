@@ -592,7 +592,7 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
     for(Constraint *c : constraints) {
         std::vector<Vector> refs;
         c->GetReferencePoints(camera, &refs);
-        for(Vector p : refs) {
+        for(const Vector &p : refs) {
             HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective, camera);
         }
     }

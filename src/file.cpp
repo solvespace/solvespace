@@ -261,7 +261,7 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
                     [](std::pair<EntityKey, EntityId> &a, std::pair<EntityKey, EntityId> &b) {
                         return a.second.v < b.second.v;
                     });
-                for(auto it : sorted) {
+                for(const auto &it : sorted) {
                     fprintf(fh, "    %d %08x %d\n",
                             it.second.v, it.first.input.v, it.first.copyNumber);
                 }
