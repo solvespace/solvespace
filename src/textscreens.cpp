@@ -431,9 +431,9 @@ void TextWindow::ShowGroupInfo() {
     if(g->type == Group::Type::HELIX) {
         Printf(false, "%Ft pitch - length per turn%E");
 
-        if (fabs(g->valB) != 0.0) {
-            Printf(false, "  %Ba %# %Fl%Ll%f%D[change]%E",
-            g->valB / SS.MmPerUnit(),
+        if (fabs(g->valB) != 0.0 || g->expressionB.size() > 0) {
+            Printf(false, "  %Ba %s %Fl%Ll%f%D[change]%E",
+            g->expressionB.c_str(),
             &TextWindow::ScreenChangeHelixPitch, g->h.v);
         } else {
             Printf(false, "  %Ba %# %E",
@@ -847,12 +847,10 @@ void TextWindow::EditControlDone(std::string s) {
             break;
 
         case Edit::HELIX_PITCH:  // stored in valB
-            // TODO(dgramop) for performance, check usedParameters > 0. otherwise set expression to be an empty string and just use valA. Do this everywhere for Group. Already done for Constraint
-            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
+            if(Expr *e = Expr::From(s, true, &SK.param, &usedParams)) {
                 double ev = e->Eval();
                 Group *g = SK.GetGroup(edit.group);
                 g->valB = ev * SS.MmPerUnit();
-                //TODO(dgramop) avoid re-parsing expressions every single time. store them in their tree state, ideally after some simplification.
                 g->expressionB = s;
                 g->exprBScalingToBase = SS.MmPerUnit();
                 SS.MarkGroupDirty(g->h);
