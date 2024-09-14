@@ -39,7 +39,7 @@ static void FindVertsOnCurve(List<SInter> *l, const SCurve *curve, SShell *sh) {
     Vector amax, amin;
     curve->GetAxisAlignedBounding(&amax, &amin);
 
-    for(auto sc : sh->curve) {
+    for(const auto &sc : sh->curve) {
         if(!sc.isExact) continue;
         
         Vector cmax, cmin;
@@ -157,7 +157,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
         // Now add any vertex that is on this segment
         const Vector lineStart     = prev.p;
         const Vector lineDirection = (p->p).Minus(prev.p);
-        for(auto vtx : vertpts) {
+        for(const auto &vtx : vertpts) {
             double t = (vtx.p.Minus(lineStart)).DivProjected(lineDirection);
             if((0.0 < t) && (t < 1.0)) {
                 il.Add(&vtx);

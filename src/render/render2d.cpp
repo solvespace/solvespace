@@ -354,7 +354,7 @@ void SurfaceRenderer::OutputInPaintOrder() {
             mp.Clear();
         }
 
-        for(auto eit : edges) {
+        for(const auto &eit : edges) {
             hStroke hcs = eit.first;
             const SEdgeList &el = eit.second;
 
