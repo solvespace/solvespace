@@ -311,7 +311,7 @@ void TextWindow::ScreenChangeGroupScale(int link, uint32_t v) {
 void TextWindow::ScreenChangeHelixPitch(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
     double pitch = g->valB/SS.MmPerUnit();
-    SS.TW.ShowEditControl(3, ssprintf("%.8f", pitch));
+    SS.TW.ShowEditControl(3, g->expressionB.c_str());
     SS.TW.edit.meaning = Edit::HELIX_PITCH;
     SS.TW.edit.group.v = v;
 }
@@ -431,10 +431,10 @@ void TextWindow::ShowGroupInfo() {
     if(g->type == Group::Type::HELIX) {
         Printf(false, "%Ft pitch - length per turn%E");
 
-        if (fabs(g->valB) != 0.0 || g->expressionB.size() > 0) {
-            Printf(false, "  %Ba %s %Fl%Ll%f%D[change]%E",
-            g->expressionB.c_str(),
-            &TextWindow::ScreenChangeHelixPitch, g->h.v);
+        if(g->expressionB.size() > 0) {
+            Printf(false, "  %Ba %s %Fl%Ll%f%D[change]%E", g->expressionB.c_str(), &TextWindow::ScreenChangeHelixPitch, g->h.v);
+        } else if (fabs(g->valB) != 0.0) {
+            Printf(false, "  %Ba %# %Fl%Ll%f%D[change]%E", g->valB / SS.MmPerUnit(), &TextWindow::ScreenChangeHelixPitch, g->h.v);
         } else {
             Printf(false, "  %Ba %# %E",
               SK.GetParam(g->h.param(7))->val * PI /
