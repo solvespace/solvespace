@@ -246,7 +246,7 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
 
             case 'P': {
                 if(!p->P().IsEmpty()) {
-                    Platform::Path relativePath = p->P().RelativeTo(filename.Parent());
+                    Platform::Path relativePath = p->P().Expand(/*fromCurrentDirectory=*/true).RelativeTo(filename.Parent());
                     ssassert(!relativePath.IsEmpty(), "Cannot relativize path");
                     fprintf(fh, "%s", relativePath.ToPortable().c_str());
                 }
@@ -285,7 +285,7 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     for(Group &g : SK.group) {
         if(g.type != Group::Type::LINKED) continue;
 
-        if(g.linkFile.RelativeTo(filename).IsEmpty()) {
+        if(g.linkFile.Expand(/*fromCurrentDirectory=*/true).RelativeTo(filename).IsEmpty()) {
             Error("This sketch links the sketch '%s'; it can only be saved "
                   "on the same volume.", g.linkFile.raw.c_str());
             return false;
