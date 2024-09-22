@@ -536,6 +536,7 @@ SSView::SSView(QWidget* parent) : QOpenGLWidget(parent) {
 
     setFocusPolicy(Qt::FocusPolicy::StrongFocus);
     setMouseTracking(true);
+    pixelRatio = pixelRatioI = 1.0;
 }
 
 void SSView::startEditing(int x, int y, int fontHeight, int minWidth,
@@ -575,6 +576,15 @@ void SSView::stopEditing() {
 void SSView::entryFinished() {
     std::string entryText = entry->text().toStdString();
     receiver->onEditingDone(entryText);
+}
+
+void SSView::paintGL() {
+    // pixelRatio is set here as devicePixelRatioF has been seen to change
+    // after the resizeGL() & showEvent() methods are called.
+    pixelRatio = devicePixelRatioF();
+    pixelRatioI = floor(pixelRatio);
+
+    receiver->onRender();
 }
 
 void SSView::wheelEvent(QWheelEvent* event)
@@ -638,9 +648,14 @@ void SSView::updateSlvSpaceMouseEvent(QMouseEvent* event)
         //slvMouseEvent.button = slvMouseEvent.button;
     }
 
-
-    slvMouseEvent.x = event->pos().x();
-    slvMouseEvent.y = event->pos().y();
+#if QT_VERSION >= 0x060000
+    QPointF pos = event->position();
+    slvMouseEvent.x = pos.x() * pixelRatio;
+    slvMouseEvent.y = pos.y() * pixelRatio;
+#else
+    slvMouseEvent.x = double(event->x());
+    slvMouseEvent.y = double(event->y());
+#endif
     Qt::KeyboardModifiers keyModifier = QGuiApplication::keyboardModifiers();
 
     switch (keyModifier)
@@ -771,7 +786,7 @@ public:
     // Returns raster graphics and coordinate scale (already applied on the platform side),
     // i.e. size of logical pixel in physical pixels, or device pixel ratio.
     double GetDevicePixelRatio() override {
-        return view->devicePixelRatio();
+        return view->pixelRatioI;
     }
 
     // Returns (fractional) font scale, to be applied on top of (integral) device pixel ratio.
@@ -818,10 +833,17 @@ public:
     }
 
     void GetContentSize(double* width, double* height) override {
-        double pixelRatio = GetDevicePixelRatio();
+#if QT_VERSION >= 0x060000
+        double pixelRatio = view->pixelRatio;
         QSize rc = view->size();
-        *width = rc.width() / pixelRatio;
-        *height = rc.height() / pixelRatio;
+        *width = rc.width() * pixelRatio;
+        *height = rc.height() * pixelRatio;
+        //printf("KR cont %f %d,%d %f,%f\n", pixelRatio, rc.width(), rc.height(), *width, *height);
+#else
+        *width = view->width();
+        *height = view->height();
+        //printf("KR cont %f,%f\n", *width, *height);
+#endif
     }
 
     void SetMinContentSize(double width, double height) override {
