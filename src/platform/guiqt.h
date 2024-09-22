@@ -29,7 +29,7 @@ class SSView : public QOpenGLWidget
 public:
     SSView(QWidget* parent = 0);
 
-    void startEditing(int x, int y, int fontHeight, int minWidth,
+    void startEditing(double xd, double yd, int fontHeight, int minWidth,
                       bool isMonoSpace, const std::string& val);
     void stopEditing();
 
@@ -46,14 +46,9 @@ protected slots:
 
 protected:
     //void initializeGL() {}
+    //void resizeGL(int width, int height) {}
 
-    void paintGL() {
-        receiver->onRender();
-    }
-
-    void resizeGL(int width, int height) {
-        receiver->onRender();
-    }
+    void paintGL();
 
     //----Mouse Events--------
     void wheelEvent(QWheelEvent* event);
@@ -93,6 +88,8 @@ protected:
 public:
     Platform::Window* receiver;
     QLineEdit* entry;
+    double pixelRatio;
+    double pixelRatioI;
     MouseEvent    slvMouseEvent;
     KeyboardEvent slvKeyEvent;
 };
