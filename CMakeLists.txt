@@ -94,8 +94,8 @@ if(MINGW)
     # Link 32 bit SolveSpace with --large-address-aware which allows it to access
     # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
     # See https://msdn.microsoft.com/en-us/library/aa366778
-        if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        # Set large address aware flag for 32-bit targets
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+    	# Set large address aware flag for 32-bit targets
         set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--large-address-aware")
     endif()
 endif()
