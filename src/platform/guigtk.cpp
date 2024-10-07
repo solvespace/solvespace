@@ -578,7 +578,7 @@ protected:
 //        gdk_scroll_event_get_direction((GdkEvent*)gdk_event, &dir);
 
         if(gdk_event_get_scroll_deltas((GdkEvent*)gdk_event, &dx, &dy)) {
-            delta = dy;
+            delta = -dy;
         } else if(gdk_event_get_scroll_direction((GdkEvent*)gdk_event, &dir)) {
             if(dir == GDK_SCROLL_UP) {
                 delta = 1;
