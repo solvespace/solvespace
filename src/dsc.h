@@ -7,8 +7,6 @@
 #ifndef SOLVESPACE_DSC_H
 #define SOLVESPACE_DSC_H
 
-#include "solvespace.h"
-
 #include <type_traits>
 #include <vector>
 
