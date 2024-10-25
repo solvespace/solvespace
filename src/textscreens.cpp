@@ -220,7 +220,19 @@ void TextWindow::ScreenSelectConstraint(int link, uint32_t v) {
     sel.constraint.v = v;
     SS.GW.selection.Add(&sel);
 }
-
+void TextWindow::AddNamedParameter(int link, uint32_t v) {
+    hGroup hg = { v };
+    SS.UndoRemember();
+    Request r = {};
+    r.group = hg;
+    r.type = Request::Type::NAMED_PARAMETER;
+    r.str = "Edit_Name";
+    SK.request.AddAndAssignId(&r);
+    r.Generate(&SK.entity, &SK.param);
+    hParam hp = r.h.param(64);
+    SK.GetParam(hp)->val = 123;
+    SS.MarkGroupDirty(r.group);
+}
 void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
     SS.UndoRemember();
     Group *g = SK.GetGroup(SS.TW.shown.group);
@@ -324,6 +336,29 @@ void TextWindow::ScreenChangePitchOption(int link, uint32_t v) {
     }
     SS.GW.Invalidate();
 }
+void TextWindow::ScreenEditParamName(int link, uint32_t v) {
+    hRequest hr = { v };
+    Request *r = SK.request.FindByIdNoOops(hr);
+    SS.TW.ShowEditControl(3, r->str);
+    SS.TW.edit.meaning = Edit::PARAMETER_NAME;
+    SS.TW.edit.request = hr;
+}
+void TextWindow::ScreenChangeParamValue(int link, uint32_t v) {
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+    hParam p = { v };
+    double value = SK.GetParam(p)->val;
+    SS.TW.ShowEditControl(3, ssprintf("%.8f", value));
+    SS.TW.edit.meaning = Edit::PARAMETER_VALUE;
+    SS.TW.edit.group.v = g->h.v;
+    SS.TW.edit.parameter = p;  
+}
+void TextWindow::ScreenDeleteParameter(int link, uint32_t v) {
+    hRequest hr = { v };
+    Request *r = SK.request.FindByIdNoOops(hr);
+    hParam p = r->h.param(64);
+    SK.param.RemoveById(p);
+    SK.request.RemoveById(hr);
+}
 void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
     SS.UndoRemember();
 
@@ -344,6 +379,7 @@ void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
     // group if it was removed.
     SS.GW.ClearSuper();
 }
+
 void TextWindow::ShowGroupInfo() {
     Group *g = SK.GetGroup(shown.group);
     const char *s = "???";
@@ -527,14 +563,42 @@ void TextWindow::ShowGroupInfo() {
         Printf(false, "'force NURBS surfaces to triangle mesh'.");
     }
 
+
 list_items:
+    Printf(false, "");
+    Printf(false, "%Ft parameters in group  %E [%Fl%Ll%D%fadd%E]",
+        g->h.v, &TextWindow::AddNamedParameter);
+    
+    int a = 0;
+    for(auto &r : SK.request) {
+        // filter on request type for parameters
+        if(r.group == shown.group && r.type == Request::Type::NAMED_PARAMETER) {
+            // get the name of our parameter request
+            std::string s = r.str;
+            // we need a handle to the parameter to get its value
+            hParam hp = r.h.param(64);
+            double value = SK.GetParam(hp)->val;
+            Printf(false,
+            "%Bp   %Fl%Ll%D%f%s%E %# %E [%Fl%Ll%f%Dchange%E] [%Fl%Ll%D%fdel%E] ",
+                   (a & 1) ? 'd' : 'a',
+                   r.h.v,
+                   &(TextWindow::ScreenEditParamName),
+                   s.c_str(),
+                   value,
+                   &(TextWindow::ScreenChangeParamValue), hp,
+                   r.h.v, &(TextWindow::ScreenDeleteParameter) );
+            a++;
+        }
+    }
+    if(a == 0) Printf(false, "%Ba   (none)");
+
     Printf(false, "");
     Printf(false, "%Ft requests in group");
 
-    int a = 0;
+    a = 0;
     for(auto &r : SK.request) {
 
-        if(r.group == shown.group) {
+        if(r.group == shown.group && r.type != Request::Type::NAMED_PARAMETER) {
             std::string s = r.DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                    (a & 1) ? 'd' : 'a',
@@ -843,6 +907,27 @@ void TextWindow::EditControlDone(std::string s) {
                 double ev = e->Eval();
                 Group *g = SK.GetGroup(edit.group);
                 g->valB = ev * SS.MmPerUnit();
+                SS.MarkGroupDirty(g->h);
+            }
+            break;
+
+        case Edit::PARAMETER_NAME:
+            if(s.empty()) {
+                Error(_("Parameter name cannot be empty"));
+            } else {
+                SS.UndoRemember();
+                if(Request *r = SK.request.FindByIdNoOops(edit.request)) {
+                    r->str = s;
+                    SS.MarkGroupDirty(r->group);
+                }
+            }
+            break;
+
+        case Edit::PARAMETER_VALUE:  // by handle (passed in group handle...)
+            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
+                double ev = e->Eval();
+                Group *g = SK.GetGroup(edit.group);
+                SK.GetParam(edit.parameter)->val = ev;
                 SS.MarkGroupDirty(g->h);
             }
             break;
