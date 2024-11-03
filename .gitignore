@@ -14,6 +14,7 @@
 /obj-*/
 /*.slvs
 .vscode/
+.idea/
 
 # Visual Studio
 out/
