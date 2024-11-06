@@ -806,9 +806,12 @@ public:
     static hConstraint TryConstrain(Constraint::Type type, hEntity ptA, hEntity ptB,
                                     hEntity entityA, hEntity entityB = Entity::NO_ENTITY,
                                     bool other = false, bool other2 = false);
-    static bool ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc);
-    static bool ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic);
-    static bool ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB);
+    static bool ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc,
+                                        Entity *arcendpoint);
+    static bool ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic,
+                                          Entity *curveendpoint);
+    static bool ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB, Entity *p1,
+                                           Entity *p2);
 };
 
 class hEquation {
