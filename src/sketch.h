@@ -360,7 +360,8 @@ public:
         CIRCLE                 = 400,
         ARC_OF_CIRCLE          = 500,
         TTF_TEXT               = 600,
-        IMAGE                  = 700
+        IMAGE                  = 700,
+        NAMED_PARAMETER        = 800
     };
 
     Request::Type type;
