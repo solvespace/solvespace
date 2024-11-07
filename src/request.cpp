@@ -33,6 +33,7 @@ static const EntReqMapping EntReqMap[] = {
 { Request::Type::ARC_OF_CIRCLE,   Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false },
 { Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       4,  false,  true,   false },
 { Request::Type::IMAGE,           Entity::Type::IMAGE,          4,  false,  true,   false },
+{ Request::Type::NAMED_PARAMETER, (Entity::Type)0,              0,  false,  false,  false },
 };
 
 static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
@@ -117,6 +118,9 @@ void Request::Generate(EntityList *entity, ParamList *param)
                 aspectRatio = 1.0;
             }
             break;
+        }
+        case Type::NAMED_PARAMETER: {
+          AddParam(param, h.param(64));
         }
 
         default: // most requests don't do anything else
@@ -222,6 +226,7 @@ std::string Request::DescriptionString() const {
             case Type::ARC_OF_CIRCLE:   s = "arc-of-circle";  break;
             case Type::TTF_TEXT:        s = "ttf-text";       break;
             case Type::IMAGE:           s = "image";          break;
+            case Type::NAMED_PARAMETER: s = "parameter";      break;
         }
     }
     ssassert(s != NULL, "Unexpected request type");
