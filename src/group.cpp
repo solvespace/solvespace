@@ -500,7 +500,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(1), gn.y);
             AddParam(param, h.param(2), gn.z);
             int ai, af;
-            if(subtype == Subtype::ONE_SIDED) {
+            if(subtype == Subtype::ONE_SIDED || subtype == Subtype::ONE_SKEWED) {
                 ai = 0; af = 2;
             } else if(subtype == Subtype::TWO_SIDED) {
                 ai = -1; af = 1;
@@ -830,10 +830,10 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
                 Minus(Expr::From(h.param(3))->Times(Expr::From(valB))), 6);
             }
         }
-    } else if(type == Type::EXTRUDE) {
+    } else if(type == Type::EXTRUDE && subtype != Subtype::ONE_SKEWED) {
         if(predef.entityB != Entity::FREE_IN_3D) {
             // The extrusion path is locked along a line, normal to the
-            // specified workplane.
+            // specified workplane. Don't constrain for skewed extrusions.
             Entity *w = SK.GetEntity(predef.entityB);
             ExprVector u = w->Normal()->NormalExprsU();
             ExprVector v = w->Normal()->NormalExprsV();

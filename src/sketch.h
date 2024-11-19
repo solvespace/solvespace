@@ -204,7 +204,8 @@ public:
         //WORKPLANE_BY_FACE          = 6004,
         // For extrudes, translates, and rotates
         ONE_SIDED                  = 7000,
-        TWO_SIDED                  = 7001
+        TWO_SIDED                  = 7001,
+        ONE_SKEWED                 = 7004
     };
     Group::Subtype subtype;
 
