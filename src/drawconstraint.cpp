@@ -17,14 +17,20 @@ std::string Constraint::Label() const {
     } else if(type == Type::COMMENT) {
         result = comment;
     } else if(type == Type::DIAMETER) {
-        if(!other) {
+        if(comment != "") {
+          result = comment;
+        } else if(!other) {
             result = "⌀" + SS.MmToStringSI(valA);
         } else {
             result = "R" + SS.MmToStringSI(valA / 2);
         }
     } else {
-        // valA has units of distance
-        result = SS.MmToStringSI(fabs(valA));
+        if(comment != "") {
+            result = comment;
+        } else {
+          // valA has units of distance
+          result = SS.MmToStringSI(fabs(valA));
+        }
     }
     if(reference) {
         result += " REF";
