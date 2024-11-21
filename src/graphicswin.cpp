@@ -1106,7 +1106,6 @@ void GraphicsWindow::MenuEdit(Command id) {
             if ( (SS.GW.pending.operation == Pending::DRAGGING_NEW_POINT)
               || (SS.GW.pending.operation == Pending::DRAGGING_NEW_LINE_POINT)
               || (SS.GW.pending.operation == Pending::DRAGGING_NEW_ARC_POINT)
-              || (SS.GW.pending.operation == Pending::DRAGGING_NEW_CUBIC_POINT)
               || (SS.GW.pending.operation == Pending::DRAGGING_NEW_RADIUS) )
             {
               SS.GW.ClearSuper();
