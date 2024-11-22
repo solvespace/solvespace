@@ -226,9 +226,36 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
     switch(link) {
-        case 's': g->subtype = Group::Subtype::ONE_SIDED; break;
-        case 'S': g->subtype = Group::Subtype::TWO_SIDED; break;
-        case 'w': g->subtype = Group::Subtype::ONE_SKEWED; break;
+        case 's':
+            if(g->subtype == Group::Subtype::TWO_SIDED)
+                g->subtype = Group::Subtype::ONE_SIDED;
+            if(g->subtype == Group::Subtype::TWO_SKEWED)
+                g->subtype = Group::Subtype::ONE_SKEWED;
+            break;
+        case 'S':
+            if(g->subtype == Group::Subtype::ONE_SIDED)
+                g->subtype = Group::Subtype::TWO_SIDED;
+            if(g->subtype == Group::Subtype::ONE_SKEWED)
+                g->subtype = Group::Subtype::TWO_SKEWED;
+            break;
+        case 'w':
+            if(g->subtype == Group::Subtype::ONE_SIDED) {
+                g->subtype = Group::Subtype::ONE_SKEWED;
+                break;
+            }
+            if(g->subtype == Group::Subtype::TWO_SIDED) {
+                g->subtype = Group::Subtype::TWO_SKEWED;
+                break;
+            }
+            if(g->subtype == Group::Subtype::ONE_SKEWED) {
+                g->subtype = Group::Subtype::ONE_SIDED;
+                break;
+            }
+            if(g->subtype == Group::Subtype::TWO_SKEWED) {
+                g->subtype = Group::Subtype::TWO_SIDED;
+                break;
+            }
+            break;
 
         case 'k': g->skipFirst = true; break;
         case 'K': g->skipFirst = false; break;
@@ -377,9 +404,12 @@ void TextWindow::ShowGroupInfo() {
         }
         Printf(true, " %Ft%s%E", s);
 
-        bool one = (g->subtype == Group::Subtype::ONE_SIDED);
-        bool two = (g->subtype == Group::Subtype::TWO_SIDED);
-        bool skew = (g->subtype == Group::Subtype::ONE_SKEWED);
+        bool one  = ((g->subtype == Group::Subtype::ONE_SIDED) ||
+                     (g->subtype == Group::Subtype::ONE_SKEWED));
+        bool two  = ((g->subtype == Group::Subtype::TWO_SIDED) ||
+                     (g->subtype == Group::Subtype::TWO_SKEWED));
+        bool skew = ((g->subtype == Group::Subtype::ONE_SKEWED) ||
+                     (g->subtype == Group::Subtype::TWO_SKEWED));
         
         if (g->type == Group::Type::EXTRUDE) {
         Printf(false,
@@ -391,7 +421,7 @@ void TextWindow::ShowGroupInfo() {
             &TextWindow::ScreenChangeGroupOption,
             two ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
-            skew ? RADIO_TRUE : RADIO_FALSE);
+            skew ? CHECK_TRUE : CHECK_FALSE);
         } else {
         Printf(false,
             "%Ba   %f%Ls%Fd%s one-sided%E  "

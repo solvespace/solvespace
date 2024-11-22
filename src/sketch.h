@@ -205,7 +205,8 @@ public:
         // For extrudes, translates, and rotates
         ONE_SIDED                  = 7000,
         TWO_SIDED                  = 7001,
-        ONE_SKEWED                 = 7004
+        ONE_SKEWED                 = 7004,
+        TWO_SKEWED                 = 7005
     };
     Group::Subtype subtype;
 
