@@ -7,6 +7,7 @@ Changelog
 Geometric Modelling Kernel (NURBS)
 
 * Improve the difference boolean operations.
+* Extrude groups have a checkbox to allow skewing - 3 DoF for the extrude direction.
 
 Constraints (new and improved):
 
