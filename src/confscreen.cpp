@@ -372,7 +372,7 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
         SS.timeoutRedundantConstr, &ScreenChangeFindConstraintTimeout);
     Printf(false, "");
-    Printf(false, "%Ft animation speed (in ms)%E");
+    Printf(false, "%Ft animation speed (in ms; 0 to disable)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
         SS.animationSpeed, &ScreenChangeAnimationSpeed);
 
@@ -574,12 +574,10 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         }
         case Edit::ANIMATION_SPEED: {
             int speed = atoi(s.c_str());
-            if(speed) {
-                if(speed >= 1) {
-                    SS.animationSpeed = speed;
-                } else {
-                    SS.animationSpeed = 1000;
-                }
+            if(speed >= 0) {
+                SS.animationSpeed = speed;
+            } else {
+                SS.animationSpeed = 800;
             }
             break;
         }

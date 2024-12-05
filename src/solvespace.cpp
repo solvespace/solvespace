@@ -55,7 +55,7 @@ void SolveSpaceUI::Init() {
     // Timeout value for finding redundant constrains (ms)
     timeoutRedundantConstr = settings->ThawInt("TimeoutRedundantConstraints", 1000);
     // Animation speed calculation base time (ms)
-    animationSpeed = settings->ThawInt("AnimationSpeed", 1000);
+    animationSpeed = settings->ThawInt("AnimationSpeed", 800);
     // View units
     viewUnits = (Unit)settings->ThawInt("ViewUnits", (uint32_t)Unit::MM);
     // Number of digits after the decimal point
