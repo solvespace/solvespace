@@ -503,12 +503,18 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
 
     // Animate transition, unless it's a tiny move.
     int64_t t0 = GetMilliseconds();
-    int32_t dt = (mp < 0.01 && mo < 10) ? (-20) :
-                     (int32_t)(100 + 600*mp + 0.4*mo);
-    // Don't ever animate for longer than 800 ms; we can get absurdly
+    int32_t dt = (mp < 0.01 && mo < 10) ? 0 :
+                     (int32_t)(SS.animationSpeed*0.75*mp + SS.animationSpeed*0.0005*mo);
+    // Apply a minimum animation time, for small moves. This gets overridden by the maximum setting
+    // so setting the animation speed to 0 disables animations entirely.
+    dt = std::max(dt, 100 /* ms */);
+    // Don't ever animate for longer than animationSpeed ms; we can get absurdly
     // long translations (as measured in pixels) if the user zooms out, moves,
     // and then zooms in again.
-    if(dt > 800) dt = 800;
+    dt = std::min(dt, SS.animationSpeed);
+    // If the resulting animation time is very short, disable it completely.
+    if (dt < 100) dt = -20;
+    
     Quaternion dq = quatf.Times(quat0.Inverse());
 
     if(!animateTimer) {
