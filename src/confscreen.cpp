@@ -207,6 +207,11 @@ void TextWindow::ScreenChangeFindConstraintTimeout(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::FIND_CONSTRAINT_TIMEOUT;
 }
 
+void TextWindow::ScreenChangeAnimationSpeed(int link, uint32_t v) {
+    SS.TW.ShowEditControl(3, std::to_string(SS.animationSpeed));
+    SS.TW.edit.meaning = Edit::ANIMATION_SPEED;
+}
+
 void TextWindow::ShowConfiguration() {
     int i;
     Printf(true, "%Ft user color (r, g, b)");
@@ -366,6 +371,10 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "%Ft redundant constraint timeout (in ms)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
         SS.timeoutRedundantConstr, &ScreenChangeFindConstraintTimeout);
+    Printf(false, "");
+    Printf(false, "%Ft animation speed (in ms)%E");
+    Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
+        SS.animationSpeed, &ScreenChangeAnimationSpeed);
 
     if(canvas) {
         const char *gl_vendor, *gl_renderer, *gl_version;
@@ -559,6 +568,17 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
                     SS.timeoutRedundantConstr = timeout;
                 } else {
                     SS.timeoutRedundantConstr = 1000;
+                }
+            }
+            break;
+        }
+        case Edit::ANIMATION_SPEED: {
+            int speed = atoi(s.c_str());
+            if(speed) {
+                if(speed >= 1) {
+                    SS.animationSpeed = speed;
+                } else {
+                    SS.animationSpeed = 1000;
                 }
             }
             break;

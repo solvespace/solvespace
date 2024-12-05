@@ -569,6 +569,7 @@ public:
     double   exportChordTol;
     int      exportMaxSegments;
     int      timeoutRedundantConstr; //milliseconds
+    int      animationSpeed; //milliseconds
     double   cameraTangent;
     double   gridSpacing;
     double   exportScale;
