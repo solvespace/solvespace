@@ -513,7 +513,7 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     // and then zooms in again.
     dt = std::min(dt, SS.animationSpeed);
     // If the resulting animation time is very short, disable it completely.
-    if (dt < 100) dt = -20;
+    if (dt < 10) dt = -20;
     
     Quaternion dq = quatf.Times(quat0.Inverse());
 
