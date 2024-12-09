@@ -612,6 +612,12 @@ public:
         double  feed;
         double  plungeFeed;
     }        gCode;
+    enum class MouseScrollAction : uint32_t {
+        AUTO,
+        PAN,
+        ZOOM,
+    };
+    MouseScrollAction mouseScrollAction;
 
     Unit     viewUnits;
     int      afterDecimalMm;
