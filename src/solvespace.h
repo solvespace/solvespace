@@ -570,15 +570,19 @@ public:
     double   exportChordTol;
     int      exportMaxSegments;
     int      timeoutRedundantConstr; //milliseconds
+    int      animationSpeed; //milliseconds
     double   cameraTangent;
     double   gridSpacing;
     double   exportScale;
     double   exportOffset;
+    bool     arcDimDefaultDiameter;
+    bool     showFullFilePath;
     bool     fixExportColors;
     bool     exportBackgroundColor;
     bool     drawBackFaces;
     bool     showContourAreas;
     bool     checkClosedContour;
+    bool     cameraNav;
     bool     turntableNav;
     bool     immediatelyEditDimension;
     bool     automaticLineConstraints;

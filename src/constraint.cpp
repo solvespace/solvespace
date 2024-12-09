@@ -131,7 +131,8 @@ hConstraint Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
         Entity::NO_ENTITY, Entity::NO_ENTITY, /*other=*/false, /*other2=*/false);
 }
 
-bool Constraint::ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc) {
+bool Constraint::ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc,
+                                         Entity *arcendpoint) {
     Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
            l1 = SK.GetEntity(line->point[1])->PointGetNum();
     Vector a1 = SK.GetEntity(arc->point[1])->PointGetNum(),
@@ -140,16 +141,32 @@ bool Constraint::ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *ar
         c->other = false;
     } else if(l0.Equals(a2) || l1.Equals(a2)) {
         c->other = true;
+    } else if(nullptr != arcendpoint) {
+        Vector p = arcendpoint->PointGetNum();
+        if(a1.Equals(p)) {
+            c->other = false;
+        } else if(a2.Equals(p)) {
+            c->other = true;
+        } else {
+            Error(_("The point you selected does not belong to the arc. "
+                    "The arc and line segment do not share an end point.\n\n"
+                    "Select the end point of the arc at which you want "
+                    "it to be tangent to the line."));
+            return false;
+        }
     } else {
         Error(_("The tangent arc and line segment must share an "
                 "endpoint. Constrain them with Constrain -> "
-                "On Point before constraining tangent."));
+                "On Point before constraining tangent.\n\n"
+                "Alternatively select the end point of the arc "
+                "at which you want it to be tangent to the line."));
         return false;
     }
     return true;
 }
 
-bool Constraint::ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic) {
+bool Constraint::ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic,
+                                           Entity *curveendpoint) {
     Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
            l1 = SK.GetEntity(line->point[1])->PointGetNum();
     Vector as = cubic->CubicGetStartNum(),
@@ -159,16 +176,32 @@ bool Constraint::ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *
         c->other = false;
     } else if(l0.Equals(af) || l1.Equals(af)) {
         c->other = true;
+    } else if(nullptr != curveendpoint) {
+        Vector p = curveendpoint->PointGetNum();
+        if(as.Equals(p)) {
+            c->other = false;
+        } else if(af.Equals(p)) {
+            c->other = true;
+        } else {
+            Error(_("The point you selected is not an end point of the cubic spline. "
+                    "The spline and line segment do not share an end point.\n\n"
+                    "Select the end point of the spline at which you want "
+                    "it to be tangent to the line."));
+            return false;
+        }
     } else {
-        Error(_("The tangent cubic and line segment must share an "
+        Error(_("The tangent cubic spline and line segment must share an "
                 "endpoint. Constrain them with Constrain -> "
-                "On Point before constraining tangent."));
+                "On Point before constraining tangent.\n\n"
+                "Alternatively select the end point of the cubic spline "
+                "at which you want it to be tangent to the line."));
         return false;
     }
     return true;
 }
 
-bool Constraint::ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB) {
+bool Constraint::ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB, Entity *epA,
+                                            Entity *epB) {
     Vector as = eA->EndpointStart(),
            af = eA->EndpointFinish(),
            bs = eB->EndpointStart(),
@@ -185,11 +218,35 @@ bool Constraint::ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *e
     } else if(af.Equals(bf)) {
         c->other = true;
         c->other2 = true;
+    } else if((nullptr != epA) && (nullptr != epB)) {
+        Vector pa = epA->PointGetNum(),
+               pb = epB->PointGetNum();
+        if((as.Equals(pa) && bs.Equals(pb)) || (as.Equals(pb) && bs.Equals(pa))) {
+            c->other  = false;
+            c->other2 = false;
+        } else if((as.Equals(pa) && bf.Equals(pb)) || (as.Equals(pb) && bf.Equals(pa))) {
+            c->other  = false;
+            c->other2 = true;
+        } else if((af.Equals(pa) && bs.Equals(pb)) || (af.Equals(pb) && bs.Equals(pa))) {
+            c->other  = true;
+            c->other2 = false;
+        } else if((af.Equals(pa) && bf.Equals(pb)) || (af.Equals(pb) && bf.Equals(pa))) {
+            c->other  = true;
+            c->other2 = true;
+        } else {
+            Error(_("The points you selected are not end points of the two curves. "
+                    "The curves do not share an end point.\n\n"
+                    "Select the end points of both curves at which you want "
+                    "them to be tangent to each other."));
+            return false;
+        }
     } else {
         Error(_("The curves must share an endpoint. Constrain them "
                 "with Constrain -> On Point before constraining "
-                "tangent."));
-        return false;
+                "tangent.\n\n"
+                "Alternatively select the end points of both "
+                "curves at which you want the curves to be tangent."));
+                return false;
     }
     return true;
 }
@@ -236,6 +293,12 @@ void Constraint::MenuConstrain(Command id) {
             } else if(gs.circlesOrArcs == 1 && gs.n == 1) {
                 c.type = Type::DIAMETER;
                 c.entityA = gs.entity[0];
+                Entity* arc = SK.GetEntity(gs.entity[0]);
+                if ((arc->type == EntityBase::Type::ARC_OF_CIRCLE)
+                    && (!SS.arcDimDefaultDiameter))
+                {
+                  c.other = true;
+                }
             } else {
                 Error(_("Bad selection for distance / diameter constraint. This "
                         "constraint can apply to:\n\n"
@@ -580,8 +643,8 @@ void Constraint::MenuConstrain(Command id) {
                         Entity::NO_ENTITY);
                     DeleteAllConstraintsFor(Type::VERTICAL, (gs.entity[0]),
                         Entity::NO_ENTITY);
-                    newcons.push_back(c);
                     AddConstraint(&c, /*rememberForUndo=*/false);
+                    newcons.push_back(c);
                     break;
                 }
             }
@@ -724,7 +787,7 @@ void Constraint::MenuConstrain(Command id) {
                         "    * two line segments\n"
                         "    * a line segment and a normal\n"
                         "    * two normals\n"
-                        "\nEqaual angles:\n"
+                        "\nEqual angles:\n"
                         "    * four line segments or normals "
                         "(equal angle between A,B and C,D)\n"
                         "    * three line segments or normals "
@@ -774,40 +837,46 @@ void Constraint::MenuConstrain(Command id) {
                     c.entityB = gs.vector[k];
                     newcons.push_back(c);
                 }
-            } else if(gs.lineSegments == 1 && gs.arcs == 1 && gs.n == 2) {
+            } else if(gs.lineSegments == 1 && gs.arcs == 1 &&
+                      (gs.n == 2 || (gs.points == 1 && gs.n == 3))) {
                 Entity *line = SK.GetEntity(gs.entity[0]),
                        *arc  = SK.GetEntity(gs.entity[1]);
                 if(line->type == Entity::Type::ARC_OF_CIRCLE) {
                     swap(line, arc);
                 }
-                if(!ConstrainArcLineTangent(&c, line, arc)) {
+                if(!ConstrainArcLineTangent(
+                       &c, line, arc, (1 == gs.points) ? SK.GetEntity(gs.point[0]) : nullptr)) {
                     return;
                 }
                 c.type = Type::ARC_LINE_TANGENT;
                 c.entityA = arc->h;
                 c.entityB = line->h;
                 newcons.push_back(c);
-            } else if(gs.lineSegments == 1 && gs.cubics == 1 && gs.n == 2) {
+            } else if(gs.lineSegments == 1 && gs.cubics == 1 &&
+                      (gs.n == 2 || (gs.points == 1 && gs.n == 3))) {
                 Entity *line  = SK.GetEntity(gs.entity[0]),
                        *cubic = SK.GetEntity(gs.entity[1]);
                 if(line->type == Entity::Type::CUBIC) {
                     swap(line, cubic);
                 }
-                if(!ConstrainCubicLineTangent(&c, line, cubic)) {
+                if(!ConstrainCubicLineTangent(
+                       &c, line, cubic, (1 == gs.points) ? SK.GetEntity(gs.point[0]) : nullptr)) {
                     return;
                 }
                 c.type = Type::CUBIC_LINE_TANGENT;
                 c.entityA = cubic->h;
                 c.entityB = line->h;
                 newcons.push_back(c);
-            } else if(gs.cubics + gs.arcs == 2 && gs.n == 2) {
+            } else if(gs.cubics + gs.arcs == 2 && (gs.n == 2 || (gs.points == 2 && gs.n == 4))) {
                 if(!SS.GW.LockedInWorkplane()) {
                     Error(_("Curve-curve tangency must apply in workplane."));
                     return;
                 }
                 Entity *eA = SK.GetEntity(gs.entity[0]),
                        *eB = SK.GetEntity(gs.entity[1]);
-                if(!ConstrainCurveCurveTangent(&c, eA, eB)) {
+                if(!ConstrainCurveCurveTangent(
+                       &c, eA, eB, (2 == gs.points) ? SK.GetEntity(gs.point[0]) : nullptr,
+                       (2 == gs.points) ? SK.GetEntity(gs.point[1]) : nullptr)) {
                     return;
                 }
                 c.type = Type::CURVE_CURVE_TANGENT;
@@ -822,8 +891,10 @@ void Constraint::MenuConstrain(Command id) {
                         "    * one or more line segments and one or more normals (parallel)\n"
                         "    * two or more normals (parallel)\n"
                         "    * two line segments, arcs, or beziers, that share "
-                              "an endpoint (tangent)\n"));
-                return;
+                              "an endpoint (tangent)\n"
+                        "    * two line segments, arcs, or beziers, that do not share "
+                              "an endpoint and the end point(s) of the curve(s) (tangent)\n"));
+                        return;
             }
             SS.UndoRemember();
             for (auto&& nc:newcons)

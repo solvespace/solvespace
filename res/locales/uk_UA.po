@@ -5,9 +5,9 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
-"Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2022-02-01 16:24+0200\n"
-"PO-Revision-Date: 2021-04-14 01:42+0300\n"
+"Report-Msgid-Bugs-To: phkahler@gmail.com\n"
+"POT-Creation-Date: 2023-01-20 16:45+0200\n"
+"PO-Revision-Date: 2024-01-02 18:47+0200\n"
 "Last-Translator: https://github.com/Symbian9\n"
 "Language-Team: app4soft\n"
 "Language: uk_UA\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Poedit 3.4.1\n"
 
 #: clipboard.cpp:309
 msgid ""
@@ -35,7 +35,7 @@ msgstr "Буфер обміну порожній; немає чого встав
 msgid "Number of copies to paste must be at least one."
 msgstr "Кількість копій для вставки має бути не менше одної."
 
-#: clipboard.cpp:389 textscreens.cpp:833
+#: clipboard.cpp:389 textscreens.cpp:832
 msgid "Scale cannot be zero."
 msgstr "Масштаб не може бути нульовим."
 
@@ -51,12 +51,12 @@ msgstr "Оберіть дві точки для визначення векто�
 msgid ""
 "Transformation is identity. So all copies will be exactly on top of each "
 "other."
-msgstr ""
+msgstr "Трансформація ідентична, тому усі копії будуть точно одна на одній."
 
 #: clipboard.cpp:457
-#, fuzzy
 msgid "Too many items to paste; split this into smaller pastes."
-msgstr "Забагато об'єктів для вставки; рзділіть копіювання на кілька етапів."
+msgstr ""
+"Забагато об'єктів для вставки; розділіть копіювання на кілька менших етапів."
 
 #: clipboard.cpp:462
 msgid "No workplane active."
@@ -64,20 +64,19 @@ msgstr "Немає активної площини."
 
 #: confscreen.cpp:381
 msgid "Bad format: specify coordinates as x, y, z"
-msgstr "Некоректний формат: визначте координати X, Y, Z"
+msgstr "Некоректний формат: визначте координати як X, Y, Z"
 
-#: confscreen.cpp:391 style.cpp:729 textscreens.cpp:864
+#: confscreen.cpp:391 style.cpp:729 textscreens.cpp:863
 msgid "Bad format: specify color as r, g, b"
 msgstr "Некоректний формат: визначте колір як R, G, B"
 
 #: confscreen.cpp:417
-#, fuzzy
 msgid ""
 "The perspective factor will have no effect until you enable View -> Use "
 "Perspective Projection."
 msgstr ""
 "Значення перспективи не матиме ефекту допоки не ввімкнено Вигляд -> "
-"Використовувати Перспективну проєкцію."
+"Використовувати Перспективну Проєкцію."
 
 #: confscreen.cpp:435 confscreen.cpp:445
 #, c-format
@@ -97,9 +96,8 @@ msgid "Bad value: autosave interval should be positive"
 msgstr "Некоректне значення: інтервал автозбереження має бути додатнім"
 
 #: confscreen.cpp:531
-#, fuzzy
 msgid "Bad format: specify interval in integral minutes"
-msgstr "Некоректний формат: визначте цілим числом інтервал у хвилинах"
+msgstr "Некоректний формат: визначте інтервал цілим числом у хвилинах"
 
 #: constraint.cpp:12
 msgctxt "constr-name"
@@ -129,7 +127,7 @@ msgstr "відстань-тчк-грань"
 #: constraint.cpp:17
 msgctxt "constr-name"
 msgid "proj-pt-pt-distance"
-msgstr "проєційна-відстань-тчк-тчк"
+msgstr "проєкційна-відстань-тчк-тчк"
 
 #: constraint.cpp:18
 msgctxt "constr-name"
@@ -169,12 +167,12 @@ msgstr "пропорція-довжин"
 #: constraint.cpp:25
 msgctxt "constr-name"
 msgid "arc-arc-length-ratio"
-msgstr ""
+msgstr "пропорція-довжин-дуга-дуга"
 
 #: constraint.cpp:26
 msgctxt "constr-name"
 msgid "arc-line-length-ratio"
-msgstr ""
+msgstr "пропорція-довжини-дуга-лінія"
 
 #: constraint.cpp:27
 msgctxt "constr-name"
@@ -184,12 +182,12 @@ msgstr "різниця-довжин"
 #: constraint.cpp:28
 msgctxt "constr-name"
 msgid "arc-arc-len-difference"
-msgstr ""
+msgstr "різниця-довжин-дуга-дуга"
 
 #: constraint.cpp:29
 msgctxt "constr-name"
 msgid "arc-line-len-difference"
-msgstr ""
+msgstr "різниця-довжин-дуга-лінія"
 
 #: constraint.cpp:30
 msgctxt "constr-name"
@@ -239,7 +237,7 @@ msgstr "тчк-на-колі"
 #: constraint.cpp:39
 msgctxt "constr-name"
 msgid "same-orientation"
-msgstr "співнаправленість"
+msgstr "співнапрямленість"
 
 #: constraint.cpp:40
 msgctxt "constr-name"
@@ -301,20 +299,26 @@ msgid ""
 "The tangent arc and line segment must share an endpoint. Constrain them with "
 "Constrain -> On Point before constraining tangent."
 msgstr ""
+"Дотичні дуга та лінія повинні мати спільну кінцеву точку. Використайте "
+"Обмежити -> На точці перед застосуванням дотичного обмеження."
 
 #: constraint.cpp:163
 msgid ""
 "The tangent cubic and line segment must share an endpoint. Constrain them "
 "with Constrain -> On Point before constraining tangent."
 msgstr ""
+"Дотичні сплайн та лінія повинні мати спільну кінцеву точку. Використайте "
+"Обмежити -> На точці перед застосуванням дотичного обмеження."
 
 #: constraint.cpp:189
 msgid ""
 "The curves must share an endpoint. Constrain them with Constrain -> On Point "
 "before constraining tangent."
 msgstr ""
+"Дотичні дуги повинні мати спільну кінцеву точку. Використайте Обмежити -> На "
+"точці перед застосуванням дотичного обмеження."
 
-#: constraint.cpp:238
+#: constraint.cpp:240
 msgid ""
 "Bad selection for distance / diameter constraint. This constraint can apply "
 "to:\n"
@@ -327,36 +331,64 @@ msgid ""
 "    * a plane face and a point (minimum distance)\n"
 "    * a circle or an arc (diameter)\n"
 msgstr ""
+"Поганий вибір для обмеження за Відстанню / Діаметром. Це обмеження можна "
+"застосувати до:\n"
+"\n"
+"    * двох точок (відстань між точками)\n"
+"    * відрізку прямої (довжина)\n"
+"    * двох точок та відрізку прямої чи нормалі (відстань між проєкціями "
+"точок)\n"
+"    * робочої площини та точки (найменша відстань)\n"
+"    * відрізку прямої та точки (найменша відстань)\n"
+"    * грані та точки (найменша відстань)\n"
+"    * кола або дуги (діаметр)\n"
 
-#: constraint.cpp:291
+#: constraint.cpp:303
 msgid ""
 "Bad selection for on point / curve / plane constraint. This constraint can "
 "apply to:\n"
 "\n"
-"    * two points (points coincident)\n"
+"    * two or more points (points coincident)\n"
 "    * a point and a workplane (point in plane)\n"
 "    * a point and a line segment (point on line)\n"
 "    * a point and a circle or arc (point on curve)\n"
-"    * a point and a plane face (point on face)\n"
+"    * a point and one to three plane faces (point on face(s))\n"
 msgstr ""
+"Поганий вибір для обмеження На Точці / Кривій / Площині. Це обмеження можна "
+"застосувати до:\n"
+"\n"
+"    * двох або більше точок (точки збігаються)\n"
+"    * точки та площини (точка лежить в площині)\n"
+"    * точки та відрізку прямої (точка лежить на прямій)\n"
+"    * точки та кола чи дуги (точка лежить на дузі)\n"
+"    * точки та від одієї до трьох граней (точка лежить на грані(ях))\n"
 
-#: constraint.cpp:353
+#: constraint.cpp:364
 msgid ""
 "Bad selection for equal length / radius constraint. This constraint can "
 "apply to:\n"
 "\n"
-"    * two line segments (equal length)\n"
+"    * two or more line segments (equal length)\n"
 "    * two line segments and two points (equal point-line distances)\n"
 "    * a line segment and two points (equal point-line distances)\n"
 "    * a line segment, and a point and line segment (point-line distance "
 "equals length)\n"
-"    * four line segments or normals (equal angle between A,B and C,D)\n"
-"    * three line segments or normals (equal angle between A,B and B,C)\n"
-"    * two circles or arcs (equal radius)\n"
+"    * two or more circles or arcs (equal radius)\n"
 "    * a line segment and an arc (line segment length equals arc length)\n"
 msgstr ""
+"Поганий вибір для обмеження Рівні Довжина / Радіус. Це обмеження можна "
+"застосувати до:\n"
+"\n"
+"    * двох або більше відрізків прямої (рівні довжини)\n"
+"    * двох відрізків та двох точок (рівні відстані від точок до відповідних "
+"відрізків)\n"
+"    * відрізка та двох точок (рівні відстані від точок до відрізка)\n"
+"    * відрізка, точки, та другого відрізка (відстань від точки до другого "
+"відрізка дорівнює першому)\n"
+"    * двох або більше кіл чи дуг (рівні радіуси)\n"
+"    * відрізку та дуги (довжина відрізку дорівнює довжині дуги) \n"
 
-#: constraint.cpp:407
+#: constraint.cpp:417
 msgid ""
 "Bad selection for length ratio constraint. This constraint can apply to:\n"
 "\n"
@@ -364,8 +396,14 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
+"Поганий вибір для обмеження Пропорція Довжин. Це обмеження можна застосувати "
+"до:\n"
+"\n"
+"    * двох відрізків прямої\n"
+"    * двох дуг\n"
+"    * дуги та відрізка прямої\n"
 
-#: constraint.cpp:441
+#: constraint.cpp:452
 msgid ""
 "Bad selection for length difference constraint. This constraint can apply "
 "to:\n"
@@ -374,16 +412,26 @@ msgid ""
 "    * two arcs\n"
 "    * one arc and one line segment\n"
 msgstr ""
+"Поганий вибір для обмеження Різниця Довжин. Це обмеження можна застосувати "
+"до:\n"
+"\n"
+"    * двох відрізків\n"
+"    * двох дуг\n"
+"    * відрізка та дуги\n"
 
-#: constraint.cpp:472
+#: constraint.cpp:487
 msgid ""
 "Bad selection for at midpoint constraint. This constraint can apply to:\n"
 "\n"
 "    * a line segment and a point (point at midpoint)\n"
 "    * a line segment and a workplane (line's midpoint on plane)\n"
 msgstr ""
+"Поганий вибір для обмеження До Середини. Це обмеження можна застосувати до:\n"
+"\n"
+"    * відрізка та точки (точка на середині відрізку)\n"
+"    * відрізка та робочої площини (середина відрізку лежить в площині)\n"
 
-#: constraint.cpp:530
+#: constraint.cpp:545
 msgid ""
 "Bad selection for symmetric constraint. This constraint can apply to:\n"
 "\n"
@@ -394,91 +442,150 @@ msgid ""
 "    * workplane, and two points or a line segment (symmetric about "
 "workplane)\n"
 msgstr ""
+"Поганий вибір для обмеження за симетрією. Це обмеження можна застосувати "
+"до:\n"
+"\n"
+"    * двох точок або відрізку прямої (симетрія відносно початку координат "
+"робочої площини)\n"
+"    * відрізка та двох точок або іншого відрізка (симетрія відносно "
+"відрізка)\n"
+"    * робочої площини та двох точок або відрізка (симетрія відносно робочої "
+"площини)\n"
 
-#: constraint.cpp:545
+#: constraint.cpp:560
 msgid ""
 "A workplane must be active when constraining symmetric without an explicit "
 "symmetry plane."
 msgstr ""
+"Робоча площина має бути активною коли використовується обмеження за "
+"симетрією без явного вибору площини."
 
-#: constraint.cpp:579
+#: constraint.cpp:600
 msgid ""
 "Activate a workplane (with Sketch -> In Workplane) before applying a "
 "horizontal or vertical constraint."
 msgstr ""
+"Активуйте площину (в Креслення -> У Робочій Площині) перед застосуванням "
+"обмеження Горизонтально або Вертикально."
 
-#: constraint.cpp:592
+#: constraint.cpp:616
 msgid ""
 "Bad selection for horizontal / vertical constraint. This constraint can "
 "apply to:\n"
 "\n"
-"    * two points\n"
-"    * a line segment\n"
+"    * two or more points\n"
+"    * one or more line segments\n"
 msgstr ""
+"Поганий вибір для обмеження Горизонтально / Вертикально. Це обмеження можна "
+"застосувати до:\n"
+"\n"
+"    * двох або більше точок\n"
+"    * одного або більше відрізків\n"
 
-#: constraint.cpp:613
+#: constraint.cpp:634
 msgid ""
 "Bad selection for same orientation constraint. This constraint can apply "
 "to:\n"
 "\n"
 "    * two normals\n"
 msgstr ""
+"Поганий вибір для обмеження Однакова Орієнтація. Це обмеження можна "
+"застосувати до:\n"
+"\n"
+"    * двох перпендикулярів\n"
 
-#: constraint.cpp:663
-#, fuzzy
+#: constraint.cpp:685
 msgid "Must select an angle constraint."
 msgstr "Необхідно обрати кут."
 
-#: constraint.cpp:676
+#: constraint.cpp:698
 msgid "Must select a constraint with associated label."
 msgstr "Необхідно обрати обмежувач з відповідною міткою."
 
-#: constraint.cpp:687
+#: constraint.cpp:721
 msgid ""
 "Bad selection for angle constraint. This constraint can apply to:\n"
 "\n"
+"Angle between:\n"
 "    * two line segments\n"
 "    * a line segment and a normal\n"
 "    * two normals\n"
+"\n"
+"Equal angles:\n"
+"    * four line segments or normals (equal angle between A,B and C,D)\n"
+"    * three line segments or normals (equal angle between A,B and B,C)\n"
 msgstr ""
+"Поганий вибір для обмеження за Кутом. Це обмеження можна застосувати до:\n"
+"\n"
+"Кута між:\n"
+"    * двома відрізками\n"
+"    * відрізком та перпендикуляром\n"
+"    * двома перпендикулярами\n"
+"\n"
+"Рівних кутів між:\n"
+"    * чотирма відрізками чи перпендикулярами (рівні кути між А,Б та В,Г)\n"
+"    * трьома відрізками чи перпендикулярами (рівні кути між А,Б та Б,В)\n"
 
-#: constraint.cpp:754
+#: constraint.cpp:805
 msgid "Curve-curve tangency must apply in workplane."
-msgstr ""
+msgstr "Обмеження дотичності дуг має відбуватися у робочій площині."
 
-#: constraint.cpp:766
+#: constraint.cpp:818
 msgid ""
 "Bad selection for parallel / tangent constraint. This constraint can apply "
 "to:\n"
 "\n"
-"    * two line segments (parallel)\n"
-"    * a line segment and a normal (parallel)\n"
-"    * two normals (parallel)\n"
+"    * two faces\n"
+"    * two or more line segments (parallel)\n"
+"    * one or more line segments and one or more normals (parallel)\n"
+"    * two or more normals (parallel)\n"
 "    * two line segments, arcs, or beziers, that share an endpoint (tangent)\n"
 msgstr ""
+"Поганий вибір для обмеження Паралельно / Дотична. Це обмеження можна "
+"застосувати до:\n"
+"\n"
+"    * двох граней\n"
+"    * двох або більше відрізків (паралельні)\n"
+"    * одного або більше відрізка та одного або більше перпендикуляра "
+"(паралельні)\n"
+"    * двох або більше перпендикулярів (паралельні)\n"
+"    * двох відрізків, дуг, чи кривих Безьє, що мають спільну кінцеву "
+"точку(дотичні)\n"
 
-#: constraint.cpp:784
+#: constraint.cpp:843
 msgid ""
 "Bad selection for perpendicular constraint. This constraint can apply to:\n"
 "\n"
+"    * two faces\n"
 "    * two line segments\n"
 "    * a line segment and a normal\n"
 "    * two normals\n"
 msgstr ""
+"Поганий вибір для обмеження Перпендикулярно. Це обмеження можна застосувати "
+"до:\n"
+"\n"
+"    * двох граней\n"
+"    * двох відрізків\n"
+"    * відрізка та перпендикуляра\n"
+"    * двох перпендикулярів\n"
 
-#: constraint.cpp:799
+#: constraint.cpp:860
 msgid ""
 "Bad selection for lock point where dragged constraint. This constraint can "
 "apply to:\n"
 "\n"
 "    * a point\n"
 msgstr ""
+"Поганий вибір для обмеження Фіксувати Точку Після Переміщення. Це обмеження "
+"можна застосувати до:\n"
+"\n"
+"    * точки\n"
 
-#: constraint.cpp:813 mouse.cpp:1158
+#: constraint.cpp:875 mouse.cpp:1158
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "КОМЕНТАР -- ДВІЧІ КЛІКНІТЬ ДЛЯ РЕДАГУВАННЯ"
 
-#: constraint.cpp:818
+#: constraint.cpp:881
 msgid "click center of comment text"
 msgstr "клікніть в місце де буде центр коментаря"
 
@@ -487,9 +594,9 @@ msgid ""
 "No solid model present; draw one with extrudes and revolves, or use Export "
 "2d View to export bare lines and curves."
 msgstr ""
-"Вісутня об'ємна модель; створіть одну з допомогою екструдування та "
-"виточування або скористайтеся функцією \"Експортувати 2D Вигляд\" для "
-"еспорту лише ліній та кривих."
+"Вісутня об'ємна модель; створіть модель за допомогою екструдування та "
+"обертання або скористайтеся функцією \"Експортувати 2D Вигляд\" для еспорту "
+"лише ліній та кривих."
 
 #: export.cpp:61
 msgid ""
@@ -500,18 +607,25 @@ msgid ""
 "    * a point and two line segments (plane through point and parallel to "
 "lines)\n"
 msgstr ""
+"Поганий вибір для експорту розрізу. Будьласка, оберіть:\n"
+"\n"
+"    * нічого, з активною робочою площиною (робоча площина буде площиною "
+"розрізу)\n"
+"    * грань (площина розрізу через грань)\n"
+"    * точку та два відрізки (площина розрізу через точку та паралельно "
+"відрізкам)\n"
 
 #: export.cpp:818
 msgid "Active group mesh is empty; nothing to export."
-msgstr "Активна група не містить меш; немає чого експортувати."
+msgstr "Активна група не містить сітку; немає чого експортувати."
 
 #: exportvector.cpp:336
 msgid "freehand lines were replaced with continuous lines"
-msgstr ""
+msgstr "довільні лінії було замінено на неперервні відрізки"
 
 #: exportvector.cpp:338
 msgid "zigzag lines were replaced with continuous lines"
-msgstr ""
+msgstr "zigzag лінії було замінено на неперервні відрізки"
 
 #: exportvector.cpp:592
 msgid ""
@@ -568,6 +682,9 @@ msgid ""
 "If you decline, any geometry that depends on the missing file will be "
 "permanently removed."
 msgstr ""
+"Шукати файл вручну?\n"
+"\n"
+"При відмові, уся геометрія, що залежить від втраченого файлу буде видалена."
 
 #: file.cpp:873
 msgctxt "button"
@@ -579,7 +696,7 @@ msgctxt "button"
 msgid "&No"
 msgstr "&Ні"
 
-#: file.cpp:877 solvespace.cpp:611
+#: file.cpp:877 solvespace.cpp:634
 msgctxt "button"
 msgid "&Cancel"
 msgstr "&Відмінити"
@@ -754,7 +871,7 @@ msgstr "Використовувати &Перспективну Проекці�
 
 #: graphicswin.cpp:97
 msgid "Show E&xploded View"
-msgstr ""
+msgstr "Показати С&кладальне Креслення"
 
 #: graphicswin.cpp:98
 msgid "Dimension &Units"
@@ -774,7 +891,7 @@ msgstr "Розміри у &Дюймах"
 
 #: graphicswin.cpp:102
 msgid "Dimensions in &Feet and Inches"
-msgstr ""
+msgstr "Розміри в &Футах та Дюймах"
 
 #: graphicswin.cpp:104
 msgid "Show &Toolbar"
@@ -909,8 +1026,8 @@ msgid "Re&ference Dimension"
 msgstr "Від&носний Розмір"
 
 #: graphicswin.cpp:148
-msgid "A&ngle"
-msgstr "К&ут"
+msgid "A&ngle / Equal Angle"
+msgstr "К&ут / Рівний Кут"
 
 #: graphicswin.cpp:149
 msgid "Reference An&gle"
@@ -937,16 +1054,16 @@ msgid "&On Point / Curve / Plane"
 msgstr "&На точці / Кривій / Площині"
 
 #: graphicswin.cpp:157
-msgid "E&qual Length / Radius / Angle"
-msgstr "Рі&вні Довжина / Радіус / Кут"
+msgid "E&qual Length / Radius"
+msgstr "Р&івна Довжина / Радіус"
 
 #: graphicswin.cpp:158
 msgid "Length / Arc Ra&tio"
-msgstr ""
+msgstr "Пропорція довжин"
 
 #: graphicswin.cpp:159
 msgid "Length / Arc Diff&erence"
-msgstr ""
+msgstr "Різниця довжин"
 
 #: graphicswin.cpp:160
 msgid "At &Midpoint"
@@ -1034,7 +1151,7 @@ msgstr "&Вебсайт / Посібник"
 
 #: graphicswin.cpp:186
 msgid "&Go to GitHub commit"
-msgstr ""
+msgstr "&До коміту на GitHub"
 
 #: graphicswin.cpp:188
 msgid "&About"
@@ -1049,11 +1166,11 @@ msgstr "(нємає нещодавніх файлів)"
 msgid "File '%s' does not exist."
 msgstr "Файл '%s' відсутній."
 
-#: graphicswin.cpp:737
+#: graphicswin.cpp:773
 msgid "No workplane is active, so the grid will not appear."
 msgstr "Відсутня активна площина - сітка не відображатиметься."
 
-#: graphicswin.cpp:752
+#: graphicswin.cpp:788
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel "
 "projection.\n"
@@ -1061,103 +1178,118 @@ msgid ""
 "For a perspective projection, modify the perspective factor in the "
 "configuration screen. A value around 0.3 is typical."
 msgstr ""
+"Встановлено нульовий коефіцієнт перспективи, тому відображення завжди буде "
+"паралельною проєкцією."
 
-#: graphicswin.cpp:837
+#: graphicswin.cpp:878
 msgid ""
 "Select a point; this point will become the center of the view on screen."
-msgstr ""
+msgstr "Оберіть точку. Ця точка стане центром відображення на екрані."
 
-#: graphicswin.cpp:1137
+#: graphicswin.cpp:1178
 msgid "No additional entities share endpoints with the selected entities."
-msgstr ""
+msgstr "Жодні сутності не мають спільних кінцевих точок з обраними сутностями."
 
-#: graphicswin.cpp:1155
+#: graphicswin.cpp:1196
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
 msgstr ""
+"Для використання цієї команди оберіть точку або іншу сутність з приєднаної "
+"деталі, або зробіть приєднану групу активною."
 
-#: graphicswin.cpp:1178
+#: graphicswin.cpp:1219
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
 msgstr ""
+"Жодної активної площини. Активуйте площину (в Креслення -> У Робочій "
+"Площині) щоб визначити площину для сітки."
 
-#: graphicswin.cpp:1185
+#: graphicswin.cpp:1226
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
 msgstr ""
+"Неможливо прикріпити ці штуки до сітки; оберіть точки, текстові коментарі чи "
+"обмеження з назвою. Щоб прикріпити лінію, оберіть її кінцеві точки."
 
-#: graphicswin.cpp:1270
+#: graphicswin.cpp:1311
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr ""
+"Жодної робочої площини не обрано. Активую площину за замовченням для цієї "
+"групи."
 
-#: graphicswin.cpp:1273
+#: graphicswin.cpp:1314
 msgid ""
 "No workplane is selected, and the active group does not have a default "
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
 "workplane group."
 msgstr ""
+"Жодної робочої площини не обрано, і активна група не має площини за "
+"замовченням. Спробуйте обрати площину, або активувати групу Креслення У "
+"Робочій Площині"
 
-#: graphicswin.cpp:1294
+#: graphicswin.cpp:1335
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
 msgstr ""
+"Поганий вибір для дотичної дуги у точці. Оберіть одну точку, або оберіть "
+"нічого щоб налаштувати дугу."
 
-#: graphicswin.cpp:1305
+#: graphicswin.cpp:1346
 msgid "click point on arc (draws anti-clockwise)"
-msgstr ""
+msgstr "клікніть для встановлення точки дуги (проти годинникової стрілки)"
 
-#: graphicswin.cpp:1306
+#: graphicswin.cpp:1347
 msgid "click to place datum point"
 msgstr "клікніть для встановлення вихідної точки"
 
-#: graphicswin.cpp:1307
+#: graphicswin.cpp:1348
 msgid "click first point of line segment"
 msgstr "клікніть першу точку прямої лінії"
 
-#: graphicswin.cpp:1309
+#: graphicswin.cpp:1350
 msgid "click first point of construction line segment"
 msgstr "клікніть першу точку конструктивної прямої лінії"
 
-#: graphicswin.cpp:1310
+#: graphicswin.cpp:1351
 msgid "click first point of cubic segment"
 msgstr "клікніть першу точку кривої"
 
-#: graphicswin.cpp:1311
+#: graphicswin.cpp:1352
 msgid "click center of circle"
 msgstr "клікніть в місце де буде центр коментаря"
 
-#: graphicswin.cpp:1312
+#: graphicswin.cpp:1353
 msgid "click origin of workplane"
 msgstr "клікніть в центр відліку площини"
 
-#: graphicswin.cpp:1313
+#: graphicswin.cpp:1354
 msgid "click one corner of rectangle"
 msgstr "клікніть для встановлення першого кута прямокутника"
 
-#: graphicswin.cpp:1314
+#: graphicswin.cpp:1355
 msgid "click top left of text"
 msgstr "клікніть для встановлення верхньої лівої межі тексту"
 
-#: graphicswin.cpp:1320
+#: graphicswin.cpp:1361
 msgid "click top left of image"
 msgstr "клікніть для встановлення верхньої лівої межі зображення"
 
-#: graphicswin.cpp:1346
+#: graphicswin.cpp:1387
 msgid ""
 "No entities are selected. Select entities before trying to toggle their "
 "construction state."
-msgstr ""
+msgstr "Жодної сутності не обрано. Оберіть сутності для перключення їх стану."
 
 #: group.cpp:86
 msgctxt "group-name"
 msgid "sketch-in-3d"
 msgstr "ескіз-в-3D"
 
-#: group.cpp:150
+#: group.cpp:154
 msgid ""
 "Bad selection for new sketch in workplane. This group can be created with:\n"
 "\n"
@@ -1167,8 +1299,15 @@ msgid ""
 "    * a point and a normal (through the point, orthogonal to the normal)\n"
 "    * a workplane (copy of the workplane)\n"
 msgstr ""
+"Поганий вибір для ного креслення в робочій площині. Ця група може бути "
+"створена з:\n"
+"\n"
+"    * точки (через точку, ортогонально до координатних осей)\n"
+"    * точки та двох відрізків (через точку, паралельно до відрізків)\n"
+"    * точку та перпендикуляр (через точку, ортогонально перпендикуляру)\n"
+"    * робочої площини (створиться копія площини)\n"
 
-#: group.cpp:166
+#: group.cpp:170
 msgid ""
 "Activate a workplane (Sketch -> In Workplane) before extruding. The sketch "
 "will be extruded normal to the workplane."
@@ -1176,16 +1315,17 @@ msgstr ""
 "Активуйте робочу площину ( Ескіз -> У Площині) перед екструдуванням. Ескіз "
 "буде екструдовано перпендикулярно до робочої площини."
 
-#: group.cpp:175
+#: group.cpp:179
 msgctxt "group-name"
 msgid "extrude"
 msgstr "видавлювання"
 
-#: group.cpp:180
+#: group.cpp:184
 msgid "Lathe operation can only be applied to planar sketches."
 msgstr ""
+"Операція виточування може бути застосована тільки для пласких креслень."
 
-#: group.cpp:191
+#: group.cpp:195
 msgid ""
 "Bad selection for new lathe group. This group can be created with:\n"
 "\n"
@@ -1193,17 +1333,23 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"Поганий вибір для нової групи проточування. Ця група може бути створена з:\n"
+"\n"
+"    * точки та відрізка або перпендикуляра (обертається крізь точку навколо "
+"осі, паралельної до відрізку / перпендикуляру)\n"
+"    * відрізка (обертається навколо відрізка)\n"
 
-#: group.cpp:201
+#: group.cpp:205
 msgctxt "group-name"
 msgid "lathe"
 msgstr "проточування"
 
-#: group.cpp:206
+#: group.cpp:210
 msgid "Revolve operation can only be applied to planar sketches."
 msgstr ""
+"Операція прокручування може бути застосована тільки для пласких креслень."
 
-#: group.cpp:217
+#: group.cpp:221
 msgid ""
 "Bad selection for new revolve group. This group can be created with:\n"
 "\n"
@@ -1211,17 +1357,22 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"Поганий вибір для нової групи прокручування. Ця група може бути створена з:\n"
+"\n"
+"    * точки та відрізка або перпендикуляра (обертається крізь точку навколо "
+"осі, паралельної до відрізку / перпендикуляру)\n"
+"    * відрізка (обертається навколо відрізка)\n"
 
-#: group.cpp:229
+#: group.cpp:233
 msgctxt "group-name"
 msgid "revolve"
 msgstr "прокручування"
 
-#: group.cpp:234
+#: group.cpp:238
 msgid "Helix operation can only be applied to planar sketches."
 msgstr "Спіраль може бути створена лише на основі площинного ескізу."
 
-#: group.cpp:245
+#: group.cpp:249
 msgid ""
 "Bad selection for new helix group. This group can be created with:\n"
 "\n"
@@ -1229,13 +1380,18 @@ msgid ""
 "to line / normal, through point)\n"
 "    * a line segment (revolved about line segment)\n"
 msgstr ""
+"Поганий вибір для нової групи проточування. Ця група може бути створена з:\n"
+"\n"
+"    * точки та відрізка або перпендикуляра (обертається крізь точку навколо "
+"осі, паралельної до відрізку / перпендикуляру)\n"
+"    * відрізка (обертається навколо відрізка)\n"
 
-#: group.cpp:257
+#: group.cpp:261
 msgctxt "group-name"
 msgid "helix"
 msgstr "спіраль"
 
-#: group.cpp:270
+#: group.cpp:274
 msgid ""
 "Bad selection for new rotation. This group can be created with:\n"
 "\n"
@@ -1244,71 +1400,87 @@ msgid ""
 "    * a point and a line or a normal (rotate about an axis through the "
 "point, and parallel to line / normal)\n"
 msgstr ""
+"Поганий вибір для нової групи проточування. Ця група може бути створена з:\n"
+"\n"
+"    * точки, доки закріплено в робочій площині (обертається в площині, "
+"навколо цієї точки)\n"
+"    * точки та відрізка чи перпендикуляря (обертається навколо осі, що "
+"проходить крізь цю точку, і паралельна до відрізку / перпендикуляру)\n"
 
-#: group.cpp:283
+#: group.cpp:287
 msgctxt "group-name"
 msgid "rotate"
 msgstr "крутіння"
 
-#: group.cpp:294
+#: group.cpp:298
 msgctxt "group-name"
 msgid "translate"
 msgstr "перекладання"
 
-#: group.cpp:416
+#: group.cpp:420
 msgid "(unnamed)"
 msgstr "(безіменне)"
 
-#: groupmesh.cpp:707
+#: groupmesh.cpp:710
 msgid "not closed contour, or not all same style!"
 msgstr "не замкнений контур або не все в єдиному стилі!"
 
-#: groupmesh.cpp:720
+#: groupmesh.cpp:723
 msgid "points not all coplanar!"
-msgstr ""
+msgstr "не всі точки знаходяться в одній площині!"
 
-#: groupmesh.cpp:722
+#: groupmesh.cpp:725
 msgid "contour is self-intersecting!"
 msgstr "контур самоперетинається!"
 
-#: groupmesh.cpp:724
+#: groupmesh.cpp:727
 msgid "zero-length edge!"
 msgstr "ребро нульової довжини!"
 
 #: importmesh.cpp:136
 msgid "Text-formated STL files are not currently supported"
-msgstr ""
+msgstr "Файли STL з текстовим форматуванням наразі не підтримуються"
 
 #: modify.cpp:252
 msgid "Must be sketching in workplane to create tangent arc."
 msgstr ""
+"Для створення дотичної дуги має бути обраний режим креслення в робочій "
+"площині."
 
 #: modify.cpp:299
 msgid ""
 "To create a tangent arc, select a point where two non-construction lines or "
 "circles in this group and workplane join."
 msgstr ""
+"Для створення дотичної дуги оберіть точку де два відрізки або дуги "
+"поєднуються."
 
 #: modify.cpp:386
 msgid ""
 "Couldn't round this corner. Try a smaller radius, or try creating the "
 "desired geometry by hand with tangency constraints."
 msgstr ""
+"Неможливо закруглити цей кут. Спробуйте менший радіус або створіть необхідну "
+"геометрію вручну задопомогою омеження Дотичності."
 
 #: modify.cpp:595
 msgid "Couldn't split this entity; lines, circles, or cubics only."
 msgstr ""
+"Неможливо розділити цей об'єкт. Дозволено тільки для відрізків, кіл(дуг), чи "
+"сплайнів."
 
 #: modify.cpp:622
-#, fuzzy
 msgid "Must be sketching in workplane to split."
-msgstr "Має бути накреслений у робочій площині для розділеня."
+msgstr ""
+"Креслення має відбуватися у робочій площині для використання розділення."
 
 #: modify.cpp:629
 msgid ""
 "Select two entities that intersect each other (e.g. two lines/circles/arcs "
 "or a line/circle/arc and a point)."
 msgstr ""
+"Оберіть дві сутності, що перетинаються (наприклад лінії/кола/дуги або лінія/"
+"коло/дуга та точка)"
 
 #: modify.cpp:734
 msgid "Can't split; no intersection found."
@@ -1416,6 +1588,8 @@ msgid ""
 "Can't draw rectangle in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr ""
+"Неможливо накреслити прямокутник у 3d; спочатку активуйте робочу площину в "
+"Креслення -> У Робочій Площині."
 
 #: mouse.cpp:1026
 msgid "click to place other corner of rectangle"
@@ -1430,6 +1604,8 @@ msgid ""
 "Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr ""
+"Неможливо накреслити дугу у 3d; спочатку активуйте робочу площину в "
+"Креслення -> У Робочій Площині."
 
 #: mouse.cpp:1071
 msgid "click to place point"
@@ -1443,12 +1619,16 @@ msgstr "клікніть наступну точку кривої або нат�
 msgid ""
 "Sketching in a workplane already; sketch in 3d before creating new workplane."
 msgstr ""
+"Вже обрано креслення у робочій площині; поверніться у креслення будь-ду в 3D "
+"для створення нової робочої площини."
 
 #: mouse.cpp:1108
 msgid ""
 "Can't draw text in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr ""
+"Неможливо накреслити текст у 3д; спочатку активуйте робочу площину в "
+"Креслення -> У Робочій Площині."
 
 #: mouse.cpp:1125
 msgid "click to place bottom right of text"
@@ -1459,16 +1639,18 @@ msgid ""
 "Can't draw image in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr ""
+"Неможливо накреслити зображення у 3д; спочатку активуйте робочу площину в "
+"Креслення -> У Робочій Площині."
 
-#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:553
+#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:565
 msgctxt "file-type"
 msgid "SolveSpace models"
-msgstr "SolveSpace модель"
+msgstr "SolveSpace модел"
 
 #: platform/gui.cpp:89
 msgctxt "file-type"
 msgid "ALL"
-msgstr ""
+msgstr "УСІ"
 
 #: platform/gui.cpp:91
 msgctxt "file-type"
@@ -1478,7 +1660,7 @@ msgstr "IDF друкована плата"
 #: platform/gui.cpp:92
 msgctxt "file-type"
 msgid "STL triangle mesh"
-msgstr ""
+msgstr "STL трикутникова сітка"
 
 #: platform/gui.cpp:96
 msgctxt "file-type"
@@ -1488,7 +1670,7 @@ msgstr "PNG зображення"
 #: platform/gui.cpp:100
 msgctxt "file-type"
 msgid "STL mesh"
-msgstr "STL меш"
+msgstr "STL сітка"
 
 #: platform/gui.cpp:101
 msgctxt "file-type"
@@ -1555,17 +1737,17 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "Comma-separated values"
 
-#: platform/guigtk.cpp:1382 platform/guimac.mm:1509 platform/guiwin.cpp:1641
+#: platform/guigtk.cpp:1382 platform/guimac.mm:1513 platform/guiwin.cpp:1641
 msgid "untitled"
 msgstr "без імені"
 
-#: platform/guigtk.cpp:1393 platform/guigtk.cpp:1426 platform/guimac.mm:1467
+#: platform/guigtk.cpp:1393 platform/guigtk.cpp:1426 platform/guimac.mm:1471
 #: platform/guiwin.cpp:1639
 msgctxt "title"
 msgid "Save File"
 msgstr "Зберегти Файл"
 
-#: platform/guigtk.cpp:1394 platform/guigtk.cpp:1427 platform/guimac.mm:1450
+#: platform/guigtk.cpp:1394 platform/guigtk.cpp:1427 platform/guimac.mm:1454
 #: platform/guiwin.cpp:1645
 msgctxt "title"
 msgid "Open File"
@@ -1586,99 +1768,103 @@ msgctxt "button"
 msgid "_Open"
 msgstr "_Відкрити"
 
-#: solvespace.cpp:171
+#: solvespace.cpp:167
 msgctxt "title"
 msgid "Autosave Available"
 msgstr "Наявні автозбереження"
 
-#: solvespace.cpp:172
+#: solvespace.cpp:168
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
 msgstr "Наявні автозбереження для цього креслення."
 
-#: solvespace.cpp:173
+#: solvespace.cpp:169
 msgctxt "dialog"
 msgid "Do you want to load the autosave file instead?"
 msgstr "Завантажити файл автозбереження?"
 
-#: solvespace.cpp:174
+#: solvespace.cpp:170
 msgctxt "button"
 msgid "&Load autosave"
 msgstr "&Завантажити автозбереження"
 
-#: solvespace.cpp:176
+#: solvespace.cpp:172
 msgctxt "button"
 msgid "Do&n't Load"
 msgstr "&Не Завантажувати"
 
-#: solvespace.cpp:599
+#: solvespace.cpp:622
 msgctxt "title"
 msgid "Modified File"
 msgstr "Файл Змінено"
 
-#: solvespace.cpp:601
+#: solvespace.cpp:624
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
 msgstr "Чи хочете ви зберегти зміни зроблені вами у ескізі “%s”?"
 
-#: solvespace.cpp:604
+#: solvespace.cpp:627
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
 msgstr "Чи хочете ви зберегти зміни зроблені вами у новому ескізі?"
 
-#: solvespace.cpp:607
+#: solvespace.cpp:630
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
 msgstr "Ваші зміни буде втрачено якщо ви не збережете їх."
 
-#: solvespace.cpp:608
+#: solvespace.cpp:631
 msgctxt "button"
 msgid "&Save"
 msgstr "&Зберегти"
 
-#: solvespace.cpp:610
+#: solvespace.cpp:633
 msgctxt "button"
 msgid "Do&n't Save"
 msgstr "&Не Зберігати"
 
-#: solvespace.cpp:631
+#: solvespace.cpp:654
 msgctxt "title"
 msgid "(new sketch)"
 msgstr "(нове креслення)"
 
-#: solvespace.cpp:638
+#: solvespace.cpp:661
 msgctxt "title"
 msgid "Property Browser"
 msgstr "Браузер Властивостей"
 
-#: solvespace.cpp:700
+#: solvespace.cpp:724
 msgid ""
 "Constraints are currently shown, and will be exported in the toolpath. This "
 "is probably not what you want; hide them by clicking the link at the top of "
 "the text window."
 msgstr ""
+"Зараз обмеження відображаються, і будуть експортовані в шлях інструменту. "
+"Скоріш за все, це не те, чого ви домагаєтеся; cховайте їх клікнувши на "
+"посилання над текстовим вікном."
 
-#: solvespace.cpp:772
+#: solvespace.cpp:812
 #, c-format
 msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
 "dwg."
 msgstr ""
+"Неможливо визначити тип файлу з розширення '%s'; спробуйте .dxf чи .dwg."
 
-#: solvespace.cpp:824
+#: solvespace.cpp:864
 msgid "Constraint must have a label, and must not be a reference dimension."
 msgstr "Обмежувач має містити мітку і бути не відносним розміром."
 
-#: solvespace.cpp:828
+#: solvespace.cpp:868
 msgid "Bad selection for step dimension; select a constraint."
 msgstr "Поганий вибір для крокової зміни розміру; оберіть обмежувач."
 
-#: solvespace.cpp:852
+#: solvespace.cpp:892
 msgid "The assembly does not interfere, good."
-msgstr ""
+msgstr "Збірка не перетинається, очман."
 
-#: solvespace.cpp:868
+#: solvespace.cpp:908
 #, c-format
 msgid ""
 "The volume of the solid model is:\n"
@@ -1689,7 +1875,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: solvespace.cpp:877
+#: solvespace.cpp:917
 #, c-format
 msgid ""
 "\n"
@@ -1702,15 +1888,19 @@ msgstr ""
 "\n"
 "    %s"
 
-#: solvespace.cpp:882
+#: solvespace.cpp:922
 msgid ""
 "\n"
 "\n"
 "Curved surfaces have been approximated as triangles.\n"
 "This introduces error, typically of around 1%."
 msgstr ""
+"\n"
+"\n"
+"Скруглені поверхні були апроксимовані до трикутників.\n"
+"Це створює похибку, зазвичай біля 1%."
 
-#: solvespace.cpp:897
+#: solvespace.cpp:937
 #, c-format
 msgid ""
 "The surface area of the selected faces is:\n"
@@ -1720,8 +1910,14 @@ msgid ""
 "Curves have been approximated as piecewise linear.\n"
 "This introduces error, typically of around 1%%."
 msgstr ""
+"Площа поверхні обраної грані:\n"
+"\n"
+"    %s\n"
+"\n"
+"Криві були апроксимовані як дрібні відрізки.\n"
+"Це створює похибку, зазвичай біля 1%%."
 
-#: solvespace.cpp:906
+#: solvespace.cpp:946
 msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
@@ -1729,7 +1925,7 @@ msgstr ""
 "Ця група не місить коректно сформованого замкненої 2D площини. Вона "
 "відкрита, не компланарна, або ж самоперетинається."
 
-#: solvespace.cpp:918
+#: solvespace.cpp:958
 #, c-format
 msgid ""
 "The area of the region sketched in this group is:\n"
@@ -1746,7 +1942,7 @@ msgstr ""
 "Криві наближено до ламаних ліній.\n"
 "Це вносить похибку, зазвичай близько 1%%."
 
-#: solvespace.cpp:938
+#: solvespace.cpp:978
 #, c-format
 msgid ""
 "The total length of the selected entities is:\n"
@@ -1763,44 +1959,47 @@ msgstr ""
 "Криві наближено до ламаних ліній.\n"
 "Це вносить похибку, зазвичай близько 1%%."
 
-#: solvespace.cpp:944
+#: solvespace.cpp:984
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
 msgstr "Поганий вибір для периметру; оберіть відрізки, дуги та криві."
 
-#: solvespace.cpp:960
+#: solvespace.cpp:1000
 msgid "Bad selection for trace; select a single point."
 msgstr "Поганий вибір для вістежування шляху; оберіть одну точку."
 
-#: solvespace.cpp:987
+#: solvespace.cpp:1027
 #, c-format
 msgid "Couldn't write to '%s'"
 msgstr "Неможливо записати у '%s'"
 
-#: solvespace.cpp:1017
+#: solvespace.cpp:1057
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
 msgstr "Меш самоперетинається (НЕ добре, недійсний)."
 
-#: solvespace.cpp:1018
+#: solvespace.cpp:1058
 msgid "The mesh is not self-intersecting (okay, valid)."
 msgstr "Меш самоперетинається (добре, дійсний)."
 
-#: solvespace.cpp:1020
+#: solvespace.cpp:1060
 msgid "The mesh has naked edges (NOT okay, invalid)."
 msgstr "Меш містить оголені ребра (НЕ добре, недійсний)."
 
-#: solvespace.cpp:1021
+#: solvespace.cpp:1061
 msgid "The mesh is watertight (okay, valid)."
 msgstr "Меш водонепроникний (добре, дійсний)."
 
-#: solvespace.cpp:1024
+#: solvespace.cpp:1064
 #, c-format
 msgid ""
 "\n"
 "\n"
 "The model contains %d triangles, from %d surfaces."
 msgstr ""
+"\n"
+"\n"
+"Модель складається з %d трикутників, що розташовані на %d поверхнях."
 
-#: solvespace.cpp:1028
+#: solvespace.cpp:1068
 #, c-format
 msgid ""
 "%s\n"
@@ -1815,7 +2014,7 @@ msgstr ""
 "\n"
 "Відсутні проблемні ребра, добре.%s"
 
-#: solvespace.cpp:1031
+#: solvespace.cpp:1071
 #, c-format
 msgid ""
 "%s\n"
@@ -1830,7 +2029,7 @@ msgstr ""
 "\n"
 "%d проблемних ребер, погано.%s"
 
-#: solvespace.cpp:1044
+#: solvespace.cpp:1084
 #, c-format
 msgid ""
 "This is SolveSpace version %s.\n"
@@ -1871,23 +2070,23 @@ msgstr ""
 msgid "Style name cannot be empty"
 msgstr "Стиль не може містити порожнє ім'я"
 
-#: textscreens.cpp:791
+#: textscreens.cpp:790
 msgid "Can't repeat fewer than 1 time."
 msgstr "Не можливо повторити менше 1 разу."
 
-#: textscreens.cpp:795
+#: textscreens.cpp:794
 msgid "Can't repeat more than 999 times."
 msgstr "Не можливо повторити понад 999 разів."
 
-#: textscreens.cpp:820
+#: textscreens.cpp:819
 msgid "Group name cannot be empty"
 msgstr "Група не може містити порожнє ім'я"
 
-#: textscreens.cpp:872
+#: textscreens.cpp:871
 msgid "Opacity must be between zero and one."
 msgstr "Непрозорість має бути між 0 та 1."
 
-#: textscreens.cpp:907
+#: textscreens.cpp:906
 msgid "Radius cannot be zero or negative."
 msgstr "Радіус не може бути нульовим чи від'ємним."
 
@@ -2049,6 +2248,12 @@ msgstr "Масштаб не може бути нульовим чи від'єм�
 #: view.cpp:139 view.cpp:148
 msgid "Bad format: specify x, y, z"
 msgstr "Некоректний формат: визначте X, Y, Z"
+
+#~ msgid "A&ngle"
+#~ msgstr "К&ут"
+
+#~ msgid "E&qual Length / Radius / Angle"
+#~ msgstr "Рі&вні Довжина / Радіус / Кут"
 
 #~ msgid "Length Ra&tio"
 #~ msgstr "Про&порція Довжин"

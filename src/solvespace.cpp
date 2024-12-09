@@ -54,6 +54,8 @@ void SolveSpaceUI::Init() {
     exportMaxSegments = settings->ThawInt("ExportMaxSegments", 64);
     // Timeout value for finding redundant constrains (ms)
     timeoutRedundantConstr = settings->ThawInt("TimeoutRedundantConstraints", 1000);
+    // Animation speed calculation base time (ms)
+    animationSpeed = settings->ThawInt("AnimationSpeed", 800);
     // View units
     viewUnits = (Unit)settings->ThawInt("ViewUnits", (uint32_t)Unit::MM);
     // Number of digits after the decimal point
@@ -69,12 +71,18 @@ void SolveSpaceUI::Init() {
     exportScale = settings->ThawFloat("ExportScale", 1.0);
     // Export offset (cutter radius comp)
     exportOffset = settings->ThawFloat("ExportOffset", 0.0);
+    // Dimensions on arcs default to diameter vs radius
+    arcDimDefaultDiameter = settings->ThawBool("ArcDimDefaultDiameter", false);
+    // Show full file path in the menu bar
+    showFullFilePath = settings->ThawBool("ShowFullFilePath", true);
     // Rewrite exported colors close to white into black (assuming white bg)
     fixExportColors = settings->ThawBool("FixExportColors", true);
     // Export background color
     exportBackgroundColor = settings->ThawBool("ExportBackgroundColor", false);
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     drawBackFaces = settings->ThawBool("DrawBackFaces", true);
+    // Use camera mouse navigation
+    cameraNav = settings->ThawBool("CameraNav", false);
     // Use turntable mouse navigation
     turntableNav = settings->ThawBool("TurntableNav", false);
     // Immediately edit dimension
@@ -233,6 +241,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeInt("ExportMaxSegments", (uint32_t)exportMaxSegments);
     // Timeout for finding which constraints to fix Jacobian
     settings->FreezeInt("TimeoutRedundantConstraints", (uint32_t)timeoutRedundantConstr);
+    // Animation speed
+    settings->FreezeInt("AnimationSpeed", (uint32_t)animationSpeed);
     // View units
     settings->FreezeInt("ViewUnits", (uint32_t)viewUnits);
     // Number of digits after the decimal point
@@ -248,6 +258,10 @@ void SolveSpaceUI::Exit() {
     settings->FreezeFloat("ExportScale", exportScale);
     // Export offset (cutter radius comp)
     settings->FreezeFloat("ExportOffset", exportOffset);
+    // Rewrite the default arc dimension setting
+    settings->FreezeBool("ArcDimDefaultDiameter", arcDimDefaultDiameter);
+    // Show full file path in the menu bar
+    settings->FreezeBool("ShowFullFilePath", showFullFilePath);
     // Rewrite exported colors close to white into black (assuming white bg)
     settings->FreezeBool("FixExportColors", fixExportColors);
     // Export background color
@@ -258,6 +272,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeBool("ShowContourAreas", showContourAreas);
     // Check that contours are closed and not self-intersecting
     settings->FreezeBool("CheckClosedContour", checkClosedContour);
+    // Use camera mouse navigation
+    settings->FreezeBool("CameraNav", cameraNav);
     // Use turntable mouse navigation
     settings->FreezeBool("TurntableNav", turntableNav);
     // Immediately edit dimensions
@@ -301,12 +317,14 @@ void SolveSpaceUI::Exit() {
 void SolveSpaceUI::Refresh() {
     // generateAll must happen bfore updating displays
     if(scheduledGenerateAll) {
-        GenerateAll(Generate::DIRTY, /*andFindFree=*/false, /*genForBBox=*/false);
+		// Clear the flag so that if the call to GenerateAll is blocked by a Message or Error, 
+		// subsequent refreshes do not try to Generate again.
         scheduledGenerateAll = false;
+        GenerateAll(Generate::DIRTY, /*andFindFree=*/false, /*genForBBox=*/false);   
     }
     if(scheduledShowTW) {
-        TW.Show();
         scheduledShowTW = false;
+        TW.Show();
     }
 }
 
@@ -654,7 +672,11 @@ void SolveSpaceUI::UpdateWindowTitles() {
         GW.window->SetTitle(C_("title", "(new sketch)"));
     } else {
         if(!GW.window->SetTitleForFilename(saveFile)) {
-            GW.window->SetTitle(saveFile.raw);
+            if(SS.showFullFilePath) {
+                GW.window->SetTitle(saveFile.raw);
+            } else {
+                GW.window->SetTitle(saveFile.raw.substr(saveFile.raw.find_last_of("/\\") + 1));
+            }
         }
     }
 
@@ -1093,7 +1115,7 @@ void SolveSpaceUI::MenuHelp(Command id) {
 "law. For details, visit http://gnu.org/licenses/\n"
 "\n"
 "© 2008-%d Jonathan Westhues and other authors.\n"),
-PACKAGE_VERSION, 2022);
+PACKAGE_VERSION, 2024);
             break;
 
         case Command::GITHUB:

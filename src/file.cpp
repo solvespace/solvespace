@@ -246,7 +246,7 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
 
             case 'P': {
                 if(!p->P().IsEmpty()) {
-                    Platform::Path relativePath = p->P().RelativeTo(filename.Parent());
+                    Platform::Path relativePath = p->P().Expand(/*fromCurrentDirectory=*/true).RelativeTo(filename.Expand(/*fromCurrentDirectory=*/true).Parent());
                     ssassert(!relativePath.IsEmpty(), "Cannot relativize path");
                     fprintf(fh, "%s", relativePath.ToPortable().c_str());
                 }
@@ -261,7 +261,7 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
                     [](std::pair<EntityKey, EntityId> &a, std::pair<EntityKey, EntityId> &b) {
                         return a.second.v < b.second.v;
                     });
-                for(auto it : sorted) {
+                for(const auto &it : sorted) {
                     fprintf(fh, "    %d %08x %d\n",
                             it.second.v, it.first.input.v, it.first.copyNumber);
                 }
@@ -285,7 +285,12 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     for(Group &g : SK.group) {
         if(g.type != Group::Type::LINKED) continue;
 
-        if(g.linkFile.RelativeTo(filename).IsEmpty()) {
+        // Expand for "filename" below is needed on Linux when the file was opened with a relative
+        // path on the command line. dialog->RunModal() in SolveSpaceUI::GetFilenameAndSave will
+        // convert the file name to full path on Windows but not on GTK.
+        if(g.linkFile.Expand(/*fromCurrentDirectory=*/true)
+               .RelativeTo(filename.Expand(/*fromCurrentDirectory=*/true))
+               .IsEmpty()) {
             Error("This sketch links the sketch '%s'; it can only be saved "
                   "on the same volume.", g.linkFile.raw.c_str());
             return false;

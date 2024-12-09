@@ -1146,7 +1146,7 @@ public:
             sscheck(GetMonitorInfo(MonitorFromWindow(hWindow, MONITOR_DEFAULTTONEAREST), &mi));
 
             sscheck(SetWindowLong(hWindow, GWL_STYLE, style & ~WS_OVERLAPPEDWINDOW));
-            sscheck(SetWindowPos(hWindow, HWND_TOP,
+            sscheck(SetWindowPos(hWindow, HWND_NOTOPMOST,
                                  mi.rcMonitor.left, mi.rcMonitor.top,
                                  mi.rcMonitor.right - mi.rcMonitor.left,
                                  mi.rcMonitor.bottom - mi.rcMonitor.top,
@@ -1185,7 +1185,7 @@ public:
         *height = (rc.bottom - rc.top) / pixelRatio;
     }
 
-    void SetMinContentSize(double width, double height) {
+    void SetMinContentSize(double width, double height) override {
         minWidth  = (int)width;
         minHeight = (int)height;
 

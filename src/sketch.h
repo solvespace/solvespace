@@ -204,7 +204,9 @@ public:
         //WORKPLANE_BY_FACE          = 6004,
         // For extrudes, translates, and rotates
         ONE_SIDED                  = 7000,
-        TWO_SIDED                  = 7001
+        TWO_SIDED                  = 7001,
+        ONE_SKEWED                 = 7004,
+        TWO_SKEWED                 = 7005
     };
     Group::Subtype subtype;
 
@@ -858,9 +860,12 @@ public:
     static hConstraint TryConstrain(Constraint::Type type, hEntity ptA, hEntity ptB,
                                     hEntity entityA, hEntity entityB = Entity::NO_ENTITY,
                                     bool other = false, bool other2 = false);
-    static bool ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc);
-    static bool ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic);
-    static bool ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB);
+    static bool ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc,
+                                        Entity *arcendpoint);
+    static bool ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic,
+                                          Entity *curveendpoint);
+    static bool ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB, Entity *p1,
+                                           Entity *p2);
 };
 
 class hEquation {

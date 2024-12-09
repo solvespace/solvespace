@@ -12,17 +12,19 @@ jobs:
   cancel_previous_runs:
     runs-on: ubuntu-latest
     name: Cancel Previous Runs
+    permissions:
+      actions: write
     steps:
-    - uses: styfle/cancel-workflow-action@0.8.0
+    - uses: styfle/cancel-workflow-action@0.12.1
       with:
         access_token: ${{ github.token }}
 
   test_ubuntu:
     needs: [cancel_previous_runs]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     name: Test Ubuntu
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Dependencies
       run: .github/scripts/install-ubuntu.sh
     - name: Build & Test
@@ -33,7 +35,7 @@ jobs:
     runs-on: windows-2019
     name: Test Windows
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Dependencies
       run: .github/scripts/install-windows.sh
       shell: bash
@@ -43,10 +45,10 @@ jobs:
 
   test_macos:
     needs: [cancel_previous_runs]
-    runs-on: macos-10.15
+    runs-on: macos-latest
     name: Test macOS
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Dependencies
       run: .github/scripts/install-macos.sh ci
     - name: Build & Test
@@ -57,7 +59,7 @@ jobs:
     name: Build Release Windows
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Dependencies
         run: .github/scripts/install-windows.sh
         shell: bash
@@ -65,7 +67,7 @@ jobs:
         run: .github/scripts/build-windows.sh release
         shell: bash
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: windows
           path: build/bin/RelWithDebInfo/solvespace.exe
@@ -75,7 +77,7 @@ jobs:
     name: Build Release Windows (OpenMP)
     runs-on: windows-2019
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install Dependencies
         run: .github/scripts/install-windows.sh
         shell: bash
@@ -83,7 +85,7 @@ jobs:
         run: .github/scripts/build-windows.sh release openmp
         shell: bash
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: windows-openmp
           path: build/bin/RelWithDebInfo/solvespace-openmp.exe
@@ -91,9 +93,9 @@ jobs:
   build_release_macos:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Build Release macOS
-    runs-on: macos-10.15
+    runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Dependencies
       run: .github/scripts/install-macos.sh ci
     - name: Build & Test
@@ -107,41 +109,41 @@ jobs:
         MACOS_APPSTORE_USERNAME: ${{ secrets.MACOS_APPSTORE_USERNAME }}
         MACOS_DEVELOPER_ID: ${{ secrets.MACOS_DEVELOPER_ID }}
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: macos
         path: build/bin/SolveSpace.dmg
 
-  deploy_snap_amd64:
-    needs: [test_ubuntu, test_windows, test_macos]
-    name: Deploy AMD64 Snap
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Fetch Tags
-      run: git fetch --force --tags
-    - name: Set Up Source
-      run: rsync --filter=":- .gitignore" -r ./ pkg/snap/solvespace-snap-src
-    - name: Build Snap
-      uses: snapcore/action-build@v1
-      id: build
-      with:
-        path: pkg/snap
-    - name: Upload & Release to Edge
-      if: github.event_name == 'push'
-      uses: snapcore/action-publish@v1
-      env:
-        SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPSTORE_LOGIN }}
-      with:
-        snap: ${{ steps.build.outputs.snap }}
-        release: edge
-    - name: Upload & Release to Beta + Edge
-      if: github.event_name == 'release'
-      uses: snapcore/action-publish@v1
-      with:
-        store_login: ${{ secrets.SNAPSTORE_LOGIN }}
-        snap: ${{ steps.build.outputs.snap }}
-        release: edge,beta
+  # deploy_snap_amd64:
+  #   needs: [test_ubuntu, test_windows, test_macos]
+  #   name: Deploy AMD64 Snap
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - name: Fetch Tags
+  #     run: git fetch --force --tags
+  #   - name: Set Up Source
+  #     run: rsync --filter=":- .gitignore" -r ./ pkg/snap/solvespace-snap-src
+  #   - name: Build Snap
+  #     uses: snapcore/action-build@v1
+  #     id: build
+  #     with:
+  #       path: pkg/snap
+  #   - name: Upload & Release to Edge
+  #     if: github.event_name == 'push'
+  #     uses: snapcore/action-publish@v1
+  #     env:
+  #       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPSTORE_LOGIN }}
+  #     with:
+  #       snap: ${{ steps.build.outputs.snap }}
+  #       release: edge
+  #   - name: Upload & Release to Beta + Edge
+  #     if: github.event_name == 'release'
+  #     uses: snapcore/action-publish@v1
+  #     with:
+  #       store_login: ${{ secrets.SNAPSTORE_LOGIN }}
+  #       snap: ${{ steps.build.outputs.snap }}
+  #       release: edge,beta
 
   upload_release_assets:
     name: Upload Release Assets
@@ -150,7 +152,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download All Workflow Artifacts
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v4
     - name: Get Release Upload URL
       id: get_upload_url
       env:

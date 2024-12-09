@@ -39,7 +39,7 @@ static void FindVertsOnCurve(List<SInter> *l, const SCurve *curve, SShell *sh) {
     Vector amax, amin;
     curve->GetAxisAlignedBounding(&amax, &amin);
 
-    for(auto sc : sh->curve) {
+    for(const auto &sc : sh->curve) {
         if(!sc.isExact) continue;
         
         Vector cmax, cmin;
@@ -157,7 +157,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
         // Now add any vertex that is on this segment
         const Vector lineStart     = prev.p;
         const Vector lineDirection = (p->p).Minus(prev.p);
-        for(auto vtx : vertpts) {
+        for(const auto &vtx : vertpts) {
             double t = (vtx.p.Minus(lineStart)).DivProjected(lineDirection);
             if((0.0 < t) && (t < 1.0)) {
                 il.Add(&vtx);
@@ -270,32 +270,35 @@ void SSurface::TrimFromEdgeList(SEdgeList *el, bool asUv) {
 
 static bool KeepRegion(SSurface::CombineAs type, bool opA, SShell::Class shell, SShell::Class orig)
 {
-    bool inShell = (shell == SShell::Class::INSIDE),
-         outSide = (shell == SShell::Class::OUTSIDE),
-         inSame  = (shell == SShell::Class::COINC_SAME),
-         inOrig  = (orig == SShell::Class::INSIDE);
+    bool inShell = (shell == SShell::Class::SURF_INSIDE),
+         outSide = (shell == SShell::Class::SURF_OUTSIDE),
+         coincSame  = (shell == SShell::Class::SURF_COINC_SAME),
+         coincOpp  = (shell == SShell::Class::SURF_COINC_OPP),
+         inOrig  = (orig == SShell::Class::SURF_INSIDE);
 
+    // This one line is not really part of this functions logic
     if(!inOrig) return false;
+
     switch(type) {
         case SSurface::CombineAs::UNION:
             if(opA) {
                 return outSide;
             } else {
-                return outSide || inSame;
+                return outSide || coincSame;
             }
 
         case SSurface::CombineAs::DIFFERENCE:
             if(opA) {
-                return outSide;
+                return outSide || coincOpp;
             } else {
-                return inShell || inSame;
+                return inShell;
             }
 
         case SSurface::CombineAs::INTERSECTION:
             if(opA) {
                 return inShell;
             } else {
-                return inShell || inSame;
+                return inShell || coincSame;
             }
 
         default: ssassert(false, "Unexpected combine type");
@@ -318,29 +321,29 @@ static void TagByClassifiedEdge(SBspUv::Class bspclass, SShell::Class *indir, SS
 {
     switch(bspclass) {
         case SBspUv::Class::INSIDE:
-            *indir  = SShell::Class::INSIDE;
-            *outdir = SShell::Class::INSIDE;
+            *indir  = SShell::Class::SURF_INSIDE;
+            *outdir = SShell::Class::SURF_INSIDE;
             break;
 
         case SBspUv::Class::OUTSIDE:
-            *indir  = SShell::Class::OUTSIDE;
-            *outdir = SShell::Class::OUTSIDE;
+            *indir  = SShell::Class::SURF_OUTSIDE;
+            *outdir = SShell::Class::SURF_OUTSIDE;
             break;
 
         case SBspUv::Class::EDGE_PARALLEL:
-            *indir  = SShell::Class::INSIDE;
-            *outdir = SShell::Class::OUTSIDE;
+            *indir  = SShell::Class::SURF_INSIDE;
+            *outdir = SShell::Class::SURF_OUTSIDE;
             break;
 
         case SBspUv::Class::EDGE_ANTIPARALLEL:
-            *indir  = SShell::Class::OUTSIDE;
-            *outdir = SShell::Class::INSIDE;
+            *indir  = SShell::Class::SURF_OUTSIDE;
+            *outdir = SShell::Class::SURF_INSIDE;
             break;
 
         default:
             dbp("TagByClassifiedEdge: fail!");
-            *indir  = SShell::Class::OUTSIDE;
-            *outdir = SShell::Class::OUTSIDE;
+            *indir  = SShell::Class::SURF_OUTSIDE;
+            *outdir = SShell::Class::SURF_OUTSIDE;
             break;
     }
 }
@@ -438,13 +441,12 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
         double t;
         sc->exact.ClosestPointTo(*pt, &t, /*mustConverge=*/false);
         *pt = sc->exact.PointAt(t);
-        ClosestPointTo(*pt, &muv);
     } else if(!sc->isExact) {
         SSurface *trimmedA = sc->GetSurfaceA(sha, shb),
                        *trimmedB = sc->GetSurfaceB(sha, shb);
         *pt = trimmedA->ClosestPointOnThisAndSurface(trimmedB, *pt);
-        ClosestPointTo(*pt, &muv);
     }
+    ClosestPointTo(*pt, &muv);
 
     *surfn = NormalAt(muv.x, muv.y);
 
@@ -472,6 +474,9 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
            pout  = PointAt(muv.Plus(enuv));
     *enin  = pin.Minus(*pt),
     *enout = pout.Minus(*pt);
+// ideally this should work (fail screwdriver file)    
+//    *enin = enxyz.ScaledBy(-1.0);
+//    *enout = enxyz;
 }
 
 //-----------------------------------------------------------------------------
@@ -612,8 +617,8 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
         SShell::Class indir_shell, outdir_shell, indir_orig, outdir_orig;
 
-        indir_orig  = SShell::Class::INSIDE;
-        outdir_orig = SShell::Class::OUTSIDE;
+        indir_orig  = SShell::Class::SURF_INSIDE;
+        outdir_orig = SShell::Class::SURF_OUTSIDE;
 
         agnst->ClassifyEdge(&indir_shell, &outdir_shell,
                             ret.PointAt(auv), ret.PointAt(buv), pt,

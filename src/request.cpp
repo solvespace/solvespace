@@ -90,7 +90,8 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     // Request-specific generation.
     switch(type) {
         case Type::TTF_TEXT: {
-            double actualAspectRatio = SS.fonts.AspectRatio(font, str);
+            // `extraPoints` is storing kerning boolean
+            double actualAspectRatio = SS.fonts.AspectRatio(font, str, extraPoints);
             if(EXACT(actualAspectRatio != 0.0)) {
                 // We could load the font, so use the actual value.
                 aspectRatio = actualAspectRatio;

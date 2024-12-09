@@ -69,9 +69,9 @@ void GraphicsWindow::Selection::Draw(bool isHovered, Canvas *canvas) {
         Vector topLeft = camera.UnProjectPoint(topLeftScreen);
 
         auto it = std::unique(refs.begin(), refs.end(),
-                              [](Vector a, Vector b) { return a.Equals(b); });
+                              [](const Vector &a, const Vector &b) { return a.Equals(b); });
         refs.erase(it, refs.end());
-        for(Vector p : refs) {
+        for(const Vector &p : refs) {
             canvas->DrawLine(topLeft, p, hcsEmphasis);
         }
     }
@@ -220,13 +220,28 @@ void GraphicsWindow::SelectByMarquee() {
         bool entityHasBBox;
         BBox entityBBox = e.GetOrGenerateScreenBBox(&entityHasBBox);
         if(entityHasBBox && entityBBox.Overlaps(marqueeBBox)) {
+            if(e.type == Entity::Type::LINE_SEGMENT) {
+                Vector p0 = SS.GW.ProjectPoint3(e.EndpointStart());
+                Vector p1 = SS.GW.ProjectPoint3(e.EndpointFinish());
+                if((!marqueeBBox.Contains({p0.x, p0.y}, 0)) &&
+                   (!marqueeBBox.Contains({p1.x, p1.y}, 0))) {
+                    // The selection marquee does not contain either of the line segment end points.
+                    // This means that either the segment is entirely outside the marquee or that
+                    // it intersects it. Check if it does...
+                    if(!Vector::BoundingBoxIntersectsLine(marqueeBBox.maxp, marqueeBBox.minp, p0,
+                                                          p1, true)) {
+                        // ... it does not so it is outside.
+                        continue;
+                    }
+                }
+            }
             MakeSelected(e.h);
         }
     }
 }
 
 //-----------------------------------------------------------------------------
-// Sort the selection according to various critieria: the entities and
+// Sort the selection according to various criteria: the entities and
 // constraints separately, counts of certain types of entities (circles,
 // lines, etc.), and so on.
 //-----------------------------------------------------------------------------
