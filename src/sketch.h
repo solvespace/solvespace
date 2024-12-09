@@ -538,6 +538,32 @@ public:
     void GenerateEquations(IdList<Equation,hEquation> *l) const;
 
     void Clear() {}
+
+    inline std::string ToString() const {
+        std::string repr = "";
+        std::string paramsStr      = "";
+        for (hParam p : param) {
+            if (p.v != 0) {
+                paramsStr += std::to_string(p.v) + ",";
+            }
+        }
+        std::string pointsStr      = "";
+        for (hEntity p : point) {
+            if (p.v != 0) {
+                pointsStr += std::to_string(p.v) + ",";
+            }
+        }
+        repr +=
+            "h:" + std::to_string(h.v) +
+            " group:" + std::to_string(group.v) +
+            " workplane:" + std::to_string(workplane.v) +
+            " point: [" + pointsStr + "]"
+            " normal:" + std::to_string(normal.v) +
+            " distance:" + std::to_string(distance.v) +
+            " type: " + std::to_string(static_cast<std::underlying_type<EntityBase::Type>::type>(type)) +
+            " param: [" + paramsStr + "]";
+        return repr;
+    }
 };
 
 class Entity : public EntityBase {
@@ -630,6 +656,13 @@ public:
     static const hParam NO_PARAM;
 
     void Clear() {}
+
+    inline std::string ToString() {
+        std::string repr = "";
+        repr += "h:" + std::to_string(h.v) +
+            " val:" + std::to_string(val);
+        return repr;
+    }
 };
 
 
@@ -741,6 +774,25 @@ public:
     static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
 
     void Clear() {}
+
+    inline std::string ToString() {
+        std::string repr = "";
+        repr +=
+            "h:" + std::to_string(h.v) +
+            " group:" + std::to_string(group.v) +
+            " type:" + std::to_string(static_cast<std::underlying_type<ConstraintBase::Type>::type>(type)) +
+            " workplane:" + std::to_string(workplane.v) +
+            " valA:" + std::to_string(valA) +
+            " ptA:" + std::to_string(ptA.v) +
+            " ptB:" + std::to_string(ptB.v) +
+            " entityA:" + std::to_string(entityA.v) +
+            " entityB:" + std::to_string(entityB.v) +
+            " entityC:" + std::to_string(entityC.v) +
+            " entityD:" + std::to_string(entityD.v) +
+            " other:" + std::to_string(other) +
+            " other2:" + std::to_string(other2);
+        return repr;
+    }
 };
 
 class Constraint : public ConstraintBase {
