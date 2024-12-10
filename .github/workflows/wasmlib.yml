@@ -70,5 +70,5 @@ jobs:
           if [ "${is_dev}" == "1" ]; then
             npm publish --access public --tag dev
           else
-            npm publish --access public
+            npm publish --access public --tag stable
           fi

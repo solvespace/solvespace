@@ -161,7 +161,7 @@ else()
 endif()
 
 
-if(ENALBE_GUI OR ENABLE_CLI)
+if(ENABLE_GUI OR ENABLE_CLI)
     set(every_platform_SOURCES
         platform/guiwin.cpp
         platform/guigtk.cpp

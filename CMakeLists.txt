@@ -185,7 +185,7 @@ endif()
 # common dependencies
 
 if(APPLE)
-    set(CMAKE_FIND_FRAMEWORK LAST)
+    set(CMAKE_FIND_FRAMEWORK FIRST)
 endif()
 
 if(EMSCRIPTEN)
