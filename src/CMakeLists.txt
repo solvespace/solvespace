@@ -165,6 +165,7 @@ add_library(solvespace-core STATIC
     render/render.cpp
     render/render2d.cpp
     srf/boolean.cpp
+    srf/chamfer.cpp
     srf/curve.cpp
     srf/merge.cpp
     srf/ratpoly.cpp

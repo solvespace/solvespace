@@ -407,6 +407,9 @@ void Group::GenerateShellAndMesh() {
         if(srcg->meshCombine != CombineAs::ASSEMBLE) {
             runningShell.MergeCoincidentSurfaces();
         }
+        
+        // Apply any edge modifiers - chamfer / fillet
+        runningShell.ModifyEdges();
 
         // If the Boolean failed, then we should note that in the text screen
         // for this group.
