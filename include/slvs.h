@@ -40,7 +40,6 @@ typedef uint32_t Slvs_hGroup;
 /* To obtain the 3d (not projected into a workplane) of a constraint or
  * an entity, specify this instead of the workplane. */
 #define SLVS_FREE_IN_3D         0
-#define SLVS_NO_ENTITY          0
 
 typedef struct {
     Slvs_hParam     h;
