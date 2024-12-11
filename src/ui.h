@@ -472,6 +472,7 @@ public:
     static void ScreenChangeShowContourAreas(int link, uint32_t v);
     static void ScreenChangeCheckClosedContour(int link, uint32_t v);
     static void ScreenChangeCameraNav(int link, uint32_t v);
+    static void ScreenChangeZoomNav(int link, uint32_t v);
     static void ScreenChangeTurntableNav(int link, uint32_t v);
     static void ScreenChangeImmediatelyEditDimension(int link, uint32_t v);
     static void ScreenChangeAutomaticLineConstraints(int link, uint32_t v);
