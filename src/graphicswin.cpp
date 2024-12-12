@@ -730,7 +730,12 @@ void GraphicsWindow::ZoomToMouse(double zoomMultiplyer) {
     double offsetRight, offsetUp;
     double righti, upi;
 
-    if (! SS.zoomCenterNav) {
+    // Mouse edit operations currently track the pointer relative to the
+    // initial button press position, so zoomCenterNav is ignored during edits.
+    bool trackPointer = (pending.operation != Pending::NONE) ||
+                        (! SS.zoomCenterNav);
+
+    if (trackPointer) {
         offsetRight = offset.Dot(projRight);
         offsetUp    = offset.Dot(projUp);
 
@@ -747,7 +752,7 @@ void GraphicsWindow::ZoomToMouse(double zoomMultiplyer) {
 
     scale *= exp(0.1823216 * zoomMultiplyer); // ln(1.2) = 0.1823216
 
-    if (! SS.zoomCenterNav) {
+    if (trackPointer) {
         double rightf = currentMousePosition.x / scale - offsetRight;
         double upf    = currentMousePosition.y / scale - offsetUp;
 
