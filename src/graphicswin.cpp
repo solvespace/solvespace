@@ -726,14 +726,14 @@ double GraphicsWindow::ZoomToFit(const Camera &camera,
 }
 
 
-void GraphicsWindow::ZoomToMouse(double zoomMultiplyer) {
+void GraphicsWindow::ZoomToMouse(double zoomMultiplyer, bool centered) {
     double offsetRight, offsetUp;
     double righti, upi;
 
     // Mouse edit operations currently track the pointer relative to the
-    // initial button press position, so zoomCenterNav is ignored during edits.
-    bool trackPointer = (pending.operation != Pending::NONE) ||
-                        (! SS.zoomCenterNav);
+    // initial button press position, so centered is currently ignored during
+    // edits.
+    bool trackPointer = (pending.operation != Pending::NONE) || (! centered);
 
     if (trackPointer) {
         offsetRight = offset.Dot(projRight);
@@ -773,11 +773,11 @@ void GraphicsWindow::ZoomToMouse(double zoomMultiplyer) {
 void GraphicsWindow::MenuView(Command id) {
     switch(id) {
         case Command::ZOOM_IN:
-            SS.GW.ZoomToMouse(1);
+            SS.GW.ZoomToMouse(1, SS.zoomCenterNav);
             break;
 
         case Command::ZOOM_OUT:
-            SS.GW.ZoomToMouse(-1);
+            SS.GW.ZoomToMouse(-1, SS.zoomCenterNav);
             break;
 
         case Command::ZOOM_TO_FIT:

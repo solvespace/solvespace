@@ -923,7 +923,8 @@ bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
             break;
 
         case MouseEvent::Type::SCROLL_VERT:
-            this->MouseScroll(event.shiftDown ? event.scrollDelta / 10 : event.scrollDelta);
+            this->MouseScroll(event.shiftDown ? event.scrollDelta / 10 : event.scrollDelta,
+                              event.controlDown);
             break;
 
         case MouseEvent::Type::LEAVE:
@@ -1488,7 +1489,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
     }
 }
 
-void GraphicsWindow::MouseScroll(double zoomMultiplyer) {
+void GraphicsWindow::MouseScroll(double zoomMultiplyer, bool alt) {
     // To support smooth scrolling where scroll wheel events come in increments
     // smaller (or larger) than 1 we do:
     //     scale *= exp(ln(1.2) * zoomMultiplyer);
@@ -1499,7 +1500,7 @@ void GraphicsWindow::MouseScroll(double zoomMultiplyer) {
     // while
     //     scale * a * b != scale * (a+b)
     // So this constant is ln(1.2) = 0.1823216 to make the default zoom 1.2x
-    ZoomToMouse(zoomMultiplyer);
+    ZoomToMouse(zoomMultiplyer, alt ? ! SS.zoomCenterNav : SS.zoomCenterNav);
 }
 
 void GraphicsWindow::MouseLeave() {

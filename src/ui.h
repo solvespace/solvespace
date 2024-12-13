@@ -649,7 +649,7 @@ public:
     void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
                                  double *wmin, bool usePerspective,
                                  const Camera &camera);
-    void ZoomToMouse(double delta);
+    void ZoomToMouse(double delta, bool centered);
     void LoopOverPoints(const std::vector<Entity *> &entities,
                         const std::vector<Constraint *> &constraints,
                         const std::vector<hEntity> &faces,
@@ -875,7 +875,7 @@ public:
     void MouseLeftDoubleClick(double x, double y);
     void MouseMiddleOrRightDown(double x, double y);
     void MouseRightUp(double x, double y);
-    void MouseScroll(double delta);
+    void MouseScroll(double delta, bool alt);
     void MouseLeave();
     bool KeyboardEvent(Platform::KeyboardEvent event);
     void EditControlDone(const std::string &s);
