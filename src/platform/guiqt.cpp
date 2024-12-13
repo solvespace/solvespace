@@ -587,21 +587,26 @@ void SSView::paintGL() {
     receiver->onRender();
 }
 
+static inline void setMouseKeyModifiers(MouseEvent& me, const QInputEvent* qe)
+{
+    Qt::KeyboardModifiers mod = qe->modifiers();
+    me.shiftDown   = mod & Qt::ShiftModifier   ? true : false;
+    me.controlDown = mod & Qt::ControlModifier ? true : false;
+}
+
 void SSView::wheelEvent(QWheelEvent* event)
 {
     const double wheelDelta=120.0;
     slvMouseEvent.button = MouseEvent::Button::NONE;
     slvMouseEvent.type = MouseEvent::Type::SCROLL_VERT;
     slvMouseEvent.scrollDelta = (double)event->angleDelta().y() / wheelDelta;
+    setMouseKeyModifiers(slvMouseEvent, event);
 
     receiver->onMouseEvent(slvMouseEvent);
 }
 
 void SSView::updateSlvSpaceMouseEvent(QMouseEvent* event)
 {
-    slvMouseEvent.shiftDown = false;
-    slvMouseEvent.controlDown = false;
-
     switch (event->type())
     {
     case QEvent::MouseMove:
@@ -656,17 +661,8 @@ void SSView::updateSlvSpaceMouseEvent(QMouseEvent* event)
     slvMouseEvent.x = double(event->x());
     slvMouseEvent.y = double(event->y());
 #endif
-    Qt::KeyboardModifiers keyModifier = QGuiApplication::keyboardModifiers();
 
-    switch (keyModifier)
-    {
-    case Qt::ShiftModifier:
-        slvMouseEvent.shiftDown = true;
-        break;
-    case Qt::ControlModifier:
-        slvMouseEvent.controlDown = true;
-        break;
-    }
+    setMouseKeyModifiers(slvMouseEvent, event);
 
     receiver->onMouseEvent(slvMouseEvent);
 }
@@ -674,12 +670,10 @@ void SSView::updateSlvSpaceMouseEvent(QMouseEvent* event)
 void SSView::updateSlvSpaceKeyEvent(QKeyEvent* event)
 {
     slvKeyEvent.key = KeyboardEvent::Key(-1);
-    slvKeyEvent.shiftDown = false;
-    slvKeyEvent.controlDown = false;
-    if (event->modifiers() == Qt::ShiftModifier)
-        slvKeyEvent.shiftDown = true;
-    if (event->modifiers() == Qt::ControlModifier)
-        slvKeyEvent.controlDown = true;
+
+    Qt::KeyboardModifiers mod = event->modifiers();
+    slvKeyEvent.shiftDown   = mod & Qt::ShiftModifier   ? true : false;
+    slvKeyEvent.controlDown = mod & Qt::ControlModifier ? true : false;
 
     if (event->key() >= Qt::Key_F1 && event->key() <= Qt::Key_F35) {
         slvKeyEvent.key = KeyboardEvent::Key::FUNCTION;
