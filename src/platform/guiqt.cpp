@@ -302,7 +302,7 @@ public:
     }
 
     void SetAccelerator(KeyboardEvent accel) override {
-        int key;
+        int key = 0;
 
         if (accel.key == KeyboardEvent::Key::CHARACTER) {
             if (accel.chr == '\t') {
@@ -318,13 +318,15 @@ public:
             key = Qt::Key_F1 + accel.num - 1;
         }
 
-        if (accel.controlDown) {
-            key |= Qt::CTRL;
+        if (key) {
+            if (accel.controlDown) {
+                key |= Qt::CTRL;
+            }
+            if (accel.shiftDown) {
+                key |= Qt::SHIFT;
+            }
+            action.setShortcut(key);
         }
-        if (accel.shiftDown) {
-            key |= Qt::SHIFT;
-        }
-        action.setShortcut(key);
     }
 
     /*
