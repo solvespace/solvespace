@@ -179,9 +179,15 @@ enum class SolveResult : uint32_t {
 
 
 // Utility functions that are provided in the platform-independent code.
-class utf8_iterator : std::iterator<std::forward_iterator_tag, char32_t> {
+class utf8_iterator {
     const char *p, *n;
 public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = char32_t;
+    using difference_type = std::ptrdiff_t;
+    using pointer = char32_t*;
+    using reference = char32_t&;
+
     utf8_iterator(const char *p) : p(p), n(NULL) {}
     bool           operator==(const utf8_iterator &i) const { return p==i.p; }
     bool           operator!=(const utf8_iterator &i) const { return p!=i.p; }
