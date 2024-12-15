@@ -21,7 +21,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 if(USE_QT_GUI)
 	set(CMAKE_AUTOMOC ON)
-	find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
+	# find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
+	find_package(Qt6 COMPONENTS Core Gui OpenGLWidgets Widgets REQUIRED)
 endif()
 
 # solvespace dependencies
@@ -376,7 +377,9 @@ if(ENABLE_GUI)
             ${FONTCONFIG_LIBRARY_DIRS})
         target_link_libraries(solvespace PRIVATE
             ${FONTCONFIG_LIBRARIES}
-            Qt5::Core Qt5::Gui Qt5::Widgets)
+            # Qt5::Core Qt5::Gui Qt5::Widgets
+            Qt6::Core Qt6::Gui Qt6::OpenGLWidgets Qt6::Widgets
+         )
     else()
         target_sources(solvespace PRIVATE
             platform/guigtk.cpp)
