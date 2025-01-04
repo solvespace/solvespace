@@ -402,7 +402,7 @@ public:
                                  SEdgeList *el, SShell *useCurvesFrom);
     void RewriteSurfaceHandlesForCurves(SShell *a, SShell *b);
     void CleanupAfterBoolean();
-    void GetEdgeModifier(hSCurve hc);
+    double GetEdgeModifier(SCurve &sc);
     void ModifyEdges();
     
     // Definitions when classifying regions of a surface; it is either inside,

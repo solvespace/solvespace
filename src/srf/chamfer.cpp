@@ -18,17 +18,28 @@ typedef struct {
 
 // We return 0 for no feature, radius for a fillet, and for chamfers a negative
 // value whose absolute value is the radius of an equivalent fillet.
-void SShell::GetEdgeModifier(hSCurve hc)
+double SShell::GetEdgeModifier(SCurve &sc)
 {
   // for testing we will hard code stuff like returning a radius for only degree 2 curves.
   // once things work we'll topo-name curves with entity handles and use that to get info.
+  if (!sc.isExact) return 0.0;
+  // chamfer any curve up high
+  if ((sc.exact.deg > 1) && (sc.exact.ctrl[0].z > 9.0)) return -5.0;
   
+  return 0.0;
 }
 
 void SShell::ModifyEdges()
 {
-	// Loop over all curves and create an info struct for the ones to modify
-        // we will call GetEdgeModifier() to get a radius or 0.
+  dbp("checking edges");
+  // Loop over all curves and create an info struct for the ones to modify
+  // we will call GetEdgeModifier() to get a radius or 0.
+  for(int i=0; i<curve.n; i++) {
+    SCurve *sc = &curve[i];
+    double m = GetEdgeModifier(*sc);
+    if (abs(m) > 0.000001)
+      dbp("modify an edge");
+  }
         
 	// create 2 new curves/trims as copies of the original. Tag the original curve.
 	// for trims we can just modify existing and add a new one.
