@@ -718,6 +718,8 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityLi
         return LinkIDF(filename, le, m, sh);
     } else if(strcmp(filename.Extension().c_str(), "stl")==0) {
         return LinkStl(filename, le, m, sh);    
+    } else if(strcmp(filename.Extension().c_str(), "STL")==0) {
+        return LinkStl(filename, le, m, sh);    
     } else {
         return LoadEntitiesFromSlvs(filename, le, m, sh);
     }
