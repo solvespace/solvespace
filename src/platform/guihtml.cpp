@@ -905,7 +905,7 @@ public:
         dbp("Canvas %s: got context %d", emCanvasSel.c_str(), emContext);
     }
 
-    static int ContextLostCallback(int eventType, const void *reserved, void *data) {
+    static bool ContextLostCallback(int eventType, const void *reserved, void *data) {
         WindowImplHtml *window = (WindowImplHtml *)data;
         dbp("Canvas %s: context lost", window->emCanvasSel.c_str());
         window->emContext = 0;
@@ -916,7 +916,7 @@ public:
         return EM_TRUE;
     }
 
-    static int ContextRestoredCallback(int eventType, const void *reserved, void *data) {
+    static bool ContextRestoredCallback(int eventType, const void *reserved, void *data) {
         WindowImplHtml *window = (WindowImplHtml *)data;
         dbp("Canvas %s: context restored", window->emCanvasSel.c_str());
         window->SetupWebGLContext();
