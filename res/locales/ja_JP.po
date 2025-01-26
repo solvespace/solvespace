@@ -2,12 +2,12 @@
 # Copyright (C) 2022 the Solvespace authors
 # This file is distributed under the same license as the SolveSpace package.
 # verylowfreq, 2022.
-#
+# 
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
-"POT-Creation-Date: 2023-01-20 16:45+0200\n"
+"POT-Creation-Date: 2025-01-26 21:04+0200\n"
 "PO-Revision-Date: 2023-01-31 09:44+0900\n"
 "Last-Translator: https://github.com/verylowfreq\n"
 "Language-Team: \n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 3.2.2\n"
 
-#: clipboard.cpp:309
+#: clipboard.cpp:314
 msgid ""
 "Cut, paste, and copy work only in a workplane.\n"
 "\n"
@@ -27,49 +27,49 @@ msgstr ""
 "\n"
 "作業平面は「スケッチ -> 作業平面上でスケッチする」から指定してください。"
 
-#: clipboard.cpp:326
+#: clipboard.cpp:331
 msgid "Clipboard is empty; nothing to paste."
 msgstr "クリップボードは空です。貼り付けるものはありません。"
 
-#: clipboard.cpp:373
+#: clipboard.cpp:378
 msgid "Number of copies to paste must be at least one."
 msgstr "貼り付ける個数は1以上でなければなりません。"
 
-#: clipboard.cpp:389 textscreens.cpp:832
+#: clipboard.cpp:394 textscreens.cpp:879
 msgid "Scale cannot be zero."
 msgstr "縮尺は0にできません。"
 
-#: clipboard.cpp:431
+#: clipboard.cpp:436
 msgid "Select one point to define origin of rotation."
 msgstr "回転の原点を決めるために、点を1つ選択してください。"
 
-#: clipboard.cpp:443
+#: clipboard.cpp:448
 msgid "Select two points to define translation vector."
 msgstr "移動方向を決めるために、点を2つ選択してください。"
 
-#: clipboard.cpp:453
+#: clipboard.cpp:458
 msgid ""
 "Transformation is identity. So all copies will be exactly on top of each "
 "other."
 msgstr "移動量が 0 です。すべての複製は同一位置にあります。"
 
-#: clipboard.cpp:457
+#: clipboard.cpp:462
 msgid "Too many items to paste; split this into smaller pastes."
 msgstr "複製の数が多すぎます。分割してください。"
 
-#: clipboard.cpp:462
+#: clipboard.cpp:467
 msgid "No workplane active."
 msgstr "作業平面がアクティブでありません。"
 
-#: confscreen.cpp:381
+#: confscreen.cpp:410
 msgid "Bad format: specify coordinates as x, y, z"
 msgstr "書式が誤っています。座標を \"x, y, z\" で指定してください。"
 
-#: confscreen.cpp:391 style.cpp:729 textscreens.cpp:863
+#: confscreen.cpp:420 style.cpp:729 textscreens.cpp:910
 msgid "Bad format: specify color as r, g, b"
 msgstr "書式が誤っています。色を \"r, g, b\" で指定してください。"
 
-#: confscreen.cpp:417
+#: confscreen.cpp:446
 msgid ""
 "The perspective factor will have no effect until you enable View -> Use "
 "Perspective Projection."
@@ -77,24 +77,24 @@ msgstr ""
 "透視投影の拡大率は、「表示 -> 透視投影で表示」を有効にするまで反映されませ"
 "ん。"
 
-#: confscreen.cpp:435 confscreen.cpp:445
+#: confscreen.cpp:464 confscreen.cpp:474
 #, c-format
 msgid "Specify between 0 and %d digits after the decimal."
 msgstr "小数点以下の桁数は、0 から %d の範囲で指定してください。"
 
-#: confscreen.cpp:457
+#: confscreen.cpp:486
 msgid "Export scale must not be zero!"
 msgstr "エクスポートの比率には0を指定できません。"
 
-#: confscreen.cpp:469
+#: confscreen.cpp:498
 msgid "Cutter radius offset must not be negative!"
 msgstr "ドリル径は負の値にできません。"
 
-#: confscreen.cpp:528
+#: confscreen.cpp:557
 msgid "Bad value: autosave interval should be positive"
 msgstr "値が誤っています。オートセーブの間隔は正の値を指定してください。"
 
-#: confscreen.cpp:531
+#: confscreen.cpp:560
 msgid "Bad format: specify interval in integral minutes"
 msgstr "書式が誤っています。間隔は分単位で整数を指定してください。"
 
@@ -293,31 +293,76 @@ msgctxt "constr-name"
 msgid "comment"
 msgstr ""
 
-#: constraint.cpp:144
+#: constraint.cpp:151
+msgid ""
+"The point you selected does not belong to the arc. The arc and line segment "
+"do not share an end point.\n"
+"\n"
+"Select the end point of the arc at which you want it to be tangent to the "
+"line."
+msgstr ""
+
+#: constraint.cpp:158
 msgid ""
 "The tangent arc and line segment must share an endpoint. Constrain them with "
-"Constrain -> On Point before constraining tangent."
+"Constrain -> On Point before constraining tangent.\n"
+"\n"
+"Alternatively select the end point of the arc at which you want it to be "
+"tangent to the line."
 msgstr ""
 "正接する円弧と線分は端点を共有している必要があります。正接拘束をする前に「拘"
-"束 -> 一致」で拘束してください。"
+"束 -> 一致」で拘束してください。\n"
+"\n"
+"Alternatively select the end point of the arc at which you want it to be "
+"tangent to the line."
 
-#: constraint.cpp:163
+#: constraint.cpp:186
 msgid ""
-"The tangent cubic and line segment must share an endpoint. Constrain them "
-"with Constrain -> On Point before constraining tangent."
+"The point you selected is not an end point of the cubic spline. The spline "
+"and line segment do not share an end point.\n"
+"\n"
+"Select the end point of the spline at which you want it to be tangent to the "
+"line."
+msgstr ""
+
+#: constraint.cpp:193
+msgid ""
+"The tangent cubic spline and line segment must share an endpoint. Constrain "
+"them with Constrain -> On Point before constraining tangent.\n"
+"\n"
+"Alternatively select the end point of the cubic spline at which you want it "
+"to be tangent to the line."
 msgstr ""
 "ベジェ曲線と線分は端点を共有している必要があります。正接拘束をする前に「拘束 "
-"-> 一致」で拘束してください。"
+"-> 一致」で拘束してください。\n"
+"\n"
+"Alternatively select the end point of the cubic spline at which you want it "
+"to be tangent to the line."
 
-#: constraint.cpp:189
+#: constraint.cpp:237
+msgid ""
+"The points you selected are not end points of the two curves. The curves do "
+"not share an end point.\n"
+"\n"
+"Select the end points of both curves at which you want them to be tangent to "
+"each other."
+msgstr ""
+
+#: constraint.cpp:244
 msgid ""
 "The curves must share an endpoint. Constrain them with Constrain -> On Point "
-"before constraining tangent."
+"before constraining tangent.\n"
+"\n"
+"Alternatively select the end points of both curves at which you want the "
+"curves to be tangent."
 msgstr ""
 "曲線同士は端点を共有している必要があります。正接拘束をする前に「拘束 -> 一"
-"致」で拘束してください。"
+"致」で拘束してください。\n"
+"\n"
+"Alternatively select the end points of both curves at which you want the "
+"curves to be tangent."
 
-#: constraint.cpp:240
+#: constraint.cpp:303
 msgid ""
 "Bad selection for distance / diameter constraint. This constraint can apply "
 "to:\n"
@@ -341,7 +386,7 @@ msgstr ""
 "　* 1 つの円もしくは円弧 (直径)\n"
 "\n"
 
-#: constraint.cpp:303
+#: constraint.cpp:366
 msgid ""
 "Bad selection for on point / curve / plane constraint. This constraint can "
 "apply to:\n"
@@ -360,7 +405,7 @@ msgstr ""
 "　* 1 つの点と、1つの円もしくは円弧 (点を曲線上に)\n"
 "　* 1 つの点と、1 から3つの平面フェイス (点をフェイス上に)\n"
 
-#: constraint.cpp:364
+#: constraint.cpp:427
 msgid ""
 "Bad selection for equal length / radius constraint. This constraint can "
 "apply to:\n"
@@ -383,7 +428,7 @@ msgstr ""
 "　* 2 つ以上の円もしくは円弧 (半径を同じに)\n"
 "　* 1 つの線分と 1 つの円弧 (線分の長さと円弧の長さを同じに)\n"
 
-#: constraint.cpp:417
+#: constraint.cpp:480
 msgid ""
 "Bad selection for length ratio constraint. This constraint can apply to:\n"
 "\n"
@@ -397,7 +442,7 @@ msgstr ""
 "　* 2 つの円弧\n"
 "　* 円弧と線分\n"
 
-#: constraint.cpp:452
+#: constraint.cpp:515
 msgid ""
 "Bad selection for length difference constraint. This constraint can apply "
 "to:\n"
@@ -412,7 +457,7 @@ msgstr ""
 "　* 2 つの円弧\n"
 "　* 円弧と線分\n"
 
-#: constraint.cpp:487
+#: constraint.cpp:550
 msgid ""
 "Bad selection for at midpoint constraint. This constraint can apply to:\n"
 "\n"
@@ -424,7 +469,7 @@ msgstr ""
 "　* 線分と点 (点を直線の中点に置きます)\n"
 "　* 線分と作業平面 (直線の中点を作業平面上に置きます)\n"
 
-#: constraint.cpp:545
+#: constraint.cpp:608
 msgid ""
 "Bad selection for symmetric constraint. This constraint can apply to:\n"
 "\n"
@@ -442,7 +487,7 @@ msgstr ""
 "　* 作業平面と、2 つの点もしくは 1 つの線分 (作業平面について対称をとりま"
 "す)\n"
 
-#: constraint.cpp:560
+#: constraint.cpp:623
 msgid ""
 "A workplane must be active when constraining symmetric without an explicit "
 "symmetry plane."
@@ -450,7 +495,7 @@ msgstr ""
 "明示的に対称平面を指定しない場合は、対象拘束をするには作業平面をアクティブに"
 "してください。"
 
-#: constraint.cpp:600
+#: constraint.cpp:663
 msgid ""
 "Activate a workplane (with Sketch -> In Workplane) before applying a "
 "horizontal or vertical constraint."
@@ -458,7 +503,7 @@ msgstr ""
 "垂直拘束や水平拘束をする前に、「スケッチ -> 作業平面上でスケッチする」で作業"
 "平面をアクティブにしてください。"
 
-#: constraint.cpp:616
+#: constraint.cpp:679
 msgid ""
 "Bad selection for horizontal / vertical constraint. This constraint can "
 "apply to:\n"
@@ -471,7 +516,7 @@ msgstr ""
 "　* 2つ以上の点\n"
 "　* 1つ以上の線分\n"
 
-#: constraint.cpp:634
+#: constraint.cpp:697
 msgid ""
 "Bad selection for same orientation constraint. This constraint can apply "
 "to:\n"
@@ -482,15 +527,15 @@ msgstr ""
 "\n"
 "　* 2 つの法線\n"
 
-#: constraint.cpp:685
+#: constraint.cpp:748
 msgid "Must select an angle constraint."
 msgstr "角度拘束を選択してください。"
 
-#: constraint.cpp:698
+#: constraint.cpp:761
 msgid "Must select a constraint with associated label."
 msgstr "値を持つ拘束を選択してください。"
 
-#: constraint.cpp:721
+#: constraint.cpp:784
 msgid ""
 "Bad selection for angle constraint. This constraint can apply to:\n"
 "\n"
@@ -514,11 +559,11 @@ msgstr ""
 "　* 4つの線分もしくは法線 (AとB、CとDの角度を同じにする)\n"
 "　* 3つの線分もしくは法線 (AとB、BとCの角度を同じにする)\n"
 
-#: constraint.cpp:805
+#: constraint.cpp:872
 msgid "Curve-curve tangency must apply in workplane."
 msgstr "曲線同士の正接は作業平面上で適用できます。"
 
-#: constraint.cpp:818
+#: constraint.cpp:887
 msgid ""
 "Bad selection for parallel / tangent constraint. This constraint can apply "
 "to:\n"
@@ -528,6 +573,8 @@ msgid ""
 "    * one or more line segments and one or more normals (parallel)\n"
 "    * two or more normals (parallel)\n"
 "    * two line segments, arcs, or beziers, that share an endpoint (tangent)\n"
+"    * two line segments, arcs, or beziers, that do not share an endpoint and "
+"the end point(s) of the curve(s) (tangent)\n"
 msgstr ""
 "平行・正接拘束ができませんでした。次の要素に適用できます:\n"
 "\n"
@@ -536,8 +583,10 @@ msgstr ""
 "　* 1つ以上の線分と1つ以上の法線 (平行に)\n"
 "　* 2つ以上の法線 (平行に)\n"
 "　* 端点の1つが一致する、2つの線分か円弧かベジェ曲線 (正接に)\n"
+"    * two line segments, arcs, or beziers, that do not share an endpoint and "
+"the end point(s) of the curve(s) (tangent)\n"
 
-#: constraint.cpp:843
+#: constraint.cpp:914
 msgid ""
 "Bad selection for perpendicular constraint. This constraint can apply to:\n"
 "\n"
@@ -553,7 +602,7 @@ msgstr ""
 "　* 1つの線分と1つの法線\n"
 "　* 2つの法線\n"
 
-#: constraint.cpp:860
+#: constraint.cpp:931
 msgid ""
 "Bad selection for lock point where dragged constraint. This constraint can "
 "apply to:\n"
@@ -565,11 +614,11 @@ msgstr ""
 "\n"
 "　* 1 つの点\n"
 
-#: constraint.cpp:875 mouse.cpp:1158
+#: constraint.cpp:946 mouse.cpp:1160
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "(コメント - ダブルクリックで編集)"
 
-#: constraint.cpp:881
+#: constraint.cpp:952
 msgid "click center of comment text"
 msgstr "コメントテキストの中心をクリックで指定"
 
@@ -633,11 +682,11 @@ msgctxt "group-name"
 msgid "#references"
 msgstr ""
 
-#: file.cpp:550
+#: file.cpp:555
 msgid "The file is empty. It may be corrupt."
 msgstr "ファイルが空です。ファイルが破損している可能性があります。"
 
-#: file.cpp:555
+#: file.cpp:560
 msgid ""
 "Unrecognized data in file. This file may be corrupt, or from a newer version "
 "of the program."
@@ -645,18 +694,18 @@ msgstr ""
 "ファイルに処理できないデータが含まれています。ファイルが破損しているか、より"
 "新しいバージョンで作成されたファイルの可能性があります。"
 
-#: file.cpp:867
+#: file.cpp:876
 msgctxt "title"
 msgid "Missing File"
 msgstr "不明ファイル"
 
-#: file.cpp:868
+#: file.cpp:877
 #, c-format
 msgctxt "dialog"
 msgid "The linked file “%s” is not present."
 msgstr "リンクされたファイル \"%s\" が見つかりません。"
 
-#: file.cpp:870
+#: file.cpp:879
 msgctxt "dialog"
 msgid ""
 "Do you want to locate it manually?\n"
@@ -668,17 +717,17 @@ msgstr ""
 "\n"
 "キャンセルした場合、不明なファイルに依存しているすべての寸法は削除されます。"
 
-#: file.cpp:873
+#: file.cpp:882
 msgctxt "button"
 msgid "&Yes"
 msgstr "はい (&Y)"
 
-#: file.cpp:875
+#: file.cpp:884
 msgctxt "button"
 msgid "&No"
 msgstr "いいえ (&N)"
 
-#: file.cpp:877 solvespace.cpp:634
+#: file.cpp:886 solvespace.cpp:652
 msgctxt "button"
 msgid "&Cancel"
 msgstr "キャンセル (&C)"
@@ -948,8 +997,8 @@ msgid "Datum &Point"
 msgstr "点 (&P)"
 
 #: graphicswin.cpp:129
-msgid "&Workplane"
-msgstr "作業平面 (&W)"
+msgid "Wor&kplane"
+msgstr "作業平面 (&k)"
 
 #: graphicswin.cpp:131
 msgid "Line &Segment"
@@ -980,16 +1029,16 @@ msgid "&Text in TrueType Font"
 msgstr "TrueTypeフォントのテキスト (&T)"
 
 #: graphicswin.cpp:139
-msgid "&Image"
-msgstr "画像 (&I)"
+msgid "I&mage"
+msgstr "画像 (&m)"
 
 #: graphicswin.cpp:141
 msgid "To&ggle Construction"
 msgstr "補助線との切り替え (&g)"
 
 #: graphicswin.cpp:142
-msgid "Tangent &Arc at Point"
-msgstr "フィレット"
+msgid "Ta&ngent Arc at Point"
+msgstr "フィレット(&n)"
 
 #: graphicswin.cpp:143
 msgid "Split Curves at &Intersection"
@@ -1148,11 +1197,11 @@ msgstr "(履歴なし)"
 msgid "File '%s' does not exist."
 msgstr "ファイル '%s' は存在しません。"
 
-#: graphicswin.cpp:773
+#: graphicswin.cpp:779
 msgid "No workplane is active, so the grid will not appear."
 msgstr "作業平面がアクティブでないため、グリッドは表示されません。"
 
-#: graphicswin.cpp:788
+#: graphicswin.cpp:794
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel "
 "projection.\n"
@@ -1165,16 +1214,16 @@ msgstr ""
 "透視投影にするには、係数を configuration から変更してください。値は 0.3 くら"
 "いが一般的です。"
 
-#: graphicswin.cpp:878
+#: graphicswin.cpp:884
 msgid ""
 "Select a point; this point will become the center of the view on screen."
 msgstr "スクリーンの中央とする点を指定してください。"
 
-#: graphicswin.cpp:1178
+#: graphicswin.cpp:1193
 msgid "No additional entities share endpoints with the selected entities."
 msgstr "選択した要素と端点を共有する要素は、これ以上ありません。"
 
-#: graphicswin.cpp:1196
+#: graphicswin.cpp:1211
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
@@ -1182,7 +1231,7 @@ msgstr ""
 "このコマンドを利用するには、リンクされた部品の要素や点を選択するか、リンクの"
 "グループをアクティブにしてください。"
 
-#: graphicswin.cpp:1219
+#: graphicswin.cpp:1234
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
@@ -1190,7 +1239,7 @@ msgstr ""
 "作業平面がアクティブではありません。グリッドの平面を指定するには作業平面をア"
 "クティブにしてください (「スケッチ -> 作業平面上でスケッチする」)。"
 
-#: graphicswin.cpp:1226
+#: graphicswin.cpp:1241
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
@@ -1199,13 +1248,13 @@ msgstr ""
 "値のある拘束を選択してください。直線をグリッドに合わせるには、端点を選択して"
 "ください。"
 
-#: graphicswin.cpp:1311
+#: graphicswin.cpp:1326
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr ""
 "作業平面がアクティブではありません。現在のグループのデフォルトの作業平面をア"
 "クティブにします。"
 
-#: graphicswin.cpp:1314
+#: graphicswin.cpp:1329
 msgid ""
 "No workplane is selected, and the active group does not have a default "
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
@@ -1215,7 +1264,7 @@ msgstr ""
 "平面がありません。作業平面を選択するか、新しく作業平面グループを作成してくだ"
 "さい。"
 
-#: graphicswin.cpp:1335
+#: graphicswin.cpp:1350
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
@@ -1224,47 +1273,47 @@ msgstr ""
 "作成します。なにも選択されていなければ、フィレット作成時のパラメーターを設定"
 "できます。"
 
-#: graphicswin.cpp:1346
+#: graphicswin.cpp:1361
 msgid "click point on arc (draws anti-clockwise)"
 msgstr "円弧上の点をクリックで指定 (反時計回りに描きます)"
 
-#: graphicswin.cpp:1347
+#: graphicswin.cpp:1362
 msgid "click to place datum point"
 msgstr "点の位置をクリックで指定"
 
-#: graphicswin.cpp:1348
+#: graphicswin.cpp:1363
 msgid "click first point of line segment"
 msgstr "線分の最初の点をクリックで指定"
 
-#: graphicswin.cpp:1350
+#: graphicswin.cpp:1365
 msgid "click first point of construction line segment"
 msgstr "補助線の線分の最初の点をクリックで指定"
 
-#: graphicswin.cpp:1351
+#: graphicswin.cpp:1366
 msgid "click first point of cubic segment"
 msgstr "ベジェ曲線の最初の点をクリックで指定"
 
-#: graphicswin.cpp:1352
+#: graphicswin.cpp:1367
 msgid "click center of circle"
 msgstr "円の中央をクリックで指定"
 
-#: graphicswin.cpp:1353
+#: graphicswin.cpp:1368
 msgid "click origin of workplane"
 msgstr "作業平面の原点をクリックで指定"
 
-#: graphicswin.cpp:1354
+#: graphicswin.cpp:1369
 msgid "click one corner of rectangle"
 msgstr "四角形の角のひとつをクリックで指定"
 
-#: graphicswin.cpp:1355
+#: graphicswin.cpp:1370
 msgid "click top left of text"
 msgstr "テキストの右上をクリックで指定する"
 
-#: graphicswin.cpp:1361
+#: graphicswin.cpp:1376
 msgid "click top left of image"
 msgstr "画像の右上をクリックで指定する"
 
-#: graphicswin.cpp:1387
+#: graphicswin.cpp:1402
 msgid ""
 "No entities are selected. Select entities before trying to toggle their "
 "construction state."
@@ -1401,7 +1450,7 @@ msgctxt "group-name"
 msgid "translate"
 msgstr ""
 
-#: group.cpp:420
+#: group.cpp:422
 msgid "(unnamed)"
 msgstr "(名称未設定)"
 
@@ -1465,104 +1514,104 @@ msgstr "互いに交差している 2 つの要素を選択してください (�
 msgid "Can't split; no intersection found."
 msgstr "交差箇所が見つからないため、分割できません。"
 
-#: mouse.cpp:557
+#: mouse.cpp:558
 msgid "Assign to Style"
 msgstr "スタイルを割り当て"
 
-#: mouse.cpp:573
+#: mouse.cpp:574
 msgid "No Style"
 msgstr "スタイル指定なし"
 
-#: mouse.cpp:576
+#: mouse.cpp:577
 msgid "Newly Created Custom Style..."
 msgstr "スタイルを作成して割り当て..."
 
-#: mouse.cpp:583
+#: mouse.cpp:584
 msgid "Group Info"
 msgstr "グループ情報"
 
-#: mouse.cpp:603
+#: mouse.cpp:604
 msgid "Style Info"
 msgstr "スタイル情報"
 
-#: mouse.cpp:623
+#: mouse.cpp:624
 msgid "Select Edge Chain"
 msgstr "接続しているエッジをまとめて選択"
 
-#: mouse.cpp:629
+#: mouse.cpp:630
 msgid "Toggle Reference Dimension"
 msgstr "参照寸法と切り替え"
 
-#: mouse.cpp:635
+#: mouse.cpp:636
 msgid "Other Supplementary Angle"
 msgstr "補角と切り替え"
 
-#: mouse.cpp:640
+#: mouse.cpp:641
 msgid "Snap to Grid"
 msgstr "グリッドに沿わせる"
 
-#: mouse.cpp:649
+#: mouse.cpp:650
 msgid "Remove Spline Point"
 msgstr "スプラインの制御点を削除"
 
-#: mouse.cpp:684
+#: mouse.cpp:685
 msgid "Add Spline Point"
 msgstr "スプラインの制御点を追加"
 
-#: mouse.cpp:688
+#: mouse.cpp:689
 msgid "Cannot add spline point: maximum number of points reached."
 msgstr ""
 "スプラインの制御点を追加できませんでした。点の個数の上限に達しています。"
 
-#: mouse.cpp:713
+#: mouse.cpp:714
 msgid "Toggle Construction"
 msgstr "補助線との切り替え"
 
-#: mouse.cpp:729
+#: mouse.cpp:730
 msgid "Delete Point-Coincident Constraint"
 msgstr "点の一致拘束を削除する"
 
-#: mouse.cpp:747
+#: mouse.cpp:748
 msgid "Cut"
 msgstr "切り取り"
 
-#: mouse.cpp:749
+#: mouse.cpp:750
 msgid "Copy"
 msgstr "コピー"
 
-#: mouse.cpp:753
+#: mouse.cpp:754
 msgid "Select All"
 msgstr "すべてを選択"
 
-#: mouse.cpp:758
+#: mouse.cpp:759
 msgid "Paste"
 msgstr "貼り付け"
 
-#: mouse.cpp:760
+#: mouse.cpp:761
 msgid "Paste Transformed..."
 msgstr "複製しながら貼り付け..."
 
-#: mouse.cpp:765
+#: mouse.cpp:766
 msgid "Delete"
 msgstr "削除"
 
-#: mouse.cpp:768
+#: mouse.cpp:769
 msgid "Unselect All"
 msgstr "選択を解除"
 
-#: mouse.cpp:775
+#: mouse.cpp:776
 msgid "Unselect Hovered"
 msgstr "カーソルを当てている要素の選択を解除"
 
-#: mouse.cpp:784
+#: mouse.cpp:785
 msgid "Zoom to Fit"
 msgstr "選択オブジェクトの最適表示"
 
-#: mouse.cpp:986 mouse.cpp:1274
+#: mouse.cpp:987 mouse.cpp:1276
 msgid "click next point of line, or press Esc"
 msgstr "直線の次の点をクリックで指定、もしくはESCで終了"
 
-#: mouse.cpp:992
+#: mouse.cpp:993
 msgid ""
 "Can't draw rectangle in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1570,15 +1619,15 @@ msgstr ""
 "三次元空間内に四角形はスケッチできません。「スケッチ -> 作業平面上でスケッチ"
 "する」で作業平面をアクティブにしてください。"
 
-#: mouse.cpp:1026
+#: mouse.cpp:1027
 msgid "click to place other corner of rectangle"
 msgstr "四角形のもう一つの角をクリックで指定"
 
-#: mouse.cpp:1047
+#: mouse.cpp:1048
 msgid "click to set radius"
 msgstr "半径をクリックで指定"
 
-#: mouse.cpp:1052
+#: mouse.cpp:1053
 msgid ""
 "Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1586,22 +1635,22 @@ msgstr ""
 "三次元空間内に円弧はスケッチできません。「スケッチ -> 作業平面上でスケッチす"
 "る」で作業平面をアクティブにしてください。"
 
-#: mouse.cpp:1071
+#: mouse.cpp:1072
 msgid "click to place point"
 msgstr "点の位置をクリックで指定"
 
-#: mouse.cpp:1087
+#: mouse.cpp:1088
 msgid "click next point of cubic, or press Esc"
 msgstr "ベジェ曲線の次の点をクリックで指定、もしくはESCで終了"
 
-#: mouse.cpp:1092
+#: mouse.cpp:1093
 msgid ""
 "Sketching in a workplane already; sketch in 3d before creating new workplane."
 msgstr ""
 "すでに作業平面上でのスケッチをしています。新しい作業平面を作成する前に、三次"
 "元空間内でスケッチしてください。"
 
-#: mouse.cpp:1108
+#: mouse.cpp:1109
 msgid ""
 "Can't draw text in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1609,11 +1658,11 @@ msgstr ""
 "三次元空間内にテキストはスケッチできません。「スケッチ -> 作業平面上でスケッ"
 "チする」で作業平面をアクティブにしてください。"
 
-#: mouse.cpp:1125
+#: mouse.cpp:1126
 msgid "click to place bottom right of text"
 msgstr "テキストの左下の位置をクリックで指定"
 
-#: mouse.cpp:1131
+#: mouse.cpp:1132
 msgid ""
 "Can't draw image in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
@@ -1621,7 +1670,7 @@ msgstr ""
 "三次元空間内に画像はスケッチできません。「スケッチ -> 作業平面上でスケッチす"
 "る」で作業平面をアクティブにしてください。"
 
-#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:565
+#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:583
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "SolveSpaceモデル"
@@ -1716,104 +1765,104 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "CSV ファイル (Comma-separated values)"
 
-#: platform/guigtk.cpp:1382 platform/guimac.mm:1513 platform/guiwin.cpp:1641
+#: platform/guigtk.cpp:1434 platform/guimac.mm:1513 platform/guiwin.cpp:1641
 msgid "untitled"
 msgstr "名称未設定"
 
-#: platform/guigtk.cpp:1393 platform/guigtk.cpp:1426 platform/guimac.mm:1471
+#: platform/guigtk.cpp:1445 platform/guigtk.cpp:1481 platform/guimac.mm:1471
 #: platform/guiwin.cpp:1639
 msgctxt "title"
 msgid "Save File"
 msgstr "ファイルを保存"
 
-#: platform/guigtk.cpp:1394 platform/guigtk.cpp:1427 platform/guimac.mm:1454
+#: platform/guigtk.cpp:1446 platform/guigtk.cpp:1482 platform/guimac.mm:1454
 #: platform/guiwin.cpp:1645
 msgctxt "title"
 msgid "Open File"
 msgstr "ファイルを開く"
 
-#: platform/guigtk.cpp:1397 platform/guigtk.cpp:1433
+#: platform/guigtk.cpp:1449 platform/guigtk.cpp:1488
 msgctxt "button"
 msgid "_Cancel"
 msgstr "キャンセル (_C)"
 
-#: platform/guigtk.cpp:1398 platform/guigtk.cpp:1431
+#: platform/guigtk.cpp:1450 platform/guigtk.cpp:1486
 msgctxt "button"
 msgid "_Save"
 msgstr "保存 (_S)"
 
-#: platform/guigtk.cpp:1399 platform/guigtk.cpp:1432
+#: platform/guigtk.cpp:1451 platform/guigtk.cpp:1487
 msgctxt "button"
 msgid "_Open"
 msgstr "開く (_O)"
 
-#: solvespace.cpp:167
+#: solvespace.cpp:175
 msgctxt "title"
 msgid "Autosave Available"
 msgstr "オートセーブファイルがあります"
 
-#: solvespace.cpp:168
+#: solvespace.cpp:176
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
 msgstr "このスケッチにはオートセーブファイルがあります。"
 
-#: solvespace.cpp:169
+#: solvespace.cpp:177
 msgctxt "dialog"
 msgid "Do you want to load the autosave file instead?"
 msgstr "代わりにオートセーブファイル読み込みますか？"
 
-#: solvespace.cpp:170
+#: solvespace.cpp:178
 msgctxt "button"
 msgid "&Load autosave"
 msgstr "オートセーブファイルを読み込む (&L)"
 
-#: solvespace.cpp:172
+#: solvespace.cpp:180
 msgctxt "button"
 msgid "Do&n't Load"
 msgstr "読み込まない (&n)"
 
-#: solvespace.cpp:622
+#: solvespace.cpp:640
 msgctxt "title"
 msgid "Modified File"
 msgstr "編集済みファイル"
 
-#: solvespace.cpp:624
+#: solvespace.cpp:642
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
 msgstr "スケッチ \"%s\" への変更を保存しますか？"
 
-#: solvespace.cpp:627
+#: solvespace.cpp:645
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
 msgstr "新規スケッチへの変更を保存しますか？"
 
-#: solvespace.cpp:630
+#: solvespace.cpp:648
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
 msgstr "保存しなければ変更は失われます。"
 
-#: solvespace.cpp:631
+#: solvespace.cpp:649
 msgctxt "button"
 msgid "&Save"
 msgstr "保存する (&S)"
 
-#: solvespace.cpp:633
+#: solvespace.cpp:651
 msgctxt "button"
 msgid "Do&n't Save"
 msgstr "保存しない (&n)"
 
-#: solvespace.cpp:654
+#: solvespace.cpp:672
 msgctxt "title"
 msgid "(new sketch)"
 msgstr "(新規スケッチ)"
 
-#: solvespace.cpp:661
+#: solvespace.cpp:683
 msgctxt "title"
 msgid "Property Browser"
 msgstr "プロパティブラウザ"
 
-#: solvespace.cpp:724
+#: solvespace.cpp:746
 msgid ""
 "Constraints are currently shown, and will be exported in the toolpath. This "
 "is probably not what you want; hide them by clicking the link at the top of "
@@ -1823,7 +1872,7 @@ msgstr ""
 "した動作ではないかもしれません。プロパティブラウザの上部にあるボタンで非表示"
 "にできます。"
 
-#: solvespace.cpp:812
+#: solvespace.cpp:834
 #, c-format
 msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
@@ -1832,19 +1881,19 @@ msgstr ""
 "拡張子からファイル形式を特定できませんでした ( '%s' )。 \".dxf\" や \".dwg\" "
 "を試してください。"
 
-#: solvespace.cpp:864
+#: solvespace.cpp:886
 msgid "Constraint must have a label, and must not be a reference dimension."
 msgstr "参照寸法ではなく、かつ、値のある拘束を選択してください。"
 
-#: solvespace.cpp:868
+#: solvespace.cpp:890
 msgid "Bad selection for step dimension; select a constraint."
 msgstr "寸法の段階的変更には無効な選択です。値のある拘束を選択してください。"
 
-#: solvespace.cpp:892
+#: solvespace.cpp:914
 msgid "The assembly does not interfere, good."
 msgstr "部品の干渉はありませんでした。"
 
-#: solvespace.cpp:908
+#: solvespace.cpp:930
 #, c-format
 msgid ""
 "The volume of the solid model is:\n"
@@ -1855,7 +1904,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: solvespace.cpp:917
+#: solvespace.cpp:939
 #, c-format
 msgid ""
 "\n"
@@ -1868,7 +1917,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: solvespace.cpp:922
+#: solvespace.cpp:944
 msgid ""
 "\n"
 "\n"
@@ -1880,7 +1929,7 @@ msgstr ""
 "曲面はトライアングルに近似します。\n"
 "これにより通常、約 1% の誤差が発生します。"
 
-#: solvespace.cpp:937
+#: solvespace.cpp:959
 #, c-format
 msgid ""
 "The surface area of the selected faces is:\n"
@@ -1897,7 +1946,7 @@ msgstr ""
 "曲線は区分線形に近似します。\n"
 "これにより通常、約 1%% の誤差が発生します。"
 
-#: solvespace.cpp:946
+#: solvespace.cpp:968
 msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
@@ -1905,7 +1954,7 @@ msgstr ""
 "このグループは正常に構成された二次元の閉じた領域が含まれていません。領域が開"
 "いているか、同一平面上にないか、自己交差しています。"
 
-#: solvespace.cpp:958
+#: solvespace.cpp:980
 #, c-format
 msgid ""
 "The area of the region sketched in this group is:\n"
@@ -1922,7 +1971,7 @@ msgstr ""
 "曲線は区分線形に近似します。\n"
 "これにより通常、約 1%% の誤差が発生します。"
 
-#: solvespace.cpp:978
+#: solvespace.cpp:1000
 #, c-format
 msgid ""
 "The total length of the selected entities is:\n"
@@ -1939,37 +1988,37 @@ msgstr ""
 "曲線は区分線形に近似します。\n"
 "これにより通常、約 1%% の誤差が発生します。"
 
-#: solvespace.cpp:984
+#: solvespace.cpp:1006
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
 msgstr ""
 "外周長の計測には無効な選択です。線分、円弧、もしくは曲線を選択してください。"
 
-#: solvespace.cpp:1000
+#: solvespace.cpp:1022
 msgid "Bad selection for trace; select a single point."
 msgstr "点の位置の記録には無効な選択です。ひとつの点を選択してください。"
 
-#: solvespace.cpp:1027
+#: solvespace.cpp:1049
 #, c-format
 msgid "Couldn't write to '%s'"
 msgstr "'%s' へ書き込めませんでした。"
 
-#: solvespace.cpp:1057
+#: solvespace.cpp:1079
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
 msgstr "メッシュが自身と交差しています (警告)"
 
-#: solvespace.cpp:1058
+#: solvespace.cpp:1080
 msgid "The mesh is not self-intersecting (okay, valid)."
 msgstr "メッシュは自己交差していません (適切)"
 
-#: solvespace.cpp:1060
+#: solvespace.cpp:1082
 msgid "The mesh has naked edges (NOT okay, invalid)."
 msgstr "メッシュには浮いたエッジが含まれています (警告)"
 
-#: solvespace.cpp:1061
+#: solvespace.cpp:1083
 msgid "The mesh is watertight (okay, valid)."
 msgstr "メッシュには隙間はありません (適切)"
 
-#: solvespace.cpp:1064
+#: solvespace.cpp:1086
 #, c-format
 msgid ""
 "\n"
@@ -1981,7 +2030,7 @@ msgstr ""
 "モデルには %d 個のトライアングルがあり、これが %d 個のサーフェスを構成しま"
 "す。"
 
-#: solvespace.cpp:1068
+#: solvespace.cpp:1090
 #, c-format
 msgid ""
 "%s\n"
@@ -1996,7 +2045,7 @@ msgstr ""
 "\n"
 "問題のあるエッジは見つかりませんでした。%s"
 
-#: solvespace.cpp:1071
+#: solvespace.cpp:1093
 #, c-format
 msgid ""
 "%s\n"
@@ -2011,7 +2060,7 @@ msgstr ""
 "\n"
 "%d 個の問題のあるエッジが見つかりました。%s"
 
-#: solvespace.cpp:1084
+#: solvespace.cpp:1106
 #, c-format
 msgid ""
 "This is SolveSpace version %s.\n"
@@ -2040,23 +2089,23 @@ msgstr ""
 msgid "Style name cannot be empty"
 msgstr "スタイル名は空にできません"
 
-#: textscreens.cpp:790
+#: textscreens.cpp:837
 msgid "Can't repeat fewer than 1 time."
 msgstr "繰り返しは 1 以上の回数を指定してください。"
 
-#: textscreens.cpp:794
+#: textscreens.cpp:841
 msgid "Can't repeat more than 999 times."
 msgstr "999回を超えて繰り返すことはできません。"
 
-#: textscreens.cpp:819
+#: textscreens.cpp:866
 msgid "Group name cannot be empty"
 msgstr "グループ名は空にできません"
 
-#: textscreens.cpp:871
+#: textscreens.cpp:918
 msgid "Opacity must be between zero and one."
 msgstr "透明度は0から1の間で指定してください。"
 
-#: textscreens.cpp:906
+#: textscreens.cpp:953
 msgid "Radius cannot be zero or negative."
 msgstr "半径は0もしくは負の値にできません。"
 
