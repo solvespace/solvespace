@@ -305,6 +305,10 @@ msgid ""
 "Select the end point of the arc at which you want it to be tangent to the "
 "line."
 msgstr ""
+"Le point sélectionné n'appartient pas à l'arc. L'arc et le segment de ligne "
+"n'ont pas d'extrémité en commun.\n"
+"\n"
+"Sélectionnez une extrémité de l'arc que vous voulez être tangent à la ligne."
 
 #: constraint.cpp:158
 msgid ""
@@ -329,6 +333,11 @@ msgid ""
 "Select the end point of the spline at which you want it to be tangent to the "
 "line."
 msgstr ""
+"Le point sélectionné n'est pas une extrémité de la spline cubique. La spline "
+"et le segment de ligne n'ont pas d'extrémité en commun.\n"
+"\n"
+"Sélectionnez l'extrémité de la spline que vous voulez être tangente à la "
+"ligne."
 
 #: constraint.cpp:193
 msgid ""
@@ -353,6 +362,10 @@ msgid ""
 "Select the end points of both curves at which you want them to be tangent to "
 "each other."
 msgstr ""
+"Les points sélectionnés ne sont pas les extrémités des des courbes. Les "
+"courbes n'ont pas d'extrémité en commun.\n"
+"\n"
+"Sélectionnez les extrémités des deux courbes que vous voulez tangentes."
 
 #: constraint.cpp:244
 msgid ""
