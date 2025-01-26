@@ -7,15 +7,15 @@ msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
 "POT-Creation-Date: 2025-01-26 21:04+0200\n"
-"PO-Revision-Date: 2022-10-15 17:32+0200\n"
+"PO-Revision-Date: 2025-01-26 21:48+0100\n"
 "Last-Translator: whitequark <whitequark@whitequark.org>\n"
 "Language-Team: none\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 2.4.2\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.2.2\n"
 
 #: clipboard.cpp:314
 msgid ""
@@ -1413,7 +1413,7 @@ msgstr "tour"
 
 #: group.cpp:210
 msgid "Revolve operation can only be applied to planar sketches."
-msgstr "L'opération révolution ne peut être appliquée qu'à des dessins plans"
+msgstr "L'opération révolution ne peut être appliquée qu'à des dessins plans."
 
 #: group.cpp:221
 msgid ""
@@ -1437,7 +1437,7 @@ msgstr "révolution"
 
 #: group.cpp:238
 msgid "Helix operation can only be applied to planar sketches."
-msgstr "L'opération hélice ne peut être appliquée qu'à des dessins plans"
+msgstr "L'opération hélice ne peut être appliquée qu'à des dessins plans."
 
 #: group.cpp:249
 msgid ""
@@ -1602,7 +1602,7 @@ msgstr ""
 
 #: mouse.cpp:714
 msgid "Toggle Construction"
-msgstr "Basculer en mode « construction »."
+msgstr "Basculer en mode « construction »"
 
 #: mouse.cpp:730
 msgid "Delete Point-Coincident Constraint"
@@ -1710,7 +1710,7 @@ msgstr ""
 #: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:583
 msgctxt "file-type"
 msgid "SolveSpace models"
-msgstr "modèles Solvespace"
+msgstr "modèles SolveSpace"
 
 #: platform/gui.cpp:89
 msgctxt "file-type"
@@ -1841,7 +1841,7 @@ msgstr "Sauvegarde automatique existante"
 #: solvespace.cpp:176
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
-msgstr "Un fichier de sauvegarder automatique est disponible pour ce dessin"
+msgstr "Un fichier de sauvegarde automatique est disponible pour ce dessin."
 
 #: solvespace.cpp:177
 msgctxt "dialog"
