@@ -19,7 +19,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
-"POT-Creation-Date: 2023-01-20 16:45+0200\n"
+"POT-Creation-Date: 2025-01-26 21:04+0200\n"
 "PO-Revision-Date: 2023-04-30 15:58+0800\n"
 "Last-Translator: liuxilu@live.com\n"
 "Language-Team: none\n"
@@ -29,7 +29,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 2.4.2\n"
 
-#: clipboard.cpp:309
+#: clipboard.cpp:314
 msgid ""
 "Cut, paste, and copy work only in a workplane.\n"
 "\n"
@@ -39,72 +39,72 @@ msgstr ""
 "\n"
 "用\"绘图 -> 在工作面内\"来激活一个。"
 
-#: clipboard.cpp:326
+#: clipboard.cpp:331
 msgid "Clipboard is empty; nothing to paste."
 msgstr "剪贴板为空；没有能粘贴的。"
 
-#: clipboard.cpp:373
+#: clipboard.cpp:378
 msgid "Number of copies to paste must be at least one."
 msgstr "至少要粘贴 1 个副本。"
 
-#: clipboard.cpp:389 textscreens.cpp:832
+#: clipboard.cpp:394 textscreens.cpp:879
 msgid "Scale cannot be zero."
 msgstr "缩放不能为零。"
 
-#: clipboard.cpp:431
+#: clipboard.cpp:436
 msgid "Select one point to define origin of rotation."
 msgstr "选择一个点来定义旋转中心。"
 
-#: clipboard.cpp:443
+#: clipboard.cpp:448
 msgid "Select two points to define translation vector."
 msgstr "选择两个点来定义平移向量。"
 
-#: clipboard.cpp:453
+#: clipboard.cpp:458
 msgid ""
 "Transformation is identity. So all copies will be exactly on top of each "
 "other."
 msgstr "输入的变换是不动，因此所有副本将互相重叠。"
 
-#: clipboard.cpp:457
+#: clipboard.cpp:462
 msgid "Too many items to paste; split this into smaller pastes."
 msgstr "要粘贴的项目太多; 请把他们拆分。"
 
-#: clipboard.cpp:462
+#: clipboard.cpp:467
 msgid "No workplane active."
 msgstr "无活动工作面。"
 
-#: confscreen.cpp:381
+#: confscreen.cpp:410
 msgid "Bad format: specify coordinates as x, y, z"
 msgstr "格式错误：请用 x,y,z 指定坐标"
 
-#: confscreen.cpp:391 style.cpp:729 textscreens.cpp:863
+#: confscreen.cpp:420 style.cpp:729 textscreens.cpp:910
 msgid "Bad format: specify color as r, g, b"
 msgstr "格式错误：请用 r,g,b 指定颜色"
 
-#: confscreen.cpp:417
+#: confscreen.cpp:446
 msgid ""
 "The perspective factor will have no effect until you enable View -> Use "
 "Perspective Projection."
 msgstr "若不启用\"查看 -> 使用透视投影\"，透视因数将不起作用。"
 
-#: confscreen.cpp:435 confscreen.cpp:445
+#: confscreen.cpp:464 confscreen.cpp:474
 #, c-format
 msgid "Specify between 0 and %d digits after the decimal."
 msgstr "请指定小数点后 0 到 %d 位。"
 
-#: confscreen.cpp:457
+#: confscreen.cpp:486
 msgid "Export scale must not be zero!"
 msgstr "导出比例不能为零！"
 
-#: confscreen.cpp:469
+#: confscreen.cpp:498
 msgid "Cutter radius offset must not be negative!"
 msgstr "刀具半径偏移不能为负！"
 
-#: confscreen.cpp:528
+#: confscreen.cpp:557
 msgid "Bad value: autosave interval should be positive"
 msgstr "值错误：自动保存间隔应为正"
 
-#: confscreen.cpp:531
+#: confscreen.cpp:560
 msgid "Bad format: specify interval in integral minutes"
 msgstr "格式错误：间隔应为整分钟"
 
@@ -303,25 +303,76 @@ msgctxt "constr-name"
 msgid "comment"
 msgstr "备注"
 
-#: constraint.cpp:144
+#: constraint.cpp:151
+msgid ""
+"The point you selected does not belong to the arc. The arc and line segment "
+"do not share an end point.\n"
+"\n"
+"Select the end point of the arc at which you want it to be tangent to the "
+"line."
+msgstr ""
+
+#: constraint.cpp:158
 msgid ""
 "The tangent arc and line segment must share an endpoint. Constrain them with "
-"Constrain -> On Point before constraining tangent."
-msgstr "要相切的弧和线段必须有共同端点。约束相切之前，用\"约束 -> 在点上\"来约束它们。"
+"Constrain -> On Point before constraining tangent.\n"
+"\n"
+"Alternatively select the end point of the arc at which you want it to be "
+"tangent to the line."
+msgstr ""
+"要相切的弧和线段必须有共同端点。约束相切之前，用\"约束 -> 在点上\"来约束它"
+"们。\n"
+"\n"
+"Alternatively select the end point of the arc at which you want it to be "
+"tangent to the line."
 
-#: constraint.cpp:163
+#: constraint.cpp:186
 msgid ""
-"The tangent cubic and line segment must share an endpoint. Constrain them "
-"with Constrain -> On Point before constraining tangent."
-msgstr "要相切的三次曲线段和线段必须有共同端点。约束相切之前，使用\"约束 -> 在点上\"来约束它们。"
+"The point you selected is not an end point of the cubic spline. The spline "
+"and line segment do not share an end point.\n"
+"\n"
+"Select the end point of the spline at which you want it to be tangent to the "
+"line."
+msgstr ""
 
-#: constraint.cpp:189
+#: constraint.cpp:193
+msgid ""
+"The tangent cubic spline and line segment must share an endpoint. Constrain "
+"them with Constrain -> On Point before constraining tangent.\n"
+"\n"
+"Alternatively select the end point of the cubic spline at which you want it "
+"to be tangent to the line."
+msgstr ""
+"要相切的三次曲线段和线段必须有共同端点。约束相切之前，使用\"约束 -> 在点上"
+"\"来约束它们。\n"
+"\n"
+"Alternatively select the end point of the cubic spline at which you want it "
+"to be tangent to the line."
+
+#: constraint.cpp:237
+msgid ""
+"The points you selected are not end points of the two curves. The curves do "
+"not share an end point.\n"
+"\n"
+"Select the end points of both curves at which you want them to be tangent to "
+"each other."
+msgstr ""
+
+#: constraint.cpp:244
 msgid ""
 "The curves must share an endpoint. Constrain them with Constrain -> On Point "
-"before constraining tangent."
-msgstr "要约束的曲线必须有共同端点。约束相切之前，使用\"约束 -> 在点上\"来约束它们。"
+"before constraining tangent.\n"
+"\n"
+"Alternatively select the end points of both curves at which you want the "
+"curves to be tangent."
+msgstr ""
+"要约束的曲线必须有共同端点。约束相切之前，使用\"约束 -> 在点上\"来约束它"
+"们。\n"
+"\n"
+"Alternatively select the end points of both curves at which you want the "
+"curves to be tangent."
 
-#: constraint.cpp:240
+#: constraint.cpp:303
 msgid ""
 "Bad selection for distance / diameter constraint. This constraint can apply "
 "to:\n"
@@ -344,10 +395,10 @@ msgstr ""
 "    * 一点与一平表面（最小距离）\n"
 "    * 一个圆或一条弧（直径）\n"
 
-#: constraint.cpp:303
+#: constraint.cpp:366
 msgid ""
-"Bad selection for on point / curve / plane constraint. "
-"This constraint can apply to:\n"
+"Bad selection for on point / curve / plane constraint. This constraint can "
+"apply to:\n"
 "\n"
 "    * two or more points (points coincident)\n"
 "    * a point and a workplane (point in plane)\n"
@@ -363,15 +414,16 @@ msgstr ""
 "    * 一点与一个圆或弧（点在曲线上）\n"
 "    * 一点与一到三个平表面（点在表面上）\n"
 
-#: constraint.cpp:364
+#: constraint.cpp:427
 msgid ""
-"Bad selection for equal length / radius constraint. "
-"This constraint can apply to:\n"
+"Bad selection for equal length / radius constraint. This constraint can "
+"apply to:\n"
 "\n"
 "    * two or more line segments (equal length)\n"
 "    * two line segments and two points (equal point-line distances)\n"
 "    * a line segment and two points (equal point-line distances)\n"
-"    * a line segment, and a point and line segment (point-line distance equals length)\n"
+"    * a line segment, and a point and line segment (point-line distance "
+"equals length)\n"
 "    * two or more circles or arcs (equal radius)\n"
 "    * a line segment and an arc (line segment length equals arc length)\n"
 msgstr ""
@@ -384,7 +436,7 @@ msgstr ""
 "    * 一条线段和一条弧（线长等于弧长）\n"
 "    * 两个以上圆或弧（半径相等）\n"
 
-#: constraint.cpp:417
+#: constraint.cpp:480
 msgid ""
 "Bad selection for length ratio constraint. This constraint can apply to:\n"
 "\n"
@@ -398,7 +450,7 @@ msgstr ""
 "    * 两条弧线\n"
 "    * 一条弧线与一条线段\n"
 
-#: constraint.cpp:452
+#: constraint.cpp:515
 msgid ""
 "Bad selection for length difference constraint. This constraint can apply "
 "to:\n"
@@ -413,7 +465,7 @@ msgstr ""
 "    * 两条弧线\n"
 "    * 一条弧线与一条线段\n"
 
-#: constraint.cpp:487
+#: constraint.cpp:550
 msgid ""
 "Bad selection for at midpoint constraint. This constraint can apply to:\n"
 "\n"
@@ -425,7 +477,7 @@ msgstr ""
 "    * 一条线段和一点（点在线段中点上）\n"
 "    * 一条线段和一工作面（线段中点在平面上）\n"
 
-#: constraint.cpp:545
+#: constraint.cpp:608
 msgid ""
 "Bad selection for symmetric constraint. This constraint can apply to:\n"
 "\n"
@@ -442,22 +494,23 @@ msgstr ""
 "    * 一条线段与两点或一条线段（关于直线对称）\n"
 "    * 一工作面和两点或一条线段（关于工作面对称）\n"
 
-#: constraint.cpp:560
+#: constraint.cpp:623
 msgid ""
 "A workplane must be active when constraining symmetric without an explicit "
 "symmetry plane."
 msgstr "没有明显的对称面时，约束对称必须有活动工作面。"
 
-#: constraint.cpp:600
+#: constraint.cpp:663
 msgid ""
 "Activate a workplane (with Sketch -> In Workplane) before applying a "
 "horizontal or vertical constraint."
 msgstr "使用水平或竖直约束之前应激活工作面（用\"绘图 -> 在工作面内\"）。"
 
-#: constraint.cpp:616
+#: constraint.cpp:679
 msgid ""
-"Bad selection for horizontal / vertical constraint. "
-"This constraint can apply to:\n\n"
+"Bad selection for horizontal / vertical constraint. This constraint can "
+"apply to:\n"
+"\n"
 "    * two or more points\n"
 "    * one or more line segments\n"
 msgstr ""
@@ -466,7 +519,7 @@ msgstr ""
 "    * 两个以上的点\n"
 "    * 一条以上的线段\n"
 
-#: constraint.cpp:634
+#: constraint.cpp:697
 msgid ""
 "Bad selection for same orientation constraint. This constraint can apply "
 "to:\n"
@@ -477,23 +530,24 @@ msgstr ""
 "\n"
 "    * 两条法线\n"
 
-#: constraint.cpp:685
+#: constraint.cpp:748
 msgid "Must select an angle constraint."
 msgstr "必须选择角度约束。"
 
-#: constraint.cpp:698
+#: constraint.cpp:761
 msgid "Must select a constraint with associated label."
 msgstr "必须选择有尺寸的约束。"
 
-#: constraint.cpp:721
+#: constraint.cpp:784
 msgid ""
-"Bad selection for angle constraint. This constraint "
-"can apply to:\n\n"
+"Bad selection for angle constraint. This constraint can apply to:\n"
+"\n"
 "Angle between:\n"
 "    * two line segments\n"
 "    * a line segment and a normal\n"
 "    * two normals\n"
-"\nEqual angles:\n"
+"\n"
+"Equal angles:\n"
 "    * four line segments or normals (equal angle between A,B and C,D)\n"
 "    * three line segments or normals (equal angle between A,B and B,C)\n"
 msgstr ""
@@ -507,20 +561,22 @@ msgstr ""
 "    * 三条线段或法线（AB之间与BC之间角度相等）\n"
 "之间的角度相等"
 
-#: constraint.cpp:805
+#: constraint.cpp:872
 msgid "Curve-curve tangency must apply in workplane."
 msgstr "曲线相切必须在工作面内应用。"
 
-#: constraint.cpp:818
+#: constraint.cpp:887
 msgid ""
-"Bad selection for parallel / tangent constraint. This "
-"constraint can apply to:\n\n"
+"Bad selection for parallel / tangent constraint. This constraint can apply "
+"to:\n"
+"\n"
 "    * two faces\n"
 "    * two or more line segments (parallel)\n"
 "    * one or more line segments and one or more normals (parallel)\n"
 "    * two or more normals (parallel)\n"
-"    * two line segments, arcs, or beziers, that share "
-"an endpoint (tangent)\n"
+"    * two line segments, arcs, or beziers, that share an endpoint (tangent)\n"
+"    * two line segments, arcs, or beziers, that do not share an endpoint and "
+"the end point(s) of the curve(s) (tangent)\n"
 msgstr ""
 "平行/相切约束的选择错误。此约束可用于：\n"
 "\n"
@@ -529,8 +585,10 @@ msgstr ""
 "    * 两条以上法线（平行）\n"
 "    * 一条以上线段与一条以上法线（平行）\n"
 "    * 有共同端点的两条弧/线段/贝塞尔曲线（相切）\n"
+"    * two line segments, arcs, or beziers, that do not share an endpoint and "
+"the end point(s) of the curve(s) (tangent)\n"
 
-#: constraint.cpp:843
+#: constraint.cpp:914
 msgid ""
 "Bad selection for perpendicular constraint. This constraint can apply to:\n"
 "\n"
@@ -546,7 +604,7 @@ msgstr ""
 "    * 两条法线\n"
 "    * 一条线段与一条法线\n"
 
-#: constraint.cpp:860
+#: constraint.cpp:931
 msgid ""
 "Bad selection for lock point where dragged constraint. This constraint can "
 "apply to:\n"
@@ -557,11 +615,11 @@ msgstr ""
 "\n"
 "    * 一点\n"
 
-#: constraint.cpp:875 mouse.cpp:1158
+#: constraint.cpp:946 mouse.cpp:1160
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "新备注——双击编辑"
 
-#: constraint.cpp:881
+#: constraint.cpp:952
 msgid "click center of comment text"
 msgstr "单击备注文本的中心"
 
@@ -570,7 +628,8 @@ msgid ""
 "No solid model present; draw one with extrudes and revolves, or use Export "
 "2d View to export bare lines and curves."
 msgstr ""
-"不存在实心体模型；用拉伸和扫略来绘制，或使用\"导出2D视图\"导出光杆直线和曲线。"
+"不存在实心体模型；用拉伸和扫略来绘制，或使用\"导出2D视图\"导出光杆直线和曲"
+"线。"
 
 #: export.cpp:61
 msgid ""
@@ -605,7 +664,8 @@ msgid ""
 msgstr "图纸的某些方面没有DXF等效项，并且未导出：\n"
 
 #: exportvector.cpp:838
-msgid "PDF page size exceeds 200 by 200 inches; many viewers may reject this file."
+msgid ""
+"PDF page size exceeds 200 by 200 inches; many viewers may reject this file."
 msgstr "PDF页面大小超过200x200英寸；许多查看器可能会拒绝此文件。"
 
 #: file.cpp:44 group.cpp:91
@@ -618,28 +678,28 @@ msgctxt "group-name"
 msgid "#references"
 msgstr "#参考"
 
-#: file.cpp:550
+#: file.cpp:555
 msgid "The file is empty. It may be corrupt."
 msgstr "文件为空，可能已损坏。"
 
-#: file.cpp:555
+#: file.cpp:560
 msgid ""
 "Unrecognized data in file. This file may be corrupt, or from a newer version "
 "of the program."
 msgstr "文件内数据无法识别。该文件可能损坏，或来自新版本程序。"
 
-#: file.cpp:867
+#: file.cpp:876
 msgctxt "title"
 msgid "Missing File"
 msgstr "文件丢失"
 
-#: file.cpp:868
+#: file.cpp:877
 #, c-format
 msgctxt "dialog"
 msgid "The linked file “%s” is not present."
 msgstr "不存在连接的文件\"%s\"。"
 
-#: file.cpp:870
+#: file.cpp:879
 msgctxt "dialog"
 msgid ""
 "Do you want to locate it manually?\n"
@@ -648,17 +708,17 @@ msgid ""
 "permanently removed."
 msgstr "您是否想手动查找？如果拒绝，基于丢失文件的所有几何图形将被永久删除。"
 
-#: file.cpp:873
+#: file.cpp:882
 msgctxt "button"
 msgid "&Yes"
 msgstr "是(&Y)"
 
-#: file.cpp:875
+#: file.cpp:884
 msgctxt "button"
 msgid "&No"
 msgstr "否(&N)"
 
-#: file.cpp:877 solvespace.cpp:634
+#: file.cpp:886 solvespace.cpp:652
 msgctxt "button"
 msgid "&Cancel"
 msgstr "取消(&C)"
@@ -928,8 +988,8 @@ msgid "Datum &Point"
 msgstr "基准点(&P)"
 
 #: graphicswin.cpp:129
-msgid "&Workplane"
-msgstr "工作面(&W)"
+msgid "Wor&kplane"
+msgstr "工作面(&k)"
 
 #: graphicswin.cpp:131
 msgid "Line &Segment"
@@ -960,16 +1020,16 @@ msgid "&Text in TrueType Font"
 msgstr "TrueType字体文本(&T)"
 
 #: graphicswin.cpp:139
-msgid "&Image"
-msgstr "图片(&I)"
+msgid "I&mage"
+msgstr "图片(&m)"
 
 #: graphicswin.cpp:141
 msgid "To&ggle Construction"
 msgstr "切换构造线(&G)"
 
 #: graphicswin.cpp:142
-msgid "Tangent &Arc at Point"
-msgstr "点处创建内切弧(&A)"
+msgid "Ta&ngent Arc at Point"
+msgstr "点处创建内切弧(&n)"
 
 #: graphicswin.cpp:143
 msgid "Split Curves at &Intersection"
@@ -1128,11 +1188,11 @@ msgstr "(无最近文件)"
 msgid "File '%s' does not exist."
 msgstr "不存在文件\"%s\"。"
 
-#: graphicswin.cpp:773
+#: graphicswin.cpp:779
 msgid "No workplane is active, so the grid will not appear."
 msgstr "没有活动工作面，因此无法显示格线。"
 
-#: graphicswin.cpp:788
+#: graphicswin.cpp:794
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel "
 "projection.\n"
@@ -1144,94 +1204,98 @@ msgstr ""
 "\n"
 "要使用透视投影，请在配置界面中修改透视因数。典型值大概是0.3。"
 
-#: graphicswin.cpp:878
+#: graphicswin.cpp:884
 msgid ""
 "Select a point; this point will become the center of the view on screen."
 msgstr "选择一点; 此点将成为屏幕上视图的中心。"
 
-#: graphicswin.cpp:1178
+#: graphicswin.cpp:1193
 msgid "No additional entities share endpoints with the selected entities."
 msgstr "所选物件不与其他物件有共同端点。"
 
-#: graphicswin.cpp:1196
+#: graphicswin.cpp:1211
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
 msgstr ""
 "使用此命令时，选择连接来的部件上一点或其他成分，或将一个连接组设为活动组。"
 
-#: graphicswin.cpp:1219
+#: graphicswin.cpp:1234
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
-msgstr "无活动工作面。激活一个工作面（用\"绘图 -> 在工作面内\"）以定义吸附格线所在的平面。"
+msgstr ""
+"无活动工作面。激活一个工作面（用\"绘图 -> 在工作面内\"）以定义吸附格线所在的"
+"平面。"
 
-#: graphicswin.cpp:1226
+#: graphicswin.cpp:1241
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
 msgstr ""
-"不能吸附这些项目到格线；选择点、文本备注、有尺寸的约束。要吸附线请选择其端点。"
+"不能吸附这些项目到格线；选择点、文本备注、有尺寸的约束。要吸附线请选择其端"
+"点。"
 
-#: graphicswin.cpp:1311
+#: graphicswin.cpp:1326
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr "未选择工作面。将激活该组的默认工作面。"
 
-#: graphicswin.cpp:1314
+#: graphicswin.cpp:1329
 msgid ""
 "No workplane is selected, and the active group does not have a default "
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
 "workplane group."
 msgstr ""
-"未选择工作面，且活动组没有默认工作面。请选择一个工作面，或激活一个\"平面草图\"组。"
+"未选择工作面，且活动组没有默认工作面。请选择一个工作面，或激活一个\"平面草图"
+"\"组。"
 
-#: graphicswin.cpp:1335
+#: graphicswin.cpp:1350
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
 msgstr "\"点处创建内切弧\"的选择错误。选择单个点，或什么都不选来设置参数。"
 
-#: graphicswin.cpp:1346
+#: graphicswin.cpp:1361
 msgid "click point on arc (draws anti-clockwise)"
 msgstr "点击弧上的点（逆时针绘制）"
 
-#: graphicswin.cpp:1347
+#: graphicswin.cpp:1362
 msgid "click to place datum point"
 msgstr "点击放置基准点"
 
-#: graphicswin.cpp:1348
+#: graphicswin.cpp:1363
 msgid "click first point of line segment"
 msgstr "点击线段的起点"
 
-#: graphicswin.cpp:1350
+#: graphicswin.cpp:1365
 msgid "click first point of construction line segment"
 msgstr "点击构造线的起点"
 
-#: graphicswin.cpp:1351
+#: graphicswin.cpp:1366
 msgid "click first point of cubic segment"
 msgstr "点击三次曲线段的起点"
 
-#: graphicswin.cpp:1352
+#: graphicswin.cpp:1367
 msgid "click center of circle"
 msgstr "点击圆心"
 
-#: graphicswin.cpp:1353
+#: graphicswin.cpp:1368
 msgid "click origin of workplane"
 msgstr "点击工作面原点"
 
-#: graphicswin.cpp:1354
+#: graphicswin.cpp:1369
 msgid "click one corner of rectangle"
 msgstr "点击矩形的一个角"
 
-#: graphicswin.cpp:1355
+#: graphicswin.cpp:1370
 msgid "click top left of text"
 msgstr "点击文本左上角"
 
-#: graphicswin.cpp:1361
+#: graphicswin.cpp:1376
 msgid "click top left of image"
 msgstr "点击图片左上角"
 
-#: graphicswin.cpp:1387
+#: graphicswin.cpp:1402
 msgid ""
 "No entities are selected. Select entities before trying to toggle their "
 "construction state."
@@ -1360,7 +1424,7 @@ msgctxt "group-name"
 msgid "translate"
 msgstr "平移"
 
-#: group.cpp:420
+#: group.cpp:422
 msgid "(unnamed)"
 msgstr "(未命名)"
 
@@ -1418,152 +1482,152 @@ msgstr "选择两个相交的物件（例如两条线/圆/弧，或一条线/圆
 msgid "Can't split; no intersection found."
 msgstr "无法拆分；未发现交点。"
 
-#: mouse.cpp:557
+#: mouse.cpp:558
 msgid "Assign to Style"
 msgstr "指定样式"
 
-#: mouse.cpp:573
+#: mouse.cpp:574
 msgid "No Style"
 msgstr "无样式"
 
-#: mouse.cpp:576
+#: mouse.cpp:577
 msgid "Newly Created Custom Style..."
 msgstr "新建自定义样式..."
 
-#: mouse.cpp:583
+#: mouse.cpp:584
 msgid "Group Info"
 msgstr "组信息"
 
-#: mouse.cpp:603
+#: mouse.cpp:604
 msgid "Style Info"
 msgstr "样式信息"
 
-#: mouse.cpp:623
+#: mouse.cpp:624
 msgid "Select Edge Chain"
 msgstr "选择相连边"
 
-#: mouse.cpp:629
+#: mouse.cpp:630
 msgid "Toggle Reference Dimension"
 msgstr "切换参考尺寸"
 
-#: mouse.cpp:635
+#: mouse.cpp:636
 msgid "Other Supplementary Angle"
 msgstr "补角"
 
-#: mouse.cpp:640
+#: mouse.cpp:641
 msgid "Snap to Grid"
 msgstr "吸附至格线"
 
-#: mouse.cpp:649
+#: mouse.cpp:650
 msgid "Remove Spline Point"
 msgstr "删除样条点"
 
-#: mouse.cpp:684
+#: mouse.cpp:685
 msgid "Add Spline Point"
 msgstr "增加样条点"
 
-#: mouse.cpp:688
+#: mouse.cpp:689
 msgid "Cannot add spline point: maximum number of points reached."
 msgstr "无法增加样条点：超过点数限制。"
 
-#: mouse.cpp:713
+#: mouse.cpp:714
 msgid "Toggle Construction"
 msgstr "切换构造线"
 
-#: mouse.cpp:729
+#: mouse.cpp:730
 msgid "Delete Point-Coincident Constraint"
 msgstr "删除点点重合约束"
 
-#: mouse.cpp:747
+#: mouse.cpp:748
 msgid "Cut"
 msgstr "剪切"
 
-#: mouse.cpp:749
+#: mouse.cpp:750
 msgid "Copy"
 msgstr "复制"
 
-#: mouse.cpp:753
+#: mouse.cpp:754
 msgid "Select All"
 msgstr "全选"
 
-#: mouse.cpp:758
+#: mouse.cpp:759
 msgid "Paste"
 msgstr "粘贴"
 
-#: mouse.cpp:760
+#: mouse.cpp:761
 msgid "Paste Transformed..."
 msgstr "粘贴并变换..."
 
-#: mouse.cpp:765
+#: mouse.cpp:766
 msgid "Delete"
 msgstr "删除"
 
-#: mouse.cpp:768
+#: mouse.cpp:769
 msgid "Unselect All"
 msgstr "全不选"
 
-#: mouse.cpp:775
+#: mouse.cpp:776
 msgid "Unselect Hovered"
 msgstr "光标下的不选"
 
-#: mouse.cpp:784
+#: mouse.cpp:785
 msgid "Zoom to Fit"
 msgstr "适合窗口"
 
-#: mouse.cpp:986 mouse.cpp:1274
+#: mouse.cpp:987 mouse.cpp:1276
 msgid "click next point of line, or press Esc"
 msgstr "点击下一个点，或按Esc取消"
 
-#: mouse.cpp:992
+#: mouse.cpp:993
 msgid ""
 "Can't draw rectangle in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "无法在三维空间绘制矩形；请先激活工作面（用\"绘图 -> 在工作面内\"）。"
 
-#: mouse.cpp:1026
+#: mouse.cpp:1027
 msgid "click to place other corner of rectangle"
 msgstr "点击放置矩形的另一个角"
 
-#: mouse.cpp:1047
+#: mouse.cpp:1048
 msgid "click to set radius"
 msgstr "点击设置半径"
 
-#: mouse.cpp:1052
+#: mouse.cpp:1053
 msgid ""
 "Can't draw arc in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "无法在三维空间绘制弧线，请激活工作面（用\"绘图 -> 在工作面内\"）"
 
-#: mouse.cpp:1071
+#: mouse.cpp:1072
 msgid "click to place point"
 msgstr "点击放置点"
 
-#: mouse.cpp:1087
+#: mouse.cpp:1088
 msgid "click next point of cubic, or press Esc"
 msgstr "点击下一个点，或按Esc取消"
 
-#: mouse.cpp:1092
+#: mouse.cpp:1093
 msgid ""
 "Sketching in a workplane already; sketch in 3d before creating new workplane."
 msgstr "已在工作面内绘制；新建工作面之前先\"在三维空间绘制\"。"
 
-#: mouse.cpp:1108
+#: mouse.cpp:1109
 msgid ""
 "Can't draw text in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "无法在三维空间绘制文本，请激活工作面（用\"绘图 -> 在工作面内\"）"
 
-#: mouse.cpp:1125
+#: mouse.cpp:1126
 msgid "click to place bottom right of text"
 msgstr "点击放置文本的右下角"
 
-#: mouse.cpp:1131
+#: mouse.cpp:1132
 msgid ""
 "Can't draw image in 3d; first, activate a workplane with Sketch -> In "
 "Workplane."
 msgstr "无法在三维空间绘制图片，请激活工作面（用\"绘图 -> 在工作面内\"）"
 
-#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:565
+#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:583
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "SolveSpace模型"
@@ -1658,131 +1722,135 @@ msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "逗号分隔数据"
 
-#: platform/guigtk.cpp:1382 platform/guimac.mm:1513 platform/guiwin.cpp:1641
+#: platform/guigtk.cpp:1434 platform/guimac.mm:1513 platform/guiwin.cpp:1641
 msgid "untitled"
 msgstr "无标题"
 
-#: platform/guigtk.cpp:1393 platform/guigtk.cpp:1426 platform/guimac.mm:1471
+#: platform/guigtk.cpp:1445 platform/guigtk.cpp:1481 platform/guimac.mm:1471
 #: platform/guiwin.cpp:1639
 msgctxt "title"
 msgid "Save File"
 msgstr "保存文件"
 
-#: platform/guigtk.cpp:1394 platform/guigtk.cpp:1427 platform/guimac.mm:1454
+#: platform/guigtk.cpp:1446 platform/guigtk.cpp:1482 platform/guimac.mm:1454
 #: platform/guiwin.cpp:1645
 msgctxt "title"
 msgid "Open File"
 msgstr "打开文件"
 
-#: platform/guigtk.cpp:1397 platform/guigtk.cpp:1433
+#: platform/guigtk.cpp:1449 platform/guigtk.cpp:1488
 msgctxt "button"
 msgid "_Cancel"
 msgstr "取消(_C)"
 
-#: platform/guigtk.cpp:1398 platform/guigtk.cpp:1431
+#: platform/guigtk.cpp:1450 platform/guigtk.cpp:1486
 msgctxt "button"
 msgid "_Save"
 msgstr "保存(_S)"
 
-#: platform/guigtk.cpp:1399 platform/guigtk.cpp:1432
+#: platform/guigtk.cpp:1451 platform/guigtk.cpp:1487
 msgctxt "button"
 msgid "_Open"
 msgstr "打开(_O)"
 
-#: solvespace.cpp:167
+#: solvespace.cpp:175
 msgctxt "title"
 msgid "Autosave Available"
 msgstr "自动保存可用"
 
-#: solvespace.cpp:168
+#: solvespace.cpp:176
 msgctxt "dialog"
 msgid "An autosave file is available for this sketch."
 msgstr "该草图有自动保存文件可用。"
 
-#: solvespace.cpp:169
+#: solvespace.cpp:177
 msgctxt "dialog"
 msgid "Do you want to load the autosave file instead?"
 msgstr "是否加载自动保存文件？"
 
-#: solvespace.cpp:170
+#: solvespace.cpp:178
 msgctxt "button"
 msgid "&Load autosave"
 msgstr "加载(&L)"
 
-#: solvespace.cpp:172
+#: solvespace.cpp:180
 msgctxt "button"
 msgid "Do&n't Load"
 msgstr "不加载(&N)"
 
-#: solvespace.cpp:622
+#: solvespace.cpp:640
 msgctxt "title"
 msgid "Modified File"
 msgstr "文件已修改"
 
-#: solvespace.cpp:624
+#: solvespace.cpp:642
 #, c-format
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the sketch “%s”?"
-msgstr "是否保存您对草图\n“%s”\n的修改？"
+msgstr ""
+"是否保存您对草图\n"
+"“%s”\n"
+"的修改？"
 
-#: solvespace.cpp:627
+#: solvespace.cpp:645
 msgctxt "dialog"
 msgid "Do you want to save the changes you made to the new sketch?"
 msgstr "是否保存您对新草图的修改？"
 
-#: solvespace.cpp:630
+#: solvespace.cpp:648
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
 msgstr "如果不保存，您的修改将会丢失。"
 
-#: solvespace.cpp:631
+#: solvespace.cpp:649
 msgctxt "button"
 msgid "&Save"
 msgstr "保存(&S)"
 
-#: solvespace.cpp:633
+#: solvespace.cpp:651
 msgctxt "button"
 msgid "Do&n't Save"
 msgstr "不保存(&N)"
 
-#: solvespace.cpp:654
+#: solvespace.cpp:672
 msgctxt "title"
 msgid "(new sketch)"
 msgstr "(新草图)"
 
-#: solvespace.cpp:661
+#: solvespace.cpp:683
 msgctxt "title"
 msgid "Property Browser"
 msgstr "属性浏览器"
 
-#: solvespace.cpp:724
+#: solvespace.cpp:746
 msgid ""
 "Constraints are currently shown, and will be exported in the toolpath. This "
 "is probably not what you want; hide them by clicking the link at the top of "
 "the text window."
 msgstr ""
-"当前显示约束，并将导出至刀具路径。这可能不是你想要的；点击文本窗口顶部的按钮来隐藏它们。"
+"当前显示约束，并将导出至刀具路径。这可能不是你想要的；点击文本窗口顶部的按钮"
+"来隐藏它们。"
 
-#: solvespace.cpp:812
+#: solvespace.cpp:834
 #, c-format
 msgid ""
 "Can't identify file type from file extension of filename '%s'; try .dxf or ."
 "dwg."
 msgstr "无法从'%s'的文件扩展名识别文件类型，请尝试.dxf或.dwg。"
 
-#: solvespace.cpp:864
+#: solvespace.cpp:886
 msgid "Constraint must have a label, and must not be a reference dimension."
 msgstr "约束必须有尺寸，且不能是参考尺寸。"
 
-#: solvespace.cpp:868
+#: solvespace.cpp:890
 msgid "Bad selection for step dimension; select a constraint."
 msgstr "尺寸步进选择错误，请选择约束。"
 
-#: solvespace.cpp:892
+#: solvespace.cpp:914
 msgid "The assembly does not interfere, good."
 msgstr "装配无干涉，好。"
 
-#: solvespace.cpp:908
+#: solvespace.cpp:930
 #, c-format
 msgid ""
 "The volume of the solid model is:\n"
@@ -1793,7 +1861,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: solvespace.cpp:917
+#: solvespace.cpp:939
 #, c-format
 msgid ""
 "\n"
@@ -1806,7 +1874,7 @@ msgstr ""
 "\n"
 "    %s"
 
-#: solvespace.cpp:922
+#: solvespace.cpp:944
 msgid ""
 "\n"
 "\n"
@@ -1817,7 +1885,7 @@ msgstr ""
 "\n"
 "曲面已近似为三角形。这会引入误差，通常约为1%。"
 
-#: solvespace.cpp:937
+#: solvespace.cpp:959
 #, c-format
 msgid ""
 "The surface area of the selected faces is:\n"
@@ -1833,13 +1901,13 @@ msgstr ""
 "\n"
 "曲线已近似为线性分段。这会引入误差，通常约为1%%。"
 
-#: solvespace.cpp:946
+#: solvespace.cpp:968
 msgid ""
 "This group does not contain a correctly-formed 2d closed area. It is open, "
 "not coplanar, or self-intersecting."
 msgstr "此组不包含正确形式的二维封闭区域。它可能是开放的，或不共面，或自相交。"
 
-#: solvespace.cpp:958
+#: solvespace.cpp:980
 #, c-format
 msgid ""
 "The area of the region sketched in this group is:\n"
@@ -1855,7 +1923,7 @@ msgstr ""
 "\n"
 "曲线已近似为线性分段。这会引入误差，通常约为1%%。"
 
-#: solvespace.cpp:978
+#: solvespace.cpp:1000
 #, c-format
 msgid ""
 "The total length of the selected entities is:\n"
@@ -1871,36 +1939,36 @@ msgstr ""
 "\n"
 "曲线已近似为线性分段。这会引入误差，通常约为1%%。"
 
-#: solvespace.cpp:984
+#: solvespace.cpp:1006
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
 msgstr "周长选择错误；请选择线段、弧线、曲线。"
 
-#: solvespace.cpp:1000
+#: solvespace.cpp:1022
 msgid "Bad selection for trace; select a single point."
 msgstr "跟踪选择不当；请选择单个点。"
 
-#: solvespace.cpp:1027
+#: solvespace.cpp:1049
 #, c-format
 msgid "Couldn't write to '%s'"
 msgstr "无法写入'%s'"
 
-#: solvespace.cpp:1057
+#: solvespace.cpp:1079
 msgid "The mesh is self-intersecting (NOT okay, invalid)."
 msgstr "网格是自相交的（不行，无效）"
 
-#: solvespace.cpp:1058
+#: solvespace.cpp:1080
 msgid "The mesh is not self-intersecting (okay, valid)."
 msgstr "网格不是自相交的（行，有效）"
 
-#: solvespace.cpp:1060
+#: solvespace.cpp:1082
 msgid "The mesh has naked edges (NOT okay, invalid)."
 msgstr "网格有裸露边（不行，无效）"
 
-#: solvespace.cpp:1061
+#: solvespace.cpp:1083
 msgid "The mesh is watertight (okay, valid)."
 msgstr "网格是水密的（行，有效）"
 
-#: solvespace.cpp:1064
+#: solvespace.cpp:1086
 #, c-format
 msgid ""
 "\n"
@@ -1911,7 +1979,7 @@ msgstr ""
 "\n"
 "该模型包含%d个表面上的%d个三角形。"
 
-#: solvespace.cpp:1068
+#: solvespace.cpp:1090
 #, c-format
 msgid ""
 "%s\n"
@@ -1926,7 +1994,7 @@ msgstr ""
 "\n"
 "没有问题边，好。%s"
 
-#: solvespace.cpp:1071
+#: solvespace.cpp:1093
 #, c-format
 msgid ""
 "%s\n"
@@ -1941,7 +2009,7 @@ msgstr ""
 "\n"
 "%d条边有问题，不好。%s"
 
-#: solvespace.cpp:1084
+#: solvespace.cpp:1106
 #, c-format
 msgid ""
 "This is SolveSpace version %s.\n"
@@ -1981,23 +2049,23 @@ msgstr "无法将样式分配给派生自其他物件的物件；尝试将样式
 msgid "Style name cannot be empty"
 msgstr "样式名称不能为空"
 
-#: textscreens.cpp:790
+#: textscreens.cpp:837
 msgid "Can't repeat fewer than 1 time."
 msgstr "不能重复 1 次以下。"
 
-#: textscreens.cpp:794
+#: textscreens.cpp:841
 msgid "Can't repeat more than 999 times."
 msgstr "不能重复 999 次以上。"
 
-#: textscreens.cpp:819
+#: textscreens.cpp:866
 msgid "Group name cannot be empty"
 msgstr "组名不能为空"
 
-#: textscreens.cpp:871
+#: textscreens.cpp:918
 msgid "Opacity must be between zero and one."
 msgstr "不透明度必须在 0 到 1 之间。"
 
-#: textscreens.cpp:906
+#: textscreens.cpp:953
 msgid "Radius cannot be zero or negative."
 msgstr "半径偏移不能为负数。"
 
