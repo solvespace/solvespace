@@ -283,6 +283,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
                         c.other2 = !c.other2;
                     }
                 }
+                break;
             }
             case Constraint::Type::HORIZONTAL:
             case Constraint::Type::VERTICAL:
