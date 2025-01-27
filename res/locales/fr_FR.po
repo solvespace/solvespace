@@ -322,8 +322,8 @@ msgstr ""
 "Contraignez-les avec « Contraintes -> Sur Point » avant de contraindre la "
 "tangente.\n"
 "\n"
-"Alternatively select the end point of the arc at which you want it to be "
-"tangent to the line."
+"Alternativement, sélectionnez l'extrémité de l'arc que vous voulez "
+"tangent à la ligne."
 
 #: constraint.cpp:186
 msgid ""
@@ -351,8 +351,8 @@ msgstr ""
 "Contraignez-les avec « Contraintes -> Sur Point » avant de contraindre la "
 "tangente.\n"
 "\n"
-"Alternatively select the end point of the cubic spline at which you want it "
-"to be tangent to the line."
+"Alternativement, sélectionnez l'extrémité de la spline cubique où vous la "
+"voulez tangent à la ligne."
 
 #: constraint.cpp:237
 msgid ""
@@ -380,6 +380,8 @@ msgstr ""
 "\n"
 "Alternatively select the end points of both curves at which you want the "
 "curves to be tangent."
+"Alternativement, sélectionnez les extrémités des deux courbes là où vous "
+"les voulez tangentes."
 
 #: constraint.cpp:303
 msgid ""
@@ -618,8 +620,8 @@ msgstr ""
 "    – Au moins deux normales (parallèle)\n"
 "    – Deux segments de ligne, des arcs ou des Béziers, qui partagent une "
 "extrémité (tangente)\n"
-"    * two line segments, arcs, or beziers, that do not share an endpoint and "
-"the end point(s) of the curve(s) (tangent)\n"
+"    * Deux segments de lignes, arcs, ou béziers, qui n'ont pas d'extrémité "
+"en commun et la/les extrémité(s) des courbe(s) (tangente)\n"
 
 #: constraint.cpp:914
 msgid ""
