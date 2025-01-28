@@ -47,8 +47,8 @@ jobs:
           "windows-ia32",
           "windows-x64",
           # "windows-arm64",
-          "macos-x86_64",
-          "macos-arm64",
+          # "macos-x86_64",
+          # "macos-arm64",
           "linux-x86_64",
           "linux-aarch64",
         ]
@@ -81,16 +81,16 @@ jobs:
           #   architecture: "arm64"
           #   cibuildwheel_architecture: "ARM64"
           #   cmake_generator_platform: "ARM64"
-          - os_arch: "macos-x86_64"
-            os: "macos-11.0"
-            os_short: "macos"
-            cibuildwheel_architecture: "x86_64"
-            architecture: "x86_64"
-          - os_arch: "macos-arm64"
-            os: "macos-11.0"
-            os_short: "macos"
-            cibuildwheel_architecture: "arm64"
-            architecture: "arm64"
+          #- os_arch: "macos-x86_64"
+          #  os: "macos-11.0"
+          #  os_short: "macos"
+          #  cibuildwheel_architecture: "x86_64"
+          #  architecture: "x86_64"
+          #- os_arch: "macos-arm64"
+          #  os: "macos-11.0"
+          #  os_short: "macos"
+          #  cibuildwheel_architecture: "arm64"
+          #  architecture: "arm64"
           - os_arch: linux-x86_64
             os: "ubuntu-22.04"
             os_short: "linux"
