@@ -1,24 +1,25 @@
 # Turkish translations for SolveSpace package.
 # Copyright (C) 2017 the SolveSpace authors
 # This file is distributed under the same license as the SolveSpace package.
-# Mustafa Halil GÖRENTAŞ <halil.mustafa@gmail.com>, 2022.
-# 
+# SPDX-FileCopyrightText: 2022, 2025 Mustafa Halil GÖRENTAŞ <halil.mustafa@gmail.com>
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.1\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
 "POT-Creation-Date: 2025-01-26 21:04+0200\n"
-"PO-Revision-Date: 2023-01-25 20:31+0300\n"
-"Last-Translator: Mustafa Halil GÖRENTAŞ <halil.mustafa@gmail.com>\n"
-"Language-Team: none\n"
+"PO-Revision-Date: 2025-01-29 21:16+0300\n"
+"Last-Translator: mustafa halil <halil.mustafa@gmail.com>\n"
+"Language-Team: Turkish <kde-l10n-tr@kde.org>\n"
 "Language: tr_TR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.1.1\n"
+"X-Generator: Lokalize 23.08.5\n"
 
 #: clipboard.cpp:314
+#, fuzzy
 msgid ""
 "Cut, paste, and copy work only in a workplane.\n"
 "\n"
@@ -303,6 +304,10 @@ msgid ""
 "Select the end point of the arc at which you want it to be tangent to the "
 "line."
 msgstr ""
+"Seçtiğiniz nokta yaya ait değildir. Yay ve doğru parçası bir bitiş "
+"noktasını paylaşmaz.\n"
+"\n"
+"Çizgiye teğet olmasını istediğiniz yayın bitiş noktasını seçin."
 
 #: constraint.cpp:158
 msgid ""
@@ -315,8 +320,8 @@ msgstr ""
 "Teğet için yay ve çizgi parçası bir uç noktayı paylaşmalıdır. Teğet "
 "kısıtlamasından önce bunları Kısıtla -> Noktada ile kısıtlayın.\n"
 "\n"
-"Alternatively select the end point of the arc at which you want it to be "
-"tangent to the line."
+"Alternatif olarak, çizgiye teğet olmasını istediğiniz yayın uç "
+"noktasını seçin."
 
 #: constraint.cpp:186
 msgid ""
@@ -326,6 +331,10 @@ msgid ""
 "Select the end point of the spline at which you want it to be tangent to the "
 "line."
 msgstr ""
+"Seçtiğiniz nokta kübik eğrinin bir uç noktası değildir. Eğri ve doğru "
+"parçası bir bitiş noktasını paylaşmaz.\n"
+"\n"
+"Çizgiye teğet olmasını istediğiniz eğrinin uç noktasını seçin."
 
 #: constraint.cpp:193
 msgid ""
@@ -335,11 +344,11 @@ msgid ""
 "Alternatively select the end point of the cubic spline at which you want it "
 "to be tangent to the line."
 msgstr ""
-"Teğet için eğri ve çizgi parçası bir uç noktayı paylaşmalıdır. Teğet "
+"Teğet için kübik eğri ve çizgi parçası bir uç noktayı paylaşmalıdır. Teğet "
 "kısıtlamasından önce onları Kısıtla -> Noktada ile kısıtlayın.\n"
 "\n"
-"Alternatively select the end point of the cubic spline at which you want it "
-"to be tangent to the line."
+"Alternatif olarak, kübik eğrinin çizgiye teğet olmasını istediğiniz uç "
+"noktasını seçin."
 
 #: constraint.cpp:237
 msgid ""
@@ -349,6 +358,12 @@ msgid ""
 "Select the end points of both curves at which you want them to be tangent to "
 "each other."
 msgstr ""
+"Seçtiğiniz noktalar iki eğrinin uç noktaları değildir. Eğriler bir uç"
+" noktasını "
+"paylaşmazlar.\n"
+"\n"
+"Birbirlerine teğet olmalarını istediğiniz her iki eğrinin uç noktalarını"
+" seçin."
 
 #: constraint.cpp:244
 msgid ""
@@ -361,8 +376,8 @@ msgstr ""
 "Eğriler bir uç noktayı paylaşmalıdır. Teğet kısıtlamasından önce onları "
 "Kısıtla -> Noktada ile kısıtlayın.\n"
 "\n"
-"Alternatively select the end points of both curves at which you want the "
-"curves to be tangent."
+"Alternatif olarak, teğet olmasını istediğiniz eğrilerin iki uç noktalarını "
+"seçin."
 
 #: constraint.cpp:303
 msgid ""
@@ -596,13 +611,13 @@ msgstr ""
 "\n"
 "    * iki yüzey\n"
 "    * iki veya daha fazla doğru parçası (paralel)\n"
-"    * bir veya daha fazla çizgi parçası ve bir veya daha fazla normal "
+"    * bir veya daha fazla doğru parçası ve bir veya daha fazla normal "
 "(paralel)\n"
 "    * iki veya daha fazla normal (paralel)\n"
-"    * bir uç noktayı (teğet) paylaşan iki çizgi parçası, yay veya bezier "
+"    * bir uç noktayı (teğet) paylaşan iki doğru parçası, yay veya bezier "
 "eğriler\n"
-"    * two line segments, arcs, or beziers, that do not share an endpoint and "
-"the end point(s) of the curve(s) (tangent)\n"
+"    *bir uç noktayı paylaşmayan iki doğru parçası, yay veya bezier eğriler ve "
+"eğri(ler)in son noktası(ları) (teğet)\n"
 
 #: constraint.cpp:914
 msgid ""
@@ -2125,8 +2140,8 @@ msgid ""
 "Can't assign style to an entity that's derived from another entity; try "
 "assigning a style to this entity's parent."
 msgstr ""
-"Başka bir öğeden türetilen bir öğeye biçim atayamazsınız; bu öğenin üst "
-"öğesine bir biçim atamayı deneyin."
+"Başka bir öğeden türetilen bir öğeye biçim atayamazsınız; bu öğenin "
+"üst öğesine bir biçim atamayı deneyin."
 
 #: style.cpp:735
 msgid "Style name cannot be empty"
@@ -2311,3 +2326,5 @@ msgstr "Ölçek sıfır veya negatif olamaz."
 #: view.cpp:139 view.cpp:148
 msgid "Bad format: specify x, y, z"
 msgstr "Kötü biçim: x, y, z'yi belirtin"
+
+
