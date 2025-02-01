@@ -2,20 +2,20 @@
 # Copyright (C) 2022 the Solvespace authors
 # This file is distributed under the same license as the SolveSpace package.
 # verylowfreq, 2022.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
 "POT-Creation-Date: 2025-01-26 21:04+0200\n"
-"PO-Revision-Date: 2023-01-31 09:44+0900\n"
+"PO-Revision-Date: 2025-02-01 10:31+0900\n"
 "Last-Translator: https://github.com/verylowfreq\n"
 "Language-Team: \n"
 "Language: ja_JP\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.2.2\n"
+"X-Generator: Poedit 3.5\n"
 
 #: clipboard.cpp:314
 msgid ""
@@ -301,6 +301,9 @@ msgid ""
 "Select the end point of the arc at which you want it to be tangent to the "
 "line."
 msgstr ""
+"選択された点は円弧上にありません。円弧と直線が同じ端点を共有していません。\n"
+"\n"
+"線分に正接させたい円弧の端点を選択してください。"
 
 #: constraint.cpp:158
 msgid ""
@@ -313,8 +316,7 @@ msgstr ""
 "正接する円弧と線分は端点を共有している必要があります。正接拘束をする前に「拘"
 "束 -> 一致」で拘束してください。\n"
 "\n"
-"Alternatively select the end point of the arc at which you want it to be "
-"tangent to the line."
+"もしくは、線分に正接させたい円弧の端点を選択してください。"
 
 #: constraint.cpp:186
 msgid ""
@@ -324,6 +326,10 @@ msgid ""
 "Select the end point of the spline at which you want it to be tangent to the "
 "line."
 msgstr ""
+"選択された点は三次スプラインの端点ではありません。スプラインと線分が同じ端点"
+"を共有していません。\n"
+"\n"
+"線分に正接させたいスプラインの端点を選択してください。"
 
 #: constraint.cpp:193
 msgid ""
@@ -336,8 +342,7 @@ msgstr ""
 "ベジェ曲線と線分は端点を共有している必要があります。正接拘束をする前に「拘束 "
 "-> 一致」で拘束してください。\n"
 "\n"
-"Alternatively select the end point of the cubic spline at which you want it "
-"to be tangent to the line."
+"もしくは、線分に正接させたいベジェ曲線の端点を選択してください。"
 
 #: constraint.cpp:237
 msgid ""
@@ -347,6 +352,10 @@ msgid ""
 "Select the end points of both curves at which you want them to be tangent to "
 "each other."
 msgstr ""
+"選択された点は2つのカーブの端点ではありません。カーブが同じ端点を共有していま"
+"せん。\n"
+"\n"
+"互いに正接させたいカーブの共通の端点を選択してください。"
 
 #: constraint.cpp:244
 msgid ""
@@ -359,8 +368,7 @@ msgstr ""
 "曲線同士は端点を共有している必要があります。正接拘束をする前に「拘束 -> 一"
 "致」で拘束してください。\n"
 "\n"
-"Alternatively select the end points of both curves at which you want the "
-"curves to be tangent."
+"もしくは、正接させたい曲線の共通の端点を選択してください。"
 
 #: constraint.cpp:303
 msgid ""
@@ -583,8 +591,7 @@ msgstr ""
 "　* 1つ以上の線分と1つ以上の法線 (平行に)\n"
 "　* 2つ以上の法線 (平行に)\n"
 "　* 端点の1つが一致する、2つの線分か円弧かベジェ曲線 (正接に)\n"
-"    * two line segments, arcs, or beziers, that do not share an endpoint and "
-"the end point(s) of the curve(s) (tangent)\n"
+"　* 正接する曲線と端点を共有しない、2つの線分か円弧かベジェ曲線\n"
 
 #: constraint.cpp:914
 msgid ""
@@ -1840,7 +1847,7 @@ msgstr "新規スケッチへの変更を保存しますか？"
 #: solvespace.cpp:648
 msgctxt "dialog"
 msgid "Your changes will be lost if you don't save them."
-msgstr "保存しなければ変更は失われます。"
+msgstr "（未保存の変更があります。）"
 
 #: solvespace.cpp:649
 msgctxt "button"
