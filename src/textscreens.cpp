@@ -57,11 +57,13 @@ void TextWindow::ScreenToggleGroupShown(int link, uint32_t v) {
     SS.GenerateAll();
 }
 void TextWindow::ScreenShowGroupsSpecial(int link, uint32_t v) {
-    bool state = link == 's';
     for(hGroup hg : SK.groupOrder) {
         Group *g = SK.GetGroup(hg);
-
-        g->visible = state;
+        switch(link) {
+        case 's': g->visible = true; break;
+        case 'c': g->visible = g->solved.dof != 0; break;
+        case 'h': g->visible = false; break;
+        }
     }
     SS.GW.persistentDirty = true;
 }
@@ -159,7 +161,8 @@ void TextWindow::ShowListOfGroups() {
         backgroundParity = !backgroundParity;
     }
 
-    Printf(true,  "  %Fl%Ls%fshow all%E / %Fl%Lh%fhide all%E",
+    Printf(true, "  %Fl%Ls%fshow all%E / %Fl%Lc%fonly unconstrained%E / %Fl%Lh%fhide all%E",
+        &(TextWindow::ScreenShowGroupsSpecial),
         &(TextWindow::ScreenShowGroupsSpecial),
         &(TextWindow::ScreenShowGroupsSpecial));
     Printf(true,  "  %Fl%Ls%fline styles%E /"
