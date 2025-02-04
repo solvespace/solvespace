@@ -1428,8 +1428,10 @@ public:
     }
 
     void FreezeChoices(SettingsRef settings, const std::string &key) override {
-        settings->FreezeString("Dialog_" + key + "_Folder",
-                               [nsPanel.directoryURL.absoluteString UTF8String]);
+        if (nsPanel.directoryURL != nil) {
+            settings->FreezeString("Dialog_" + key + "_Folder",
+                                   [nsPanel.directoryURL.absoluteString UTF8String]);
+        }
     }
 
     void ThawChoices(SettingsRef settings, const std::string &key) override {
