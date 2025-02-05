@@ -10,7 +10,7 @@ jobs:
     name: WASM library
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: git submodule update --init extlib/mimalloc extlib/eigen
       - name: Pack
         shell: bash
@@ -20,7 +20,7 @@ jobs:
           rm libmimalloc.a || true
           zip -r slvs-wasmlib.zip .
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: slvs-wasmlib
           path: build-wasmlib/bin/slvs-wasmlib.zip
@@ -31,9 +31,9 @@ jobs:
     ]
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - run: git submodule update --init extlib/mimalloc extlib/eigen
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: artifacts
       - name: Setup Node
