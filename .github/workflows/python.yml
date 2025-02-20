@@ -58,6 +58,8 @@ jobs:
           "39",
           "310",
           "311",
+          "312",
+          "313",
         ]
         exclude:
           - os_arch: "macos-arm64"

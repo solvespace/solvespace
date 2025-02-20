@@ -190,19 +190,19 @@ cpdef tuple make_quaternion(double ux, double uy, double uz, double vx, double v
     return qw, qx, qy, qz
 
 # entities
-def add_point_2d(grouph: int, u: double, v: double, workplane: Slvs_Entity) -> Slvs_Entity:
+def add_point_2d(grouph: int, u: float, v: float, workplane: Slvs_Entity) -> Slvs_Entity:
     return Slvs_AddPoint2D(grouph, u, v, workplane)
 
-def add_point_3d(grouph: int, x: double, y: double, z: double) -> Slvs_Entity:
+def add_point_3d(grouph: int, x: float, y: float, z: float) -> Slvs_Entity:
     return Slvs_AddPoint3D(grouph, x, y, z)
 
 def add_normal_2d(grouph: int, workplane: Slvs_Entity) -> Slvs_Entity:
     return Slvs_AddNormal2D(grouph, workplane)
 
-def add_normal_3d(grouph: int, qw: double, qx: double, qy: double, qz: double) -> Slvs_Entity:
+def add_normal_3d(grouph: int, qw: float, qx: float, qy: float, qz: float) -> Slvs_Entity:
     return Slvs_AddNormal3D(grouph, qw, qx, qy, qz)
 
-def add_distance(grouph: int, value: double, workplane: Slvs_Entity) -> Slvs_Entity:
+def add_distance(grouph: int, value: float, workplane: Slvs_Entity) -> Slvs_Entity:
     return Slvs_AddDistance(grouph, value, workplane)
 
 def add_line_2d(grouph: int, ptA: Slvs_Entity, ptB: Slvs_Entity, workplane: Slvs_Entity) -> Slvs_Entity:
@@ -227,7 +227,7 @@ def add_base_2d(grouph: int) -> Slvs_Entity:
     return Slvs_AddBase2D(grouph)
 
 # constraints
-def add_constraint(grouph: int, c_type: int, workplane: Slvs_Entity, val: double, ptA: Slvs_Entity = E_NONE,
+def add_constraint(grouph: int, c_type: int, workplane: Slvs_Entity, val: float, ptA: Slvs_Entity = E_NONE,
         ptB: Slvs_Entity = E_NONE, entityA: Slvs_Entity = E_NONE,
         entityB: Slvs_Entity = E_NONE, entityC: Slvs_Entity = E_NONE,
         entityD: Slvs_Entity = E_NONE, other: int = 0, other2: int = 0) -> Slvs_Constraint:
@@ -236,7 +236,7 @@ def add_constraint(grouph: int, c_type: int, workplane: Slvs_Entity, val: double
 def coincident(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
     return Slvs_Coincident(grouph, entityA, entityB, workplane)
 
-def distance(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, value: double, workplane: Slvs_Entity) -> Slvs_Constraint:
+def distance(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, value: float, workplane: Slvs_Entity) -> Slvs_Constraint:
     return Slvs_Distance(grouph, entityA, entityB, value, workplane)
 
 def equal(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
@@ -252,7 +252,7 @@ def equal_point_to_line(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity,
                                         workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
     return Slvs_EqualPointToLine(grouph, entityA, entityB, entityC, entityD, workplane)
 
-def ratio(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, value: double, workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
+def ratio(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, value: float, workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
     return Slvs_Ratio(grouph, entityA, entityB, value, workplane)
 
 def symmetric(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, entityC: Slvs_Entity = E_NONE, workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
@@ -273,16 +273,16 @@ def horizontal(grouph: int, entityA: Slvs_Entity, workplane: Slvs_Entity, entity
 def vertical(grouph: int, entityA: Slvs_Entity, workplane: Slvs_Entity, entityB: Slvs_Entity = E_NONE) -> Slvs_Constraint:
     return Slvs_Vertical(grouph, entityA, workplane, entityB)
 
-def diameter(grouph: int, entityA: Slvs_Entity, value: double) -> Slvs_Constraint:
+def diameter(grouph: int, entityA: Slvs_Entity, value: float) -> Slvs_Constraint:
     return Slvs_Diameter(grouph, entityA, value)
 
 def same_orientation(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity) -> Slvs_Constraint:
     return Slvs_SameOrientation(grouph, entityA, entityB)
 
-def angle(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, value: double, workplane: Slvs_Entity = E_FREE_IN_3D, inverse: int = 0) -> Slvs_Constraint:
+def angle(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, value: float, workplane: Slvs_Entity = E_FREE_IN_3D, inverse: bool = False) -> Slvs_Constraint:
     return Slvs_Angle(grouph, entityA, entityB, value, workplane, inverse)
 
-def perpendicular(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity = E_FREE_IN_3D, inverse: int = 0) -> Slvs_Constraint:
+def perpendicular(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity = E_FREE_IN_3D, inverse: bool = False) -> Slvs_Constraint:
     return Slvs_Perpendicular(grouph, entityA, entityB, workplane, inverse)
 
 def parallel(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
@@ -291,10 +291,10 @@ def parallel(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane:
 def tangent(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
     return Slvs_Tangent(grouph, entityA, entityB, workplane)
 
-def distance_proj(grouph: int, ptA: Slvs_Entity, ptB: Slvs_Entity, value: double) -> Slvs_Constraint:
+def distance_proj(grouph: int, ptA: Slvs_Entity, ptB: Slvs_Entity, value: float) -> Slvs_Constraint:
     return Slvs_DistanceProj(grouph, ptA, ptB, value)
 
-def length_diff(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, value: double, workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
+def length_diff(grouph: int, entityA: Slvs_Entity, entityB: Slvs_Entity, value: float, workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
     return Slvs_LengthDiff(grouph, entityA, entityB, value, workplane)
 
 def dragged(grouph: int, ptA: Slvs_Entity, workplane: Slvs_Entity = E_FREE_IN_3D) -> Slvs_Constraint:
@@ -361,13 +361,13 @@ class EntityType(IntEnum):
     CIRCLE = _SLVS_E_CIRCLE
     ARC_OF_CIRCLE = _SLVS_E_ARC_OF_CIRCLE
 
-def solve_sketch(grouph: int, calculateFaileds: int):
+def solve_sketch(grouph: int, calculateFaileds: bool):
     return Slvs_SolveSketch(grouph, calculateFaileds)
 
 def get_param_value(ph: int):
     return Slvs_GetParamValue(ph)
 
-def set_param_value(ph: int, value: double):
+def set_param_value(ph: int, value: float):
     Slvs_SetParamValue(ph, value)
 
 def clear_sketch():
