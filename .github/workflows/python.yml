@@ -2,8 +2,9 @@ name: Python
 
 on:
   push:
-    branches: [ master, python, experiments, stateful-c-lib ]
+    branches: [ master ]
     tags: [ v* ]
+  workflow_dispatch:
 
 jobs:
   python-sdist:
@@ -128,7 +129,7 @@ jobs:
         with:
           platforms: arm64
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.11.2
+        uses: pypa/cibuildwheel@v2.22.0
         env:
           CIBW_BUILD: "cp${{ matrix.python_version }}-*"
           CIBW_PLATFORM: "${{ matrix.os_short }}"
@@ -138,6 +139,7 @@ jobs:
             CMAKE_GENERATOR="Visual Studio 17 2022"
             CMAKE_GENERATOR_PLATFORM="${{ matrix.cmake_generator_platform }}"
           CIBW_ENVIRONMENT_PASS_WINDOWS: "CMAKE_GENERATOR CMAKE_GENERATOR_PLATFORM"
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=10.12
       - uses: actions/upload-artifact@v4
         with:
           name: wheel-cp${{ matrix.python_version }}-${{ matrix.os_short }}-${{ matrix.architecture }}
