@@ -4,14 +4,15 @@
 # EvilSpirit <evilspirit@evilspirit.org>, 2017.
 # Olesya Gerasimenko <translation-team@basealt.ru>, 2021.
 # Alexandre Prokoudine <alexandre.prokoudine@gmail.com>, 2023.
+# Milan Djurovic <mdjurovic@zohomail.com>, 2025.
 # 
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
 "POT-Creation-Date: 2025-01-26 21:04+0200\n"
-"PO-Revision-Date: 2023-04-04 22:39+0200\n"
-"Last-Translator: Alexandre Prokoudine <alexandre.prokoudine@gmail.com>\n"
+"PO-Revision-Date: 2025-02-22 14:48-0800\n"
+"Last-Translator: Milan Djurovic <mdjurovic@zohomail.com>\n"
 "Language-Team: Russian <gnome-cyr@lists.gnome.org>\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
@@ -29,7 +30,7 @@ msgid ""
 msgstr ""
 "Копировать, вставить или вырезать можно\n"
 "только находясь в рабочей плоскости.\n"
-"Активируйте ее через Эскиз->В рабочей плоскости"
+"Активируйте ее через Эскиз->В рабочей плоскости."
 
 #: clipboard.cpp:331
 msgid "Clipboard is empty; nothing to paste."
@@ -64,7 +65,7 @@ msgstr "Слишком много элементов для вставки; ра
 
 #: clipboard.cpp:467
 msgid "No workplane active."
-msgstr "Рабочая плоскость не активна"
+msgstr "Нет активной рабочей плоскости."
 
 #: confscreen.cpp:410
 msgid "Bad format: specify coordinates as x, y, z"
@@ -696,11 +697,11 @@ msgstr "Активная группа не содержит тел; нечего
 
 #: exportvector.cpp:336
 msgid "freehand lines were replaced with continuous lines"
-msgstr "Стили линии 'от руки' были заменены сплошными линиями"
+msgstr "стили линии 'от руки' были заменены сплошными линиями"
 
 #: exportvector.cpp:338
 msgid "zigzag lines were replaced with continuous lines"
-msgstr "Стили линии 'зиг-заг' были заменены сплошными линиями"
+msgstr "ломаные линии были заменены сплошными линиями"
 
 #: exportvector.cpp:592
 msgid ""
@@ -736,7 +737,7 @@ msgid ""
 "of the program."
 msgstr ""
 "Некоторые данные из этого файла не распознаны. Возможно, файл поврежден или "
-"создан в более новой версии программы"
+"создан в более новой версии программы."
 
 #: file.cpp:876
 msgctxt "title"
@@ -1717,9 +1718,7 @@ msgstr "кликните мышью там, где хотите создать �
 
 #: mouse.cpp:1088
 msgid "click next point of cubic, or press Esc"
-msgstr ""
-"кликните мышью там, где хотите создать следующую точку сплайна или нажмите "
-"Esc для завершения операции."
+msgstr "кликните следующую точку сплайна или нажмите Esc"
 
 #: mouse.cpp:1093
 msgid ""
@@ -2068,7 +2067,7 @@ msgstr ""
 msgid "Bad selection for perimeter; select line segments, arcs, and curves."
 msgstr ""
 "Неправильное выделение для расчета периметра; необходимо выбирать только "
-"отрезки, дуги и кривые в качестве исходных данных"
+"отрезки, дуги и кривые."
 
 #: solvespace.cpp:1022
 msgid "Bad selection for trace; select a single point."
@@ -2177,7 +2176,7 @@ msgstr ""
 
 #: style.cpp:735
 msgid "Style name cannot be empty"
-msgstr "Имя стиля не может быть пустым."
+msgstr "Имя стиля не может быть пустым"
 
 #: textscreens.cpp:837
 msgid "Can't repeat fewer than 1 time."
@@ -2189,7 +2188,7 @@ msgstr "Невозможно сделать повтор больше, чем 99
 
 #: textscreens.cpp:866
 msgid "Group name cannot be empty"
-msgstr "Имя группы не может быть пустым."
+msgstr "Имя группы не может быть пустым"
 
 #: textscreens.cpp:918
 msgid "Opacity must be between zero and one."
