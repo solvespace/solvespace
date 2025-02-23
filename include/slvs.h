@@ -10,7 +10,7 @@
 #ifndef __SLVS_H
 #define __SLVS_H
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(STATIC_LIB)
 #   ifdef EXPORT_DLL
 #       define DLL __declspec( dllexport )
 #   else
@@ -423,8 +423,8 @@ DLL bool Slvs_IsDistance(Slvs_Entity e);
 DLL bool Slvs_IsPoint(Slvs_Entity e);
 DLL bool Slvs_IsCircle(Slvs_Entity e);
 
-static Slvs_Entity SLVS_E_NONE = { 0 };
-static Slvs_Entity SLVS_E_FREE_IN_3D = { 0 };
+static const Slvs_Entity SLVS_E_NONE = { 0 };
+static const Slvs_Entity SLVS_E_FREE_IN_3D = { 0 };
 
 DLL Slvs_Entity Slvs_AddPoint2D(uint32_t grouph, double u, double v, Slvs_Entity workplane);
 DLL Slvs_Entity Slvs_AddPoint3D(uint32_t grouph, double x, double y, double z);
