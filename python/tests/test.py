@@ -1,5 +1,5 @@
 from unittest import TestCase
-import solvespace as slvs
+import slvs
 # from solvespace import ConstraintType, E_NONE
 from math import radians
 
