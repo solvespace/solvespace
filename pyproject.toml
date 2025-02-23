@@ -3,7 +3,7 @@ requires = ["scikit-build-core", "Cython", "cmake", "ninja"]
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "solvespace"
+name = "slvs"
 version = "0.0.0"
 description="SolveSpace solver wrapped with Cython"
 readme = "README.md"
@@ -32,7 +32,7 @@ sdist.include = [
   ".git/HEAD",
   ".git/refs"
 ]
-wheel.packages = ["python/solvespace"]
+wheel.packages = ["python/slvs"]
 
 [tool.scikit-build.cmake.define]
 ENABLE_GUI = "OFF"

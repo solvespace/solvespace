@@ -145,10 +145,10 @@ if(ENABLE_PYTHON_LIB)
     if(SKBUILD)
         install(TARGETS solvespace DESTINATION ${SKBUILD_PROJECT_NAME})
     else()
-        install(TARGETS solvespace DESTINATION "solvespace")
+        install(TARGETS solvespace DESTINATION "slvs")
         install(
-            DIRECTORY ${CMAKE_SOURCE_DIR}/python/solvespace/
-            DESTINATION "solvespace"
+            DIRECTORY ${CMAKE_SOURCE_DIR}/python/slvs/
+            DESTINATION "slvs"
         )
     endif()
 else()
