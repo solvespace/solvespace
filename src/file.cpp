@@ -3,6 +3,11 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
+#include <cstring>
+#include <string>
+#include <type_traits>
+#include <unordered_map>
+
 #include "solvespace.h"
 
 #define VERSION_STRING "\261\262\263" "SolveSpaceREVa"
@@ -84,163 +89,353 @@ void SolveSpaceUI::NewFile() {
     CreateDefaultDrawingGroup();
 }
 
-const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
-    { 'g',  "Group.h.v",                'x',    &(SS.sv.g.h.v)                },
-    { 'g',  "Group.type",               'd',    &(SS.sv.g.type)               },
-    { 'g',  "Group.order",              'd',    &(SS.sv.g.order)              },
-    { 'g',  "Group.name",               'S',    &(SS.sv.g.name)               },
-    { 'g',  "Group.activeWorkplane.v",  'x',    &(SS.sv.g.activeWorkplane.v)  },
-    { 'g',  "Group.opA.v",              'x',    &(SS.sv.g.opA.v)              },
-    { 'g',  "Group.opB.v",              'x',    &(SS.sv.g.opB.v)              },
-    { 'g',  "Group.valA",               'f',    &(SS.sv.g.valA)               },
-    { 'g',  "Group.valB",               'f',    &(SS.sv.g.valB)               },
-    { 'g',  "Group.valC",               'f',    &(SS.sv.g.valB)               },
-    { 'g',  "Group.color",              'c',    &(SS.sv.g.color)              },
-    { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
-    { 'g',  "Group.skipFirst",          'b',    &(SS.sv.g.skipFirst)          },
-    { 'g',  "Group.meshCombine",        'd',    &(SS.sv.g.meshCombine)        },
-    { 'g',  "Group.forceToMesh",        'd',    &(SS.sv.g.forceToMesh)        },
-    { 'g',  "Group.predef.q.w",         'f',    &(SS.sv.g.predef.q.w)         },
-    { 'g',  "Group.predef.q.vx",        'f',    &(SS.sv.g.predef.q.vx)        },
-    { 'g',  "Group.predef.q.vy",        'f',    &(SS.sv.g.predef.q.vy)        },
-    { 'g',  "Group.predef.q.vz",        'f',    &(SS.sv.g.predef.q.vz)        },
-    { 'g',  "Group.predef.origin.v",    'x',    &(SS.sv.g.predef.origin.v)    },
-    { 'g',  "Group.predef.entityB.v",   'x',    &(SS.sv.g.predef.entityB.v)   },
-    { 'g',  "Group.predef.entityC.v",   'x',    &(SS.sv.g.predef.entityC.v)   },
-    { 'g',  "Group.predef.swapUV",      'b',    &(SS.sv.g.predef.swapUV)      },
-    { 'g',  "Group.predef.negateU",     'b',    &(SS.sv.g.predef.negateU)     },
-    { 'g',  "Group.predef.negateV",     'b',    &(SS.sv.g.predef.negateV)     },
-    { 'g',  "Group.visible",            'b',    &(SS.sv.g.visible)            },
-    { 'g',  "Group.suppress",           'b',    &(SS.sv.g.suppress)           },
-    { 'g',  "Group.relaxConstraints",   'b',    &(SS.sv.g.relaxConstraints)   },
-    { 'g',  "Group.allowRedundant",     'b',    &(SS.sv.g.allowRedundant)     },
-    { 'g',  "Group.allDimsReference",   'b',    &(SS.sv.g.allDimsReference)   },
-    { 'g',  "Group.scale",              'f',    &(SS.sv.g.scale)              },
-    { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
-    { 'g',  "Group.impFile",            'i',    NULL                          },
-    { 'g',  "Group.impFileRel",         'P',    &(SS.sv.g.linkFile)           },
-
-    { 'p',  "Param.h.v.",               'x',    &(SS.sv.p.h.v)                },
-    { 'p',  "Param.val",                'f',    &(SS.sv.p.val)                },
-
-    { 'r',  "Request.h.v",              'x',    &(SS.sv.r.h.v)                },
-    { 'r',  "Request.type",             'd',    &(SS.sv.r.type)               },
-    { 'r',  "Request.extraPoints",      'd',    &(SS.sv.r.extraPoints)        },
-    { 'r',  "Request.workplane.v",      'x',    &(SS.sv.r.workplane.v)        },
-    { 'r',  "Request.group.v",          'x',    &(SS.sv.r.group.v)            },
-    { 'r',  "Request.construction",     'b',    &(SS.sv.r.construction)       },
-    { 'r',  "Request.style",            'x',    &(SS.sv.r.style)              },
-    { 'r',  "Request.str",              'S',    &(SS.sv.r.str)                },
-    { 'r',  "Request.font",             'S',    &(SS.sv.r.font)               },
-    { 'r',  "Request.file",             'P',    &(SS.sv.r.file)               },
-    { 'r',  "Request.aspectRatio",      'f',    &(SS.sv.r.aspectRatio)        },
-
-    { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },
-    { 'e',  "Entity.type",              'd',    &(SS.sv.e.type)               },
-    { 'e',  "Entity.construction",      'b',    &(SS.sv.e.construction)       },
-    { 'e',  "Entity.style",             'x',    &(SS.sv.e.style)              },
-    { 'e',  "Entity.str",               'S',    &(SS.sv.e.str)                },
-    { 'e',  "Entity.font",              'S',    &(SS.sv.e.font)               },
-    { 'e',  "Entity.file",              'P',    &(SS.sv.e.file)               },
-    { 'e',  "Entity.point[0].v",        'x',    &(SS.sv.e.point[0].v)         },
-    { 'e',  "Entity.point[1].v",        'x',    &(SS.sv.e.point[1].v)         },
-    { 'e',  "Entity.point[2].v",        'x',    &(SS.sv.e.point[2].v)         },
-    { 'e',  "Entity.point[3].v",        'x',    &(SS.sv.e.point[3].v)         },
-    { 'e',  "Entity.point[4].v",        'x',    &(SS.sv.e.point[4].v)         },
-    { 'e',  "Entity.point[5].v",        'x',    &(SS.sv.e.point[5].v)         },
-    { 'e',  "Entity.point[6].v",        'x',    &(SS.sv.e.point[6].v)         },
-    { 'e',  "Entity.point[7].v",        'x',    &(SS.sv.e.point[7].v)         },
-    { 'e',  "Entity.point[8].v",        'x',    &(SS.sv.e.point[8].v)         },
-    { 'e',  "Entity.point[9].v",        'x',    &(SS.sv.e.point[9].v)         },
-    { 'e',  "Entity.point[10].v",       'x',    &(SS.sv.e.point[10].v)        },
-    { 'e',  "Entity.point[11].v",       'x',    &(SS.sv.e.point[11].v)        },
-    { 'e',  "Entity.extraPoints",       'd',    &(SS.sv.e.extraPoints)        },
-    { 'e',  "Entity.normal.v",          'x',    &(SS.sv.e.normal.v)           },
-    { 'e',  "Entity.distance.v",        'x',    &(SS.sv.e.distance.v)         },
-    { 'e',  "Entity.workplane.v",       'x',    &(SS.sv.e.workplane.v)        },
-    { 'e',  "Entity.actPoint.x",        'f',    &(SS.sv.e.actPoint.x)         },
-    { 'e',  "Entity.actPoint.y",        'f',    &(SS.sv.e.actPoint.y)         },
-    { 'e',  "Entity.actPoint.z",        'f',    &(SS.sv.e.actPoint.z)         },
-    { 'e',  "Entity.actNormal.w",       'f',    &(SS.sv.e.actNormal.w)        },
-    { 'e',  "Entity.actNormal.vx",      'f',    &(SS.sv.e.actNormal.vx)       },
-    { 'e',  "Entity.actNormal.vy",      'f',    &(SS.sv.e.actNormal.vy)       },
-    { 'e',  "Entity.actNormal.vz",      'f',    &(SS.sv.e.actNormal.vz)       },
-    { 'e',  "Entity.actDistance",       'f',    &(SS.sv.e.actDistance)        },
-    { 'e',  "Entity.actVisible",        'b',    &(SS.sv.e.actVisible),        },
-
-
-    { 'c',  "Constraint.h.v",           'x',    &(SS.sv.c.h.v)                },
-    { 'c',  "Constraint.type",          'd',    &(SS.sv.c.type)               },
-    { 'c',  "Constraint.group.v",       'x',    &(SS.sv.c.group.v)            },
-    { 'c',  "Constraint.workplane.v",   'x',    &(SS.sv.c.workplane.v)        },
-    { 'c',  "Constraint.valA",          'f',    &(SS.sv.c.valA)               },
-    { 'c',  "Constraint.valP.v",        'x',    &(SS.sv.c.valP.v)             },
-    { 'c',  "Constraint.ptA.v",         'x',    &(SS.sv.c.ptA.v)              },
-    { 'c',  "Constraint.ptB.v",         'x',    &(SS.sv.c.ptB.v)              },
-    { 'c',  "Constraint.entityA.v",     'x',    &(SS.sv.c.entityA.v)          },
-    { 'c',  "Constraint.entityB.v",     'x',    &(SS.sv.c.entityB.v)          },
-    { 'c',  "Constraint.entityC.v",     'x',    &(SS.sv.c.entityC.v)          },
-    { 'c',  "Constraint.entityD.v",     'x',    &(SS.sv.c.entityD.v)          },
-    { 'c',  "Constraint.other",         'b',    &(SS.sv.c.other)              },
-    { 'c',  "Constraint.other2",        'b',    &(SS.sv.c.other2)             },
-    { 'c',  "Constraint.reference",     'b',    &(SS.sv.c.reference)          },
-    { 'c',  "Constraint.comment",       'S',    &(SS.sv.c.comment)            },
-    { 'c',  "Constraint.disp.offset.x", 'f',    &(SS.sv.c.disp.offset.x)      },
-    { 'c',  "Constraint.disp.offset.y", 'f',    &(SS.sv.c.disp.offset.y)      },
-    { 'c',  "Constraint.disp.offset.z", 'f',    &(SS.sv.c.disp.offset.z)      },
-    { 'c',  "Constraint.disp.style",    'x',    &(SS.sv.c.disp.style)         },
-
-    { 's',  "Style.h.v",                'x',    &(SS.sv.s.h.v)                },
-    { 's',  "Style.name",               'S',    &(SS.sv.s.name)               },
-    { 's',  "Style.width",              'f',    &(SS.sv.s.width)              },
-    { 's',  "Style.widthAs",            'd',    &(SS.sv.s.widthAs)            },
-    { 's',  "Style.textHeight",         'f',    &(SS.sv.s.textHeight)         },
-    { 's',  "Style.textHeightAs",       'd',    &(SS.sv.s.textHeightAs)       },
-    { 's',  "Style.textAngle",          'f',    &(SS.sv.s.textAngle)          },
-    { 's',  "Style.textOrigin",         'x',    &(SS.sv.s.textOrigin)         },
-    { 's',  "Style.color",              'c',    &(SS.sv.s.color)              },
-    { 's',  "Style.fillColor",          'c',    &(SS.sv.s.fillColor)          },
-    { 's',  "Style.filled",             'b',    &(SS.sv.s.filled)             },
-    { 's',  "Style.visible",            'b',    &(SS.sv.s.visible)            },
-    { 's',  "Style.exportable",         'b',    &(SS.sv.s.exportable)         },
-    { 's',  "Style.stippleType",        'd',    &(SS.sv.s.stippleType)        },
-    { 's',  "Style.stippleScale",       'f',    &(SS.sv.s.stippleScale)       },
-
-    { 0, NULL, 0, NULL }
+template<class T, bool>
+struct UnderlyingTypeHelper {
+    using type = T;
 };
+
+template<class T>
+struct UnderlyingTypeHelper<T, true> {
+    using type = typename std::underlying_type<T>::type;
+};
+
+template<class T>
+using UnderlyingType = typename UnderlyingTypeHelper<T, std::is_enum<T>::value>::type;
+
+struct StrEqual {
+    bool operator()(const char *a, const char *b) const {
+        return strcmp(a, b) == 0;
+    }
+};
+struct StrHash {
+    uint64_t operator()(const char *v) const {
+        // Use FNV hash as the hashing function
+        constexpr uint64_t prime{0x100000001B3};
+        uint64_t res = 0xcbf29ce484222325;
+        for(; *v; ++v) {
+            res = (res * prime) ^ *v;
+        }
+        return res;
+    }
+};
+using SaveTable = std::unordered_map<const char *, SolveSpaceUI::SaveDesc, StrHash, StrEqual>;
+
+// Ideally we should just use `offsetof(type, member)` and save that in `SaveDesc`, but
+// since it doesn't work with types that are not standard layout, we have to go through
+// this lambda and store it as a function pointer instead
+#define MEMBER(type, member) \
+    [](const void *obj) { return &static_cast<type *>(const_cast<void *>(obj))->member; }
+
+template<class F>
+static constexpr SolveSpaceUI::SaveDesc BoolFormatter(F getter) {
+    using ReturnType = typename std::remove_pointer<decltype(getter(nullptr))>::type;
+    static_assert(std::is_same<bool, ReturnType>::value, "Only booleans can be bool-formatted");
+    return {'b', (void *(*)(const void *)) static_cast<ReturnType *(*)(const void *)>(getter)};
+}
+
+template<class F>
+static constexpr SolveSpaceUI::SaveDesc IntFormatter(F getter) {
+    using ReturnType = typename std::remove_pointer<decltype(getter(nullptr))>::type;
+    static_assert(std::is_integral<UnderlyingType<ReturnType>>::value &&
+                      sizeof(ReturnType) == sizeof(int),
+                  "Only integral types can be int-formatted");
+    return {std::is_signed<UnderlyingType<ReturnType>>::value ? 'd' : 'u',
+            (void *(*)(const void *)) static_cast<ReturnType *(*)(const void *)>(getter)};
+}
+
+template<class F>
+static constexpr SolveSpaceUI::SaveDesc HexFormatter(F getter) {
+    using ReturnType = typename std::remove_pointer<decltype(getter(nullptr))>::type;
+    static_assert(std::is_unsigned<UnderlyingType<ReturnType>>::value &&
+                      sizeof(ReturnType) == sizeof(uint32_t),
+                  "Only unsigned integral types can be hex-formatted");
+    return {'x', (void *(*)(const void *)) static_cast<ReturnType *(*)(const void *)>(getter)};
+}
+
+template<class F>
+static constexpr SolveSpaceUI::SaveDesc FloatFormatter(F getter) {
+    using ReturnType = typename std::remove_pointer<decltype(getter(nullptr))>::type;
+    static_assert(std::is_same<double, ReturnType>::value, "Only doubles can be float-formatted");
+    return {'f', (void *(*)(const void *)) static_cast<ReturnType *(*)(const void *)>(getter)};
+}
+
+template<class F>
+static constexpr SolveSpaceUI::SaveDesc ColorFormatter(F getter) {
+    using ReturnType = typename std::remove_pointer<decltype(getter(nullptr))>::type;
+    static_assert(std::is_same<RgbaColor, ReturnType>::value,
+                  "Only RgbaColor can be color-formatted");
+    return {'c', (void *(*)(const void *)) static_cast<ReturnType *(*)(const void *)>(getter)};
+}
+
+template<class F>
+static constexpr SolveSpaceUI::SaveDesc StrFormatter(F getter) {
+    using ReturnType = typename std::remove_pointer<decltype(getter(nullptr))>::type;
+    static_assert(std::is_same<std::string, ReturnType>::value,
+                  "Only std::string can be string-formatted");
+    return {'S', (void *(*)(const void *)) static_cast<ReturnType *(*)(const void *)>(getter)};
+}
+
+template<class F>
+static constexpr SolveSpaceUI::SaveDesc MapFormatter(F getter) {
+    using ReturnType = typename std::remove_pointer<decltype(getter(nullptr))>::type;
+    static_assert(std::is_same<EntityMap, ReturnType>::value,
+                  "Only EntityMap can be map-formatted");
+    return {'M', (void *(*)(const void *)) static_cast<ReturnType *(*)(const void *)>(getter)};
+}
+
+template<class F>
+static constexpr SolveSpaceUI::SaveDesc PathFormatter(F getter) {
+    using ReturnType = typename std::remove_pointer<decltype(getter(nullptr))>::type;
+    static_assert(std::is_same<Platform::Path, ReturnType>::value,
+                  "Only Platform::Path can be path-formatted");
+    return {'P', (void *(*)(const void *)) static_cast<ReturnType *(*)(const void *)>(getter)};
+}
+
+static constexpr SolveSpaceUI::SaveDesc IgnoredFormatter() {
+    return {'i', nullptr};
+}
+
+static const SaveTable::value_type SAVED_GROUP[] = {
+    {"h.v", HexFormatter(MEMBER(Group, h.v))},
+    {"type", IntFormatter(MEMBER(Group, type))},
+    {"order", IntFormatter(MEMBER(Group, order))},
+    {"name", StrFormatter(MEMBER(Group, name))},
+    {"activeWorkplane.v", HexFormatter(MEMBER(Group, activeWorkplane.v))},
+    {"opA.v", HexFormatter(MEMBER(Group, opA.v))},
+    {"opB.v", HexFormatter(MEMBER(Group, opB.v))},
+    {"valA", FloatFormatter(MEMBER(Group, valA))},
+    {"valB", FloatFormatter(MEMBER(Group, valB))},
+    {"valC", FloatFormatter(MEMBER(Group, valB))},
+    {"color", ColorFormatter(MEMBER(Group, color))},
+    {"subtype", IntFormatter(MEMBER(Group, subtype))},
+    {"skipFirst", BoolFormatter(MEMBER(Group, skipFirst))},
+    {"meshCombine", IntFormatter(MEMBER(Group, meshCombine))},
+    {"forceToMesh", BoolFormatter(MEMBER(Group, forceToMesh))},
+    {"predef.q.w", FloatFormatter(MEMBER(Group, predef.q.w))},
+    {"predef.q.vx", FloatFormatter(MEMBER(Group, predef.q.vx))},
+    {"predef.q.vy", FloatFormatter(MEMBER(Group, predef.q.vy))},
+    {"predef.q.vz", FloatFormatter(MEMBER(Group, predef.q.vz))},
+    {"predef.origin.v", HexFormatter(MEMBER(Group, predef.origin.v))},
+    {"predef.entityB.v", HexFormatter(MEMBER(Group, predef.entityB.v))},
+    {"predef.entityC.v", HexFormatter(MEMBER(Group, predef.entityC.v))},
+    {"predef.swapUV", BoolFormatter(MEMBER(Group, predef.swapUV))},
+    {"predef.negateU", BoolFormatter(MEMBER(Group, predef.negateU))},
+    {"predef.negateV", BoolFormatter(MEMBER(Group, predef.negateV))},
+    {"visible", BoolFormatter(MEMBER(Group, visible))},
+    {"suppress", BoolFormatter(MEMBER(Group, suppress))},
+    {"relaxConstraints", BoolFormatter(MEMBER(Group, relaxConstraints))},
+    {"allowRedundant", BoolFormatter(MEMBER(Group, allowRedundant))},
+    {"allDimsReference", BoolFormatter(MEMBER(Group, allDimsReference))},
+    {"scale", FloatFormatter(MEMBER(Group, scale))},
+    {"remap", MapFormatter(MEMBER(Group, remap))},
+    {"impFile", IgnoredFormatter()},
+    {"impFileRel", PathFormatter(MEMBER(Group, linkFile))},
+};
+
+static const SaveTable::value_type SAVED_PARAM[] = {
+    {"h.v.", HexFormatter(MEMBER(Param, h.v))},
+    {"val", FloatFormatter(MEMBER(Param, val))},
+};
+
+static const SaveTable::value_type SAVED_REQUEST[] = {
+    {"h.v", HexFormatter(MEMBER(Request, h.v))},
+    {"type", IntFormatter(MEMBER(Request, type))},
+    {"extraPoints", IntFormatter(MEMBER(Request, extraPoints))},
+    {"workplane.v", HexFormatter(MEMBER(Request, workplane.v))},
+    {"group.v", HexFormatter(MEMBER(Request, group.v))},
+    {"construction", BoolFormatter(MEMBER(Request, construction))},
+    {"style", HexFormatter(MEMBER(Request, style.v))},
+    {"str", StrFormatter(MEMBER(Request, str))},
+    {"font", StrFormatter(MEMBER(Request, font))},
+    {"file", PathFormatter(MEMBER(Request, file))},
+    {"aspectRatio", FloatFormatter(MEMBER(Request, aspectRatio))},
+};
+
+static const SaveTable::value_type SAVED_ENTITY[] = {
+    {"h.v", HexFormatter(MEMBER(Entity, h.v))},
+    {"type", IntFormatter(MEMBER(Entity, type))},
+    {"construction", BoolFormatter(MEMBER(Entity, construction))},
+    {"style", HexFormatter(MEMBER(Entity, style.v))},
+    {"str", StrFormatter(MEMBER(Entity, str))},
+    {"font", StrFormatter(MEMBER(Entity, font))},
+    {"file", PathFormatter(MEMBER(Entity, file))},
+    {"point[0].v", HexFormatter(MEMBER(Entity, point[0].v))},
+    {"point[1].v", HexFormatter(MEMBER(Entity, point[1].v))},
+    {"point[2].v", HexFormatter(MEMBER(Entity, point[2].v))},
+    {"point[3].v", HexFormatter(MEMBER(Entity, point[3].v))},
+    {"point[4].v", HexFormatter(MEMBER(Entity, point[4].v))},
+    {"point[5].v", HexFormatter(MEMBER(Entity, point[5].v))},
+    {"point[6].v", HexFormatter(MEMBER(Entity, point[6].v))},
+    {"point[7].v", HexFormatter(MEMBER(Entity, point[7].v))},
+    {"point[8].v", HexFormatter(MEMBER(Entity, point[8].v))},
+    {"point[9].v", HexFormatter(MEMBER(Entity, point[9].v))},
+    {"point[10].v", HexFormatter(MEMBER(Entity, point[10].v))},
+    {"point[11].v", HexFormatter(MEMBER(Entity, point[11].v))},
+    {"extraPoints", IntFormatter(MEMBER(Entity, extraPoints))},
+    {"normal.v", HexFormatter(MEMBER(Entity, normal.v))},
+    {"distance.v", HexFormatter(MEMBER(Entity, distance.v))},
+    {"workplane.v", HexFormatter(MEMBER(Entity, workplane.v))},
+    {"actPoint.x", FloatFormatter(MEMBER(Entity, actPoint.x))},
+    {"actPoint.y", FloatFormatter(MEMBER(Entity, actPoint.y))},
+    {"actPoint.z", FloatFormatter(MEMBER(Entity, actPoint.z))},
+    {"actNormal.w", FloatFormatter(MEMBER(Entity, actNormal.w))},
+    {"actNormal.vx", FloatFormatter(MEMBER(Entity, actNormal.vx))},
+    {"actNormal.vy", FloatFormatter(MEMBER(Entity, actNormal.vy))},
+    {"actNormal.vz", FloatFormatter(MEMBER(Entity, actNormal.vz))},
+    {"actDistance", FloatFormatter(MEMBER(Entity, actDistance))},
+    {"actVisible", BoolFormatter(MEMBER(Entity, actVisible))},
+};
+
+static const SaveTable::value_type SAVED_CONSTRAINT[] = {
+    {"h.v", HexFormatter(MEMBER(Constraint, h.v))},
+    {"type", IntFormatter(MEMBER(Constraint, type))},
+    {"group.v", HexFormatter(MEMBER(Constraint, group.v))},
+    {"workplane.v", HexFormatter(MEMBER(Constraint, workplane.v))},
+    {"valA", FloatFormatter(MEMBER(Constraint, valA))},
+    {"valP.v", HexFormatter(MEMBER(Constraint, valP.v))},
+    {"ptA.v", HexFormatter(MEMBER(Constraint, ptA.v))},
+    {"ptB.v", HexFormatter(MEMBER(Constraint, ptB.v))},
+    {"entityA.v", HexFormatter(MEMBER(Constraint, entityA.v))},
+    {"entityB.v", HexFormatter(MEMBER(Constraint, entityB.v))},
+    {"entityC.v", HexFormatter(MEMBER(Constraint, entityC.v))},
+    {"entityD.v", HexFormatter(MEMBER(Constraint, entityD.v))},
+    {"other", BoolFormatter(MEMBER(Constraint, other))},
+    {"other2", BoolFormatter(MEMBER(Constraint, other2))},
+    {"reference", BoolFormatter(MEMBER(Constraint, reference))},
+    {"comment", StrFormatter(MEMBER(Constraint, comment))},
+    {"disp.offset.x", FloatFormatter(MEMBER(Constraint, disp.offset.x))},
+    {"disp.offset.y", FloatFormatter(MEMBER(Constraint, disp.offset.y))},
+    {"disp.offset.z", FloatFormatter(MEMBER(Constraint, disp.offset.z))},
+    {"disp.style", HexFormatter(MEMBER(Constraint, disp.style.v))},
+};
+
+static const SaveTable::value_type SAVED_STYLE[] = {
+    {"h.v", HexFormatter(MEMBER(Style, h.v))},
+    {"name", StrFormatter(MEMBER(Style, name))},
+    {"width", FloatFormatter(MEMBER(Style, width))},
+    {"widthAs", IntFormatter(MEMBER(Style, widthAs))},
+    {"textHeight", FloatFormatter(MEMBER(Style, textHeight))},
+    {"textHeightAs", IntFormatter(MEMBER(Style, textHeightAs))},
+    {"textAngle", FloatFormatter(MEMBER(Style, textAngle))},
+    {"textOrigin", HexFormatter(MEMBER(Style, textOrigin))},
+    {"color", ColorFormatter(MEMBER(Style, color))},
+    {"fillColor", ColorFormatter(MEMBER(Style, fillColor))},
+    {"filled", BoolFormatter(MEMBER(Style, filled))},
+    {"visible", BoolFormatter(MEMBER(Style, visible))},
+    {"exportable", BoolFormatter(MEMBER(Style, exportable))},
+    {"stippleType", IntFormatter(MEMBER(Style, stippleType))},
+    {"stippleScale", FloatFormatter(MEMBER(Style, stippleScale))},
+};
+
+using SaveTableMap =
+    std::unordered_map<std::string, std::pair<std::vector<const char *>, SaveTable>>;
+
+template<size_t N>
+SaveTableMap::value_type save_table(const char *name, const SaveTable::value_type (&t)[N]) {
+    SaveTable m;
+    std::vector<const char *> k;
+
+    m.reserve(N);
+    k.reserve(N);
+
+    for(const auto &kv : t) {
+        m[kv.first] = kv.second;
+        k.push_back(kv.first);
+    }
+
+    return {name, {std::move(k), std::move(m)}};
+}
+
+static const SaveTableMap SAVED_TYPES = {
+    {save_table("Group", SAVED_GROUP)},           {save_table("Param", SAVED_PARAM)},
+    {save_table("Request", SAVED_REQUEST)},       {save_table("Entity", SAVED_ENTITY)},
+    {save_table("Constraint", SAVED_CONSTRAINT)}, {save_table("Style", SAVED_STYLE)},
+};
+
+void *SolveSpaceUI::LoadUnion::Get(char tname) {
+    switch(tname) {
+    case 'G': return &g;
+    case 'P': return &p;
+    case 'R': return &r;
+    case 'E': return &e;
+    case 'C': return &c;
+    case 'S': return &s;
+    default: ssassert(false, "Invalid type name");
+    }
+}
+
+const SolveSpaceUI::SaveDesc *SolveSpaceUI::GetSaveDesc(const char *key) {
+    const char *prefix_end = strchr(key, '.');
+    if(prefix_end == nullptr) {
+        return nullptr;
+    }
+
+    std::string prefix(key, prefix_end);
+    auto table = SAVED_TYPES.find(prefix);
+    if(table == SAVED_TYPES.end()) {
+        return nullptr;
+    }
+
+    const auto &desc_table = table->second.second;
+    auto desc              = desc_table.find(prefix_end + 1);
+    if(desc == desc_table.end()) {
+        return nullptr;
+    }
+
+    return &desc->second;
+}
 
 struct SAVEDptr {
     EntityMap      &M() { return *((EntityMap *)this); }
     std::string    &S() { return *((std::string *)this); }
     Platform::Path &P() { return *((Platform::Path *)this); }
+    const EntityMap      &M() const { return *((const EntityMap *)this); }
+    const std::string    &S() const { return *((const std::string *)this); }
+    const Platform::Path &P() const { return *((const Platform::Path *)this); }
     bool      &b() { return *((bool *)this); }
     RgbaColor &c() { return *((RgbaColor *)this); }
     int       &d() { return *((int *)this); }
+    unsigned  &u() { return *((unsigned *)this); }
     double    &f() { return *((double *)this); }
     uint32_t  &x() { return *((uint32_t *)this); }
+    const bool      &b() const { return *((const bool *)this); }
+    const RgbaColor &c() const { return *((const RgbaColor *)this); }
+    const int       &d() const { return *((const int *)this); }
+    const unsigned  &u() const { return *((const unsigned *)this); }
+    const double    &f() const { return *((const double *)this); }
+    const uint32_t  &x() const { return *((const uint32_t *)this); }
 };
 
-void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
-    int i;
-    for(i = 0; SAVED[i].type != 0; i++) {
-        if(SAVED[i].type != type) continue;
+static inline SAVEDptr *SavedPtr(const void *obj, const SolveSpaceUI::SaveDesc &table) {
+    return reinterpret_cast<SAVEDptr *>(table.member(obj));
+}
 
-        int fmt = SAVED[i].fmt;
-        SAVEDptr *p = (SAVEDptr *)SAVED[i].ptr;
+void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, const char *tname,
+                                  const void *obj) {
+    const auto &table = SAVED_TYPES.at(tname);
+    for(const auto &key : table.first) {
+        const auto &desc = table.second.at(key);
+
+        int fmt = desc.fmt;
+        if(desc.member == nullptr)
+            continue;
+
+        const SAVEDptr *p = SavedPtr(obj, desc);
         // Any items that aren't specified are assumed to be zero
         if(fmt == 'S' && p->S().empty())          continue;
         if(fmt == 'P' && p->P().IsEmpty())        continue;
         if(fmt == 'd' && p->d() == 0)             continue;
+        if(fmt == 'u' && p->u() == 0)             continue;
         if(fmt == 'f' && EXACT(p->f() == 0.0))    continue;
         if(fmt == 'x' && p->x() == 0)             continue;
-        if(fmt == 'i')                            continue;
 
-        fprintf(fh, "%s=", SAVED[i].desc);
+        fprintf(fh, "%s.%s=", tname, key);
         switch(fmt) {
             case 'S': fprintf(fh, "%s",    p->S().c_str());       break;
             case 'b': fprintf(fh, "%d",    p->b() ? 1 : 0);       break;
             case 'c': fprintf(fh, "%08x",  p->c().ToPackedInt()); break;
             case 'd': fprintf(fh, "%d",    p->d());               break;
+            case 'u': fprintf(fh, "%u",    p->u());               break;
             case 'f': fprintf(fh, "%.20f", p->f());               break;
             case 'x': fprintf(fh, "%08x",  p->x());               break;
 
@@ -268,8 +463,6 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
                 fprintf(fh, "}");
                 break;
             }
-
-            case 'i': break;
 
             default: ssassert(false, "Unexpected value format");
         }
@@ -307,40 +500,34 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
 
     int i, j;
     for(auto &g : SK.group) {
-        sv.g = g;
-        SaveUsingTable(filename, 'g');
+        SaveUsingTable(filename, "Group", &g);
         fprintf(fh, "AddGroup\n\n");
     }
 
     for(auto &p : SK.param) {
-        sv.p = p;
-        SaveUsingTable(filename, 'p');
+        SaveUsingTable(filename, "Param", &p);
         fprintf(fh, "AddParam\n\n");
     }
 
     for(auto &r : SK.request) {
-        sv.r = r;
-        SaveUsingTable(filename, 'r');
+        SaveUsingTable(filename, "Request", &r);
         fprintf(fh, "AddRequest\n\n");
     }
 
     for(auto &e : SK.entity) {
         e.CalculateNumerical(/*forExport=*/true);
-        sv.e = e;
-        SaveUsingTable(filename, 'e');
+        SaveUsingTable(filename, "Entity", &e);
         fprintf(fh, "AddEntity\n\n");
     }
 
     for(auto &c : SK.constraint) {
-        sv.c = c;
-        SaveUsingTable(filename, 'c');
+        SaveUsingTable(filename, "Constraint", &c);
         fprintf(fh, "AddConstraint\n\n");
     }
 
     for(auto &s : SK.style) {
-        sv.s = s;
-        if(sv.s.h.v >= Style::FIRST_CUSTOM) {
-            SaveUsingTable(filename, 's');
+        if(s.h.v >= Style::FIRST_CUSTOM) {
+            SaveUsingTable(filename, "Style", &s);
             fprintf(fh, "AddStyle\n\n");
         }
     }
@@ -349,17 +536,15 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     // to print either of those just does nothing if the mesh/shell is empty.
 
     Group *g = SK.GetGroup(*SK.groupOrder.Last());
-    SMesh *m = &g->runningMesh;
-    for(i = 0; i < m->l.n; i++) {
-        STriangle *tr = &(m->l[i]);
+    for(const STriangle &tr : g->runningMesh.l) {
         fprintf(fh, "Triangle %08x %08x "
                 "%.20f %.20f %.20f  %.20f %.20f %.20f  %.20f %.20f %.20f\n",
-            tr->meta.face, tr->meta.color.ToPackedInt(),
-            CO(tr->a), CO(tr->b), CO(tr->c));
+            tr.meta.face, tr.meta.color.ToPackedInt(),
+            CO(tr.a), CO(tr.b), CO(tr.c));
     }
 
     SShell *s = &g->runningShell;
-    for(SSurface &srf : s->surface) {
+    for(const SSurface &srf : s->surface) {
         fprintf(fh, "Surface %08x %08x %08x %d %d\n",
             srf.h.v, srf.color.ToPackedInt(), srf.face, srf.degm, srf.degn);
         for(i = 0; i <= srf.degm; i++) {
@@ -369,16 +554,15 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
             }
         }
 
-        STrimBy *stb;
-        for(stb = srf.trim.First(); stb; stb = srf.trim.NextAfter(stb)) {
+        for(const STrimBy &stb : srf.trim) {
             fprintf(fh, "TrimBy %08x %d %.20f %.20f %.20f  %.20f %.20f %.20f\n",
-                stb->curve.v, stb->backwards ? 1 : 0,
-                CO(stb->start), CO(stb->finish));
+                stb.curve.v, stb.backwards ? 1 : 0,
+                CO(stb.start), CO(stb.finish));
         }
 
         fprintf(fh, "AddSurface\n");
     }
-    for(SCurve &sc : s->curve) {
+    for(const SCurve &sc : s->curve) {
         fprintf(fh, "Curve %08x %d %d %08x %08x\n",
             sc.h.v,
             sc.isExact ? 1 : 0, sc.exact.deg,
@@ -390,10 +574,9 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
                     i, CO(sc.exact.ctrl[i]), sc.exact.weight[i]);
             }
         }
-        SCurvePt *scpt;
-        for(scpt = sc.pts.First(); scpt; scpt = sc.pts.NextAfter(scpt)) {
+        for(const SCurvePt &scpt : sc.pts) {
             fprintf(fh, "CurvePt %d %.20f %.20f %.20f\n",
-                scpt->vertex ? 1 : 0, CO(scpt->p));
+                scpt.vertex ? 1 : 0, CO(scpt.p));
         }
 
         fprintf(fh, "AddCurve\n");
@@ -404,69 +587,71 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     return true;
 }
 
-void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, char *val) {
-    int i;
-    for(i = 0; SAVED[i].type != 0; i++) {
-        if(strcmp(SAVED[i].desc, key)==0) {
-            SAVEDptr *p = (SAVEDptr *)SAVED[i].ptr;
-            unsigned int u = 0;
-            switch(SAVED[i].fmt) {
-                case 'S': p->S() = val;                     break;
-                case 'b': p->b() = (atoi(val) != 0);        break;
-                case 'd': p->d() = atoi(val);               break;
-                case 'f': p->f() = atof(val);               break;
-                case 'x': sscanf(val, "%x", &u); p->x()= u; break;
+void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, const char *key, const char *val,
+                                  SolveSpaceUI::LoadUnion &obj) {
+    const SaveDesc *desc = GetSaveDesc(key);
+    if(desc == nullptr) {
+        fileLoadError = true;
+        return;
+    }
 
-                case 'P': {
-                    Platform::Path path = Platform::Path::FromPortable(val);
-                    if(!path.IsEmpty()) {
-                        p->P() = filename.Parent().Join(path).Expand();
-                    }
-                    break;
-                }
+    // Ignored members should be ignored
+    if(desc->member == nullptr) {
+        return;
+    }
 
-                case 'c':
-                    sscanf(val, "%x", &u);
-                    p->c() = RgbaColor::FromPackedInt(u);
-                    break;
+    SAVEDptr *p    = SavedPtr(obj.Get(key[0]), *desc);
+    unsigned int u = 0;
+    switch(desc->fmt) {
+        case 'S': p->S() = val;                     break;
+        case 'b': p->b() = (atoi(val) != 0);        break;
+        case 'd': p->d() = atoi(val);               break;
+        case 'u': sscanf(val, "%u", &u); p->u()=u;  break;
+        case 'f': p->f() = atof(val);               break;
+        case 'x': sscanf(val, "%x", &u); p->x()= u; break;
 
-                case 'M': {
-                    p->M().clear();
-                    for(;;) {
-                        EntityKey ek;
-                        EntityId ei;
-                        char line2[1024];
-                        if (fgets(line2, (int)sizeof(line2), fh) == NULL)
-                            break;
-                        if(sscanf(line2, "%d %x %d", &(ei.v), &(ek.input.v),
-                                                     &(ek.copyNumber)) == 3) {
-                            if(ei.v == Entity::NO_ENTITY.v) {
-                                // Commit bd84bc1a mistakenly introduced code that would remap
-                                // some entities to NO_ENTITY. This was fixed in commit bd84bc1a,
-                                // but files created meanwhile are corrupt, and can cause crashes.
-                                //
-                                // To fix this, we skip any such remaps when loading; they will be
-                                // recreated on the next regeneration. Any resulting orphans will
-                                // be pruned in the usual way, recovering to a well-defined state.
-                                continue;
-                            }
-                            p->M().insert({ ek, ei });
-                        } else {
-                            break;
-                        }
-                    }
-                    break;
-                }
-
-                case 'i': break;
-
-                default: ssassert(false, "Unexpected value format");
+        case 'P': {
+            Platform::Path path = Platform::Path::FromPortable(val);
+            if(!path.IsEmpty()) {
+                p->P() = filename.Parent().Join(path).Expand();
             }
             break;
         }
-    }
-    if(SAVED[i].type == 0) {
-        fileLoadError = true;
+
+        case 'c':
+            sscanf(val, "%x", &u);
+            p->c() = RgbaColor::FromPackedInt(u);
+            break;
+
+        case 'M': {
+            p->M().clear();
+            for(;;) {
+                EntityKey ek;
+                EntityId ei;
+                char line2[1024];
+                if (fgets(line2, (int)sizeof(line2), fh) == NULL)
+                    break;
+                if(sscanf(line2, "%d %x %d", &(ei.v), &(ek.input.v),
+                                             &(ek.copyNumber)) == 3) {
+                    if(ei.v == Entity::NO_ENTITY.v) {
+                        // Commit bd84bc1a mistakenly introduced code that would remap
+                        // some entities to NO_ENTITY. This was fixed in commit bd84bc1a,
+                        // but files created meanwhile are corrupt, and can cause crashes.
+                        //
+                        // To fix this, we skip any such remaps when loading; they will be
+                        // recreated on the next regeneration. Any resulting orphans will
+                        // be pruned in the usual way, recovering to a well-defined state.
+                        continue;
+                    }
+                    p->M().insert({ ek, ei });
+                } else {
+                    break;
+                }
+            }
+            break;
+        }
+
+        default: ssassert(false, "Unexpected value format");
     }
 }
 
@@ -483,7 +668,7 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
 
     ClearExisting();
 
-    sv = {};
+    LoadUnion sv = {};
     sv.g.scale = 1; // default is 1, not 0; so legacy files need this
     Style::FillDefaultStyle(&sv.s);
 
@@ -503,8 +688,8 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
         char *e = strchr(line, '=');
         if(e) {
             *e = '\0';
-            char *key = line, *val = e+1;
-            LoadUsingTable(filename, key, val);
+            const char *key = line, *val = e+1;
+            LoadUsingTable(filename, key, val, sv);
         } else if(strcmp(line, "AddGroup")==0) {
             // legacy files have a spurious dependency between linked groups
             // and their parent groups, remove
@@ -737,7 +922,7 @@ bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityLi
     if(!fh) return false;
 
     le->Clear();
-    sv = {};
+    LoadUnion sv = {};
 
     char line[1024];
     while(fgets(line, (int)sizeof(line), fh)) {
@@ -754,7 +939,7 @@ bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityLi
         if(e) {
             *e = '\0';
             char *key = line, *val = e+1;
-            LoadUsingTable(filename, key, val);
+            LoadUsingTable(filename, key, val, sv);
         } else if(strcmp(line, "AddGroup")==0) {
             // These get allocated whether we want them or not.
             sv.g.remap.clear();
