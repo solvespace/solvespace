@@ -16,7 +16,7 @@ const double SShell::DOTP_TOL = 1e-5;
 extern int FLAG;
 
 
-double SSurface::DepartureFromCoplanar() const {
+double SSurface::Curve::DepartureFromCoplanar() const {
     int i, j;
     int ia, ja, ib = 0, jb = 0, ic = 0, jc = 0;
     double best;
@@ -73,7 +73,7 @@ double SSurface::DepartureFromCoplanar() const {
     return farthest;
 }
 
-void SSurface::WeightControlPoints() {
+void SSurface::Curve::WeightControlPoints() {
     int i, j;
     for(i = 0; i <= degm; i++) {
         for(j = 0; j <= degn; j++) {
@@ -81,7 +81,7 @@ void SSurface::WeightControlPoints() {
         }
     }
 }
-void SSurface::UnWeightControlPoints() {
+void SSurface::Curve::UnWeightControlPoints() {
     int i, j;
     for(i = 0; i <= degm; i++) {
         for(j = 0; j <= degn; j++) {
@@ -89,7 +89,7 @@ void SSurface::UnWeightControlPoints() {
         }
     }
 }
-void SSurface::CopyRowOrCol(bool row, int this_ij, SSurface *src, int src_ij) {
+void SSurface::Curve::CopyRowOrCol(bool row, int this_ij, SSurface::Curve *src, int src_ij) {
     if(row) {
         int j;
         for(j = 0; j <= degn; j++) {
@@ -104,8 +104,8 @@ void SSurface::CopyRowOrCol(bool row, int this_ij, SSurface *src, int src_ij) {
         }
     }
 }
-void SSurface::BlendRowOrCol(bool row, int this_ij, SSurface *a, int a_ij,
-                                                    SSurface *b, int b_ij)
+void SSurface::Curve::BlendRowOrCol(bool row, int this_ij, SSurface::Curve *a, int a_ij,
+                                                    SSurface::Curve *b, int b_ij)
 {
     if(row) {
         int j;
@@ -125,14 +125,13 @@ void SSurface::BlendRowOrCol(bool row, int this_ij, SSurface *a, int a_ij,
         }
     }
 }
-void SSurface::SplitInHalf(bool byU, SSurface *sa, SSurface *sb) {
+void SSurface::Curve::SplitInHalf(bool byU, SSurface::Curve *sa, SSurface::Curve *sb) {
     sa->degm = sb->degm = degm;
     sa->degn = sb->degn = degn;
 
     // by de Casteljau's algorithm in a projective space; so we must work
     // on points (w*x, w*y, w*z, w) so create a temporary copy
-    SSurface st;
-    st = *this;
+    SSurface::Curve st = *this;
     st.WeightControlPoints();
 
     switch(byU ? degm : degn) {
@@ -197,18 +196,18 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
 
     if(*cnt > 2000) {
         dbp("!!! too many subdivisions (level=%d)!", *level);
-        dbp("degm = %d degn = %d", degm, degn);
+        dbp("degm = %d degn = %d", curve.degm, curve.degn);
         return;
     }
     (*cnt)++;
 
     // If we might intersect, and the surface is small, then switch to Newton
     // iterations.
-    if(DepartureFromCoplanar() < 0.2*SS.ChordTolMm()) {
-        Vector p = (ctrl[0   ][0   ]).Plus(
-                    ctrl[0   ][degn]).Plus(
-                    ctrl[degm][0   ]).Plus(
-                    ctrl[degm][degn]).ScaledBy(0.25);
+    if(curve.DepartureFromCoplanar() < 0.2*SS.ChordTolMm()) {
+        Vector p = (curve.ctrl[0        ][0        ]).Plus(
+                    curve.ctrl[0        ][curve.degn]).Plus(
+                    curve.ctrl[curve.degm][0        ]).Plus(
+                    curve.ctrl[curve.degm][curve.degn]).ScaledBy(0.25);
         Inter inter;
         sorig->ClosestPointTo(p, &(inter.p.x), &(inter.p.y), /*mustConverge=*/false);
         if(sorig->PointIntersectingLine(a, b, &(inter.p.x), &(inter.p.y))) {
@@ -226,7 +225,7 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
 
     // But the surface is big, so split it, alternating by u and v
     SSurface surf0, surf1;
-    SplitInHalf((*level & 1) == 0, &surf0, &surf1);
+    curve.SplitInHalf((*level & 1) == 0, &surf0.curve, &surf1.curve);
 
     int nextLevel = (*level) + 1;
     (*level) = nextLevel;
@@ -258,7 +257,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
     // cases that we can quickly solve in closed form, or general numerical.
     Vector center, axis, start, finish;
     double radius;
-    if(degm == 1 && degn == 1) {
+    if(curve.degm == 1 && curve.degn == 1) {
         // Against a plane, easy.
         Vector n = NormalAt(0, 0).WithMagnitude(1);
         double d = n.Dot(PointAt(0, 0));

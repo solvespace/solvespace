@@ -6,8 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "../solvespace.h"
 
-SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
-    SSurface ret = {};
+SSurface::Curve SSurface::Curve::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
+    Curve ret = {};
 
     ret.degm = sb->deg;
     ret.degn = 1;
@@ -24,15 +24,21 @@ SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
     return ret;
 }
 
+SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
+    SSurface ret = {};
+    ret.curve = Curve::FromExtrusionOf(sb, t0, t1);
+    return ret;
+}
+
 bool SSurface::IsExtrusion(SBezier *of, Vector *alongp) const {
     int i;
 
-    if(degn != 1) return false;
+    if(curve.degn != 1) return false;
 
-    Vector along = (ctrl[0][1]).Minus(ctrl[0][0]);
-    for(i = 0; i <= degm; i++) {
-        if((fabs(weight[i][1] - weight[i][0]) < LENGTH_EPS) &&
-           ((ctrl[i][1]).Minus(ctrl[i][0])).Equals(along))
+    Vector along = (curve.ctrl[0][1]).Minus(curve.ctrl[0][0]);
+    for(i = 0; i <= curve.degm; i++) {
+        if((fabs(curve.weight[i][1] - curve.weight[i][0]) < LENGTH_EPS) &&
+           ((curve.ctrl[i][1]).Minus(curve.ctrl[i][0])).Equals(along))
         {
             continue;
         }
@@ -41,18 +47,18 @@ bool SSurface::IsExtrusion(SBezier *of, Vector *alongp) const {
 
     // yes, we are a surface of extrusion; copy the original curve and return
     if(of) {
-        for(i = 0; i <= degm; i++) {
-            of->weight[i] = weight[i][0];
-            of->ctrl[i] = ctrl[i][0];
+        for(i = 0; i <= curve.degm; i++) {
+            of->weight[i] = curve.weight[i][0];
+            of->ctrl[i] = curve.ctrl[i][0];
         }
-        of->deg = degm;
+        of->deg = curve.degm;
         *alongp = along;
     }
     return true;
 }
 
 bool SSurface::IsCylinder(Vector *axis, Vector *center, double *r,
-                            Vector *start, Vector *finish) const
+                          Vector *start, Vector *finish) const
 {
     SBezier sb;
     if(!IsExtrusion(&sb, axis)) return false;
@@ -65,10 +71,11 @@ bool SSurface::IsCylinder(Vector *axis, Vector *center, double *r,
 
 // Create a surface patch by revolving and possibly translating a curve.
 // Works for sections up to but not including 180 degrees.
-SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis, double thetas,
-                                    double thetaf, double dists,
-                                    double distf) { // s is start, f is finish
-    SSurface ret = {};
+SSurface::Curve SSurface::Curve::FromRevolutionOf(
+        SBezier *sb, Vector pt, Vector axis, double thetas,
+        double thetaf, double dists, double distf) { // s is start, f is finish
+    Curve ret = {};
+
     ret.degm = sb->deg;
     ret.degn = 2;
 
@@ -109,8 +116,16 @@ SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis, double 
     return ret;
 }
 
-SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
+SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis, double thetas,
+                                    double thetaf, double dists,
+                                    double distf) { // s is start, f is finish
     SSurface ret = {};
+    ret.curve = Curve::FromRevolutionOf(sb, pt, axis, thetas, thetaf, dists, distf);
+    return ret;
+}
+
+SSurface::Curve SSurface::Curve::FromPlane(Vector pt, Vector u, Vector v) {
+    Curve ret = {};
 
     ret.degm = 1;
     ret.degn = 1;
@@ -122,6 +137,43 @@ SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
     ret.ctrl[0][1] = pt.Plus(u);
     ret.ctrl[1][0] = pt.Plus(v);
     ret.ctrl[1][1] = pt.Plus(v).Plus(u);
+
+    return ret;
+}
+
+SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
+    SSurface ret = {};
+    ret.curve = Curve::FromPlane(pt, u, v);
+    return ret;
+}
+
+SSurface::Curve SSurface::Curve::FromTransformationOf(
+    SSurface::Curve *a, Vector t, Quaternion q, double scale)
+{
+    const bool needRotate    = !EXACT(q.vx == 0.0 && q.vy == 0.0 && q.vz == 0.0 && q.w == 1.0);
+    const bool needTranslate = !EXACT(t.x  == 0.0 && t.y  == 0.0 && t.z  == 0.0);
+    const bool needScale     = !EXACT(scale == 1.0);
+
+    Curve ret = {};
+
+    ret.degm = a->degm;
+    ret.degn = a->degn;
+    for(int i = 0; i <= 3; i++) {
+        for(int j = 0; j <= 3; j++) {
+            Vector ctrl = a->ctrl[i][j];
+            if(needScale) {
+                ctrl = ctrl.ScaledBy(scale);
+            }
+            if(needRotate) {
+                ctrl = q.Rotate(ctrl);
+            }
+            if(needTranslate) {
+                ctrl = ctrl.Plus(t);
+            }
+            ret.ctrl[i][j] = ctrl;
+            ret.weight[i][j] = a->weight[i][j];
+        }
+    }
 
     return ret;
 }
@@ -138,25 +190,7 @@ SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q, dou
     ret.color = a->color;
     ret.face = a->face;
 
-    ret.degm = a->degm;
-    ret.degn = a->degn;
-    int i, j;
-    for(i = 0; i <= 3; i++) {
-        for(j = 0; j <= 3; j++) {
-            Vector ctrl = a->ctrl[i][j];
-            if(needScale) {
-                ctrl = ctrl.ScaledBy(scale);
-            }
-            if(needRotate) {
-                ctrl = q.Rotate(ctrl);
-            }
-            if(needTranslate) {
-                ctrl = ctrl.Plus(t);
-            }
-            ret.ctrl[i][j] = ctrl;
-            ret.weight[i][j] = a->weight[i][j];
-        }
-    }
+    ret.curve = Curve::FromTransformationOf(&a->curve, t, q, scale);
 
     if(includingTrims) {
         STrimBy *stb;
@@ -188,16 +222,19 @@ SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q, dou
     return ret;
 }
 
-void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const {
+void SSurface::Curve::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const {
     *ptMax = Vector::From(VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE);
     *ptMin = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 
-    int i, j;
-    for(i = 0; i <= degm; i++) {
-        for(j = 0; j <= degn; j++) {
+    for(int i = 0; i <= degm; i++) {
+        for(int j = 0; j <= degn; j++) {
             (ctrl[i][j]).MakeMaxMin(ptMax, ptMin);
         }
     }
+}
+
+void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const {
+    curve.GetAxisAlignedBounding(ptMax, ptMin);
 }
 
 bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool asSegment) const {
@@ -417,7 +454,7 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     SPolygon poly = {};
     if(el.AssemblePolygon(&poly, NULL, /*keepDir=*/true)) {
         int i, start = sm->l.n;
-        if(degm == 1 && degn == 1) {
+        if(curve.degm == 1 && curve.degn == 1) {
             // A surface with curvature along one direction only; so
             // choose the triangulation with chords that lie as much
             // as possible within the surface. And since the trim curves
@@ -460,7 +497,7 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
 // normal. We therefore must reverse all our trim curves too. The uv
 // coordinates change, but trim curves are stored as xyz so nothing happens
 //-----------------------------------------------------------------------------
-void SSurface::Reverse() {
+void SSurface::Curve::Reverse() {
     int i, j;
     for(i = 0; i < (degm+1)/2; i++) {
         for(j = 0; j <= degn; j++) {
@@ -468,6 +505,10 @@ void SSurface::Reverse() {
             swap(weight[i][j], weight[degm-i][j]);
         }
     }
+}
+
+void SSurface::Reverse() {
+    curve.Reverse();
 
     STrimBy *stb;
     for(stb = trim.First(); stb; stb = trim.NextAfter(stb)) {
@@ -476,13 +517,17 @@ void SSurface::Reverse() {
     }
 }
 
-void SSurface::ScaleSelfBy(double s) {
+void SSurface::Curve::ScaleSelfBy(double s) {
     int i, j;
     for(i = 0; i <= degm; i++) {
         for(j = 0; j <= degn; j++) {
             ctrl[i][j] = ctrl[i][j].ScaledBy(s);
         }
     }
+}
+
+void SSurface::ScaleSelfBy(double s) {
+    curve.ScaleSelfBy(s);
 }
 
 void SSurface::Clear() {

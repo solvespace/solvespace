@@ -21,7 +21,7 @@ void SShell::MergeCoincidentSurfaces() {
             continue;
         // And for now we handle only coincident planes, so no sense wasting
         // time on other surfaces.
-        if(si->degm != 1 || si->degn != 1) continue;
+        if(si->curve.degm != 1 || si->curve.degn != 1) continue;
 
         SEdgeList sel = {};
         si->MakeEdgesInto(this, &sel, SSurface::MakeAs::XYZ);
@@ -109,14 +109,14 @@ void SShell::MergeCoincidentSurfaces() {
             // We move in the +v direction as v goes from 0 to 1, and in the
             // +u direction as u goes from 0 to 1. So our normal ends up
             // pointed the same direction.
-            double nt = (si->ctrl[0][0]).Dot(n);
-            si->ctrl[0][0] =
+            double nt = (si->curve.ctrl[0][0]).Dot(n);
+            si->curve.ctrl[0][0] =
                 Vector::From(umin, vmin, nt).ScaleOutOfCsys(u, v, n);
-            si->ctrl[0][1] =
+            si->curve.ctrl[0][1] =
                 Vector::From(umin, vmax, nt).ScaleOutOfCsys(u, v, n);
-            si->ctrl[1][1] =
+            si->curve.ctrl[1][1] =
                 Vector::From(umax, vmax, nt).ScaleOutOfCsys(u, v, n);
-            si->ctrl[1][0] =
+            si->curve.ctrl[1][0] =
                 Vector::From(umax, vmin, nt).ScaleOutOfCsys(u, v, n);
         }
         sel.Clear();

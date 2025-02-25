@@ -289,7 +289,7 @@ void Group::GenerateShellAndMesh() {
                 }
 
                 // So these are the sides
-                if(ss->degm != 1 || ss->degn != 1) continue;
+                if(ss->curve.degm != 1 || ss->curve.degn != 1) continue;
 
                 for(Entity &e : SK.entity) {
                     if(e.group != opA) continue;
@@ -300,10 +300,10 @@ void Group::GenerateShellAndMesh() {
                     a = a.Plus(ttop);
                     b = b.Plus(ttop);
                     // Could get taken backwards, so check all cases.
-                    if((a.Equals(ss->ctrl[0][0]) && b.Equals(ss->ctrl[1][0])) ||
-                       (b.Equals(ss->ctrl[0][0]) && a.Equals(ss->ctrl[1][0])) ||
-                       (a.Equals(ss->ctrl[0][1]) && b.Equals(ss->ctrl[1][1])) ||
-                       (b.Equals(ss->ctrl[0][1]) && a.Equals(ss->ctrl[1][1])))
+                    if((a.Equals(ss->curve.ctrl[0][0]) && b.Equals(ss->curve.ctrl[1][0])) ||
+                       (b.Equals(ss->curve.ctrl[0][0]) && a.Equals(ss->curve.ctrl[1][0])) ||
+                       (a.Equals(ss->curve.ctrl[0][1]) && b.Equals(ss->curve.ctrl[1][1])) ||
+                       (b.Equals(ss->curve.ctrl[0][1]) && a.Equals(ss->curve.ctrl[1][1])))
                     {
                         face = Remap(e.h, REMAP_LINE_TO_FACE);
                         ss->face = face.v;

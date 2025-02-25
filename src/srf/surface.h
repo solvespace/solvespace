@@ -270,9 +270,34 @@ public:
     RgbaColor       color;
     uint32_t        face;
 
-    int             degm, degn;
-    Vector          ctrl[4][4];
-    double          weight[4][4];
+    struct Curve {
+        int         degm, degn;
+        Vector      ctrl[4][4];
+        double      weight[4][4];
+
+        static Curve FromExtrusionOf(SBezier *sb, Vector t0, Vector t1);
+        static Curve FromRevolutionOf(SBezier *sb, Vector pt, Vector axis, double thetas,
+                                        double thetaf, double dists, double distf);
+        static Curve FromPlane(Vector pt, Vector u, Vector v);
+        static Curve FromTransformationOf(Curve *a, Vector t, Quaternion q,
+                                            double scale);
+        void ScaleSelfBy(double s);
+
+        void WeightControlPoints();
+        void UnWeightControlPoints();
+        void CopyRowOrCol(bool row, int this_ij, Curve *src, int src_ij);
+        void BlendRowOrCol(bool row, int this_ij, Curve *a, int a_ij,
+                                                  Curve *b, int b_ij);
+
+        double DepartureFromCoplanar() const;
+        void SplitInHalf(bool byU, Curve *sa, Curve *sb);
+
+        void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const;
+
+        void Reverse();
+    };
+
+    Curve           curve;
 
     List<STrimBy>   trim;
 
@@ -311,13 +336,6 @@ public:
         int     tag;
         Point2d p;
     } Inter;
-    void WeightControlPoints();
-    void UnWeightControlPoints();
-    void CopyRowOrCol(bool row, int this_ij, SSurface *src, int src_ij);
-    void BlendRowOrCol(bool row, int this_ij, SSurface *a, int a_ij,
-                                              SSurface *b, int b_ij);
-    double DepartureFromCoplanar() const;
-    void SplitInHalf(bool byU, SSurface *sa, SSurface *sb);
     void AllPointsIntersecting(Vector a, Vector b,
                                List<SInter> *l,
                                bool asSegment, bool trimmed, bool inclTangent);
