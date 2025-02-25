@@ -203,10 +203,10 @@ public:
         LEFT_MARGIN    = 6,
     };
 
-#define CHECK_FALSE "\xEE\x80\x80" // U+E000
-#define CHECK_TRUE  "\xEE\x80\x81"
-#define RADIO_FALSE "\xEE\x80\x82"
-#define RADIO_TRUE  "\xEE\x80\x83"
+#define UI_CHECK_FALSE "\xEE\x80\x80" // U+E000
+#define UI_CHECK_TRUE  "\xEE\x80\x81"
+#define UI_RADIO_FALSE "\xEE\x80\x82"
+#define UI_RADIO_TRUE  "\xEE\x80\x83"
 
     int scrollPos;      // The scrollbar position, in half-row units
     int halfRows;       // The height of our window, in half-row units

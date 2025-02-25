@@ -265,7 +265,7 @@ void TextWindow::ShowConfiguration() {
         SS.DegreeToString(1.23456789).c_str());
     Printf(false, "  %Fd%f%Ll%s  use SI prefixes for distances%E",
         &ScreenChangeUseSIPrefixes,
-        SS.useSIPrefixes ? CHECK_TRUE : CHECK_FALSE);
+        SS.useSIPrefixes ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "%Ft export scale factor (1:1=mm, 1:25.4=inch)");
@@ -280,30 +280,30 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "");
     Printf(false, "  %Fd%f%Ll%s  export shaded 2d triangles%E",
         &ScreenChangeShadedTriangles,
-        SS.exportShadedTriangles ? CHECK_TRUE : CHECK_FALSE);
+        SS.exportShadedTriangles ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     if(fabs(SS.exportOffset) > LENGTH_EPS) {
         Printf(false, "  %Fd%s  curves as piecewise linear%E "
-                      "(since cutter radius is not zero)", CHECK_TRUE);
+                      "(since cutter radius is not zero)", UI_CHECK_TRUE);
     } else {
         Printf(false, "  %Fd%f%Ll%s  export curves as piecewise linear%E",
             &ScreenChangePwlCurves,
-            SS.exportPwlCurves ? CHECK_TRUE : CHECK_FALSE);
+            SS.exportPwlCurves ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     }
     Printf(false, "  %Fd%f%Ll%s  fix white exported lines%E",
         &ScreenChangeFixExportColors,
-        SS.fixExportColors ? CHECK_TRUE : CHECK_FALSE);
+        SS.fixExportColors ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  export background color%E",
         &ScreenChangeExportBackgroundColor,
-        SS.exportBackgroundColor ? CHECK_TRUE : CHECK_FALSE);
+        SS.exportBackgroundColor ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "%Ft export canvas size:  "
                   "%f%Fd%Lf%s fixed%E  "
                   "%f%Fd%Lt%s auto%E",
         &ScreenChangeCanvasSizeAuto,
-        !SS.exportCanvasSizeAuto ? RADIO_TRUE : RADIO_FALSE,
+        !SS.exportCanvasSizeAuto ? UI_RADIO_TRUE : UI_RADIO_FALSE,
         &ScreenChangeCanvasSizeAuto,
-        SS.exportCanvasSizeAuto ? RADIO_TRUE : RADIO_FALSE);
+        SS.exportCanvasSizeAuto ? UI_RADIO_TRUE : UI_RADIO_FALSE);
 
     if(SS.exportCanvasSizeAuto) {
         Printf(false, "%Ft (by margins around exported geometry)");
@@ -341,28 +341,28 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "");
     Printf(false, "  %Fd%f%Ll%s  draw triangle back faces in red%E",
         &ScreenChangeBackFaces,
-        SS.drawBackFaces ? CHECK_TRUE : CHECK_FALSE);
+        SS.drawBackFaces ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  check sketch for closed contour%E",
         &ScreenChangeCheckClosedContour,
-        SS.checkClosedContour ? CHECK_TRUE : CHECK_FALSE);
+        SS.checkClosedContour ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  show areas of closed contours%E",
         &ScreenChangeShowContourAreas,
-        SS.showContourAreas ? CHECK_TRUE : CHECK_FALSE);
+        SS.showContourAreas ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  enable automatic line constraints%E",
         &ScreenChangeAutomaticLineConstraints,
-        SS.automaticLineConstraints ? CHECK_TRUE : CHECK_FALSE);
+        SS.automaticLineConstraints ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  use camera mouse navigation%E", &ScreenChangeCameraNav,
-        SS.cameraNav ? CHECK_TRUE : CHECK_FALSE);
+        SS.cameraNav ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  use turntable mouse navigation%E", &ScreenChangeTurntableNav,
-        SS.turntableNav ? CHECK_TRUE : CHECK_FALSE);
+        SS.turntableNav ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  edit newly added dimensions%E",
         &ScreenChangeImmediatelyEditDimension,
-        SS.immediatelyEditDimension ? CHECK_TRUE : CHECK_FALSE);
+        SS.immediatelyEditDimension ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  arc default is diameter%E",
         &ScreenChangeArcDimDefault,
-        SS.arcDimDefaultDiameter ? CHECK_TRUE : CHECK_FALSE);
+        SS.arcDimDefaultDiameter ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  display the full path in the title bar%E",
-           &ScreenChangeShowFullFilePath, SS.showFullFilePath ? CHECK_TRUE : CHECK_FALSE);
+           &ScreenChangeShowFullFilePath, SS.showFullFilePath ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "");
     Printf(false, "%Ft autosave interval (in minutes)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",

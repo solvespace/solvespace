@@ -220,7 +220,7 @@ void TextWindow::DescribeSelection() {
                         e->str.c_str(), &ScreenEditTtfText, e->h.request().v);
                     Printf(true, "  %Fd%f%D%Ll%s  apply kerning",
                            &ScreenToggleTtfKerning, e->h.request().v,
-                           e->extraPoints ? CHECK_TRUE : CHECK_FALSE);
+                           e->extraPoints ? UI_CHECK_TRUE : UI_CHECK_FALSE);
                     Printf(true, "  select new font");
                     SS.fonts.LoadAll();
                     // Not using range-for here because we use i inside the output.
@@ -480,11 +480,11 @@ void TextWindow::DescribeSelection() {
             }
             Printf(true, "  %Fd%f%D%Ll%s  reference",
                    &ScreenConstraintToggleReference, gs.constraint[0].v,
-                   c->reference ? CHECK_TRUE : CHECK_FALSE);
+                   c->reference ? UI_CHECK_TRUE : UI_CHECK_FALSE);
             if(c->type == Constraint::Type::DIAMETER) {
                 Printf(false, "  %Fd%f%D%Ll%s  use radius",
                        &ScreenConstraintShowAsRadius, gs.constraint[0].v,
-                       c->other ? CHECK_TRUE : CHECK_FALSE);
+                       c->other ? UI_CHECK_TRUE : UI_CHECK_FALSE);
             }
         } else {
             Printf(false, "%FtCONSTRAINT%E  %s", desc.c_str());

@@ -95,10 +95,10 @@ void TextWindow::ScreenGoToWebsite(int link, uint32_t v) {
     Platform::OpenInBrowser("http://solvespace.com/txtlink");
 }
 void TextWindow::ShowListOfGroups() {
-    const char *radioTrue  = " " RADIO_TRUE  " ",
-               *radioFalse = " " RADIO_FALSE " ",
-               *checkTrue  = " " CHECK_TRUE  " ",
-               *checkFalse = " " CHECK_FALSE " ";
+    const char *radioTrue  = " " UI_RADIO_TRUE  " ",
+               *radioFalse = " " UI_RADIO_FALSE " ",
+               *checkTrue  = " " UI_CHECK_TRUE  " ",
+               *checkFalse = " " UI_CHECK_FALSE " ";
 
     Printf(true, "%Ft active");
     Printf(false, "%Ft    shown dof group-name%E");
@@ -420,19 +420,19 @@ void TextWindow::ShowGroupInfo() {
                   "%f%LS%Fd%s two-sided%E  "
                   "%f%Lw%Fd%s skewed%E",
             &TextWindow::ScreenChangeGroupOption,
-            one ? RADIO_TRUE : RADIO_FALSE,
+            one ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
-            two ? RADIO_TRUE : RADIO_FALSE,
+            two ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
-            skew ? CHECK_TRUE : CHECK_FALSE);
+            skew ? UI_CHECK_TRUE : UI_CHECK_FALSE);
         } else {
         Printf(false,
             "%Ba   %f%Ls%Fd%s one-sided%E  "
                   "%f%LS%Fd%s two-sided%E",
             &TextWindow::ScreenChangeGroupOption,
-            one ? RADIO_TRUE : RADIO_FALSE,
+            one ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
-            two ? RADIO_TRUE : RADIO_FALSE);        
+            two ? UI_RADIO_TRUE : UI_RADIO_FALSE);
         }
         
         if(g->type == Group::Type::ROTATE || g->type == Group::Type::TRANSLATE) {
@@ -442,9 +442,9 @@ void TextWindow::ShowGroupInfo() {
                    "%Bd   %Ftstart  %f%LK%Fd%s with original%E  "
                          "%f%Lk%Fd%s with copy #1%E",
                     &ScreenChangeGroupOption,
-                    !skip ? RADIO_TRUE : RADIO_FALSE,
+                    !skip ? UI_RADIO_TRUE : UI_RADIO_FALSE,
                     &ScreenChangeGroupOption,
-                    skip ? RADIO_TRUE : RADIO_FALSE);
+                    skip ? UI_RADIO_TRUE : UI_RADIO_FALSE);
             }
 
             int times = (int)(g->valA);
@@ -488,7 +488,7 @@ void TextWindow::ShowGroupInfo() {
         }
         Printf(false, "   %Fd%f%LP%s  fixed",
             &TextWindow::ScreenChangePitchOption,
-            g->valB != 0 ? CHECK_TRUE : CHECK_FALSE);
+            g->valB != 0 ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
         Printf(false, ""); // blank line    
     }
@@ -506,18 +506,18 @@ void TextWindow::ShowGroupInfo() {
                              "%f%D%Lc%Fd%s assemble%E  ",
             &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::UNION,
-            un ? RADIO_TRUE : RADIO_FALSE,
+            un ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::ASSEMBLE,
-            (asy ? RADIO_TRUE : RADIO_FALSE));
+            (asy ? UI_RADIO_TRUE : UI_RADIO_FALSE));
         Printf(false, "%Ba   %f%D%Lc%Fd%s difference%E  "
                              "%f%D%Lc%Fd%s intersection%E  ",
             &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::DIFFERENCE,
-            diff ? RADIO_TRUE : RADIO_FALSE,
+            diff ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::INTERSECTION,
-            intr ? RADIO_TRUE : RADIO_FALSE);
+            intr ? UI_RADIO_TRUE : UI_RADIO_FALSE);
 
         if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
            g->type == Group::Type::REVOLVE || g->type == Group::Type::HELIX) {
@@ -536,7 +536,7 @@ void TextWindow::ShowGroupInfo() {
            g->type == Group::Type::HELIX) {
             Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
                 &TextWindow::ScreenChangeGroupOption,
-                g->suppress ? CHECK_TRUE : CHECK_FALSE);
+                g->suppress ? UI_CHECK_TRUE : UI_CHECK_FALSE);
         }
 
         Printf(false, "");
@@ -544,31 +544,31 @@ void TextWindow::ShowGroupInfo() {
 
     Printf(false, " %f%Lv%Fd%s  show entities from this group",
         &TextWindow::ScreenChangeGroupOption,
-        g->visible ? CHECK_TRUE : CHECK_FALSE);
+        g->visible ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
     if(!g->IsForcedToMeshBySource() && !g->IsTriangleMeshAssembly()) {
         Printf(false, " %f%Lf%Fd%s  force NURBS surfaces to triangle mesh",
             &TextWindow::ScreenChangeGroupOption,
-            g->forceToMesh ? CHECK_TRUE : CHECK_FALSE);
+            g->forceToMesh ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     } else {
         Printf(false, " (model already forced to triangle mesh)");
     }
 
     Printf(true, " %f%Lr%Fd%s  relax constraints and dimensions",
         &TextWindow::ScreenChangeGroupOption,
-        g->relaxConstraints ? CHECK_TRUE : CHECK_FALSE);
+        g->relaxConstraints ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
     Printf(false, " %f%Le%Fd%s  allow redundant constraints",
         &TextWindow::ScreenChangeGroupOption,
-        g->allowRedundant ? CHECK_TRUE : CHECK_FALSE);
+        g->allowRedundant ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
     Printf(false, " %f%LD%Fd%s  suppress dof calculation (improves solver performance)",
         &TextWindow::ScreenChangeGroupOption,
-        g->suppressDofCalculation ? CHECK_TRUE : CHECK_FALSE);
+        g->suppressDofCalculation ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
     Printf(false, " %f%Ld%Fd%s  treat all dimensions as reference",
         &TextWindow::ScreenChangeGroupOption,
-        g->allDimsReference ? CHECK_TRUE : CHECK_FALSE);
+        g->allDimsReference ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
     if(g->booleanFailed) {
         Printf(false, "");
@@ -812,10 +812,10 @@ void TextWindow::ShowTangentArc() {
     Printf(false, "");
     Printf(false, "  %Fd%f%La%s  choose radius automatically%E",
         &ScreenChangeTangentArc,
-        !SS.tangentArcManual ? CHECK_TRUE : CHECK_FALSE);
+        !SS.tangentArcManual ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     Printf(false, "  %Fd%f%Lm%s  modify original entities%E",
         &ScreenChangeTangentArc,
-        SS.tangentArcModify ? CHECK_TRUE : CHECK_FALSE);
+        SS.tangentArcModify ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "To create a tangent arc at a point,");
