@@ -797,9 +797,9 @@ void TextWindow::ShowStyleInfo() {
                             "%D%f%LW%s pixels%E  "
                             "%D%f%Lw%s %s",
             s->h.v, &ScreenChangeStyleYesNo,
-            widthpx ? RADIO_TRUE : RADIO_FALSE,
+            widthpx ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             s->h.v, &ScreenChangeStyleYesNo,
-            !widthpx ? RADIO_TRUE : RADIO_FALSE,
+            !widthpx ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             SS.UnitName());
     }
 
@@ -834,7 +834,7 @@ void TextWindow::ShowStyleInfo() {
     }
 
     for(uint32_t i = 0; i <= (uint32_t)StipplePattern::LAST; i++) {
-        const char *radio = s->stippleType == (StipplePattern)i ? RADIO_TRUE : RADIO_FALSE;
+        const char *radio = s->stippleType == (StipplePattern)i ? UI_RADIO_TRUE : UI_RADIO_FALSE;
         Printf(false, "%Bp     %D%f%Lp%s %s%E",
             (i % 2 == 0) ? 'd' : 'a',
             s->h.v, &ScreenChangeStylePatternType,
@@ -854,7 +854,7 @@ void TextWindow::ShowStyleInfo() {
 
         Printf(false, "%Bd   %D%f%Lf%s  contours are filled%E",
             s->h.v, &ScreenChangeStyleYesNo,
-            s->filled ? CHECK_TRUE : CHECK_FALSE);
+            s->filled ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     }
 
     // The text height, and its units
@@ -881,9 +881,9 @@ void TextWindow::ShowStyleInfo() {
                             "%D%f%LG%s pixels%E  "
                             "%D%f%Lg%s %s",
             s->h.v, &ScreenChangeStyleYesNo,
-            textHeightpx ? RADIO_TRUE : RADIO_FALSE,
+            textHeightpx ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             s->h.v, &ScreenChangeStyleYesNo,
-            !textHeightpx ? RADIO_TRUE : RADIO_FALSE,
+            !textHeightpx ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             SS.UnitName());
     }
 
@@ -901,11 +901,11 @@ void TextWindow::ShowStyleInfo() {
                       "%D%f%LH%s center%E  "
                       "%D%f%LR%s right%E  ",
             s->h.v, &ScreenChangeStyleYesNo,
-            ((uint32_t)s->textOrigin & (uint32_t)Style::TextOrigin::LEFT) ? RADIO_TRUE : RADIO_FALSE,
+            ((uint32_t)s->textOrigin & (uint32_t)Style::TextOrigin::LEFT) ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             s->h.v, &ScreenChangeStyleYesNo,
-            neither ? RADIO_TRUE : RADIO_FALSE,
+            neither ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             s->h.v, &ScreenChangeStyleYesNo,
-            ((uint32_t)s->textOrigin & (uint32_t)Style::TextOrigin::RIGHT) ? RADIO_TRUE : RADIO_FALSE);
+            ((uint32_t)s->textOrigin & (uint32_t)Style::TextOrigin::RIGHT) ? UI_RADIO_TRUE : UI_RADIO_FALSE);
 
         neither = !((uint32_t)s->textOrigin & ((uint32_t)Style::TextOrigin::BOT | (uint32_t)Style::TextOrigin::TOP));
         Printf(false, "%Bd   "
@@ -913,11 +913,11 @@ void TextWindow::ShowStyleInfo() {
                       "%D%f%LV%s center%E  "
                       "%D%f%LT%s top%E  ",
             s->h.v, &ScreenChangeStyleYesNo,
-            ((uint32_t)s->textOrigin & (uint32_t)Style::TextOrigin::BOT) ? RADIO_TRUE : RADIO_FALSE,
+            ((uint32_t)s->textOrigin & (uint32_t)Style::TextOrigin::BOT) ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             s->h.v, &ScreenChangeStyleYesNo,
-            neither ? RADIO_TRUE : RADIO_FALSE,
+            neither ? UI_RADIO_TRUE : UI_RADIO_FALSE,
             s->h.v, &ScreenChangeStyleYesNo,
-            ((uint32_t)s->textOrigin & (uint32_t)Style::TextOrigin::TOP) ? RADIO_TRUE : RADIO_FALSE);
+            ((uint32_t)s->textOrigin & (uint32_t)Style::TextOrigin::TOP) ? UI_RADIO_TRUE : UI_RADIO_FALSE);
     }
 
     Printf(false, "");
@@ -925,12 +925,12 @@ void TextWindow::ShowStyleInfo() {
     if(s->h.v >= Style::FIRST_CUSTOM) {
         Printf(false, "  %Fd%D%f%Lv%s  show these objects on screen%E",
                 s->h.v, &ScreenChangeStyleYesNo,
-                s->visible ? CHECK_TRUE : CHECK_FALSE);
+                s->visible ? UI_CHECK_TRUE : UI_CHECK_FALSE);
     }
 
     Printf(false, "  %Fd%D%f%Le%s  export these objects%E",
             s->h.v, &ScreenChangeStyleYesNo,
-            s->exportable ? CHECK_TRUE : CHECK_FALSE);
+            s->exportable ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
     if(s->h.v >= Style::FIRST_CUSTOM) {
         Printf(false, "");

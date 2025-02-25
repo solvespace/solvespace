@@ -515,7 +515,7 @@ void TextWindow::ShowPasteTransformed() {
         &ScreenChangePasteTransformed);
     Printf(false, "%Ba   %Ftmirror%E    %Fd%Lf%f%s  flip%E",
         &ScreenChangePasteTransformed,
-        shown.paste.scale < 0 ? CHECK_TRUE : CHECK_FALSE);
+        shown.paste.scale < 0 ? UI_CHECK_TRUE : UI_CHECK_FALSE);
 
     Printf(true, " %Fl%Lg%fpaste transformed now%E", &ScreenPasteTransformed);
 
