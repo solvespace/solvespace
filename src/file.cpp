@@ -361,11 +361,11 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     SShell *s = &g->runningShell;
     for(SSurface &srf : s->surface) {
         fprintf(fh, "Surface %08x %08x %08x %d %d\n",
-            srf.h.v, srf.color.ToPackedInt(), srf.face, srf.curve.degm, srf.curve.degn);
-        for(i = 0; i <= srf.curve.degm; i++) {
-            for(j = 0; j <= srf.curve.degn; j++) {
+            srf.h.v, srf.color.ToPackedInt(), srf.face, srf.degm, srf.degn);
+        for(i = 0; i <= srf.degm; i++) {
+            for(j = 0; j <= srf.degn; j++) {
                 fprintf(fh, "SCtrl %d %d %.20f %.20f %.20f Weight %20.20f\n",
-                    i, j, CO(srf.curve.ctrl[i][j]), srf.curve.weight[i][j]);
+                    i, j, CO(srf.ctrl[i][j]), srf.weight[i][j]);
             }
         }
 
@@ -794,7 +794,7 @@ bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityLi
             unsigned int rgba = 0;
             if(sscanf(line, "Surface %x %x %x %d %d",
                 &(srf.h.v), &rgba, &(srf.face),
-                &(srf.curve.degm), &(srf.curve.degn)) != 5) {
+                &(srf.degm), &(srf.degn)) != 5) {
                 ssassert(false, "Unexpected Surface format");
             }
             srf.color = RgbaColor::FromPackedInt((uint32_t)rgba);
@@ -807,8 +807,8 @@ bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityLi
             {
                 ssassert(false, "Unexpected SCtrl format");
             }
-            srf.curve.ctrl[i][j] = c;
-            srf.curve.weight[i][j] = w;
+            srf.ctrl[i][j] = c;
+            srf.weight[i][j] = w;
         } else if(StrStartsWith(line, "TrimBy ")) {
             STrimBy stb = {};
             int backwards;

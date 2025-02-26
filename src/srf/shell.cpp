@@ -328,8 +328,8 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
 
                     sc         = {};
                     sc.isExact = true;
-                    sc.exact   = SBezier::From(ss->curve.ctrl[0][0], ss->curve.ctrl[0][1], ss->curve.ctrl[0][2]);
-                    sc.exact.weight[1] = ss->curve.weight[0][1];
+                    sc.exact   = SBezier::From(ss->ctrl[0][0], ss->ctrl[0][1], ss->ctrl[0][2]);
+                    sc.exact.weight[1] = ss->weight[0][1];
                     double max_dt = 0.5;
                     if (sc.exact.deg > 1) max_dt = 0.125;
                     (sc.exact).MakePwlInto(&(sc.pts), 0.0, max_dt);
@@ -438,10 +438,10 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
 
                     sc = {};
                     sc.isExact = true;
-                    sc.exact = SBezier::From(ss->curve.ctrl[0][0],
-                                             ss->curve.ctrl[0][1],
-                                             ss->curve.ctrl[0][2]);
-                    sc.exact.weight[1] = ss->curve.weight[0][1];
+                    sc.exact = SBezier::From(ss->ctrl[0][0],
+                                             ss->ctrl[0][1],
+                                             ss->ctrl[0][2]);
+                    sc.exact.weight[1] = ss->weight[0][1];
                     (sc.exact).MakePwlInto(&(sc.pts));
                     sc.surfA = revs[j];
                     sc.surfB = revsp[j];
@@ -471,21 +471,21 @@ void SShell::MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0) {
 
         // Revolution of a line; this is potentially a plane, which we can
         // rewrite to have degree (1, 1).
-        if(srf->curve.degm == 1 && srf->curve.degn == 2) {
+        if(srf->degm == 1 && srf->degn == 2) {
             // close start, far start, far finish
             Vector cs, fs, ff;
             double d0, d1;
-            d0 = (srf->curve.ctrl[0][0]).DistanceToLine(pt, axis);
-            d1 = (srf->curve.ctrl[1][0]).DistanceToLine(pt, axis);
+            d0 = (srf->ctrl[0][0]).DistanceToLine(pt, axis);
+            d1 = (srf->ctrl[1][0]).DistanceToLine(pt, axis);
 
             if(d0 > d1) {
-                cs = srf->curve.ctrl[1][0];
-                fs = srf->curve.ctrl[0][0];
-                ff = srf->curve.ctrl[0][2];
+                cs = srf->ctrl[1][0];
+                fs = srf->ctrl[0][0];
+                ff = srf->ctrl[0][2];
             } else {
-                cs = srf->curve.ctrl[0][0];
-                fs = srf->curve.ctrl[1][0];
-                ff = srf->curve.ctrl[1][2];
+                cs = srf->ctrl[0][0];
+                fs = srf->ctrl[1][0];
+                ff = srf->ctrl[1][2];
             }
 
             // origin close, origin far
@@ -503,20 +503,20 @@ void SShell::MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0) {
                 double vm = (ff.Minus(of)).Dot(v);
                 v = v.ScaledBy(vm);
 
-                srf->curve.degm = 1;
-                srf->curve.degn = 1;
-                srf->curve.ctrl[0][0] = of;
-                srf->curve.ctrl[0][1] = of.Plus(u);
-                srf->curve.ctrl[1][0] = of.Plus(v);
-                srf->curve.ctrl[1][1] = of.Plus(u).Plus(v);
-                srf->curve.weight[0][0] = 1;
-                srf->curve.weight[0][1] = 1;
-                srf->curve.weight[1][0] = 1;
-                srf->curve.weight[1][1] = 1;
+                srf->degm = 1;
+                srf->degn = 1;
+                srf->ctrl[0][0] = of;
+                srf->ctrl[0][1] = of.Plus(u);
+                srf->ctrl[1][0] = of.Plus(v);
+                srf->ctrl[1][1] = of.Plus(u).Plus(v);
+                srf->weight[0][0] = 1;
+                srf->weight[0][1] = 1;
+                srf->weight[1][0] = 1;
+                srf->weight[1][1] = 1;
 
                 if(oldn.Dot(srf->NormalAt(0.5, 0.5)) < 0) {
-                    swap(srf->curve.ctrl[0][0], srf->curve.ctrl[1][0]);
-                    swap(srf->curve.ctrl[0][1], srf->curve.ctrl[1][1]);
+                    swap(srf->ctrl[0][0], srf->ctrl[1][0]);
+                    swap(srf->ctrl[0][1], srf->ctrl[1][1]);
                 }
                 continue;
             }
@@ -524,7 +524,7 @@ void SShell::MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0) {
             if(fabs(d0 - d1) < LENGTH_EPS) {
                 // This is a cylinder; so transpose it so that we'll recognize
                 // it as a surface of extrusion.
-                SSurface::Curve sn = srf->curve;
+                SSurface sn = *srf;
 
                 // Transposing u and v flips the normal, so reverse u to
                 // flip it again and put it back where we started.
@@ -533,12 +533,12 @@ void SShell::MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0) {
                 int dm, dn;
                 for(dm = 0; dm <= 1; dm++) {
                     for(dn = 0; dn <= 2; dn++) {
-                        sn.ctrl  [dn][dm] = srf->curve.ctrl  [1-dm][dn];
-                        sn.weight[dn][dm] = srf->curve.weight[1-dm][dn];
+                        sn.ctrl  [dn][dm] = srf->ctrl  [1-dm][dn];
+                        sn.weight[dn][dm] = srf->weight[1-dm][dn];
                     }
                 }
 
-                srf->curve = sn;
+                *srf = sn;
                 continue;
             }
         }

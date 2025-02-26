@@ -315,13 +315,13 @@ Vector SSurface::PointAt(double u, double v) const {
     double den = 0;
 
     int i, j;
-    for(i = 0; i <= curve.degm; i++) {
-        for(j = 0; j <= curve.degn; j++) {
-            double Bi = Bernstein(i, curve.degm, u),
-                   Bj = Bernstein(j, curve.degn, v);
+    for(i = 0; i <= degm; i++) {
+        for(j = 0; j <= degn; j++) {
+            double Bi = Bernstein(i, degm, u),
+                   Bj = Bernstein(j, degn, v);
 
-            num = num.Plus(curve.ctrl[i][j].ScaledBy(Bi*Bj*curve.weight[i][j]));
-            den += curve.weight[i][j]*Bi*Bj;
+            num = num.Plus(ctrl[i][j].ScaledBy(Bi*Bj*weight[i][j]));
+            den += weight[i][j]*Bi*Bj;
         }
     }
     num = num.ScaledBy(1.0/den);
@@ -337,21 +337,21 @@ void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv, bool retry
            den_v = 0;
 
     int i, j;
-    for(i = 0; i <= curve.degm; i++) {
-        for(j = 0; j <= curve.degn; j++) {
-            double Bi  = Bernstein(i, curve.degm, u),
-                   Bj  = Bernstein(j, curve.degn, v),
-                   Bip = BernsteinDerivative(i, curve.degm, u),
-                   Bjp = BernsteinDerivative(j, curve.degn, v);
+    for(i = 0; i <= degm; i++) {
+        for(j = 0; j <= degn; j++) {
+            double Bi  = Bernstein(i, degm, u),
+                   Bj  = Bernstein(j, degn, v),
+                   Bip = BernsteinDerivative(i, degm, u),
+                   Bjp = BernsteinDerivative(j, degn, v);
 
-            num = num.Plus(curve.ctrl[i][j].ScaledBy(Bi*Bj*curve.weight[i][j]));
-            den += curve.weight[i][j]*Bi*Bj;
+            num = num.Plus(ctrl[i][j].ScaledBy(Bi*Bj*weight[i][j]));
+            den += weight[i][j]*Bi*Bj;
 
-            num_u = num_u.Plus(curve.ctrl[i][j].ScaledBy(Bip*Bj*curve.weight[i][j]));
-            den_u += curve.weight[i][j]*Bip*Bj;
+            num_u = num_u.Plus(ctrl[i][j].ScaledBy(Bip*Bj*weight[i][j]));
+            den_u += weight[i][j]*Bip*Bj;
 
-            num_v = num_v.Plus(curve.ctrl[i][j].ScaledBy(Bi*Bjp*curve.weight[i][j]));
-            den_v += curve.weight[i][j]*Bi*Bjp;
+            num_v = num_v.Plus(ctrl[i][j].ScaledBy(Bi*Bjp*weight[i][j]));
+            den_v += weight[i][j]*Bi*Bjp;
         }
     }
     // quotient rule; f(t) = n(t)/d(t), so f' = (n'*d - n*d')/(d^2)
@@ -387,17 +387,17 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
     // derivative goes to zero at the control points, and would result in
     // nonconvergence. We avoid that here, and also guarantee a consistent
     // (u, v) (of the infinitely many possible in one parameter).
-    if(p.Equals(curve.ctrl[0]         [0]         )) { *u = 0; *v = 0; return; }
-    if(p.Equals(curve.ctrl[curve.degm][0]         )) { *u = 1; *v = 0; return; }
-    if(p.Equals(curve.ctrl[curve.degm][curve.degn])) { *u = 1; *v = 1; return; }
-    if(p.Equals(curve.ctrl[0]         [curve.degn])) { *u = 0; *v = 1; return; }
+    if(p.Equals(ctrl[0]   [0]   )) { *u = 0; *v = 0; return; }
+    if(p.Equals(ctrl[degm][0]   )) { *u = 1; *v = 0; return; }
+    if(p.Equals(ctrl[degm][degn])) { *u = 1; *v = 1; return; }
+    if(p.Equals(ctrl[0]   [degn])) { *u = 0; *v = 1; return; }
 
     // And planes are trivial, so don't waste time iterating over those.
-    if(curve.degm == 1 && curve.degn == 1) {
-        Vector orig =  curve.ctrl[0][0],
-               bu   = (curve.ctrl[1][0]).Minus(orig),
-               bv   = (curve.ctrl[0][1]).Minus(orig);
-        if((curve.ctrl[1][1]).Equals(orig.Plus(bu).Plus(bv))) {
+    if(degm == 1 && degn == 1) {
+        Vector orig =  ctrl[0][0],
+               bu   = (ctrl[1][0]).Minus(orig),
+               bv   = (ctrl[0][1]).Minus(orig);
+        if((ctrl[1][1]).Equals(orig.Plus(bu).Plus(bv))) {
 
             Vector n = bu.Cross(bv);
             Vector ty = n.Cross(bu).ScaledBy(1.0/bu.MagSquared());
@@ -426,7 +426,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
     // Search for a reasonable initial guess
     int i, j;
     double minDist = VERY_POSITIVE;
-    int res = (max(curve.degm, curve.degn) == 2) ? 7 : 20;
+    int res = (max(degm, degn) == 2) ? 7 : 20;
     for(i = 0; i < res; i++) {
         for(j = 0; j < res; j++) {
             double tryu = (i + 0.5)/res, tryv = (j + 0.5)/res;

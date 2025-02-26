@@ -127,7 +127,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
     bool isExtdt = this->IsExtrusion(&oft, &alongt),
          isExtdb =    b->IsExtrusion(&ofb, &alongb);
 
-    if(curve.degm == 1 && curve.degn == 1 && b->curve.degm == 1 && b->curve.degn == 1) {
+    if(degm == 1 && degn == 1 && b->degm == 1 && b->degn == 1) {
         // Line-line intersection; it's a plane or nothing.
         Vector na = NormalAt(0, 0).WithMagnitude(1),
                nb = b->NormalAt(0, 0).WithMagnitude(1);
@@ -187,12 +187,12 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                                            p.Plus(dl.ScaledBy(tmax)));
             AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
         }
-    } else if((curve.degm == 1 && curve.degn == 1 && isExtdb) ||
-              (b->curve.degm == 1 && b->curve.degn == 1 && isExtdt))
+    } else if((degm == 1 && degn == 1 && isExtdb) ||
+              (b->degm == 1 && b->degn == 1 && isExtdt))
     {
         // The intersection between a plane and a surface of extrusion
         SSurface *splane, *sext;
-        if(curve.degm == 1 && curve.degn == 1) {
+        if(degm == 1 && degn == 1) {
             splane = this;
             sext = b;
         } else {
@@ -213,7 +213,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             // a line.
             Vector pm, alu, p0, dp;
             // a point halfway along the extrusion
-            pm = ((sext->curve.ctrl[0][0]).Plus(sext->curve.ctrl[0][1])).ScaledBy(0.5);
+            pm = ((sext->ctrl[0][0]).Plus(sext->ctrl[0][1])).ScaledBy(0.5);
             alu = along.WithMagnitude(1);
             dp = (n.Cross(along)).WithMagnitude(1);
             // n, alu, and dp form an orthogonal csys; set n component to
@@ -259,10 +259,10 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         List<SInter> inters = {};
         List<Vector> lv = {};
 
-        double a_axis0 = (   curve.ctrl[0][0]).Dot(axis),
-               a_axis1 = (   curve.ctrl[0][1]).Dot(axis),
-               b_axis0 = (b->curve.ctrl[0][0]).Dot(axis),
-               b_axis1 = (b->curve.ctrl[0][1]).Dot(axis);
+        double a_axis0 = (   ctrl[0][0]).Dot(axis),
+               a_axis1 = (   ctrl[0][1]).Dot(axis),
+               b_axis0 = (b->ctrl[0][0]).Dot(axis),
+               b_axis1 = (b->ctrl[0][1]).Dot(axis);
 
         if(a_axis0 > a_axis1) swap(a_axis0, a_axis1);
         if(b_axis0 > b_axis1) swap(b_axis0, b_axis1);
@@ -313,7 +313,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         inters.Clear();
         lv.Clear();
     } else {
-        if((curve.degm == 1 && curve.degn == 1) || (b->curve.degm == 1 && b->curve.degn == 1)) {
+        if((degm == 1 && degn == 1) || (b->degm == 1 && b->degn == 1)) {
             // we should only be here if just one surface is a plane because the
             // plane-plane case was already handled above. Need to check the other
             // nonplanar surface for trim curves that lie in the plane and are not
@@ -322,7 +322,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             // This also seems necessary to merge some coincident surfaces.
             SSurface *splane, *sext;
             SShell *shext;
-            if(curve.degm == 1 && curve.degn == 1) { // this and other checks assume coplanar ctrl pts.
+            if(degm == 1 && degn == 1) { // this and other checks assume coplanar ctrl pts.
                 splane = this;
                 sext = b;
                 shext = agnstB;
@@ -512,10 +512,10 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 // Currently handles planes only.
 //-----------------------------------------------------------------------------
 bool SSurface::CoincidentWith(SSurface *ss, bool sameNormal) const {
-    if(curve.degm != 1 || curve.degn != 1) return false;
-    if(ss->curve.degm != 1 || ss->curve.degn != 1) return false;
+    if(degm != 1 || degn != 1) return false;
+    if(ss->degm != 1 || ss->degn != 1) return false;
 
-    Vector p = curve.ctrl[0][0];
+    Vector p = ctrl[0][0];
     Vector n = NormalAt(0, 0).WithMagnitude(1);
     double d = n.Dot(p);
 
@@ -532,11 +532,11 @@ bool SSurface::CoincidentWith(SSurface *ss, bool sameNormal) const {
 }
 
 bool SSurface::CoincidentWithPlane(Vector n, double d) const {
-    if(curve.degm != 1 || curve.degn != 1) return false;
-    if(fabs(n.Dot(curve.ctrl[0][0]) - d) > LENGTH_EPS) return false;
-    if(fabs(n.Dot(curve.ctrl[0][1]) - d) > LENGTH_EPS) return false;
-    if(fabs(n.Dot(curve.ctrl[1][0]) - d) > LENGTH_EPS) return false;
-    if(fabs(n.Dot(curve.ctrl[1][1]) - d) > LENGTH_EPS) return false;
+    if(degm != 1 || degn != 1) return false;
+    if(fabs(n.Dot(ctrl[0][0]) - d) > LENGTH_EPS) return false;
+    if(fabs(n.Dot(ctrl[0][1]) - d) > LENGTH_EPS) return false;
+    if(fabs(n.Dot(ctrl[1][0]) - d) > LENGTH_EPS) return false;
+    if(fabs(n.Dot(ctrl[1][1]) - d) > LENGTH_EPS) return false;
 
     return true;
 }
@@ -545,10 +545,10 @@ bool SSurface::CoincidentWithPlane(Vector n, double d) const {
 // Does a planar surface contain a curve? Does the curve lie completely in plane?
 //-----------------------------------------------------------------------------
 bool SSurface::ContainsPlaneCurve(SCurve *sc) const {
-    if(curve.degm != 1 || curve.degn != 1) return false;
+    if(degm != 1 || degn != 1) return false;
     if(!sc->isExact) return false; // we don't handle those (yet?)
     
-    Vector p = curve.ctrl[0][0];
+    Vector p = ctrl[0][0];
     Vector n = NormalAt(0, 0).WithMagnitude(1);
     double d = n.Dot(p);
 

@@ -390,7 +390,7 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
     l.RemoveTagged();
 
     // Handle simple triangle fans all at once. This pass is optional.
-    if(srf->curve.degm == 1 && srf->curve.degn == 1) {
+    if(srf->degm == 1 && srf->degn == 1) {
         l.ClearTags();
         int j=0;
         int pstart = 0;
@@ -468,7 +468,7 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
                 (l[ear]).ear = IsEar(ear, scaledEps) ? EarType::EAR : EarType::NOT_EAR;
             }
             if(l[ear].ear == EarType::EAR) {
-                if(srf->curve.degm == 1 && srf->curve.degn == 1) {
+                if(srf->degm == 1 && srf->degn == 1) {
                     // This is a plane; any ear is a good ear.
                     bestEar = ear;
                     break;
@@ -558,8 +558,8 @@ void SSurface::MakeTriangulationGridInto(List<double> *l, double vs, double vf,
         // 0.999 is about 2.5 degrees of twist over the middle 1/3 V-span.
         // we don't check at the ends because the derivative may not be valid there.
         double twist = 1.0;
-        if (curve.degm == 1) twist = NormalAtMaybeSwapped(u, vm1, swapped).Dot(
-                                     NormalAtMaybeSwapped(u, vm2, swapped) );
+        if (degm == 1) twist = NormalAtMaybeSwapped(u, vm1, swapped).Dot(
+                               NormalAtMaybeSwapped(u, vm2, swapped) );
         if (twist < worst_twist) worst_twist = twist;
 
         worst = max(worst, pm1.DistanceToLine(ps, pf.Minus(ps)));
@@ -597,11 +597,11 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
     srf->MakeTriangulationGridInto(&lj, 0, 1, /*swapped=*/false, 0);
 
     // force 2nd order grid to have at least 4 segments in each direction
-    if ((li.n < 5) && (srf->curve.degm>1)) { // 4 segments minimum
+    if ((li.n < 5) && (srf->degm>1)) { // 4 segments minimum
         li.Clear();
         li.Add(&v[0]);li.Add(&v[1]);li.Add(&v[2]);li.Add(&v[3]);li.Add(&v[4]);
     }
-    if ((lj.n < 5) && (srf->curve.degn>1)) { // 4 segments minimum
+    if ((lj.n < 5) && (srf->degn>1)) { // 4 segments minimum
         lj.Clear();
         lj.Add(&v[0]);lj.Add(&v[1]);lj.Add(&v[2]);lj.Add(&v[3]);lj.Add(&v[4]);
     }

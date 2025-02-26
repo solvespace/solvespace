@@ -183,31 +183,31 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     // B-spline surface (in fact, just a Bezier surface).
     fprintf(f, "#%d=(\n", srfid);
     fprintf(f, "BOUNDED_SURFACE()\n");
-    fprintf(f, "B_SPLINE_SURFACE(%d,%d,(", ss->curve.degm, ss->curve.degn);
-    for(i = 0; i <= ss->curve.degm; i++) {
+    fprintf(f, "B_SPLINE_SURFACE(%d,%d,(", ss->degm, ss->degn);
+    for(i = 0; i <= ss->degm; i++) {
         fprintf(f, "(");
-        for(j = 0; j <= ss->curve.degn; j++) {
-            fprintf(f, "#%d", srfid + 1 + j + i*(ss->curve.degn + 1));
-            if(j != ss->curve.degn) fprintf(f, ",");
+        for(j = 0; j <= ss->degn; j++) {
+            fprintf(f, "#%d", srfid + 1 + j + i*(ss->degn + 1));
+            if(j != ss->degn) fprintf(f, ",");
         }
         fprintf(f, ")");
-        if(i != ss->curve.degm) fprintf(f, ",");
+        if(i != ss->degm) fprintf(f, ",");
     }
     fprintf(f, "),.UNSPECIFIED.,.F.,.F.,.F.)\n");
     fprintf(f, "B_SPLINE_SURFACE_WITH_KNOTS((%d,%d),(%d,%d),",
-        (ss->curve.degm + 1), (ss->curve.degm + 1),
-        (ss->curve.degn + 1), (ss->curve.degn + 1));
+        (ss->degm + 1), (ss->degm + 1),
+        (ss->degn + 1), (ss->degn + 1));
     fprintf(f, "(0.000,1.000),(0.000,1.000),.UNSPECIFIED.)\n");
     fprintf(f, "GEOMETRIC_REPRESENTATION_ITEM()\n");
     fprintf(f, "RATIONAL_B_SPLINE_SURFACE((");
-    for(i = 0; i <= ss->curve.degm; i++) {
+    for(i = 0; i <= ss->degm; i++) {
         fprintf(f, "(");
-        for(j = 0; j <= ss->curve.degn; j++) {
-            fprintf(f, "%.10f", ss->curve.weight[i][j]);
-            if(j != ss->curve.degn) fprintf(f, ",");
+        for(j = 0; j <= ss->degn; j++) {
+            fprintf(f, "%.10f", ss->weight[i][j]);
+            if(j != ss->degn) fprintf(f, ",");
         }
         fprintf(f, ")");
-        if(i != ss->curve.degm) fprintf(f, ",");
+        if(i != ss->degm) fprintf(f, ",");
     }
     fprintf(f, "))\n");
     fprintf(f, "REPRESENTATION_ITEM('')\n");
@@ -215,16 +215,16 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     fprintf(f, ");\n");
 
     // The control points for the untrimmed surface.
-    for(i = 0; i <= ss->curve.degm; i++) {
-        for(j = 0; j <= ss->curve.degn; j++) {
+    for(i = 0; i <= ss->degm; i++) {
+        for(j = 0; j <= ss->degn; j++) {
             fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-                srfid + 1 + j + i*(ss->curve.degn + 1),
-                CO(ss->curve.ctrl[i][j]));
+                srfid + 1 + j + i*(ss->degn + 1),
+                CO(ss->ctrl[i][j]));
         }
     }
     fprintf(f, "\n");
 
-    id = srfid + 1 + (ss->curve.degm + 1)*(ss->curve.degn + 1);
+    id = srfid + 1 + (ss->degm + 1)*(ss->degn + 1);
 
     // Now we do the trim curves. We must group each outer loop separately
     // along with its inner faces, so do that now.
