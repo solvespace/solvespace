@@ -21,7 +21,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 # solvespace dependencies
 add_library(slvs_deps INTERFACE)
-target_include_directories(slvs_deps INTERFACE SYSTEM
+target_include_directories(slvs_deps SYSTEM INTERFACE
     ${OPENGL_INCLUDE_DIR}
     ${ZLIB_INCLUDE_DIR}
     ${PNG_PNG_INCLUDE_DIR}
@@ -38,14 +38,14 @@ target_link_libraries(slvs_deps INTERFACE
     mimalloc-static)
 
 if(Backtrace_FOUND)
-    target_include_directories(slvs_deps INTERFACE SYSTEM
+    target_include_directories(slvs_deps SYSTEM INTERFACE
         ${Backtrace_INCLUDE_DIRS})
     target_link_libraries(slvs_deps INTERFACE
         ${Backtrace_LIBRARY})
 endif()
 
 if(SPACEWARE_FOUND)
-    target_include_directories(slvs_deps INTERFACE SYSTEM
+    target_include_directories(slvs_deps SYSTEM INTERFACE
         ${SPACEWARE_INCLUDE_DIR})
     target_link_libraries(slvs_deps INTERFACE
         ${SPACEWARE_LIBRARIES})
@@ -421,7 +421,7 @@ if(ENABLE_GUI)
         target_sources(solvespace PRIVATE
             platform/guigtk.cpp)
 
-        target_include_directories(solvespace PRIVATE SYSTEM
+        target_include_directories(solvespace SYSTEM PRIVATE
             ${GTKMM_INCLUDE_DIRS}
             ${JSONC_INCLUDE_DIRS}
             ${FONTCONFIG_INCLUDE_DIRS})
