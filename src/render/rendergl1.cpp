@@ -557,34 +557,39 @@ void OpenGl1Renderer::DrawPoint(const Vector &o, Canvas::hStroke hcs) {
 #endif
 typedef void(SSGL_CALLBACK *GLUCallback)();
 
+using CombineVec = std::vector<std::unique_ptr<Vector>>;
+
 static void SSGL_CALLBACK Vertex(Vector *p) {
     ssglVertex3v(*p);
 }
 static void SSGL_CALLBACK Combine(double coords[3], void *vertexData[4],
-                                  float weight[4], void **outData) {
-    Vector *n = (Vector *)AllocTemporary(sizeof(Vector));
+                                  float weight[4], void **outData, void *inData) {
+    Vector *n = new Vector;
     n->x = coords[0];
     n->y = coords[1];
     n->z = coords[2];
 
     *outData = n;
+    CombineVec *vec = static_cast<CombineVec *>(inData);
+    vec->emplace_back(n);
 }
 void OpenGl1Renderer::DrawPolygon(const SPolygon &p, hFill hcf) {
     UnSelectPrimitive();
     SelectFill(hcf);
 
     GLUtesselator *gt = gluNewTess();
-    gluTessCallback(gt, GLU_TESS_BEGIN,   (GLUCallback) glBegin);
-    gluTessCallback(gt, GLU_TESS_VERTEX,  (GLUCallback) Vertex);
-    gluTessCallback(gt, GLU_TESS_END,     (GLUCallback) glEnd);
-    gluTessCallback(gt, GLU_TESS_COMBINE, (GLUCallback) Combine);
+    gluTessCallback(gt, GLU_TESS_BEGIN,        (GLUCallback) glBegin);
+    gluTessCallback(gt, GLU_TESS_VERTEX,       (GLUCallback) Vertex);
+    gluTessCallback(gt, GLU_TESS_END,          (GLUCallback) glEnd);
+    gluTessCallback(gt, GLU_TESS_COMBINE_DATA, (GLUCallback) Combine);
 
     gluTessProperty(gt, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
 
     ssglNormal3v(p.normal);
     gluTessNormal(gt, p.normal.x, p.normal.y, p.normal.z);
 
-    gluTessBeginPolygon(gt, NULL);
+    CombineVec vecs;
+    gluTessBeginPolygon(gt, &vecs);
     for(const SContour &sc : p.l) {
         gluTessBeginContour(gt);
         for(const SPoint &sp : sc.l) {
