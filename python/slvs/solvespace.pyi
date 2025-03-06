@@ -62,6 +62,7 @@ class ResultFlag(IntEnum):
     INCONSISTENT = auto()
     DIDNT_CONVERGE = auto()
     TOO_MANY_UNKNOWNS = auto()
+    REDUNDANT_OKAY = auto()
 
 class Slvs_Entity(TypedDict):
   h: int

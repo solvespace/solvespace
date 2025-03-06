@@ -870,9 +870,12 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
             sr.result = SLVS_RESULT_DIDNT_CONVERGE;
             return sr;
         }
-        case SolveResult::REDUNDANT_DIDNT_CONVERGE:
-        case SolveResult::REDUNDANT_OKAY: {
+        case SolveResult::REDUNDANT_DIDNT_CONVERGE: {
             sr.result = SLVS_RESULT_INCONSISTENT;
+            return sr;
+        }
+        case SolveResult::REDUNDANT_OKAY: {
+            sr.result = SLVS_RESULT_REDUNDANT_OKAY;
             return sr;
         }
         case SolveResult::TOO_MANY_UNKNOWNS: {
@@ -992,8 +995,11 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
             break;
 
         case SolveResult::REDUNDANT_DIDNT_CONVERGE:
-        case SolveResult::REDUNDANT_OKAY:
             ssys->result = SLVS_RESULT_INCONSISTENT;
+            break;
+
+        case SolveResult::REDUNDANT_OKAY:
+            ssys->result = SLVS_RESULT_REDUNDANT_OKAY;
             break;
 
         case SolveResult::TOO_MANY_UNKNOWNS:
