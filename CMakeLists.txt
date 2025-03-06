@@ -252,10 +252,9 @@ if(ENABLE_GUI OR ENABLE_CLI)
         list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
         find_vendored_package(Freetype freetype
-            WITH_ZLIB               OFF
-            WITH_BZip2              OFF
-            WITH_PNG                OFF
-            WITH_HarfBuzz           OFF
+            FT_DISABLE_BZIP2        ON
+            FT_DISABLE_HARFBUZZ     ON
+            FT_DISABLE_BROTLI       ON
             FREETYPE_LIBRARY        freetype
             FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
 
