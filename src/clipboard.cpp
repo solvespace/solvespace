@@ -285,7 +285,6 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
                 }
                 break;
             }
-                // Fall through...
             case Constraint::Type::HORIZONTAL:
             case Constraint::Type::VERTICAL:
                 // When rotating 90 or 270 degrees, swap the vertical / horizontal constraints
