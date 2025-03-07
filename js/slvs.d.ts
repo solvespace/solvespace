@@ -27,7 +27,6 @@ export interface Constraint {
 export interface SolveResult {
   result: number;
   dof: number;
-  rank: number;
   bad: number;
 }
 

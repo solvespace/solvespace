@@ -229,12 +229,15 @@ int System::CalculateRank() {
     return result;
 }
 
-bool System::TestRank(int *dof) {
+bool System::TestRank(int *dof, int *rank) {
     EvalJacobian();
     int jacobianRank = CalculateRank();
     // We are calculating dof based on real rank, not mat.m.
     // Using this approach we can calculate real dof even when redundant is allowed.
     if(dof != NULL) *dof = mat.n - jacobianRank;
+    if(rank) {
+        *rank = jacobianRank;
+    }
     return jacobianRank == mat.m;
 }
 
@@ -414,7 +417,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bo
     }
 }
 
-SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
+SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
                           bool andFindBad, bool andFindFree, bool forceDofCheck)
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
@@ -546,7 +549,7 @@ SolveResult System::SolveRank(Group *g, int *rank, int *dof, List<hConstraint> *
         return SolveResult::TOO_MANY_UNKNOWNS;
     }
 
-    bool rankOk = TestRank(dof);
+    bool rankOk = TestRank(dof, rank);
     if(!rankOk) {
         // When we are testing with redundant allowed, we don't want to have additional info
         // about redundants since this test is working only for single redundant constraint
