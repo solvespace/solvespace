@@ -268,7 +268,7 @@ public:
 
     static const double CONVERGE_TOLERANCE;
     int CalculateRank();
-    bool TestRank(int *dof = NULL);
+    bool TestRank(int *dof = NULL, int *rank = NULL);
     static bool SolveLinearSystem(const Eigen::SparseMatrix<double> &A,
                                   const Eigen::VectorXd &B, Eigen::VectorXd *X);
     bool SolveLeastSquares();
@@ -287,8 +287,7 @@ public:
 
     void MarkParamsFree(bool findFree);
 
-    SolveResult Solve(Group *g, int *rank = NULL, int *dof = NULL,
-                      List<hConstraint> *bad = NULL,
+    SolveResult Solve(Group *g, int *dof = NULL, List<hConstraint> *bad = NULL,
                       bool andFindBad = false, bool andFindFree = false,
                       bool forceDofCheck = false);
 
