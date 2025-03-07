@@ -60,6 +60,7 @@ EMSCRIPTEN_BINDINGS(slvs) {
   emscripten::constant("RESULT_INCONSISTENT", SLVS_RESULT_INCONSISTENT);
   emscripten::constant("RESULT_DIDNT_CONVERGE", SLVS_RESULT_DIDNT_CONVERGE);
   emscripten::constant("RESULT_TOO_MANY_UNKNOWNS", SLVS_RESULT_TOO_MANY_UNKNOWNS);
+  emscripten::constant("RESULT_REDUNDANT_OKAY", SLVS_RESULT_REDUNDANT_OKAY);
 
   emscripten::value_array<std::array<uint32_t, 4>>("array_uint32_4")
     .element(emscripten::index<0>())
