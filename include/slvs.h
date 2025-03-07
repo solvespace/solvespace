@@ -201,7 +201,6 @@ typedef struct {
 typedef struct {
     int                 result;
     int                 dof;
-    int                 rank;
     int                 bad;
 } Slvs_SolveResult;
 

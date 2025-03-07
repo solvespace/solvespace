@@ -854,10 +854,9 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
     List<hConstraint> badList;
     bool andFindBad = calculateFaileds ? true : false;
 
-    int rank = 0, dof = 0;
-    SolveResult status = SYS.Solve(&g, &rank, &dof, &badList, andFindBad, false, false);
+    int dof = 0;
+    SolveResult status = SYS.Solve(&g, &dof, &badList, andFindBad, false, false);
     Slvs_SolveResult sr = {};
-    sr.rank = rank;
     sr.dof = dof;
     sr.bad = badList.n;
     sr.result = 0;
@@ -983,7 +982,7 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
 
     // Now we're finally ready to solve!
     bool andFindBad = ssys->calculateFaileds ? true : false;
-    SolveResult how = SYS.Solve(&g, NULL, &(ssys->dof), &bad, andFindBad, /*andFindFree=*/false);
+    SolveResult how = SYS.Solve(&g, &(ssys->dof), &bad, andFindBad, /*andFindFree=*/false);
 
     switch(how) {
         case SolveResult::OKAY:
