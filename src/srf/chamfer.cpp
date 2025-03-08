@@ -31,22 +31,66 @@ double SShell::GetEdgeModifier(SCurve &sc)
 
 void SShell::ModifyEdges()
 {
-  dbp("checking edges");
-  // Loop over all curves and create an info struct for the ones to modify
-  // we will call GetEdgeModifier() to get a radius or 0.
-  for(int i=0; i<curve.n; i++) {
-    SCurve *sc = &curve[i];
-    double m = GetEdgeModifier(*sc);
-    if (abs(m) > 0.000001)
-      dbp("modify an edge");
-  }
+    dbp("checking edges");
+    // Loop over all curves and create an info struct for the ones to modify
+    // we will call GetEdgeModifier() to get a radius or 0.
+    for(int i=0; i<curve.n; i++) {
+        SCurve *sc = &curve[i];
+        double m = GetEdgeModifier(*sc);
+        bool chamfer = false;
+      
+        if (abs(m) > 0.000001)
+        {
+            dbp("modify an edge");
+            if (m < 0.0) {
+                chamfer = true;
+                m = -m;
+            }
         
-	// create 2 new curves/trims as copies of the original. Tag the original curve.
-	// for trims we can just modify existing and add a new one.
-
-	// create a new surface trimmed by our 2 new curves and joining the 3 surfaces A,C,B
+        
+	// create a new surface C, for the fillet or chamfer
 	// - for now this surface has zero area because the trims are identical
+            SSurface srfC = {};
+            srfC.degm = sc->exact.deg;
+            if (chamfer)
+              srfC.degn = 1;
+            else
+              srfC.degn = 2;
 
+            srfC.degn = 3;  // we're doing something else for now
+
+//            srf.color = ???? what to put here;
+            hSSurface hsrfC = surface.AddAndAssignId(&srfC);
+
+
+        // create 2 new curves/trims as copies of the original. Tag the original curve.
+        // for trims we can just modify existing and add a new one.
+            Vector zeroVec = {0.0, 0.0, 0.0};
+            // create curve A joining surface A with surface C
+            SCurve curveA = {};
+            curveA.isExact = true;
+            curveA.exact = sc->exact.TransformedBy(zeroVec, Quaternion::IDENTITY, 1.0);
+            // copy would be better, but we need to redo this later anyway.
+            (curveA.exact).MakePwlInto(&(curveA.pts));
+            // one of these needs to be the new surface
+            curveA.surfA = sc->surfA;
+            curveA.surfB = hsrfC;
+            hSCurve hcurveA = curve.AddAndAssignId(&curveA);
+
+            // create curve B joining surface B with surface C
+            SCurve curveB = {};
+            curveB.isExact = true;
+            curveB.exact = sc->exact.TransformedBy(zeroVec, Quaternion::IDENTITY, 1.0);
+            // copy would be better, but we need to redo this later anyway.
+            (curveB.exact).MakePwlInto(&(curveB.pts));
+            // one of these needs to be the new surface
+            curveB.surfA = hsrfC;
+            curveB.surfB = sc->surfB;
+            hSCurve hcurveB = curve.AddAndAssignId(&curveB);
+
+  
+        }
+    }
 	// Delete the original curves (we can probably leave the curve and modify the trim(s))
 
 	// For each new curve, find the one that matches our start and end point and
@@ -64,6 +108,5 @@ void SShell::ModifyEdges()
 	// when we get to corners with 3 fillets we will need a spherical surface to join (hard).
 
 	// Delete our info structures
-
 }
 
