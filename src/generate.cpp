@@ -421,7 +421,7 @@ void SolveSpaceUI::ForceReferences() {
         Entity *wrkpl = SK.GetEntity(hr.entity(0));
         // The origin for our coordinate system, always zero
         Entity *origin = SK.GetEntity(wrkpl->point[0]);
-        origin->PointForceTo(Vector::From(0, 0, 0));
+        origin->PointForceTo({0, 0, 0});
         origin->construction = true;
         SK.GetParam(origin->param[0])->known = true;
         SK.GetParam(origin->param[1])->known = true;

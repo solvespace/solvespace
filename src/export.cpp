@@ -246,10 +246,10 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
     }
 
     if(exportWireframe) {
-        Vector u = Vector::From(1.0, 0.0, 0.0),
-               v = Vector::From(0.0, 1.0, 0.0),
-               n = Vector::From(0.0, 0.0, 1.0),
-               origin = Vector::From(0.0, 0.0, 0.0);
+        Vector u{1.0, 0.0, 0.0},
+               v{0.0, 1.0, 0.0},
+               n{0.0, 0.0, 1.0},
+               origin{};    // {0, 0, 0}
         double cameraTan = 0.0,
                scale = 1.0;
 
@@ -344,7 +344,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
         sel->Clear();
 
         SPolygon compd = {};
-        sp.normal = Vector::From(0, 0, -1);
+        sp.normal = {0, 0, -1};
         sp.FixContourDirections();
         sp.OffsetInto(&compd, SS.exportOffset*s);
         sp.Clear();
@@ -591,9 +591,9 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     // will then get exported as closed paths.
     SBezierLoopSetSet sblss = {};
     SBezierLoopSet leftovers = {};
-    SSurface srf = SSurface::FromPlane(Vector::From(0, 0, 0),
-                                       Vector::From(1, 0, 0),
-                                       Vector::From(0, 1, 0));
+    SSurface srf = SSurface::FromPlane({0, 0, 0},
+                                       {1, 0, 0},
+                                       {0, 1, 0});
     SPolygon spxyz = {};
     bool allClosed;
     SEdge notClosedAt;
@@ -685,8 +685,8 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
     SBezier *b;
 
     // First calculate the bounding box.
-    ptMin = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
-    ptMax = Vector::From(VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE);
+    ptMin = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
+    ptMax = {VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE};
     if(sm) {
         for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
             (tr->a).MakeMaxMin(&ptMax, &ptMin);

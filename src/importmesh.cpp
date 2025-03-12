@@ -87,7 +87,7 @@ static hEntity newNormal(EntityList *el, int *id, Quaternion normal, hEntity p) 
     en.construction = false;
     en.style.v = Style::NORMALS;
     // to be visible we need to add a point.
-//    en.point[0] = newPoint(el, id, Vector::From(0,0,0));
+//    en.point[0] = newPoint(el, id, {0, 0, 0});
     en.point[0] = p;
     en.actVisible = true;
     en.forceHidden = false;
@@ -156,7 +156,7 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
         f.read((char*)&xn, 4);
         f.read((char*)&yn, 4);
         f.read((char*)&zn, 4);
-        tr.an = Vector::From(xn,yn,zn);
+        tr.an = {xn,yn,zn};
         tr.bn = tr.an;
         tr.cn = tr.an;
 
@@ -205,10 +205,10 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     int id = 1;
 
     //add the STL origin and normals
-    hEntity origin = newPoint(el, &id, Vector::From(0.0, 0.0, 0.0));    
-    newNormal(el, &id, Quaternion::From(Vector::From(1,0,0),Vector::From(0,1,0)), origin);
-    newNormal(el, &id, Quaternion::From(Vector::From(0,1,0),Vector::From(0,0,1)), origin);
-    newNormal(el, &id, Quaternion::From(Vector::From(0,0,1),Vector::From(1,0,0)), origin);
+    hEntity origin = newPoint(el, &id, {0.0, 0.0, 0.0});    
+    newNormal(el, &id, Quaternion::From({1, 0, 0},{0, 1, 0}), origin);
+    newNormal(el, &id, Quaternion::From({0, 1, 0},{0, 0, 1}), origin);
+    newNormal(el, &id, Quaternion::From({0, 0, 1},{1, 0, 0}), origin);
 
     BBox box = {};
     box.minp = verts[0].p;
@@ -220,14 +220,14 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     }
 
     hEntity p[8];
-    p[0] = newPoint(el, &id, Vector::From(box.minp.x, box.minp.y, box.minp.z));
-    p[1] = newPoint(el, &id, Vector::From(box.maxp.x, box.minp.y, box.minp.z));
-    p[2] = newPoint(el, &id, Vector::From(box.minp.x, box.maxp.y, box.minp.z));
-    p[3] = newPoint(el, &id, Vector::From(box.maxp.x, box.maxp.y, box.minp.z));
-    p[4] = newPoint(el, &id, Vector::From(box.minp.x, box.minp.y, box.maxp.z));
-    p[5] = newPoint(el, &id, Vector::From(box.maxp.x, box.minp.y, box.maxp.z));
-    p[6] = newPoint(el, &id, Vector::From(box.minp.x, box.maxp.y, box.maxp.z));
-    p[7] = newPoint(el, &id, Vector::From(box.maxp.x, box.maxp.y, box.maxp.z));
+    p[0] = newPoint(el, &id, {box.minp.x, box.minp.y, box.minp.z});
+    p[1] = newPoint(el, &id, {box.maxp.x, box.minp.y, box.minp.z});
+    p[2] = newPoint(el, &id, {box.minp.x, box.maxp.y, box.minp.z});
+    p[3] = newPoint(el, &id, {box.maxp.x, box.maxp.y, box.minp.z});
+    p[4] = newPoint(el, &id, {box.minp.x, box.minp.y, box.maxp.z});
+    p[5] = newPoint(el, &id, {box.maxp.x, box.minp.y, box.maxp.z});
+    p[6] = newPoint(el, &id, {box.minp.x, box.maxp.y, box.maxp.z});
+    p[7] = newPoint(el, &id, {box.maxp.x, box.maxp.y, box.maxp.z});
 
     newLine(el, &id, p[0], p[1]);
     newLine(el, &id, p[0], p[2]);

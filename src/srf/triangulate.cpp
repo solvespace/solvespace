@@ -15,7 +15,7 @@ void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
 
     //int64_t in = GetMilliseconds();
 
-    normal = Vector::From(0, 0, 1);
+    normal = {0, 0, 1};
 
     while(l.n > 0) {
         FixContourDirections();
@@ -235,7 +235,7 @@ bool SContour::IsEmptyTriangle(int ap, int bp, int cp, double scaledEPS) const {
     (tr.b).MakeMaxMin(&maxv, &minv);
     (tr.c).MakeMaxMin(&maxv, &minv);
 
-    Vector n = Vector::From(0, 0, -1);
+    Vector n = {0, 0, -1};
 
     int i;
     for(i = 0; i < l.n; i++) {
@@ -295,7 +295,7 @@ bool SContour::IsEar(int bp, double scaledEps) const {
         return true;
     }
 
-    Vector n = Vector::From(0, 0, -1);
+    Vector n = {0, 0, -1};
     if((tr.Normal()).Dot(n) < scaledEps) {
         // This vertex is reflex, or between two collinear edges; either way,
         // it's not an ear.
@@ -584,7 +584,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
 
     SEdgeList holes = {};
 
-    normal = Vector::From(0, 0, 1);
+    normal = {0, 0, 1};
     FixContourDirections();
 
     // Build a rectangular grid, with horizontal and vertical lines in the
@@ -614,7 +614,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
         // generate two triangles in the mesh, and cut it out of our polygon.
         // Quads around the perimeter would be rejected by AnyEdgeCrossings.
         std::vector<bool> bottom(lj.n, false); // did we use this quad?
-        Vector tu = {0,0,0}, tv = {0,0,0};
+        Vector tu{}, tv{};  // {0, 0, 0}
         int i, j;
         for(i = 1; i < (li.n-1); i++) {
             bool prev_flag = false;
@@ -623,10 +623,10 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
                 double us = li[i], uf = li[i+1],
                        vs = lj[j], vf = lj[j+1];
 
-                Vector a = Vector::From(us, vs, 0),
-                       b = Vector::From(us, vf, 0),
-                       c = Vector::From(uf, vf, 0),
-                       d = Vector::From(uf, vs, 0);
+                Vector a = {us, vs, 0},
+                       b = {us, vf, 0},
+                       c = {uf, vf, 0},
+                       d = {uf, vs, 0};
 
                 //  |   d-----c
                 //  |   |     |
@@ -712,7 +712,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
 
 void SPolygon::TriangulateInto(SMesh *m) const {
     Vector n = normal;
-    if(n.Equals(Vector::From(0.0, 0.0, 0.0))) {
+    if(n.Equals({0.0, 0.0, 0.0})) {
        n = ComputeNormal();
     }
     Vector u = n.Normal(0);
@@ -721,9 +721,9 @@ void SPolygon::TriangulateInto(SMesh *m) const {
     SPolygon p = {};
     this->InverseTransformInto(&p, u, v, n);
 
-    SSurface srf = SSurface::FromPlane(Vector::From(0.0, 0.0, 0.0),
-                                       Vector::From(1.0, 0.0, 0.0),
-                                       Vector::From(0.0, 1.0, 0.0));
+    SSurface srf = SSurface::FromPlane({0.0, 0.0, 0.0},
+                                       {1.0, 0.0, 0.0},
+                                       {0.0, 1.0, 0.0});
     SMesh pm = {};
     p.UvTriangulateInto(&pm, &srf);
     for(STriangle st : pm.l) {

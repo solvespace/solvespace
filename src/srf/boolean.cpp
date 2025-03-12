@@ -179,7 +179,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
             });
 
             // And now uses the intersections to generate our split pwl edge(s)
-            Vector prev = Vector::From(VERY_POSITIVE, 0, 0);
+            Vector prev = {VERY_POSITIVE, 0, 0};
             for(pi = il.First(); pi; pi = il.NextAfter(pi)) {
                 // On-edge intersection will generate same split point for
                 // both surfaces, so don't create zero-length edge.
@@ -548,8 +548,8 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
             SBspUv::Class c = (ss->bsp) ? ss->bsp->ClassifyEdge(auv, buv, ss) : SBspUv::Class::OUTSIDE;
             if(c != SBspUv::Class::OUTSIDE) {
-                Vector ta = Vector::From(0, 0, 0);
-                Vector tb = Vector::From(0, 0, 0);
+                Vector ta = {0, 0, 0};
+                Vector tb = {0, 0, 0};
                 ret.ClosestPointTo(a, &(ta.x), &(ta.y));
                 ret.ClosestPointTo(b, &(tb.x), &(tb.y));
 
@@ -754,7 +754,7 @@ void SShell::RewriteSurfaceHandlesForCurves(SShell *a, SShell *b) {
 void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
     booleanFailed = false;
 
-    Vector t = Vector::From(0, 0, 0);
+    Vector t = {0, 0, 0};
     Quaternion q = Quaternion::IDENTITY;
     int i = 0;
     SShell *ab;

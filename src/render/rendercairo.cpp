@@ -98,7 +98,7 @@ void CairoRenderer::FinishPath() {
 void CairoRenderer::OutputBezier(const SBezier &b, hStroke hcs) {
     SelectStroke(hcs);
 
-    Vector c, n = Vector::From(0, 0, 1);
+    Vector c, n = {0, 0, 1};
     double r;
     if(b.deg == 1) {
         MoveTo(b.ctrl[0]);

@@ -251,7 +251,7 @@ void Group::GenerateShellAndMesh() {
 
         Vector tbot, ttop;
         if(subtype == Subtype::ONE_SIDED || subtype == Subtype::ONE_SKEWED) {
-            tbot = Vector::From(0, 0, 0); ttop = translate.ScaledBy(2);
+            tbot = {0, 0, 0}; ttop = translate.ScaledBy(2);
         } else {
             tbot = translate.ScaledBy(-1); ttop = translate.ScaledBy(1);
         }
@@ -779,10 +779,10 @@ void Group::DrawContourAreaLabels(Canvas *canvas) {
 
         Vector min = sbls.l[0].l[0].ctrl[0];
         Vector max = min;
-        Vector zero = Vector::From(0.0, 0.0, 0.0);
-        sbls.GetBoundingProjd(Vector::From(1.0, 0.0, 0.0), zero, &min.x, &max.x);
-        sbls.GetBoundingProjd(Vector::From(0.0, 1.0, 0.0), zero, &min.y, &max.y);
-        sbls.GetBoundingProjd(Vector::From(0.0, 0.0, 1.0), zero, &min.z, &max.z);
+        Vector zero = {0.0, 0.0, 0.0};
+        sbls.GetBoundingProjd({1.0, 0.0, 0.0}, zero, &min.x, &max.x);
+        sbls.GetBoundingProjd({0.0, 1.0, 0.0}, zero, &min.y, &max.y);
+        sbls.GetBoundingProjd({0.0, 0.0, 1.0}, zero, &min.z, &max.z);
 
         Vector mid = min.Plus(max).ScaledBy(0.5);
 

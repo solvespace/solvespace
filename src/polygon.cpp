@@ -271,8 +271,8 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) co
     dest->Clear();
 
     bool allClosed = true;
-    Vector first = Vector::From(0, 0, 0);
-    Vector last  = Vector::From(0, 0, 0);
+    Vector first = {0, 0, 0};
+    Vector last  = {0, 0, 0};
     int i;
     for(i = 0; i < l.n; i++) {
         if(!l[i].tag) {
@@ -380,7 +380,7 @@ SKdNodeEdges *SKdNodeEdges::From(SEdgeLl *sell) {
 
     // Compute the midpoints (just mean, though median would be better) of
     // each component.
-    Vector ptAve = Vector::From(0, 0, 0);
+    Vector ptAve = {0, 0, 0};
     SEdgeLl *flip;
     int totaln = 0;
     for(flip = sell; flip; flip = flip->next) {
@@ -573,7 +573,7 @@ void SContour::CopyInto(SContour *dest) const {
 }
 
 void SContour::FindPointWithMinX() {
-    xminPt = Vector::From(1e10, 1e10, 1e10);
+    xminPt = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
     for(const SPoint *sp = l.First(); sp; sp = l.NextAfter(sp)) {
         if(sp->p.x < xminPt.x) {
             xminPt = sp->p;
@@ -582,7 +582,7 @@ void SContour::FindPointWithMinX() {
 }
 
 Vector SContour::ComputeNormal() const {
-    Vector n = Vector::From(0, 0, 0);
+    Vector n = {0, 0, 0};
 
     for(int i = 0; i < l.n - 2; i++) {
         Vector u = (l[i+1].p).Minus(l[i+0].p).WithMagnitude(1);
@@ -678,7 +678,7 @@ void SPolygon::MakeEdgesInto(SEdgeList *el) const {
 
 Vector SPolygon::ComputeNormal() const {
     if(l.IsEmpty())
-        return Vector::From(0, 0, 0);
+        return {0, 0, 0};
     return (l[0]).ComputeNormal();
 }
 
@@ -899,7 +899,7 @@ void SContour::OffsetInto(SContour *dest, double r) const {
                                 nx0, ny0, ndx, ndy,
                                 &x, &y);
 
-            dest->AddPoint(Vector::From(x, y, 0));
+            dest->AddPoint({x, y, 0});
         } else {
             if(fabs(thetap - thetan) < (6*PI)/180) {
                 Vector pp = { b.x - r*sin(thetap),

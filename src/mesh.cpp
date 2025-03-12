@@ -50,8 +50,8 @@ void SMesh::DoBounding(Vector v, Vector *vmax, Vector *vmin) const {
 }
 void SMesh::GetBounding(Vector *vmax, Vector *vmin) const {
     int i;
-    *vmin = Vector::From( 1e12,  1e12,  1e12);
-    *vmax = Vector::From(-1e12, -1e12, -1e12);
+    *vmin = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
+    *vmax = {VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE};
     for(i = 0; i < l.n; i++) {
         const STriangle *st = &(l[i]);
         DoBounding(st->a, vmax, vmin);
@@ -115,7 +115,7 @@ void SMesh::Simplify(int start) {
     STriangle *tout = new STriangle[maxTriangles];
     int toutc = 0;
 
-    Vector n = Vector::From(0, 0, 0);
+    Vector n = {0, 0, 0};
     Vector *conv = new Vector[maxTriangles * 3];
     int convc = 0;
 
@@ -340,8 +340,8 @@ void SMesh::MakeFromTransformationOf(SMesh *a, Vector trans,
 bool SMesh::IsEmpty() const { return (l.IsEmpty()); }
 
 uint32_t SMesh::FirstIntersectionWith(Point2d mp) const {
-    Vector rayPoint = SS.GW.UnProjectPoint3(Vector::From(mp.x, mp.y, 0.0));
-    Vector rayDir = SS.GW.UnProjectPoint3(Vector::From(mp.x, mp.y, 1.0)).Minus(rayPoint);
+    Vector rayPoint = SS.GW.UnProjectPoint3({mp.x, mp.y, 0.0});
+    Vector rayDir = SS.GW.UnProjectPoint3({mp.x, mp.y, 1.0}).Minus(rayPoint);
 
     uint32_t face = 0;
     double faceT = VERY_NEGATIVE;
@@ -1158,7 +1158,7 @@ double SMesh::CalculateVolume() const {
     double vol = 0;
     for(STriangle tr : l) {
         // Translate to place vertex A at (x, y, 0)
-        Vector trans = Vector::From(tr.a.x, tr.a.y, 0);
+        Vector trans = {tr.a.x, tr.a.y, 0};
         tr.a = (tr.a).Minus(trans);
         tr.b = (tr.b).Minus(trans);
         tr.c = (tr.c).Minus(trans);
@@ -1167,11 +1167,11 @@ double SMesh::CalculateVolume() const {
         // whether the triangle is CW or CCW, C is either to the
         // right or to the left of the y-axis. This handles the
         // sign of our normal.
-        Vector u = Vector::From(-tr.b.y, tr.b.x, 0);
+        Vector u = {-tr.b.y, tr.b.x, 0};
         u = u.WithMagnitude(1);
-        Vector v = Vector::From(tr.b.x, tr.b.y, 0);
+        Vector v = {tr.b.x, tr.b.y, 0};
         v = v.WithMagnitude(1);
-        Vector n = Vector::From(0, 0, 1);
+        Vector n = {0, 0, 1};
 
         tr.a = (tr.a).DotInToCsys(u, v, n);
         tr.b = (tr.b).DotInToCsys(u, v, n);

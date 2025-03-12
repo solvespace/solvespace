@@ -399,7 +399,7 @@ Quaternion Quaternion::ToThe(double p) const {
     }
 
     Quaternion r;
-    Vector axis = Vector::From(vx, vy, vz);
+    Vector axis = {vx, vy, vz};
     double theta = acos(w); // okay, since magnitude is 1, so -1 <= w <= 1
     theta *= p;
     r.w = cos(theta);
@@ -461,9 +461,9 @@ Vector Vector::Normal(int which) const {
     // Arbitrarily choose one vector that's normal to us, pivoting
     // appropriately.
     double xa = fabs(x), ya = fabs(y), za = fabs(z);
-    if(this->Equals(Vector::From(0, 0, 1))) {
+    if(this->Equals({0, 0, 1})) {
         // Make DXFs exported in the XY plane work nicely...
-        n = Vector::From(1, 0, 0);
+        n = {1, 0, 0};
     } else if(xa < ya && xa < za) {
         n.x = 0;
         n.y = z;
@@ -784,7 +784,7 @@ Vector Vector::AtIntersectionOfPlaneAndLine(Vector n, double d,
 
     if(fabs(n.Dot(dp)) < LENGTH_EPS) {
         if(parallel) *parallel = true;
-        return Vector::From(0, 0, 0);
+        return {0, 0, 0};
     }
 
     if(parallel) *parallel = false;
@@ -819,7 +819,7 @@ Vector Vector::AtIntersectionOfPlanes(Vector na, double da,
                        nc.x, nc.y, nc.z);
     if(fabs(det) < 1e-10) { // arbitrary tolerance, not so good
         *parallel = true;
-        return Vector::From(0, 0, 0);
+        return {0, 0, 0};
     }
     *parallel = false;
 
@@ -835,7 +835,7 @@ Vector Vector::AtIntersectionOfPlanes(Vector na, double da,
                        nb.x, nb.y, db,
                        nc.x, nc.y, dc  );
 
-    return Vector::From(detx/det, dety/det, detz/det);
+    return {detx/det, dety/det, detz/det};
 }
 
 size_t VectorHash::operator()(const Vector &v) const {
@@ -887,7 +887,7 @@ Vector4 Vector4::ScaledBy(double s) const {
 }
 
 Vector Vector4::PerspectiveProject() const {
-    return Vector::From(x / w, y / w, z / w);
+    return {x / w, y / w, z / w};
 }
 
 Point2d Point2d::From(double x, double y) {

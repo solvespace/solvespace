@@ -552,7 +552,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         // Cast a ray in a random direction (two-sided so that we test if
         // the point lies on a surface, but use only one side for in/out
         // testing)
-        Vector ray = Vector::From(Random[cnt], Random[cnt+1], Random[cnt+2]);
+        Vector ray = {Random[cnt], Random[cnt+1], Random[cnt+2]};
 
         AllPointsIntersecting(
             p.Minus(ray), p.Plus(ray), &l,

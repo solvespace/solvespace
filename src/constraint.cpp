@@ -320,7 +320,7 @@ void Constraint::MenuConstrain(Command id) {
                 c.disp.offset = n.Cross(a.Minus(b));
                 c.disp.offset = (c.disp.offset).WithMagnitude(50/SS.GW.scale);
             } else {
-                c.disp.offset = Vector::From(0, 0, 0);
+                c.disp.offset = {};    // {0, 0, 0}
             }
 
             if(id == Command::REF_DISTANCE) {

@@ -263,8 +263,8 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const {
 
     // The starting and finishing control points that define our end tangents
     // (if the spline isn't periodic), and the on-curve points.
-    Vector ctrl_s = Vector::From(0, 0, 0);
-    Vector ctrl_f = Vector::From(0, 0, 0);
+    Vector ctrl_s{}; // {0, 0, 0}
+    Vector ctrl_f{}; // {0, 0, 0}
     Vector pt[MAX_N+4];
     if(periodic) {
         for(i = 0; i < ep + 3; i++) {
@@ -362,24 +362,24 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const {
         if(periodic) {
             p0 = pt[i];
             int iw = WRAP(i - 1, n);
-            p1 = p0.Plus(Vector::From(Xx[iw], Xy[iw], Xz[iw]));
+            p1 = p0.Plus({Xx[iw], Xy[iw], Xz[iw]});
         } else if(i == 0) {
             p0 = pt[0];
             p1 = ctrl_s;
         } else {
             p0 = pt[i];
-            p1 = p0.Plus(Vector::From(Xx[i-1], Xy[i-1], Xz[i-1]));
+            p1 = p0.Plus({Xx[i-1], Xy[i-1], Xz[i-1]});
         }
         if(periodic) {
             p3 = pt[i+1];
             int iw = WRAP(i, n);
-            p2 = p3.Minus(Vector::From(Xx[iw], Xy[iw], Xz[iw]));
+            p2 = p3.Minus({Xx[iw], Xy[iw], Xz[iw]});
         } else if(i == (pts - 2)) {
             p3 = pt[pts-1];
             p2 = ctrl_f;
         } else {
             p3 = pt[i+1];
-            p2 = p3.Minus(Vector::From(Xx[i], Xy[i], Xz[i]));
+            p2 = p3.Minus({Xx[i], Xy[i], Xz[i]});
         }
         SBezier sb = SBezier::From(p0, p1, p2, p3);
         sbl->l.Add(&sb);
@@ -503,7 +503,7 @@ Vector Entity::ExplodeOffset() const {
         double offset = SS.explodeDistance * (requestIdx + 1);
         return SK.GetEntity(workplane)->Normal()->NormalN().ScaledBy(offset);
     } else {
-        return Vector::From(0, 0, 0);
+        return {}; // {0, 0, 0}
     }
 }
 

@@ -644,7 +644,7 @@ void GraphicsWindow::SplitLinesOrCurves() {
 
     Entity *ea = SK.GetEntity(ha),
            *eb = SK.GetEntity(hb);
-    Vector pi = Vector::From(0, 0, 0);
+    Vector pi = {0, 0, 0};
 
     // First, decide the point where we're going to make the split.
     bool foundInters = false;

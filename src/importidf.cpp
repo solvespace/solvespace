@@ -123,7 +123,7 @@ static hEntity newNormal(EntityList *el, int *id, Quaternion normal) {
     en.construction = false;
     en.style.v = Style::ACTIVE_GRP;
     // to be visible we need to add a point.
-    en.point[0] = newPoint(el, id, Vector::From(0,0,3), /*visible=*/ true);
+    en.point[0] = newPoint(el, id, {0,0,3}, /*visible=*/ true);
     en.actVisible = true;
     en.forceHidden = false;
 
@@ -339,15 +339,15 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     
     hEntity hprev;
     hEntity hprevTop;
-    Vector pprev = Vector::From(0,0,0);
-    Vector pprevTop = Vector::From(0,0,0);
+    Vector pprev{};    // {0, 0, 0}
+    Vector pprevTop{};  // {0, 0, 0}
     
     double board_thickness = 10.0;
     double scale = 1.0; //mm
     bool topEntities       = false;
     bool bottomEntities    = false;
 
-    Quaternion normal = Quaternion::From(Vector::From(1,0,0), Vector::From(0,1,0));
+    Quaternion normal = Quaternion::From({1, 0, 0}, {0, 1, 0});
     hEntity hnorm = newNormal(el, &entityCount, normal);
 
     // to create the extursion we will need to collect a set of bezier curves defined
@@ -414,8 +414,8 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
                     double x = stof(values[1]) * scale;
                     double y = stof(values[2]) * scale;
                     double ang = stof(values[3]);
-                    Vector point = Vector::From(x,y,0.0);
-                    Vector pTop = Vector::From(x,y,board_thickness);
+                    Vector point = {x, y, 0.0};
+                    Vector pTop  = {x, y, board_thickness};
                     if(c != curve) { // start a new curve
                         curve = c;
                         if (bottomEntities)
@@ -479,17 +479,17 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
                     if(((d > 1.7) || (values[5].compare(0,3,"PIN") == 0)
                          || (values[5].compare(0,3,"MTG") == 0)) && !duplicate) {
                         // create the entity
-                        Vector cent = Vector::From(x,y,0.0);
+                        Vector cent = {x, y, 0.0};
                         hEntity hcent = newPoint(el, &entityCount, cent);
                         hEntity hdist = newDistance(el, &entityCount, d/2);
                         newCircle(el, &entityCount, hcent, hdist, hnorm, false);
                         // and again for the top
-                        Vector cTop = Vector::From(x,y,board_thickness);
+                        Vector cTop = {x, y, board_thickness};
                         hcent = newPoint(el, &entityCount, cTop);
                         hdist = newDistance(el, &entityCount, d/2);
                         newCircle(el, &entityCount, hcent, hdist, hnorm, false);
                         // create the curves for the extrusion
-                        Vector pt = Vector::From(x+d/2, y, 0.0);
+                        Vector pt = {x+d/2, y, 0.0};
                         MakeBeziersForArcs(&sbl, cent, pt, pt, normal, 360.0);
                     }
 
@@ -510,7 +510,7 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     SPolygon polyLoops = {};
     bool allClosed;
     bool allCoplanar;
-    Vector errorPointAt = Vector::From(0,0,0);
+    Vector errorPointAt{}; // {0, 0, 0}
     SEdge errorAt = {};
     
     SBezierLoopSetSet sblss = {};
@@ -522,8 +522,8 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     double ctc = SS.chordTolCalculated;
     if(ctc == 0.0) SS.chordTolCalculated = 0.1; //mm
     // there should only by one sbls in the sblss unless a board has disjointed parts...
-    sh->MakeFromExtrusionOf(sblss.l.First(), Vector::From(0.0, 0.0, 0.0),
-                                   Vector::From(0.0, 0.0, board_thickness),
+    sh->MakeFromExtrusionOf(sblss.l.First(), {0.0, 0.0, 0.0},
+                                   {0.0, 0.0, board_thickness},
                                    RgbaColor::From(0, 180, 0) );
     SS.chordTolCalculated = ctc;
     sblss.Clear();

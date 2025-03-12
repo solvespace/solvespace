@@ -191,8 +191,8 @@ SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q, dou
 }
 
 void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const {
-    *ptMax = Vector::From(VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE);
-    *ptMin = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
+    *ptMax = {VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE};
+    *ptMin = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
 
     int i, j;
     for(i = 0; i <= degm; i++) {
@@ -222,7 +222,7 @@ bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool asSegment) const
 void SSurface::MakeTrimEdgesInto(SEdgeList *sel, MakeAs flags,
                                  SCurve *sc, STrimBy *stb)
 {
-    Vector prev = Vector::From(0, 0, 0);
+    Vector prev = {0, 0, 0};
     bool inCurve = false, empty = true;
     double u = 0, v = 0;
 
@@ -241,7 +241,7 @@ void SSurface::MakeTrimEdgesInto(SEdgeList *sel, MakeAs flags,
 
         if(flags == MakeAs::UV) {
             ClosestPointTo(*pt, &u, &v);
-            tpt = Vector::From(u, v, 0);
+            tpt = {u, v, 0};
         } else {
             tpt = *pt;
         }

@@ -316,7 +316,7 @@ bool SBezierList::GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
     if(!l.IsEmpty()) {
         pt = l[0].Start();
     } else {
-        pt = Vector::From(0, 0, 0);
+        pt = {0, 0, 0};
     }
     ptFar = ptOffLine = pt;
 
@@ -334,8 +334,8 @@ bool SBezierList::GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
     if(ptFar.Equals(pt)) {
         // The points are all coincident. So neither basis vector matters.
         *p = pt;
-        *u = Vector::From(1, 0, 0);
-        *v = Vector::From(0, 1, 0);
+        *u = {1, 0, 0};
+        *v = {0, 1, 0};
         return true;
     }
 
@@ -526,7 +526,7 @@ SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
     if(poly->l.n > 0) {
         ret.point = poly->AnyPoint();
     } else {
-        ret.point = Vector::From(0, 0, 0);
+        ret.point = {0, 0, 0};
     }
 
     return ret;
@@ -623,10 +623,10 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
         for(pt = sc->l.First(); pt; pt = sc->l.NextAfter(pt)) {
             double u, v;
             srfuv->ClosestPointTo(pt->p, &u, &v);
-            spuv.l.Last()->AddPoint(Vector::From(u, v, 0));
+            spuv.l.Last()->AddPoint({u, v, 0});
         }
     }
-    spuv.normal = Vector::From(0, 0, 1); // must be, since it's in xy plane now
+    spuv.normal = {0, 0, 1}; // must be, since it's in xy plane now
 
     static const int OUTER_LOOP = 10;
     static const int INNER_LOOP = 20;

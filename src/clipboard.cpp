@@ -209,7 +209,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             // Likewise the scale, which could otherwise take us out of the
             // workplane.
             pt = pt.ScaledBy(fabs(scale));
-            pt = pt.ScaleOutOfCsys(u, v, Vector::From(0, 0, 0));
+            pt = pt.ScaleOutOfCsys(u, v, {}/*{0, 0, 0}*/);
             pt = pt.Plus(p);
             pt = pt.RotatedAbout(n, theta);
             pt = pt.Plus(trans);
@@ -338,7 +338,7 @@ void GraphicsWindow::MenuClipboard(Command id) {
             Entity *wrkpl  = SK.GetEntity(SS.GW.ActiveWorkplane());
             Vector p = SK.GetEntity(wrkpl->point[0])->PointGetNum();
             SS.TW.shown.paste.times  = 1;
-            SS.TW.shown.paste.trans  = Vector::From(0, 0, 0);
+            SS.TW.shown.paste.trans  = {};    // {0, 0, 0}
             SS.TW.shown.paste.theta  = 0;
             SS.TW.shown.paste.origin = p;
             SS.TW.shown.paste.scale  = 1;

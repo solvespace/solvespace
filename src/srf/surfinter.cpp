@@ -436,7 +436,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             sc.pts.Add(&padd);
 
             Point2d pa, pb;
-            Vector np, npc = Vector::From(0, 0, 0);
+            Vector np, npc = {0, 0, 0};
             bool fwd = false;
             // Better to start with a too-small step, so that we don't miss
             // features of the curve entirely.
@@ -583,12 +583,12 @@ void SShell::MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
         proto->ClosestPointTo(se->b, &ub, &vb);
 
         if(sameNormal) {
-            se->a = Vector::From(ua, va, 0);
-            se->b = Vector::From(ub, vb, 0);
+            se->a = {ua, va, 0};
+            se->b = {ub, vb, 0};
         } else {
             // Flip normal, so flip all edge directions
-            se->b = Vector::From(ua, va, 0);
-            se->a = Vector::From(ub, vb, 0);
+            se->b = {ua, va, 0};
+            se->a = {ub, vb, 0};
         }
     }
 }

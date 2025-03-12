@@ -109,7 +109,7 @@ void Camera::LoadIdentity() {
 
 void Camera::NormalizeProjectionVectors() {
     if(projRight.Magnitude() < LENGTH_EPS) {
-        projRight = Vector::From(1, 0, 0);
+        projRight = {1, 0, 0};
     }
 
     Vector norm = projRight.Cross(projUp);
