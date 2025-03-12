@@ -270,9 +270,19 @@ void ConstraintBase::Generate(ParamList *l) {
 
 void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                                        bool forReference) const {
-    if(reference && !forReference) return;
-
-    Expr *exA = Expr::From(valA);
+    Expr *exA = {};
+    
+    if(reference && !forReference) {
+        return;
+    } else {
+        if(expression != "") {
+//            exA = Expr::From(expression.c_str(), false, &SK.param, NULL);
+            exA = Expr::From(expression.c_str(), false);
+        } else {
+            exA = Expr::From(valA);
+        }
+    }
+ 
     switch(type) {
         case Type::PT_PT_DISTANCE:
             AddEq(l, Distance(workplane, ptA, ptB)->Minus(exA), 0);

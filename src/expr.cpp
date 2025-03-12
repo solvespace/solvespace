@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------------
 #include <limits>
 #include "solvespace.h"
+#include "sketch.h"
 
 ExprVector ExprVector::From(Expr *x, Expr *y, Expr *z) {
     ExprVector r = { x, y, z};
@@ -756,8 +757,23 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
         } else if(s == "pi") {
             t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
             t.expr->v = PI;
-        } else {
-            *error = "'" + s + "' is not a valid variable, function or constant";
+// New stuff
+//        } else if(params != NULL) {
+        } else { // check all the named parameters
+            bool found = false;
+            for(const Request &r : SK.request ) {
+                if (r.type != Request::Type::NAMED_PARAMETER) continue;
+                if(r.str != s) continue;
+                t = Token::From(TokenType::OPERAND, Expr::Op::PARAM);
+                hParam hp = r.h.param(64);
+                t.expr->parh = hp;
+                found = true;
+            }
+            if(!found)
+            {
+              *error = "'" + s + "' is not a valid variable, function or constant";
+            }
+// End new stuff
         }
     } else if(isdigit(c) || c == '.') {
         return LexNumber(error);

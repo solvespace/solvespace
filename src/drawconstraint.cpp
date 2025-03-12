@@ -32,6 +32,9 @@ std::string Constraint::Label() const {
           result = SS.MmToStringSI(fabs(valA));
         }
     }
+    if(expression != "") {
+        result = expression;
+    }
     if(reference) {
         result += " REF";
     }
