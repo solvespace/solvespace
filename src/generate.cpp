@@ -536,8 +536,7 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     Group *g = SK.GetGroup(hg);
     g->solved.remove.Clear();
     g->solved.findToFixTimeout = SS.timeoutRedundantConstr;
-    SolveResult how = sys.Solve(g, NULL,
-                                   &(g->solved.dof),
+    SolveResult how = sys.Solve(g, &(g->solved.dof),
                                    &(g->solved.remove),
                                    /*andFindBad=*/!g->allowRedundant,
                                    /*andFindFree=*/andFindFree,
