@@ -255,6 +255,7 @@ if(ENABLE_GUI OR ENABLE_CLI)
             FT_DISABLE_BZIP2        ON
             FT_DISABLE_HARFBUZZ     ON
             FT_DISABLE_BROTLI       ON
+            FT_DISABLE_PNG          ON
             FREETYPE_LIBRARY        freetype
             FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
 
