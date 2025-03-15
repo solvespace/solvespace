@@ -105,9 +105,8 @@ static std::string PrepareSavefile(std::string data) {
             std::string key   = data.substr(lineBegin, eqPos - lineBegin),
                         value = data.substr(eqPos + 1, nextLineBegin - eqPos - 2);
 
-            for(int i = 0; SolveSpaceUI::SAVED[i].type != 0; i++) {
-                if(SolveSpaceUI::SAVED[i].fmt  != 'f') continue;
-                if(SolveSpaceUI::SAVED[i].desc != key) continue;
+            const SolveSpaceUI::SaveDesc *desc = SolveSpaceUI::GetSaveDesc(key.c_str());
+            if(desc != nullptr && desc->fmt == 'f') {
                 double f = strtod(value.c_str(), NULL);
                 f = round(f * precision) / precision;
                 std::string newValue = ssprintf("%.20f", f);
