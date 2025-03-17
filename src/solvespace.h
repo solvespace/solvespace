@@ -626,6 +626,7 @@ public:
     int      autosaveInterval; // in minutes
     bool     explode;
     double   explodeDistance;
+    double   textSizeScale;
 
     std::string MmToString(double v, bool editable=false);
     std::string MmToStringSI(double v, int dim = 0);
