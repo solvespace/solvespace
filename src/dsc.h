@@ -721,6 +721,7 @@ public:
             (int)(255 - ((bgra >> 24) & 0xff)));
     }
 };
+static_assert(sizeof(RgbaColor) == 4, "RgbaColor must be exactly 4 bytes");
 
 struct RgbaColorCompare {
     bool operator()(RgbaColor a, RgbaColor b) const {
