@@ -565,17 +565,6 @@ list_items:
         }
     }
     if(a == 0) Printf(false, "%Ba   (none)");
-
-    a = 0;
-    Printf(false, "");
-    Printf(false, "%Ft named parameters");
-    for(Param &id : SK.param) {
-        if(!id.name.empty()) {
-            Printf(false, "    %s: %#", id.name.c_str(), id.val);
-            a++;
-        }
-    }
-    if(a == 0) Printf(false, "%Ba   (none)");
 }
 
 //-----------------------------------------------------------------------------
