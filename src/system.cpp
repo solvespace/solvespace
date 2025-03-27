@@ -425,7 +425,7 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
     int x;
     dbp("%d equations", eq.n);
     for(x = 0; x < eq.n; x++) {
-        dbp("  %.3f = %s = 0", eq[x].e->Eval(), eq[x].e->Print());
+        dbp("  %.3f = %s = 0", eq[x].e->Eval(), eq[x].e->Print().c_str());
     }
     dbp("%d parameters", param.n);
     for(x = 0; x < param.n; x++) {
