@@ -94,19 +94,44 @@ void TextWindow::ScreenShowEditView(int link, uint32_t v) {
 void TextWindow::ScreenGoToWebsite(int link, uint32_t v) {
     Platform::OpenInBrowser("http://solvespace.com/txtlink");
 }
+void TextWindow::ScreenToggleGroupFolded(int link, uint32_t v) {
+    hGroup hg = { v };
+    Group *g = SK.GetGroup(hg);
+    g->folded = !g->folded;
+    SS.GW.Invalidate();
+}
+
 void TextWindow::ShowListOfGroups() {
     const char *radioTrue  = " " RADIO_TRUE  " ",
                *radioFalse = " " RADIO_FALSE " ",
                *checkTrue  = " " CHECK_TRUE  " ",
                *checkFalse = " " CHECK_FALSE " ";
+    const char *foldedMarker   = " ► ",
+               *unfoldedMarker = " ▼ ";
 
     Printf(true, "%Ft active");
     Printf(false, "%Ft    shown dof group-name%E");
     bool afterActive = false;
     bool backgroundParity = false;
+    
+    // First, let's identify dependencies to show hierarchy
+    std::map<hGroup, std::vector<hGroup>> dependencyMap;
+    std::set<hGroup> hasParent;
+    
     for(hGroup hg : SK.groupOrder) {
         Group *g = SK.GetGroup(hg);
-
+        
+        // Handle hierarchical dependencies
+        if(g->opA.v != 0) {
+            dependencyMap[g->opA].push_back(g->h);
+            hasParent.insert(g->h);
+        }
+    }
+    
+    // Function to recursively print groups with proper indentation
+    std::function<void(hGroup, int)> printGroup = [&](hGroup hg, int depth) {
+        Group *g = SK.GetGroup(hg);
+        
         std::string s = g->DescriptionString();
         bool active = (g->h == SS.GW.activeGroup);
         bool shown = g->visible;
@@ -129,16 +154,46 @@ void TextWindow::ShowListOfGroups() {
         if(g->forceToMesh || g->IsTriangleMeshAssembly()) {
             suffix = " (∆)";
         }
+        
+        // Show tags if present
+        if(!g->tags.empty()) {
+            suffix += " [";
+            for(size_t i = 0; i < g->tags.size(); i++) {
+                suffix += g->tags[i];
+                if(i < g->tags.size() - 1) {
+                    suffix += ", ";
+                }
+            }
+            suffix += "]";
+        }
+        
+        // Add indentation based on depth
+        std::string indent;
+        for(int i = 0; i < depth; i++) {
+            indent += "  ";
+        }
 
         bool ref = (g->h == Group::HGROUP_REFERENCES);
+        bool hasChildren = dependencyMap.find(g->h) != dependencyMap.end();
+        
+        // Show fold/unfold control only if the group has children
+        std::string foldControl = hasChildren ? 
+            (g->folded ? foldedMarker : unfoldedMarker) : "    ";
+            
         Printf(false,
                "%Bp%Fd "
+               "%s%Fl%D%f%s%E"
                "%Ft%s%Fb%D%f%Ll%s%E "
                "%Fb%s%D%f%Ll%s%E  "
                "%Fp%D%f%s%Ll%s%E "
                "%Fp%Ll%D%f%s%E%s",
                // Alternate between light and dark backgrounds, for readability
                backgroundParity ? 'd' : 'a',
+               // Indentation and fold/unfold control
+               indent.c_str(),
+               hasChildren ? g->h.v : 0,
+               hasChildren ? &TextWindow::ScreenToggleGroupFolded : NULL,
+               foldControl.c_str(),
                // Link that activates the group
                ref ? "   " : "",
                g->h.v, (&TextWindow::ScreenActivateGroup),
@@ -159,6 +214,20 @@ void TextWindow::ShowListOfGroups() {
 
         if(active) afterActive = true;
         backgroundParity = !backgroundParity;
+        
+        // Recursively print child groups if not folded
+        if(hasChildren && !g->folded) {
+            for(hGroup childGroup : dependencyMap[g->h]) {
+                printGroup(childGroup, depth + 1);
+            }
+        }
+    };
+    
+    // Print groups that don't have parents first
+    for(hGroup hg : SK.groupOrder) {
+        if(hasParent.find(hg) == hasParent.end()) {
+            printGroup(hg, 0);
+        }
     }
 
     Printf(true, "  %Fl%Ls%fshow all%E / %Fl%Lc%fonly unconstrained%E / %Fl%Lh%fhide all%E",
@@ -330,6 +399,35 @@ void TextWindow::ScreenChangeGroupName(int link, uint32_t v) {
     SS.TW.ShowEditControl(12, g->DescriptionString().substr(5));
     SS.TW.edit.meaning = Edit::GROUP_NAME;
     SS.TW.edit.group.v = v;
+}
+
+void TextWindow::ScreenChangeGroupNotes(int link, uint32_t v) {
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+    SS.TW.ShowEditControl(12, g->notes);
+    SS.TW.edit.meaning = Edit::GROUP_NOTES;
+    SS.TW.edit.group.v = v;
+}
+
+void TextWindow::ScreenAddGroupTag(int link, uint32_t v) {
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+    SS.TW.ShowEditControl(12, "");
+    SS.TW.edit.meaning = Edit::GROUP_ADD_TAG;
+    SS.TW.edit.group.v = v;
+}
+
+void TextWindow::ScreenRemoveGroupTag(int link, uint32_t v) {
+    SS.UndoRemember();
+    
+    // Extract group handle and tag index from the encoded value
+    hGroup hg = { v & 0xff };
+    uint32_t tagIndex = v >> 8;
+    
+    Group *g = SK.GetGroup(hg);
+    if(g && tagIndex < g->tags.size()) {
+        g->tags.erase(g->tags.begin() + tagIndex);
+        SS.GW.Invalidate();
+        SS.ScheduleShowTW();
+    }
 }
 void TextWindow::ScreenChangeGroupScale(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
@@ -575,6 +673,30 @@ void TextWindow::ShowGroupInfo() {
     Printf(false, " %f%Ld%Fd%s  treat all dimensions as reference",
         &TextWindow::ScreenChangeGroupOption,
         g->allDimsReference ? CHECK_TRUE : CHECK_FALSE);
+
+    // Show group notes and tags if available
+    Printf(false, "");
+    Printf(false, "%Ft group metadata%E");
+    
+    Printf(false, "  %Ftnotes:%E %s %Fl%Ll%f%D[edit]%E",
+        g->notes.empty() ? "(none)" : g->notes.c_str(),
+        g->h.v, &TextWindow::ScreenChangeGroupNotes);
+    
+    // Show tags with clickable links to remove individual tags
+    Printf(false, "  %Fttags:%E ");
+    if(g->tags.empty()) {
+        Printf(false, "(none) ");
+    } else {
+        for(size_t i = 0; i < g->tags.size(); i++) {
+            // Encode the tag index in the high 24 bits of the data value (v)
+            uint32_t tagData = (((uint32_t)i) << 8) | g->h.v;
+            Printf(false, "%Fl%Ll%D%f[%s]%E ", 
+                tagData, &TextWindow::ScreenRemoveGroupTag, g->tags[i].c_str());
+        }
+    }
+    
+    Printf(false, "%Fl%Ll%f%D[add]%E",
+        g->h.v, &TextWindow::ScreenAddGroupTag);
 
     if(g->booleanFailed) {
         Printf(false, "");
@@ -963,6 +1085,36 @@ void TextWindow::EditControlDone(std::string s) {
                     break;
                 }
                 SS.tangentArcRadius = SS.ExprToMm(e);
+            }
+            break;
+            
+        case Edit::GROUP_NOTES:
+            SS.UndoRemember();
+            if(Group *g = SK.group.FindByIdNoOops(edit.group)) {
+                g->notes = s;
+                SS.GW.Invalidate();
+            }
+            break;
+            
+        case Edit::GROUP_ADD_TAG:
+            SS.UndoRemember();
+            if(!s.empty()) {
+                if(Group *g = SK.group.FindByIdNoOops(edit.group)) {
+                    // Check if tag already exists
+                    bool tagExists = false;
+                    for(const std::string &tag : g->tags) {
+                        if(tag == s) {
+                            tagExists = true;
+                            break;
+                        }
+                    }
+                    
+                    // Add tag if it doesn't exist
+                    if(!tagExists) {
+                        g->tags.push_back(s);
+                        SS.GW.Invalidate();
+                    }
+                }
             }
             break;
 

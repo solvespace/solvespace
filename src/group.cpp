@@ -32,6 +32,12 @@ void Group::Clear() {
     impEntity.Clear();
     // remap is the only one that doesn't get recreated when we regen
     remap.clear();
+    
+    // Clear tree view metadata
+    folded = false;
+    tags.clear();
+    notes.clear();
+    customIcon.clear();
 }
 
 void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {

@@ -119,6 +119,9 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
     { 'g',  "Group.impFile",            'i',    NULL                          },
     { 'g',  "Group.impFileRel",         'P',    &(SS.sv.g.linkFile)           },
+    { 'g',  "Group.folded",             'b',    &(SS.sv.g.folded)             },
+    { 'g',  "Group.notes",              'S',    &(SS.sv.g.notes)              },
+    { 'g',  "Group.customIcon",         'S',    &(SS.sv.g.customIcon)         },
 
     { 'p',  "Param.h.v.",               'x',    &(SS.sv.p.h.v)                },
     { 'p',  "Param.val",                'f',    &(SS.sv.p.val)                },
@@ -308,6 +311,19 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     int i, j;
     for(auto &g : SK.group) {
         sv.g = g;
+        
+        // Handle tags separately since they're a vector of strings
+        if(!g.tags.empty()) {
+            fprintf(fh, "Group.tags=");
+            for(size_t i = 0; i < g.tags.size(); i++) {
+                fprintf(fh, "%s", g.tags[i].c_str());
+                if(i < g.tags.size() - 1) {
+                    fprintf(fh, ";");
+                }
+            }
+            fprintf(fh, "\n");
+        }
+        
         SaveUsingTable(filename, 'g');
         fprintf(fh, "AddGroup\n\n");
     }
@@ -504,7 +520,27 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
         if(e) {
             *e = '\0';
             char *key = line, *val = e+1;
-            LoadUsingTable(filename, key, val);
+            
+            // Special handling for tags which are stored as a vector of strings
+            if(strcmp(key, "Group.tags") == 0) {
+                std::string tags = val;
+                // Split the tags string by semicolons
+                size_t pos = 0;
+                std::string token;
+                sv.g.tags.clear();
+                while ((pos = tags.find(";")) != std::string::npos) {
+                    token = tags.substr(0, pos);
+                    if (!token.empty()) {
+                        sv.g.tags.push_back(token);
+                    }
+                    tags.erase(0, pos + 1);
+                }
+                if (!tags.empty()) {
+                    sv.g.tags.push_back(tags);
+                }
+            } else {
+                LoadUsingTable(filename, key, val);
+            }
         } else if(strcmp(line, "AddGroup")==0) {
             // legacy files have a spurious dependency between linked groups
             // and their parent groups, remove
