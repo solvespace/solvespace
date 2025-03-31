@@ -1033,6 +1033,9 @@ msgstr ""
 msgid "&Go to GitHub commit"
 msgstr ""
 
+msgid "Toggle Group Suppression"
+msgstr ""
+
 #: graphicswin.cpp:188
 msgid "&About"
 msgstr ""
