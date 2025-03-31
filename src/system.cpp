@@ -86,13 +86,80 @@ void System::EvalJacobian() {
     mat.A.num.resize(mat.m, mat.n);
     const int size = mat.A.sym.outerSize();
 
-    for(int k = 0; k < size; k++) {
-        for(SparseMatrix <Expr *>::InnerIterator it(mat.A.sym, k); it; ++it) {
-            double value = it.value()->Eval();
-            if(EXACT(value == 0.0)) continue;
-            mat.A.num.insert(it.row(), it.col()) = value;
+    // If multi-threading is disabled or the matrix is too small, use single-threaded code
+    if(!SS.enableMultiThreaded || size < 4) {
+        for(int k = 0; k < size; k++) {
+            for(SparseMatrix <Expr *>::InnerIterator it(mat.A.sym, k); it; ++it) {
+                double value = it.value()->Eval();
+                if(EXACT(value == 0.0)) continue;
+                mat.A.num.insert(it.row(), it.col()) = value;
+            }
         }
+        mat.A.num.makeCompressed();
+        return;
     }
+
+    // Get the thread pool for multi-threaded execution
+    ThreadPool& pool = SolveSpace::GetThreadPool();
+
+    // For multi-threaded execution, we need to be careful about concurrent matrix updates
+    // Create thread-local triplet lists
+    struct ThreadData {
+        std::vector<Eigen::Triplet<double>> triplets;
+    };
+    std::vector<ThreadData> threadData(threadCount);
+    
+    // Calculate work per thread (columns per thread)
+    std::vector<int> workRanges;
+    workRanges.reserve(threadCount + 1);
+    const int columnsPerThread = (size + threadCount - 1) / threadCount;
+    
+    for(size_t i = 0; i < threadCount; i++) {
+        int start = i * columnsPerThread;
+        workRanges.push_back(start);
+    }
+    workRanges.push_back(size); // End marker
+    
+    // Create a task for each thread
+    std::vector<std::future<void>> futures;
+    futures.reserve(threadCount);
+    
+    for(size_t t = 0; t < threadCount; t++) {
+        futures.push_back(pool.Submit([this, t, &threadData, &workRanges]() {
+            ThreadData& data = threadData[t];
+            const int startCol = workRanges[t];
+            const int endCol = workRanges[t + 1];
+            
+            // Process columns assigned to this thread
+            for(int k = startCol; k < endCol; k++) {
+                for(SparseMatrix<Expr *>::InnerIterator it(mat.A.sym, k); it; ++it) {
+                    double value = it.value()->Eval();
+                    if(EXACT(value == 0.0)) continue;
+                    data.triplets.emplace_back(it.row(), it.col(), value);
+                }
+            }
+        }));
+    }
+    
+    // Wait for all threads to complete
+    for(auto& future : futures) {
+        future.get();
+    }
+    
+    // Aggregate results from all threads
+    std::vector<Eigen::Triplet<double>> allTriplets;
+    size_t totalTriplets = 0;
+    for(const auto& data : threadData) {
+        totalTriplets += data.triplets.size();
+    }
+    allTriplets.reserve(totalTriplets);
+    
+    for(const auto& data : threadData) {
+        allTriplets.insert(allTriplets.end(), data.triplets.begin(), data.triplets.end());
+    }
+    
+    // Build the matrix from triplets
+    mat.A.num.setFromTriplets(allTriplets.begin(), allTriplets.end());
     mat.A.num.makeCompressed();
 }
 

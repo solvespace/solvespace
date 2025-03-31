@@ -16,6 +16,9 @@ void SolveSpaceUI::Init() {
     dbp("%s", LoadString("banner.txt").data());
 #endif
 
+    // Initialize the threading subsystem
+    SolveSpace::InitThreading();
+
     Platform::SettingsRef settings = Platform::GetSettings();
 
     SS.tangentArcRadius = 10.0;
@@ -54,6 +57,9 @@ void SolveSpaceUI::Init() {
     exportMaxSegments = settings->ThawInt("ExportMaxSegments", 64);
     // Timeout value for finding redundant constrains (ms)
     timeoutRedundantConstr = settings->ThawInt("TimeoutRedundantConstraints", 1000);
+    // Multi-threading options
+    enableMultiThreaded = settings->ThawBool("EnableMultiThreaded", true);
+    threadCount = settings->ThawInt("ThreadCount", 0); // 0 = auto-detect
     // Animation speed calculation base time (ms)
     animationSpeed = settings->ThawInt("AnimationSpeed", 800);
     // View units
@@ -241,6 +247,9 @@ void SolveSpaceUI::Exit() {
     settings->FreezeInt("ExportMaxSegments", (uint32_t)exportMaxSegments);
     // Timeout for finding which constraints to fix Jacobian
     settings->FreezeInt("TimeoutRedundantConstraints", (uint32_t)timeoutRedundantConstr);
+    // Multi-threading options
+    settings->FreezeBool("EnableMultiThreaded", enableMultiThreaded);
+    settings->FreezeInt("ThreadCount", (uint32_t)threadCount);
     // Animation speed
     settings->FreezeInt("AnimationSpeed", (uint32_t)animationSpeed);
     // View units
@@ -310,6 +319,9 @@ void SolveSpaceUI::Exit() {
 
     // And the default styles, colors and line widths and such.
     Style::FreezeDefaultStyles(settings);
+
+    // Shut down the threading subsystem
+    SolveSpace::ShutdownThreading();
 
     Platform::ExitGui();
 }

@@ -68,11 +68,13 @@ endif()
 set(libslvs_sources
     solvespace.h
     platform/platform.h
+    threaded.h
     util.cpp
     entity.cpp
     expr.cpp
     constrainteq.cpp
     system.cpp
+    threaded.cpp
     platform/platformbase.cpp
     lib.cpp
 )
@@ -219,6 +221,7 @@ if(ENABLE_GUI OR ENABLE_CLI)
         textwin.cpp
         toolbar.cpp
         ttf.cpp
+        threaded.cpp
         undoredo.cpp
         util.cpp
         view.cpp

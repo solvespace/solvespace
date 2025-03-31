@@ -320,6 +320,7 @@ public:
         G_CODE_FEED           = 115,
         G_CODE_PLUNGE_FEED    = 116,
         AUTOSAVE_INTERVAL     = 117,
+        THREAD_COUNT          = 150,
         LIGHT_AMBIENT         = 118,
         FIND_CONSTRAINT_TIMEOUT = 119,
         EXPLODE_DISTANCE      = 120,
@@ -453,6 +454,8 @@ public:
     static void ScreenChangeCheckClosedContour(int link, uint32_t v);
     static void ScreenChangeCameraNav(int link, uint32_t v);
     static void ScreenChangeTurntableNav(int link, uint32_t v);
+    static void ScreenChangeEnableMultiThreaded(int link, uint32_t v);
+    static void ScreenChangeThreadCount(int link, uint32_t v);
     static void ScreenChangeImmediatelyEditDimension(int link, uint32_t v);
     static void ScreenChangeAutomaticLineConstraints(int link, uint32_t v);
     static void ScreenChangePwlCurves(int link, uint32_t v);

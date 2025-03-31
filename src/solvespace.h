@@ -30,6 +30,10 @@
 #include <set>
 #include <sstream>
 #include <string>
+#include <thread>
+#include <mutex>
+#include <future>
+#include <atomic>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -303,6 +307,7 @@ public:
 };
 
 #include "ttf.h"
+#include "threaded.h"
 
 class StepFileWriter {
 public:
@@ -575,6 +580,8 @@ public:
     double   exportChordTol;
     int      exportMaxSegments;
     int      timeoutRedundantConstr; //milliseconds
+    bool     enableMultiThreaded; // Whether to use multi-threading
+    int      threadCount; // Number of threads to use (0 = auto)
     int      animationSpeed; //milliseconds
     double   cameraTangent;
     double   gridSpacing;

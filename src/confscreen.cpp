@@ -101,6 +101,18 @@ void TextWindow::ScreenChangeTurntableNav(int link, uint32_t v) {
     }
 }
 
+void TextWindow::ScreenChangeEnableMultiThreaded(int link, uint32_t v) {
+    SS.enableMultiThreaded = !SS.enableMultiThreaded;
+    // We need to reinitialize the thread pool
+    SolveSpace::ShutdownThreading();
+    SolveSpace::InitThreading();
+}
+
+void TextWindow::ScreenChangeThreadCount(int link, uint32_t v) {
+    SS.TW.ShowEditControl(3, ssprintf("%d", SS.threadCount));
+    SS.TW.edit.meaning = Edit::THREAD_COUNT;
+}
+
 void TextWindow::ScreenChangeCameraNav(int link, uint32_t v) {
     SS.cameraNav = !SS.cameraNav;
 }
@@ -375,6 +387,14 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "%Ft animation speed (in ms; 0 to disable)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
         SS.animationSpeed, &ScreenChangeAnimationSpeed);
+        
+    Printf(false, "");
+    Printf(false, "%Ft multi-threading options%E");
+    Printf(false, "  %Fd%f%Ll%s  enable multi-threading%E",
+        &ScreenChangeEnableMultiThreaded,
+        SS.enableMultiThreaded ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "%Ba   thread count: %Fd%d %Fl%Ll%f[change]%E (0 = auto)",
+        SS.threadCount, &ScreenChangeThreadCount);
 
     if(canvas) {
         const char *gl_vendor, *gl_renderer, *gl_version;
@@ -569,6 +589,19 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
                 } else {
                     SS.timeoutRedundantConstr = 1000;
                 }
+            }
+            break;
+        }
+        
+        case Edit::THREAD_COUNT: {
+            int threads = atoi(s.c_str());
+            if(threads >= 0) {
+                SS.threadCount = threads;
+                // Reinitialize thread pool to apply changes
+                SolveSpace::ShutdownThreading();
+                SolveSpace::InitThreading();
+            } else {
+                Error(_("Bad value: thread count should be 0 or greater"));
             }
             break;
         }
