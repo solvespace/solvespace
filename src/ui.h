@@ -301,6 +301,8 @@ public:
         GROUP_SCALE           = 3,
         GROUP_COLOR           = 4,
         GROUP_OPACITY         = 5,
+        GROUP_NOTES           = 6,
+        GROUP_ADD_TAG         = 7,
         // For the configuration screen
         LIGHT_DIRECTION       = 100,
         LIGHT_INTENSITY       = 101,
@@ -415,9 +417,13 @@ public:
     static void ScreenSelectGroup(int link, uint32_t v);
     static void ScreenActivateGroup(int link, uint32_t v);
     static void ScreenToggleGroupShown(int link, uint32_t v);
+    static void ScreenToggleGroupFolded(int link, uint32_t v);
     static void ScreenHowGroupSolved(int link, uint32_t v);
     static void ScreenShowGroupsSpecial(int link, uint32_t v);
     static void ScreenDeleteGroup(int link, uint32_t v);
+    static void ScreenRemoveGroupTag(int link, uint32_t v);
+    static void ScreenChangeGroupNotes(int link, uint32_t v);
+    static void ScreenAddGroupTag(int link, uint32_t v);
 
     static void ScreenHoverGroupWorkplane(int link, uint32_t v);
     static void ScreenHoverRequest(int link, uint32_t v);

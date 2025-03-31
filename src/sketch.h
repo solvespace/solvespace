@@ -263,6 +263,11 @@ public:
 
     std::string     name;
 
+    // Group tree metadata for improved organization
+    bool        folded;     // Whether this group is folded in the tree view
+    std::vector<std::string> tags; // User-defined organizational tags
+    std::string notes;      // User annotations for documentation
+    std::string customIcon; // User-selected icon for visual identification
 
     void Activate();
     std::string DescriptionString();
