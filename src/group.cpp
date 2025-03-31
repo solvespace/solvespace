@@ -71,6 +71,57 @@ void Group::MenuGroup(Command id)  {
 void Group::MenuGroup(Command id, Platform::Path linkFile) {
     Platform::SettingsRef settings = Platform::GetSettings();
 
+    // Handle the group suppression toggle command separately
+    if(id == Command::GROUP_TOGGLE_SUPPRESS) {
+        hGroup hg = SS.GW.activeGroup;
+        if(SS.GW.gs.n == 1 && SS.GW.gs.entities == 1) {
+            // If we have a selection, use the selected entity's group
+            hg = SS.GW.gs.entity[0].group();
+        }
+        
+        Group *g = SK.GetGroup(hg);
+        // Toggle the suppress status
+        g->suppress = !g->suppress;
+        
+        // We need to check all subsequent groups to see if they depend on this one
+        // and mark them as dirty
+        bool foundCurrent = false;
+        for(auto const &gh : SK.groupOrder) {
+            Group *grp = SK.GetGroup(gh);
+            if(!foundCurrent) {
+                // Keep looking until we find the current group
+                if(grp->h.v == hg.v) {
+                    foundCurrent = true;
+                }
+                continue;
+            }
+            
+            // We found the current group, so now check dependencies
+            // Groups that depend on the suppressed group include:
+            // - Extrude, Lathe, Revolve operations that use the suppressed group as a base
+            // - Step and repeat (translate/rotate) groups that use the suppressed group
+            if((grp->type == Type::EXTRUDE || 
+                grp->type == Type::LATHE || 
+                grp->type == Type::REVOLVE ||
+                grp->type == Type::HELIX) && 
+                grp->opA.v == hg.v) {
+                // This group directly depends on the suppressed group
+                SS.MarkGroupDirty(grp->h);
+            } else if((grp->type == Type::TRANSLATE || 
+                      grp->type == Type::ROTATE) && 
+                      grp->opA.v == hg.v) {
+                // This is a step-and-repeat that depends on the suppressed group
+                SS.MarkGroupDirty(grp->h);
+            }
+        }
+        
+        // Mark the suppressed group dirty too
+        SS.MarkGroupDirty(hg);
+        SS.GW.Invalidate();
+        SS.ScheduleShowTW();
+        return;
+    }
+
     Group g = {};
     g.visible = true;
     g.color = RGBi(100, 100, 100);

@@ -212,224 +212,237 @@ This feature will significantly improve performance when solving complex constra
 3. Implement defensive thread safety with explicit synchronization
 4. Build extensive test suite for multi-threading correctness
 
----
-
 #### Basic Assembly Management System
 
-This feature will provide SolveSpace with a lightweight, efficient assembly system that maintains compatibility with the existing constraint solver while expanding functionality for multi-part designs.
+This feature will add structured assembly capabilities to SolveSpace while maintaining its lightweight nature. The implementation will focus on a mate-based approach that leverages the existing constraint system.
 
-**Phase 1: Data Structure and Architecture**
-- Design assembly data structures that extend the existing group system
-- Create a component management system for external model references
-- Implement hierarchical model structure for part-subassembly-assembly relationships
-- Design persistent storage format for assembly relationships
+**Phase 1: Core Assembly Data Structure**
+- Design and implement Assembly entity type
+- Create hierarchical component management system
+- Implement instance transformation tracking
+- Design persistent storage format for assembly data
+- Add UI elements for assembly tree view
 
-**Phase 2: Core Assembly Constraints (Mates)**
-- Implement coincident, concentric, parallel, perpendicular, and tangent mate types
-- Create mate solver integration with the existing constraint system
-- Add UI for mate creation, editing, and management
-- Implement consistent update and rebuild mechanisms
+**Phase 2: Component Management**
+- Implement file reference system for external parts
+- Create component insertion workflow
+- Develop component positioning tools
+- Add support for component instances (multiple copies)
+- Implement visibility and selection filtering
 
-**Phase 3: Assembly Visualization and Management**
-- Create component tree view for assembly hierarchy
-- Implement component visibility and selection controls
-- Add assembly-specific view modes and cross-highlighting
-- Create performance optimizations for large assembly rendering
+**Phase 3: Mate-Based Constraints**
+- Design mate constraint system based on existing geometric constraints
+- Implement standard mate types:
+  - Coincident (point-point, point-line, point-plane)
+  - Concentric (circle-circle, circle-arc)
+  - Parallel (line-line, plane-plane)
+  - Perpendicular (line-line, line-plane)
+  - Tangent (circle-circle, circle-line)
+  - Distance (point-point, point-line, point-plane)
+  - Angle (line-line, plane-plane)
+- Create mate constraint solver integration
+- Develop mate editing UI
 
-**Phase 4: Assembly Motion and Analysis**
-- Add basic kinematic analysis for degree-of-freedom calculation
-- Implement simplified motion simulation for mechanism visualization
-- Create interference detection between components
-- Add position reporting and measurement tools for assemblies
+**Phase 4: Assembly Analysis and Validation**
+- Implement interference detection
+- Add degrees of freedom analysis
+- Create mass property calculations for assemblies
+- Implement center of gravity visualization
+- Add assembly validation and error reporting
 
-**Phase 5: Documentation and Export**
-- Implement basic BOM (Bill of Materials) generation
-- Create assembly-aware exporting for common formats
-- Add part numbering and identification system
-- Implement assembly drawing generation capabilities
+**Phase 5: Documentation and Reporting**
+- Implement basic Bill of Materials (BOM) generation
+- Add part numbering system
+- Create assembly drawing views
+- Design exploded view capabilities
+- Develop assembly animation tools (basic kinematics)
 
 **Technical Goals:**
-- Support for assemblies with 50-100 parts while maintaining performance
-- Compatibility with existing SolveSpace constraints and features
-- Intuitive UI that maintains SolveSpace's clean design philosophy
-- Lightweight implementation that doesn't significantly increase binary size
-- Full compatibility with existing file format (backward compatibility)
+- Support assemblies with 50-100 components without performance degradation
+- Maintain sub-second response time for mate operations
+- Keep file size overhead minimal (target <20% increase for typical assemblies)
+- Ensure backward compatibility with existing SolveSpace files
+- Provide a migration path for existing "file-link" assemblies
 
 **Risk Analysis:**
 
 *High-Risk Areas:*
 
-1. **Integration with Existing Constraint System**
-   - Risk: Assembly constraints might conflict with or duplicate existing constraints
-   - Mitigation: Create a clear separation between assembly-level and part-level constraints
+1. **Performance with Large Assemblies**
+   - Risk: The lightweight nature of SolveSpace could be compromised when handling many components
+   - Mitigation: Implement level-of-detail system, selective loading, and lazy constraint evaluation
 
-2. **Performance with Large Assemblies**
-   - Risk: Solver performance degradation with high component counts
-   - Mitigation: Implement hierarchical solving, level-of-detail controls, and deferred updates
+2. **Solver Integration**
+   - Risk: The existing constraint solver may not efficiently handle inter-component constraints
+   - Mitigation: Develop a hierarchical solving approach, with local and global solving phases
 
-3. **File Format Compatibility**
-   - Risk: Breaking compatibility with existing .slvs files
-   - Mitigation: Extend the format in a backward-compatible way with version checking
+3. **File Format Changes**
+   - Risk: Major changes to file format could break compatibility
+   - Mitigation: Design an extension to the existing format rather than replacing it, ensure graceful degradation
 
 *Medium-Risk Areas:*
 
 1. **User Interface Complexity**
-   - Risk: Assembly features could complicate the UI
-   - Mitigation: Create modular UI with progressive disclosure of complexity
+   - Risk: Adding assembly management could complicate the currently clean UI
+   - Mitigation: Design a progressive disclosure interface, maintain current workflow for non-assembly operations
 
 2. **Reference Management**
-   - Risk: External file references create dependency management challenges
-   - Mitigation: Robust path handling and reference updating mechanisms
+   - Risk: External file references could become invalid or circular
+   - Mitigation: Implement robust path handling, reference validation, and circular dependency detection
 
-3. **Constraint Satisfaction**
-   - Risk: Over-constrained or conflicting mates causing solver issues
-   - Mitigation: Enhanced feedback systems and constraint debugging tools
+3. **Memory Management**
+   - Risk: Multiple component instances could significantly increase memory requirements
+   - Mitigation: Implement instance sharing for geometry data, load/unload components based on visibility
 
 *Implementation Strategy:*
 
-1. Leverage existing group system as a foundation for assembly structure
-2. Implement incremental assembly feature set with frequent testing
-3. Focus on solver integration first, then build UI on stable foundation
-4. Create extensive test suite for assembly operations and edge cases
-
----
+1. Start with a minimal viable implementation focusing on core assembly structure
+2. Leverage existing constraint system for mates when possible
+3. Implement proper separation between component definitions and instances
+4. Ensure early and frequent testing with realistic assemblies
+5. Maintain SolveSpace's identity as a lightweight tool by avoiding feature creep
 
 #### Feature Tree Improvements
 
-This feature will enhance SolveSpace's parametric modeling capabilities by improving the feature tree system, allowing for better model organization, editing, and history manipulation.
+This feature will enhance SolveSpace's history-based parametric modeling capabilities by improving the feature tree management system, allowing for more flexible editing and organization of the design history.
 
-**Phase 1: Group Tree Restructuring**
-- Implement drag-and-drop reordering of compatible operations
-- Create hierarchy visualization improvements for group dependencies
-- Add group metadata for better organization and filtering
-- Implement persistent group folding/unfolding state
+**Phase 1: Feature Tree Data Structure Enhancements**
+- Refactor the Group data structure to support non-linear dependencies
+- Implement richer metadata for feature tree nodes
+- Design a more flexible dependency tracking system
+- Add support for feature reordering
+- Create a persistent storage format for enhanced tree data
 
-**Phase 2: Enhanced Suppression Capabilities**
-- Expand group suppression to handle complex dependency chains
-- Implement feature-level suppression (subset of group operations)
-- Create mechanism for temporary suppression vs. permanent removal
-- Add UI for suppression state management and visualization
+**Phase 2: Feature Management UI**
+- Redesign the feature tree UI for improved usability
+- Implement drag-and-drop reordering of operations
+- Create visual dependency indicators
+- Add context menus for feature operations
+- Implement search and filtering for complex models
 
-**Phase 3: Operation Modification**
-- Implement edit-in-place for existing operations
-- Create unified parameter editing interface for operations
-- Add ability to change operation types when compatible
-- Implement "insert operation" at arbitrary history points
+**Phase 3: Advanced Feature Operations**
+- Implement feature reordering with dependency validation
+- Add feature folders for organizational grouping
+- Create feature duplication functionality
+- Implement parametric patterns (linear, circular, mirror)
+- Add support for feature references across groups
 
-**Phase 4: History Management**
-- Create branch/variant capabilities for design exploration
-- Implement design states for capturing key milestone versions
-- Add visual diffing between history states
-- Create mechanisms for selective rollback
+**Phase 4: Dependency Management**
+- Create tools for analyzing and visualizing dependencies
+- Implement dependency breaking/remapping
+- Add automatic dependency resolution for compatible operations
+- Design conflict resolution UI for invalid operations
+- Develop repair tools for broken references
 
-**Phase 5: Advanced Features**
-- Implement feature patterns (linear, circular, etc.)
-- Add parametric relationships between operations
-- Create "light parent" capability for reduced dependencies
-- Implement group templates for reusable feature sequences
+**Phase 5: Enhanced Feature State Management**
+- Extend group suppression capabilities 
+- Implement rollback marker for partial model viewing
+- Add feature visibility toggles
+- Create temporary feature overrides
+- Implement feature locking to prevent modification
 
 **Technical Goals:**
-- Maintain backward compatibility with existing .slvs files
-- Support complex history trees with 100+ operations
-- Intuitive UI that preserves SolveSpace's clean approach
-- Robust error handling for invalid operations
-- Minimal performance overhead for history management
+- Support models with 500+ features without performance degradation
+- Maintain fast tree manipulation (< 100ms response time)
+- Keep backward compatibility with existing SolveSpace files
+- Ensure proper handling of feature dependencies
+- Provide intuitive UI for complex tree operations
 
 **Risk Analysis:**
 
 *High-Risk Areas:*
 
 1. **Dependency Management**
-   - Risk: Reordering operations could break dependencies and model integrity
-   - Mitigation: Comprehensive dependency tracking and validation system
+   - Risk: Breaking existing dependency logic could corrupt models
+   - Mitigation: Comprehensive validation, safe mode with old behavior, automatic repair tools
 
-2. **Numerical Stability**
-   - Risk: Operations applied in different orders could affect numerical results
-   - Mitigation: Robust regeneration queue with deterministic evaluation order
+2. **File Format Changes**
+   - Risk: Enhanced tree structure requires file format changes
+   - Mitigation: Implement format versioning, graceful fallback for older versions
 
-3. **Parametric Relationships**
-   - Risk: Complex interdependencies creating circular references
-   - Mitigation: Explicit dependency graph with cycle detection
+3. **Solver Integration**
+   - Risk: Changes to operation order affects constraint solving
+   - Mitigation: Implement proper rebuild queueing, dependency-aware solving
 
 *Medium-Risk Areas:*
 
-1. **UI Complexity**
-   - Risk: Feature tree enhancements complicating the clean UI
-   - Mitigation: Progressive disclosure, intelligent defaults, and context-sensitive controls
+1. **User Interface Complexity**
+   - Risk: Advanced tree operations could complicate the UI
+   - Mitigation: Progressive disclosure, focus on common operations, good visual feedback
 
-2. **Performance Impact**
-   - Risk: Complex history tracking affecting interactive performance
-   - Mitigation: Lazy evaluation and efficient caching strategies
+2. **Performance with Large Models**
+   - Risk: More complex dependency tracking could slow down large models
+   - Mitigation: Optimized data structures, lazy evaluation, incremental updates
 
 3. **Backward Compatibility**
-   - Risk: Breaking existing models with new feature tree semantics
-   - Mitigation: Version-aware processing and conservative defaults
+   - Risk: New features might not translate well to older versions
+   - Mitigation: Clear warnings when using new features, fallback behaviors
 
 *Implementation Strategy:*
 
-1. Extend the existing group system incrementally
-2. Create core dependency graph capability first
-3. Implement UI improvements in small, testable increments
-4. Extensive testing with existing models to ensure compatibility
-
----
+1. Start with core data structure improvements while maintaining existing behaviors
+2. Implement UI changes incrementally to gather user feedback
+3. Add advanced features only after core reordering functionality is solid
+4. Create extensive test cases for dependency scenarios
+5. Focus on maintaining SolveSpace's lightweight nature and performance
 
 #### Feature Implementation Synergies
 
-When considering implementation of multiple major features, there are significant overlaps and synergies to leverage:
+After analyzing the planned features, several important synergies and overlaps have been identified that could allow for more efficient and coordinated implementation:
 
-**Data Structure and Architecture Synergies:**
+**Data Structure and Architectural Synergies:**
 
-1. **Group System Extension**
-   - Both Assembly Management and Feature Tree Improvements extend the core group system
-   - Shared implementation work on dependency tracking would benefit both features
-   - A unified approach to group metadata and organization serves both use cases
+1. **Hierarchical Data Management**
+   - Both the Assembly Management and Feature Tree Improvements require enhanced hierarchical data structures
+   - Implement a common tree node management system that can serve both features
+   - Develop shared UI components for tree visualization and manipulation
+   - Unified approach to persistence (file format changes) would reduce duplication
 
-2. **Parametric Relationships**
-   - Multi-threaded solver improvements benefit both assembly constraints and complex feature trees
-   - Shared infrastructure for relationship tracking can support both feature areas
-   - Performance optimizations to the constraint solver benefit all features
+2. **Constraint System Integration**
+   - Assembly mates and parametric model constraints use similar mathematical foundations
+   - Create a unified constraint abstraction layer that serves both single-part and assembly constraints
+   - Shared solver integration to handle both feature-level and assembly-level constraints
+   - Common approach to constraint visualization and editing
 
-3. **Persistent Storage**
-   - File format extensions can be designed to accommodate both assembly data and enhanced feature tree information
-   - Shared serialization/deserialization logic can be developed once
-   - Version management approach can handle both feature areas simultaneously
+3. **Performance Optimizations**
+   - Multi-threaded Jacobian evaluation directly benefits both part modeling and assembly operations
+   - Memory management improvements would help all features, especially with large assemblies or complex trees
+   - Implement a common system for selective loading/evaluation that could serve both features
 
 **User Interface Synergies:**
 
-1. **Tree View Enhancements**
-   - A unified tree view implementation can support both feature tree and assembly hierarchy
-   - Shared context menu infrastructure for both feature types
-   - Common drag-and-drop, selection, and filtering capabilities
+1. **Progressive UI Improvements**
+   - Both Assembly Management and Feature Tree enhancements require UI updates
+   - Design a unified approach to tree manipulation (drag-drop, context menus)
+   - Develop consistent visual language for dependencies and relationships
+   - Create common filtering and search mechanisms
 
-2. **Property Panel Improvements**
-   - Unified property editing UI can work for both features and assembly components
-   - Shared implementation of parameter input controls
-   - Common suppression UI can work for both groups and assembly components
+2. **State Management**
+   - Feature suppression and component visibility use similar concepts
+   - Implement a unified show/hide/suppress framework that works for both features
+   - Develop common mechanisms for temporary overrides and state tracking
 
-3. **Selection and Interaction**
-   - Enhanced selection mechanics benefit both assembly manipulation and feature editing
-   - Shared implementation of highlighting and visual feedback
-   - Common implementation of undo/redo mechanics for both features
+**Implementation Approach:**
 
-**Implementation Approach Recommendations:**
+1. **Foundation First**
+   - Start with the Multi-threaded Jacobian evaluation as it improves performance for all features
+   - Next, implement the core data structure improvements for the Feature Tree, as this provides a foundation for Assembly Management
+   - Finally, build the Assembly Management system, leveraging the improved tree structure and performance
 
-1. **Sequencing Strategy:**
-   - Start with Multi-threaded Jacobian Evaluation to improve core performance (already implemented)
-   - Next implement the Feature Tree Improvements as they extend the core architecture
-   - Then build Assembly Management on top of the improved feature tree foundation
+2. **Incremental Implementation with Shared Components**
+   - Identify and implement shared architectural components first:
+     - Enhanced tree data structures
+     - UI components for tree management
+     - Extended constraint system
+   - Develop feature-specific functionality on top of these shared components
+   - Maintain consistent UI patterns and user workflows across features
 
-2. **Shared First Steps:**
-   - Create a unified approach to dependency tracking and validation
-   - Implement enhanced group metadata system to support both features
-   - Develop a common UI framework for tree views and property editing
+3. **Coordinated File Format Changes**
+   - Plan a single, comprehensive file format update rather than separate changes for each feature
+   - Implement backward compatibility layers for all features simultaneously
+   - Create migration tools that handle both tree and assembly changes
 
-3. **Development Efficiency:**
-   - Create shared test models that exercise both feature sets
-   - Implement common debugging tools for constraint issues
-   - Develop unified documentation covering both feature areas
-
-By recognizing these synergies, development effort can be optimized to deliver multiple major features with shared architectural foundations and reduced total implementation time.
+This coordinated approach would reduce development effort, create a more consistent user experience, and provide a stronger foundation for future enhancements while maintaining SolveSpace's identity as a lightweight, efficient CAD tool.
 
 ---
 

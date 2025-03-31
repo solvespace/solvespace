@@ -326,6 +326,28 @@ make
 See the [guide for contributors](CONTRIBUTING.md) for the best way to file issues, contribute code,
 and debug SolveSpace.
 
+## Feature Guide
+
+### Group Suppression
+
+SolveSpace supports suppressing groups in your model, which allows you to temporarily disable parts of your model without deleting them. This is useful when:
+
+- You want to temporarily disable a feature to see how it affects the model
+- You're troubleshooting complex models by isolating specific parts
+- You need to create alternative versions of a design by enabling/disabling certain features
+
+To suppress a group:
+1. Select the group in the text window or select any entity in the group
+2. Press Shift+Delete or use the "suppress this group in model" checkbox in the property browser
+
+When a group is suppressed:
+- The group's contribution to the 3D model is removed
+- Any groups that depend on the suppressed group (e.g., extrusions of a suppressed sketch) will not generate geometry
+- Suppressed sketch entities remain visible but appear as dashed/dimmed lines
+- Construction entities in suppressed groups remain visible for reference
+
+This feature affects the dependency chain, meaning that if you suppress a sketch, all features that depend on that sketch will also be suppressed automatically.
+
 ## License
 
 SolveSpace is distributed under the terms of the [GPL v3](COPYING.txt) or later.

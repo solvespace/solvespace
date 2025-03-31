@@ -138,6 +138,7 @@ enum class Command : uint32_t {
     GROUP_TRANS,
     GROUP_LINK,
     GROUP_RECENT,
+    GROUP_TOGGLE_SUPPRESS,
     // Constrain
     DISTANCE_DIA,
     REF_DISTANCE,

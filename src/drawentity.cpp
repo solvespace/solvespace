@@ -512,8 +512,12 @@ Vector Entity::PointGetDrawNum() const {
 }
 
 void Entity::Draw(DrawAs how, Canvas *canvas) {
+    // Get the group to check if it's suppressed
+    Group *g = SK.GetGroup(group);
+    
+    // Don't draw if not visible or if in a suppressed group (except when hovered/selected)
     if(!(how == DrawAs::HOVERED || how == DrawAs::SELECTED) &&
-       !IsVisible()) return;
+       (!IsVisible() || (g->suppress && !construction))) return;
 
     int zIndex;
     if(IsPoint()) {
@@ -542,6 +546,14 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
     switch(how) {
         case DrawAs::DEFAULT:
             stroke.layer = Canvas::Layer::NORMAL;
+            // If this entity is in a suppressed group but still visible (construction entities),
+            // show it with a stippled pattern to visually indicate suppression
+            if(g->suppress && construction) {
+                stroke.stipplePattern = StipplePattern::DASH;
+                stroke.stippleScale = 4.0;
+                // Make construction lines in suppressed groups more transparent
+                stroke.color = stroke.color.WithAlpha(stroke.color.alpha / 2);
+            }
             break;
 
         case DrawAs::OVERLAY:
