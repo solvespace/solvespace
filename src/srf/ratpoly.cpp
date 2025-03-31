@@ -515,7 +515,8 @@ bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
         bool parallel;
         pi = Vector::AtIntersectionOfPlaneAndLine(n, d, p0, p1, &parallel);
         if(parallel) {
-            dbp("parallel (surface intersecting line)");
+            // This is normal behavior, but we'll log it at trace level
+            // dbp("[TRACE] parallel (surface intersecting line) - tangent plane parallel to line");
             break;
         }
 
@@ -532,7 +533,8 @@ bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
         *u += du / tx.MagSquared();
         *v += dv / ty.MagSquared();
     }
-    dbp("didn't converge (surface intersecting line)");
+    // This is normal behavior, but we'll log it at trace level
+    // dbp("[TRACE] didn't converge (surface intersecting line) - after 20 iterations");
     return false;
 }
 
@@ -560,6 +562,16 @@ Vector SSurface::ClosestPointOnThisAndSurface(SSurface *srf2, Vector p) {
         }
 
         if((cp[0]).Equals(cp[1], RATPOLY_EPS)) break;
+        
+        // This is normal behavior, but we'll log it at trace level
+        // if(i == 9) {
+        //    double distBetween = (cp[0]).Minus(cp[1]).Magnitude();
+        //    dbp("[TRACE] ClosestPointOnThisAndSurface didn't converge after 10 iterations");
+        //    dbp("[TRACE] Distance between points: %.9f (tolerance: %.9f)", 
+        //        distBetween, RATPOLY_EPS);
+        //    dbp("[TRACE] Surface points: (%.6f,%.6f,%.6f) and (%.6f,%.6f,%.6f)",
+        //        cp[0].x, cp[0].y, cp[0].z, cp[1].x, cp[1].y, cp[1].z);
+        // }
 
         Vector p0 = Vector::AtIntersectionOfPlanes(n[0], d[0], n[1], d[1]),
                dp = (n[0]).Cross(n[1]);

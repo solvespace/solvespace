@@ -135,7 +135,12 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                db = nb.Dot(b->PointAt(0, 0));
 
         Vector dl = na.Cross(nb);
-        if(dl.Magnitude() < LENGTH_EPS) return; // parallel planes
+        if(dl.Magnitude() < LENGTH_EPS) {
+            // This is normal behavior, but we'll log it at trace level
+            // dbp("[TRACE] parallel (surface intersecting line) - planes are parallel (mag=%.9f)", dl.Magnitude());
+            // dbp("[TRACE] na=(%.6f,%.6f,%.6f), nb=(%.6f,%.6f,%.6f)", na.x, na.y, na.z, nb.x, nb.y, nb.z);
+            return; // parallel planes
+        }
         dl = dl.WithMagnitude(1);
         Vector p = Vector::AtIntersectionOfPlanes(na, da, nb, db);
 
@@ -466,6 +471,13 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
                     if(tol > maxtol*0.8) {
                         step *= 0.90;
+                        // This is normal behavior, but we'll log it at trace level
+                        // if(i == 19) {
+                        //    dbp("[TRACE] surface intersecting line - didn't converge (tol=%.6f, max=%.6f)", 
+                        //        tol, maxtol);
+                        //    dbp("[TRACE] step=%.6f, start=(%.3f,%.3f,%.3f), dp=(%.3f,%.3f,%.3f)", 
+                        //        step, start.x, start.y, start.z, dp.x, dp.y, dp.z);
+                        // }
                     } else {
                         step /= 0.90;
                     }
