@@ -88,7 +88,16 @@ void System::EvalJacobian() {
 
     // Original single-threaded implementation
     // Always works and is a good fallback
-    if(!SS.enableMultiThreaded || size < 4) {
+#ifdef LIBRARY
+    // For the LIBRARY build (libslvs), always use single-threaded mode
+    // since SS is not available in this context
+    bool useThreads = false;
+#else
+    // For the full SolveSpace application, respect user settings
+    bool useThreads = SS.enableMultiThreaded && size >= 4;
+#endif
+
+    if(!useThreads) {
         for(int k = 0; k < size; k++) {
             for(SparseMatrix <Expr *>::InnerIterator it(mat.A.sym, k); it; ++it) {
                 double value = it.value()->Eval();
