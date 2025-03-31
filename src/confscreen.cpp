@@ -103,9 +103,7 @@ void TextWindow::ScreenChangeTurntableNav(int link, uint32_t v) {
 
 void TextWindow::ScreenChangeEnableMultiThreaded(int link, uint32_t v) {
     SS.enableMultiThreaded = !SS.enableMultiThreaded;
-    // We need to reinitialize the thread pool
-    SolveSpace::ShutdownThreading();
-    SolveSpace::InitThreading();
+    // OpenMP threading settings will take effect on next Jacobian evaluation
 }
 
 void TextWindow::ScreenChangeThreadCount(int link, uint32_t v) {
@@ -597,9 +595,15 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
             int threads = atoi(s.c_str());
             if(threads >= 0) {
                 SS.threadCount = threads;
-                // Reinitialize thread pool to apply changes
-                SolveSpace::ShutdownThreading();
-                SolveSpace::InitThreading();
+                // With OpenMP, thread count will be applied next time
+#if defined(_OPENMP)
+                if(threads > 0) {
+                    omp_set_num_threads(threads);
+                } else {
+                    // Auto-detect based on system
+                    omp_set_num_threads(omp_get_max_threads());
+                }
+#endif
             } else {
                 Error(_("Bad value: thread count should be 0 or greater"));
             }

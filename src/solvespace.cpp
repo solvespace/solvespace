@@ -16,8 +16,7 @@ void SolveSpaceUI::Init() {
     dbp("%s", LoadString("banner.txt").data());
 #endif
 
-    // Initialize the threading subsystem
-    SolveSpace::InitThreading();
+    // Threading is initialized via OpenMP when needed
 
     Platform::SettingsRef settings = Platform::GetSettings();
 
@@ -320,8 +319,7 @@ void SolveSpaceUI::Exit() {
     // And the default styles, colors and line widths and such.
     Style::FreezeDefaultStyles(settings);
 
-    // Shut down the threading subsystem
-    SolveSpace::ShutdownThreading();
+    // OpenMP threading doesn't need explicit shutdown
 
     Platform::ExitGui();
 }

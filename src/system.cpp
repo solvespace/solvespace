@@ -86,7 +86,8 @@ void System::EvalJacobian() {
     mat.A.num.resize(mat.m, mat.n);
     const int size = mat.A.sym.outerSize();
 
-    // If multi-threading is disabled or the matrix is too small, use single-threaded code
+    // Original single-threaded implementation
+    // Always works and is a good fallback
     if(!SS.enableMultiThreaded || size < 4) {
         for(int k = 0; k < size; k++) {
             for(SparseMatrix <Expr *>::InnerIterator it(mat.A.sym, k); it; ++it) {
@@ -99,68 +100,46 @@ void System::EvalJacobian() {
         return;
     }
 
-    // Get the thread pool for multi-threaded execution
-    ThreadPool& pool = SolveSpace::GetThreadPool();
+#if defined(_OPENMP)
+    // Use OpenMP for parallel execution if available
+    // Pre-compute total nonzeros in A for allocation
+    std::vector<Eigen::Triplet<double>> triplets;
+    triplets.reserve(size * 5); // Estimate 5 nonzeros per column on average
 
-    // For multi-threaded execution, we need to be careful about concurrent matrix updates
-    // Create thread-local triplet lists
-    struct ThreadData {
-        std::vector<Eigen::Triplet<double>> triplets;
-    };
-    std::vector<ThreadData> threadData(threadCount);
-    
-    // Calculate work per thread (columns per thread)
-    std::vector<int> workRanges;
-    workRanges.reserve(threadCount + 1);
-    const int columnsPerThread = (size + threadCount - 1) / threadCount;
-    
-    for(size_t i = 0; i < threadCount; i++) {
-        int start = i * columnsPerThread;
-        workRanges.push_back(start);
-    }
-    workRanges.push_back(size); // End marker
-    
-    // Create a task for each thread
-    std::vector<std::future<void>> futures;
-    futures.reserve(threadCount);
-    
-    for(size_t t = 0; t < threadCount; t++) {
-        futures.push_back(pool.Submit([this, t, &threadData, &workRanges]() {
-            ThreadData& data = threadData[t];
-            const int startCol = workRanges[t];
-            const int endCol = workRanges[t + 1];
-            
-            // Process columns assigned to this thread
-            for(int k = startCol; k < endCol; k++) {
-                for(SparseMatrix<Expr *>::InnerIterator it(mat.A.sym, k); it; ++it) {
-                    double value = it.value()->Eval();
-                    if(EXACT(value == 0.0)) continue;
-                    data.triplets.emplace_back(it.row(), it.col(), value);
-                }
+    #pragma omp parallel
+    {
+        std::vector<Eigen::Triplet<double>> localTriplets;
+        localTriplets.reserve(size); // Reasonable local reserve
+
+        #pragma omp for nowait
+        for(int k = 0; k < size; k++) {
+            for(SparseMatrix<Expr *>::InnerIterator it(mat.A.sym, k); it; ++it) {
+                double value = it.value()->Eval();
+                if(EXACT(value == 0.0)) continue;
+                localTriplets.emplace_back(it.row(), it.col(), value);
             }
-        }));
+        }
+
+        #pragma omp critical
+        {
+            triplets.insert(triplets.end(), localTriplets.begin(), localTriplets.end());
+        }
     }
-    
-    // Wait for all threads to complete
-    for(auto& future : futures) {
-        future.get();
-    }
-    
-    // Aggregate results from all threads
-    std::vector<Eigen::Triplet<double>> allTriplets;
-    size_t totalTriplets = 0;
-    for(const auto& data : threadData) {
-        totalTriplets += data.triplets.size();
-    }
-    allTriplets.reserve(totalTriplets);
-    
-    for(const auto& data : threadData) {
-        allTriplets.insert(allTriplets.end(), data.triplets.begin(), data.triplets.end());
-    }
-    
+
     // Build the matrix from triplets
-    mat.A.num.setFromTriplets(allTriplets.begin(), allTriplets.end());
+    mat.A.num.setFromTriplets(triplets.begin(), triplets.end());
     mat.A.num.makeCompressed();
+#else
+    // If OpenMP is not available, fall back to single-threaded
+    for(int k = 0; k < size; k++) {
+        for(SparseMatrix <Expr *>::InnerIterator it(mat.A.sym, k); it; ++it) {
+            double value = it.value()->Eval();
+            if(EXACT(value == 0.0)) continue;
+            mat.A.num.insert(it.row(), it.col()) = value;
+        }
+    }
+    mat.A.num.makeCompressed();
+#endif
 }
 
 bool System::IsDragged(hParam p) {
