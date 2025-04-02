@@ -193,6 +193,9 @@
             "name": "eigen",
             "buildsystem": "cmake-ninja",
             "builddir": true,
+            "config-opts": [
+                "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+            ],
             "sources": [
                 {
                     "type": "archive",
@@ -216,7 +219,8 @@
             "builddir": true,
             "config-opts": [
                 "-DBUILD_STATIC_LIBS=OFF",
-                "-DENABLE_THREADING=ON"
+                "-DENABLE_THREADING=ON",
+                "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
             ],
             "sources": [
                 {
