@@ -105,7 +105,7 @@
                 {
                     "type": "archive",
                     "url": "https://download.gnome.org/sources/cairomm/1.16/cairomm-1.16.1.tar.xz",
-                    "sha256": "6f6060d8e98dd4b8acfee2295fddbdd38cf487c07c26aad8d1a83bb9bff4a2c6",
+                    "sha256": "8bf1b0813f4fb6b039752427dc2c097d0723304d4e1f92a77270a362fca4e8ee",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "cairomm",
@@ -131,7 +131,7 @@
                 {
                     "type": "archive",
                     "url": "https://download.gnome.org/sources/pangomm/2.50/pangomm-2.50.1.tar.xz",
-                    "sha256": "ccc9923413e408c2bff637df663248327d72822f11e394b423e1c7ed9350440a",
+                    "sha256": "ccc9923413e408c2bff637df663248327d72822f11e394b423e1c5652b7d9214",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "pangomm",
@@ -157,7 +157,7 @@
                 {
                     "type": "archive",
                     "url": "https://download.gnome.org/sources/atkmm/2.36/atkmm-2.36.2.tar.xz",
-                    "sha256": "6f62dd94622d2f39b21a3c915f3cb46905f867396a9d1f7ac88a0d5e572ff53b",
+                    "sha256": "6f62dd99f746985e573605937577ccfc944368f606a71ca46342d70e1cdae079",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "atkmm",
@@ -183,7 +183,7 @@
                 {
                     "type": "archive",
                     "url": "https://download.gnome.org/sources/gtkmm/4.8/gtkmm-4.8.0.tar.xz",
-                    "sha256": "c82786d46e2b07346b6397ca7f1a86e3eb1dd681dad774f2bff10082a0c7ea8c",
+                    "sha256": "c82786d46e2b07346b6397ca7f1929d952f4922fa5c9db3dee08498b9a136cf5",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "gtkmm",
