@@ -1,0 +1,20 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 8127e096..7bb6108a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 3.0)
++cmake_minimum_required(VERSION 3.5)
+ project(libmimalloc C CXX)
+ 
+ set(CMAKE_C_STANDARD 11)
+diff --git a/test/CMakeLists.txt b/test/CMakeLists.txt
+index bb8dc97e..f756c6b2 100644
+--- a/test/CMakeLists.txt
++++ b/test/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-cmake_minimum_required(VERSION 3.0)
++cmake_minimum_required(VERSION 3.5)
+ project(mimalloc-test C CXX)
+ 
+ set(CMAKE_C_STANDARD 11)
