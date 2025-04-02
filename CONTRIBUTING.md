@@ -48,6 +48,7 @@ Contributing code
 
 SolveSpace is written in C++, and currently targets all compilers compliant with C++11.
 This includes GCC 5 and later, Clang 3.3 and later, and Visual Studio 12 (2013) and later.
+For GTK4 builds (enabled with USE_GTK4=ON), C++17 is required due to GTKmm-4 dependencies.
 
 ### High-level conventions
 
