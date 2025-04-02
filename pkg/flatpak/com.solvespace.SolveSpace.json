@@ -239,7 +239,8 @@
             "config-opts": [
                 "-DFLATPAK=ON",
                 "-DENABLE_TESTS=OFF",
-                "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+                "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
+                "-DUSE_GTK4=ON"
             ],
             "sources": [
                 {
