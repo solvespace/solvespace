@@ -531,13 +531,8 @@ void TextWindow::ShowGroupInfo() {
                 &TextWindow::ScreenOpacity);
         }
 
-        if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
-           g->type == Group::Type::REVOLVE || g->type == Group::Type::LINKED ||
-           g->type == Group::Type::HELIX) {
-            Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
-                &TextWindow::ScreenChangeGroupOption,
-                g->suppress ? CHECK_TRUE : CHECK_FALSE);
-        }
+        // Removed the group type check - now showing suppress checkbox
+    // for all groups uniformly in the code below
 
         Printf(false, "");
     }
@@ -545,6 +540,16 @@ void TextWindow::ShowGroupInfo() {
     Printf(false, " %f%Lv%Fd%s  show entities from this group",
         &TextWindow::ScreenChangeGroupOption,
         g->visible ? CHECK_TRUE : CHECK_FALSE);
+        
+    // Always show the suppress checkbox, regardless of group type
+    Printf(false, " %f%LP%Fd%s  suppress this group in model (Shift+Delete)",
+        &TextWindow::ScreenChangeGroupOption,
+        g->suppress ? CHECK_TRUE : CHECK_FALSE);
+        
+    // Add a note about the difference between visibility and suppression
+    if(g->suppress) {
+        Printf(false, "   (suppression affects dependencies and model generation)");
+    }
 
     if(!g->IsForcedToMeshBySource() && !g->IsTriangleMeshAssembly()) {
         Printf(false, " %f%Lf%Fd%s  force NURBS surfaces to triangle mesh",
