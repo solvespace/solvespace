@@ -1,7 +1,25 @@
 //-----------------------------------------------------------------------------
 //
-// Copyright 2018 whitequark
+// Loosely based on guigtk.cpp by whitequark
+// Commonwealth copyright Erkin Alp Güney 2025
+// Human involvement below copyrightability threshold outside the commonwealth
 //-----------------------------------------------------------------------------
+#include <errno.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <json-c/json_object.h>
+#include <json-c/json_util.h>
+#include <glibmm/convert.h>
+#include <glibmm/main.h>
+#include <gtkmm/box.h>
+#include <gtkmm/checkbutton.h>
+#include <gtkmm/cssprovider.h>
+#include <gtkmm/entry.h>
+#include <gtkmm/filechooserdialog.h>
+#include <gtkmm/fixed.h>
+#include <gtkmm/glarea.h>
+#include <gtkmm/application.h>
+#include <gtkmm/popover.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
