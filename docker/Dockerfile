@@ -10,7 +10,15 @@ RUN apt-get update && apt-get install -y \
     libfontconfig-dev \
     libspnav-dev \
     libgl1-mesa-dev \
-    git
+    git \
+    zlib1g-dev \
+    libpng-dev \
+    libfreetype6-dev \
+    libcairo2-dev \
+    libpangomm-2.48-dev \
+    libx11-dev \
+    gettext \
+    pkg-config
 
 # Set up working directory
 WORKDIR /app
