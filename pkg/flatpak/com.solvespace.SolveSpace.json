@@ -44,9 +44,10 @@
         },
         {
             "name": "sigc++",
-            "buildsystem": "meson",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
             "config-opts": [
-                "-Dbuild-examples=false"
+                "-DBUILD_EXAMPLES=OFF"
             ],
             "sources": [
                 {
