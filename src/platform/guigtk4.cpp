@@ -542,33 +542,37 @@ protected:
     void setup_event_controllers() {
         auto motion_controller = Gtk::EventControllerMotion::create();
         motion_controller->signal_motion().connect(
-            [this](double x, double y) -> void {
+            [this](double x, double y) -> bool {
                 GdkModifierType state = Gtk::get_current_event_state();
                 process_pointer_event(MouseEvent::Type::MOTION, x, y, state);
+                return true;
             });
         motion_controller->signal_leave().connect(
-            [this]() -> void {
+            [this]() -> bool {
                 double x, y;
                 get_pointer_position(x, y);
                 process_pointer_event(MouseEvent::Type::LEAVE, x, y, GdkModifierType(0));
+                return true;
             });
         add_controller(motion_controller);
 
         auto gesture_click = Gtk::GestureClick::create();
         gesture_click->set_button(0); // Listen for any button
         gesture_click->signal_pressed().connect(
-            [this](int n_press, double x, double y) -> void {
+            [this](int n_press, double x, double y) -> bool {
                 GdkModifierType state = Gtk::get_current_event_state();
                 guint button = gesture_click->get_current_button();
                 process_pointer_event(
                     n_press > 1 ? MouseEvent::Type::DBL_PRESS : MouseEvent::Type::PRESS, 
                     x, y, state, button);
+                return true;
             });
         gesture_click->signal_released().connect(
-            [this](int n_press, double x, double y) -> void {
+            [this](int n_press, double x, double y) -> bool {
                 GdkModifierType state = Gtk::get_current_event_state();
                 guint button = gesture_click->get_current_button();
                 process_pointer_event(MouseEvent::Type::RELEASE, x, y, state, button);
+                return true;
             });
         add_controller(gesture_click);
 
@@ -581,18 +585,18 @@ protected:
                 GdkModifierType state = Gtk::get_current_event_state();
                 process_pointer_event(MouseEvent::Type::SCROLL_VERT, x, y, state, 0, -dy);
                 return true;
-            }, false);
+            });
         add_controller(scroll_controller);
 
         auto key_controller = Gtk::EventControllerKey::create();
         key_controller->signal_key_pressed().connect(
             [this](guint keyval, guint keycode, GdkModifierType state) -> bool {
                 return process_key_event(KeyboardEvent::Type::PRESS, keyval, state);
-            }, false);
+            });
         key_controller->signal_key_released().connect(
             [this](guint keyval, guint keycode, GdkModifierType state) -> bool {
                 return process_key_event(KeyboardEvent::Type::RELEASE, keyval, state);
-            }, false);
+            });
         add_controller(key_controller);
     }
 
@@ -842,7 +846,7 @@ protected:
                     return true;
                 }
                 return false;
-            }, false);
+            });
     }
 
     bool on_query_tooltip(int x, int y, bool keyboard_tooltip,
@@ -1275,11 +1279,12 @@ class FileDialogImplGtk : public FileDialog {
 public:
     Gtk::FileChooser           *gtkChooser;
     std::vector<std::string>    extensions;
+    std::vector<Glib::RefPtr<Gtk::FileFilter>> filterObjects;
 
     void InitFileChooser(Gtk::FileChooser &chooser) {
         gtkChooser = &chooser;
         gtkChooser->signal_selection_changed().connect(
-            sigc::mem_fun(this, &FileDialogImplGtk::FilterChanged));
+            [this]() -> void { this->FilterChanged(); });
     }
 
     void SetCurrentName(std::string name) override {
@@ -1316,30 +1321,28 @@ public:
         gtkFilter->set_name(name + " (" + desc + ")");
 
         this->extensions.push_back(extensions.front());
+        this->filterObjects.push_back(gtkFilter);
         gtkChooser->add_filter(gtkFilter);
     }
 
     std::string GetExtension() {
-        auto filters = gtkChooser->get_filters();
-        size_t filterIndex =
-            std::find(filters.begin(), filters.end(), gtkChooser->get_filter()) -
-            filters.begin();
-        if(filterIndex < extensions.size()) {
-            return extensions[filterIndex];
-        } else {
-            return extensions.front();
+        auto currentFilter = gtkChooser->get_filter();
+        for (size_t i = 0; i < extensions.size() && i < filterObjects.size(); i++) {
+            if (filterObjects[i] == currentFilter) {
+                return extensions[i];
+            }
         }
+        return extensions.empty() ? "" : extensions.front();
     }
 
     void SetExtension(std::string extension) {
-        auto filters = gtkChooser->get_filters();
         size_t extensionIndex =
             std::find(extensions.begin(), extensions.end(), extension) -
             extensions.begin();
-        if(extensionIndex < filters.size()) {
-            gtkChooser->set_filter(filters[extensionIndex]);
-        } else {
-            gtkChooser->set_filter(filters.front());
+        if(extensionIndex < extensions.size() && extensionIndex < filterObjects.size()) {
+            gtkChooser->set_filter(filterObjects[extensionIndex]);
+        } else if (!filterObjects.empty()) {
+            gtkChooser->set_filter(filterObjects.front());
         }
     }
 
@@ -1407,11 +1410,23 @@ public:
 
     bool RunModal() override {
         CheckForUntitledFile();
-        if(gtkDialog.run() == Gtk::ResponseType::OK) {
-            return true;
-        } else {
-            return false;
+        
+        bool result = false;
+        gtkDialog.signal_response().connect([this, &result](int response) {
+            if (response == Gtk::ResponseType::OK) {
+                result = true;
+            }
+            gtkDialog.hide();
+        });
+        
+        gtkDialog.show();
+        
+        auto context = gtkDialog.get_display()->get_app_launch_context();
+        while (gtkDialog.is_visible()) {
+            g_main_context_iteration(nullptr, TRUE);
         }
+        
+        return result;
     }
 };
 
@@ -1495,11 +1510,9 @@ std::vector<Platform::Path> GetFontFiles() {
 }
 
 void OpenInBrowser(const std::string &url) {
-    // first param should be our window?
-    gtk_show_uri_on_window(NULL, url.c_str(), GDK_CURRENT_TIME, NULL);
+    auto launcher = Gtk::UriLauncher::create(url);
+    launcher->launch(Glib::RefPtr<Gtk::Window>(), nullptr);
 }
-
-Gtk::Main *gtkMain;
 
 static Glib::RefPtr<Gtk::Application> gtkApp;
 
@@ -1528,7 +1541,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
             
             gtkApp->activate();
             return 0;
-        }, false);
+        });
 
     // Add our application-specific styles, to override GTK defaults.
     Glib::RefPtr<Gtk::CssProvider> style_provider = Gtk::CssProvider::create();
@@ -1539,8 +1552,9 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     }
     )");
     
-    style_provider->add_provider_for_display(
-        Gdk::Display::get_default(), 
+    Gtk::StyleProvider::add_provider_for_display(
+        Gdk::Display::get_default(),
+        style_provider,
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     // Set locale from user preferences.
