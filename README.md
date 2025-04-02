@@ -94,14 +94,25 @@ You will need `git`. See the platform specific instructions below to install it.
 ### Building for Linux
 
 You will need the usual build tools, CMake, zlib, libpng, cairo, freetype. To
-build the GUI, you will need fontconfig, gtkmm 3.0 (version 3.16 or later),
-pangomm 1.4, OpenGL and OpenGL GLU, and optionally, the Space Navigator client
-library. On a Debian derivative (e.g. Ubuntu) these can be installed with:
+build the GUI, you will need fontconfig, gtkmm 3.0 (version 3.16 or later) or gtkmm 4.0 for GTK4 builds,
+pangomm 1.4 (or pangomm 2.48 for GTK4), OpenGL and OpenGL GLU, and optionally, the Space Navigator client
+library. 
+
+For GTK3 builds (default) on a Debian derivative (e.g. Ubuntu) these can be installed with:
 
 ```sh
 sudo apt install git build-essential cmake zlib1g-dev libpng-dev \
             libcairo2-dev libfreetype6-dev libjson-c-dev \
             libfontconfig1-dev libgtkmm-3.0-dev libpangomm-1.4-dev \
+            libgl-dev libglu-dev libspnav-dev
+```
+
+For GTK4 builds (Ubuntu 24.04 or newer recommended):
+
+```sh
+sudo apt install git build-essential cmake zlib1g-dev libpng-dev \
+            libcairo2-dev libfreetype6-dev libjson-c-dev \
+            libfontconfig1-dev libgtkmm-4.0-dev libpangomm-2.48-dev \
             libgl-dev libglu-dev libspnav-dev
 ```
 
