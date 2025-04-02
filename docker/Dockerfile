@@ -18,7 +18,8 @@ RUN apt-get update && apt-get install -y \
     libpangomm-2.48-dev \
     libx11-dev \
     gettext \
-    pkg-config
+    pkg-config \
+    libgdk-x11-4.0-dev
 
 # Set up working directory
 WORKDIR /app
