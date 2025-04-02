@@ -104,8 +104,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://download.gnome.org/sources/cairomm/1.16/cairomm-1.16.1.tar.xz",
-                    "sha256": "8bf1b0813f4fb6b039752427dc2c097d0723304d4e1f92a77270a362fca4e8ee",
+                    "url": "https://download.gnome.org/sources/cairomm/1.15/cairomm-1.15.4.tar.xz",
+                    "sha256": "4cd9fd959538953dfa606aaa7a31381e3193eebf14d814d97ef928684ee9feb5",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "cairomm",
