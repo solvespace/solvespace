@@ -59,6 +59,9 @@ set(ENABLE_OPENMP     OFF CACHE BOOL
     "Whether geometric operations will be parallelized using OpenMP")
 set(ENABLE_LTO        OFF CACHE BOOL
     "Whether interprocedural (global) optimizations are enabled")
+option(USE_GTK4
+    "Use GTK4 instead of GTK3"
+    OFF)
 option(FORCE_VENDORED_Eigen3
     "Whether we should use our bundled Eigen even in the presence of a system copy"
     OFF)
@@ -324,7 +327,12 @@ if(ENABLE_GUI)
         find_package(SpaceWare)
         pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
         pkg_check_modules(JSONC REQUIRED json-c)
-        pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.18 pangomm-1.4 x11)
+        if(USE_GTK4)
+            pkg_check_modules(GTKMM REQUIRED gtkmm-4.0 pangomm-2.48 x11)
+            add_definitions(-DUSE_GTK4)
+        else()
+            pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.18 pangomm-1.4 x11)
+        endif()
     endif()
 endif()
 
