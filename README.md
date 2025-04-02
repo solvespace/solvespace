@@ -118,10 +118,19 @@ sudo apt install git build-essential cmake zlib1g-dev libpng-dev \
 
 On a RedHat derivative (e.g. Fedora) the dependencies can be installed with:
 
+For GTK3 builds (default):
 ```sh
 sudo dnf install git gcc-c++ cmake zlib-devel libpng-devel \
             cairo-devel freetype-devel json-c-devel \
             fontconfig-devel gtkmm30-devel pangomm-devel \
+            mesa-libGL-devel mesa-libGLU-devel libspnav-devel
+```
+
+For GTK4 builds (Fedora 38 or newer recommended):
+```sh
+sudo dnf install git gcc-c++ cmake zlib-devel libpng-devel \
+            cairo-devel freetype-devel json-c-devel \
+            fontconfig-devel gtkmm4.0-devel pangomm2_48-devel \
             mesa-libGL-devel mesa-libGLU-devel libspnav-devel
 ```
 
@@ -258,11 +267,17 @@ is `build/bin/SolveSpace.app/Contents/MacOS/solvespace-cli`.
 
 ## Building on OpenBSD
 
-You will need git, cmake, libexecinfo, libpng, gtk3mm and pangomm.
+You will need git, cmake, libexecinfo, libpng, and GTK dependencies.
 These can be installed from the ports tree:
 
+For GTK3 builds (default):
 ```sh
 pkg_add -U git cmake libexecinfo png json-c gtk3mm pangomm
+```
+
+For GTK4 builds:
+```sh
+pkg_add -U git cmake libexecinfo png json-c gtk4mm pangomm2_48
 ```
 
 Before building, [check out the project and the necessary submodules](#via-source-code).
