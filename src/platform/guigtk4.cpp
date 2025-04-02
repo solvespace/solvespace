@@ -24,6 +24,7 @@
 #include <gtkmm/separator.h>
 #include <gtkmm/tooltip.h>
 #include <gtkmm/window.h>
+#include <gtkmm/adjustment.h>
 #include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/eventcontrollerkey.h>
 #include <gtkmm/eventcontrollerscroll.h>
@@ -244,18 +245,25 @@ TimerRef CreateTimer() {
 // GTK menu extensions
 //-----------------------------------------------------------------------------
 
-class GtkMenuItem : public Gtk::CheckMenuItem {
+class GtkMenuItem : public Gtk::CheckButton {
     Platform::MenuItem *_receiver;
     bool                _has_indicator;
     bool                _synthetic_event;
+    sigc::connection    _activate_connection;
 
 public:
     GtkMenuItem(Platform::MenuItem *receiver) :
         _receiver(receiver), _has_indicator(false), _synthetic_event(false) {
+        
+        _activate_connection = signal_toggled().connect(
+            [this]() {
+                if(!_synthetic_event && _receiver->onTrigger) {
+                    _receiver->onTrigger();
+                }
+            }, false);
     }
 
     void set_accel_key(const Gtk::AccelKey &accel_key) {
-        Gtk::CheckMenuItem::set_accel_key(accel_key);
     }
 
     bool has_indicator() const {
@@ -267,27 +275,12 @@ public:
     }
 
     void set_active(bool active) {
-        if(Gtk::CheckMenuItem::get_active() == active)
+        if(get_active() == active)
             return;
 
         _synthetic_event = true;
-        Gtk::CheckMenuItem::set_active(active);
+        Gtk::CheckButton::set_active(active);
         _synthetic_event = false;
-    }
-
-protected:
-    void on_activate() override {
-        Gtk::CheckMenuItem::on_activate();
-
-        if(!_synthetic_event && _receiver->onTrigger) {
-            _receiver->onTrigger();
-        }
-    }
-
-    void draw_indicator_vfunc(const Cairo::RefPtr<Cairo::Context> &cr) override {
-        if(_has_indicator) {
-            Gtk::CheckMenuItem::draw_indicator_vfunc(cr);
-        }
     }
 };
 
@@ -298,6 +291,8 @@ protected:
 class MenuItemImplGtk final : public MenuItem {
 public:
     GtkMenuItem gtkMenuItem;
+    std::string actionName;  // Add actionName member for GTK4 compatibility
+    std::function<void()> onTrigger;
 
     MenuItemImplGtk() : gtkMenuItem(this) {}
 
@@ -319,10 +314,10 @@ public:
 
         Gdk::ModifierType accelMods = {};
         if(accel.shiftDown) {
-            accelMods |= Gdk::SHIFT_MASK;
+            accelMods |= Gdk::ModifierType::SHIFT_MASK;
         }
         if(accel.controlDown) {
-            accelMods |= Gdk::CONTROL_MASK;
+            accelMods |= Gdk::ModifierType::CONTROL_MASK;
         }
 
         gtkMenuItem.set_accel_key(Gtk::AccelKey(accelKey, accelMods));
@@ -336,12 +331,12 @@ public:
 
             case Indicator::CHECK_MARK:
                 gtkMenuItem.set_has_indicator(true);
-                gtkMenuItem.set_draw_as_radio(false);
+                gtkMenuItem.set_has_indicator(false);
                 break;
 
             case Indicator::RADIO_MARK:
                 gtkMenuItem.set_has_indicator(true);
-                gtkMenuItem.set_draw_as_radio(true);
+                gtkMenuItem.set_has_indicator(true);
                 break;
         }
     }
@@ -359,9 +354,16 @@ public:
 
 class MenuImplGtk final : public Menu {
 public:
-    Gtk::Menu   gtkMenu;
-    std::vector<std::shared_ptr<MenuItemImplGtk>>   menuItems;
-    std::vector<std::shared_ptr<MenuImplGtk>>       subMenus;
+    Glib::RefPtr<Gio::Menu> gioMenu;
+    Gtk::Popover gtkMenu;
+    std::vector<std::shared_ptr<MenuItemImplGtk>> menuItems;
+    std::vector<std::shared_ptr<MenuImplGtk>> subMenus;
+    
+    MenuImplGtk() {
+        gioMenu = Gio::Menu::create();
+        auto menuBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+        gtkMenu.set_child(*menuBox);
+    }
 
     MenuItemRef AddItem(const std::string &label,
                         std::function<void()> onTrigger = NULL,
@@ -369,49 +371,52 @@ public:
         auto menuItem = std::make_shared<MenuItemImplGtk>();
         menuItems.push_back(menuItem);
 
-        menuItem->gtkMenuItem.set_label(mnemonics ? PrepareMnemonics(label) : label);
-        menuItem->gtkMenuItem.set_use_underline(mnemonics);
-        menuItem->gtkMenuItem.show();
+        std::string itemLabel = mnemonics ? PrepareMnemonics(label) : label;
+        
+        std::string actionName = "app.action" + std::to_string(menuItems.size());
+        
+        auto gioMenuItem = Gio::MenuItem::create(itemLabel, actionName);
+        gioMenu->append_item(gioMenuItem);
+        
+        menuItem->actionName = actionName;
         menuItem->onTrigger = onTrigger;
-        gtkMenu.append(menuItem->gtkMenuItem);
-
+        
         return menuItem;
     }
 
     MenuRef AddSubMenu(const std::string &label) override {
-        auto menuItem = std::make_shared<MenuItemImplGtk>();
-        menuItems.push_back(menuItem);
-
         auto subMenu = std::make_shared<MenuImplGtk>();
         subMenus.push_back(subMenu);
 
-        menuItem->gtkMenuItem.set_label(PrepareMnemonics(label));
-        menuItem->gtkMenuItem.set_use_underline(true);
-        menuItem->gtkMenuItem.set_submenu(subMenu->gtkMenu);
-        menuItem->gtkMenuItem.show_all();
-        gtkMenu.append(menuItem->gtkMenuItem);
-
+        std::string itemLabel = PrepareMnemonics(label);
+        
+        gioMenu->append_submenu(itemLabel, subMenu->gioMenu);
+        
         return subMenu;
     }
 
     void AddSeparator() override {
-        Gtk::SeparatorMenuItem *gtkMenuItem = Gtk::manage(new Gtk::SeparatorMenuItem());
-        gtkMenuItem->show();
-        gtkMenu.append(*Gtk::manage(gtkMenuItem));
+        auto section = Gio::Menu::create();
+        gioMenu->append_section("", section);
     }
 
     void PopUp() override {
+        gtkMenu.set_visible(true);
+        
         Glib::RefPtr<Glib::MainLoop> loop = Glib::MainLoop::create();
-        auto signal = gtkMenu.signal_deactivate().connect([&]() { loop->quit(); });
-
-        gtkMenu.show_all();
-        gtkMenu.popup(0, GDK_CURRENT_TIME);
+        auto signal = gtkMenu.signal_closed().connect([&]() { 
+            loop->quit(); 
+        });
+        
         loop->run();
         signal.disconnect();
     }
 
     void Clear() override {
-        gtkMenu.foreach([&](Gtk::Widget &w) { gtkMenu.remove(w); });
+        while (gioMenu->get_n_items() > 0) {
+            gioMenu->remove(0);
+        }
+        
         menuItems.clear();
         subMenus.clear();
     }
@@ -423,25 +428,30 @@ MenuRef CreateMenu() {
 
 class MenuBarImplGtk final : public MenuBar {
 public:
-    Gtk::MenuBar    gtkMenuBar;
-    std::vector<std::shared_ptr<MenuImplGtk>>       subMenus;
+    Glib::RefPtr<Gio::Menu> gioMenuBar;
+    Gtk::Box gtkMenuBar;
+    std::vector<std::shared_ptr<MenuImplGtk>> subMenus;
+    
+    MenuBarImplGtk() : gtkMenuBar(Gtk::Orientation::HORIZONTAL) {
+        gioMenuBar = Gio::Menu::create();
+    }
 
     MenuRef AddSubMenu(const std::string &label) override {
         auto subMenu = std::make_shared<MenuImplGtk>();
         subMenus.push_back(subMenu);
 
-        Gtk::MenuItem *gtkMenuItem = Gtk::manage(new Gtk::MenuItem);
-        gtkMenuItem->set_label(PrepareMnemonics(label));
-        gtkMenuItem->set_use_underline(true);
-        gtkMenuItem->set_submenu(subMenu->gtkMenu);
-        gtkMenuItem->show_all();
-        gtkMenuBar.append(*gtkMenuItem);
-
+        std::string itemLabel = PrepareMnemonics(label);
+        
+        gioMenuBar->append_submenu(itemLabel, subMenu->gioMenu);
+        
         return subMenu;
     }
 
     void Clear() override {
-        gtkMenuBar.foreach([&](Gtk::Widget &w) { gtkMenuBar.remove(w); });
+        while (gioMenuBar->get_n_items() > 0) {
+            gioMenuBar->remove(0);
+        }
+        
         subMenus.clear();
     }
 };
@@ -542,61 +552,63 @@ protected:
     void setup_event_controllers() {
         auto motion_controller = Gtk::EventControllerMotion::create();
         motion_controller->signal_motion().connect(
-            [this](double x, double y) -> bool {
-                GdkModifierType state = Gtk::get_current_event_state();
+            [this](double x, double y) {
+                GdkModifierType state = GdkModifierType(0);
                 process_pointer_event(MouseEvent::Type::MOTION, x, y, state);
                 return true;
-            });
+            }, false);
         motion_controller->signal_leave().connect(
-            [this]() -> bool {
+            [this]() {
                 double x, y;
                 get_pointer_position(x, y);
                 process_pointer_event(MouseEvent::Type::LEAVE, x, y, GdkModifierType(0));
                 return true;
-            });
+            }, false);
         add_controller(motion_controller);
 
         auto gesture_click = Gtk::GestureClick::create();
         gesture_click->set_button(0); // Listen for any button
         gesture_click->signal_pressed().connect(
-            [this](int n_press, double x, double y) -> bool {
-                GdkModifierType state = Gtk::get_current_event_state();
+            [this, gesture_click](int n_press, double x, double y) {
+                GdkModifierType state = GdkModifierType(0);
                 guint button = gesture_click->get_current_button();
                 process_pointer_event(
                     n_press > 1 ? MouseEvent::Type::DBL_PRESS : MouseEvent::Type::PRESS, 
                     x, y, state, button);
                 return true;
-            });
+            }, false);
         gesture_click->signal_released().connect(
-            [this](int n_press, double x, double y) -> bool {
-                GdkModifierType state = Gtk::get_current_event_state();
+            [this, gesture_click](int n_press, double x, double y) {
+                GdkModifierType state = GdkModifierType(0);
                 guint button = gesture_click->get_current_button();
                 process_pointer_event(MouseEvent::Type::RELEASE, x, y, state, button);
                 return true;
-            });
+            }, false);
         add_controller(gesture_click);
 
         auto scroll_controller = Gtk::EventControllerScroll::create();
         scroll_controller->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
         scroll_controller->signal_scroll().connect(
-            [this](double dx, double dy) -> bool {
+            [this](double dx, double dy) {
                 double x, y;
                 get_pointer_position(x, y);
-                GdkModifierType state = Gtk::get_current_event_state();
+                GdkModifierType state = GdkModifierType(0);
                 process_pointer_event(MouseEvent::Type::SCROLL_VERT, x, y, state, 0, -dy);
                 return true;
-            });
+            }, false);
         add_controller(scroll_controller);
 
         auto key_controller = Gtk::EventControllerKey::create();
         key_controller->signal_key_pressed().connect(
-            [this](guint keyval, guint keycode, GdkModifierType state) -> bool {
-                return process_key_event(KeyboardEvent::Type::PRESS, keyval, state);
-            });
+            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
+                return process_key_event(KeyboardEvent::Type::PRESS, keyval, gdk_state);
+            }, false);
         key_controller->signal_key_released().connect(
-            [this](guint keyval, guint keycode, GdkModifierType state) -> bool {
-                return process_key_event(KeyboardEvent::Type::RELEASE, keyval, state);
-            });
+            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
+                return process_key_event(KeyboardEvent::Type::RELEASE, keyval, gdk_state);
+            }, false);
         add_controller(key_controller);
     }
 
@@ -607,7 +619,8 @@ protected:
         
         auto surface = get_native()->get_surface();
         double root_x, root_y;
-        surface->get_device_position(device, root_x, root_y, nullptr);
+        Gdk::ModifierType mask;
+        surface->get_device_position(device, root_x, root_y, mask);
         
         x = root_x;
         y = root_y;
@@ -622,21 +635,32 @@ class GtkEditorOverlay : public Gtk::Fixed {
 
 public:
     GtkEditorOverlay(Platform::Window *receiver) : _receiver(receiver), _gl_widget(receiver) {
-        set_child(_gl_widget);
+        put(_gl_widget, 0, 0);
 
         _entry.set_visible(false);
         _entry.set_has_frame(false);
         put(_entry, 0, 0);  // We'll position it properly later
 
         _entry.signal_activate().
-            connect(sigc::mem_fun(this, &GtkEditorOverlay::on_activate));
+            connect(sigc::mem_fun(*this, &GtkEditorOverlay::on_activate));
             
         _key_controller = Gtk::EventControllerKey::create();
         _key_controller->signal_key_pressed().connect(
-            sigc::mem_fun(this, &GtkEditorOverlay::on_key_pressed), false);
+            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
+                return on_key_pressed(keyval, keycode, gdk_state);
+            }, false);
         _key_controller->signal_key_released().connect(
-            sigc::mem_fun(this, &GtkEditorOverlay::on_key_released), false);
+            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
+                return on_key_released(keyval, keycode, gdk_state);
+            }, false);
         add_controller(_key_controller);
+        
+        auto size_controller = Gtk::EventControllerMotion::create();
+        add_controller(size_controller);
+        
+        on_size_allocate();
     }
 
     bool is_editing() const {
@@ -648,7 +672,15 @@ public:
         Pango::FontDescription font_desc;
         font_desc.set_family(is_monospace ? "monospace" : "normal");
         font_desc.set_absolute_size(font_height * Pango::SCALE);
-        _entry.set_font(font_desc);
+        auto css_provider = Gtk::CssProvider::create();
+        std::string css_data = "entry { font-family: ";
+        css_data += (is_monospace ? "monospace" : "normal");
+        css_data += "; font-size: ";
+        css_data += std::to_string(font_height);
+        css_data += "px; }";
+        css_provider->load_from_data(css_data);
+        _entry.get_style_context()->add_provider(css_provider, 
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         // The y coordinate denotes baseline.
         Pango::FontMetrics font_metrics = get_pango_context()->get_metrics(font_desc);
@@ -660,10 +692,23 @@ public:
         layout->set_text(val + " ");
         int width = layout->get_logical_extents().get_width();
 
-        auto css_node = _entry.get_css_node();
-        Gtk::Border margin = _entry.get_margin();
-        Gtk::Border border(1, 1, 1, 1);  // Default border size
-        Gtk::Border padding(2, 2, 2, 2); // Default padding size
+        Gtk::Border margin;
+        margin.set_left(0);
+        margin.set_right(0);
+        margin.set_top(0);
+        margin.set_bottom(0);
+        
+        Gtk::Border border;
+        border.set_left(1);
+        border.set_right(1);
+        border.set_top(1);
+        border.set_bottom(1);
+        
+        Gtk::Border padding;
+        padding.set_left(2);
+        padding.set_right(2);
+        padding.set_top(2);
+        padding.set_bottom(2);
         
         put(_entry,
             x - margin.get_left() - border.get_left() - padding.get_left(),
@@ -679,13 +724,12 @@ public:
             _entry.set_visible(true);
             _entry.grab_focus();
 
-            grab_add();
+            _entry.grab_focus();
         }
     }
 
     void stop_editing() {
         if(_entry.get_visible()) {
-            grab_remove();
             _entry.set_visible(false);
             _gl_widget.grab_focus();
         }
@@ -714,19 +758,21 @@ protected:
         return false;
     }
 
-    void size_allocate(int width, int height, int baseline) override {
-        Gtk::Fixed::size_allocate(width, height, baseline);
+    void on_size_allocate() {
+        Gtk::Allocation allocation = get_allocation();
+        int baseline = -1; // Default baseline value
 
-        _gl_widget.size_allocate(width, height, baseline);
+        _gl_widget.size_allocate(allocation, baseline);
 
         if(_entry.get_visible()) {
             int entry_width, entry_height, min_height, natural_height;
             _entry.get_size_request(entry_width, entry_height);
-            _entry.measure(Gtk::Orientation::VERTICAL, -1, min_height, natural_height, -1, -1);
+            int min_baseline, natural_baseline;
+            _entry.measure(Gtk::Orientation::VERTICAL, -1, min_height, natural_height, min_baseline, natural_baseline);
             
-            int x, y;
-            child_property(_entry, "x", x);
-            child_property(_entry, "y", y);
+            Gtk::Allocation entry_allocation = _entry.get_allocation();
+            x = entry_allocation.get_x();
+            y = entry_allocation.get_y();
             
             _entry.size_allocate(
                 Gdk::Rectangle(x, y, entry_width > 0 ? entry_width : 100, natural_height),
@@ -744,7 +790,7 @@ protected:
 class GtkWindow : public Gtk::Window {
     Platform::Window   *_receiver;
     Gtk::Box            _vbox;
-    Gtk::MenuBar       *_menu_bar = NULL;
+    Gtk::HeaderBar     *menu_bar = NULL;
     Gtk::Box            _hbox;
     GtkEditorOverlay    _editor_overlay;
     Gtk::Scrollbar      _scrollbar;
@@ -760,7 +806,8 @@ public:
         _vbox(Gtk::Orientation::VERTICAL),
         _hbox(Gtk::Orientation::HORIZONTAL),
         _editor_overlay(receiver),
-        _scrollbar(Gtk::Orientation::VERTICAL) {
+        _scrollbar() {
+        _scrollbar.set_orientation(Gtk::Orientation::VERTICAL);
         
         _hbox.set_hexpand(true);
         _hbox.set_vexpand(true);
@@ -777,12 +824,14 @@ public:
         _editor_overlay.set_visible(true);
         get_gl_widget().set_visible(true);
 
-        _scrollbar.get_adjustment()->signal_value_changed().
-            connect(sigc::mem_fun(this, &GtkWindow::on_scrollbar_value_changed));
+        auto adjustment = Gtk::Adjustment::create(0.0, 0.0, 100.0, 1.0, 10.0, 10.0);
+        _scrollbar.set_adjustment(adjustment);
+        adjustment->signal_value_changed().
+            connect(sigc::mem_fun(*this, &GtkWindow::on_scrollbar_value_changed), false);
 
         get_gl_widget().set_has_tooltip(true);
         get_gl_widget().signal_query_tooltip().
-            connect(sigc::mem_fun(this, &GtkWindow::on_query_tooltip));
+            connect(sigc::mem_fun(*this, &GtkWindow::on_query_tooltip), false);
             
         setup_event_controllers();
     }
@@ -791,18 +840,18 @@ public:
         return _is_fullscreen;
     }
 
-    Gtk::MenuBar *get_menu_bar() const {
-        return _menu_bar;
+    Gtk::HeaderBar *get_menu_bar() const {
+        return menu_bar;
     }
 
-    void set_menu_bar(Gtk::MenuBar *menu_bar) {
-        if(_menu_bar) {
-            _vbox.remove(*_menu_bar);
+    void set_menu_bar(Gtk::HeaderBar *menu_bar_ptr) {
+        if(menu_bar) {
+            _vbox.remove(*menu_bar);
         }
-        _menu_bar = menu_bar;
-        if(_menu_bar) {
-            _menu_bar->set_visible(true);
-            _vbox.prepend(*_menu_bar);
+        menu_bar = menu_bar_ptr;
+        if(menu_bar) {
+            menu_bar->set_visible(true);
+            _vbox.prepend(*menu_bar);
         }
     }
 
@@ -843,10 +892,10 @@ protected:
             [this]() -> bool {
                 if(_receiver->onClose) {
                     _receiver->onClose();
-                    return true;
+                    return true; // Prevent default close behavior
                 }
                 return false;
-            });
+            }, false);
     }
 
     bool on_query_tooltip(int x, int y, bool keyboard_tooltip,
@@ -857,7 +906,7 @@ protected:
     }
 
     void on_fullscreen_changed() {
-        _is_fullscreen = get_fullscreened();
+        _is_fullscreen = is_fullscreen();
         if(_receiver->onFullScreen) {
             _receiver->onFullScreen(_is_fullscreen);
         }
@@ -885,22 +934,17 @@ public:
                 break;
 
             case Kind::TOOL:
-                gtkWindow.set_type_hint(Gdk::WINDOW_TYPE_HINT_UTILITY);
-                gtkWindow.set_skip_taskbar_hint(true);
-                gtkWindow.set_skip_pager_hint(true);
+                gtkWindow.set_modal(true);
+                gtkWindow.set_deletable(false);
                 break;
         }
 
         auto icon = LoadPng("freedesktop/solvespace-48x48.png");
-        auto gdkIcon =
-            Gdk::Pixbuf::create_from_data(&icon->data[0], Gdk::COLORSPACE_RGB,
-                                          icon->format == Pixmap::Format::RGBA, 8,
-                                          icon->width, icon->height, icon->stride);
-        gtkWindow.set_icon(gdkIcon->copy());
+        gtkWindow.set_icon_name("solvespace");
     }
 
     double GetPixelDensity() override {
-        return gtkWindow.get_screen()->get_resolution();
+        return gtkWindow.get_scale_factor();
     }
 
     double GetDevicePixelRatio() override {
@@ -941,10 +985,11 @@ public:
 
     void SetMenuBar(MenuBarRef newMenuBar) override {
         if(newMenuBar) {
-            Gtk::MenuBar *gtkMenuBar = &((MenuBarImplGtk*)&*newMenuBar)->gtkMenuBar;
-            gtkWindow.set_menu_bar(gtkMenuBar);
+            auto headerBar = Gtk::make_managed<Gtk::HeaderBar>();
+            gtkWindow.set_titlebar(*headerBar);
         } else {
-            gtkWindow.set_menu_bar(NULL);
+            auto headerBar = Gtk::make_managed<Gtk::HeaderBar>();
+            gtkWindow.set_titlebar(*headerBar);
         }
         menuBar = newMenuBar;
     }
@@ -961,9 +1006,13 @@ public:
     void FreezePosition(SettingsRef settings, const std::string &key) override {
         if(!gtkWindow.is_visible()) return;
 
-        int left, top, width, height;
-        gtkWindow.get_position(left, top);
-        gtkWindow.get_size(width, height);
+        int left = 0, top = 0;
+        Gtk::Allocation allocation = gtkWindow.get_allocation();
+        left = allocation.get_x();
+        top = allocation.get_y();
+        
+        int width = gtkWindow.get_width();
+        int height = gtkWindow.get_height();
         bool isMaximized = gtkWindow.is_maximized();
 
         settings->FreezeInt(key + "_Left",       left);
@@ -974,36 +1023,34 @@ public:
     }
 
     void ThawPosition(SettingsRef settings, const std::string &key) override {
-        int left, top, width, height;
-        gtkWindow.get_position(left, top);
-        gtkWindow.get_size(width, height);
+        int left = 0, top = 0;
+        int width = gtkWindow.get_width();
+        int height = gtkWindow.get_height();
 
         left   = settings->ThawInt(key + "_Left",   left);
         top    = settings->ThawInt(key + "_Top",    top);
         width  = settings->ThawInt(key + "_Width",  width);
         height = settings->ThawInt(key + "_Height", height);
 
-        gtkWindow.move(left, top);
-        gtkWindow.resize(width, height);
+        gtkWindow.set_default_size(width, height);
+        
 
         if(settings->ThawBool(key + "_Maximized", false)) {
             gtkWindow.maximize();
         }
     }
 
-    void SetCursor(Cursor cursor) override {
+    void SetCursor(Cursor cursorType) override {
         std::string cursor_name;
-        switch(cursor) {
+        switch(cursorType) {
             case Cursor::POINTER: cursor_name = "default"; break;
             case Cursor::HAND:    cursor_name = "pointer"; break;
             default: ssassert(false, "Unexpected cursor");
         }
 
-        auto gdkWindow = gtkWindow.get_gl_widget().get_window();
-        if(gdkWindow) {
-            gdkWindow->set_cursor(Gdk::Cursor::create(gdkWindow->get_display(), cursor_name.c_str()));
-//        gdkWindow->get_display()
-        }
+        auto display = gtkWindow.get_display();
+        auto gdk_cursor = Gdk::Cursor::create(cursor_name);
+        gtkWindow.get_gl_widget().set_cursor(gdk_cursor);
     }
 
     void SetTooltip(const std::string &text, double x, double y,
@@ -1034,8 +1081,15 @@ public:
     }
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
-        auto adjustment = gtkWindow.get_scrollbar().get_adjustment();
-        adjustment->configure(adjustment->get_value(), min, max, 1, 4, pageSize);
+        auto adjustment = Gtk::Adjustment::create(
+            gtkWindow.get_scrollbar().get_adjustment()->get_value(), // value
+            min,                    // lower
+            max,                    // upper
+            1,                      // step_increment
+            4,                      // page_increment
+            pageSize                // page_size
+        );
+        gtkWindow.get_scrollbar().set_adjustment(adjustment);
     }
 
     double GetScrollbarPosition() override {
@@ -1043,7 +1097,7 @@ public:
     }
 
     void SetScrollbarPosition(double pos) override {
-        return gtkWindow.get_scrollbar().get_adjustment()->set_value(pos);
+        gtkWindow.get_scrollbar().get_adjustment()->set_value(pos);
     }
 
     void Invalidate() override {
@@ -1107,8 +1161,8 @@ static void ProcessSpnavEvent(WindowImplGtk *window, const spnav_event &spnavEve
     }
 }
 
-static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, gpointer data) {
-    XEvent *xEvent = (XEvent *)gdkXEvent;
+[[maybe_unused]]
+static bool HandleSpnavXEvent(XEvent *xEvent, gpointer data) {
     WindowImplGtk *window = (WindowImplGtk *)data;
     bool shiftDown   = (xEvent->xmotion.state & ShiftMask)   != 0;
     bool controlDown = (xEvent->xmotion.state & ControlMask) != 0;
@@ -1116,26 +1170,29 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, 
     spnav_event spnavEvent;
     if(spnav_x11_event(xEvent, &spnavEvent)) {
         ProcessSpnavEvent(window, spnavEvent, shiftDown, controlDown);
-        return GDK_FILTER_REMOVE;
+        return true; // Event handled
     }
-    return GDK_FILTER_CONTINUE;
+    return false; // Event not handled
 }
 
 static gboolean ConsumeSpnavQueue(GIOChannel *, GIOCondition, gpointer data) {
     WindowImplGtk *window = (WindowImplGtk *)data;
-    Glib::RefPtr<Gdk::Window> gdkWindow = window->gtkWindow.get_window();
-
+    
+    auto display = window->gtkWindow.get_display();
+    
     // We don't get modifier state through the socket.
-    int x, y;
     Gdk::ModifierType mask{};
-#if GTK_CHECK_VERSION(3, 20, 0)
-    Glib::RefPtr<Gdk::Device> device = gdkWindow->get_display()->get_default_seat()->get_pointer();
-#else
-    Glib::RefPtr<Gdk::Device> device = gdkWindow->get_display()->get_device_manager()->get_client_pointer();
-#endif
-    gdkWindow->get_device_position(device, x, y, mask);
-    bool shiftDown   = (mask & Gdk::SHIFT_MASK)   != 0;
-    bool controlDown = (mask & Gdk::CONTROL_MASK) != 0;
+    
+    auto seat = display->get_default_seat();
+    auto device = seat->get_pointer();
+    
+    auto keyboard = seat->get_keyboard();
+    if (keyboard) {
+        mask = keyboard->get_modifier_state();
+    }
+    
+    bool shiftDown   = ((static_cast<int>(mask) & static_cast<int>(Gdk::ModifierType::SHIFT_MASK)) != 0);
+    bool controlDown = ((static_cast<int>(mask) & static_cast<int>(Gdk::ModifierType::CONTROL_MASK)) != 0);
 
     spnav_event spnavEvent;
     while(spnav_poll_event(&spnavEvent)) {
@@ -1153,6 +1210,7 @@ void Request3DConnexionEventsForWindow(WindowRef window) {
                        ConsumeSpnavQueue, windowImpl.get());
     }
 }
+#endif // HAVE_SPACEWARE && (GDK_WINDOWING_X11 || GDK_WINDOWING_WAYLAND)
 
 //-----------------------------------------------------------------------------
 // Message dialogs
@@ -1169,8 +1227,8 @@ public:
     Gtk::MessageDialog gtkDialog;
 
     MessageDialogImplGtk(Gtk::Window &parent)
-        : gtkDialog(parent, "", /*use_markup=*/false, Gtk::MESSAGE_INFO,
-                    Gtk::BUTTONS_NONE, /*modal=*/true)
+        : gtkDialog(parent, "", /*use_markup=*/false, Gtk::MessageType::INFO,
+                    Gtk::ButtonsType::NONE, /*modal=*/true)
     {
         SetTitle("Message");
     }
@@ -1178,22 +1236,28 @@ public:
     void SetType(Type type) override {
         switch(type) {
             case Type::INFORMATION:
-                gtkImage.set_from_icon_name("dialog-information", Gtk::ICON_SIZE_DIALOG);
+                gtkImage.set_from_icon_name("dialog-information");
+                gtkImage.set_icon_size(Gtk::IconSize::LARGE);
                 break;
 
             case Type::QUESTION:
-                gtkImage.set_from_icon_name("dialog-question", Gtk::ICON_SIZE_DIALOG);
+                gtkImage.set_from_icon_name("dialog-question");
+                gtkImage.set_icon_size(Gtk::IconSize::LARGE);
                 break;
 
             case Type::WARNING:
-                gtkImage.set_from_icon_name("dialog-warning", Gtk::ICON_SIZE_DIALOG);
+                gtkImage.set_from_icon_name("dialog-warning");
+                gtkImage.set_icon_size(Gtk::IconSize::LARGE);
                 break;
 
             case Type::ERROR:
-                gtkImage.set_from_icon_name("dialog-error", Gtk::ICON_SIZE_DIALOG);
+                gtkImage.set_from_icon_name("dialog-error");
+                gtkImage.set_icon_size(Gtk::IconSize::LARGE);
                 break;
         }
-        gtkDialog.set_image(gtkImage);
+        auto content_area = gtkDialog.get_content_area();
+        content_area->append(gtkImage);
+        gtkImage.set_visible(true);
     }
 
     void SetTitle(std::string title) override {
@@ -1212,10 +1276,10 @@ public:
         int responseId = 0;
         switch(response) {
             case Response::NONE:   ssassert(false, "Unexpected response");
-            case Response::OK:     responseId = Gtk::RESPONSE_OK;     break;
-            case Response::YES:    responseId = Gtk::RESPONSE_YES;    break;
-            case Response::NO:     responseId = Gtk::RESPONSE_NO;     break;
-            case Response::CANCEL: responseId = Gtk::RESPONSE_CANCEL; break;
+            case Response::OK:     responseId = Gtk::ResponseType::OK;     break;
+            case Response::YES:    responseId = Gtk::ResponseType::YES;    break;
+            case Response::NO:     responseId = Gtk::ResponseType::NO;     break;
+            case Response::CANCEL: responseId = Gtk::ResponseType::CANCEL; break;
         }
         gtkDialog.add_button(PrepareMnemonics(label), responseId);
         if(isDefault) {
@@ -1226,14 +1290,14 @@ public:
     Response ProcessResponse(int gtkResponse) {
         Response response;
         switch(gtkResponse) {
-            case Gtk::RESPONSE_OK:     response = Response::OK;     break;
-            case Gtk::RESPONSE_YES:    response = Response::YES;    break;
-            case Gtk::RESPONSE_NO:     response = Response::NO;     break;
-            case Gtk::RESPONSE_CANCEL: response = Response::CANCEL; break;
+            case Gtk::ResponseType::OK:     response = Response::OK;     break;
+            case Gtk::ResponseType::YES:    response = Response::YES;    break;
+            case Gtk::ResponseType::NO:     response = Response::NO;     break;
+            case Gtk::ResponseType::CANCEL: response = Response::CANCEL; break;
 
-            case Gtk::RESPONSE_NONE:
-            case Gtk::RESPONSE_CLOSE:
-            case Gtk::RESPONSE_DELETE_EVENT:
+            case Gtk::ResponseType::NONE:
+            case Gtk::ResponseType::CLOSE:
+            case Gtk::ResponseType::DELETE_EVENT:
                 response = Response::NONE;
                 break;
 
@@ -1262,7 +1326,26 @@ public:
     }
 
     Response RunModal() override {
-        return ProcessResponse(gtkDialog.run());
+        gtkDialog.show();
+        int response = Gtk::ResponseType::NONE;
+        
+        auto conn = gtkDialog.signal_response().connect(
+            [&response](int r) {
+                response = r;
+            });
+            
+        auto loop = Glib::MainLoop::create();
+        gtkDialog.signal_close_request().connect(
+            [&loop]() -> bool {
+                loop->quit();
+                return true;
+            }, false);
+            
+        loop->run();
+        
+        conn.disconnect();
+        
+        return ProcessResponse(response);
     }
 };
 
@@ -1283,8 +1366,14 @@ public:
 
     void InitFileChooser(Gtk::FileChooser &chooser) {
         gtkChooser = &chooser;
-        gtkChooser->signal_selection_changed().connect(
-            [this]() -> void { this->FilterChanged(); });
+        if (auto dialog = dynamic_cast<Gtk::FileChooserDialog*>(gtkChooser)) {
+            dialog->signal_response().connect(
+                [this](int response) { 
+                    if (response == Gtk::ResponseType::OK) {
+                        this->FilterChanged(); 
+                    }
+                }, false);
+        }
     }
 
     void SetCurrentName(std::string name) override {
@@ -1510,8 +1599,7 @@ std::vector<Platform::Path> GetFontFiles() {
 }
 
 void OpenInBrowser(const std::string &url) {
-    auto launcher = Gtk::UriLauncher::create(url);
-    launcher->launch(Glib::RefPtr<Gtk::Window>(), nullptr);
+    Gio::AppInfo::launch_default_for_uri(url);
 }
 
 static Glib::RefPtr<Gtk::Application> gtkApp;
@@ -1541,7 +1629,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
             
             gtkApp->activate();
             return 0;
-        });
+        }, false);
 
     // Add our application-specific styles, to override GTK defaults.
     Glib::RefPtr<Gtk::CssProvider> style_provider = Gtk::CssProvider::create();
@@ -1552,7 +1640,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     }
     )");
     
-    Gtk::StyleProvider::add_provider_for_display(
+    Gtk::StyleContext::add_provider_for_display(
         Gdk::Display::get_default(),
         style_provider,
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
