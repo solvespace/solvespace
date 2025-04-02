@@ -238,8 +238,7 @@
             "builddir": true,
             "config-opts": [
                 "-DFLATPAK=ON",
-                "-DENABLE_TESTS=OFF",
-                "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+                "-DENABLE_TESTS=OFF"
             ],
             "sources": [
                 {
