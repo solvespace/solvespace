@@ -40,6 +40,7 @@ cmake \
     -D ENABLE_OPENMP="ON" \
     -D ENABLE_SANITIZERS="${ENABLE_SANITIZERS}" \
     -D ENABLE_LTO="${ENABLE_LTO}" \
+    -D CMAKE_POLICY_VERSION_MINIMUM=3.5 \
     ..
 
 if [ "$3" = "xcode" ]; then
