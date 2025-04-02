@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
     libx11-dev \
     gettext \
     pkg-config \
-    libgdk-x11-4.0-dev
+    librust-gdkx11-sys-dev
 
 # Set up working directory
 WORKDIR /app
