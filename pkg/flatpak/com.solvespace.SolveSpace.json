@@ -52,7 +52,7 @@
                 {
                     "type": "archive",
                     "url": "https://download.gnome.org/sources/libsigc++/3.0/libsigc++-3.0.0.tar.xz",
-                    "sha256": "b70edcf4611651c54a426e109b17196e1fa17da090592a5000e2d134c03ac5c8",
+                    "sha256": "50a0855c1eb26e6044ffe888dbe061938ab4241f96d8f3754ea7ead38ab8ed06",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "libsigc++",
