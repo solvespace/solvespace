@@ -37,11 +37,8 @@
 #if defined(HAVE_SPACEWARE)
 #   include <spnav.h>
 #   include <gdk/gdk.h>
-#   if defined(GDK_WINDOWING_X11)
-#       include <gdk/x11/gdkx.h>
-#   endif
 #   if defined(GDK_WINDOWING_WAYLAND)
-#       include <gdk/gdkwayland.h>
+#       include <gdk/wayland/gdkwayland.h>
 #   endif
 #   if GTK_CHECK_VERSION(3, 20, 0)
 #       include <gdkmm/seat.h>
@@ -225,7 +222,7 @@ public:
             _connection.disconnect();
         }
 
-        auto handler = [this]() {
+        auto handler = [this]() -> bool {
             if(this->onTimeout) {
                 this->onTimeout();
             }
@@ -545,12 +542,12 @@ protected:
     void setup_event_controllers() {
         auto motion_controller = Gtk::EventControllerMotion::create();
         motion_controller->signal_motion().connect(
-            [this](double x, double y) {
+            [this](double x, double y) -> void {
                 GdkModifierType state = Gtk::get_current_event_state();
                 process_pointer_event(MouseEvent::Type::MOTION, x, y, state);
             });
         motion_controller->signal_leave().connect(
-            [this]() {
+            [this]() -> void {
                 double x, y;
                 get_pointer_position(x, y);
                 process_pointer_event(MouseEvent::Type::LEAVE, x, y, GdkModifierType(0));
@@ -560,7 +557,7 @@ protected:
         auto gesture_click = Gtk::GestureClick::create();
         gesture_click->set_button(0); // Listen for any button
         gesture_click->signal_pressed().connect(
-            [this](int n_press, double x, double y) {
+            [this](int n_press, double x, double y) -> void {
                 GdkModifierType state = Gtk::get_current_event_state();
                 guint button = gesture_click->get_current_button();
                 process_pointer_event(
@@ -568,7 +565,7 @@ protected:
                     x, y, state, button);
             });
         gesture_click->signal_released().connect(
-            [this](int n_press, double x, double y) {
+            [this](int n_press, double x, double y) -> void {
                 GdkModifierType state = Gtk::get_current_event_state();
                 guint button = gesture_click->get_current_button();
                 process_pointer_event(MouseEvent::Type::RELEASE, x, y, state, button);
@@ -578,7 +575,7 @@ protected:
         auto scroll_controller = Gtk::EventControllerScroll::create();
         scroll_controller->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
         scroll_controller->signal_scroll().connect(
-            [this](double dx, double dy) {
+            [this](double dx, double dy) -> bool {
                 double x, y;
                 get_pointer_position(x, y);
                 GdkModifierType state = Gtk::get_current_event_state();
@@ -589,11 +586,11 @@ protected:
 
         auto key_controller = Gtk::EventControllerKey::create();
         key_controller->signal_key_pressed().connect(
-            [this](guint keyval, guint keycode, GdkModifierType state) {
+            [this](guint keyval, guint keycode, GdkModifierType state) -> bool {
                 return process_key_event(KeyboardEvent::Type::PRESS, keyval, state);
             }, false);
         key_controller->signal_key_released().connect(
-            [this](guint keyval, guint keycode, GdkModifierType state) {
+            [this](guint keyval, guint keycode, GdkModifierType state) -> bool {
                 return process_key_event(KeyboardEvent::Type::RELEASE, keyval, state);
             }, false);
         add_controller(key_controller);
@@ -829,11 +826,11 @@ protected:
     void setup_event_controllers() {
         _motion_controller = Gtk::EventControllerMotion::create();
         _motion_controller->signal_enter().connect(
-            [this](double x, double y) {
+            [this](double x, double y) -> void {
                 _is_under_cursor = true;
             });
         _motion_controller->signal_leave().connect(
-            [this]() {
+            [this]() -> void {
                 _is_under_cursor = false;
             });
         add_controller(_motion_controller);
@@ -1147,31 +1144,11 @@ void Request3DConnexionEventsForWindow(WindowRef window) {
     std::shared_ptr<WindowImplGtk> windowImpl =
         std::static_pointer_cast<WindowImplGtk>(window);
 
-    Glib::RefPtr<Gdk::Window> gdkWindow = windowImpl->gtkWindow.get_window();
-#if defined(GDK_WINDOWING_X11)
-    if(GDK_IS_X11_DISPLAY(gdkWindow->get_display()->gobj())) {
-        if(spnav_x11_open(gdk_x11_get_default_xdisplay(),
-                          gdk_x11_window_get_xid(gdkWindow->gobj())) != -1) {
-            gdkWindow->add_filter(GdkSpnavFilter, windowImpl.get());
-        } else if(spnav_open() != -1) {
-            g_io_add_watch(g_io_channel_unix_new(spnav_fd()), G_IO_IN,
-                           ConsumeSpnavQueue, windowImpl.get());
-        }
+    if(spnav_open() != -1) {
+        g_io_add_watch(g_io_channel_unix_new(spnav_fd()), G_IO_IN,
+                       ConsumeSpnavQueue, windowImpl.get());
     }
-#endif
-#if defined(GDK_WINDOWING_WAYLAND)
-    if(GDK_IS_WAYLAND_DISPLAY(gdkWindow->get_display()->gobj())) {
-	if(spnav_open() != -1) {
-            g_io_add_watch(g_io_channel_unix_new(spnav_fd()), G_IO_IN,
-                           ConsumeSpnavQueue, windowImpl.get());
-        }
-    }
-#endif
-
 }
-#else
-void Request3DConnexionEventsForWindow(WindowRef window) {}
-#endif
 
 //-----------------------------------------------------------------------------
 // Message dialogs
@@ -1266,14 +1243,14 @@ public:
     }
 
     void ShowModal() override {
-        gtkDialog.signal_hide().connect([this] {
+        gtkDialog.signal_hide().connect([this]() -> void {
             auto it = std::remove(shownMessageDialogs.begin(), shownMessageDialogs.end(),
                                   shared_from_this());
             shownMessageDialogs.erase(it);
         });
         shownMessageDialogs.push_back(shared_from_this());
 
-        gtkDialog.signal_response().connect([this](int gtkResponse) {
+        gtkDialog.signal_response().connect([this](int gtkResponse) -> void {
             ProcessResponse(gtkResponse);
             gtkDialog.hide();
         });

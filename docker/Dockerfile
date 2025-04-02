@@ -18,8 +18,7 @@ RUN apt-get update && apt-get install -y \
     libpangomm-2.48-dev \
     libx11-dev \
     gettext \
-    pkg-config \
-    librust-gdkx11-sys-dev
+    pkg-config
 
 # Set up working directory
 WORKDIR /app
