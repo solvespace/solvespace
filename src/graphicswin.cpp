@@ -120,6 +120,8 @@ const MenuEntry Menu[] = {
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
 { 1, N_("Link / Assemble..."),          Command::GROUP_LINK,       S|'i',   KN, mGrp   },
 { 1, N_("Link Recent"),                 Command::GROUP_RECENT,     0,       KN, mGrp   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Toggle Group Suppression"),    Command::GROUP_TOGGLE_SUPPRESS, S|'\x7f', KN, mGrp },
 
 { 0, N_("&Sketch"),                     Command::NONE,             0,       KN, mReq   },
 { 1, N_("In &Workplane"),               Command::SEL_WORKPLANE,    '2',     KR, mReq   },

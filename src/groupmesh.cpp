@@ -221,9 +221,10 @@ void Group::GenerateShellAndMesh() {
     // Don't attempt a lathe or extrusion unless the source section is good:
     // planar and not self-intersecting.
     bool haveSrc = true;
-    if(type == Type::EXTRUDE || type == Type::LATHE || type == Type::REVOLVE) {
+    if(type == Type::EXTRUDE || type == Type::LATHE || type == Type::REVOLVE || type == Type::HELIX) {
         Group *src = SK.GetGroup(opA);
-        if(src->polyError.how != PolyError::GOOD) {
+        // Skip if the source group has errors or is suppressed
+        if(src->polyError.how != PolyError::GOOD || src->suppress) {
             haveSrc = false;
         }
     }
@@ -650,6 +651,10 @@ void Group::Draw(Canvas *canvas) {
     // Everything here gets drawn whether or not the group is hidden; we
     // can control this stuff independently, with show/hide solids, edges,
     // mesh, etc.
+    
+    // We don't skip drawing just because a group is suppressed.
+    // Suppression should control the dependency chain and 3D results,
+    // but visible controls whether things are drawn on screen.
 
     GenerateDisplayItems();
     DrawMesh(DrawMeshAs::DEFAULT, canvas);
