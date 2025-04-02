@@ -11,7 +11,11 @@
 std::string Constraint::Label() const {
     std::string result;
     if(type == Type::ANGLE) {
-        result = SS.DegreeToString(valA) + "°";
+        if(comment != "") {
+            result = comment;
+        } else {
+            result = SS.DegreeToString(valA) + "°";
+        }
     } else if(type == Type::LENGTH_RATIO || type == Type::ARC_ARC_LEN_RATIO || type == Type::ARC_LINE_LEN_RATIO) {
         result = ssprintf("%.3f:1", valA);
     } else if(type == Type::COMMENT) {
@@ -31,9 +35,6 @@ std::string Constraint::Label() const {
           // valA has units of distance
           result = SS.MmToStringSI(fabs(valA));
         }
-    }
-    if(expression != "") {
-        result = expression;
     }
     if(reference) {
         result += " REF";
