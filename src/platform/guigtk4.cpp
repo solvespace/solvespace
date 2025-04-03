@@ -1570,20 +1570,8 @@ public:
         CheckForUntitledFile();
         
         gtkNative->set_modal(true);
-        gtkNative->show();
         
-        auto loop = Glib::MainLoop::create();
-        
-        auto response_id = Gtk::ResponseType::CANCEL;
-        auto response_handler = gtkNative->signal_response().connect(
-            [&](int response) {
-                response_id = (Gtk::ResponseType)response;
-                loop->quit();
-            });
-            
-        loop->run();
-        
-        response_handler.disconnect();
+        auto response_id = gtkNative->run();
         
         return response_id == Gtk::ResponseType::ACCEPT;
     }
