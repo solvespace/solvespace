@@ -78,10 +78,9 @@
         },
         {
             "name": "glibmm",
-            "buildsystem": "cmake-ninja",
-            "builddir": true,
+            "buildsystem": "meson",
             "config-opts": [
-                "-DBUILD_EXAMPLES=OFF"
+                "-Dbuild-examples=false"
             ],
             "build-options": {
                 "env": {
@@ -111,11 +110,10 @@
         },
         {
             "name": "cairomm",
-            "buildsystem": "cmake-ninja",
-            "builddir": true,
+            "buildsystem": "meson",
             "config-opts": [
-                "-DBUILD_EXAMPLES=OFF",
-                "-DBUILD_TESTS=OFF"
+                "-Dbuild-examples=false",
+                "-Dbuild-tests=false"
             ],
             "build-options": {
                 "env": {
@@ -143,11 +141,10 @@
         },
         {
             "name": "pangomm",
-            "buildsystem": "cmake-ninja",
-            "builddir": true,
+            "buildsystem": "meson",
             "config-opts": [
-                "-DBUILD_EXAMPLES=OFF",
-                "-DBUILD_TESTS=OFF"
+                "-Dbuild-examples=false",
+                "-Dbuild-tests=false"
             ],
             "build-options": {
                 "env": {
@@ -175,11 +172,10 @@
         },
         {
             "name": "atkmm",
-            "buildsystem": "cmake-ninja",
-            "builddir": true,
+            "buildsystem": "meson",
             "config-opts": [
-                "-DBUILD_EXAMPLES=OFF",
-                "-DBUILD_TESTS=OFF"
+                "-Dbuild-examples=false",
+                "-Dbuild-tests=false"
             ],
             "build-options": {
                 "env": {
@@ -207,11 +203,10 @@
         },
         {
             "name": "gtkmm",
-            "buildsystem": "cmake-ninja",
-            "builddir": true,
+            "buildsystem": "meson",
             "config-opts": [
-                "-DBUILD_DEMOS=OFF",
-                "-DBUILD_TESTS=OFF"
+                "-Dbuild-demos=false",
+                "-Dbuild-tests=false"
             ],
             "build-options": {
                 "env": {
