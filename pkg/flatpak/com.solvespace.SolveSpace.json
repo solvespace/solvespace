@@ -97,8 +97,11 @@
         },
         {
             "name": "cairomm",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
             "config-opts": [
-                "--disable-documentation"
+                "-DBUILD_EXAMPLES=OFF",
+                "-DBUILD_TESTS=OFF"
             ],
             "sources": [
                 {
@@ -121,7 +124,17 @@
         },
         {
             "name": "pangomm",
-            "buildsystem": "meson",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
+            "config-opts": [
+                "-DBUILD_EXAMPLES=OFF",
+                "-DBUILD_TESTS=OFF"
+            ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
@@ -143,7 +156,17 @@
         },
         {
             "name": "atkmm",
-            "buildsystem": "meson",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
+            "config-opts": [
+                "-DBUILD_EXAMPLES=OFF",
+                "-DBUILD_TESTS=OFF"
+            ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
@@ -165,10 +188,11 @@
         },
         {
             "name": "gtkmm",
-            "buildsystem": "meson",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
             "config-opts": [
-                "-Dbuild-demos=false",
-                "-Dbuild-tests=false"
+                "-DBUILD_DEMOS=OFF",
+                "-DBUILD_TESTS=OFF"
             ],
             "sources": [
                 {
