@@ -1690,6 +1690,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 }
 
 void RunGui() {
+    gtkApp->run();
 }
 
 void ExitGui() {
