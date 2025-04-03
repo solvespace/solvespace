@@ -1680,7 +1680,10 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
 void RunGui() {
     setenv("GTK_A11Y", "none", 0);
-    gtkApp->run();
+    
+    if (!gtkApp->is_registered()) {
+        gtkApp->run();
+    }
 }
 
 void ExitGui() {
