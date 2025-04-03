@@ -789,8 +789,8 @@ protected:
             _entry.measure(Gtk::Orientation::VERTICAL, -1, min_height, natural_height, min_baseline, natural_baseline);
             
             Gtk::Allocation entry_allocation = _entry.get_allocation();
-            x = entry_allocation.get_x();
-            y = entry_allocation.get_y();
+            int x = entry_allocation.get_x();
+            int y = entry_allocation.get_y();
             
             _entry.size_allocate(
                 Gdk::Rectangle(x, y, entry_width > 0 ? entry_width : 100, natural_height),
@@ -1565,11 +1565,24 @@ public:
 
     bool RunModal() override {
         CheckForUntitledFile();
-        if(gtkNative->run() == Gtk::ResponseType::ACCEPT) {
-            return true;
-        } else {
-            return false;
-        }
+        
+        gtkNative->set_modal(true);
+        gtkNative->show();
+        
+        auto loop = Glib::MainLoop::create();
+        
+        auto response_id = Gtk::ResponseType::CANCEL;
+        auto response_handler = gtkNative->signal_response().connect(
+            [&](int response) {
+                response_id = (Gtk::ResponseType)response;
+                loop->quit();
+            });
+            
+        loop->run();
+        
+        response_handler.disconnect();
+        
+        return response_id == Gtk::ResponseType::ACCEPT;
     }
 };
 
