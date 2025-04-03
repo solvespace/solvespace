@@ -1679,7 +1679,10 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 }
 
 void RunGui() {
-    setenv("GTK_A11Y", "none", 0);
+    const char* display = getenv("DISPLAY");
+    if (display && (strncmp(display, ":", 1) == 0)) {
+        setenv("GTK_A11Y", "none", 0);
+    }
     
     if (!gtkApp->is_registered()) {
         gtkApp->run();
