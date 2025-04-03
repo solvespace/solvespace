@@ -23,6 +23,14 @@
         {
             "name": "mm-common",
             "buildsystem": "meson",
+            "config-opts": [
+                "-Dwarning_level=0"
+            ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
@@ -72,8 +80,14 @@
             "name": "glibmm",
             "buildsystem": "meson",
             "config-opts": [
-                "-Dbuild-examples=false"
+                "-Dbuild-examples=false",
+                "-Dwarning_level=0"
             ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
@@ -100,8 +114,14 @@
             "buildsystem": "meson",
             "config-opts": [
                 "-Dbuild-examples=false",
-                "-Dbuild-tests=false"
+                "-Dbuild-tests=false",
+                "-Dwarning_level=0"
             ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
@@ -126,8 +146,14 @@
             "buildsystem": "meson",
             "config-opts": [
                 "-Dbuild-examples=false",
-                "-Dbuild-tests=false"
+                "-Dbuild-tests=false",
+                "-Dwarning_level=0"
             ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
@@ -152,8 +178,14 @@
             "buildsystem": "meson",
             "config-opts": [
                 "-Dbuild-examples=false",
-                "-Dbuild-tests=false"
+                "-Dbuild-tests=false",
+                "-Dwarning_level=0"
             ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
@@ -178,8 +210,14 @@
             "buildsystem": "meson",
             "config-opts": [
                 "-Dbuild-demos=false",
-                "-Dbuild-tests=false"
+                "-Dbuild-tests=false",
+                "-Dwarning_level=0"
             ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
