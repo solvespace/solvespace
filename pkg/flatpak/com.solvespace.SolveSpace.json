@@ -111,11 +111,11 @@
         },
         {
             "name": "cairomm",
-            "buildsystem": "meson",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
             "config-opts": [
-                "-Dbuild-examples=false",
-                "-Dbuild-tests=false",
-                "-Dwarning_level=0"
+                "-DBUILD_EXAMPLES=OFF",
+                "-DBUILD_TESTS=OFF"
             ],
             "build-options": {
                 "env": {
@@ -143,11 +143,11 @@
         },
         {
             "name": "pangomm",
-            "buildsystem": "meson",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
             "config-opts": [
-                "-Dbuild-examples=false",
-                "-Dbuild-tests=false",
-                "-Dwarning_level=0"
+                "-DBUILD_EXAMPLES=OFF",
+                "-DBUILD_TESTS=OFF"
             ],
             "build-options": {
                 "env": {
@@ -175,11 +175,11 @@
         },
         {
             "name": "atkmm",
-            "buildsystem": "meson",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
             "config-opts": [
-                "-Dbuild-examples=false",
-                "-Dbuild-tests=false",
-                "-Dwarning_level=0"
+                "-DBUILD_EXAMPLES=OFF",
+                "-DBUILD_TESTS=OFF"
             ],
             "build-options": {
                 "env": {
@@ -207,11 +207,11 @@
         },
         {
             "name": "gtkmm",
-            "buildsystem": "meson",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
             "config-opts": [
-                "-Dbuild-demos=false",
-                "-Dbuild-tests=false",
-                "-Dwarning_level=0"
+                "-DBUILD_DEMOS=OFF",
+                "-DBUILD_TESTS=OFF"
             ],
             "build-options": {
                 "env": {
