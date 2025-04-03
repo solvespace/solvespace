@@ -997,11 +997,64 @@ public:
             
             for (const auto& subMenu : menuBarImpl->subMenus) {
                 auto menuButton = Gtk::make_managed<Gtk::Button>();
-                menuButton->set_label(subMenu->gioMenu->get_item_attribute(0, "label").get_string());
+                
+                menuButton->set_label("Menu");
+                
+                if (subMenu->gioMenu->get_n_items() > 0) {
+                    auto iter = subMenu->gioMenu->iterate_item_attributes(0);
+                    if (iter) {
+                        Glib::ustring attr_name;
+                        Glib::VariantBase value;
+                        while (iter->get_next(attr_name, value)) {
+                            if (attr_name == "label") {
+                                try {
+                                    auto variant = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(value);
+                                    menuButton->set_label(variant.get());
+                                } catch (const std::exception& e) {
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
                 
                 auto popover = Gtk::make_managed<Gtk::Popover>();
                 popover->set_parent(*menuButton);
-                popover->set_menu_model(subMenu->gioMenu);
+                
+                auto box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+                
+                for (int i = 0; i < subMenu->gioMenu->get_n_items(); i++) {
+                    Glib::ustring itemLabel = "Item " + std::to_string(i);
+                    
+                    auto iter = subMenu->gioMenu->iterate_item_attributes(i);
+                    if (iter) {
+                        Glib::ustring attr_name;
+                        Glib::VariantBase value;
+                        while (iter->get_next(attr_name, value)) {
+                            if (attr_name == "label") {
+                                try {
+                                    auto variant = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(value);
+                                    itemLabel = variant.get();
+                                } catch (const std::exception& e) {
+                                }
+                                break;
+                            }
+                        }
+                    }
+                    
+                    auto item = Gtk::make_managed<Gtk::Button>(itemLabel);
+                    
+                    if (i < static_cast<int>(subMenu->menuItems.size()) && subMenu->menuItems[i]->onTrigger) {
+                        item->signal_clicked().connect([popover, onTrigger = subMenu->menuItems[i]->onTrigger]() {
+                            popover->popdown();
+                            onTrigger();
+                        });
+                    }
+                    
+                    box->append(*item);
+                }
+                
+                popover->set_child(*box);
                 
                 menuButton->signal_clicked().connect([popover]() {
                     popover->popup();
