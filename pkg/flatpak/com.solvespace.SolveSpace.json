@@ -250,6 +250,11 @@
                 "-DFLATPAK=ON",
                 "-DENABLE_TESTS=OFF"
             ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "dir",
