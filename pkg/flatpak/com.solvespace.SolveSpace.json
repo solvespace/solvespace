@@ -193,6 +193,11 @@
             "name": "eigen",
             "buildsystem": "cmake-ninja",
             "builddir": true,
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
@@ -218,6 +223,11 @@
                 "-DBUILD_STATIC_LIBS=OFF",
                 "-DENABLE_THREADING=ON"
             ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
