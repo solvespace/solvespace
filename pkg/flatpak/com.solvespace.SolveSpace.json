@@ -78,10 +78,10 @@
         },
         {
             "name": "glibmm",
-            "buildsystem": "meson",
+            "buildsystem": "cmake-ninja",
+            "builddir": true,
             "config-opts": [
-                "-Dbuild-examples=false",
-                "-Dwarning_level=0"
+                "-DBUILD_EXAMPLES=OFF"
             ],
             "build-options": {
                 "env": {
