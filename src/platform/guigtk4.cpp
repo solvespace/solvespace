@@ -4,47 +4,36 @@
 // Commonwealth copyright Erkin Alp Güney 2025
 // Human involvement below copyrightability threshold outside the commonwealth
 //-----------------------------------------------------------------------------
+
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
 #include <json-c/json_object.h>
 #include <json-c/json_util.h>
+
 #include <glibmm/convert.h>
 #include <glibmm/main.h>
-#include <gtkmm/box.h>
-#include <gtkmm/checkbutton.h>
-#include <gtkmm/cssprovider.h>
-#include <gtkmm/entry.h>
-#include <gtkmm/filechooserdialog.h>
-#include <gtkmm/fixed.h>
-#include <gtkmm/glarea.h>
+
+#include <gtkmm/adjustment.h>
 #include <gtkmm/application.h>
-#include <gtkmm/popover.h>
-#include <errno.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <json-c/json_object.h>
-#include <json-c/json_util.h>
-#include <glibmm/convert.h>
-#include <glibmm/main.h>
 #include <gtkmm/box.h>
-#include <gtkmm/checkbutton.h>
-#include <gtkmm/cssprovider.h>
-#include <gtkmm/entry.h>
-#include <gtkmm/filechooserdialog.h>
-#include <gtkmm/fixed.h>
-#include <gtkmm/glarea.h>
-#include <gtkmm/application.h>
-#include <gtkmm/popover.h>
 #include <gtkmm/button.h>
+#include <gtkmm/checkbutton.h>
+#include <gtkmm/cssprovider.h>
+#include <gtkmm/entry.h>
+#include <gtkmm/filechooserdialog.h>
+#include <gtkmm/fixed.h>
+#include <gtkmm/glarea.h>
 #include <gtkmm/messagedialog.h>
+#include <gtkmm/popover.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/separator.h>
 #include <gtkmm/tooltip.h>
 #include <gtkmm/window.h>
-#include <gtkmm/adjustment.h>
-#include <gtkmm/eventcontrollermotion.h>
+
 #include <gtkmm/eventcontrollerkey.h>
+#include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/eventcontrollerscroll.h>
 #include <gtkmm/gestureclick.h>
 
