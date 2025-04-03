@@ -349,11 +349,9 @@ public:
 
             case Indicator::CHECK_MARK:
                 gtkMenuItem.set_has_indicator(true);
-                gtkMenuItem.set_has_indicator(false);
                 break;
 
             case Indicator::RADIO_MARK:
-                gtkMenuItem.set_has_indicator(true);
                 gtkMenuItem.set_has_indicator(true);
                 break;
         }
