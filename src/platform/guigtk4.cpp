@@ -1001,13 +1001,9 @@ public:
                 menuButton->set_label("Menu");
                 
                 if (subMenu->gioMenu->get_n_items() > 0) {
-                    auto labelVariant = subMenu->gioMenu->get_item_attribute_value(0, "label");
-                    if (labelVariant) {
-                        try {
-                            auto variant = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(labelVariant);
-                            menuButton->set_label(variant.get());
-                        } catch (const std::exception& e) {
-                        }
+                    Glib::ustring label;
+                    if (subMenu->gioMenu->get_item_attribute(0, "label", label)) {
+                        menuButton->set_label(label);
                     }
                 }
                 
@@ -1019,13 +1015,9 @@ public:
                 for (int i = 0; i < subMenu->gioMenu->get_n_items(); i++) {
                     Glib::ustring itemLabel = "Item " + std::to_string(i);
                     
-                    auto labelVariant = subMenu->gioMenu->get_item_attribute_value(i, "label");
-                    if (labelVariant) {
-                        try {
-                            auto variant = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(labelVariant);
-                            itemLabel = variant.get();
-                        } catch (const std::exception& e) {
-                        }
+                    Glib::ustring label;
+                    if (subMenu->gioMenu->get_item_attribute(i, "label", label)) {
+                        itemLabel = label;
                     }
                     
                     auto item = Gtk::make_managed<Gtk::Button>(itemLabel);
