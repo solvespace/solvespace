@@ -1001,19 +1001,12 @@ public:
                 menuButton->set_label("Menu");
                 
                 if (subMenu->gioMenu->get_n_items() > 0) {
-                    auto iter = subMenu->gioMenu->iterate_item_attributes(0);
-                    if (iter) {
-                        Glib::ustring attr_name;
-                        Glib::VariantBase value;
-                        while (iter->get_next(attr_name, value)) {
-                            if (attr_name == "label") {
-                                try {
-                                    auto variant = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(value);
-                                    menuButton->set_label(variant.get());
-                                } catch (const std::exception& e) {
-                                }
-                                break;
-                            }
+                    auto labelVariant = subMenu->gioMenu->get_item_attribute_value(0, "label");
+                    if (labelVariant) {
+                        try {
+                            auto variant = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(labelVariant);
+                            menuButton->set_label(variant.get());
+                        } catch (const std::exception& e) {
                         }
                     }
                 }
@@ -1026,19 +1019,12 @@ public:
                 for (int i = 0; i < subMenu->gioMenu->get_n_items(); i++) {
                     Glib::ustring itemLabel = "Item " + std::to_string(i);
                     
-                    auto iter = subMenu->gioMenu->iterate_item_attributes(i);
-                    if (iter) {
-                        Glib::ustring attr_name;
-                        Glib::VariantBase value;
-                        while (iter->get_next(attr_name, value)) {
-                            if (attr_name == "label") {
-                                try {
-                                    auto variant = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(value);
-                                    itemLabel = variant.get();
-                                } catch (const std::exception& e) {
-                                }
-                                break;
-                            }
+                    auto labelVariant = subMenu->gioMenu->get_item_attribute_value(i, "label");
+                    if (labelVariant) {
+                        try {
+                            auto variant = Glib::VariantBase::cast_dynamic<Glib::Variant<Glib::ustring>>(labelVariant);
+                            itemLabel = variant.get();
+                        } catch (const std::exception& e) {
                         }
                     }
                     
