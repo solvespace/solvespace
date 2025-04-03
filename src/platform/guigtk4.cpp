@@ -1001,8 +1001,7 @@ public:
                 menuButton->set_label("Menu");
                 
                 if (subMenu->gioMenu->get_n_items() > 0) {
-                    menuButton->set_label(subMenu->menuItems.empty() ? "Menu" : 
-                                         subMenu->menuItems[0]->label);
+                    menuButton->set_label("Menu " + std::to_string(i+1));
                 }
                 
                 auto popover = Gtk::make_managed<Gtk::Popover>();
@@ -1011,11 +1010,7 @@ public:
                 auto box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
                 
                 for (int i = 0; i < subMenu->gioMenu->get_n_items(); i++) {
-                    Glib::ustring itemLabel = "Item " + std::to_string(i);
-                    
-                    if (i < static_cast<int>(subMenu->menuItems.size())) {
-                        itemLabel = subMenu->menuItems[i]->label;
-                    }
+                    Glib::ustring itemLabel = "Item " + std::to_string(i+1);
                     
                     auto item = Gtk::make_managed<Gtk::Button>(itemLabel);
                     
