@@ -268,7 +268,8 @@
             "builddir": true,
             "config-opts": [
                 "-DFLATPAK=ON",
-                "-DENABLE_TESTS=OFF"
+                "-DENABLE_TESTS=OFF",
+                "-DUSE_GTK4=ON"
             ],
             "build-options": {
                 "env": {
