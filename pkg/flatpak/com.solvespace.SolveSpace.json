@@ -301,6 +301,11 @@
                 "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
                 "-DUSE_GTK4=ON"
             ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "dir",
