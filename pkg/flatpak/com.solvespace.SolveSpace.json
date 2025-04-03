@@ -96,11 +96,15 @@
         },
         {
             "name": "cairomm",
-            "buildsystem": "meson",
+            "buildsystem": "autotools",
             "config-opts": [
-                "-Dbuild-examples=false",
-                "-Dbuild-tests=false"
+                "--disable-documentation"
             ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
