@@ -991,9 +991,25 @@ public:
     void SetMenuBar(MenuBarRef newMenuBar) override {
         if(newMenuBar) {
             auto headerBar = Gtk::make_managed<Gtk::HeaderBar>();
+            headerBar->set_show_title_buttons(true);
+            
+            auto menuBarImpl = std::static_pointer_cast<MenuBarImplGtk>(newMenuBar);
+            
+            for (const auto& subMenu : menuBarImpl->subMenus) {
+                auto menuButton = Gtk::make_managed<Gtk::MenuButton>();
+                menuButton->set_label(subMenu->gioMenu->get_item_attribute_value(0, "label").get_string());
+                
+                auto popover = Gtk::make_managed<Gtk::PopoverMenu>();
+                popover->set_menu_model(subMenu->gioMenu);
+                menuButton->set_popover(*popover);
+                
+                headerBar->pack_start(*menuButton);
+            }
+            
             gtkWindow.set_titlebar(*headerBar);
         } else {
             auto headerBar = Gtk::make_managed<Gtk::HeaderBar>();
+            headerBar->set_show_title_buttons(true);
             gtkWindow.set_titlebar(*headerBar);
         }
         menuBar = newMenuBar;
