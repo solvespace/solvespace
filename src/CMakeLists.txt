@@ -418,8 +418,13 @@ if(ENABLE_GUI)
             COMMENT "Copying UI script filemanagerui.sj"
             VERBATIM)
     else()
-        target_sources(solvespace PRIVATE
-            platform/guigtk.cpp)
+        if(USE_GTK4)
+            target_sources(solvespace PRIVATE
+                platform/guigtk4.cpp)
+        else()
+            target_sources(solvespace PRIVATE
+                platform/guigtk.cpp)
+        endif()
 
         target_include_directories(solvespace SYSTEM PRIVATE
             ${GTKMM_INCLUDE_DIRS}
