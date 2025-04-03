@@ -996,12 +996,16 @@ public:
             auto menuBarImpl = std::static_pointer_cast<MenuBarImplGtk>(newMenuBar);
             
             for (const auto& subMenu : menuBarImpl->subMenus) {
-                auto menuButton = Gtk::make_managed<Gtk::MenuButton>();
-                menuButton->set_label(subMenu->gioMenu->get_item_attribute_value(0, "label").get_string());
+                auto menuButton = Gtk::make_managed<Gtk::Button>();
+                menuButton->set_label(subMenu->gioMenu->get_item_attribute(0, "label").get_string());
                 
-                auto popover = Gtk::make_managed<Gtk::PopoverMenu>();
+                auto popover = Gtk::make_managed<Gtk::Popover>();
+                popover->set_parent(*menuButton);
                 popover->set_menu_model(subMenu->gioMenu);
-                menuButton->set_popover(*popover);
+                
+                menuButton->signal_clicked().connect([popover]() {
+                    popover->popup();
+                });
                 
                 headerBar->pack_start(*menuButton);
             }
