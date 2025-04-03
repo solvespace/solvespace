@@ -1673,8 +1673,6 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         SetLocale("en_US");
     }
 
-    gtkApp->run(argc, argv);
-    
     return args;
 }
 
