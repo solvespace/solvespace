@@ -61,7 +61,7 @@ set(ENABLE_LTO        OFF CACHE BOOL
     "Whether interprocedural (global) optimizations are enabled")
 option(USE_GTK4
     "Use GTK4 instead of GTK3"
-    OFF)
+    ON)
     
 # GTK4 requires C++14 or higher and more permissive compilation
 if(USE_GTK4)
