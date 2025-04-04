@@ -94,20 +94,20 @@ You will need `git`. See the platform specific instructions below to install it.
 ### Building for Linux
 
 You will need the usual build tools, CMake, zlib, libpng, cairo, freetype. To
-build the GUI, you will need fontconfig, gtkmm 3.0 (version 3.16 or later) or 
-gtkmm 4.0 for GTK4 builds, pangomm 1.4 (or pangomm 2.48 for GTK4), OpenGL and 
+build the GUI, you will need fontconfig, gtkmm 4.0 (default) or gtkmm 3.0 (version 3.16 or later) 
+for GTK3 builds, pangomm 2.48 (or pangomm 1.4 for GTK3), OpenGL and 
 OpenGL GLU, and optionally, the Space Navigator client library.
 
-For GTK3 builds (default) on a Debian derivative (e.g. Ubuntu) these can be installed with:
+For GTK4 builds (default) on a Debian derivative (e.g. Ubuntu 24.04 or newer recommended):
 
 ```sh
 sudo apt install git build-essential cmake zlib1g-dev libpng-dev \
             libcairo2-dev libfreetype6-dev libjson-c-dev \
-            libfontconfig1-dev libgtkmm-3.0-dev libpangomm-1.4-dev \
+            libfontconfig1-dev libgtkmm-4.0-dev libpangomm-2.48-dev \
             libgl-dev libglu-dev libspnav-dev
 ```
 
-For GTK4 builds (Ubuntu 24.04 or newer recommended):
+For GTK3 builds:
 
 ```sh
 sudo apt install git build-essential cmake zlib1g-dev libpng-dev \
@@ -118,15 +118,15 @@ sudo apt install git build-essential cmake zlib1g-dev libpng-dev \
 
 On a RedHat derivative (e.g. Fedora) the dependencies can be installed with:
 
-For GTK3 builds (default):
+For GTK4 builds (default, Fedora 38 or newer recommended):
 ```sh
 sudo dnf install git gcc-c++ cmake zlib-devel libpng-devel \
             cairo-devel freetype-devel json-c-devel \
-            fontconfig-devel gtkmm30-devel pangomm-devel \
+            fontconfig-devel gtkmm4.0-devel pangomm2_48-devel \
             mesa-libGL-devel mesa-libGLU-devel libspnav-devel
 ```
 
-For GTK4 builds (Fedora 38 or newer recommended):
+For GTK3 builds:
 ```sh
 sudo dnf install git gcc-c++ cmake zlib-devel libpng-devel \
             cairo-devel freetype-devel json-c-devel \
@@ -270,14 +270,14 @@ is `build/bin/SolveSpace.app/Contents/MacOS/solvespace-cli`.
 You will need git, cmake, libexecinfo, libpng, and GTK dependencies.
 These can be installed from the ports tree:
 
-For GTK3 builds (default):
-```sh
-pkg_add -U git cmake libexecinfo png json-c gtk3mm pangomm
-```
-
-For GTK4 builds:
+For GTK4 builds (default):
 ```sh
 pkg_add -U git cmake libexecinfo png json-c gtk4mm pangomm2_48
+```
+
+For GTK3 builds:
+```sh
+pkg_add -U git cmake libexecinfo png json-c gtk3mm pangomm
 ```
 
 Before building, [check out the project and the necessary submodules](#via-source-code).
