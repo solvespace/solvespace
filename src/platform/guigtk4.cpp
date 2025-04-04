@@ -249,11 +249,7 @@ public:
             }
             return false;
         };
-        // Note: asan warnings about new-delete-type-mismatch are false positives here:
-        // https://gitlab.gnome.org/GNOME/gtkmm/-/issues/65
-        // Pass new_delete_type_mismatch=0 to ASAN_OPTIONS to disable those warnings.
-        // Unfortunately they won't go away until upgrading to gtkmm4
-        _connection = Glib::signal_timeout().connect(handler, milliseconds);
+        _connection = Glib::timeout_add(milliseconds, handler);
     }
 };
 
@@ -1256,10 +1252,14 @@ public:
                     item->set_tooltip_text(menuItem->name);
                     
                     if (menuItem->onTrigger) {
-                        item->signal_clicked().connect([popover, onTrigger = menuItem->onTrigger]() {
-                            popover->popdown();
-                            onTrigger();
-                        });
+                        auto click_controller = Gtk::GestureClick::create();
+                        click_controller->set_button(GDK_BUTTON_PRIMARY);
+                        click_controller->signal_released().connect(
+                            [popover, onTrigger = menuItem->onTrigger](int n_press, double x, double y) {
+                                popover->popdown();
+                                onTrigger();
+                            });
+                        item->add_controller(click_controller);
                     }
                     
                     auto menuItemImpl = std::dynamic_pointer_cast<MenuItemImplGtk>(menuItem);
@@ -1652,10 +1652,18 @@ public:
             }
         });
         
-        gtkDialog.signal_response().connect([this](int gtkResponse) -> void {
-            ProcessResponse(gtkResponse);
-            gtkDialog.hide();
-        });
+        auto response_controller = Gtk::EventControllerLegacy::create();
+        response_controller->signal_event().connect(
+            [this](const GdkEvent* event) -> bool {
+                if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
+                    int gtkResponse = gtkDialog.get_response();
+                    ProcessResponse(gtkResponse);
+                    gtkDialog.hide();
+                    return true;
+                }
+                return false;
+            });
+        gtkDialog.add_controller(response_controller);
 
         gtkDialog.show();
     }
@@ -1678,11 +1686,17 @@ public:
         controller->add_shortcut(shortcut);
         gtkDialog.add_controller(controller);
         
-        auto response_handler = gtkDialog.signal_response().connect(
-            [&](int r) {
-                response = r;
-                loop->quit();
-            }, false);
+        auto response_controller = Gtk::EventControllerLegacy::create();
+        response_controller->signal_event().connect(
+            [&](const GdkEvent* event) -> bool {
+                if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
+                    response = gtkDialog.get_response();
+                    loop->quit();
+                    return true;
+                }
+                return false;
+            });
+        gtkDialog.add_controller(response_controller);
             
         auto close_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
         auto close_connection = close_binding->connect([&loop, &response](bool visible) {
@@ -2153,24 +2167,35 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
     
     if (settings) {
-        settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
-            []() {
+        auto theme_binding = Gtk::PropertyExpression<bool>::create(
+            settings->property_gtk_application_prefer_dark_theme());
+        theme_binding->connect(
+            [](bool dark_theme) {
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                 SS.GW.Invalidate();
             });
     }
     
     std::vector<std::string> args;
-    gtkApp->signal_command_line().connect(
-        [&args, argc, argv](const Glib::RefPtr<Gio::ApplicationCommandLine>& command_line) -> int {
-            int app_argc;
-            char **app_argv = command_line->get_arguments(app_argc);
-            
-            args = InitCli(app_argc, app_argv);
-            
-            gtkApp->activate();
-            return 0;
-        }, false);
+    
+    auto command_controller = Gtk::EventControllerLegacy::create();
+    command_controller->signal_event().connect(
+        [&args, argc, argv, gtkApp](const GdkEvent* event) -> bool {
+            if (gdk_event_get_event_type(event) == GDK_APPLICATION_COMMAND) {
+                auto command_line = gdk_application_command_get_command_line(event);
+                auto app_command_line = Gio::wrap(GIO_APPLICATION_COMMAND_LINE(command_line));
+                
+                int app_argc;
+                char **app_argv = app_command_line->get_arguments(app_argc);
+                
+                args = InitCli(app_argc, app_argv);
+                
+                gtkApp->activate();
+                return true;
+            }
+            return false;
+        });
+    gtkApp->add_controller(command_controller);
 
     style_provider->load_from_data(R"(
     /* Base entry styling */
