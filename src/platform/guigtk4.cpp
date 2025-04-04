@@ -1013,12 +1013,23 @@ public:
 
         auto adjustment = Gtk::Adjustment::create(0.0, 0.0, 100.0, 1.0, 10.0, 10.0);
         _scrollbar.set_adjustment(adjustment);
-        adjustment->signal_value_changed().
-            connect(sigc::mem_fun(*this, &GtkWindow::on_scrollbar_value_changed), false);
+        
+        auto value_binding = Gtk::PropertyExpression<double>::create(adjustment->property_value());
+        value_binding->connect([this](double value) {
+            if(_receiver->onScrollbarAdjusted) {
+                _receiver->onScrollbarAdjusted(value);
+            }
+        });
 
         get_gl_widget().set_has_tooltip(true);
-        get_gl_widget().signal_query_tooltip().
-            connect(sigc::mem_fun(*this, &GtkWindow::on_query_tooltip), false);
+        auto tooltip_controller = Gtk::EventController::create();
+        tooltip_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        tooltip_controller->signal_query_tooltip().connect(
+            [this](int x, int y, bool keyboard_tooltip, 
+                  const Glib::RefPtr<Gtk::Tooltip> &tooltip) -> bool {
+                return on_query_tooltip(x, y, keyboard_tooltip, tooltip);
+            }, false);
+        get_gl_widget().add_controller(tooltip_controller);
             
         setup_event_controllers();
     }
@@ -1075,14 +1086,26 @@ protected:
             }, false);
         add_controller(_motion_controller);
         
-        signal_close_request().connect(
-            [this]() -> bool {
-                if(_receiver->onClose) {
-                    _receiver->onClose();
-                    return true; // Prevent default close behavior
+        auto close_controller = Gtk::EventControllerLegacy::create();
+        close_controller->signal_event().connect(
+            [this](const GdkEvent* event) -> bool {
+                if (gdk_event_get_event_type(event) == GDK_DELETE) {
+                    if(_receiver->onClose) {
+                        _receiver->onClose();
+                        return true; // Prevent default close behavior
+                    }
                 }
                 return false;
             }, false);
+        add_controller(close_controller);
+        
+        auto fullscreen_binding = Gtk::PropertyExpression<bool>::create(property_fullscreened());
+        fullscreen_binding->connect([this](bool is_fullscreen) {
+            _is_fullscreen = is_fullscreen;
+            if(_receiver->onFullScreen) {
+                _receiver->onFullScreen(_is_fullscreen);
+            }
+        });
     }
 
     bool on_query_tooltip(int x, int y, bool keyboard_tooltip,
@@ -1090,19 +1113,6 @@ protected:
         tooltip->set_text(_tooltip_text);
         tooltip->set_tip_area(_tooltip_area);
         return !_tooltip_text.empty() && (keyboard_tooltip || _is_under_cursor);
-    }
-
-    void on_fullscreen_changed() {
-        _is_fullscreen = is_fullscreen();
-        if(_receiver->onFullScreen) {
-            _receiver->onFullScreen(_is_fullscreen);
-        }
-    }
-
-    void on_scrollbar_value_changed() {
-        if(_receiver->onScrollbarAdjusted) {
-            _receiver->onScrollbarAdjusted(_scrollbar.get_adjustment()->get_value());
-        }
     }
 };
 
@@ -1709,12 +1719,25 @@ public:
     void InitFileChooser(Gtk::FileChooser &chooser) {
         gtkChooser = &chooser;
         if (auto dialog = dynamic_cast<Gtk::FileChooserDialog*>(gtkChooser)) {
-            dialog->signal_response().connect(
-                [this](int response) { 
-                    if (response == Gtk::ResponseType::OK) {
-                        this->FilterChanged(); 
+            auto response_controller = Gtk::EventControllerLegacy::create();
+            response_controller->signal_event().connect(
+                [this, dialog](const GdkEvent* event) -> bool {
+                    if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
+                        int response = dialog->get_response();
+                        if (response == Gtk::ResponseType::OK) {
+                            this->FilterChanged();
+                        }
+                        return false;
                     }
+                    return false;
                 }, false);
+            dialog->add_controller(response_controller);
+            
+            auto filter_binding = Gtk::PropertyExpression<Glib::RefPtr<Gtk::FileFilter>>::create(
+                gtkChooser->property_filter());
+            filter_binding->connect([this](Glib::RefPtr<Gtk::FileFilter> filter) {
+                this->FilterChanged();
+            });
         }
     }
 
@@ -1865,16 +1888,39 @@ public:
         auto loop = Glib::MainLoop::create();
         auto response_id = Gtk::ResponseType::CANCEL;
         
-        auto response_handler = gtkDialog.signal_response().connect(
-            [&](int response) {
-                response_id = static_cast<Gtk::ResponseType>(response);
+        auto response_controller = Gtk::EventControllerLegacy::create();
+        response_controller->signal_event().connect(
+            [&](const GdkEvent* event) -> bool {
+                if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
+                    response_id = static_cast<Gtk::ResponseType>(gtkDialog.get_response());
+                    loop->quit();
+                    return true;
+                }
+                return false;
+            }, false);
+        gtkDialog.add_controller(response_controller);
+        
+        auto shortcut_controller = Gtk::ShortcutController::create();
+        auto action = Gtk::CallbackAction::create([&loop]() {
+            loop->quit();
+            return true;
+        });
+        
+        auto shortcut = Gtk::Shortcut::create(
+            Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
+            action);
+        shortcut_controller->add_shortcut(shortcut);
+        gtkDialog.add_controller(shortcut_controller);
+        
+        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
+        auto visible_connection = visible_binding->connect([&loop](bool visible) {
+            if (!visible) {
                 loop->quit();
-            });
+            }
+        });
         
         gtkDialog.show();
         loop->run();
-        
-        response_handler.disconnect();
         
         return response_id == Gtk::ResponseType::OK;
     }
@@ -1919,14 +1965,35 @@ public:
         int response_id = Gtk::ResponseType::CANCEL;
         auto loop = Glib::MainLoop::create();
         
-        auto response_handler = gtkNative->signal_response().connect(
-            [&](int response) {
+        auto response_binding = Gtk::PropertyExpression<int>::create(gtkNative->property_response());
+        auto response_connection = response_binding->connect([&](int response) {
+            if (response != Gtk::ResponseType::NONE) {
                 response_id = response;
                 loop->quit();
-            });
+            }
+        });
+        
+        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkNative->property_visible());
+        auto visible_connection = visible_binding->connect([&loop](bool visible) {
+            if (!visible) {
+                loop->quit();
+            }
+        });
             
         if (auto widget = gtkNative->get_widget()) {
             widget->add_css_class("solvespace-file-dialog");
+            
+            auto shortcut_controller = Gtk::ShortcutController::create();
+            auto action = Gtk::CallbackAction::create([&]() {
+                gtkNative->response(Gtk::ResponseType::CANCEL);
+                return true;
+            });
+            
+            auto shortcut = Gtk::Shortcut::create(
+                Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
+                action);
+            shortcut_controller->add_shortcut(shortcut);
+            widget->add_controller(shortcut_controller);
         }
         
         gtkNative->show();
