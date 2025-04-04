@@ -1118,8 +1118,8 @@ public:
                 }
                 
                 menuButton->set_tooltip_text(menuButton->get_label());
-                menuButton->get_accessible()->set_role(Gtk::AccessibleRole::MENU_BUTTON);
-                menuButton->get_accessible()->set_name(menuButton->get_label() + " Menu");
+                menuButton->set_accessible_role(Gtk::AccessibleRole::MENU_BUTTON);
+                menuButton->set_accessible_name(menuButton->get_label() + " Menu");
                 
                 auto popover = Gtk::make_managed<Gtk::Popover>();
                 menuButton->set_popover(*popover);
@@ -1142,8 +1142,8 @@ public:
                     item->add_css_class("menu-item");
                     item->set_halign(Gtk::Align::FILL);
                     
-                    item->get_accessible()->set_role(Gtk::AccessibleRole::MENU_ITEM);
-                    item->get_accessible()->set_name(menuItem->label);
+                    item->set_accessible_role(Gtk::AccessibleRole::MENU_ITEM);
+                    item->set_accessible_name(menuItem->label);
                     
                     if (menuItem->onTrigger) {
                         item->signal_clicked().connect([popover, onTrigger = menuItem->onTrigger]() {
@@ -1471,7 +1471,7 @@ public:
     }
 
     void SetMessage(std::string message) override {
-        gtkDialog.set_message(message);
+        gtkDialog.set_text(message);
     }
 
     void SetDescription(std::string description) override {
@@ -1773,7 +1773,19 @@ public:
     bool RunModal() override {
         CheckForUntitledFile();
         
-        auto response_id = gtkNative->show();
+        int response_id = Gtk::ResponseType::CANCEL;
+        auto loop = Glib::MainLoop::create();
+        
+        auto response_handler = gtkNative->signal_response().connect(
+            [&](int response) {
+                response_id = response;
+                loop->quit();
+            });
+            
+        gtkNative->show();
+        loop->run();
+        
+        response_handler.disconnect();
         
         return response_id == Gtk::ResponseType::ACCEPT;
     }
