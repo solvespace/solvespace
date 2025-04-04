@@ -1044,49 +1044,71 @@ public:
             
             auto menuBarImpl = std::static_pointer_cast<MenuBarImplGtk>(newMenuBar);
             
-            int menuIndex = 0;
-            for (const auto& subMenu : menuBarImpl->subMenus) {
+            for (size_t menuIndex = 0; menuIndex < menuBarImpl->subMenus.size(); menuIndex++) {
+                const auto& subMenu = menuBarImpl->subMenus[menuIndex];
                 auto menuButton = Gtk::make_managed<Gtk::MenuButton>();
                 
-                menuButton->set_label("Menu");
-                
+                Glib::VariantBase labelVariant;
                 if (subMenu->gioMenu->get_n_items() > 0) {
+                    subMenu->gioMenu->get_item_attribute(0, "label", labelVariant);
+                    Glib::ustring menuLabel;
+                    labelVariant.get(menuLabel);
+                    if (!menuLabel.empty()) {
+                        menuButton->set_label(menuLabel);
+                    } else {
+                        menuButton->set_label("Menu " + std::to_string(menuIndex+1));
+                    }
+                } else {
                     menuButton->set_label("Menu " + std::to_string(menuIndex+1));
                 }
                 
-                menuIndex++;
+                menuButton->set_tooltip_text(menuButton->get_label());
+                menuButton->get_accessible()->set_role(Gtk::AccessibleRole::MENU_BUTTON);
+                menuButton->get_accessible()->set_name(menuButton->get_label() + " Menu");
                 
                 auto popover = Gtk::make_managed<Gtk::Popover>();
                 menuButton->set_popover(*popover);
                 
-                auto box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-                box->set_margin_start(4);
-                box->set_margin_end(4);
-                box->set_margin_top(4);
-                box->set_margin_bottom(4);
-                box->set_spacing(2);
+                auto grid = Gtk::make_managed<Gtk::Grid>();
+                grid->set_margin_start(4);
+                grid->set_margin_end(4);
+                grid->set_margin_top(4);
+                grid->set_margin_bottom(4);
+                grid->set_row_spacing(2);
+                grid->set_column_spacing(8);
                 
-                for (int i = 0; i < subMenu->gioMenu->get_n_items(); i++) {
-                    Glib::ustring itemLabel = "Item " + std::to_string(i+1);
+                for (size_t i = 0; i < subMenu->menuItems.size(); i++) {
+                    auto menuItem = subMenu->menuItems[i];
                     
                     auto item = Gtk::make_managed<Gtk::Button>();
-                    item->set_label(itemLabel);
+                    item->set_label(menuItem->label);
                     item->set_has_frame(false);
                     item->add_css_class("flat");
+                    item->add_css_class("menu-item");
                     item->set_halign(Gtk::Align::FILL);
                     
-                    if (i < static_cast<int>(subMenu->menuItems.size()) && subMenu->menuItems[i]->onTrigger) {
-                        item->signal_clicked().connect([popover, onTrigger = subMenu->menuItems[i]->onTrigger]() {
+                    item->get_accessible()->set_role(Gtk::AccessibleRole::MENU_ITEM);
+                    item->get_accessible()->set_name(menuItem->label);
+                    
+                    if (menuItem->onTrigger) {
+                        item->signal_clicked().connect([popover, onTrigger = menuItem->onTrigger]() {
                             popover->popdown();
                             onTrigger();
                         });
                     }
                     
-                    box->append(*item);
+                    grid->attach(*item, 0, i, 1, 1);
+                    
+                    if (!menuItem->shortcut.empty()) {
+                        auto shortcutLabel = Gtk::make_managed<Gtk::Label>();
+                        shortcutLabel->set_label(menuItem->shortcut);
+                        shortcutLabel->add_css_class("dim-label");
+                        shortcutLabel->set_halign(Gtk::Align::END);
+                        grid->attach(*shortcutLabel, 1, i, 1, 1);
+                    }
                 }
                 
-                popover->set_child(*box);
-                
+                popover->set_child(*grid);
                 
                 headerBar->pack_start(*menuButton);
             }
