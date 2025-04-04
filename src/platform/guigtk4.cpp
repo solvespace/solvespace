@@ -809,11 +809,12 @@ class GtkWindow : public Gtk::Window {
     Gtk::Box            _hbox;
     GtkEditorOverlay    _editor_overlay;
     Gtk::Scrollbar      _scrollbar;
-    bool                _is_under_cursor = false;
-    bool                _is_fullscreen = false;
     std::string         _tooltip_text;
     Gdk::Rectangle      _tooltip_area;
     Glib::RefPtr<Gtk::EventControllerMotion> _motion_controller;
+    
+    Glib::Property<bool> _is_under_cursor_prop;
+    Glib::Property<bool> _is_fullscreen_prop;
 
 public:
     GtkWindow(Platform::Window *receiver) : 
@@ -821,7 +822,9 @@ public:
         _vbox(Gtk::Orientation::VERTICAL),
         _hbox(Gtk::Orientation::HORIZONTAL),
         _editor_overlay(receiver),
-        _scrollbar() {
+        _scrollbar(),
+        _is_under_cursor_prop(*this, "is-under-cursor", false),
+        _is_fullscreen_prop(*this, "is-fullscreen", false) {
         _scrollbar.set_orientation(Gtk::Orientation::VERTICAL);
         
         _hbox.set_hexpand(true);
@@ -852,7 +855,7 @@ public:
     }
 
     bool is_full_screen() const {
-        return _is_fullscreen;
+        return _is_fullscreen_prop.get_value();
     }
 
     Gtk::HeaderBar *get_menu_bar() const {
@@ -895,11 +898,11 @@ protected:
         _motion_controller = Gtk::EventControllerMotion::create();
         _motion_controller->signal_enter().connect(
             [this](double x, double y) -> void {
-                _is_under_cursor = true;
+                _is_under_cursor_prop.set_value(true);
             });
         _motion_controller->signal_leave().connect(
             [this]() -> void {
-                _is_under_cursor = false;
+                _is_under_cursor_prop.set_value(false);
             });
         add_controller(_motion_controller);
         
@@ -917,13 +920,13 @@ protected:
                           const Glib::RefPtr<Gtk::Tooltip> &tooltip) {
         tooltip->set_text(_tooltip_text);
         tooltip->set_tip_area(_tooltip_area);
-        return !_tooltip_text.empty() && (keyboard_tooltip || _is_under_cursor);
+        return !_tooltip_text.empty() && (keyboard_tooltip || _is_under_cursor_prop.get_value());
     }
 
     void on_fullscreen_changed() {
-        _is_fullscreen = is_fullscreen();
+        _is_fullscreen_prop.set_value(is_fullscreen());
         if(_receiver->onFullScreen) {
-            _receiver->onFullScreen(_is_fullscreen);
+            _receiver->onFullScreen(_is_fullscreen_prop.get_value());
         }
     }
 
