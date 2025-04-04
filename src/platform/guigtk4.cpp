@@ -1601,7 +1601,19 @@ public:
         
         gtkNative->set_modal(true);
         
-        auto response_id = gtkNative->run();
+        auto loop = Glib::MainLoop::create();
+        auto response_id = Gtk::ResponseType::CANCEL;
+        
+        auto response_handler = gtkNative->signal_response().connect(
+            [&](int response) {
+                response_id = static_cast<Gtk::ResponseType>(response);
+                loop->quit();
+            });
+        
+        gtkNative->show();
+        loop->run();
+        
+        response_handler.disconnect();
         
         return response_id == Gtk::ResponseType::ACCEPT;
     }
