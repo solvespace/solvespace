@@ -1409,12 +1409,12 @@ public:
 
             case Type::WARNING:
                 icon_name = "dialog-warning";
-                gtkDialog.set_message_dialog_flags(Gtk::DialogFlags::MODAL);
+                gtkDialog.set_modal(true);
                 break;
 
             case Type::ERROR:
                 icon_name = "dialog-error";
-                gtkDialog.set_message_dialog_flags(Gtk::DialogFlags::MODAL);
+                gtkDialog.set_modal(true);
                 break;
         }
         
@@ -1826,11 +1826,6 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
     
-    gtkApp->set_application_id("org.solvespace.SolveSpace");
-    
-    
-    gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
-    
     auto style_provider = Gtk::CssProvider::create();
     style_provider->load_from_data(R"(
         .solvespace-app {
@@ -1843,8 +1838,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         style_provider,
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         
-    auto display = Gdk::Display::get_default();
-    auto settings = Gtk::Settings::get_for_display(display);
+    auto settings = Gtk::Settings::get_default();
     
     if (settings) {
         settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
@@ -1873,7 +1867,6 @@ std::vector<std::string> InitGui(int argc, char **argv) {
             return 0;
         }, false);
 
-    Glib::RefPtr<Gtk::CssProvider> style_provider = Gtk::CssProvider::create();
     style_provider->load_from_data(R"(
     /* Base entry styling */
     entry {
@@ -1974,7 +1967,7 @@ void RunGui() {
         
         gtkApp->hold();
         
-        auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
+        auto settings = Gtk::Settings::get_default();
         if (settings) {
             auto theme_property = settings->property_gtk_application_prefer_dark_theme();
             theme_property.signal_changed().connect(
