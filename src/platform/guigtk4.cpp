@@ -1748,22 +1748,63 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     Glib::RefPtr<Gtk::CssProvider> style_provider = Gtk::CssProvider::create();
     style_provider->load_from_data(R"(
+    /* Base entry styling */
     entry {
         background: white;
         color: black;
         border-radius: 4px;
         padding: 2px;
+        min-height: 24px;
     }
     
+    /* Custom editor entry styling */
     .solvespace-editor-entry {
         background: transparent;
         padding: 0;
         margin: 0;
+        caret-color: #0066cc;
     }
     
+    /* Button styling */
     button.flat {
         padding: 6px;
         margin: 1px;
+        border-radius: 4px;
+    }
+    
+    /* Dialog styling */
+    .dialog-icon {
+        min-width: 32px;
+        min-height: 32px;
+        margin: 8px;
+    }
+    
+    /* Message dialog styling */
+    .message-dialog-content {
+        margin: 12px;
+        padding: 8px;
+    }
+    
+    /* Header bar styling */
+    headerbar {
+        padding: 4px;
+        min-height: 38px;
+    }
+    
+    /* Scrollbar styling */
+    scrollbar {
+        background-color: transparent;
+    }
+    
+    scrollbar slider {
+        background-color: rgba(128, 128, 128, 0.7);
+        border-radius: 6px;
+        min-width: 8px;
+        min-height: 8px;
+    }
+    
+    scrollbar slider:hover {
+        background-color: rgba(128, 128, 128, 0.9);
     }
     )");
     
