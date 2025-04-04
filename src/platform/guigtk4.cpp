@@ -1104,6 +1104,7 @@ public:
             for (size_t menuIndex = 0; menuIndex < menuBarImpl->subMenus.size(); menuIndex++) {
                 const auto& subMenu = menuBarImpl->subMenus[menuIndex];
                 auto menuButton = Gtk::make_managed<Gtk::MenuButton>();
+                menuButton->add_css_class("menu-button");
                 
                 Glib::VariantBase labelVariant;
                 if (subMenu->gioMenu->get_n_items() > 0) {
@@ -1424,6 +1425,11 @@ public:
                     Gtk::ButtonsType::NONE, /*modal=*/true)
     {
         SetTitle("Message");
+        
+        auto button_area = gtkDialog.get_action_area();
+        if (button_area) {
+            button_area->add_css_class("dialog-button-box");
+        }
     }
 
     void SetType(Type type) override {
@@ -1465,6 +1471,7 @@ public:
         gtkImage.add_css_class("dialog-icon");
         
         auto content_area = gtkDialog.get_content_area();
+        content_area->add_css_class("dialog-content");
         content_area->set_margin_start(12);
         content_area->set_margin_end(12);
         content_area->set_margin_top(12);
