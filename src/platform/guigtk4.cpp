@@ -463,10 +463,10 @@ MenuRef CreateMenu() {
 class MenuBarImplGtk final : public MenuBar {
 public:
     Glib::RefPtr<Gio::Menu> gioMenuBar;
-    Gtk::Box gtkMenuBar;
     std::vector<std::shared_ptr<MenuImplGtk>> subMenus;
+    std::vector<Gtk::MenuButton*> menuButtons;
     
-    MenuBarImplGtk() : gtkMenuBar(Gtk::Orientation::HORIZONTAL) {
+    MenuBarImplGtk() {
         gioMenuBar = Gio::Menu::create();
     }
 
@@ -480,12 +480,28 @@ public:
         
         return subMenu;
     }
+    
+    Gtk::MenuButton* CreateMenuButton(const std::string &label, const std::shared_ptr<MenuImplGtk> &menu) {
+        auto button = Gtk::make_managed<Gtk::MenuButton>();
+        button->set_label(PrepareMnemonics(label));
+        button->set_menu_model(menu->gioMenu);
+        button->add_css_class("menu-button");
+        
+        button->set_accessible_role(Gtk::AccessibleRole::MENU_BUTTON);
+        button->set_accessible_name(label + " Menu");
+        
+        button->set_tooltip_text(label);
+        
+        menuButtons.push_back(button);
+        return button;
+    }
 
     void Clear() override {
         while (gioMenuBar->get_n_items() > 0) {
             gioMenuBar->remove(0);
         }
         
+        menuButtons.clear();
         subMenus.clear();
     }
 };
@@ -1165,12 +1181,10 @@ public:
                 auto popover = Gtk::make_managed<Gtk::Popover>();
                 menuButton->set_popover(*popover);
                 
-                auto box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
-                box->set_margin_start(4);
-                box->set_margin_end(4);
-                box->set_margin_top(4);
-                box->set_margin_bottom(4);
-                box->set_spacing(2);
+                auto grid = Gtk::make_managed<Gtk::Grid>();
+                grid->set_row_spacing(2);
+                grid->set_column_spacing(8);
+                grid->set_margin(8);
                 
                 for (size_t i = 0; i < subMenu->menuItems.size(); i++) {
                     auto menuItem = subMenu->menuItems[i];
@@ -1195,24 +1209,22 @@ public:
                     
                     auto menuItemImpl = std::dynamic_pointer_cast<MenuItemImplGtk>(menuItem);
                     if (menuItemImpl && !menuItemImpl->shortcutText.empty()) {
-                        auto itemBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
-                        itemBox->set_spacing(8);
-                        itemBox->append(*item);
+                        grid->attach(*item, 0, i, 1, 1);
                         
                         auto shortcutLabel = Gtk::make_managed<Gtk::Label>();
                         shortcutLabel->set_label(menuItemImpl->shortcutText);
                         shortcutLabel->add_css_class("dim-label");
                         shortcutLabel->set_halign(Gtk::Align::END);
                         shortcutLabel->set_hexpand(true);
-                        itemBox->append(*shortcutLabel);
+                        shortcutLabel->set_margin_start(16);
                         
-                        box->append(*itemBox);
+                        grid->attach(*shortcutLabel, 1, i, 1, 1);
                     } else {
-                        box->append(*item);
+                        grid->attach(*item, 0, i, 2, 1);
                     }
                 }
                 
-                popover->set_child(*box);
+                popover->set_child(*grid);
                 
                 headerBar->pack_start(*menuButton);
             }
