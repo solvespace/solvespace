@@ -1949,14 +1949,35 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 void RunGui() {
     const char* display = getenv("DISPLAY");
     if (display && (strncmp(display, ":", 1) == 0)) {
-        setenv("GTK_A11Y", "none", 0);
+        const char* ci = getenv("CI");
+        if (ci && (strcmp(ci, "true") == 0)) {
+            setenv("GTK_A11Y", "none", 0);
+        } else {
+            const char* a11y_bus = getenv("AT_SPI_BUS_ADDRESS");
+            if (!a11y_bus) {
+                setenv("GTK_A11Y", "none", 0);
+            }
+        }
     } else {
         unsetenv("GTK_A11Y");
     }
     
     if (!gtkApp->is_registered()) {
         gtkApp->register_application();
-        gtkApp->hold(); // Prevent application from exiting when last window closes
+        
+        gtkApp->hold();
+        
+        auto portal = Gtk::Settings::get_default();
+        if (portal) {
+            portal->property_gtk_application_prefer_dark_theme().signal_changed().connect(
+                []() {
+                    SS.UndoAndExitAllScreens();
+                    SS.ReloadAllImported();
+                    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+                    SS.GW.Invalidate();
+                });
+        }
+        
         gtkApp->run();
     }
 }
