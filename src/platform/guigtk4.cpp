@@ -557,50 +557,51 @@ protected:
     void setup_event_controllers() {
         auto motion_controller = Gtk::EventControllerMotion::create();
         motion_controller->signal_motion().connect(
-            [this](double x, double y) {
-                GdkModifierType state = GdkModifierType(0);
-                process_pointer_event(MouseEvent::Type::MOTION, x, y, state);
+            [this, motion_controller](double x, double y) {
+                auto state = motion_controller->get_current_event_state();
+                process_pointer_event(MouseEvent::Type::MOTION, x, y, static_cast<GdkModifierType>(state));
                 return true;
-            }, false);
+            });
         motion_controller->signal_leave().connect(
             [this]() {
                 double x, y;
                 get_pointer_position(x, y);
                 process_pointer_event(MouseEvent::Type::LEAVE, x, y, GdkModifierType(0));
                 return true;
-            }, false);
+            });
         add_controller(motion_controller);
 
         auto gesture_click = Gtk::GestureClick::create();
         gesture_click->set_button(0); // Listen for any button
         gesture_click->signal_pressed().connect(
             [this, gesture_click](int n_press, double x, double y) {
-                GdkModifierType state = GdkModifierType(0);
+                auto state = gesture_click->get_current_event_state();
                 guint button = gesture_click->get_current_button();
                 process_pointer_event(
                     n_press > 1 ? MouseEvent::Type::DBL_PRESS : MouseEvent::Type::PRESS, 
-                    x, y, state, button);
+                    x, y, static_cast<GdkModifierType>(state), button);
+                grab_focus(); // Ensure we get keyboard focus on click
                 return true;
-            }, false);
+            });
         gesture_click->signal_released().connect(
             [this, gesture_click](int n_press, double x, double y) {
-                GdkModifierType state = GdkModifierType(0);
+                auto state = gesture_click->get_current_event_state();
                 guint button = gesture_click->get_current_button();
-                process_pointer_event(MouseEvent::Type::RELEASE, x, y, state, button);
+                process_pointer_event(MouseEvent::Type::RELEASE, x, y, static_cast<GdkModifierType>(state), button);
                 return true;
-            }, false);
+            });
         add_controller(gesture_click);
 
         auto scroll_controller = Gtk::EventControllerScroll::create();
         scroll_controller->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
         scroll_controller->signal_scroll().connect(
-            [this](double dx, double dy) {
+            [this, scroll_controller](double dx, double dy) {
                 double x, y;
                 get_pointer_position(x, y);
-                GdkModifierType state = GdkModifierType(0);
-                process_pointer_event(MouseEvent::Type::SCROLL_VERT, x, y, state, 0, -dy);
+                auto state = scroll_controller->get_current_event_state();
+                process_pointer_event(MouseEvent::Type::SCROLL_VERT, x, y, static_cast<GdkModifierType>(state), 0, -dy);
                 return true;
-            }, false);
+            });
         add_controller(scroll_controller);
 
         auto key_controller = Gtk::EventControllerKey::create();
@@ -608,13 +609,16 @@ protected:
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return process_key_event(KeyboardEvent::Type::PRESS, keyval, gdk_state);
-            }, false);
+            });
         key_controller->signal_key_released().connect(
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return process_key_event(KeyboardEvent::Type::RELEASE, keyval, gdk_state);
-            }, false);
+            });
         add_controller(key_controller);
+        
+        auto focus_controller = Gtk::EventControllerFocus::create();
+        add_controller(focus_controller);
     }
 
     void get_pointer_position(double &x, double &y) {
@@ -677,15 +681,19 @@ public:
         Pango::FontDescription font_desc;
         font_desc.set_family(is_monospace ? "monospace" : "normal");
         font_desc.set_absolute_size(font_height * Pango::SCALE);
+        
         auto css_provider = Gtk::CssProvider::create();
         std::string css_data = "entry { font-family: ";
         css_data += (is_monospace ? "monospace" : "normal");
         css_data += "; font-size: ";
         css_data += std::to_string(font_height);
-        css_data += "px; }";
+        css_data += "px; padding: 0; margin: 0; background: transparent; }";
         css_provider->load_from_data(css_data);
+        
         _entry.get_style_context()->add_provider(css_provider, 
             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+            
+        _entry.add_css_class("solvespace-editor-entry");
 
         // The y coordinate denotes baseline.
         Pango::FontMetrics font_metrics = get_pango_context()->get_metrics(font_desc);
@@ -933,7 +941,12 @@ public:
     GtkWindow       gtkWindow;
     MenuBarRef      menuBar;
 
-    WindowImplGtk(Window::Kind kind) : gtkWindow(this) {
+    Glib::Property<bool> visible_property;
+    
+    WindowImplGtk(Window::Kind kind) : 
+        gtkWindow(this),
+        visible_property(*this, "visible", false)
+    {
         switch(kind) {
             case Kind::TOPLEVEL:
                 break;
@@ -946,6 +959,14 @@ public:
 
         auto icon = LoadPng("freedesktop/solvespace-48x48.png");
         gtkWindow.set_icon_name("solvespace");
+        
+        visible_property.signal_changed().connect([this]() {
+            if (visible_property.get_value()) {
+                gtkWindow.show();
+            } else {
+                gtkWindow.hide();
+            }
+        });
     }
 
     double GetPixelDensity() override {
@@ -961,11 +982,7 @@ public:
     }
 
     void SetVisible(bool visible) override {
-        if(visible) {
-            gtkWindow.show();
-        } else {
-            gtkWindow.hide();
-        }
+        visible_property.set_value(visible);
     }
 
     void Focus() override {
@@ -997,7 +1014,7 @@ public:
             
             int menuIndex = 0;
             for (const auto& subMenu : menuBarImpl->subMenus) {
-                auto menuButton = Gtk::make_managed<Gtk::Button>();
+                auto menuButton = Gtk::make_managed<Gtk::MenuButton>();
                 
                 menuButton->set_label("Menu");
                 
@@ -1008,14 +1025,23 @@ public:
                 menuIndex++;
                 
                 auto popover = Gtk::make_managed<Gtk::Popover>();
-                popover->set_parent(*menuButton);
+                menuButton->set_popover(*popover);
                 
                 auto box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+                box->set_margin_start(4);
+                box->set_margin_end(4);
+                box->set_margin_top(4);
+                box->set_margin_bottom(4);
+                box->set_spacing(2);
                 
                 for (int i = 0; i < subMenu->gioMenu->get_n_items(); i++) {
                     Glib::ustring itemLabel = "Item " + std::to_string(i+1);
                     
-                    auto item = Gtk::make_managed<Gtk::Button>(itemLabel);
+                    auto item = Gtk::make_managed<Gtk::Button>();
+                    item->set_label(itemLabel);
+                    item->set_has_frame(false);
+                    item->add_css_class("flat");
+                    item->set_halign(Gtk::Align::FILL);
                     
                     if (i < static_cast<int>(subMenu->menuItems.size()) && subMenu->menuItems[i]->onTrigger) {
                         item->signal_clicked().connect([popover, onTrigger = subMenu->menuItems[i]->onTrigger]() {
@@ -1029,9 +1055,6 @@ public:
                 
                 popover->set_child(*box);
                 
-                menuButton->signal_clicked().connect([popover]() {
-                    popover->popup();
-                });
                 
                 headerBar->pack_start(*menuButton);
             }
