@@ -623,19 +623,18 @@ protected:
             }, false);
         add_controller(key_controller);
         
-        set_accessible_role(Gtk::AccessibleRole::CANVAS);
+        set_can_focus(true);
         
-        auto focus_controller = Gtk::EventControllerKey::create();
-        focus_controller->signal_focus_in().connect(
+        auto focus_controller = Gtk::EventControllerFocus::create();
+        focus_controller->signal_enter().connect(
             [this]() {
-                set_has_focus(true);
+                grab_focus();
                 return true;
-            }, false);
-        focus_controller->signal_focus_out().connect(
+            });
+        focus_controller->signal_leave().connect(
             [this]() {
-                set_has_focus(false);
                 return true;
-            }, false);
+            });
         add_controller(focus_controller);
     }
 
@@ -761,9 +760,8 @@ public:
         padding.set_top(2);
         padding.set_bottom(2);
         
-        put(_entry,
-            x - margin.get_left() - border.get_left() - padding.get_left(),
-            y - margin.get_top()  - border.get_top()  - padding.get_top());
+        _entry.set_margin_start(x - margin.get_left() - border.get_left() - padding.get_left());
+        _entry.set_margin_top(y - margin.get_top() - border.get_top() - padding.get_top());
 
         int fitWidth = width / Pango::SCALE + padding.get_left() + padding.get_right();
         _entry.set_size_request(max(fitWidth, min_width), -1);
@@ -816,13 +814,13 @@ protected:
         _gl_widget.set_size_request(width, height);
 
         if(_entry.get_visible()) {
-            int entry_width, entry_height, min_height, natural_height;
-            _entry.get_preferred_height(min_height, natural_height);
-            int min_baseline, natural_baseline;
-            _entry.measure(Gtk::Orientation::VERTICAL, -1, min_height, natural_height, min_baseline, natural_baseline);
+            int min_height = 0, natural_height = 0;
+            int min_width = 0, natural_width = 0;
             
-            int entry_x = _editing_x;
-            int entry_y = _editing_y;
+            _entry.measure(Gtk::Orientation::VERTICAL, -1, 
+                          min_height, natural_height, 
+                          min_width, natural_width);
+            
             int entry_width = _entry.get_width();
             int entry_height = natural_height;
             
@@ -1665,7 +1663,7 @@ public:
         gtkDialog.set_transient_for(gtkParent);
         gtkDialog.set_modal(true);
         
-        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
+        gtkDialog.add_css_class("dialog");
         
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
@@ -1685,7 +1683,7 @@ public:
     }
 
     void SetTitle(std::string title) override {
-        title_property.set_value(PrepareTitle(title));
+        gtkDialog.set_title(PrepareTitle(title));
     }
 
     bool RunModal() override {
@@ -1828,28 +1826,26 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
     
-    Glib::set_application_name("SolveSpace");
-    Glib::set_prgname("solvespace");
+    gtkApp->set_application_id("org.solvespace.SolveSpace");
     
-    auto app_info = gtkApp->get_application_info();
-    if (app_info) {
-        app_info->set_version("3.1");
-        app_info->set_website("https://solvespace.com");
-        app_info->set_website_label("SolveSpace Website");
-        app_info->set_license_type(Gtk::License::GPL_3_0);
-        app_info->set_comments("Parametric 2D/3D CAD");
-        app_info->set_translator_credits("SolveSpace Contributors");
-        
-        app_info->set_copyright("© 2008-2023 SolveSpace Contributors");
-        app_info->set_authors({"Jonathan Westhues", "whitequark", "ruevs", "Paul Kahler"});
-        app_info->set_documenters({"SolveSpace Contributors"});
-        app_info->set_artists({"SolveSpace Contributors"});
-        
-        Gtk::Accessible::set_accessible_role(Gtk::AccessibleRole::APPLICATION);
-        Gtk::Accessible::set_accessible_description("SolveSpace - Parametric 2D/3D CAD");
-    }
     
-    auto settings = Gtk::Settings::get_default();
+    gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
+    
+    auto style_provider = Gtk::CssProvider::create();
+    style_provider->load_from_data(R"(
+        .solvespace-app {
+            /* Application-wide styles */
+        }
+    )");
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        style_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+    auto display = Gdk::Display::get_default();
+    auto settings = Gtk::Settings::get_for_display(display);
+    
     if (settings) {
         settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
             []() {
