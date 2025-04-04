@@ -648,24 +648,28 @@ protected:
     }
 };
 
-class GtkEditorOverlay : public Gtk::Overlay {
+class GtkEditorOverlay : public Gtk::Box {
     Window      *_receiver;
     GtkGLWidget _gl_widget;
     Gtk::Entry  _entry;
     Glib::RefPtr<Gtk::EventControllerKey> _key_controller;
-    Glib::RefPtr<Gtk::ConstraintLayout> _constraint_layout;
+    Glib::RefPtr<Gtk::Grid> _grid;
 
 public:
-    GtkEditorOverlay(Platform::Window *receiver) : _receiver(receiver), _gl_widget(receiver) {
-        set_child(_gl_widget);
+    GtkEditorOverlay(Platform::Window *receiver) : 
+        Gtk::Box(Gtk::Orientation::VERTICAL),
+        _receiver(receiver), 
+        _gl_widget(receiver) {
+        
+        append(_gl_widget);
 
         _entry.set_visible(false);
         _entry.set_has_frame(false);
         
-        add_overlay(_entry);
+        append(_entry);
         
         _entry.signal_activate().
-            connect(sigc::mem_fun(*this, &GtkEditorOverlay::on_activate));
+            connect(sigc::mem_fun(*this, &GtkEditorOverlay::on_activate), false);
             
         _key_controller = Gtk::EventControllerKey::create();
         _key_controller->signal_key_pressed().connect(
@@ -678,10 +682,10 @@ public:
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return on_key_released(keyval, keycode, gdk_state);
             }, false);
-        add_controller(_key_controller);
+        _gl_widget.add_controller(_key_controller);
         
         auto size_controller = Gtk::EventControllerMotion::create();
-        add_controller(size_controller);
+        _gl_widget.add_controller(size_controller);
         
         on_size_allocate();
     }
@@ -786,24 +790,30 @@ protected:
     }
 
     void on_size_allocate() {
-        Gtk::Allocation allocation = get_allocation();
-        int baseline = -1; // Default baseline value
-
-        _gl_widget.size_allocate(allocation, baseline);
+        int width = get_width();
+        int height = get_height();
+        
+        _gl_widget.set_size_request(width, height);
 
         if(_entry.get_visible()) {
             int entry_width, entry_height, min_height, natural_height;
-            _entry.get_size_request(entry_width, entry_height);
+            _entry.get_preferred_height(min_height, natural_height);
             int min_baseline, natural_baseline;
             _entry.measure(Gtk::Orientation::VERTICAL, -1, min_height, natural_height, min_baseline, natural_baseline);
             
-            Gtk::Allocation entry_allocation = _entry.get_allocation();
-            int x = entry_allocation.get_x();
-            int y = entry_allocation.get_y();
+            int entry_x = _editing_x;
+            int entry_y = _editing_y;
+            int entry_width = _entry.get_width();
+            int entry_height = natural_height;
             
-            _entry.size_allocate(
-                Gdk::Rectangle(x, y, entry_width > 0 ? entry_width : 100, natural_height),
-                -1);
+            _entry.set_size_request(entry_width > 0 ? entry_width : 100, entry_height);
+            
+            auto css_provider = Gtk::CssProvider::create();
+            css_provider->load_from_data(
+                Glib::ustring::compose("entry { margin-left: %1px; margin-top: %2px; }", 
+                entry_x, entry_y));
+            _entry.get_style_context()->add_provider(css_provider, 
+                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
     }
 
@@ -825,8 +835,8 @@ class GtkWindow : public Gtk::Window {
     Gdk::Rectangle      _tooltip_area;
     Glib::RefPtr<Gtk::EventControllerMotion> _motion_controller;
     
-    Glib::Property<bool> _is_under_cursor_prop;
-    Glib::Property<bool> _is_fullscreen_prop;
+    bool _is_under_cursor;
+    bool _is_fullscreen;
 
 public:
     GtkWindow(Platform::Window *receiver) : 
@@ -835,8 +845,8 @@ public:
         _hbox(Gtk::Orientation::HORIZONTAL),
         _editor_overlay(receiver),
         _scrollbar(),
-        _is_under_cursor_prop(*this, "is-under-cursor", false),
-        _is_fullscreen_prop(*this, "is-fullscreen", false) {
+        _is_under_cursor(false),
+        _is_fullscreen(false) {
         _scrollbar.set_orientation(Gtk::Orientation::VERTICAL);
         
         _hbox.set_hexpand(true);
@@ -867,7 +877,7 @@ public:
     }
 
     bool is_full_screen() const {
-        return _is_fullscreen_prop.get_value();
+        return _is_fullscreen;
     }
 
     Gtk::HeaderBar *get_menu_bar() const {
@@ -910,12 +920,12 @@ protected:
         _motion_controller = Gtk::EventControllerMotion::create();
         _motion_controller->signal_enter().connect(
             [this](double x, double y) -> void {
-                _is_under_cursor_prop.set_value(true);
-            });
+                _is_under_cursor = true;
+            }, false);
         _motion_controller->signal_leave().connect(
             [this]() -> void {
-                _is_under_cursor_prop.set_value(false);
-            });
+                _is_under_cursor = false;
+            }, false);
         add_controller(_motion_controller);
         
         signal_close_request().connect(
@@ -1826,7 +1836,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
             
             gtkApp->activate();
             return 0;
-        });
+        }, false);
 
     Glib::RefPtr<Gtk::CssProvider> style_provider = Gtk::CssProvider::create();
     style_provider->load_from_data(R"(
@@ -1929,15 +1939,14 @@ void RunGui() {
         
         gtkApp->hold();
         
-        auto portal = Gtk::Settings::get_default();
-        if (portal) {
-            portal->property_gtk_application_prefer_dark_theme().signal_changed().connect(
+        auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
+        if (settings) {
+            auto theme_property = settings->property_gtk_application_prefer_dark_theme();
+            theme_property.signal_changed().connect(
                 []() {
-                    SS.UndoAndExitAllScreens();
-                    SS.ReloadAllImported();
                     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                     SS.GW.Invalidate();
-                });
+                }, false);
         }
         
         gtkApp->run();
