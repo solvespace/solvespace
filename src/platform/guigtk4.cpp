@@ -1873,6 +1873,27 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         .solvespace-app {
             /* Application-wide styles */
         }
+        
+        .menu-button {
+            padding: 4px 8px;
+        }
+        
+        .menu-item {
+            padding: 6px 8px;
+            border-radius: 4px;
+        }
+        
+        .menu-item:hover {
+            background-color: alpha(currentColor, 0.1);
+        }
+        
+        .dialog-content {
+            margin: 12px;
+        }
+        
+        .dialog-button-box {
+            margin-top: 12px;
+        }
     )");
     
     Gtk::StyleContext::add_provider_for_display(
