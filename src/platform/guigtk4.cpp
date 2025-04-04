@@ -1706,6 +1706,11 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     gtkApp = Gtk::Application::create("org.solvespace.SolveSpace");
     
+    gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
+    
+    Glib::set_application_name("SolveSpace");
+    Glib::set_prgname("solvespace");
+    
     std::vector<std::string> args;
     gtkApp->signal_command_line().connect(
         [&args, argc, argv](const Glib::RefPtr<Gio::ApplicationCommandLine>& command_line) -> int {
@@ -1716,14 +1721,26 @@ std::vector<std::string> InitGui(int argc, char **argv) {
             
             gtkApp->activate();
             return 0;
-        }, false);
+        });
 
-    // Add our application-specific styles, to override GTK defaults.
     Glib::RefPtr<Gtk::CssProvider> style_provider = Gtk::CssProvider::create();
     style_provider->load_from_data(R"(
     entry {
         background: white;
         color: black;
+        border-radius: 4px;
+        padding: 2px;
+    }
+    
+    .solvespace-editor-entry {
+        background: transparent;
+        padding: 0;
+        margin: 0;
+    }
+    
+    button.flat {
+        padding: 6px;
+        margin: 1px;
     }
     )");
     
