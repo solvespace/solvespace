@@ -4,6 +4,14 @@ Changelog
 3.x - development
 ---
 
+Platform and UI
+
+* Complete GTK4 migration with modern event controllers, property bindings, and layout managers.
+* Improved accessibility support in GTK4 implementation with proper roles and names.
+* Enhanced CSS styling for GTK4 UI elements with consistent theme application.
+* Fixed Flatpak manifest with correct dependency checksums and build options.
+* Updated documentation with GTK4 development best practices.
+
 Geometric Modelling Kernel (NURBS)
 
 * Improve the difference boolean operations.
