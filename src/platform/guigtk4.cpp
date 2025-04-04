@@ -20,15 +20,21 @@
 #include <gtkmm/box.h>
 #include <gtkmm/button.h>
 #include <gtkmm/checkbutton.h>
+#include <gtkmm/constraintlayout.h>
 #include <gtkmm/cssprovider.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/filechooserdialog.h>
 #include <gtkmm/fixed.h>
 #include <gtkmm/glarea.h>
+#include <gtkmm/grid.h>
+#include <gtkmm/headerbar.h>
+#include <gtkmm/menubutton.h>
 #include <gtkmm/messagedialog.h>
+#include <gtkmm/overlay.h>
 #include <gtkmm/popover.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/separator.h>
+#include <gtkmm/stylecontext.h>
 #include <gtkmm/tooltip.h>
 #include <gtkmm/window.h>
 
@@ -661,6 +667,20 @@ public:
         _receiver(receiver), 
         _gl_widget(receiver) {
         
+        auto css_provider = Gtk::CssProvider::create();
+        css_provider->load_from_data(
+            "box.editor-overlay { background-color: transparent; }"
+            "entry.editor-text { background-color: white; color: black; border-radius: 3px; padding: 2px; }"
+        );
+        
+        set_name("editor-overlay");
+        get_style_context()->add_class("editor-overlay");
+        get_style_context()->add_provider(css_provider, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+        _entry.set_name("editor-text");
+        _entry.get_style_context()->add_class("editor-text");
+        _entry.get_style_context()->add_provider(css_provider, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
         append(_gl_widget);
 
         _entry.set_visible(false);
@@ -849,6 +869,16 @@ public:
         _is_fullscreen(false) {
         _scrollbar.set_orientation(Gtk::Orientation::VERTICAL);
         
+        auto css_provider = Gtk::CssProvider::create();
+        css_provider->load_from_data(
+            "window.solvespace-window { background-color: #f0f0f0; }"
+            "scrollbar { background-color: #e0e0e0; border-radius: 0; }"
+        );
+        
+        set_name("solvespace-window");
+        get_style_context()->add_class("solvespace-window");
+        get_style_context()->add_provider(css_provider, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
         _hbox.set_hexpand(true);
         _hbox.set_vexpand(true);
         _editor_overlay.set_hexpand(true);
@@ -942,13 +972,13 @@ protected:
                           const Glib::RefPtr<Gtk::Tooltip> &tooltip) {
         tooltip->set_text(_tooltip_text);
         tooltip->set_tip_area(_tooltip_area);
-        return !_tooltip_text.empty() && (keyboard_tooltip || _is_under_cursor_prop.get_value());
+        return !_tooltip_text.empty() && (keyboard_tooltip || _is_under_cursor);
     }
 
     void on_fullscreen_changed() {
-        _is_fullscreen_prop.set_value(is_fullscreen());
+        _is_fullscreen = is_fullscreen();
         if(_receiver->onFullScreen) {
-            _receiver->onFullScreen(_is_fullscreen_prop.get_value());
+            _receiver->onFullScreen(_is_fullscreen);
         }
     }
 
@@ -968,11 +998,11 @@ public:
     GtkWindow       gtkWindow;
     MenuBarRef      menuBar;
 
-    Glib::Property<bool> visible_property;
+    bool            _is_visible;
     
     WindowImplGtk(Window::Kind kind) : 
         gtkWindow(this),
-        visible_property(*this, "visible", false)
+        _is_visible(false)
     {
         switch(kind) {
             case Kind::TOPLEVEL:
@@ -987,13 +1017,17 @@ public:
         auto icon = LoadPng("freedesktop/solvespace-48x48.png");
         gtkWindow.set_icon_name("solvespace");
         
-        visible_property.signal_changed().connect([this]() {
-            if (visible_property.get_value()) {
-                gtkWindow.show();
-            } else {
-                gtkWindow.hide();
-            }
-        });
+        auto css_provider = Gtk::CssProvider::create();
+        css_provider->load_from_data(
+            "window.tool-window { background-color: #f5f5f5; }"
+        );
+        
+        if (kind == Kind::TOOL) {
+            gtkWindow.set_name("tool-window");
+            gtkWindow.get_style_context()->add_class("tool-window");
+            gtkWindow.get_style_context()->add_provider(css_provider, 
+                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        }
     }
 
     double GetPixelDensity() override {
@@ -1009,7 +1043,12 @@ public:
     }
 
     void SetVisible(bool visible) override {
-        visible_property.set_value(visible);
+        _is_visible = visible;
+        if (visible) {
+            gtkWindow.show();
+        } else {
+            gtkWindow.hide();
+        }
     }
 
     void Focus() override {
