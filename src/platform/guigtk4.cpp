@@ -34,6 +34,7 @@
 #include <gtkmm/popover.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/separator.h>
+#include <gtkmm/settings.h>
 #include <gtkmm/stylecontext.h>
 #include <gtkmm/tooltip.h>
 #include <gtkmm/window.h>
@@ -305,6 +306,7 @@ class MenuItemImplGtk final : public MenuItem {
 public:
     GtkMenuItem gtkMenuItem;
     std::string actionName;  // Add actionName member for GTK4 compatibility
+    std::string shortcutText; // Store shortcut text for GTK4 compatibility
     std::function<void()> onTrigger;
 
     MenuItemImplGtk() : gtkMenuItem(this) {}
@@ -334,6 +336,27 @@ public:
         }
 
         gtkMenuItem.set_accel_key(Gtk::AccelKey(accelKey, accelMods));
+        
+        std::string modText;
+        if(accel.controlDown) modText += "Ctrl+";
+        if(accel.shiftDown) modText += "Shift+";
+        
+        std::string keyText;
+        if(accel.key == KeyboardEvent::Key::CHARACTER) {
+            if(accel.chr == '\t') {
+                keyText = "Tab";
+            } else if(accel.chr == '\x1b') {
+                keyText = "Esc";
+            } else if(accel.chr == '\x7f') {
+                keyText = "Del";
+            } else if(accel.chr >= ' ' && accel.chr <= '~') {
+                keyText = std::string(1, toupper(accel.chr));
+            }
+        } else if(accel.key == KeyboardEvent::Key::FUNCTION) {
+            keyText = "F" + std::to_string(accel.num);
+        }
+        
+        shortcutText = modText + keyText;
     }
 
     void SetIndicator(Indicator type) override {
@@ -1131,9 +1154,10 @@ public:
                     
                     grid->attach(*item, 0, i, 1, 1);
                     
-                    if (!menuItem->shortcut.empty()) {
+                    auto menuItemImpl = std::dynamic_pointer_cast<MenuItemImplGtk>(menuItem);
+                    if (menuItemImpl && !menuItemImpl->shortcutText.empty()) {
                         auto shortcutLabel = Gtk::make_managed<Gtk::Label>();
-                        shortcutLabel->set_label(menuItem->shortcut);
+                        shortcutLabel->set_label(menuItemImpl->shortcutText);
                         shortcutLabel->add_css_class("dim-label");
                         shortcutLabel->set_halign(Gtk::Align::END);
                         grid->attach(*shortcutLabel, 1, i, 1, 1);
@@ -1399,22 +1423,31 @@ public:
         switch(type) {
             case Type::INFORMATION:
                 icon_name = "dialog-information";
-                gtkDialog.set_message_dialog_flags(Gtk::DialogFlags::MODAL);
+                gtkDialog.set_modal(true);
                 break;
 
             case Type::QUESTION:
                 icon_name = "dialog-question";
-                gtkDialog.set_message_dialog_flags(Gtk::DialogFlags::MODAL | Gtk::DialogFlags::DESTROY_WITH_PARENT);
+                gtkDialog.set_modal(true);
+                gtkDialog.set_destroy_with_parent(true);
                 break;
 
             case Type::WARNING:
                 icon_name = "dialog-warning";
                 gtkDialog.set_modal(true);
+                gtkDialog.set_destroy_with_parent(true);
                 break;
 
             case Type::ERROR:
                 icon_name = "dialog-error";
                 gtkDialog.set_modal(true);
+                gtkDialog.set_destroy_with_parent(true);
+                break;
+                
+            case Type::ERROR_MAYFAIL:
+                icon_name = "dialog-error";
+                gtkDialog.set_modal(true);
+                gtkDialog.set_destroy_with_parent(true);
                 break;
         }
         
@@ -1740,21 +1773,8 @@ public:
     bool RunModal() override {
         CheckForUntitledFile();
         
-        gtkNative->set_modal(true);
         
-        auto loop = Glib::MainLoop::create();
-        auto response_id = Gtk::ResponseType::CANCEL;
-        
-        auto response_handler = gtkNative->signal_response().connect(
-            [&](int response) {
-                response_id = static_cast<Gtk::ResponseType>(response);
-                loop->quit();
-            }, false);
-        
-        gtkNative->show();
-        loop->run();
-        
-        response_handler.disconnect();
+        auto response_id = gtkNative->show();
         
         return response_id == Gtk::ResponseType::ACCEPT;
     }
@@ -1824,6 +1844,8 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     gtkApp = Gtk::Application::create("org.solvespace.SolveSpace");
     
+    gtkApp->property_application_id() = "org.solvespace.SolveSpace";
+    
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
     
     auto style_provider = Gtk::CssProvider::create();
@@ -1838,20 +1860,13 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         style_provider,
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         
-    auto settings = Gtk::Settings::get_default();
+    auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
     
     if (settings) {
         settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
             []() {
-                auto style_provider = Gtk::CssProvider::create();
-                style_provider->load_from_data(R"(
-                    /* Dark mode specific styles would go here */
-                )");
-                
-                Gtk::StyleContext::add_provider_for_display(
-                    Gdk::Display::get_default(),
-                    style_provider,
-                    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+                SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+                SS.GW.Invalidate();
             });
     }
     
@@ -1967,7 +1982,7 @@ void RunGui() {
         
         gtkApp->hold();
         
-        auto settings = Gtk::Settings::get_default();
+        auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
         if (settings) {
             auto theme_property = settings->property_gtk_application_prefer_dark_theme();
             theme_property.signal_changed().connect(
