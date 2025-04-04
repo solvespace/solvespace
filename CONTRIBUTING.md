@@ -290,3 +290,90 @@ the following commands in your shell:
     export G_DEBUG=fatal_warnings
     export LIBGL_DEBUG=1
     export MESA_DEBUG=1
+
+### GTK4 Development Best Practices
+
+When working on the GTK4 implementation (enabled with USE_GTK4=ON), follow these best practices:
+
+#### Event Controllers
+
+GTK4 replaces the signal-based event handling with controller-based event handling. Always use the appropriate controller classes:
+
+```c++
+// Instead of this (GTK3 style):
+button->signal_clicked().connect([this]() {
+    // Handle click
+});
+
+// Use this (GTK4 style):
+auto click_controller = Gtk::GestureClick::create();
+click_controller->signal_released().connect([this](int n_press, double x, double y) {
+    // Handle click
+});
+button->add_controller(click_controller);
+```
+
+Common controller types:
+- `Gtk::GestureClick` - For click events
+- `Gtk::EventControllerKey` - For keyboard events
+- `Gtk::EventControllerMotion` - For mouse motion events
+- `Gtk::EventControllerScroll` - For scroll events
+- `Gtk::ShortcutController` - For keyboard shortcuts
+
+#### Property Bindings
+
+GTK4 provides a reactive property binding system. Use property bindings instead of signal handlers for property changes:
+
+```c++
+// Instead of this (GTK3 style):
+settings->property_gtk_application_prefer_dark_theme().signal_changed().connect([]() {
+    // Handle theme change
+});
+
+// Use this (GTK4 style):
+auto theme_binding = Gtk::PropertyExpression<bool>::create(
+    settings->property_gtk_application_prefer_dark_theme());
+theme_binding->connect([](bool dark_theme) {
+    // Handle theme change
+});
+```
+
+#### Layout Managers
+
+GTK4 emphasizes layout managers over manual positioning. Use appropriate layout managers:
+
+- `Gtk::Grid` - For grid-based layouts
+- `Gtk::Box` - For horizontal or vertical layouts
+- `Gtk::Paned` - For resizable split views
+- `Gtk::Overlay` - For overlaying widgets
+
+#### CSS Styling
+
+GTK4 provides enhanced CSS styling capabilities. Use CSS classes and styling:
+
+```c++
+// Add CSS classes to widgets
+widget->add_css_class("my-custom-class");
+
+// Load CSS data
+auto css_provider = Gtk::CssProvider::create();
+css_provider->load_from_data(
+    ".my-custom-class { background-color: #f0f0f0; }"
+);
+
+// Apply provider to the display
+Gtk::StyleContext::add_provider_for_display(
+    display,
+    css_provider,
+    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+);
+```
+
+#### Accessibility
+
+GTK4 has improved accessibility support. Ensure all widgets have appropriate accessibility roles and names:
+
+```c++
+widget->get_accessible()->set_property("accessible-role", "button");
+widget->get_accessible()->set_property("accessible-name", "Save");
+```
