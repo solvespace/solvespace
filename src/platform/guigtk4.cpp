@@ -49,7 +49,6 @@
 #include <gtkmm/shortcuttrigger.h>
 #include <gtkmm/shortcutaction.h>
 #include <gtkmm/accessible.h>
-#include <gtkmm/accessibletext.h>
 #include <gtkmm/propertyexpression.h>
 
 #include "config.h"
