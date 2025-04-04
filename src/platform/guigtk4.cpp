@@ -506,6 +506,14 @@ public:
     GtkGLWidget(Platform::Window *receiver) : _receiver(receiver) {
         set_has_depth_buffer(true);
         set_can_focus(true);
+        
+        add_css_class("solvespace-gl-area");
+        add_css_class("drawing-area");
+        
+        set_accessible_role(Gtk::AccessibleRole::CANVAS);
+        set_accessible_name("SolveSpace Drawing Area");
+        set_accessible_description("3D modeling canvas for SolveSpace");
+        
         setup_event_controllers();
     }
 
