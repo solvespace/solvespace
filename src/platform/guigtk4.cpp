@@ -1734,6 +1734,16 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     Glib::set_application_name("SolveSpace");
     Glib::set_prgname("solvespace");
     
+    auto app_info = gtkApp->get_application_info();
+    if (app_info) {
+        app_info->set_version("3.1");
+        app_info->set_website("https://solvespace.com");
+        app_info->set_website_label("SolveSpace Website");
+        app_info->set_license_type(Gtk::License::GPL_3_0);
+        app_info->set_comments("Parametric 2D/3D CAD");
+        app_info->set_translator_credits("SolveSpace Contributors");
+    }
+    
     std::vector<std::string> args;
     gtkApp->signal_command_line().connect(
         [&args, argc, argv](const Glib::RefPtr<Gio::ApplicationCommandLine>& command_line) -> int {
