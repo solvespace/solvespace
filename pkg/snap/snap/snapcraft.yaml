@@ -55,6 +55,7 @@ parts:
       - -DSNAP=ON
       - -DENABLE_OPENMP=ON
       - -DENABLE_LTO=ON
+      - -DUSE_GTK4=ON
     build-packages:
       - zlib1g-dev
       - libpng-dev
@@ -62,14 +63,18 @@ parts:
       - libfreetype6-dev
       - libjson-c-dev
       - libgl-dev
-      - libsigc++-2.0-dev
+      - libsigc++-3.0-dev
+      - libgtkmm-4.0-dev
+      - libpangomm-2.48-dev
       - libspnav-dev
       - git
       - g++
       - libc6-dev
     stage-packages:
       - libspnav0
-      - libsigc++-2.0-0v5
+      - libsigc++-3.0-0v5
+      - libgtkmm-4.0-1
+      - libpangomm-2.48-1
 
   cleanup:
     after: [solvespace]
