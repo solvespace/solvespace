@@ -687,39 +687,55 @@ protected:
     }
 };
 
-class GtkEditorOverlay : public Gtk::Box {
+class GtkEditorOverlay : public Gtk::Grid {
     Window      *_receiver;
     GtkGLWidget _gl_widget;
     Gtk::Entry  _entry;
     Glib::RefPtr<Gtk::EventControllerKey> _key_controller;
-    Glib::RefPtr<Gtk::Grid> _grid;
 
 public:
     GtkEditorOverlay(Platform::Window *receiver) : 
-        Gtk::Box(Gtk::Orientation::VERTICAL),
+        Gtk::Grid(),
         _receiver(receiver), 
         _gl_widget(receiver) {
         
         auto css_provider = Gtk::CssProvider::create();
         css_provider->load_from_data(
-            "box.editor-overlay { background-color: transparent; }"
+            "grid.editor-overlay { background-color: transparent; }"
             "entry.editor-text { background-color: white; color: black; border-radius: 3px; padding: 2px; }"
         );
         
         set_name("editor-overlay");
-        get_style_context()->add_class("editor-overlay");
-        get_style_context()->add_provider(css_provider, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        add_css_class("editor-overlay");
+        set_row_spacing(4);
+        set_column_spacing(4);
+        set_row_homogeneous(false);
+        set_column_homogeneous(false);
+        
+        set_accessible_role(Gtk::AccessibleRole::GROUP);
+        set_accessible_name("Editor Overlay");
+        set_accessible_description("SolveSpace editor overlay with drawing area and text input");
+        
+        Gtk::StyleContext::add_provider_for_display(
+            get_display(),
+            css_provider,
+            GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+        _gl_widget.set_hexpand(true);
+        _gl_widget.set_vexpand(true);
         
         _entry.set_name("editor-text");
-        _entry.get_style_context()->add_class("editor-text");
-        _entry.get_style_context()->add_provider(css_provider, GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-        
-        append(_gl_widget);
-
+        _entry.add_css_class("editor-text");
         _entry.set_visible(false);
         _entry.set_has_frame(false);
+        _entry.set_hexpand(true);
+        _entry.set_vexpand(false);
         
-        append(_entry);
+        _entry.set_accessible_role(Gtk::AccessibleRole::TEXT_BOX);
+        _entry.set_accessible_name("Text Input");
+        
+        attach(_gl_widget, 0, 0);
+        attach(_entry, 0, 1);
         
         _entry.signal_activate().
             connect(sigc::mem_fun(*this, &GtkEditorOverlay::on_activate), false);
