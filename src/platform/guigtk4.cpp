@@ -1688,7 +1688,10 @@ public:
 class FileDialogNativeImplGtk final : public FileDialogImplGtk {
 public:
     Glib::RefPtr<Gtk::FileChooserNative> gtkNative;
-
+    
+    Glib::Property<bool> modal_property;
+    Glib::Property<Glib::ustring> title_property;
+    
     FileDialogNativeImplGtk(Gtk::Window &gtkParent, bool isSave) {
         gtkNative = Gtk::FileChooserNative::create(
             isSave ? C_("title", "Save File")
@@ -1699,20 +1702,36 @@ public:
             isSave ? C_("button", "_Save")
                    : C_("button", "_Open"),
             C_("button", "_Cancel"));
+            
+        modal_property = Glib::Property<bool>(*this, "modal", false);
+        title_property = Glib::Property<Glib::ustring>(*this, "title", 
+            isSave ? C_("title", "Save File") : C_("title", "Open File"));
+            
+        modal_property.signal_changed().connect([this]() {
+            gtkNative->set_modal(modal_property.get_value());
+        });
+        
+        title_property.signal_changed().connect([this]() {
+            gtkNative->set_title(title_property.get_value());
+        });
+        
+        modal_property.set_value(true);
+        
         if(isSave) {
             gtkNative->set_current_name("untitled");
         }
+        
         InitFileChooser(*gtkNative);
     }
 
     void SetTitle(std::string title) override {
-        gtkNative->set_title(PrepareTitle(title));
+        title_property.set_value(PrepareTitle(title));
     }
 
     bool RunModal() override {
         CheckForUntitledFile();
         
-        gtkNative->set_modal(true);
+        modal_property.set_value(true);
         
         auto loop = Glib::MainLoop::create();
         auto response_id = Gtk::ResponseType::CANCEL;
