@@ -11,6 +11,7 @@ Platform and UI
 * Enhanced CSS styling for GTK4 UI elements with consistent theme application.
 * Fixed Flatpak manifest with correct dependency checksums and build options.
 * Updated documentation with GTK4 development best practices.
+* Added comprehensive test suite for GTK4 UI functionality.
 
 Geometric Modelling Kernel (NURBS)
 
