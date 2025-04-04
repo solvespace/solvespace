@@ -1773,7 +1773,6 @@ public:
     bool RunModal() override {
         CheckForUntitledFile();
         
-        
         auto response_id = gtkNative->show();
         
         return response_id == Gtk::ResponseType::ACCEPT;
