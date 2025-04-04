@@ -1022,11 +1022,13 @@ public:
     GtkWindow       gtkWindow;
     MenuBarRef      menuBar;
 
-    bool            _is_visible;
+    Glib::Property<bool> _visible_prop;
+    Glib::Property<bool> _fullscreen_prop;
     
     WindowImplGtk(Window::Kind kind) : 
         gtkWindow(this),
-        _is_visible(false)
+        _visible_prop(*this, "visible", false),
+        _fullscreen_prop(*this, "fullscreen", false)
     {
         switch(kind) {
             case Kind::TOPLEVEL:
@@ -1054,6 +1056,24 @@ public:
                 css_provider,
                 GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
+        
+        _visible_prop.signal_changed().connect([this]() {
+            if (_visible_prop.get_value()) {
+                gtkWindow.show();
+            } else {
+                gtkWindow.hide();
+            }
+        });
+        
+        _fullscreen_prop.signal_changed().connect([this]() {
+            if (_fullscreen_prop.get_value()) {
+                gtkWindow.fullscreen();
+            } else {
+                gtkWindow.unfullscreen();
+            }
+        });
+        
+        gtkWindow.set_accessible_role(Gtk::AccessibleRole::WINDOW);
     }
 
     double GetPixelDensity() override {
@@ -1065,16 +1085,11 @@ public:
     }
 
     bool IsVisible() override {
-        return gtkWindow.is_visible();
+        return _visible_prop.get_value();
     }
 
     void SetVisible(bool visible) override {
-        _is_visible = visible;
-        if (visible) {
-            gtkWindow.show();
-        } else {
-            gtkWindow.hide();
-        }
+        _visible_prop.set_value(visible);
     }
 
     void Focus() override {
@@ -1082,15 +1097,11 @@ public:
     }
 
     bool IsFullScreen() override {
-        return gtkWindow.is_full_screen();
+        return _fullscreen_prop.get_value();
     }
 
     void SetFullScreen(bool fullScreen) override {
-        if(fullScreen) {
-            gtkWindow.fullscreen();
-        } else {
-            gtkWindow.unfullscreen();
-        }
+        _fullscreen_prop.set_value(fullScreen);
     }
 
     void SetTitle(const std::string &title) override {
