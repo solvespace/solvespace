@@ -1924,6 +1924,26 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
     
+    auto shortcut_controller = Gtk::ShortcutController::create();
+    shortcut_controller->set_scope(Gtk::ShortcutScope::GLOBAL);
+    
+    auto escape_action = Gtk::NamedAction::create("app.escape");
+    auto escape_trigger = Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType());
+    auto escape_shortcut = Gtk::Shortcut::create(escape_trigger, escape_action);
+    shortcut_controller->add_shortcut(escape_shortcut);
+    
+    auto save_action = Gtk::NamedAction::create("app.save");
+    auto save_trigger = Gtk::KeyvalTrigger::create(GDK_KEY_s, Gdk::ModifierType::CONTROL_MASK);
+    auto save_shortcut = Gtk::Shortcut::create(save_trigger, save_action);
+    shortcut_controller->add_shortcut(save_shortcut);
+    
+    auto open_action = Gtk::NamedAction::create("app.open");
+    auto open_trigger = Gtk::KeyvalTrigger::create(GDK_KEY_o, Gdk::ModifierType::CONTROL_MASK);
+    auto open_shortcut = Gtk::Shortcut::create(open_trigger, open_action);
+    shortcut_controller->add_shortcut(open_shortcut);
+    
+    gtkApp->add_controller(shortcut_controller);
+    
     auto style_provider = Gtk::CssProvider::create();
     style_provider->load_from_data(R"(
         .solvespace-app {
