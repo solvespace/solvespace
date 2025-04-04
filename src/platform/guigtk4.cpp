@@ -1621,26 +1621,45 @@ public:
 class FileDialogGtkImplGtk final : public FileDialogImplGtk {
 public:
     Gtk::FileChooserDialog      gtkDialog;
-
+    
+    Glib::Property<bool> modal_property;
+    Glib::Property<Glib::ustring> title_property;
+    
     FileDialogGtkImplGtk(Gtk::Window &gtkParent, bool isSave)
         : gtkDialog(isSave ? C_("title", "Save File")
                            : C_("title", "Open File"),
                     isSave ? Gtk::FileChooser::Action::SAVE
-                           : Gtk::FileChooser::Action::OPEN) {
+                           : Gtk::FileChooser::Action::OPEN),
+          modal_property(gtkDialog.property_modal()),
+          title_property(gtkDialog.property_title())
+    {
         gtkDialog.set_transient_for(gtkParent);
-        gtkDialog.set_modal(true);
-        gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
-        gtkDialog.add_button(isSave ? C_("button", "_Save")
-                                    : C_("button", "_Open"), Gtk::ResponseType::OK);
+        modal_property.set_value(true);
+        
+        gtkDialog.get_accessible()->set_role(Gtk::AccessibleRole::DIALOG);
+        gtkDialog.get_accessible()->set_name(isSave ? "Save File Dialog" : "Open File Dialog");
+        gtkDialog.get_accessible()->set_description(
+            isSave ? "Dialog for saving files" : "Dialog for opening files");
+        
+        auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
+        cancel_button->add_css_class("destructive-action");
+        
+        auto action_button = gtkDialog.add_button(
+            isSave ? C_("button", "_Save") : C_("button", "_Open"), 
+            Gtk::ResponseType::OK);
+        action_button->add_css_class("suggested-action");
+        
         gtkDialog.set_default_response(Gtk::ResponseType::OK);
+        
         if(isSave) {
             gtkDialog.set_current_name("untitled");
         }
+        
         InitFileChooser(gtkDialog);
     }
 
     void SetTitle(std::string title) override {
-        gtkDialog.set_title(PrepareTitle(title));
+        title_property.set_value(PrepareTitle(title));
     }
 
     bool RunModal() override {
