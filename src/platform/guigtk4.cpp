@@ -636,20 +636,22 @@ protected:
     }
 };
 
-class GtkEditorOverlay : public Gtk::Fixed {
+class GtkEditorOverlay : public Gtk::Overlay {
     Window      *_receiver;
     GtkGLWidget _gl_widget;
     Gtk::Entry  _entry;
     Glib::RefPtr<Gtk::EventControllerKey> _key_controller;
+    Glib::RefPtr<Gtk::ConstraintLayout> _constraint_layout;
 
 public:
     GtkEditorOverlay(Platform::Window *receiver) : _receiver(receiver), _gl_widget(receiver) {
-        put(_gl_widget, 0, 0);
+        set_child(_gl_widget);
 
         _entry.set_visible(false);
         _entry.set_has_frame(false);
-        put(_entry, 0, 0);  // We'll position it properly later
-
+        
+        add_overlay(_entry);
+        
         _entry.signal_activate().
             connect(sigc::mem_fun(*this, &GtkEditorOverlay::on_activate));
             
@@ -658,12 +660,12 @@ public:
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return on_key_pressed(keyval, keycode, gdk_state);
-            }, false);
+            });
         _key_controller->signal_key_released().connect(
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return on_key_released(keyval, keycode, gdk_state);
-            }, false);
+            });
         add_controller(_key_controller);
         
         auto size_controller = Gtk::EventControllerMotion::create();
