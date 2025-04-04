@@ -1045,8 +1045,10 @@ public:
         
         if (kind == Kind::TOOL) {
             gtkWindow.set_name("tool-window");
-            gtkWindow.get_style_context()->add_class("tool-window");
-            gtkWindow.get_style_context()->add_provider(css_provider, 
+            gtkWindow.add_css_class("tool-window");
+            Gtk::StyleContext::add_provider_for_display(
+                gtkWindow.get_display(),
+                css_provider,
                 GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
     }
@@ -1124,13 +1126,12 @@ public:
                 auto popover = Gtk::make_managed<Gtk::Popover>();
                 menuButton->set_popover(*popover);
                 
-                auto grid = Gtk::make_managed<Gtk::Grid>();
-                grid->set_margin_start(4);
-                grid->set_margin_end(4);
-                grid->set_margin_top(4);
-                grid->set_margin_bottom(4);
-                grid->set_row_spacing(2);
-                grid->set_column_spacing(8);
+                auto box = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::VERTICAL);
+                box->set_margin_start(4);
+                box->set_margin_end(4);
+                box->set_margin_top(4);
+                box->set_margin_bottom(4);
+                box->set_spacing(2);
                 
                 for (size_t i = 0; i < subMenu->menuItems.size(); i++) {
                     auto menuItem = subMenu->menuItems[i];
@@ -1141,6 +1142,7 @@ public:
                     item->add_css_class("flat");
                     item->add_css_class("menu-item");
                     item->set_halign(Gtk::Align::FILL);
+                    item->set_hexpand(true);
                     
                     item->set_accessible_role(Gtk::AccessibleRole::MENU_ITEM);
                     item->set_accessible_name(menuItem->label);
@@ -1152,19 +1154,26 @@ public:
                         });
                     }
                     
-                    grid->attach(*item, 0, i, 1, 1);
-                    
                     auto menuItemImpl = std::dynamic_pointer_cast<MenuItemImplGtk>(menuItem);
                     if (menuItemImpl && !menuItemImpl->shortcutText.empty()) {
+                        auto itemBox = Gtk::make_managed<Gtk::Box>(Gtk::Orientation::HORIZONTAL);
+                        itemBox->set_spacing(8);
+                        itemBox->append(*item);
+                        
                         auto shortcutLabel = Gtk::make_managed<Gtk::Label>();
                         shortcutLabel->set_label(menuItemImpl->shortcutText);
                         shortcutLabel->add_css_class("dim-label");
                         shortcutLabel->set_halign(Gtk::Align::END);
-                        grid->attach(*shortcutLabel, 1, i, 1, 1);
+                        shortcutLabel->set_hexpand(true);
+                        itemBox->append(*shortcutLabel);
+                        
+                        box->append(*itemBox);
+                    } else {
+                        box->append(*item);
                     }
                 }
                 
-                popover->set_child(*grid);
+                popover->set_child(*box);
                 
                 headerBar->pack_start(*menuButton);
             }
