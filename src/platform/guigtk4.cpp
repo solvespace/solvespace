@@ -601,7 +601,7 @@ protected:
                 auto state = scroll_controller->get_current_event_state();
                 process_pointer_event(MouseEvent::Type::SCROLL_VERT, x, y, static_cast<GdkModifierType>(state), 0, -dy);
                 return true;
-            });
+            }, false);
         add_controller(scroll_controller);
 
         auto key_controller = Gtk::EventControllerKey::create();
@@ -609,42 +609,27 @@ protected:
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return process_key_event(KeyboardEvent::Type::PRESS, keyval, gdk_state);
-            });
+            }, false);
         key_controller->signal_key_released().connect(
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return process_key_event(KeyboardEvent::Type::RELEASE, keyval, gdk_state);
-            });
+            }, false);
         add_controller(key_controller);
         
-        auto focus_controller = Gtk::EventControllerFocus::create();
-        focus_controller->signal_enter().connect(
+        set_accessible_role(Gtk::AccessibleRole::CANVAS);
+        
+        auto focus_controller = Gtk::EventControllerKey::create();
+        focus_controller->signal_focus_in().connect(
             [this]() {
-                auto accessible = get_accessible();
-                if (accessible) {
-                    accessible->set_role(Gtk::AccessibleRole::CANVAS);
-                    accessible->update_property(
-                        Gtk::AccessibleProperty::LABEL,
-                        "SolveSpace 3D Editor"
-                    );
-                    accessible->update_state(
-                        Gtk::AccessibleState::FOCUSED,
-                        true
-                    );
-                }
+                set_has_focus(true);
                 return true;
-            });
-        focus_controller->signal_leave().connect(
+            }, false);
+        focus_controller->signal_focus_out().connect(
             [this]() {
-                auto accessible = get_accessible();
-                if (accessible) {
-                    accessible->update_state(
-                        Gtk::AccessibleState::FOCUSED,
-                        false
-                    );
-                }
+                set_has_focus(false);
                 return true;
-            });
+            }, false);
         add_controller(focus_controller);
     }
 
@@ -687,12 +672,12 @@ public:
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return on_key_pressed(keyval, keycode, gdk_state);
-            });
+            }, false);
         _key_controller->signal_key_released().connect(
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return on_key_released(keyval, keycode, gdk_state);
-            });
+            }, false);
         add_controller(_key_controller);
         
         auto size_controller = Gtk::EventControllerMotion::create();
@@ -1367,22 +1352,22 @@ public:
         switch(type) {
             case Type::INFORMATION:
                 icon_name = "dialog-information";
-                gtkDialog.set_message_type(Gtk::MessageType::INFO);
+                gtkDialog.set_message_dialog_flags(Gtk::DialogFlags::MODAL);
                 break;
 
             case Type::QUESTION:
                 icon_name = "dialog-question";
-                gtkDialog.set_message_type(Gtk::MessageType::QUESTION);
+                gtkDialog.set_message_dialog_flags(Gtk::DialogFlags::MODAL | Gtk::DialogFlags::DESTROY_WITH_PARENT);
                 break;
 
             case Type::WARNING:
                 icon_name = "dialog-warning";
-                gtkDialog.set_message_type(Gtk::MessageType::WARNING);
+                gtkDialog.set_message_dialog_flags(Gtk::DialogFlags::MODAL);
                 break;
 
             case Type::ERROR:
                 icon_name = "dialog-error";
-                gtkDialog.set_message_type(Gtk::MessageType::ERROR);
+                gtkDialog.set_message_dialog_flags(Gtk::DialogFlags::MODAL);
                 break;
         }
         
@@ -1476,13 +1461,13 @@ public:
             [&](int r) {
                 response = r;
                 loop->quit();
-            });
+            }, false);
             
         auto close_handler = gtkDialog.signal_close_request().connect(
             [&loop]() -> bool {
                 loop->quit();
                 return true;
-            });
+            }, false);
             
         gtkDialog.show();
         loop->run();
@@ -1622,24 +1607,16 @@ class FileDialogGtkImplGtk final : public FileDialogImplGtk {
 public:
     Gtk::FileChooserDialog      gtkDialog;
     
-    Glib::Property<bool> modal_property;
-    Glib::Property<Glib::ustring> title_property;
-    
     FileDialogGtkImplGtk(Gtk::Window &gtkParent, bool isSave)
         : gtkDialog(isSave ? C_("title", "Save File")
                            : C_("title", "Open File"),
                     isSave ? Gtk::FileChooser::Action::SAVE
-                           : Gtk::FileChooser::Action::OPEN),
-          modal_property(gtkDialog.property_modal()),
-          title_property(gtkDialog.property_title())
+                           : Gtk::FileChooser::Action::OPEN)
     {
         gtkDialog.set_transient_for(gtkParent);
-        modal_property.set_value(true);
+        gtkDialog.set_modal(true);
         
-        gtkDialog.get_accessible()->set_role(Gtk::AccessibleRole::DIALOG);
-        gtkDialog.get_accessible()->set_name(isSave ? "Save File Dialog" : "Open File Dialog");
-        gtkDialog.get_accessible()->set_description(
-            isSave ? "Dialog for saving files" : "Dialog for opening files");
+        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
         
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
@@ -1689,9 +1666,6 @@ class FileDialogNativeImplGtk final : public FileDialogImplGtk {
 public:
     Glib::RefPtr<Gtk::FileChooserNative> gtkNative;
     
-    Glib::Property<bool> modal_property;
-    Glib::Property<Glib::ustring> title_property;
-    
     FileDialogNativeImplGtk(Gtk::Window &gtkParent, bool isSave) {
         gtkNative = Gtk::FileChooserNative::create(
             isSave ? C_("title", "Save File")
@@ -1703,19 +1677,7 @@ public:
                    : C_("button", "_Open"),
             C_("button", "_Cancel"));
             
-        modal_property = Glib::Property<bool>(*this, "modal", false);
-        title_property = Glib::Property<Glib::ustring>(*this, "title", 
-            isSave ? C_("title", "Save File") : C_("title", "Open File"));
-            
-        modal_property.signal_changed().connect([this]() {
-            gtkNative->set_modal(modal_property.get_value());
-        });
-        
-        title_property.signal_changed().connect([this]() {
-            gtkNative->set_title(title_property.get_value());
-        });
-        
-        modal_property.set_value(true);
+        gtkNative->set_modal(true);
         
         if(isSave) {
             gtkNative->set_current_name("untitled");
@@ -1725,13 +1687,13 @@ public:
     }
 
     void SetTitle(std::string title) override {
-        title_property.set_value(PrepareTitle(title));
+        gtkNative->set_title(PrepareTitle(title));
     }
 
     bool RunModal() override {
         CheckForUntitledFile();
         
-        modal_property.set_value(true);
+        gtkNative->set_modal(true);
         
         auto loop = Glib::MainLoop::create();
         auto response_id = Gtk::ResponseType::CANCEL;
@@ -1740,7 +1702,7 @@ public:
             [&](int response) {
                 response_id = static_cast<Gtk::ResponseType>(response);
                 loop->quit();
-            });
+            }, false);
         
         gtkNative->show();
         loop->run();
