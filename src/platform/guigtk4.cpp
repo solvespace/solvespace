@@ -1798,12 +1798,11 @@ public:
                 loop->quit();
             });
             
+        gtkNative->get_widget()->add_css_class("solvespace-file-dialog");
         gtkNative->show();
         loop->run();
         
-        response_handler.disconnect();
-        
-        return response_id == Gtk::ResponseType::OK;
+        return response_id == Gtk::ResponseType::ACCEPT;
     }
 };
 
