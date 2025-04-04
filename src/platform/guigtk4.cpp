@@ -1790,6 +1790,30 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         app_info->set_license_type(Gtk::License::GPL_3_0);
         app_info->set_comments("Parametric 2D/3D CAD");
         app_info->set_translator_credits("SolveSpace Contributors");
+        
+        app_info->set_copyright("© 2008-2023 SolveSpace Contributors");
+        app_info->set_authors({"Jonathan Westhues", "whitequark", "ruevs", "Paul Kahler"});
+        app_info->set_documenters({"SolveSpace Contributors"});
+        app_info->set_artists({"SolveSpace Contributors"});
+        
+        Gtk::Accessible::set_accessible_role(Gtk::AccessibleRole::APPLICATION);
+        Gtk::Accessible::set_accessible_description("SolveSpace - Parametric 2D/3D CAD");
+    }
+    
+    auto settings = Gtk::Settings::get_default();
+    if (settings) {
+        settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
+            []() {
+                auto style_provider = Gtk::CssProvider::create();
+                style_provider->load_from_data(R"(
+                    /* Dark mode specific styles would go here */
+                )");
+                
+                Gtk::StyleContext::add_provider_for_display(
+                    Gdk::Display::get_default(),
+                    style_provider,
+                    GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+            });
     }
     
     std::vector<std::string> args;
