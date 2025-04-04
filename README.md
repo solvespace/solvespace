@@ -112,7 +112,7 @@ For GTK3 builds:
 ```sh
 sudo apt install git build-essential cmake zlib1g-dev libpng-dev \
             libcairo2-dev libfreetype6-dev libjson-c-dev \
-            libfontconfig1-dev libgtkmm-4.0-dev libpangomm-2.48-dev \
+            libfontconfig1-dev libgtkmm-3.0-dev libpangomm-1.4-dev \
             libgl-dev libglu-dev libspnav-dev
 ```
 
@@ -130,7 +130,7 @@ For GTK3 builds:
 ```sh
 sudo dnf install git gcc-c++ cmake zlib-devel libpng-devel \
             cairo-devel freetype-devel json-c-devel \
-            fontconfig-devel gtkmm4.0-devel pangomm2_48-devel \
+            fontconfig-devel gtkmm30-devel pangomm-devel \
             mesa-libGL-devel mesa-libGLU-devel libspnav-devel
 ```
 
