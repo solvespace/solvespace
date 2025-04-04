@@ -1413,24 +1413,29 @@ public:
     }
 
     Response RunModal() override {
-        gtkDialog.show();
-        int response = Gtk::ResponseType::NONE;
+        gtkDialog.set_modal(true);
         
-        auto conn = gtkDialog.signal_response().connect(
-            [&response](int r) {
+        int response = Gtk::ResponseType::NONE;
+        auto loop = Glib::MainLoop::create();
+        
+        auto response_handler = gtkDialog.signal_response().connect(
+            [&](int r) {
                 response = r;
+                loop->quit();
             });
             
-        auto loop = Glib::MainLoop::create();
-        gtkDialog.signal_close_request().connect(
+        auto close_handler = gtkDialog.signal_close_request().connect(
             [&loop]() -> bool {
                 loop->quit();
                 return true;
-            }, false);
+            });
             
+        gtkDialog.show();
         loop->run();
         
-        conn.disconnect();
+        response_handler.disconnect();
+        close_handler.disconnect();
+        gtkDialog.hide();
         
         return ProcessResponse(response);
     }
