@@ -49,7 +49,6 @@
 #include <gtkmm/shortcuttrigger.h>
 #include <gtkmm/shortcutaction.h>
 #include <gtkmm/accessible.h>
-#include <gtkmm/propertyexpression.h>
 
 #include "config.h"
 #if defined(HAVE_GTK_FILECHOOSERNATIVE)
