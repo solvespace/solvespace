@@ -11,6 +11,9 @@ if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
     add_definitions(-DTEST_BUILD_ON_WINDOWS)
 endif()
 
+# Platform-specific tests
+add_subdirectory(platform)
+
 # test suite
 
 set(testsuite_SOURCES
