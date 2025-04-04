@@ -1787,6 +1787,9 @@ public:
             
         gtkNative->set_modal(true);
         
+        gtkNative->set_accessible_role(Gtk::AccessibleRole::DIALOG);
+        gtkNative->set_accessible_name(isSave ? "Save File Dialog" : "Open File Dialog");
+        
         if(isSave) {
             gtkNative->set_current_name("untitled");
         }
