@@ -1597,22 +1597,21 @@ public:
     bool RunModal() override {
         CheckForUntitledFile();
         
-        bool result = false;
-        gtkDialog.signal_response().connect([this, &result](int response) {
-            if (response == Gtk::ResponseType::OK) {
-                result = true;
-            }
-            gtkDialog.hide();
-        });
+        auto loop = Glib::MainLoop::create();
+        auto response_id = Gtk::ResponseType::CANCEL;
+        
+        auto response_handler = gtkDialog.signal_response().connect(
+            [&](int response) {
+                response_id = static_cast<Gtk::ResponseType>(response);
+                loop->quit();
+            });
         
         gtkDialog.show();
+        loop->run();
         
-        auto context = gtkDialog.get_display()->get_app_launch_context();
-        while (gtkDialog.is_visible()) {
-            g_main_context_iteration(nullptr, TRUE);
-        }
+        response_handler.disconnect();
         
-        return result;
+        return response_id == Gtk::ResponseType::OK;
     }
 };
 
