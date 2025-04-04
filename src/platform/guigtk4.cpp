@@ -1796,7 +1796,7 @@ public:
         
         response_handler.disconnect();
         
-        return response_id == Gtk::ResponseType::ACCEPT;
+        return response_id == Gtk::ResponseType::OK;
     }
 };
 
