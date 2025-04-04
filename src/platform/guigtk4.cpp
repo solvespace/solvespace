@@ -646,6 +646,9 @@ protected:
             }, false);
         add_controller(key_controller);
         
+        add_css_class("solvespace-gl-widget");
+        set_accessible_role(Gtk::AccessibleRole::CANVAS);
+        set_accessible_name("SolveSpace 3D View");
         set_can_focus(true);
         
         auto focus_controller = Gtk::EventControllerFocus::create();
@@ -1430,6 +1433,9 @@ public:
         if (button_area) {
             button_area->add_css_class("dialog-button-box");
         }
+        
+        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
+        gtkDialog.add_css_class("solvespace-dialog");
     }
 
     void SetType(Type type) override {
