@@ -1766,9 +1766,13 @@ void RunGui() {
     const char* display = getenv("DISPLAY");
     if (display && (strncmp(display, ":", 1) == 0)) {
         setenv("GTK_A11Y", "none", 0);
+    } else {
+        unsetenv("GTK_A11Y");
     }
     
     if (!gtkApp->is_registered()) {
+        gtkApp->register_application();
+        gtkApp->hold(); // Prevent application from exiting when last window closes
         gtkApp->run();
     }
 }
