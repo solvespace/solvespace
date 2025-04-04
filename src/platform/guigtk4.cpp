@@ -43,6 +43,14 @@
 #include <gtkmm/eventcontrollermotion.h>
 #include <gtkmm/eventcontrollerscroll.h>
 #include <gtkmm/gestureclick.h>
+#include <gtkmm/label.h>
+#include <gtkmm/shortcutcontroller.h>
+#include <gtkmm/shortcut.h>
+#include <gtkmm/shortcuttrigger.h>
+#include <gtkmm/shortcutaction.h>
+#include <gtkmm/accessible.h>
+#include <gtkmm/accessibletext.h>
+#include <gtkmm/propertyexpression.h>
 
 #include "config.h"
 #if defined(HAVE_GTK_FILECHOOSERNATIVE)
@@ -526,9 +534,9 @@ public:
         add_css_class("solvespace-gl-area");
         add_css_class("drawing-area");
         
-        set_accessible_role(Gtk::AccessibleRole::CANVAS);
-        set_accessible_name("SolveSpace Drawing Area");
-        set_accessible_description("3D modeling canvas for SolveSpace");
+        get_accessible()->set_property("accessible-role", "canvas");
+        get_accessible()->set_property("accessible-name", "SolveSpace Drawing Area");
+        get_accessible()->set_property("accessible-description", "3D modeling canvas for SolveSpace");
         
         setup_event_controllers();
     }
@@ -671,21 +679,21 @@ protected:
         add_controller(key_controller);
         
         add_css_class("solvespace-gl-widget");
-        set_accessible_role(Gtk::AccessibleRole::CANVAS);
-        set_accessible_name("SolveSpace 3D View");
+        get_accessible()->set_property("accessible-role", "canvas");
+        get_accessible()->set_property("accessible-name", "SolveSpace 3D View");
         set_can_focus(true);
         
-        auto focus_controller = Gtk::EventControllerFocus::create();
-        focus_controller->signal_enter().connect(
+        auto key_controller = Gtk::EventControllerKey::create();
+        key_controller->signal_focus_in().connect(
             [this]() {
                 grab_focus();
                 return true;
             });
-        focus_controller->signal_leave().connect(
+        key_controller->signal_focus_out().connect(
             [this]() {
                 return true;
             });
-        add_controller(focus_controller);
+        add_controller(key_controller);
     }
 
     void get_pointer_position(double &x, double &y) {
@@ -728,9 +736,10 @@ public:
         set_row_homogeneous(false);
         set_column_homogeneous(false);
         
-        set_accessible_role(Gtk::AccessibleRole::GROUP);
-        set_accessible_name("Editor Overlay");
-        set_accessible_description("SolveSpace editor overlay with drawing area and text input");
+        get_accessible()->set_property("accessible-role", "group");
+        get_accessible()->set_property("accessible-name", "Editor Overlay");
+        get_accessible()->set_property("accessible-description", 
+            "SolveSpace editor overlay with drawing area and text input");
         
         Gtk::StyleContext::add_provider_for_display(
             get_display(),
@@ -747,8 +756,8 @@ public:
         _entry.set_hexpand(true);
         _entry.set_vexpand(false);
         
-        _entry.set_accessible_role(Gtk::AccessibleRole::TEXT_BOX);
-        _entry.set_accessible_name("Text Input");
+        _entry.get_accessible()->set_property("accessible-role", "text-box");
+        _entry.get_accessible()->set_property("accessible-name", "Text Input");
         
         attach(_gl_widget, 0, 0);
         attach(_entry, 0, 1);
@@ -1113,7 +1122,7 @@ public:
             }
         });
         
-        gtkWindow.set_accessible_role(Gtk::AccessibleRole::WINDOW);
+        gtkWindow.get_accessible()->set_property("accessible-role", "window");
     }
 
     double GetPixelDensity() override {
@@ -1481,7 +1490,7 @@ public:
             button_area->add_css_class("dialog-button-box");
         }
         
-        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
+        gtkDialog.get_accessible()->set_property("accessible-role", "dialog");
         gtkDialog.add_css_class("solvespace-dialog");
     }
 
@@ -1768,18 +1777,18 @@ public:
         gtkDialog.add_css_class("dialog");
         gtkDialog.add_css_class("solvespace-file-dialog");
         
-        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
-        gtkDialog.set_accessible_name(isSave ? "Save File Dialog" : "Open File Dialog");
+        gtkDialog.get_accessible()->set_property("accessible-role", "dialog");
+        gtkDialog.get_accessible()->set_property("accessible-name", isSave ? "Save File Dialog" : "Open File Dialog");
         
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
-        cancel_button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
+        cancel_button->get_accessible()->set_property("accessible-role", "button");
         
         auto action_button = gtkDialog.add_button(
             isSave ? C_("button", "_Save") : C_("button", "_Open"), 
             Gtk::ResponseType::OK);
         action_button->add_css_class("suggested-action");
-        action_button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
+        action_button->get_accessible()->set_property("accessible-role", "button");
         
         gtkDialog.set_default_response(Gtk::ResponseType::OK);
         
@@ -1834,8 +1843,8 @@ public:
             
         gtkNative->set_modal(true);
         
-        gtkNative->set_accessible_role(Gtk::AccessibleRole::DIALOG);
-        gtkNative->set_accessible_name(isSave ? "Save File Dialog" : "Open File Dialog");
+        gtkNative->get_accessible()->set_property("accessible-role", "dialog");
+        gtkNative->get_accessible()->set_property("accessible-name", isSave ? "Save File Dialog" : "Open File Dialog");
         
         if(isSave) {
             gtkNative->set_current_name("untitled");
@@ -1860,7 +1869,10 @@ public:
                 loop->quit();
             });
             
-        gtkNative->get_widget()->add_css_class("solvespace-file-dialog");
+        if (auto widget = gtkNative->get_widget()) {
+            widget->add_css_class("solvespace-file-dialog");
+        }
+        
         gtkNative->show();
         loop->run();
         
