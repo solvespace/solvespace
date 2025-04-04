@@ -269,18 +269,22 @@ class GtkMenuItem : public Gtk::CheckButton {
     Platform::MenuItem *_receiver;
     bool                _has_indicator;
     bool                _synthetic_event;
-    sigc::connection    _activate_connection;
+    Glib::RefPtr<Gtk::GestureClick> _click_controller;
 
 public:
     GtkMenuItem(Platform::MenuItem *receiver) :
         _receiver(receiver), _has_indicator(false), _synthetic_event(false) {
         
-        _activate_connection = signal_toggled().connect(
-            [this]() {
+        _click_controller = Gtk::GestureClick::create();
+        _click_controller->set_button(GDK_BUTTON_PRIMARY);
+        _click_controller->signal_released().connect(
+            [this](int n_press, double x, double y) {
                 if(!_synthetic_event && _receiver->onTrigger) {
                     _receiver->onTrigger();
                 }
-            }, false);
+                return true;
+            });
+        add_controller(_click_controller);
     }
 
     void set_accel_key(const Gtk::AccelKey &accel_key) {
@@ -447,26 +451,39 @@ public:
     }
 
     void PopUp() override {
-        gtkMenu.set_visible(true);
+        Glib::RefPtr<Glib::MainLoop> loop = Glib::MainLoop::create();
         
-        auto controller = Gtk::EventControllerKey::create();
-        controller->signal_key_pressed().connect(
-            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+        auto key_controller = Gtk::EventControllerKey::create();
+        key_controller->signal_key_pressed().connect(
+            [this, &loop](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 if (keyval == GDK_KEY_Escape) {
                     gtkMenu.set_visible(false);
+                    loop->quit();
                     return true;
                 }
                 return false;
             }, false);
-        gtkMenu.add_controller(controller);
+        gtkMenu.add_controller(key_controller);
         
-        Glib::RefPtr<Glib::MainLoop> loop = Glib::MainLoop::create();
-        auto signal = gtkMenu.signal_closed().connect([&]() { 
-            loop->quit(); 
+        auto focus_controller = Gtk::EventControllerFocus::create();
+        focus_controller->signal_leave().connect(
+            [this, &loop]() {
+                loop->quit();
+            });
+        gtkMenu.add_controller(focus_controller);
+        
+        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkMenu.property_visible());
+        auto visible_connection = visible_binding->connect([&loop](bool visible) {
+            if (!visible) {
+                loop->quit();
+            }
         });
         
+        gtkMenu.set_visible(true);
+        
         loop->run();
-        signal.disconnect();
+        
+        gtkMenu.set_visible(false);
     }
 
     void Clear() override {
@@ -781,8 +798,16 @@ public:
         attach(_gl_widget, 0, 0);
         attach(_entry, 0, 1);
         
-        _entry.signal_activate().
-            connect(sigc::mem_fun(*this, &GtkEditorOverlay::on_activate), false);
+        auto entry_key_controller = Gtk::EventControllerKey::create();
+        entry_key_controller->signal_key_pressed().connect(
+            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                if (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) {
+                    on_activate();
+                    return true;
+                }
+                return false;
+            }, false);
+        _entry.add_controller(entry_key_controller);
             
         _key_controller = Gtk::EventControllerKey::create();
         _key_controller->signal_key_pressed().connect(
@@ -1606,17 +1631,22 @@ public:
     }
 
     void ShowModal() override {
-        gtkDialog.signal_hide().connect([this]() -> void {
-            auto it = std::remove(shownMessageDialogs.begin(), shownMessageDialogs.end(),
-                                  shared_from_this());
-            shownMessageDialogs.erase(it);
-        });
         shownMessageDialogs.push_back(shared_from_this());
-
+        
+        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
+        auto visible_connection = visible_binding->connect([this](bool visible) {
+            if (!visible) {
+                auto it = std::remove(shownMessageDialogs.begin(), shownMessageDialogs.end(),
+                                     shared_from_this());
+                shownMessageDialogs.erase(it);
+            }
+        });
+        
         gtkDialog.signal_response().connect([this](int gtkResponse) -> void {
             ProcessResponse(gtkResponse);
             gtkDialog.hide();
         });
+
         gtkDialog.show();
     }
 
@@ -1626,23 +1656,35 @@ public:
         int response = Gtk::ResponseType::NONE;
         auto loop = Glib::MainLoop::create();
         
+        auto controller = Gtk::ShortcutController::create();
+        auto action = Gtk::CallbackAction::create([&loop]() {
+            loop->quit();
+            return true;
+        });
+        
+        auto shortcut = Gtk::Shortcut::create(
+            Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
+            action);
+        controller->add_shortcut(shortcut);
+        gtkDialog.add_controller(controller);
+        
         auto response_handler = gtkDialog.signal_response().connect(
             [&](int r) {
                 response = r;
                 loop->quit();
             }, false);
             
-        auto close_handler = gtkDialog.signal_close_request().connect(
-            [&loop]() -> bool {
+        auto close_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
+        auto close_connection = close_binding->connect([&loop, &response](bool visible) {
+            if (!visible) {
                 loop->quit();
-                return true;
-            }, false);
-            
+            }
+        });
+        
         gtkDialog.show();
         loop->run();
         
         response_handler.disconnect();
-        close_handler.disconnect();
         gtkDialog.hide();
         
         return ProcessResponse(response);
