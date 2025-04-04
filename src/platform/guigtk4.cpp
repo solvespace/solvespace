@@ -1308,28 +1308,41 @@ public:
     }
 
     void SetType(Type type) override {
+        const char* icon_name = "dialog-information";
+        
         switch(type) {
             case Type::INFORMATION:
-                gtkImage.set_from_icon_name("dialog-information");
-                gtkImage.set_icon_size(Gtk::IconSize::LARGE);
+                icon_name = "dialog-information";
+                gtkDialog.set_message_type(Gtk::MessageType::INFO);
                 break;
 
             case Type::QUESTION:
-                gtkImage.set_from_icon_name("dialog-question");
-                gtkImage.set_icon_size(Gtk::IconSize::LARGE);
+                icon_name = "dialog-question";
+                gtkDialog.set_message_type(Gtk::MessageType::QUESTION);
                 break;
 
             case Type::WARNING:
-                gtkImage.set_from_icon_name("dialog-warning");
-                gtkImage.set_icon_size(Gtk::IconSize::LARGE);
+                icon_name = "dialog-warning";
+                gtkDialog.set_message_type(Gtk::MessageType::WARNING);
                 break;
 
             case Type::ERROR:
-                gtkImage.set_from_icon_name("dialog-error");
-                gtkImage.set_icon_size(Gtk::IconSize::LARGE);
+                icon_name = "dialog-error";
+                gtkDialog.set_message_type(Gtk::MessageType::ERROR);
                 break;
         }
+        
+        gtkImage.set_from_icon_name(icon_name);
+        gtkImage.set_icon_size(Gtk::IconSize::LARGE);
+        gtkImage.add_css_class("dialog-icon");
+        
         auto content_area = gtkDialog.get_content_area();
+        content_area->set_margin_start(12);
+        content_area->set_margin_end(12);
+        content_area->set_margin_top(12);
+        content_area->set_margin_bottom(12);
+        content_area->set_spacing(12);
+        
         content_area->append(gtkImage);
         gtkImage.set_visible(true);
     }
