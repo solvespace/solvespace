@@ -1912,10 +1912,36 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     style_provider->load_from_data(R"(
         .solvespace-app {
             /* Application-wide styles */
+            background-color: #f8f8f8;
         }
         
         .menu-button {
             padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .solvespace-gl-area {
+            background-color: #ffffff;
+            border-radius: 2px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .drawing-area {
+            min-width: 300px;
+            min-height: 300px;
+        }
+        
+        .solvespace-file-dialog {
+            padding: 8px;
+        }
+        
+        .menu-item {
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .menu-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
         }
         
         .menu-item {
