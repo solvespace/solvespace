@@ -618,6 +618,33 @@ protected:
         add_controller(key_controller);
         
         auto focus_controller = Gtk::EventControllerFocus::create();
+        focus_controller->signal_enter().connect(
+            [this]() {
+                auto accessible = get_accessible();
+                if (accessible) {
+                    accessible->set_role(Gtk::AccessibleRole::CANVAS);
+                    accessible->update_property(
+                        Gtk::AccessibleProperty::LABEL,
+                        "SolveSpace 3D Editor"
+                    );
+                    accessible->update_state(
+                        Gtk::AccessibleState::FOCUSED,
+                        true
+                    );
+                }
+                return true;
+            });
+        focus_controller->signal_leave().connect(
+            [this]() {
+                auto accessible = get_accessible();
+                if (accessible) {
+                    accessible->update_state(
+                        Gtk::AccessibleState::FOCUSED,
+                        false
+                    );
+                }
+                return true;
+            });
         add_controller(focus_controller);
     }
 
