@@ -48,11 +48,16 @@
             "config-opts": [
                 "-Dbuild-examples=false"
             ],
+            "build-options": {
+                "env": {
+                    "MESON_ARGS": "--wrap-mode=nofallback"
+                }
+            },
             "sources": [
                 {
                     "type": "archive",
                     "url": "https://download.gnome.org/sources/libsigc++/3.0/libsigc++-3.0.7.tar.xz",
-                    "sha256": "bfbe91c0d094ea6bbc6cbd3909b8521e8b8d5c8034183290b37a89ddb1e3fad0",
+                    "sha256": "bfbe91c0d094ea6bbc6cbd3909b7d98c6561eea8b6d9c0c25add906a6e83d733",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "libsigc++",

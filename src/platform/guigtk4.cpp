@@ -369,14 +369,20 @@ public:
         switch(type) {
             case Indicator::NONE:
                 gtkMenuItem.set_has_indicator(false);
+                gtkMenuItem.remove_css_class("check-menu-item");
+                gtkMenuItem.remove_css_class("radio-menu-item");
                 break;
 
             case Indicator::CHECK_MARK:
                 gtkMenuItem.set_has_indicator(true);
+                gtkMenuItem.add_css_class("check-menu-item");
+                gtkMenuItem.remove_css_class("radio-menu-item");
                 break;
 
             case Indicator::RADIO_MARK:
                 gtkMenuItem.set_has_indicator(true);
+                gtkMenuItem.remove_css_class("check-menu-item");
+                gtkMenuItem.add_css_class("radio-menu-item");
                 break;
         }
     }
@@ -442,6 +448,17 @@ public:
 
     void PopUp() override {
         gtkMenu.set_visible(true);
+        
+        auto controller = Gtk::EventControllerKey::create();
+        controller->signal_key_pressed().connect(
+            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                if (keyval == GDK_KEY_Escape) {
+                    gtkMenu.set_visible(false);
+                    return true;
+                }
+                return false;
+            }, false);
+        gtkMenu.add_controller(controller);
         
         Glib::RefPtr<Glib::MainLoop> loop = Glib::MainLoop::create();
         auto signal = gtkMenu.signal_closed().connect([&]() { 
@@ -714,6 +731,7 @@ class GtkEditorOverlay : public Gtk::Grid {
     GtkGLWidget _gl_widget;
     Gtk::Entry  _entry;
     Glib::RefPtr<Gtk::EventControllerKey> _key_controller;
+    Glib::RefPtr<Gtk::PropertyExpression<bool>> _entry_visible_binding;
 
 public:
     GtkEditorOverlay(Platform::Window *receiver) : 
@@ -753,6 +771,9 @@ public:
         _entry.set_has_frame(false);
         _entry.set_hexpand(true);
         _entry.set_vexpand(false);
+        
+        auto entry_visible_expr = Gtk::PropertyExpression<bool>::create(_entry.property_visible());
+        _entry_visible_binding = entry_visible_expr;
         
         _entry.get_accessible()->set_property("accessible-role", "text-box");
         _entry.get_accessible()->set_property("accessible-name", "Text Input");
@@ -1069,13 +1090,13 @@ public:
     GtkWindow       gtkWindow;
     MenuBarRef      menuBar;
 
-    Glib::Property<bool> _visible_prop;
-    Glib::Property<bool> _fullscreen_prop;
+    bool _visible;
+    bool _fullscreen;
     
     WindowImplGtk(Window::Kind kind) : 
         gtkWindow(this),
-        _visible_prop(*this, "visible", false),
-        _fullscreen_prop(*this, "fullscreen", false)
+        _visible(false),
+        _fullscreen(false)
     {
         switch(kind) {
             case Kind::TOPLEVEL:
@@ -1104,23 +1125,8 @@ public:
                 GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         }
         
-        _visible_prop.signal_changed().connect([this]() {
-            if (_visible_prop.get_value()) {
-                gtkWindow.show();
-            } else {
-                gtkWindow.hide();
-            }
-        });
         
-        _fullscreen_prop.signal_changed().connect([this]() {
-            if (_fullscreen_prop.get_value()) {
-                gtkWindow.fullscreen();
-            } else {
-                gtkWindow.unfullscreen();
-            }
-        });
-        
-        gtkWindow.get_accessible()->set_property("accessible-role", "window");
+        gtkWindow.get_style_context()->add_class("window");
     }
 
     double GetPixelDensity() override {
@@ -1132,11 +1138,16 @@ public:
     }
 
     bool IsVisible() override {
-        return _visible_prop.get_value();
+        return _visible;
     }
 
     void SetVisible(bool visible) override {
-        _visible_prop.set_value(visible);
+        _visible = visible;
+        if (_visible) {
+            gtkWindow.show();
+        } else {
+            gtkWindow.hide();
+        }
     }
 
     void Focus() override {
@@ -1144,11 +1155,16 @@ public:
     }
 
     bool IsFullScreen() override {
-        return _fullscreen_prop.get_value();
+        return _fullscreen;
     }
 
     void SetFullScreen(bool fullScreen) override {
-        _fullscreen_prop.set_value(fullScreen);
+        _fullscreen = fullScreen;
+        if (_fullscreen) {
+            gtkWindow.fullscreen();
+        } else {
+            gtkWindow.unfullscreen();
+        }
     }
 
     void SetTitle(const std::string &title) override {
@@ -1167,23 +1183,22 @@ public:
                 auto menuButton = Gtk::make_managed<Gtk::MenuButton>();
                 menuButton->add_css_class("menu-button");
                 
-                Glib::VariantBase labelVariant;
+                Glib::ustring menuLabel;
                 if (subMenu->gioMenu->get_n_items() > 0) {
-                    subMenu->gioMenu->get_item_attribute(0, "label", labelVariant);
-                    Glib::ustring menuLabel;
-                    labelVariant.get(menuLabel);
-                    if (!menuLabel.empty()) {
-                        menuButton->set_label(menuLabel);
+                    auto menuImpl = std::static_pointer_cast<MenuImplGtk>(subMenu);
+                    if (!menuImpl->name.empty()) {
+                        menuLabel = menuImpl->name;
                     } else {
-                        menuButton->set_label("Menu " + std::to_string(menuIndex+1));
+                        menuLabel = "Menu " + std::to_string(menuIndex+1);
                     }
                 } else {
-                    menuButton->set_label("Menu " + std::to_string(menuIndex+1));
+                    menuLabel = "Menu " + std::to_string(menuIndex+1);
                 }
+                menuButton->set_label(menuLabel);
                 
                 menuButton->set_tooltip_text(menuButton->get_label());
-                menuButton->set_accessible_role(Gtk::AccessibleRole::MENU_BUTTON);
-                menuButton->set_accessible_name(menuButton->get_label() + " Menu");
+                menuButton->add_css_class("menu-button");
+                menuButton->set_tooltip_text(menuButton->get_label() + " Menu");
                 
                 auto popover = Gtk::make_managed<Gtk::Popover>();
                 menuButton->set_popover(*popover);
@@ -1203,9 +1218,7 @@ public:
                     item->add_css_class("menu-item");
                     item->set_halign(Gtk::Align::FILL);
                     item->set_hexpand(true);
-                    
-                    item->set_accessible_role(Gtk::AccessibleRole::MENU_ITEM);
-                    item->set_accessible_name(menuItem->label);
+                    item->set_tooltip_text(menuItem->name);
                     
                     if (menuItem->onTrigger) {
                         item->signal_clicked().connect([popover, onTrigger = menuItem->onTrigger]() {
@@ -1781,12 +1794,15 @@ public:
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
         cancel_button->get_accessible()->set_property("accessible-role", "button");
+        cancel_button->get_accessible()->set_property("accessible-name", "Cancel");
         
         auto action_button = gtkDialog.add_button(
             isSave ? C_("button", "_Save") : C_("button", "_Open"), 
             Gtk::ResponseType::OK);
         action_button->add_css_class("suggested-action");
         action_button->get_accessible()->set_property("accessible-role", "button");
+        action_button->get_accessible()->set_property("accessible-name", 
+            isSave ? "Save" : "Open");
         
         gtkDialog.set_default_response(Gtk::ResponseType::OK);
         
@@ -1841,8 +1857,8 @@ public:
             
         gtkNative->set_modal(true);
         
-        gtkNative->get_accessible()->set_property("accessible-role", "dialog");
-        gtkNative->get_accessible()->set_property("accessible-name", isSave ? "Save File Dialog" : "Open File Dialog");
+        gtkNative->add_css_class("dialog");
+        gtkNative->set_title(isSave ? "Save File Dialog" : "Open File Dialog");
         
         if(isSave) {
             gtkNative->set_current_name("untitled");
