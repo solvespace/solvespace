@@ -1719,14 +1719,20 @@ public:
         gtkDialog.set_modal(true);
         
         gtkDialog.add_css_class("dialog");
+        gtkDialog.add_css_class("solvespace-file-dialog");
+        
+        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
+        gtkDialog.set_accessible_name(isSave ? "Save File Dialog" : "Open File Dialog");
         
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
+        cancel_button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
         
         auto action_button = gtkDialog.add_button(
             isSave ? C_("button", "_Save") : C_("button", "_Open"), 
             Gtk::ResponseType::OK);
         action_button->add_css_class("suggested-action");
+        action_button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
         
         gtkDialog.set_default_response(Gtk::ResponseType::OK);
         
