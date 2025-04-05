@@ -1076,6 +1076,65 @@ class GtkWindow : public Gtk::Window {
     bool _is_under_cursor;
     bool _is_fullscreen;
     
+    void setup_event_controllers() {
+        _motion_controller = Gtk::EventControllerMotion::create();
+        _motion_controller->signal_enter().connect(
+            [this](double x, double y) {
+                _is_under_cursor = true;
+                return true;
+            });
+        _motion_controller->signal_leave().connect(
+            [this]() {
+                _is_under_cursor = false;
+                return true;
+            });
+        add_controller(_motion_controller);
+
+        auto key_controller = Gtk::EventControllerKey::create();
+        key_controller->signal_key_pressed().connect(
+            [this](guint keyval, guint keycode, Gdk::ModifierType state) {
+                if(_receiver->onKeyDown) {
+                    Platform::KeyboardEvent event = {};
+                    if(keyval == GDK_KEY_Escape) {
+                        event.key = Platform::KeyboardEvent::Key::CHARACTER;
+                        event.chr = '\x1b';
+                    } else if(keyval == GDK_KEY_Delete) {
+                        event.key = Platform::KeyboardEvent::Key::CHARACTER;
+                        event.chr = '\x7f';
+                    } else if(keyval == GDK_KEY_Tab) {
+                        event.key = Platform::KeyboardEvent::Key::CHARACTER;
+                        event.chr = '\t';
+                    } else if(keyval >= GDK_KEY_F1 && keyval <= GDK_KEY_F12) {
+                        event.key = Platform::KeyboardEvent::Key::FUNCTION;
+                        event.num = keyval - GDK_KEY_F1 + 1;
+                    } else if(keyval >= GDK_KEY_0 && keyval <= GDK_KEY_9) {
+                        event.key = Platform::KeyboardEvent::Key::CHARACTER;
+                        event.chr = '0' + (keyval - GDK_KEY_0);
+                    } else if(keyval >= GDK_KEY_a && keyval <= GDK_KEY_z) {
+                        event.key = Platform::KeyboardEvent::Key::CHARACTER;
+                        event.chr = 'a' + (keyval - GDK_KEY_a);
+                    } else if(keyval >= GDK_KEY_A && keyval <= GDK_KEY_Z) {
+                        event.key = Platform::KeyboardEvent::Key::CHARACTER;
+                        event.chr = 'A' + (keyval - GDK_KEY_A);
+                    } else {
+                        guint32 unicode = gdk_keyval_to_unicode(keyval);
+                        if(unicode) {
+                            event.key = Platform::KeyboardEvent::Key::CHARACTER;
+                            event.chr = unicode;
+                        }
+                    }
+                    
+                    event.shiftDown = (state & Gdk::ModifierType::SHIFT_MASK) != 0;
+                    event.controlDown = (state & Gdk::ModifierType::CONTROL_MASK) != 0;
+                    
+                    _receiver->onKeyDown(event);
+                    return true;
+                }
+                return false;
+            }, false);
+        add_controller(key_controller);
+    }
+    
     void setup_state_binding() {
         property_state().signal_changed().connect([this]() {
             auto state = get_state();
@@ -1128,9 +1187,10 @@ public:
         auto adjustment = Gtk::Adjustment::create(0.0, 0.0, 100.0, 1.0, 10.0, 10.0);
         _scrollbar.set_adjustment(adjustment);
 
-        adjustment->signal_value_changed().connect([this, adjustment]() {
+        auto value_binding = Gtk::PropertyExpression<double>::create(adjustment->property_value());
+        value_binding->connect([this, adjustment](double value) {
             if(_receiver->onScrollbarAdjusted) {
-                _receiver->onScrollbarAdjusted(adjustment->get_value());
+                _receiver->onScrollbarAdjusted(value);
             }
         });
 
