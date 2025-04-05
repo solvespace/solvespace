@@ -740,9 +740,11 @@ protected:
         focus_controller->signal_enter().connect(
             [this]() {
                 grab_focus();
+                update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::FOCUSED);
             });
         focus_controller->signal_leave().connect(
             [this]() {
+                update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::NONE);
             });
         add_controller(focus_controller);
     }
@@ -1390,6 +1392,20 @@ public:
                 border-radius: 3px;
                 padding: 4px;
                 caret-color: @link_color;
+            }
+            button {
+                padding: 6px 10px;
+                border-radius: 4px;
+            }
+            button:focus {
+                outline: 2px solid alpha(@accent_color, 0.8);
+                outline-offset: 1px;
+            }
+            button.suggested-action:focus {
+                outline-color: alpha(@accent_color, 0.9);
+            }
+            button.destructive-action:focus {
+                outline-color: alpha(@destructive_color, 0.8);
             }
         )css");
 
