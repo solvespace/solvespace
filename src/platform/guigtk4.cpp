@@ -2716,19 +2716,54 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     auto style_provider = Gtk::CssProvider::create();
     style_provider->load_from_data(R"(
-        /* Application-wide styles */
+        /* Application-wide styles with improved accessibility */
         .solvespace-app {
             background-color: #f8f8f8;
             color: #333333;
             font-family: 'Cantarell', sans-serif;
         }
         
-        /* Header bar styling */
+        /* Improved header bar styling */
         headerbar {
             background-color: #e0e0e0;
             border-bottom: 1px solid #d0d0d0;
             padding: 6px;
             min-height: 46px;
+        }
+        
+        /* Button styling with focus indicators for accessibility */
+        button {
+            padding: 6px 10px;
+            border-radius: 4px;
+            transition: background-color 200ms ease;
+        }
+        
+        button:hover {
+            background-color: alpha(#000000, 0.05);
+        }
+        
+        button:focus {
+            outline: 2px solid #3584e4;
+            outline-offset: -1px;
+        }
+        
+        /* Menu styling with improved contrast */
+        menubutton {
+            padding: 4px;
+        }
+        
+        menubutton:hover {
+            background-color: alpha(#000000, 0.05);
+        }
+        
+        menubutton > button {
+            padding: 4px 8px;
+        }
+        
+        /* GL area styling */
+        .solvespace-gl-area {
+            background-color: #ffffff;
+            border: 1px solid #d0d0d0;
         }
         
         /* Menu button styling */
@@ -2747,10 +2782,52 @@ std::vector<std::string> InitGui(int argc, char **argv) {
             outline: 2px solid rgba(61, 174, 233, 0.5);
         }
         
-        /* GL area styling */
-        .solvespace-gl-area {
-            background-color: #ffffff;
+        /* Dialog styling with improved accessibility */
+        dialog {
+            background-color: #f8f8f8;
             border: 1px solid #d0d0d0;
+            border-radius: 6px;
+            padding: 12px;
+        }
+        
+        dialog headerbar {
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+        }
+        
+        /* Text input styling with focus indicators */
+        entry {
+            background-color: #ffffff;
+            color: #333333;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            padding: 6px;
+            caret-color: #3584e4;
+        }
+        
+        entry:focus {
+            border-color: #3584e4;
+            outline: 2px solid alpha(#3584e4, 0.3);
+            outline-offset: -1px;
+        }
+        
+        /* Scrollbar styling for better visibility */
+        scrollbar {
+            background-color: transparent;
+            border-radius: 8px;
+            min-width: 14px;
+            min-height: 14px;
+        }
+        
+        scrollbar slider {
+            background-color: #b0b0b0;
+            border-radius: 8px;
+            min-width: 8px;
+            min-height: 8px;
+        }
+        
+        scrollbar slider:hover {
+            background-color: #909090;
         }
         
         /* Editor overlay styling */
