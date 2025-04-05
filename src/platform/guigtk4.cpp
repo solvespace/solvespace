@@ -2296,11 +2296,33 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         .menu-button {
             padding: 4px 8px;
             margin: 2px;
+            border-radius: 4px;
+            transition: background-color 200ms ease;
+        }
+        
+        .menu-button:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .menu-button:focus {
+            outline: 2px solid rgba(0, 102, 204, 0.5);
+            outline-offset: 1px;
         }
         
         .menu-item {
             padding: 6px 8px;
             margin: 1px;
+            border-radius: 4px;
+            transition: background-color 200ms ease;
+        }
+        
+        .menu-item:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .menu-item:focus {
+            outline: 2px solid rgba(0, 102, 204, 0.5);
+            outline-offset: 1px;
         }
         
         .solvespace-gl-area {
