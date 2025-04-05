@@ -794,6 +794,14 @@ public:
         set_column_homogeneous(false);
 
         set_tooltip_text("SolveSpace editor overlay with drawing area and text input");
+        
+        auto accessible = get_accessible();
+        if (accessible) {
+            accessible->set_property("accessible-role", "panel");
+            accessible->set_property("accessible-name", "SolveSpace Editor");
+            accessible->set_property("accessible-description", 
+                "Drawing area with text input for SolveSpace parametric CAD");
+        }
 
         Gtk::StyleContext::add_provider_for_display(
             get_display(),
@@ -810,15 +818,28 @@ public:
         _entry.set_hexpand(true);
         _entry.set_vexpand(false);
 
-        _entry.property_visible().signal_changed().connect([this]() {
+        auto visibility_binding = Gtk::PropertyExpression<bool>::create(_entry.property_visible());
+        visibility_binding->connect([this]() {
             if (_entry.get_visible()) {
                 _entry.grab_focus();
+                
+                auto accessible = _entry.get_accessible();
+                if (accessible) {
+                    accessible->set_property("accessible-state", "focused");
+                }
             } else {
                 _gl_widget.grab_focus();
             }
         });
 
         _entry.set_tooltip_text("Text Input");
+        
+        auto accessible = _entry.get_accessible();
+        if (accessible) {
+            accessible->set_property("accessible-role", "text");
+            accessible->set_property("accessible-name", "SolveSpace Text Input");
+            accessible->set_property("accessible-description", "Text entry for editing SolveSpace parameters and values");
+        }
 
         attach(_gl_widget, 0, 0);
         attach(_entry, 0, 1);
@@ -867,6 +888,8 @@ public:
         
         
         _shortcut_controller = Gtk::ShortcutController::create();
+        _shortcut_controller->set_name("editor-shortcuts");
+        _shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
 
         auto enter_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
             on_activate();
@@ -874,6 +897,7 @@ public:
         });
         auto enter_trigger = Gtk::KeyvalTrigger::create(GDK_KEY_Return, Gdk::ModifierType(0));
         auto enter_shortcut = Gtk::Shortcut::create(enter_trigger, enter_action);
+        enter_shortcut->set_action_name("activate-editor");
         _shortcut_controller->add_shortcut(enter_shortcut);
 
         auto escape_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
@@ -885,21 +909,45 @@ public:
         });
         auto escape_trigger = Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0));
         auto escape_shortcut = Gtk::Shortcut::create(escape_trigger, escape_action);
+        escape_shortcut->set_action_name("stop-editing");
         _shortcut_controller->add_shortcut(escape_shortcut);
 
         _entry.add_controller(_shortcut_controller);
+        
+        auto accessible = _entry.get_accessible();
+        if (accessible) {
+            accessible->set_property("accessible-keyboard-shortcuts", 
+                "Enter: Activate, Escape: Cancel editing");
+        }
 
         _key_controller = Gtk::EventControllerKey::create();
+        _key_controller->set_name("editor-key-controller");
+        _key_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        
         _key_controller->signal_key_pressed().connect(
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
-                return on_key_pressed(keyval, keycode, gdk_state);
+                bool handled = on_key_pressed(keyval, keycode, gdk_state);
+                
+                if (handled && (keyval == GDK_KEY_Delete || 
+                               keyval == GDK_KEY_BackSpace || 
+                               keyval == GDK_KEY_Tab)) {
+                    auto accessible = _gl_widget.get_accessible();
+                    if (accessible) {
+                        accessible->set_property("accessible-state", "busy");
+                        accessible->set_property("accessible-state", "enabled");
+                    }
+                }
+                
+                return handled;
             }, false);
+            
         _key_controller->signal_key_released().connect(
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return on_key_released(keyval, keycode, gdk_state);
             }, false);
+
         _gl_widget.add_controller(_key_controller);
 
         auto size_controller = Gtk::EventControllerMotion::create();
