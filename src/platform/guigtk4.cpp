@@ -745,12 +745,14 @@ class GtkEditorOverlay : public Gtk::Grid {
     Glib::RefPtr<Gtk::EventControllerKey> _key_controller;
     Glib::RefPtr<Gtk::PropertyExpression<bool>> _entry_visible_binding;
     Glib::RefPtr<Gtk::ShortcutController> _shortcut_controller;
+    Glib::RefPtr<Gtk::ConstraintLayout> _constraint_layout;
 
 public:
     GtkEditorOverlay(Platform::Window *receiver) :
         Gtk::Grid(),
         _receiver(receiver),
-        _gl_widget(receiver) {
+        _gl_widget(receiver),
+        _constraint_layout(Gtk::ConstraintLayout::create()) {
 
         auto css_provider = Gtk::CssProvider::create();
         css_provider->load_from_data(
@@ -811,6 +813,11 @@ public:
         attach(_gl_widget, 0, 0);
         attach(_entry, 0, 1);
 
+        set_layout_manager(_constraint_layout);
+        
+        auto entry_guide = Gtk::ConstraintGuide::create();
+        _constraint_layout->add_guide(entry_guide);
+        
         _shortcut_controller = Gtk::ShortcutController::create();
 
         auto enter_action = Gtk::CallbackAction::create([this]() {
@@ -904,11 +911,37 @@ public:
         padding.set_top(2);
         padding.set_bottom(2);
 
-        _entry.set_margin_start(x - margin.get_left() - border.get_left() - padding.get_left());
-        _entry.set_margin_top(y - margin.get_top() - border.get_top() - padding.get_top());
-
+        _constraint_layout->remove_all_constraints();
+        
+        int adjusted_x = x - margin.get_left() - border.get_left() - padding.get_left();
+        int adjusted_y = y - margin.get_top() - border.get_top() - padding.get_top();
+        
         int fitWidth = width / Pango::SCALE + padding.get_left() + padding.get_right();
         _entry.set_size_request(max(fitWidth, min_width), -1);
+        
+        auto entry_constraint_x = Gtk::Constraint::create(
+            &_entry,                                // target widget
+            Gtk::ConstraintAttribute::LEFT,         // target attribute
+            Gtk::ConstraintRelation::EQ,            // relation
+            nullptr,                                // source widget (nullptr = parent)
+            Gtk::ConstraintAttribute::LEFT,         // source attribute
+            1.0,                                    // multiplier
+            adjusted_x                              // constant
+        );
+        
+        auto entry_constraint_y = Gtk::Constraint::create(
+            &_entry,                                // target widget
+            Gtk::ConstraintAttribute::TOP,          // target attribute
+            Gtk::ConstraintRelation::EQ,            // relation
+            nullptr,                                // source widget (nullptr = parent)
+            Gtk::ConstraintAttribute::TOP,          // source attribute
+            1.0,                                    // multiplier
+            adjusted_y                              // constant
+        );
+        
+        _constraint_layout->add_constraint(entry_constraint_x);
+        _constraint_layout->add_constraint(entry_constraint_y);
+        
         queue_resize();
 
         _entry.set_text(val);
@@ -969,13 +1002,8 @@ protected:
             int entry_height = natural_height;
 
             _entry.set_size_request(entry_width > 0 ? entry_width : 100, entry_height);
-
-            auto css_provider = Gtk::CssProvider::create();
-            css_provider->load_from_data(
-                Glib::ustring::compose("entry { margin-left: %1px; margin-top: %2px; }",
-                entry_x, entry_y));
-            _entry.get_style_context()->add_provider(css_provider,
-                GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+            
+            _constraint_layout->set_layout_requested();
         }
     }
 
@@ -1057,6 +1085,14 @@ public:
         get_gl_widget().add_controller(tooltip_controller);
 
         setup_event_controllers();
+        
+        auto fullscreen_binding = Gtk::PropertyExpression<bool>::create(property_fullscreened());
+        fullscreen_binding->connect([this](bool is_fullscreen) {
+            _is_fullscreen = is_fullscreen;
+            if(_receiver->onFullScreen) {
+                _receiver->onFullScreen(_is_fullscreen);
+            }
+        });
     }
 
     bool is_full_screen() const {
@@ -1111,10 +1147,10 @@ protected:
             }, false);
         add_controller(_motion_controller);
 
-        auto close_controller = Gtk::EventControllerLegacy::create();
-        close_controller->signal_event().connect(
-            [this](const GdkEvent* event) -> bool {
-                if (gdk_event_get_event_type(event) == GDK_DELETE) {
+        auto close_controller = Gtk::EventControllerKey::create();
+        close_controller->signal_key_pressed().connect(
+            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                if (keyval == GDK_KEY_Escape) {
                     if(_receiver->onClose) {
                         _receiver->onClose();
                         return true; // Prevent default close behavior
@@ -1122,6 +1158,15 @@ protected:
                 }
                 return false;
             }, false);
+        
+        signal_close_request().connect(
+            [this]() -> bool {
+                if(_receiver->onClose) {
+                    _receiver->onClose();
+                    return true; // Prevent default close behavior
+                }
+                return false;
+            });
         add_controller(close_controller);
 
         auto fullscreen_binding = Gtk::PropertyExpression<bool>::create(property_fullscreened());
@@ -1187,6 +1232,12 @@ public:
 
 
         gtkWindow.get_style_context()->add_class("window");
+        
+        auto accessible = gtkWindow.get_accessible();
+        accessible->set_property("accessible-role", kind == Kind::TOOL ? "dialog" : "application");
+        accessible->set_property("accessible-name", "SolveSpace");
+        accessible->set_property("accessible-description", 
+            "Parametric 2D/3D CAD tool");
     }
 
     double GetPixelDensity() override {
@@ -1279,6 +1330,10 @@ public:
                     item->set_halign(Gtk::Align::FILL);
                     item->set_hexpand(true);
                     item->set_tooltip_text(menuItem->name);
+                    
+                    auto accessible = item->get_accessible();
+                    accessible->set_property("accessible-role", "menu-item");
+                    accessible->set_property("accessible-name", menuItem->name);
 
                     if (menuItem->onTrigger) {
                         auto click_controller = Gtk::GestureClick::create();
@@ -2199,6 +2254,39 @@ std::vector<std::string> InitGui(int argc, char **argv) {
             background-color: #f8f8f8;
             color: #333333;
             font-family: 'Cantarell', sans-serif;
+        }
+        
+        headerbar {
+            background-color: #e0e0e0;
+            border-bottom: 1px solid #d0d0d0;
+        }
+        
+        .menu-button {
+            padding: 4px 8px;
+            margin: 2px;
+        }
+        
+        .menu-item {
+            padding: 6px 8px;
+            margin: 1px;
+        }
+        
+        .solvespace-gl-area {
+            background-color: #ffffff;
+        }
+        
+        .editor-overlay {
+            background-color: transparent;
+        }
+        
+        .editor-text {
+            background-color: white;
+            color: black;
+            border-radius: 3px;
+            padding: 2px;
+            caret-color: #0066cc;
+            selection-background-color: rgba(0, 102, 204, 0.3);
+            selection-color: black;
         }
 
         /* Window styles */
