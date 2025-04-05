@@ -798,6 +798,8 @@ public:
         set_row_spacing(4);
         set_column_spacing(4);
         set_row_homogeneous(false);
+        
+        set_layout_manager(_constraint_layout);
         set_column_homogeneous(false);
 
         set_tooltip_text("SolveSpace editor overlay with drawing area and text input");
@@ -805,8 +807,6 @@ public:
         set_property("accessible-role", Gtk::Accessible::Role::PANEL);
         set_property("accessible-name", "SolveSpace Editor");
         set_property("accessible-description", "Drawing area with text input for SolveSpace parametric CAD");
-        
-        set_layout_manager(_constraint_layout);
         
         setup_event_controllers();
         
@@ -869,11 +869,10 @@ public:
         _entry.set_hexpand(true);
         _entry.set_vexpand(false);
 
-        auto visibility_binding = Gtk::PropertyExpression<bool>::create(_entry.property_visible());
-        visibility_binding->connect([this]() {
+        _entry.property_visible().signal_changed().connect([this]() {
             if (_entry.get_visible()) {
                 _entry.grab_focus();
-                _entry.set_accessible_state(Gtk::AccessibleState::FOCUSED, true);
+                _entry.set_property("accessible-state", "focused");
             } else {
                 _gl_widget.grab_focus();
             }
@@ -888,7 +887,6 @@ public:
         attach(_gl_widget, 0, 0);
         attach(_entry, 0, 1);
         
-        set_layout_manager(_constraint_layout);
         
         auto gl_guide = _constraint_layout->add_guide(Gtk::ConstraintGuide::create());
         gl_guide->set_min_size(100, 100);
