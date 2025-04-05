@@ -280,6 +280,11 @@ public:
                 return true;
             });
         add_controller(_click_controller);
+        
+        auto accessible = get_accessible();
+        if (accessible) {
+            accessible->set_property("accessible-role", "menu-item");
+        }
     }
 
     void set_accel_key(const Gtk::AccelKey &accel_key) {
@@ -1070,6 +1075,19 @@ class GtkWindow : public Gtk::Window {
 
     bool _is_under_cursor;
     bool _is_fullscreen;
+    
+    void setup_state_binding() {
+        property_state().signal_changed().connect([this]() {
+            auto state = get_state();
+            bool is_fullscreen = (state & Gdk::ToplevelState::FULLSCREEN) != 0;
+            if (_is_fullscreen != is_fullscreen) {
+                _is_fullscreen = is_fullscreen;
+                if(_receiver->onFullScreen) {
+                    _receiver->onFullScreen(is_fullscreen);
+                }
+            }
+        });
+    }
 
 public:
     GtkWindow(Platform::Window *receiver) :
@@ -1128,12 +1146,7 @@ public:
 
         setup_event_controllers();
         
-        property_fullscreened().signal_changed().connect([this]() {
-            _is_fullscreen = get_fullscreened();
-            if(_receiver->onFullScreen) {
-                _receiver->onFullScreen(_is_fullscreen);
-            }
-        });
+        setup_state_binding();
     }
 
     bool is_full_screen() const {
@@ -1300,6 +1313,13 @@ public:
         gtkWindow.get_style_context()->add_class("window");
         
         gtkWindow.set_tooltip_text("SolveSpace - Parametric 2D/3D CAD tool");
+        
+        auto accessible = gtkWindow.get_accessible();
+        if (accessible) {
+            accessible->set_property("accessible-role", kind == Kind::TOOL ? "dialog" : "application");
+            accessible->set_property("accessible-name", "SolveSpace");
+            accessible->set_property("accessible-description", "Parametric 2D/3D CAD tool");
+        }
     }
 
     double GetPixelDensity() override {
