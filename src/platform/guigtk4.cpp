@@ -756,12 +756,14 @@ class GtkEditorOverlay : public Gtk::Grid {
     Gtk::Entry  _entry;
     Glib::RefPtr<Gtk::EventControllerKey> _key_controller;
     Glib::RefPtr<Gtk::ShortcutController> _shortcut_controller;
+    Glib::RefPtr<Gtk::ConstraintLayout> _constraint_layout;
 
 public:
     GtkEditorOverlay(Platform::Window *receiver) :
         Gtk::Grid(),
         _receiver(receiver),
-        _gl_widget(receiver) {
+        _gl_widget(receiver),
+        _constraint_layout(Gtk::ConstraintLayout::create()) {
 
         auto css_provider = Gtk::CssProvider::create();
         css_provider->load_from_data(
@@ -815,6 +817,41 @@ public:
 
         attach(_gl_widget, 0, 0);
         attach(_entry, 0, 1);
+        
+        set_layout_manager(_constraint_layout);
+        
+        auto gl_guide = _constraint_layout->add_guide(Gtk::ConstraintGuide::create());
+        gl_guide->set_min_size(100, 100);
+        
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::LEFT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::LEFT));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::RIGHT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::RIGHT));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::TOP,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::TOP));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_entry, Gtk::ConstraintAttribute::LEFT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::LEFT));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_entry, Gtk::ConstraintAttribute::RIGHT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::RIGHT));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_entry, Gtk::ConstraintAttribute::TOP,
+            Gtk::ConstraintRelation::EQ,
+            &_gl_widget, Gtk::ConstraintAttribute::BOTTOM));
         
         _entry.set_margin_start(10);
         _entry.set_margin_end(10);
