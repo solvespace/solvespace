@@ -1107,7 +1107,7 @@ protected:
     void setup_event_controllers() {
         auto key_controller = Gtk::EventControllerKey::create();
         key_controller->signal_key_pressed().connect(
-            [this](guint keyval, guint keycode, GdkModifierType state) -> bool {
+            [this](unsigned int keyval, unsigned int keycode, Gdk::ModifierType state) -> bool {
                 if(is_editing()) {
                     if(keyval == GDK_KEY_Escape) {
                         stop_editing();
@@ -1119,7 +1119,7 @@ protected:
             }, false);
             
         key_controller->signal_key_released().connect(
-            [this](guint keyval, guint keycode, GdkModifierType state) -> bool {
+            [this](unsigned int keyval, unsigned int keycode, Gdk::ModifierType state) -> bool {
                 if(is_editing()) {
                     return false; // Let the entry handle it
                 }
