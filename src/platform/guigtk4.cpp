@@ -2535,6 +2535,47 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     gtkApp->add_controller(shortcut_controller);
 
     style_provider->load_from_data(R"(
+    /* Base window styling */
+    window {
+        background-color: #f5f5f5;
+    }
+    
+    headerbar {
+        background-color: #e0e0e0;
+        border-bottom: 1px solid #d0d0d0;
+        padding: 4px;
+    }
+    
+    /* Menu styling */
+    .menu-button {
+        padding: 4px 8px;
+        margin: 2px;
+        border-radius: 4px;
+    }
+    
+    .menu-button:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+    
+    .menu-item {
+        padding: 6px 8px;
+        margin: 1px;
+    }
+    
+    .menu-item:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+    }
+    
+    /* GL area styling */
+    .solvespace-gl-area {
+        background-color: #ffffff;
+    }
+    
+    /* Editor overlay styling */
+    .editor-overlay {
+        background-color: transparent;
+    }
+    
     /* Base entry styling */
     entry {
         background: white;
@@ -2542,6 +2583,14 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         border-radius: 4px;
         padding: 2px;
         min-height: 24px;
+        caret-color: #0066cc;
+        selection-background-color: rgba(0, 102, 204, 0.3);
+        selection-color: black;
+    }
+    
+    entry:focus {
+        border-color: #0066cc;
+        box-shadow: 0 0 0 1px rgba(0, 102, 204, 0.5);
     }
 
     /* Custom editor entry styling */
