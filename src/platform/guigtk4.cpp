@@ -1883,15 +1883,15 @@ public:
             });
         gtkDialog.add_controller(response_controller);
 
-        auto close_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
-        auto close_connection = close_binding->connect([&loop, &response](bool visible) {
-            if (!visible) {
-                loop->quit();
-            }
-        });
+        auto visibility_connection = gtkDialog.property_visible().signal_changed().connect(
+            [&loop, &response]() {
+                if (!gtkDialog.get_visible()) {
+                    loop->quit();
+                }
+            });
 
-        gtkDialog.get_accessible()->set_property("accessible-role", "dialog");
-        gtkDialog.get_accessible()->set_property("accessible-modal", true);
+        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
+        gtkDialog.set_accessible_name("Message Dialog");
 
         gtkDialog.show();
         loop->run();
@@ -2046,20 +2046,20 @@ public:
         gtkDialog.add_css_class("dialog");
         gtkDialog.add_css_class("solvespace-file-dialog");
 
-        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
-        gtkDialog.set_accessible_name(isSave ? "Save File Dialog" : "Open File Dialog");
+        gtkDialog.set_name(isSave ? "save-file-dialog" : "open-file-dialog");
+        gtkDialog.set_title(isSave ? "Save File" : "Open File");
 
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
-        cancel_button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
-        cancel_button->set_accessible_name("Cancel");
+        cancel_button->set_name("cancel-button");
+        cancel_button->set_tooltip_text("Cancel");
 
         auto action_button = gtkDialog.add_button(
             isSave ? C_("button", "_Save") : C_("button", "_Open"),
             Gtk::ResponseType::OK);
         action_button->add_css_class("suggested-action");
-        action_button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
-        action_button->set_accessible_name(isSave ? "Save" : "Open");
+        action_button->set_name(isSave ? "save-button" : "open-button");
+        action_button->set_tooltip_text(isSave ? "Save" : "Open");
 
         gtkDialog.set_default_response(Gtk::ResponseType::OK);
 
@@ -2506,44 +2506,30 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
 
     if (settings) {
-        auto theme_binding = Gtk::PropertyExpression<bool>::create(
-            settings->property_gtk_application_prefer_dark_theme());
-        theme_binding->connect(
-            [](bool dark_theme) {
+        settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
+            []() {
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                 SS.GW.Invalidate();
             });
     }
 
     std::vector<std::string> args;
+    for (int i = 0; i < argc; i++) {
+        args.push_back(argv[i]);
+    }
 
-    auto command_controller = Gtk::EventControllerLegacy::create();
-    command_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
-    command_controller->signal_event().connect(
-        [&args, argc, argv, gtkApp](const GdkEvent* event) -> bool {
-            if (gdk_event_get_event_type(event) == GDK_APPLICATION_COMMAND) {
-                auto command_line = gdk_application_command_get_command_line(event);
-                auto app_command_line = Gio::wrap(GIO_APPLICATION_COMMAND_LINE(command_line));
-
-                int app_argc;
-                char **app_argv = app_command_line->get_arguments(app_argc);
-
-                args = InitCli(app_argc, app_argv);
-
-                auto activate_binding = Gtk::PropertyExpression<bool>::create(
-                    gtkApp->property_is_registered());
-                activate_binding->connect([gtkApp](bool is_registered) {
-                    if (is_registered) {
-                        gtkApp->activate();
-                    }
-                });
-
-                gtkApp->activate();
-                return true;
-            }
-            return false;
-        });
-    gtkApp->add_controller(command_controller);
+    auto shortcut_controller = Gtk::ShortcutController::create();
+    shortcut_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    
+    auto help_shortcut = Gtk::Shortcut::create(
+        Gtk::KeyvalTrigger::create(GDK_KEY_F1),
+        Gtk::CallbackAction::create([]() {
+            return true;
+        })
+    );
+    shortcut_controller->add_shortcut(help_shortcut);
+    
+    gtkApp->add_controller(shortcut_controller);
 
     style_provider->load_from_data(R"(
     /* Base entry styling */
@@ -2652,7 +2638,7 @@ void RunGui() {
                 []() {
                     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                     SS.GW.Invalidate();
-                }, false);
+                });
         }
 
         gtkApp->run();
