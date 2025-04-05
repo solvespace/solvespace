@@ -2523,7 +2523,8 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     
     auto help_shortcut = Gtk::Shortcut::create(
         Gtk::KeyvalTrigger::create(GDK_KEY_F1),
-        Gtk::CallbackAction::create([]() {
+        Gtk::CallbackAction::create([](Gtk::Widget& widget, const Glib::VariantBase& args) {
+            SS.GW.ShowContextMenu();
             return true;
         })
     );
