@@ -281,10 +281,8 @@ public:
             });
         add_controller(_click_controller);
         
-        auto accessible = get_accessible();
-        if (accessible) {
-            accessible->set_property("accessible-role", "menu-item");
-        }
+        set_property("accessible-role", Gtk::Accessible::Role::MENU_ITEM);
+        set_property("accessible-name", _receiver->name);
     }
 
     void set_accel_key(const Gtk::AccelKey &accel_key) {
@@ -723,21 +721,21 @@ protected:
         add_controller(shortcut_controller);
 
         add_css_class("solvespace-gl-widget");
-        get_accessible()->set_property("accessible-role", "canvas");
-        get_accessible()->set_property("accessible-name", "SolveSpace 3D View");
+        set_property("accessible-role", Gtk::Accessible::Role::CANVAS);
+        set_property("accessible-name", "SolveSpace 3D View");
         set_can_focus(true);
 
-        auto key_controller = Gtk::EventControllerKey::create();
-        key_controller->signal_focus_in().connect(
+        auto focus_controller = Gtk::EventControllerFocus::create();
+        focus_controller->signal_enter().connect(
             [this]() {
                 grab_focus();
                 return true;
             });
-        key_controller->signal_focus_out().connect(
+        focus_controller->signal_leave().connect(
             [this]() {
                 return true;
             });
-        add_controller(key_controller);
+        add_controller(focus_controller);
     }
 
     void get_pointer_position(double &x, double &y) {
@@ -795,9 +793,9 @@ public:
 
         set_tooltip_text("SolveSpace editor overlay with drawing area and text input");
         
-        set_accessible_role(Gtk::AccessibleRole::PANEL);
-        set_accessible_name("SolveSpace Editor");
-        set_accessible_description("Drawing area with text input for SolveSpace parametric CAD");
+        set_property("accessible-role", Gtk::Accessible::Role::PANEL);
+        set_property("accessible-name", "SolveSpace Editor");
+        set_property("accessible-description", "Drawing area with text input for SolveSpace parametric CAD");
         
         set_layout_manager(_constraint_layout);
         
@@ -1164,7 +1162,7 @@ class GtkWindow : public Gtk::Window {
                 _receiver->onFullScreen(is_fullscreen);
             }
             
-            set_accessible_state(Gtk::AccessibleState::EXPANDED, is_fullscreen);
+            set_property("accessible-state-expanded", is_fullscreen);
             
             return true;
         });
@@ -1179,8 +1177,8 @@ class GtkWindow : public Gtk::Window {
             [this](double x, double y) {
                 _is_under_cursor = true;
                 
-                set_accessible_role(Gtk::AccessibleRole::APPLICATION);
-                set_accessible_state(Gtk::AccessibleState::FOCUSED);
+                set_property("accessible-role", Gtk::Accessible::Role::APPLICATION);
+                set_property("accessible-state-focused", true);
                 
                 return true;
             });
@@ -1571,13 +1569,11 @@ public:
         
         gtkWindow.set_tooltip_text("SolveSpace - Parametric 2D/3D CAD tool");
         
-        auto accessible = gtkWindow.get_accessible();
-        if (accessible) {
-            accessible->set_property("accessible-role", kind == Kind::TOOL ? "dialog" : "application");
-            accessible->set_property("accessible-name", "SolveSpace");
-            accessible->set_property("accessible-description", 
-                "Parametric 2D/3D CAD tool");
-        }
+        gtkWindow.set_property("accessible-role", kind == Kind::TOOL ? 
+            Gtk::Accessible::Role::DIALOG : Gtk::Accessible::Role::APPLICATION);
+        gtkWindow.set_property("accessible-name", "SolveSpace");
+        gtkWindow.set_property("accessible-description", 
+            "Parametric 2D/3D CAD tool");
     }
 
     double GetPixelDensity() override {
@@ -1974,9 +1970,9 @@ public:
             button_box->add_css_class("dialog-button-box");
         }
 
-        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
-        gtkDialog.set_accessible_name("SolveSpace Message");
-        gtkDialog.set_accessible_description("Dialog displaying a message from SolveSpace");
+        gtkDialog.set_property("accessible-role", Gtk::Accessible::Role::DIALOG);
+        gtkDialog.set_property("accessible-name", "SolveSpace Message");
+        gtkDialog.set_property("accessible-description", "Dialog displaying a message from SolveSpace");
         
         gtkDialog.add_css_class("solvespace-dialog");
         gtkDialog.add_css_class("message-dialog");
@@ -2578,6 +2574,11 @@ public:
         gtkNative->add_css_class(isSave ? "save-dialog" : "open-dialog");
         
         gtkNative->set_title(isSave ? "Save SolveSpace File" : "Open SolveSpace File");
+        
+        gtkNative->set_property("accessible-role", Gtk::Accessible::Role::DIALOG);
+        gtkNative->set_property("accessible-name", isSave ? "Save File" : "Open File");
+        gtkNative->set_property("accessible-description", 
+            isSave ? "Dialog to save SolveSpace files" : "Dialog to open SolveSpace files");
 
         if(isSave) {
             gtkNative->set_current_name("untitled");
@@ -2750,9 +2751,9 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     gtkApp = Gtk::Application::create("org.solvespace.SolveSpace");
 
     gtkApp->property_application_id() = "org.solvespace.SolveSpace";
-    gtkApp->set_accessible_role(Gtk::AccessibleRole::APPLICATION);
-    gtkApp->set_accessible_name("SolveSpace");
-    gtkApp->set_accessible_description("Parametric 2D/3D CAD tool");
+    gtkApp->set_property("accessible-role", Gtk::Accessible::Role::APPLICATION);
+    gtkApp->set_property("accessible-name", "SolveSpace");
+    gtkApp->set_property("accessible-description", "Parametric 2D/3D CAD tool");
 
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
 
