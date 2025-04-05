@@ -938,7 +938,7 @@ public:
         _shortcut_controller->set_name("editor-shortcuts");
         _shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
 
-        auto enter_action = Gtk::CallbackAction::create([this](const Glib::VariantBase&) {
+        auto enter_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
             on_activate();
             return true;
         });
@@ -947,7 +947,7 @@ public:
         enter_shortcut->set_action_name("activate-editor");
         _shortcut_controller->add_shortcut(enter_shortcut);
 
-        auto escape_action = Gtk::CallbackAction::create([this](const Glib::VariantBase&) {
+        auto escape_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
             if (is_editing()) {
                 stop_editing();
                 return true;
@@ -1728,7 +1728,7 @@ public:
                             }
                         });
                         
-                        auto action = Gtk::CallbackAction::create([popover, onTrigger = menuItem->onTrigger](const Glib::VariantBase&) {
+                        auto action = Gtk::CallbackAction::create([popover, onTrigger = menuItem->onTrigger](Gtk::Widget&, const Glib::VariantBase&) {
                             popover->popdown();
                             onTrigger();
                             return true;
@@ -2242,7 +2242,7 @@ public:
         shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
         shortcut_controller->set_name("dialog-shortcuts");
 
-        auto escape_action = Gtk::CallbackAction::create([&loop](const Glib::VariantBase&) {
+        auto escape_action = Gtk::CallbackAction::create([&loop](Gtk::Widget&, const Glib::VariantBase&) {
             loop->quit();
             return true;
         });
@@ -2252,7 +2252,7 @@ public:
         escape_shortcut->set_action_name("escape");
         shortcut_controller->add_shortcut(escape_shortcut);
 
-        auto enter_action = Gtk::CallbackAction::create([this, &response, &loop](const Glib::VariantBase&) {
+        auto enter_action = Gtk::CallbackAction::create([this, &response, &loop](Gtk::Widget&, const Glib::VariantBase&) {
             auto default_response = gtkDialog.get_default_response();
             if (default_response != Gtk::ResponseType::NONE) {
                 response = default_response;
@@ -2573,7 +2573,7 @@ public:
         shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
         shortcut_controller->set_name("file-dialog-shortcuts");
         
-        auto escape_action = Gtk::CallbackAction::create([&loop](const Glib::VariantBase&) {
+        auto escape_action = Gtk::CallbackAction::create([&loop](Gtk::Widget&, const Glib::VariantBase&) {
             loop->quit();
             return true;
         });
@@ -2583,7 +2583,7 @@ public:
         escape_shortcut->set_action_name("escape");
         shortcut_controller->add_shortcut(escape_shortcut);
         
-        auto enter_action = Gtk::CallbackAction::create([&response_id, &loop, this](const Glib::VariantBase&) {
+        auto enter_action = Gtk::CallbackAction::create([&response_id, &loop, this](Gtk::Widget&, const Glib::VariantBase&) {
             response_id = Gtk::ResponseType::OK;
             loop->quit();
             return true;
