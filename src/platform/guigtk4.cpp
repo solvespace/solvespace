@@ -1518,7 +1518,8 @@ public:
         if (accessible) {
             accessible->set_property("accessible-role", kind == Kind::TOOL ? "dialog" : "application");
             accessible->set_property("accessible-name", "SolveSpace");
-            accessible->set_property("accessible-description", "Parametric 2D/3D CAD tool");
+            accessible->set_property("accessible-description", 
+                "Parametric 2D/3D CAD tool");
         }
     }
 
@@ -2732,11 +2733,15 @@ std::vector<std::string> InitGui(int argc, char **argv) {
             font-family: 'Cantarell', sans-serif;
         }
         
+        /* Header bar styling */
         headerbar {
             background-color: #e0e0e0;
             border-bottom: 1px solid #d0d0d0;
+            padding: 6px;
+            min-height: 46px;
         }
         
+        /* Menu button styling */
         .menu-button {
             padding: 4px 8px;
             margin: 2px;
@@ -2749,8 +2754,62 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         }
         
         .menu-button:focus {
-            outline: 2px solid rgba(0, 102, 204, 0.5);
+            outline: 2px solid rgba(61, 174, 233, 0.5);
+        }
+        
+        /* GL area styling */
+        .solvespace-gl-area {
+            background-color: #ffffff;
+            border: 1px solid #d0d0d0;
+        }
+        
+        /* Editor overlay styling */
+        .editor-overlay {
+            background-color: transparent;
+        }
+        
+        /* Text entry styling */
+        .editor-text {
+            background-color: white;
+            color: black;
+            border-radius: 3px;
+            padding: 4px;
+            margin: 2px;
+            caret-color: #0066cc;
+            selection-background-color: rgba(0, 102, 204, 0.3);
+            selection-color: black;
+        }
+        
+        /* Accessibility focus styling */
+        *:focus {
+            outline: 2px solid rgba(61, 174, 233, 0.8);
             outline-offset: 1px;
+        }
+        
+        /* Dialog styling */
+        dialog {
+            background-color: #f8f8f8;
+            border-radius: 6px;
+            border: 1px solid #d0d0d0;
+            padding: 12px;
+        }
+        
+        /* Scrollbar styling */
+        scrollbar {
+            background-color: transparent;
+            border-radius: 8px;
+            margin: 2px;
+        }
+        
+        scrollbar slider {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            min-width: 8px;
+            min-height: 8px;
+        }
+        
+        scrollbar slider:hover {
+            background-color: rgba(0, 0, 0, 0.5);
         }
         
         .menu-item {
