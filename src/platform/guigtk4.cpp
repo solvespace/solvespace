@@ -474,8 +474,7 @@ public:
             });
         gtkMenu.add_controller(motion_controller);
 
-        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkMenu.property_visible());
-        visible_binding->connect([&loop, this]() {
+        gtkMenu.property_visible().signal_changed().connect([&loop, this]() {
             if (!gtkMenu.get_visible()) {
                 loop->quit();
             }
@@ -531,7 +530,7 @@ public:
 
         button->set_tooltip_text(label + " Menu");
         
-        button->set_property("accessible-role", Gtk::Accessible::Role::MENU_BUTTON);
+        button->set_property("accessible-role", std::string("menu-button"));
         button->set_property("accessible-name", label + " Menu");
 
         menuButtons.push_back(button);
@@ -733,21 +732,19 @@ protected:
         add_controller(shortcut_controller);
 
         add_css_class("solvespace-gl-widget");
-        set_property("accessible-role", Gtk::Accessible::Role::CANVAS);
-        set_property("accessible-name", "SolveSpace 3D View");
+        set_property("accessible-role", std::string("canvas"));
+        set_property("accessible-name", std::string("SolveSpace 3D View"));
         set_can_focus(true);
 
-        auto focus_key_controller = Gtk::EventControllerKey::create();
-        focus_key_controller->signal_focus_in().connect(
+        auto focus_controller = Gtk::EventControllerFocus::create();
+        focus_controller->signal_enter().connect(
             [this]() {
                 grab_focus();
-                return true;
             });
-        focus_key_controller->signal_focus_out().connect(
+        focus_controller->signal_leave().connect(
             [this]() {
-                return true;
             });
-        add_controller(focus_key_controller);
+        add_controller(focus_controller);
     }
 
     void get_pointer_position(double &x, double &y) {
@@ -1174,23 +1171,24 @@ class GtkWindow : public Gtk::Window {
     bool _is_fullscreen;
     Glib::RefPtr<Gtk::ConstraintLayout> _constraint_layout;
     
-    // void setup_state_binding() {
-    //     property_state().signal_changed().connect([this]() {
-    //         auto state = get_state();
-    //         bool is_fullscreen = (state & Gdk::ToplevelState::FULLSCREEN) != 0;
-    //         
-    //         if (_is_fullscreen != is_fullscreen) {
-    //             _is_fullscreen = is_fullscreen;
-    //             
-    //                 is_fullscreen ? Gtk::Accessible::State::EXPANDED : Gtk::Accessible::State::COLLAPSED);
-    //             
-    //             if(_receiver->onFullScreen) {
-    //                 _receiver->onFullScreen(is_fullscreen);
-    //             }
-    //         }
-    //     });
-    //     
-    //     update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
+    void setup_state_binding() {
+        auto state_binding = Gtk::PropertyExpression<Gdk::ToplevelState>::create(property_state());
+        state_binding->connect([this](Gdk::ToplevelState state) {
+            bool is_fullscreen = (state & Gdk::ToplevelState::FULLSCREEN) != 0;
+            
+            if (_is_fullscreen != is_fullscreen) {
+                _is_fullscreen = is_fullscreen;
+                
+                set_property("accessible-state", 
+                    std::string(is_fullscreen ? "expanded" : "collapsed"));
+                
+                if(_receiver->onFullScreen) {
+                    _receiver->onFullScreen(is_fullscreen);
+                }
+            }
+        });
+        
+        set_property("accessible-role", std::string("application"));
     //     update_property(Gtk::Accessible::Property::LABEL, "SolveSpace");
     //     update_property(Gtk::Accessible::Property::DESCRIPTION, "Parametric 2D/3D CAD application");
     // }
@@ -1340,7 +1338,7 @@ class GtkWindow : public Gtk::Window {
                 remove_css_class("dark");
             }
             
-            update_property(Gtk::Accessible::Property::DESCRIPTION, 
+            set_property("accessible-description", 
                 std::string("Parametric 2D/3D CAD application") + 
                 (dark_theme ? " (Dark theme)" : " (Light theme)"));
         });
@@ -1414,6 +1412,10 @@ public:
         set_child(_vbox);
 
         _vbox.set_layout_manager(_constraint_layout);
+        
+        setup_event_controllers();
+        setup_state_binding();
+        setup_property_bindings();
         
         _constraint_layout->add_constraint(Gtk::Constraint::create(
             &_hbox, Gtk::Constraint::Attribute::LEFT,
@@ -2045,8 +2047,8 @@ public:
         }
 
         gtkDialog.set_property("accessible-role", Gtk::Accessible::Role::DIALOG);
-        gtkDialog.set_property("accessible-name", "SolveSpace Message");
-        gtkDialog.set_property("accessible-description", "Dialog displaying a message from SolveSpace");
+        gtkDialog.set_property("accessible-name", std::string("SolveSpace Message"));
+        gtkDialog.set_property("accessible-description", std::string("Dialog displaying a message from SolveSpace"));
         
         gtkDialog.add_css_class("solvespace-dialog");
         gtkDialog.add_css_class("message-dialog");
@@ -2282,7 +2284,7 @@ public:
                         std::string name;
                         accessible->get_property("accessible-name", name);
                         if (!name.empty()) {
-                            accessible->set_property("accessible-state", "focused");
+                            accessible->set_property("accessible-state", std::string("focused"));
                         }
                     }
                 }
@@ -2316,8 +2318,8 @@ public:
         
         auto accessible = gtkDialog.get_accessible();
         if (accessible) {
-            accessible->set_property("accessible-state", "modal");
-            accessible->set_property("accessible-role", "dialog");
+            accessible->set_property("accessible-state", std::string("modal"));
+            accessible->set_property("accessible-role", Gtk::Accessible::Role::DIALOG);
         }
 
         gtkDialog.show();
@@ -2349,8 +2351,8 @@ public:
         
         if (auto widget = dynamic_cast<Gtk::Widget*>(gtkChooser)) {
             widget->set_property("accessible-role", Gtk::Accessible::Role::FILE_CHOOSER);
-            widget->set_property("accessible-name", "SolveSpace File Chooser");
-            widget->set_property("accessible-description", "Dialog for selecting files in SolveSpace");
+            widget->set_property("accessible-name", std::string("SolveSpace File Chooser"));
+            widget->set_property("accessible-description", std::string("Dialog for selecting files in SolveSpace"));
             
             widget->add_css_class("solvespace-file-dialog");
         }
@@ -2509,10 +2511,10 @@ public:
         gtkDialog.set_name(isSave ? "save-file-dialog" : "open-file-dialog");
         gtkDialog.set_title(isSave ? "Save File" : "Open File");
 
-        gtkDialog.set_property("accessible-role", Gtk::Accessible::Role::DIALOG);
-        gtkDialog.set_property("accessible-name", isSave ? "Save File" : "Open File");
+        gtkDialog.set_property("accessible-role", std::string("dialog"));
+        gtkDialog.set_property("accessible-name", std::string(isSave ? "Save File" : "Open File"));
         gtkDialog.set_property("accessible-description", 
-            isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
+            std::string(isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files"));
 
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
@@ -2520,9 +2522,9 @@ public:
         cancel_button->set_name("cancel-button");
         cancel_button->set_tooltip_text("Cancel");
         
-        cancel_button->set_property("accessible-role", Gtk::Accessible::Role::BUTTON);
-        cancel_button->set_property("accessible-name", "Cancel");
-        cancel_button->set_property("accessible-description", "Cancel the file operation");
+        cancel_button->set_property("accessible-role", std::string("button"));
+        cancel_button->set_property("accessible-name", std::string("Cancel"));
+        cancel_button->set_property("accessible-description", std::string("Cancel the file operation"));
 
         auto action_button = gtkDialog.add_button(
             isSave ? C_("button", "_Save") : C_("button", "_Open"),
@@ -2532,10 +2534,10 @@ public:
         action_button->set_name(isSave ? "save-button" : "open-button");
         action_button->set_tooltip_text(isSave ? "Save" : "Open");
         
-        action_button->set_property("accessible-role", Gtk::Accessible::Role::BUTTON);
-        action_button->set_property("accessible-name", isSave ? "Save" : "Open");
+        action_button->set_property("accessible-role", std::string("button"));
+        action_button->set_property("accessible-name", std::string(isSave ? "Save" : "Open"));
         action_button->set_property("accessible-description", 
-            isSave ? "Save the current file" : "Open the selected file");
+            std::string(isSave ? "Save the current file" : "Open the selected file"));
 
         gtkDialog.set_default_response(Gtk::ResponseType::OK);
 
@@ -2596,8 +2598,7 @@ public:
         
         gtkDialog.add_controller(shortcut_controller);
 
-        auto dialog_visible_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
-        dialog_visible_binding->connect([&loop, this]() {
+        gtkDialog.property_visible().signal_changed().connect([&loop, this]() {
             if (!gtkDialog.get_visible()) {
                 loop->quit();
             }
@@ -2605,7 +2606,7 @@ public:
 
         auto accessible = gtkDialog.get_accessible();
         if (accessible) {
-            accessible->set_property("accessible-state", "modal");
+            accessible->set_property("accessible-state", std::string("modal"));
         }
 
         gtkDialog.show();
@@ -2690,7 +2691,7 @@ public:
                 accessible->set_property("accessible-name", isSave ? "Save SolveSpace File" : "Open SolveSpace File");
                 accessible->set_property("accessible-description", 
                     isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
-                accessible->set_property("accessible-state", "modal");
+                accessible->set_property("accessible-state", std::string("modal"));
             }
 
             auto shortcut_controller = Gtk::ShortcutController::create();
@@ -2731,7 +2732,7 @@ public:
                                 
                                 auto accessible = button->get_accessible();
                                 if (accessible) {
-                                    accessible->set_property("accessible-state", "focused");
+                                    accessible->set_property("accessible-state", std::string("focused"));
                                 }
                                 break;
                             }
@@ -2817,9 +2818,9 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     gtkApp = Gtk::Application::create("org.solvespace.SolveSpace");
 
     gtkApp->property_application_id() = "org.solvespace.SolveSpace";
-    gtkApp->set_property("accessible-role", Gtk::Accessible::Role::APPLICATION);
-    gtkApp->set_property("accessible-name", "SolveSpace");
-    gtkApp->set_property("accessible-description", "Parametric 2D/3D CAD tool");
+    gtkApp->set_property("accessible-role", std::string("application"));
+    gtkApp->set_property("accessible-name", std::string("SolveSpace"));
+    gtkApp->set_property("accessible-description", std::string("Parametric 2D/3D CAD tool"));
 
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
 
@@ -2841,7 +2842,6 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto open_shortcut = Gtk::Shortcut::create(open_trigger, open_action);
     shortcut_controller->add_shortcut(open_shortcut);
 
-    gtkApp->add_controller(shortcut_controller);
 
     auto style_provider = Gtk::CssProvider::create();
     style_provider->load_from_data(R"(
@@ -3256,15 +3256,12 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto help_shortcut = Gtk::Shortcut::create(
         Gtk::KeyvalTrigger::create(GDK_KEY_F1),
         Gtk::CallbackAction::create([](Gtk::Widget& widget, const Glib::VariantBase& args) {
-            if(SS.GW.showHelpForCurrentCommand) {
-                SS.GW.showHelpForCurrentCommand();
-            }
+            SS.ShowHelp();
             return true;
         })
     );
     shortcut_controller->add_shortcut(help_shortcut);
     
-    gtkApp->add_controller(shortcut_controller);
 
     style_provider->load_from_data(R"(
     /* Base window styling */
