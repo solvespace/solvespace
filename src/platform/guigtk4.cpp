@@ -2153,7 +2153,7 @@ public:
                 escape_action);
             shortcut_controller->add_shortcut(escape_shortcut);
 
-            auto enter_action = Gtk::CallbackAction::create([&]() {
+            auto enter_action = Gtk::CallbackAction::create([&](Gtk::Widget&, const Glib::VariantBase&) {
                 gtkNative->response(Gtk::ResponseType::ACCEPT);
                 return true;
             });
