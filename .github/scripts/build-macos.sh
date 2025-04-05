@@ -40,7 +40,6 @@ cmake \
     -D ENABLE_OPENMP="ON" \
     -D ENABLE_SANITIZERS="${ENABLE_SANITIZERS}" \
     -D ENABLE_LTO="${ENABLE_LTO}" \
-    -D USE_GTK4="OFF" \
     ..
 
 if [ "$3" = "xcode" ]; then
