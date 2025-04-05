@@ -2617,16 +2617,15 @@ public:
         int response_id = Gtk::ResponseType::CANCEL;
         auto loop = Glib::MainLoop::create();
 
-        auto response_binding = Gtk::PropertyExpression<int>::create(gtkNative->property_response());
-        response_binding->connect([&response_id, &loop](int response) {
+        gtkNative->property_response().signal_changed().connect([&response_id, &loop, this]() {
+            int response = gtkNative->get_response();
             if (response != Gtk::ResponseType::NONE) {
                 response_id = response;
                 loop->quit();
             }
         });
 
-        auto visibility_binding = Gtk::PropertyExpression<bool>::create(gtkNative->property_visible());
-        visibility_binding->connect([&loop, this]() {
+        gtkNative->property_visible().signal_changed().connect([&loop, this]() {
             if (!gtkNative->get_visible()) {
                 loop->quit();
             }
