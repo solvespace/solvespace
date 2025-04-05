@@ -2161,8 +2161,8 @@ public:
     void ShowModal() override {
         shownMessageDialogs.push_back(shared_from_this());
 
-        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
-        visible_binding->connect([this](bool visible) {
+        gtkDialog.property_visible().signal_changed().connect([this]() {
+            bool visible = gtkDialog.get_visible();
             if (!visible) {
                 auto it = std::remove(shownMessageDialogs.begin(), shownMessageDialogs.end(),
                                      shared_from_this());
