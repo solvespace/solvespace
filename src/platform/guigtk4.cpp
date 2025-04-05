@@ -1126,19 +1126,33 @@ class GtkWindow : public Gtk::Window {
     
     void setup_event_controllers() {
         _motion_controller = Gtk::EventControllerMotion::create();
+        _motion_controller->set_name("window-motion-controller");
+        _motion_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        
         _motion_controller->signal_enter().connect(
             [this](double x, double y) {
                 _is_under_cursor = true;
+                
+                auto accessible = get_accessible();
+                if (accessible) {
+                    accessible->set_property("accessible-state", "focused");
+                }
+                
                 return true;
             });
+            
         _motion_controller->signal_leave().connect(
             [this]() {
                 _is_under_cursor = false;
                 return true;
             });
+            
         add_controller(_motion_controller);
 
         auto key_controller = Gtk::EventControllerKey::create();
+        key_controller->set_name("window-key-controller");
+        key_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        
         key_controller->signal_key_pressed().connect(
             [this](guint keyval, guint keycode, Gdk::ModifierType state) {
                 if(_receiver->onKeyDown) {
@@ -1175,25 +1189,76 @@ class GtkWindow : public Gtk::Window {
                     event.shiftDown = (state & Gdk::ModifierType::SHIFT_MASK) != 0;
                     event.controlDown = (state & Gdk::ModifierType::CONTROL_MASK) != 0;
                     
+                    if (keyval == GDK_KEY_Escape || keyval == GDK_KEY_Delete || 
+                        keyval == GDK_KEY_Tab || (keyval >= GDK_KEY_F1 && keyval <= GDK_KEY_F12)) {
+                        auto accessible = get_accessible();
+                        if (accessible) {
+                            accessible->set_property("accessible-state", "busy");
+                            accessible->set_property("accessible-state", "enabled");
+                        }
+                    }
+                    
                     _receiver->onKeyDown(event);
                     return true;
                 }
                 return false;
             }, false);
+            
+        key_controller->signal_key_released().connect(
+            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                if(_receiver->onKeyUp) {
+                    return _receiver->onKeyUp(keyval, state);
+                }
+                return false;
+            }, false);
+            
         add_controller(key_controller);
+        
+        auto gesture_controller = Gtk::GestureClick::create();
+        gesture_controller->set_name("window-click-controller");
+        gesture_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        gesture_controller->set_button(0); // Any button
+        
+        gesture_controller->signal_pressed().connect(
+            [this](int n_press, double x, double y) {
+                auto accessible = get_accessible();
+                if (accessible) {
+                    accessible->set_property("accessible-state", "active");
+                }
+            });
+            
+        add_controller(gesture_controller);
     }
     
     void setup_state_binding() {
-        property_state().signal_changed().connect([this]() {
-            auto state = get_state();
+        auto state_binding = Gtk::PropertyExpression<Gdk::ToplevelState>::create(property_state());
+        state_binding->connect([this](Gdk::ToplevelState state) {
             bool is_fullscreen = (state & Gdk::ToplevelState::FULLSCREEN) != 0;
+            
             if (_is_fullscreen != is_fullscreen) {
                 _is_fullscreen = is_fullscreen;
+                
+                auto accessible = get_accessible();
+                if (accessible) {
+                    accessible->set_property("accessible-state", 
+                        is_fullscreen ? "expanded" : "collapsed");
+                }
+                
                 if(_receiver->onFullScreen) {
                     _receiver->onFullScreen(is_fullscreen);
                 }
             }
+            
+            return true;
         });
+        
+        auto accessible = get_accessible();
+        if (accessible) {
+            accessible->set_property("accessible-role", "application");
+            accessible->set_property("accessible-name", "SolveSpace");
+            accessible->set_property("accessible-description", 
+                "Parametric 2D/3D CAD application");
+        }
     }
 
 public:
