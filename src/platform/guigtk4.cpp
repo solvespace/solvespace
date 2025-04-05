@@ -795,13 +795,9 @@ public:
 
         set_tooltip_text("SolveSpace editor overlay with drawing area and text input");
         
-        auto accessible = get_accessible();
-        if (accessible) {
-            accessible->set_property("accessible-role", "panel");
-            accessible->set_property("accessible-name", "SolveSpace Editor");
-            accessible->set_property("accessible-description", 
-                "Drawing area with text input for SolveSpace parametric CAD");
-        }
+        set_accessible_role(Gtk::AccessibleRole::PANEL);
+        set_accessible_name("SolveSpace Editor");
+        set_accessible_description("Drawing area with text input for SolveSpace parametric CAD");
 
         Gtk::StyleContext::add_provider_for_display(
             get_display(),
@@ -822,11 +818,7 @@ public:
         visibility_binding->connect([this]() {
             if (_entry.get_visible()) {
                 _entry.grab_focus();
-                
-                auto accessible = _entry.get_accessible();
-                if (accessible) {
-                    accessible->set_property("accessible-state", "focused");
-                }
+                _entry.set_accessible_state(Gtk::AccessibleState::FOCUSED, true);
             } else {
                 _gl_widget.grab_focus();
             }
@@ -834,12 +826,9 @@ public:
 
         _entry.set_tooltip_text("Text Input");
         
-        auto accessible = _entry.get_accessible();
-        if (accessible) {
-            accessible->set_property("accessible-role", "text");
-            accessible->set_property("accessible-name", "SolveSpace Text Input");
-            accessible->set_property("accessible-description", "Text entry for editing SolveSpace parameters and values");
-        }
+        _entry.set_accessible_role(Gtk::AccessibleRole::TEXT_BOX);
+        _entry.set_accessible_name("SolveSpace Text Input");
+        _entry.set_accessible_description("Text entry for editing SolveSpace parameters and values");
 
         attach(_gl_widget, 0, 0);
         attach(_entry, 0, 1);
@@ -891,7 +880,7 @@ public:
         _shortcut_controller->set_name("editor-shortcuts");
         _shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
 
-        auto enter_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
+        auto enter_action = Gtk::CallbackAction::create([this](const Glib::VariantBase&) {
             on_activate();
             return true;
         });
@@ -900,7 +889,7 @@ public:
         enter_shortcut->set_action_name("activate-editor");
         _shortcut_controller->add_shortcut(enter_shortcut);
 
-        auto escape_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
+        auto escape_action = Gtk::CallbackAction::create([this](const Glib::VariantBase&) {
             if (is_editing()) {
                 stop_editing();
                 return true;
@@ -914,11 +903,8 @@ public:
 
         _entry.add_controller(_shortcut_controller);
         
-        auto accessible = _entry.get_accessible();
-        if (accessible) {
-            accessible->set_property("accessible-keyboard-shortcuts", 
-                "Enter: Activate, Escape: Cancel editing");
-        }
+        _entry.set_accessible_property("accessible-keyboard-shortcuts", 
+            "Enter: Activate, Escape: Cancel editing");
 
         _key_controller = Gtk::EventControllerKey::create();
         _key_controller->set_name("editor-key-controller");
@@ -932,11 +918,8 @@ public:
                 if (handled && (keyval == GDK_KEY_Delete || 
                                keyval == GDK_KEY_BackSpace || 
                                keyval == GDK_KEY_Tab)) {
-                    auto accessible = _gl_widget.get_accessible();
-                    if (accessible) {
-                        accessible->set_property("accessible-state", "busy");
-                        accessible->set_property("accessible-state", "enabled");
-                    }
+                    _gl_widget.set_accessible_state(Gtk::AccessibleState::BUSY, true);
+                    _gl_widget.set_accessible_state(Gtk::AccessibleState::ENABLED, true);
                 }
                 
                 return handled;
