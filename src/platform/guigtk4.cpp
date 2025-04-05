@@ -2435,13 +2435,10 @@ public:
         gtkDialog.set_name(isSave ? "save-file-dialog" : "open-file-dialog");
         gtkDialog.set_title(isSave ? "Save File" : "Open File");
 
-        auto accessible = gtkDialog.get_accessible();
-        if (accessible) {
-            accessible->set_property("accessible-role", "file-chooser");
-            accessible->set_property("accessible-name", isSave ? "Save File" : "Open File");
-            accessible->set_property("accessible-description", 
-                isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
-        }
+        gtkDialog.set_property("accessible-role", Gtk::Accessible::Role::DIALOG);
+        gtkDialog.set_property("accessible-name", isSave ? "Save File" : "Open File");
+        gtkDialog.set_property("accessible-description", 
+            isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
 
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
@@ -2449,12 +2446,9 @@ public:
         cancel_button->set_name("cancel-button");
         cancel_button->set_tooltip_text("Cancel");
         
-        auto cancel_accessible = cancel_button->get_accessible();
-        if (cancel_accessible) {
-            cancel_accessible->set_property("accessible-role", "button");
-            cancel_accessible->set_property("accessible-name", "Cancel");
-            cancel_accessible->set_property("accessible-description", "Cancel the file operation");
-        }
+        cancel_button->set_property("accessible-role", Gtk::Accessible::Role::BUTTON);
+        cancel_button->set_property("accessible-name", "Cancel");
+        cancel_button->set_property("accessible-description", "Cancel the file operation");
 
         auto action_button = gtkDialog.add_button(
             isSave ? C_("button", "_Save") : C_("button", "_Open"),
@@ -2464,13 +2458,10 @@ public:
         action_button->set_name(isSave ? "save-button" : "open-button");
         action_button->set_tooltip_text(isSave ? "Save" : "Open");
         
-        auto action_accessible = action_button->get_accessible();
-        if (action_accessible) {
-            action_accessible->set_property("accessible-role", "button");
-            action_accessible->set_property("accessible-name", isSave ? "Save" : "Open");
-            action_accessible->set_property("accessible-description", 
-                isSave ? "Save the current file" : "Open the selected file");
-        }
+        action_button->set_property("accessible-role", Gtk::Accessible::Role::BUTTON);
+        action_button->set_property("accessible-name", isSave ? "Save" : "Open");
+        action_button->set_property("accessible-description", 
+            isSave ? "Save the current file" : "Open the selected file");
 
         gtkDialog.set_default_response(Gtk::ResponseType::OK);
 
