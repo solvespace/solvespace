@@ -1123,6 +1123,7 @@ class GtkWindow : public Gtk::Window {
 
     bool _is_under_cursor;
     bool _is_fullscreen;
+    Glib::RefPtr<Gtk::ConstraintLayout> _constraint_layout;
     
     void setup_event_controllers() {
         _motion_controller = Gtk::EventControllerMotion::create();
@@ -1269,7 +1270,8 @@ public:
         _editor_overlay(receiver),
         _scrollbar(),
         _is_under_cursor(false),
-        _is_fullscreen(false) {
+        _is_fullscreen(false),
+        _constraint_layout(Gtk::ConstraintLayout::create()) {
         _scrollbar.set_orientation(Gtk::Orientation::VERTICAL);
 
         auto css_provider = Gtk::CssProvider::create();
@@ -1292,6 +1294,30 @@ public:
         _vbox.append(_hbox);
         set_child(_vbox);
 
+        _vbox.set_layout_manager(_constraint_layout);
+        
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_hbox, Gtk::ConstraintAttribute::LEFT,
+            Gtk::ConstraintRelation::EQ,
+            &_vbox, Gtk::ConstraintAttribute::LEFT));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_hbox, Gtk::ConstraintAttribute::RIGHT,
+            Gtk::ConstraintRelation::EQ,
+            &_vbox, Gtk::ConstraintAttribute::RIGHT));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_editor_overlay, Gtk::ConstraintAttribute::WIDTH,
+            Gtk::ConstraintRelation::EQ,
+            &_hbox, Gtk::ConstraintAttribute::WIDTH,
+            1.0, -20)); // Subtract scrollbar width
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_scrollbar, Gtk::ConstraintAttribute::WIDTH,
+            Gtk::ConstraintRelation::EQ,
+            nullptr, Gtk::ConstraintAttribute::NONE,
+            0.0, 20)); // Fixed width for scrollbar
+        
         _vbox.set_visible(true);
         _hbox.set_visible(true);
         _editor_overlay.set_visible(true);
