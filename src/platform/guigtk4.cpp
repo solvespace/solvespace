@@ -1134,10 +1134,8 @@ class GtkWindow : public Gtk::Window {
             [this](double x, double y) {
                 _is_under_cursor = true;
                 
-                auto accessible = get_accessible();
-                if (accessible) {
-                    accessible->set_property("accessible-state", "focused");
-                }
+                set_accessible_role(Gtk::AccessibleRole::APPLICATION);
+                set_accessible_state(Gtk::AccessibleState::FOCUSED);
                 
                 return true;
             });
@@ -1192,11 +1190,8 @@ class GtkWindow : public Gtk::Window {
                     
                     if (keyval == GDK_KEY_Escape || keyval == GDK_KEY_Delete || 
                         keyval == GDK_KEY_Tab || (keyval >= GDK_KEY_F1 && keyval <= GDK_KEY_F12)) {
-                        auto accessible = get_accessible();
-                        if (accessible) {
-                            accessible->set_property("accessible-state", "busy");
-                            accessible->set_property("accessible-state", "enabled");
-                        }
+                        set_accessible_state(Gtk::AccessibleState::BUSY);
+                        set_accessible_state(Gtk::AccessibleState::ENABLED);
                     }
                     
                     _receiver->onKeyDown(event);
@@ -1222,10 +1217,7 @@ class GtkWindow : public Gtk::Window {
         
         gesture_controller->signal_pressed().connect(
             [this](int n_press, double x, double y) {
-                auto accessible = get_accessible();
-                if (accessible) {
-                    accessible->set_property("accessible-state", "active");
-                }
+                set_accessible_state(Gtk::AccessibleState::ACTIVE);
             });
             
         add_controller(gesture_controller);
@@ -1239,11 +1231,9 @@ class GtkWindow : public Gtk::Window {
             if (_is_fullscreen != is_fullscreen) {
                 _is_fullscreen = is_fullscreen;
                 
-                auto accessible = get_accessible();
-                if (accessible) {
-                    accessible->set_property("accessible-state", 
-                        is_fullscreen ? "expanded" : "collapsed");
-                }
+                set_accessible_state(is_fullscreen ? 
+                    Gtk::AccessibleState::EXPANDED : 
+                    Gtk::AccessibleState::COLLAPSED);
                 
                 if(_receiver->onFullScreen) {
                     _receiver->onFullScreen(is_fullscreen);
@@ -1253,13 +1243,9 @@ class GtkWindow : public Gtk::Window {
             return true;
         });
         
-        auto accessible = get_accessible();
-        if (accessible) {
-            accessible->set_property("accessible-role", "application");
-            accessible->set_property("accessible-name", "SolveSpace");
-            accessible->set_property("accessible-description", 
-                "Parametric 2D/3D CAD application");
-        }
+        set_accessible_role(Gtk::AccessibleRole::APPLICATION);
+        set_accessible_name("SolveSpace");
+        set_accessible_description("Parametric 2D/3D CAD application");
     }
 
 public:
@@ -1938,15 +1924,14 @@ public:
     {
         SetTitle("Message");
 
-        auto button_area = gtkDialog.get_action_area();
-        if (button_area) {
-            button_area->add_css_class("dialog-button-box");
+        auto button_box = gtkDialog.get_content_area();
+        if (button_box) {
+            button_box->add_css_class("dialog-button-box");
         }
 
-        auto accessible = gtkDialog.get_accessible();
-        accessible->set_property("accessible-role", "dialog");
-        accessible->set_property("accessible-name", "SolveSpace Message");
-        accessible->set_property("accessible-description", "Dialog displaying a message from SolveSpace");
+        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
+        gtkDialog.set_accessible_name("SolveSpace Message");
+        gtkDialog.set_accessible_description("Dialog displaying a message from SolveSpace");
         
         gtkDialog.add_css_class("solvespace-dialog");
         gtkDialog.add_css_class("message-dialog");
@@ -1979,7 +1964,7 @@ public:
                 gtkDialog.set_destroy_with_parent(true);
                 break;
 
-            case Type::ERROR_MAYFAIL:
+            case Type::ERROR:
                 icon_name = "dialog-error";
                 gtkDialog.set_modal(true);
                 gtkDialog.set_destroy_with_parent(true);
@@ -2009,8 +1994,7 @@ public:
     void SetMessage(std::string message) override {
         gtkDialog.set_text(message);
         
-        auto accessible = gtkDialog.get_accessible();
-        if (accessible && !message.empty()) {
+        if (!message.empty()) {
             std::string dialogType = "Message";
             if (gtkDialog.get_message_type() == Gtk::MessageType::QUESTION) {
                 dialogType = "Question";
@@ -2020,16 +2004,15 @@ public:
                 dialogType = "Error";
             }
             
-            accessible->set_property("accessible-name", "SolveSpace " + dialogType + ": " + message);
+            gtkDialog.set_accessible_name("SolveSpace " + dialogType + ": " + message);
         }
     }
 
     void SetDescription(std::string description) override {
         gtkDialog.set_secondary_text(description);
         
-        auto accessible = gtkDialog.get_accessible();
-        if (accessible && !description.empty()) {
-            accessible->set_property("accessible-description", description);
+        if (!description.empty()) {
+            gtkDialog.set_accessible_description(description);
         }
     }
 
@@ -2050,10 +2033,8 @@ public:
             button->add_css_class("suggested-action");
         }
         
-        auto accessible = button->get_accessible();
-        if (accessible) {
-            accessible->set_property("accessible-role", "button");
-            accessible->set_property("accessible-name", label);
+        button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
+        button->set_accessible_name(label);
             
             std::string description;
             switch(response) {
@@ -2065,9 +2046,8 @@ public:
             }
             
             if (!description.empty()) {
-                accessible->set_property("accessible-description", description);
+                button->set_accessible_description(description);
             }
-        }
         
         switch(response) {
             case Response::OK:
@@ -2111,19 +2091,20 @@ public:
     void ShowModal() override {
         shownMessageDialogs.push_back(shared_from_this());
 
-        auto visible_connection = gtkDialog.property_visible().signal_changed().connect([this]() {
-            if (!gtkDialog.get_visible()) {
+        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
+        visible_binding->connect([this](bool visible) {
+            if (!visible) {
                 auto it = std::remove(shownMessageDialogs.begin(), shownMessageDialogs.end(),
                                      shared_from_this());
                 shownMessageDialogs.erase(it);
             }
         });
 
-        auto response_controller = Gtk::EventControllerLegacy::create();
-        response_controller->signal_event().connect(
-            [this](const GdkEvent* event) -> bool {
-                if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
-                    int gtkResponse = gtkDialog.get_response();
+        auto response_controller = Gtk::EventControllerKey::create();
+        response_controller->signal_key_released().connect(
+            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                if (keyval == GDK_KEY_Escape) {
+                    int gtkResponse = Gtk::ResponseType::CANCEL;
                     ProcessResponse(gtkResponse);
                     gtkDialog.hide();
                     return true;
@@ -2145,7 +2126,7 @@ public:
         shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
         shortcut_controller->set_name("dialog-shortcuts");
 
-        auto escape_action = Gtk::CallbackAction::create([&loop](Gtk::Widget&, const Glib::VariantBase&) {
+        auto escape_action = Gtk::CallbackAction::create([&loop](const Glib::VariantBase&) {
             loop->quit();
             return true;
         });
@@ -2155,7 +2136,7 @@ public:
         escape_shortcut->set_action_name("escape");
         shortcut_controller->add_shortcut(escape_shortcut);
 
-        auto enter_action = Gtk::CallbackAction::create([this, &response, &loop](Gtk::Widget&, const Glib::VariantBase&) {
+        auto enter_action = Gtk::CallbackAction::create([this, &response, &loop](const Glib::VariantBase&) {
             auto default_response = gtkDialog.get_default_response();
             if (default_response != Gtk::ResponseType::NONE) {
                 response = default_response;
@@ -2486,7 +2467,7 @@ public:
         shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
         shortcut_controller->set_name("file-dialog-shortcuts");
         
-        auto escape_action = Gtk::CallbackAction::create([&loop](Gtk::Widget&, const Glib::VariantBase&) {
+        auto escape_action = Gtk::CallbackAction::create([&loop](const Glib::VariantBase&) {
             loop->quit();
             return true;
         });
@@ -2496,7 +2477,7 @@ public:
         escape_shortcut->set_action_name("escape");
         shortcut_controller->add_shortcut(escape_shortcut);
         
-        auto enter_action = Gtk::CallbackAction::create([&response_id, &loop, this](Gtk::Widget&, const Glib::VariantBase&) {
+        auto enter_action = Gtk::CallbackAction::create([&response_id, &loop, this](const Glib::VariantBase&) {
             response_id = Gtk::ResponseType::OK;
             loop->quit();
             return true;
