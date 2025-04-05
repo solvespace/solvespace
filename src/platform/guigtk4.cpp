@@ -1314,9 +1314,9 @@ class GtkWindow : public Gtk::Window {
             return true;
         });
         
-        set_property("accessible-role", Gtk::Accessible::Role::APPLICATION);
-        set_property("accessible-name", "SolveSpace");
-        set_property("accessible-description", "Parametric 2D/3D CAD application");
+        update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
+        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace");
+        update_property(Gtk::Accessible::Property::DESCRIPTION, "Parametric 2D/3D CAD application");
     }
 
 public:
@@ -1402,9 +1402,9 @@ public:
         setup_event_controllers();
         setup_state_binding();
         
-        set_property("accessible-role", Gtk::Accessible::Role::APPLICATION);
-        set_property("accessible-name", "SolveSpace");
-        set_property("accessible-description", "Parametric 2D/3D CAD application");
+        update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
+        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace");
+        update_property(Gtk::Accessible::Property::DESCRIPTION, "Parametric 2D/3D CAD application");
     }
 
     bool is_full_screen() const {
