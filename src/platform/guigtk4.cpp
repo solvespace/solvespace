@@ -48,6 +48,8 @@
 #include <gtkmm/shortcuttrigger.h>
 #include <gtkmm/shortcutaction.h>
 #include <gtkmm/accessible.h>
+#include <gtkmm/expression.h>
+#include <gtkmm/propertyexpression.h>
 
 #include "config.h"
 #if defined(HAVE_GTK_FILECHOOSERNATIVE)
@@ -525,6 +527,9 @@ public:
         button->add_css_class("menu-button");
 
         button->set_tooltip_text(label + " Menu");
+        
+        button->set_property("accessible-role", Gtk::Accessible::Role::MENU_BUTTON);
+        button->set_property("accessible-name", label + " Menu");
 
         menuButtons.push_back(button);
         return button;
@@ -561,6 +566,10 @@ public:
         add_css_class("drawing-area");
 
         set_tooltip_text("SolveSpace Drawing Area - 3D modeling canvas");
+        
+        set_property("accessible-role", Gtk::Accessible::Role::CANVAS);
+        set_property("accessible-name", "SolveSpace Drawing Area");
+        set_property("accessible-description", "3D modeling canvas for creating and editing models");
 
         setup_event_controllers();
     }
@@ -725,17 +734,17 @@ protected:
         set_property("accessible-name", "SolveSpace 3D View");
         set_can_focus(true);
 
-        auto focus_controller = Gtk::EventControllerFocus::create();
-        focus_controller->signal_enter().connect(
+        auto focus_key_controller = Gtk::EventControllerKey::create();
+        focus_key_controller->signal_focus_in().connect(
             [this]() {
                 grab_focus();
                 return true;
             });
-        focus_controller->signal_leave().connect(
+        focus_key_controller->signal_focus_out().connect(
             [this]() {
                 return true;
             });
-        add_controller(focus_controller);
+        add_controller(focus_key_controller);
     }
 
     void get_pointer_position(double &x, double &y) {
@@ -798,6 +807,8 @@ public:
         set_property("accessible-description", "Drawing area with text input for SolveSpace parametric CAD");
         
         set_layout_manager(_constraint_layout);
+        
+        setup_event_controllers();
         
         _constraint_layout->add_constraint(Gtk::Constraint::create(
             &_gl_widget, Gtk::ConstraintAttribute::TOP,
@@ -1089,22 +1100,29 @@ public:
     }
 
 protected:
-    bool on_key_pressed(guint keyval, guint keycode, GdkModifierType state) {
-        if(is_editing()) {
-            if(keyval == GDK_KEY_Escape) {
-                stop_editing();
-                return true;
-            }
-            return false; // Let the entry handle it
-        }
-        return false;
-    }
-
-    bool on_key_released(guint keyval, guint keycode, GdkModifierType state) {
-        if(is_editing()) {
-            return false; // Let the entry handle it
-        }
-        return false;
+    void setup_event_controllers() {
+        auto key_controller = Gtk::EventControllerKey::create();
+        key_controller->signal_key_pressed().connect(
+            [this](guint keyval, guint keycode, GdkModifierType state) -> bool {
+                if(is_editing()) {
+                    if(keyval == GDK_KEY_Escape) {
+                        stop_editing();
+                        return true;
+                    }
+                    return false; // Let the entry handle it
+                }
+                return false;
+            }, false);
+            
+        key_controller->signal_key_released().connect(
+            [this](guint keyval, guint keycode, GdkModifierType state) -> bool {
+                if(is_editing()) {
+                    return false; // Let the entry handle it
+                }
+                return false;
+            }, false);
+            
+        add_controller(key_controller);
     }
 
     void on_size_allocate() {
@@ -1153,8 +1171,8 @@ class GtkWindow : public Gtk::Window {
     Glib::RefPtr<Gtk::ConstraintLayout> _constraint_layout;
     
     void setup_state_binding() {
-        auto state_binding = Gtk::PropertyExpression<Gdk::ToplevelState>::create(property_state());
-        state_binding->connect([this](Gdk::ToplevelState state) {
+        property_state().signal_changed().connect([this]() {
+            auto state = get_state();
             bool is_fullscreen = (state & Gdk::ToplevelState::FULLSCREEN) != 0;
             _is_fullscreen = is_fullscreen;
             
@@ -1186,10 +1204,21 @@ class GtkWindow : public Gtk::Window {
         _motion_controller->signal_leave().connect(
             [this]() {
                 _is_under_cursor = false;
+                
+                set_property("accessible-state-focused", false);
+                
                 return true;
             });
             
         add_controller(_motion_controller);
+        
+        signal_close_request().connect(
+            [this]() -> bool {
+                if(_receiver->onClose) {
+                    _receiver->onClose();
+                }
+                return true;
+            }, false);
 
         auto key_controller = Gtk::EventControllerKey::create();
         key_controller->set_name("window-key-controller");
@@ -1274,9 +1303,7 @@ class GtkWindow : public Gtk::Window {
             if (_is_fullscreen != is_fullscreen) {
                 _is_fullscreen = is_fullscreen;
                 
-                set_accessible_state(is_fullscreen ? 
-                    Gtk::AccessibleState::EXPANDED : 
-                    Gtk::AccessibleState::COLLAPSED);
+                set_property("accessible-state-expanded", is_fullscreen);
                 
                 if(_receiver->onFullScreen) {
                     _receiver->onFullScreen(is_fullscreen);
@@ -1286,9 +1313,9 @@ class GtkWindow : public Gtk::Window {
             return true;
         });
         
-        set_accessible_role(Gtk::AccessibleRole::APPLICATION);
-        set_accessible_name("SolveSpace");
-        set_accessible_description("Parametric 2D/3D CAD application");
+        set_property("accessible-role", Gtk::Accessible::Role::APPLICATION);
+        set_property("accessible-name", "SolveSpace");
+        set_property("accessible-description", "Parametric 2D/3D CAD application");
     }
 
 public:
@@ -1355,26 +1382,28 @@ public:
         auto adjustment = Gtk::Adjustment::create(0.0, 0.0, 100.0, 1.0, 10.0, 10.0);
         _scrollbar.set_adjustment(adjustment);
 
-        auto value_binding = Gtk::PropertyExpression<double>::create(adjustment->property_value());
-        value_binding->connect([this, adjustment](double value) {
+        adjustment->signal_value_changed().connect([this, adjustment]() {
+            double value = adjustment->get_value();
             if(_receiver->onScrollbarAdjusted) {
                 _receiver->onScrollbarAdjusted(value);
             }
         });
 
         get_gl_widget().set_has_tooltip(true);
-        auto tooltip_controller = Gtk::EventController::create();
-        tooltip_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
-        tooltip_controller->signal_query_tooltip().connect(
+        get_gl_widget().signal_query_tooltip().connect(
             [this](int x, int y, bool keyboard_tooltip,
                   const Glib::RefPtr<Gtk::Tooltip> &tooltip) -> bool {
-                return on_query_tooltip(x, y, keyboard_tooltip, tooltip);
-            }, false);
-        get_gl_widget().add_controller(tooltip_controller);
+                tooltip->set_text(_tooltip_text);
+                tooltip->set_tip_area(_tooltip_area);
+                return !_tooltip_text.empty() && (keyboard_tooltip || _is_under_cursor);
+            });
 
         setup_event_controllers();
-        
         setup_state_binding();
+        
+        set_property("accessible-role", Gtk::Accessible::Role::APPLICATION);
+        set_property("accessible-name", "SolveSpace");
+        set_property("accessible-description", "Parametric 2D/3D CAD application");
     }
 
     bool is_full_screen() const {
@@ -2087,7 +2116,7 @@ public:
             }
             
             if (!description.empty()) {
-                button->set_accessible_description(description);
+                button->set_property("accessible-description", description);
             }
         
         switch(response) {
