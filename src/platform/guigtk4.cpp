@@ -474,7 +474,8 @@ public:
             });
         gtkMenu.add_controller(motion_controller);
 
-        auto visible_connection = gtkMenu.property_visible().signal_changed().connect([&loop, this]() {
+        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkMenu.property_visible());
+        visible_binding->connect([&loop, this]() {
             if (!gtkMenu.get_visible()) {
                 loop->quit();
             }
@@ -871,10 +872,11 @@ public:
         _entry.set_hexpand(true);
         _entry.set_vexpand(false);
 
-        _entry.property_visible().signal_changed().connect([this]() {
+        auto entry_visible_binding = Gtk::PropertyExpression<bool>::create(_entry.property_visible());
+        entry_visible_binding->connect([this]() {
             if (_entry.get_visible()) {
                 _entry.grab_focus();
-                        _entry.update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::FOCUSED);
+                _entry.update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::FOCUSED);
             } else {
                 _gl_widget.grab_focus();
             }
@@ -1303,7 +1305,8 @@ class GtkWindow : public Gtk::Window {
     }
     
     void setup_state_binding() {
-        property_state().signal_changed().connect([this]() {
+        auto state_binding = Gtk::PropertyExpression<Gdk::ToplevelState>::create(property_state());
+        state_binding->connect([this]() {
             auto state = get_state();
             bool is_fullscreen = (state & Gdk::ToplevelState::FULLSCREEN) != 0;
             
@@ -1325,7 +1328,9 @@ class GtkWindow : public Gtk::Window {
 
     void setup_property_bindings() {
         auto settings = Gtk::Settings::get_default();
-        settings->property_gtk_application_prefer_dark_theme().signal_changed().connect([this, settings]() {
+        auto theme_binding = Gtk::PropertyExpression<bool>::create(
+            settings->property_gtk_application_prefer_dark_theme());
+        theme_binding->connect([this, settings]() {
             bool dark_theme = settings->property_gtk_application_prefer_dark_theme();
             if (dark_theme) {
                 add_css_class("dark");
@@ -1440,7 +1445,8 @@ public:
         auto adjustment = Gtk::Adjustment::create(0.0, 0.0, 100.0, 1.0, 10.0, 10.0);
         _scrollbar.set_adjustment(adjustment);
 
-        adjustment->property_value().signal_changed().connect([this, adjustment]() {
+        auto value_binding = Gtk::PropertyExpression<double>::create(adjustment->property_value());
+        value_binding->connect([this, adjustment]() {
             double value = adjustment->get_value();
             if(_receiver->onScrollbarAdjusted) {
                 _receiver->onScrollbarAdjusted(value / adjustment->get_upper());
@@ -1575,7 +1581,8 @@ public:
                 gtkWindow.add_css_class("light");
             }
             
-            settings->property_gtk_application_prefer_dark_theme().signal_changed().connect([this, settings]() {
+            auto theme_binding = Gtk::PropertyExpression<bool>::create(settings->property_gtk_application_prefer_dark_theme());
+            theme_binding->connect([this, settings]() {
                 bool dark_theme = settings->property_gtk_application_prefer_dark_theme();
                 if (dark_theme) {
                     gtkWindow.add_css_class("dark");
@@ -1709,7 +1716,8 @@ public:
                         "Menu item: " + menuItem->name);
 
                     if (menuItem->onTrigger) {
-                        item->property_active().signal_changed().connect([item]() {
+                        auto active_binding = Gtk::PropertyExpression<bool>::create(item->property_active());
+                        active_binding->connect([item]() {
                             bool active = item->get_active();
                             if (active) {
                                 item->update_property(Gtk::Accessible::Property::STATE, 
@@ -1876,7 +1884,8 @@ public:
             pageSize                // page_size
         );
         
-        adjustment->property_value().signal_changed().connect([this, adjustment]() {
+        auto value_binding = Gtk::PropertyExpression<double>::create(adjustment->property_value());
+        value_binding->connect([this, adjustment]() {
             double value = adjustment->get_value();
             if(onScrollbarAdjusted) {
                 onScrollbarAdjusted(value / adjustment->get_upper());
@@ -2197,7 +2206,8 @@ public:
     void ShowModal() override {
         shownMessageDialogs.push_back(shared_from_this());
 
-        gtkDialog.property_visible().signal_changed().connect([this]() {
+        auto dialog_visible_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
+        dialog_visible_binding->connect([this]() {
             bool visible = gtkDialog.get_visible();
             if (!visible) {
                 auto it = std::remove(shownMessageDialogs.begin(), shownMessageDialogs.end(),
@@ -2295,7 +2305,8 @@ public:
             });
         gtkDialog.add_controller(response_controller);
 
-        gtkDialog.property_visible().signal_changed().connect([&loop, &response, this, &gtkDialog]() {
+        auto dialog_visible_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
+        dialog_visible_binding->connect([&loop, &response, this, &gtkDialog]() {
             if (!gtkDialog.get_visible()) {
                 loop->quit();
             }
@@ -2360,7 +2371,8 @@ public:
                 });
             dialog->add_controller(response_controller);
             
-            gtkChooser->property_filter().signal_changed().connect([this]() {
+            auto filter_binding = Gtk::PropertyExpression<Glib::RefPtr<Gtk::FileFilter>>::create(gtkChooser->property_filter());
+            filter_binding->connect([this]() {
                 this->FilterChanged();
             });
             
@@ -2584,7 +2596,8 @@ public:
         
         gtkDialog.add_controller(shortcut_controller);
 
-        gtkDialog.property_visible().signal_changed().connect([&loop, this]() {
+        auto dialog_visible_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
+        dialog_visible_binding->connect([&loop, this]() {
             if (!gtkDialog.get_visible()) {
                 loop->quit();
             }
@@ -2650,7 +2663,8 @@ public:
         int response_id = Gtk::ResponseType::CANCEL;
         auto loop = Glib::MainLoop::create();
 
-        gtkNative->property_response().signal_changed().connect([&response_id, &loop, this]() {
+        auto response_binding = Gtk::PropertyExpression<int>::create(gtkNative->property_response());
+        response_binding->connect([&response_id, &loop, this]() {
             int response = gtkNative->get_response();
             if (response != Gtk::ResponseType::NONE) {
                 response_id = response;
@@ -2658,7 +2672,8 @@ public:
             }
         });
 
-        gtkNative->property_visible().signal_changed().connect([&loop, this]() {
+        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkNative->property_visible());
+        visible_binding->connect([&loop, this]() {
             if (!gtkNative->get_visible()) {
                 loop->quit();
             }
@@ -3222,7 +3237,8 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
 
     if (settings) {
-        settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
+        auto theme_binding = Gtk::PropertyExpression<bool>::create(settings->property_gtk_application_prefer_dark_theme());
+        theme_binding->connect(
             []() {
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                 SS.GW.Invalidate();
