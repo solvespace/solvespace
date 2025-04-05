@@ -834,7 +834,7 @@ public:
         
         _shortcut_controller = Gtk::ShortcutController::create();
 
-        auto enter_action = Gtk::CallbackAction::create([this]() {
+        auto enter_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
             on_activate();
             return true;
         });
@@ -842,7 +842,7 @@ public:
         auto enter_shortcut = Gtk::Shortcut::create(enter_trigger, enter_action);
         _shortcut_controller->add_shortcut(enter_shortcut);
 
-        auto escape_action = Gtk::CallbackAction::create([this]() {
+        auto escape_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
             if (is_editing()) {
                 stop_editing();
                 return true;
@@ -1163,7 +1163,7 @@ protected:
         auto shortcut_controller = Gtk::ShortcutController::create();
         shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
         
-        auto escape_action = Gtk::CallbackAction::create([this]() {
+        auto escape_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
             if(_receiver->onClose) {
                 _receiver->onClose();
                 return true;
@@ -1354,7 +1354,7 @@ public:
                     accessible->set_property("accessible-name", menuItem->name);
 
                     if (menuItem->onTrigger) {
-                        auto action = Gtk::CallbackAction::create([popover, onTrigger = menuItem->onTrigger]() {
+                        auto action = Gtk::CallbackAction::create([popover, onTrigger = menuItem->onTrigger](Gtk::Widget&, const Glib::VariantBase&) {
                             popover->popdown();
                             onTrigger();
                             return true;
