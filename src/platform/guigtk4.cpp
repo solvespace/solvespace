@@ -644,19 +644,26 @@ protected:
 
     void setup_event_controllers() {
         auto motion_controller = Gtk::EventControllerMotion::create();
-        motion_controller->signal_motion().connect(
-            [this, motion_controller](double x, double y) {
-                auto state = motion_controller->get_current_event_state();
-                process_pointer_event(MouseEvent::Type::MOTION, x, y, static_cast<GdkModifierType>(state));
-                return true;
-            });
-        motion_controller->signal_leave().connect(
-            [this]() {
+        
+        auto motion_binding = Gtk::PropertyExpression<Gdk::Rectangle>::create(
+            motion_controller->property_position());
+        motion_binding->connect([this, motion_controller](const Gdk::Rectangle& position) {
+            auto state = motion_controller->get_current_event_state();
+            process_pointer_event(MouseEvent::Type::MOTION, 
+                                 position.get_x(), position.get_y(), 
+                                 static_cast<GdkModifierType>(state));
+        });
+        
+        auto contains_binding = Gtk::PropertyExpression<bool>::create(
+            motion_controller->property_contains_pointer());
+        contains_binding->connect([this](bool contains) {
+            if (!contains) {
                 double x, y;
                 get_pointer_position(x, y);
                 process_pointer_event(MouseEvent::Type::LEAVE, x, y, GdkModifierType(0));
-                return true;
-            });
+            }
+        });
+        
         add_controller(motion_controller);
 
         auto gesture_click = Gtk::GestureClick::create();
@@ -692,18 +699,25 @@ protected:
             }, false);
         add_controller(scroll_controller);
 
+        auto shortcut_controller = Gtk::ShortcutController::create();
+        shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
+        
         auto key_controller = Gtk::EventControllerKey::create();
+        
         key_controller->signal_key_pressed().connect(
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return process_key_event(KeyboardEvent::Type::PRESS, keyval, gdk_state);
             }, false);
+            
         key_controller->signal_key_released().connect(
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 return process_key_event(KeyboardEvent::Type::RELEASE, keyval, gdk_state);
             }, false);
+            
         add_controller(key_controller);
+        add_controller(shortcut_controller);
 
         add_css_class("solvespace-gl-widget");
         get_accessible()->set_property("accessible-role", "canvas");
