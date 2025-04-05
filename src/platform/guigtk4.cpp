@@ -1108,6 +1108,22 @@ class GtkWindow : public Gtk::Window {
     bool _is_fullscreen;
     Glib::RefPtr<Gtk::ConstraintLayout> _constraint_layout;
     
+    void setup_state_binding() {
+        auto state_binding = Gtk::PropertyExpression<Gdk::ToplevelState>::create(property_state());
+        state_binding->connect([this](Gdk::ToplevelState state) {
+            bool is_fullscreen = (state & Gdk::ToplevelState::FULLSCREEN) != 0;
+            _is_fullscreen = is_fullscreen;
+            
+            if(_receiver->onFullScreen) {
+                _receiver->onFullScreen(is_fullscreen);
+            }
+            
+            set_accessible_state(Gtk::AccessibleState::EXPANDED, is_fullscreen);
+            
+            return true;
+        });
+    }
+    
     void setup_event_controllers() {
         _motion_controller = Gtk::EventControllerMotion::create();
         _motion_controller->set_name("window-motion-controller");
