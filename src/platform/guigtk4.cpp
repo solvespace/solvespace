@@ -1137,27 +1137,31 @@ public:
 protected:
     void setup_event_controllers() {
         _motion_controller = Gtk::EventControllerMotion::create();
-        _motion_controller->signal_enter().connect(
-            [this](double x, double y) -> void {
-                _is_under_cursor = true;
-            }, false);
-        _motion_controller->signal_leave().connect(
-            [this]() -> void {
-                _is_under_cursor = false;
-            }, false);
+        
+        auto cursor_binding = Gtk::PropertyExpression<bool>::create(
+            _motion_controller->property_contains_pointer());
+        cursor_binding->connect([this](bool contains) {
+            _is_under_cursor = contains;
+        });
+        
         add_controller(_motion_controller);
 
-        auto close_controller = Gtk::EventControllerKey::create();
-        close_controller->signal_key_pressed().connect(
-            [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
-                if (keyval == GDK_KEY_Escape) {
-                    if(_receiver->onClose) {
-                        _receiver->onClose();
-                        return true; // Prevent default close behavior
-                    }
-                }
-                return false;
-            }, false);
+        auto shortcut_controller = Gtk::ShortcutController::create();
+        shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
+        
+        auto escape_action = Gtk::CallbackAction::create([this]() {
+            if(_receiver->onClose) {
+                _receiver->onClose();
+                return true;
+            }
+            return false;
+        });
+        
+        auto escape_shortcut = Gtk::Shortcut::create(
+            Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
+            escape_action);
+            
+        shortcut_controller->add_shortcut(escape_shortcut);
         
         signal_close_request().connect(
             [this]() -> bool {
@@ -1167,7 +1171,7 @@ protected:
                 }
                 return false;
             });
-        add_controller(close_controller);
+        add_controller(shortcut_controller);
 
         auto fullscreen_binding = Gtk::PropertyExpression<bool>::create(property_fullscreened());
         fullscreen_binding->connect([this](bool is_fullscreen) {
@@ -1336,6 +1340,18 @@ public:
                     accessible->set_property("accessible-name", menuItem->name);
 
                     if (menuItem->onTrigger) {
+                        auto action = Gtk::CallbackAction::create([popover, onTrigger = menuItem->onTrigger]() {
+                            popover->popdown();
+                            onTrigger();
+                            return true;
+                        });
+                        
+                        auto shortcut = Gtk::Shortcut::create(
+                            Gtk::ShortcutTrigger::parse("pressed"), action);
+                            
+                        auto controller = Gtk::ShortcutController::create();
+                        controller->add_shortcut(shortcut);
+                        
                         auto click_controller = Gtk::GestureClick::create();
                         click_controller->set_button(GDK_BUTTON_PRIMARY);
                         click_controller->signal_released().connect(
@@ -1343,6 +1359,8 @@ public:
                                 popover->popdown();
                                 onTrigger();
                             });
+                            
+                        item->add_controller(controller);
                         item->add_controller(click_controller);
                     }
 
