@@ -1180,7 +1180,8 @@ class GtkWindow : public Gtk::Window {
                 _receiver->onFullScreen(is_fullscreen);
             }
             
-            set_property("accessible-state-expanded", is_fullscreen);
+            update_property(Gtk::Accessible::Property::STATE, 
+                is_fullscreen ? Gtk::Accessible::State::EXPANDED : Gtk::Accessible::State::COLLAPSED);
             
             return true;
         });
@@ -1195,8 +1196,8 @@ class GtkWindow : public Gtk::Window {
             [this](double x, double y) {
                 _is_under_cursor = true;
                 
-                set_property("accessible-role", Gtk::Accessible::Role::APPLICATION);
-                set_property("accessible-state-focused", true);
+                update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
+                update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::FOCUSED);
                 
                 return true;
             });
@@ -1205,7 +1206,7 @@ class GtkWindow : public Gtk::Window {
             [this]() {
                 _is_under_cursor = false;
                 
-                set_property("accessible-state-focused", false);
+                update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::NONE);
                 
                 return true;
             });
