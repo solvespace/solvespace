@@ -2107,18 +2107,53 @@ public:
 
     void InitFileChooser(Gtk::FileChooser &chooser) {
         gtkChooser = &chooser;
+        
+        if (auto widget = dynamic_cast<Gtk::Widget*>(gtkChooser)) {
+            auto accessible = widget->get_accessible();
+            if (accessible) {
+                accessible->set_property("accessible-role", "file-chooser");
+                accessible->set_property("accessible-name", "SolveSpace File Chooser");
+                accessible->set_property("accessible-description", "Dialog for selecting files in SolveSpace");
+            }
+            
+            widget->add_css_class("solvespace-file-dialog");
+        }
+        
         if (auto dialog = dynamic_cast<Gtk::FileChooserDialog*>(gtkChooser)) {
-            dialog->signal_response().connect(
-                [this](int response) {
-                    if (response == Gtk::ResponseType::OK) {
-                        this->FilterChanged();
+            auto response_controller = Gtk::EventControllerLegacy::create();
+            response_controller->set_name("file-dialog-response-controller");
+            response_controller->signal_event().connect(
+                [this, dialog](const GdkEvent* event) -> bool {
+                    if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
+                        int response = dialog->get_response();
+                        if (response == Gtk::ResponseType::OK) {
+                            this->FilterChanged();
+                        }
+                        return true;
                     }
+                    return false;
                 });
-
-            gtkChooser->property_filter().signal_changed().connect(
-                [this]() {
-                    this->FilterChanged();
-                });
+            dialog->add_controller(response_controller);
+            
+            auto filter_binding = Gtk::PropertyExpression<Glib::RefPtr<Gtk::FileFilter>>::create(gtkChooser->property_filter());
+            filter_binding->connect([this]() {
+                this->FilterChanged();
+            });
+            
+            auto shortcut_controller = Gtk::ShortcutController::create();
+            shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
+            shortcut_controller->set_name("file-dialog-shortcuts");
+            
+            auto home_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
+                gtkChooser->set_current_folder(Gio::File::create_for_path(Glib::get_home_dir()));
+                return true;
+            });
+            auto home_shortcut = Gtk::Shortcut::create(
+                Gtk::KeyvalTrigger::create(GDK_KEY_h, Gdk::ModifierType::CONTROL_MASK | Gdk::ModifierType::ALT_MASK),
+                home_action);
+            shortcut_controller->add_shortcut(home_shortcut);
+            
+            dialog->add_controller(shortcut_controller);
         }
     }
 
@@ -2233,21 +2268,47 @@ public:
 
         gtkDialog.add_css_class("dialog");
         gtkDialog.add_css_class("solvespace-file-dialog");
+        gtkDialog.add_css_class(isSave ? "save-dialog" : "open-dialog");
 
         gtkDialog.set_name(isSave ? "save-file-dialog" : "open-file-dialog");
         gtkDialog.set_title(isSave ? "Save File" : "Open File");
 
+        auto accessible = gtkDialog.get_accessible();
+        if (accessible) {
+            accessible->set_property("accessible-role", "file-chooser");
+            accessible->set_property("accessible-name", isSave ? "Save File" : "Open File");
+            accessible->set_property("accessible-description", 
+                isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
+        }
+
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
+        cancel_button->add_css_class("cancel-action");
         cancel_button->set_name("cancel-button");
         cancel_button->set_tooltip_text("Cancel");
+        
+        auto cancel_accessible = cancel_button->get_accessible();
+        if (cancel_accessible) {
+            cancel_accessible->set_property("accessible-role", "button");
+            cancel_accessible->set_property("accessible-name", "Cancel");
+            cancel_accessible->set_property("accessible-description", "Cancel the file operation");
+        }
 
         auto action_button = gtkDialog.add_button(
             isSave ? C_("button", "_Save") : C_("button", "_Open"),
             Gtk::ResponseType::OK);
         action_button->add_css_class("suggested-action");
+        action_button->add_css_class(isSave ? "save-action" : "open-action");
         action_button->set_name(isSave ? "save-button" : "open-button");
         action_button->set_tooltip_text(isSave ? "Save" : "Open");
+        
+        auto action_accessible = action_button->get_accessible();
+        if (action_accessible) {
+            action_accessible->set_property("accessible-role", "button");
+            action_accessible->set_property("accessible-name", isSave ? "Save" : "Open");
+            action_accessible->set_property("accessible-description", 
+                isSave ? "Save the current file" : "Open the selected file");
+        }
 
         gtkDialog.set_default_response(Gtk::ResponseType::OK);
 
@@ -2268,30 +2329,57 @@ public:
         auto loop = Glib::MainLoop::create();
         auto response_id = Gtk::ResponseType::CANCEL;
 
-        auto response_connection = gtkDialog.signal_response().connect(
-            [&loop, &response_id](int response) {
-                response_id = static_cast<Gtk::ResponseType>(response);
-                loop->quit();
+        auto response_controller = Gtk::EventControllerLegacy::create();
+        response_controller->set_name("file-dialog-response-controller");
+        response_controller->signal_event().connect(
+            [&loop, &response_id, this](const GdkEvent* event) -> bool {
+                if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
+                    response_id = static_cast<Gtk::ResponseType>(gtkDialog.get_response());
+                    loop->quit();
+                    return true;
+                }
+                return false;
             });
+        gtkDialog.add_controller(response_controller);
 
         auto shortcut_controller = Gtk::ShortcutController::create();
-        auto action = Gtk::CallbackAction::create([&loop](Gtk::Widget&, const Glib::VariantBase&) {
+        shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
+        shortcut_controller->set_name("file-dialog-shortcuts");
+        
+        auto escape_action = Gtk::CallbackAction::create([&loop](Gtk::Widget&, const Glib::VariantBase&) {
             loop->quit();
             return true;
         });
-
-        auto shortcut = Gtk::Shortcut::create(
+        auto escape_shortcut = Gtk::Shortcut::create(
             Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
-            action);
-        shortcut_controller->add_shortcut(shortcut);
+            escape_action);
+        escape_shortcut->set_action_name("escape");
+        shortcut_controller->add_shortcut(escape_shortcut);
+        
+        auto enter_action = Gtk::CallbackAction::create([&response_id, &loop, this](Gtk::Widget&, const Glib::VariantBase&) {
+            response_id = Gtk::ResponseType::OK;
+            loop->quit();
+            return true;
+        });
+        auto enter_shortcut = Gtk::Shortcut::create(
+            Gtk::KeyvalTrigger::create(GDK_KEY_Return, Gdk::ModifierType(0)),
+            enter_action);
+        enter_shortcut->set_action_name("activate-default");
+        shortcut_controller->add_shortcut(enter_shortcut);
+        
         gtkDialog.add_controller(shortcut_controller);
 
-        auto visible_connection = gtkDialog.property_visible().signal_changed().connect(
-            [&loop, &gtkDialog]() {
-                if (!gtkDialog.get_visible()) {
-                    loop->quit();
-                }
-            });
+        auto visibility_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
+        visibility_binding->connect([&loop, this]() {
+            if (!gtkDialog.get_visible()) {
+                loop->quit();
+            }
+        });
+
+        auto accessible = gtkDialog.get_accessible();
+        if (accessible) {
+            accessible->set_property("accessible-state", "modal");
+        }
 
         gtkDialog.show();
         loop->run();
@@ -2320,12 +2408,16 @@ public:
         gtkNative->set_modal(true);
 
         gtkNative->add_css_class("dialog");
-        gtkNative->set_title(isSave ? "Save File Dialog" : "Open File Dialog");
+        gtkNative->add_css_class("solvespace-file-dialog");
+        gtkNative->add_css_class(isSave ? "save-dialog" : "open-dialog");
+        
+        gtkNative->set_title(isSave ? "Save SolveSpace File" : "Open SolveSpace File");
 
         if(isSave) {
             gtkNative->set_current_name("untitled");
         }
-
+        
+        
         InitFileChooser(*gtkNative);
     }
 
@@ -2339,55 +2431,63 @@ public:
         int response_id = Gtk::ResponseType::CANCEL;
         auto loop = Glib::MainLoop::create();
 
-        auto response_connection = gtkNative->signal_response().connect(
-            [&](int response) {
-                if (response != Gtk::ResponseType::NONE) {
-                    response_id = response;
-                    loop->quit();
-                }
+        auto response_binding = Gtk::PropertyExpression<int>::create(gtkNative->property_response());
+        response_binding->connect([&response_id, &loop](int response) {
+            if (response != Gtk::ResponseType::NONE) {
+                response_id = response;
+                loop->quit();
+            }
         });
 
-        auto visible_connection = gtkNative->property_visible().signal_changed().connect(
-            [&loop, &gtkNative]() {
-                if (!gtkNative->get_visible()) {
-                    loop->quit();
-                }
-            });
+        auto visibility_binding = Gtk::PropertyExpression<bool>::create(gtkNative->property_visible());
+        visibility_binding->connect([&loop, this]() {
+            if (!gtkNative->get_visible()) {
+                loop->quit();
+            }
+        });
 
         if (auto widget = gtkNative->get_widget()) {
             widget->add_css_class("solvespace-file-dialog");
+            widget->add_css_class("dialog");
+            widget->add_css_class(isSave ? "save-dialog" : "open-dialog");
+            
             auto accessible = widget->get_accessible();
             if (accessible) {
-                accessible->set_property("accessible-role", "dialog");
+                accessible->set_property("accessible-role", "file-chooser");
+                accessible->set_property("accessible-name", isSave ? "Save SolveSpace File" : "Open SolveSpace File");
                 accessible->set_property("accessible-description", 
                     isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
+                accessible->set_property("accessible-state", "modal");
             }
-            widget->add_css_class("dialog");
 
             auto shortcut_controller = Gtk::ShortcutController::create();
             shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
-
-            auto escape_action = Gtk::CallbackAction::create([&](Gtk::Widget&, const Glib::VariantBase&) {
+            shortcut_controller->set_name("native-file-dialog-shortcuts");
+            
+            auto escape_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
                 gtkNative->response(Gtk::ResponseType::CANCEL);
                 return true;
             });
             auto escape_shortcut = Gtk::Shortcut::create(
                 Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
                 escape_action);
+            escape_shortcut->set_action_name("escape");
             shortcut_controller->add_shortcut(escape_shortcut);
 
-            auto enter_action = Gtk::CallbackAction::create([&](Gtk::Widget&, const Glib::VariantBase&) {
+            auto enter_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
                 gtkNative->response(Gtk::ResponseType::ACCEPT);
                 return true;
             });
             auto enter_shortcut = Gtk::Shortcut::create(
                 Gtk::KeyvalTrigger::create(GDK_KEY_Return, Gdk::ModifierType(0)),
                 enter_action);
+            enter_shortcut->set_action_name("activate-default");
             shortcut_controller->add_shortcut(enter_shortcut);
 
             widget->add_controller(shortcut_controller);
 
             auto key_controller = Gtk::EventControllerKey::create();
+            key_controller->set_name("native-file-dialog-key-controller");
             key_controller->signal_key_pressed().connect(
                 [widget](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                     auto buttons = widget->observe_children();
@@ -2395,6 +2495,11 @@ public:
                         if (auto button = dynamic_cast<Gtk::Button*>(child)) {
                             if (button->get_receives_default()) {
                                 button->grab_focus();
+                                
+                                auto accessible = button->get_accessible();
+                                if (accessible) {
+                                    accessible->set_property("accessible-state", "focused");
+                                }
                                 break;
                             }
                         }
