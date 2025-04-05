@@ -2848,6 +2848,67 @@ std::vector<std::string> InitGui(int argc, char **argv) {
             border: 1px solid #d0d0d0;
         }
         
+        /* Editor overlay styling with improved accessibility */
+        .editor-overlay {
+            background-color: transparent;
+        }
+        
+        .editor-text {
+            background-color: white;
+            color: black;
+            border-radius: 3px;
+            padding: 4px;
+            margin: 2px;
+            caret-color: #0066cc;
+            selection-background-color: rgba(0, 102, 204, 0.3);
+            selection-color: black;
+        }
+        
+        /* High contrast mode support */
+        @define-color accent_bg_color #3584e4;
+        @define-color accent_fg_color #ffffff;
+        
+        /* Dialog styling with improved accessibility */
+        dialog {
+            background-color: #f8f8f8;
+            border-radius: 6px;
+            border: 1px solid #d0d0d0;
+            padding: 12px;
+        }
+        
+        dialog .dialog-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 12px;
+        }
+        
+        dialog .dialog-content {
+            margin: 8px 0;
+        }
+        
+        dialog .dialog-buttons {
+            margin-top: 12px;
+        }
+        
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .editor-text {
+                background-color: white;
+                color: black;
+                border: 2px solid black;
+            }
+            
+            button:focus {
+                outline: 3px solid black;
+                outline-offset: -2px;
+            }
+            
+            dialog {
+                border: 2px solid black;
+                background-color: white;
+            }
+        }
+        
         /* Menu button styling */
         .menu-button {
             padding: 4px 8px;
