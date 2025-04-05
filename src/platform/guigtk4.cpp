@@ -804,9 +804,9 @@ public:
 
         set_tooltip_text("SolveSpace editor overlay with drawing area and text input");
         
-        set_property("accessible-role", Gtk::Accessible::Role::PANEL);
-        set_property("accessible-name", "SolveSpace Editor");
-        set_property("accessible-description", "Drawing area with text input for SolveSpace parametric CAD");
+        update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::PANEL);
+        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace Editor");
+        update_property(Gtk::Accessible::Property::DESCRIPTION, "Drawing area with text input for SolveSpace parametric CAD");
         
         setup_event_controllers();
         
@@ -872,7 +872,7 @@ public:
         _entry.property_visible().signal_changed().connect([this]() {
             if (_entry.get_visible()) {
                 _entry.grab_focus();
-                _entry.set_property("accessible-state", "focused");
+                        _entry.update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::FOCUSED);
             } else {
                 _gl_widget.grab_focus();
             }
@@ -880,13 +880,14 @@ public:
 
         _entry.set_tooltip_text("Text Input");
         
-        _entry.set_accessible_role(Gtk::AccessibleRole::TEXT_BOX);
-        _entry.set_accessible_name("SolveSpace Text Input");
-        _entry.set_accessible_description("Text entry for editing SolveSpace parameters and values");
+        _entry.update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::TEXT_BOX);
+        _entry.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace Text Input");
+        _entry.update_property(Gtk::Accessible::Property::DESCRIPTION, "Text entry for editing SolveSpace parameters and values");
 
         attach(_gl_widget, 0, 0);
         attach(_entry, 0, 1);
         
+        set_layout_manager(_constraint_layout);
         
         auto gl_guide = _constraint_layout->add_guide(Gtk::ConstraintGuide::create());
         gl_guide->set_min_size(100, 100);
@@ -956,8 +957,9 @@ public:
 
         _entry.add_controller(_shortcut_controller);
         
-        _entry.set_accessible_property("accessible-keyboard-shortcuts", 
-            "Enter: Activate, Escape: Cancel editing");
+        _entry.update_property(Gtk::Accessible::Property::DESCRIPTION, 
+            _entry.get_property<Glib::ustring>(Gtk::Accessible::Property::DESCRIPTION) + 
+            " (Shortcuts: Enter to activate, Escape to cancel)");
 
         _key_controller = Gtk::EventControllerKey::create();
         _key_controller->set_name("editor-key-controller");
@@ -971,8 +973,8 @@ public:
                 if (handled && (keyval == GDK_KEY_Delete || 
                                keyval == GDK_KEY_BackSpace || 
                                keyval == GDK_KEY_Tab)) {
-                    _gl_widget.set_accessible_state(Gtk::AccessibleState::BUSY, true);
-                    _gl_widget.set_accessible_state(Gtk::AccessibleState::ENABLED, true);
+                    _gl_widget.update_property(Gtk::Accessible::Property::BUSY, true);
+                    _gl_widget.update_property(Gtk::Accessible::Property::ENABLED, true);
                 }
                 
                 return handled;
