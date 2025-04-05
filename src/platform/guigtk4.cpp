@@ -1793,7 +1793,7 @@ public:
         auto controller = Gtk::ShortcutController::create();
         controller->set_scope(Gtk::ShortcutScope::LOCAL);
 
-        auto escape_action = Gtk::CallbackAction::create([&loop]() {
+        auto escape_action = Gtk::CallbackAction::create([&loop](Gtk::Widget&, const Glib::VariantBase&) {
             loop->quit();
             return true;
         });
@@ -1802,7 +1802,7 @@ public:
             escape_action);
         controller->add_shortcut(escape_shortcut);
 
-        auto enter_action = Gtk::CallbackAction::create([this, &response, &loop]() {
+        auto enter_action = Gtk::CallbackAction::create([this, &response, &loop](Gtk::Widget&, const Glib::VariantBase&) {
             auto default_response = gtkDialog.get_default_response();
             if (default_response != Gtk::ResponseType::NONE) {
                 response = default_response;
@@ -2058,7 +2058,7 @@ public:
         gtkDialog.add_controller(response_controller);
 
         auto shortcut_controller = Gtk::ShortcutController::create();
-        auto action = Gtk::CallbackAction::create([&loop]() {
+        auto action = Gtk::CallbackAction::create([&loop](Gtk::Widget&, const Glib::VariantBase&) {
             loop->quit();
             return true;
         });
@@ -2144,7 +2144,7 @@ public:
             auto shortcut_controller = Gtk::ShortcutController::create();
             shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
 
-            auto escape_action = Gtk::CallbackAction::create([&]() {
+            auto escape_action = Gtk::CallbackAction::create([&](Gtk::Widget&, const Glib::VariantBase&) {
                 gtkNative->response(Gtk::ResponseType::CANCEL);
                 return true;
             });
