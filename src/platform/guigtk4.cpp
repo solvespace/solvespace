@@ -798,6 +798,52 @@ public:
         set_accessible_role(Gtk::AccessibleRole::PANEL);
         set_accessible_name("SolveSpace Editor");
         set_accessible_description("Drawing area with text input for SolveSpace parametric CAD");
+        
+        set_layout_manager(_constraint_layout);
+        
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::TOP,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::TOP));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::LEFT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::LEFT));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::RIGHT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::RIGHT));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::BOTTOM,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::BOTTOM,
+            1.0, -30)); // Leave space for text entry
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_entry, Gtk::ConstraintAttribute::BOTTOM,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::BOTTOM));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_entry, Gtk::ConstraintAttribute::LEFT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::LEFT,
+            1.0, 10)); // Left margin
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_entry, Gtk::ConstraintAttribute::RIGHT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::RIGHT,
+            1.0, -10)); // Right margin
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_entry, Gtk::ConstraintAttribute::HEIGHT,
+            Gtk::ConstraintRelation::EQ,
+            nullptr, Gtk::ConstraintAttribute::NONE,
+            0.0, 24)); // Fixed height
 
         Gtk::StyleContext::add_provider_for_display(
             get_display(),
