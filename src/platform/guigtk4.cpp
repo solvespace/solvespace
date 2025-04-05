@@ -1965,9 +1965,9 @@ public:
     {
         SetTitle("Message");
 
-        auto button_box = gtkDialog.get_content_area();
-        if (button_box) {
-            button_box->add_css_class("dialog-button-box");
+        auto content_area = gtkDialog.get_content_area();
+        if (content_area) {
+            content_area->add_css_class("dialog-content-area");
         }
 
         gtkDialog.set_property("accessible-role", Gtk::Accessible::Role::DIALOG);
@@ -2005,7 +2005,7 @@ public:
                 gtkDialog.set_destroy_with_parent(true);
                 break;
 
-            case Type::ERROR:
+            default:
                 icon_name = "dialog-error";
                 gtkDialog.set_modal(true);
                 gtkDialog.set_destroy_with_parent(true);
@@ -2033,7 +2033,7 @@ public:
     }
 
     void SetMessage(std::string message) override {
-        gtkDialog.set_text(message);
+        gtkDialog.set_message(message);
         
         if (!message.empty()) {
             std::string dialogType = "Message";
@@ -2045,7 +2045,7 @@ public:
                 dialogType = "Error";
             }
             
-            gtkDialog.set_accessible_name("SolveSpace " + dialogType + ": " + message);
+            gtkDialog.set_property("accessible-name", "SolveSpace " + dialogType + ": " + message);
         }
     }
 
@@ -2053,7 +2053,7 @@ public:
         gtkDialog.set_secondary_text(description);
         
         if (!description.empty()) {
-            gtkDialog.set_accessible_description(description);
+            gtkDialog.set_property("accessible-description", description);
         }
     }
 
@@ -2074,10 +2074,10 @@ public:
             button->add_css_class("suggested-action");
         }
         
-        button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
-        button->set_accessible_name(label);
+        button->set_property("accessible-role", Gtk::Accessible::Role::BUTTON);
+        button->set_property("accessible-name", label);
             
-            std::string description;
+        std::string description;
             switch(response) {
                 case Response::OK:     description = "Confirm the action"; break;
                 case Response::YES:    description = "Agree with the question"; break;
@@ -2215,14 +2215,16 @@ public:
             });
         gtkDialog.add_controller(key_controller);
 
-        auto response_controller = Gtk::EventControllerLegacy::create();
+        auto response_controller = Gtk::EventControllerKey::create();
         response_controller->set_name("dialog-response-controller");
-        response_controller->signal_event().connect(
-            [&](const GdkEvent* event) -> bool {
-                if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
-                    response = gtkDialog.get_response();
-                    loop->quit();
-                    return true;
+        response_controller->signal_key_released().connect(
+            [&response, &loop, this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                if (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) {
+                    response = gtkDialog.get_default_response();
+                    if (response != Gtk::ResponseType::NONE) {
+                        loop->quit();
+                        return true;
+                    }
                 }
                 return false;
             });
@@ -2271,23 +2273,20 @@ public:
         gtkChooser = &chooser;
         
         if (auto widget = dynamic_cast<Gtk::Widget*>(gtkChooser)) {
-            auto accessible = widget->get_accessible();
-            if (accessible) {
-                accessible->set_property("accessible-role", "file-chooser");
-                accessible->set_property("accessible-name", "SolveSpace File Chooser");
-                accessible->set_property("accessible-description", "Dialog for selecting files in SolveSpace");
-            }
+            widget->set_property("accessible-role", Gtk::Accessible::Role::FILE_CHOOSER);
+            widget->set_property("accessible-name", "SolveSpace File Chooser");
+            widget->set_property("accessible-description", "Dialog for selecting files in SolveSpace");
             
             widget->add_css_class("solvespace-file-dialog");
         }
         
         if (auto dialog = dynamic_cast<Gtk::FileChooserDialog*>(gtkChooser)) {
-            auto response_controller = Gtk::EventControllerLegacy::create();
+            auto response_controller = Gtk::EventControllerKey::create();
             response_controller->set_name("file-dialog-response-controller");
-            response_controller->signal_event().connect(
-                [this, dialog](const GdkEvent* event) -> bool {
-                    if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
-                        int response = dialog->get_response();
+            response_controller->signal_key_released().connect(
+                [this, dialog](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
+                    if (keyval == GDK_KEY_Return || keyval == GDK_KEY_KP_Enter) {
+                        int response = dialog->get_default_response();
                         if (response == Gtk::ResponseType::OK) {
                             this->FilterChanged();
                         }
