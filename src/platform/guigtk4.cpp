@@ -2248,6 +2248,12 @@ public:
 
         if (auto widget = gtkNative->get_widget()) {
             widget->add_css_class("solvespace-file-dialog");
+            auto accessible = widget->get_accessible();
+            if (accessible) {
+                accessible->set_property("accessible-role", "dialog");
+                accessible->set_property("accessible-description", 
+                    isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
+            }
             widget->add_css_class("dialog");
 
             auto shortcut_controller = Gtk::ShortcutController::create();
@@ -2365,6 +2371,9 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     gtkApp = Gtk::Application::create("org.solvespace.SolveSpace");
 
     gtkApp->property_application_id() = "org.solvespace.SolveSpace";
+    gtkApp->set_accessible_role(Gtk::AccessibleRole::APPLICATION);
+    gtkApp->set_accessible_name("SolveSpace");
+    gtkApp->set_accessible_description("Parametric 2D/3D CAD tool");
 
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
 
