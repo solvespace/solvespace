@@ -821,13 +821,59 @@ public:
             }
         });
 
-        _entry.get_accessible()->set_property("accessible-role", "text-box");
-        _entry.get_accessible()->set_property("accessible-name", "Text Input");
-
-        attach(_gl_widget, 0, 0);
-        attach(_entry, 0, 1);
+        _entry.set_accessible_role(Gtk::AccessibleRole::TEXT_BOX);
+        _entry.set_accessible_name("Text Input");
 
         set_layout_manager(_constraint_layout);
+        
+        _constraint_layout->add_child(_gl_widget);
+        _constraint_layout->add_child(_entry);
+        
+        auto gl_top = Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::TOP,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::TOP);
+        
+        auto gl_bottom = Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::BOTTOM,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::BOTTOM);
+            
+        auto gl_left = Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::LEFT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::LEFT);
+            
+        auto gl_right = Gtk::Constraint::create(
+            &_gl_widget, Gtk::ConstraintAttribute::RIGHT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::RIGHT);
+            
+        auto entry_bottom = Gtk::Constraint::create(
+            &_entry, Gtk::ConstraintAttribute::BOTTOM,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::BOTTOM,
+            -10); // 10px margin
+            
+        auto entry_left = Gtk::Constraint::create(
+            &_entry, Gtk::ConstraintAttribute::LEFT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::LEFT,
+            10); // 10px margin
+            
+        auto entry_right = Gtk::Constraint::create(
+            &_entry, Gtk::ConstraintAttribute::RIGHT,
+            Gtk::ConstraintRelation::EQ,
+            this, Gtk::ConstraintAttribute::RIGHT,
+            -10); // 10px margin
+            
+        _constraint_layout->add_constraint(gl_top);
+        _constraint_layout->add_constraint(gl_bottom);
+        _constraint_layout->add_constraint(gl_left);
+        _constraint_layout->add_constraint(gl_right);
+        _constraint_layout->add_constraint(entry_bottom);
+        _constraint_layout->add_constraint(entry_left);
+        _constraint_layout->add_constraint(entry_right);
         
         auto entry_guide = Gtk::ConstraintGuide::create();
         _constraint_layout->add_guide(entry_guide);
@@ -1251,11 +1297,9 @@ public:
 
         gtkWindow.get_style_context()->add_class("window");
         
-        auto accessible = gtkWindow.get_accessible();
-        accessible->set_property("accessible-role", kind == Kind::TOOL ? "dialog" : "application");
-        accessible->set_property("accessible-name", "SolveSpace");
-        accessible->set_property("accessible-description", 
-            "Parametric 2D/3D CAD tool");
+        gtkWindow.set_accessible_role(kind == Kind::TOOL ? Gtk::AccessibleRole::DIALOG : Gtk::AccessibleRole::APPLICATION);
+        gtkWindow.set_accessible_name("SolveSpace");
+        gtkWindow.set_accessible_description("Parametric 2D/3D CAD tool");
     }
 
     double GetPixelDensity() override {
@@ -1876,25 +1920,17 @@ public:
     void InitFileChooser(Gtk::FileChooser &chooser) {
         gtkChooser = &chooser;
         if (auto dialog = dynamic_cast<Gtk::FileChooserDialog*>(gtkChooser)) {
-            auto response_controller = Gtk::EventControllerLegacy::create();
-            response_controller->signal_event().connect(
-                [this, dialog](const GdkEvent* event) -> bool {
-                    if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
-                        int response = dialog->get_response();
-                        if (response == Gtk::ResponseType::OK) {
-                            this->FilterChanged();
-                        }
-                        return false;
+            dialog->signal_response().connect(
+                [this](int response) {
+                    if (response == Gtk::ResponseType::OK) {
+                        this->FilterChanged();
                     }
-                    return false;
-                }, false);
-            dialog->add_controller(response_controller);
+                });
 
-            auto filter_binding = Gtk::PropertyExpression<Glib::RefPtr<Gtk::FileFilter>>::create(
-                gtkChooser->property_filter());
-            filter_binding->connect([this](Glib::RefPtr<Gtk::FileFilter> filter) {
-                this->FilterChanged();
-            });
+            gtkChooser->property_filter().signal_changed().connect(
+                [this]() {
+                    this->FilterChanged();
+                });
         }
     }
 
@@ -2010,21 +2046,20 @@ public:
         gtkDialog.add_css_class("dialog");
         gtkDialog.add_css_class("solvespace-file-dialog");
 
-        gtkDialog.get_accessible()->set_property("accessible-role", "dialog");
-        gtkDialog.get_accessible()->set_property("accessible-name", isSave ? "Save File Dialog" : "Open File Dialog");
+        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
+        gtkDialog.set_accessible_name(isSave ? "Save File Dialog" : "Open File Dialog");
 
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
-        cancel_button->get_accessible()->set_property("accessible-role", "button");
-        cancel_button->get_accessible()->set_property("accessible-name", "Cancel");
+        cancel_button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
+        cancel_button->set_accessible_name("Cancel");
 
         auto action_button = gtkDialog.add_button(
             isSave ? C_("button", "_Save") : C_("button", "_Open"),
             Gtk::ResponseType::OK);
         action_button->add_css_class("suggested-action");
-        action_button->get_accessible()->set_property("accessible-role", "button");
-        action_button->get_accessible()->set_property("accessible-name",
-            isSave ? "Save" : "Open");
+        action_button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
+        action_button->set_accessible_name(isSave ? "Save" : "Open");
 
         gtkDialog.set_default_response(Gtk::ResponseType::OK);
 
@@ -2045,17 +2080,11 @@ public:
         auto loop = Glib::MainLoop::create();
         auto response_id = Gtk::ResponseType::CANCEL;
 
-        auto response_controller = Gtk::EventControllerLegacy::create();
-        response_controller->signal_event().connect(
-            [&](const GdkEvent* event) -> bool {
-                if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
-                    response_id = static_cast<Gtk::ResponseType>(gtkDialog.get_response());
-                    loop->quit();
-                    return true;
-                }
-                return false;
-            }, false);
-        gtkDialog.add_controller(response_controller);
+        auto response_connection = gtkDialog.signal_response().connect(
+            [&loop, &response_id](int response) {
+                response_id = static_cast<Gtk::ResponseType>(response);
+                loop->quit();
+            });
 
         auto shortcut_controller = Gtk::ShortcutController::create();
         auto action = Gtk::CallbackAction::create([&loop](Gtk::Widget&, const Glib::VariantBase&) {
@@ -2069,12 +2098,12 @@ public:
         shortcut_controller->add_shortcut(shortcut);
         gtkDialog.add_controller(shortcut_controller);
 
-        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
-        auto visible_connection = visible_binding->connect([&loop](bool visible) {
-            if (!visible) {
-                loop->quit();
-            }
-        });
+        auto visible_connection = gtkDialog.property_visible().signal_changed().connect(
+            [&loop, &gtkDialog]() {
+                if (!gtkDialog.get_visible()) {
+                    loop->quit();
+                }
+            });
 
         gtkDialog.show();
         loop->run();
@@ -2122,20 +2151,20 @@ public:
         int response_id = Gtk::ResponseType::CANCEL;
         auto loop = Glib::MainLoop::create();
 
-        auto response_binding = Gtk::PropertyExpression<int>::create(gtkNative->property_response());
-        auto response_connection = response_binding->connect([&](int response) {
-            if (response != Gtk::ResponseType::NONE) {
-                response_id = response;
-                loop->quit();
-            }
+        auto response_connection = gtkNative->signal_response().connect(
+            [&](int response) {
+                if (response != Gtk::ResponseType::NONE) {
+                    response_id = response;
+                    loop->quit();
+                }
         });
 
-        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkNative->property_visible());
-        auto visible_connection = visible_binding->connect([&loop](bool visible) {
-            if (!visible) {
-                loop->quit();
-            }
-        });
+        auto visible_connection = gtkNative->property_visible().signal_changed().connect(
+            [&loop, &gtkNative]() {
+                if (!gtkNative->get_visible()) {
+                    loop->quit();
+                }
+            });
 
         if (auto widget = gtkNative->get_widget()) {
             widget->add_css_class("solvespace-file-dialog");
