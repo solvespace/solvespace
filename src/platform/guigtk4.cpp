@@ -1189,6 +1189,18 @@ protected:
             int entry_height = natural_height;
 
             _entry.set_size_request(entry_width > 0 ? entry_width : 100, entry_height);
+            
+            _constraint_layout->add_constraint(Gtk::Constraint::create(
+                &_entry, Gtk::Constraint::Attribute::WIDTH,
+                Gtk::Constraint::Relation::GE,
+                nullptr, Gtk::Constraint::Attribute::NONE,
+                100.0, 1.0));
+                
+            _constraint_layout->add_constraint(Gtk::Constraint::create(
+                &_entry, Gtk::Constraint::Attribute::HEIGHT,
+                Gtk::Constraint::Relation::EQ,
+                nullptr, Gtk::Constraint::Attribute::NONE,
+                entry_height, 1.0));
 
             _constraint_layout->set_layout_requested();
         }
@@ -2896,15 +2908,48 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         "}"
         ".solvespace-gl-area { "
         "   background-color: #ffffff; "
+        "   border-radius: 2px; "
+        "   border: 1px solid #e0e0e0; "
         "}"
         "headerbar { "
         "   padding: 4px; "
         "   background-image: none; "
+        "   background-color: #e0e0e0; "
         "   border-bottom: 1px solid #c0c0c0; "
         "}"
         "button.menu-button { "
         "   margin: 2px; "
         "   padding: 4px 8px; "
+        "   border-radius: 3px; "
+        "   transition: background-color 200ms ease; "
+        "}"
+        "button.menu-button:hover { "
+        "   background-color: rgba(128, 128, 128, 0.1); "
+        "}"
+        "dialog.solvespace-file-dialog { "
+        "   border-radius: 4px; "
+        "   padding: 8px; "
+        "}"
+        "dialog.solvespace-file-dialog button { "
+        "   border-radius: 3px; "
+        "   padding: 6px 12px; "
+        "}"
+        "dialog.solvespace-file-dialog button.suggested-action { "
+        "   background-color: #0066cc; "
+        "   color: white; "
+        "}"
+        "dialog.solvespace-file-dialog button.destructive-action { "
+        "   background-color: #f5f5f5; "
+        "   color: #333333; "
+        "}"
+        "entry.editor-text { "
+        "   background-color: white; "
+        "   color: black; "
+        "   border-radius: 3px; "
+        "   padding: 2px; "
+        "   caret-color: #0066cc; "
+        "   selection-background-color: rgba(0, 102, 204, 0.3); "
+        "   selection-color: black; "
         "}"
         "dialog.solvespace-file-dialog { "
         "   border-radius: 4px; "
