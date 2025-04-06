@@ -324,6 +324,7 @@ public:
         FIND_CONSTRAINT_TIMEOUT = 119,
         EXPLODE_DISTANCE      = 120,
         ANIMATION_SPEED       = 121,
+        LANGUAGE              = 122,
         // For TTF text
         TTF_TEXT              = 300,
         // For the step dimension screen

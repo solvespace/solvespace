@@ -530,10 +530,10 @@ public:
         button->set_menu_model(menu->gioMenu);
         button->add_css_class("menu-button");
 
-        button->set_tooltip_text(label + " Menu");
+        button->set_tooltip_text(label + " " + C_("tooltip", "Menu"));
 
-        button->set_property("accessible-role", std::string("menu-button"));
-        button->set_property("accessible-name", label + " Menu");
+        button->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::MENU_BUTTON);
+        button->update_property(Gtk::Accessible::Property::LABEL, label + " " + C_("accessibility", "Menu"));
 
         menuButtons.push_back(button);
         return button;
@@ -569,11 +569,11 @@ public:
         add_css_class("solvespace-gl-area");
         add_css_class("drawing-area");
 
-        set_tooltip_text("SolveSpace Drawing Area - 3D modeling canvas");
+        set_tooltip_text(C_("tooltip", "SolveSpace Drawing Area - 3D modeling canvas"));
 
         update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::CANVAS);
-        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace Drawing Area");
-        update_property(Gtk::Accessible::Property::DESCRIPTION, "3D modeling canvas for creating and editing models");
+        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace Drawing Area"));
+        update_property(Gtk::Accessible::Property::DESCRIPTION, C_("accessibility", "3D modeling canvas for creating and editing models"));
 
         setup_event_controllers();
     }
@@ -725,11 +725,21 @@ protected:
                 
                 if (handled) {
                     if (keyval == GDK_KEY_Delete) {
-                        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Delete Mode");
+                        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace 3D View - Delete Mode"));
                         update_property(Gtk::Accessible::Property::BUSY, true);
                     } else if (keyval == GDK_KEY_Escape) {
-                        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View");
+                        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace 3D View"));
                         update_property(Gtk::Accessible::Property::BUSY, false);
+                    } else if (keyval == GDK_KEY_l || keyval == GDK_KEY_L) {
+                        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace 3D View - Line Tool"));
+                    } else if (keyval == GDK_KEY_c || keyval == GDK_KEY_C) {
+                        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace 3D View - Circle Tool"));
+                    } else if (keyval == GDK_KEY_a || keyval == GDK_KEY_A) {
+                        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace 3D View - Arc Tool"));
+                    } else if (keyval == GDK_KEY_r || keyval == GDK_KEY_R) {
+                        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace 3D View - Rectangle Tool"));
+                    } else if (keyval == GDK_KEY_d || keyval == GDK_KEY_D) {
+                        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace 3D View - Dimension Tool"));
                     }
                 }
                 
@@ -747,8 +757,8 @@ protected:
 
         add_css_class("solvespace-gl-widget");
         update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::CANVAS);
-        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View");
-        update_property(Gtk::Accessible::Property::DESCRIPTION, "Interactive 3D modeling canvas for creating and editing models");
+        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace 3D View"));
+        update_property(Gtk::Accessible::Property::DESCRIPTION, C_("accessibility", "Interactive 3D modeling canvas for creating and editing models"));
         set_can_focus(true);
 
         auto focus_controller = Gtk::EventControllerFocus::create();
@@ -819,11 +829,11 @@ public:
         set_layout_manager(_constraint_layout);
         set_column_homogeneous(false);
 
-        set_tooltip_text("SolveSpace editor overlay with drawing area and text input");
+        set_tooltip_text(C_("tooltip", "SolveSpace editor overlay with drawing area and text input"));
 
         update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::PANEL);
-        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace Editor");
-        update_property(Gtk::Accessible::Property::DESCRIPTION, "Drawing area with text input for SolveSpace parametric CAD");
+        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace Editor"));
+        update_property(Gtk::Accessible::Property::DESCRIPTION, C_("accessibility", "Drawing area with text input for SolveSpace parametric CAD"));
 
         setup_event_controllers();
 
@@ -896,11 +906,11 @@ public:
             }
         });
 
-        _entry.set_tooltip_text("Text Input");
+        _entry.set_tooltip_text(C_("tooltip", "Text Input"));
 
         _entry.update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::TEXT_BOX);
-        _entry.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace Text Input");
-        _entry.update_property(Gtk::Accessible::Property::DESCRIPTION, "Text entry for editing SolveSpace parameters and values");
+        _entry.update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace Text Input"));
+        _entry.update_property(Gtk::Accessible::Property::DESCRIPTION, C_("accessibility", "Text entry for editing SolveSpace parameters and values"));
 
         attach(_gl_widget, 0, 0);
         attach(_entry, 0, 1);
@@ -1259,9 +1269,9 @@ class GtkWindow : public Gtk::Window {
             }
         });
 
-        set_property("accessible-role", std::string("application"));
-        set_property("accessible-label", std::string("SolveSpace"));
-        set_property("accessible-description", std::string("Parametric 2D/3D CAD application"));
+        update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
+        update_property(Gtk::Accessible::Property::LABEL, C_("app-name", "SolveSpace"));
+        update_property(Gtk::Accessible::Property::DESCRIPTION, C_("app-description", "Parametric 2D/3D CAD application"));
     }
 
     void setup_event_controllers() {
@@ -1705,13 +1715,13 @@ public:
 
         gtkWindow.add_css_class("window");
 
-        gtkWindow.set_tooltip_text("SolveSpace - Parametric 2D/3D CAD tool");
+        gtkWindow.set_tooltip_text(C_("tooltip", "SolveSpace - Parametric 2D/3D CAD tool"));
 
         gtkWindow.update_property(Gtk::Accessible::Property::ROLE,
             kind == Kind::TOOL ? Gtk::Accessible::Role::DIALOG : Gtk::Accessible::Role::APPLICATION);
-        gtkWindow.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace");
+        gtkWindow.update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace"));
         gtkWindow.update_property(Gtk::Accessible::Property::DESCRIPTION,
-            "Parametric 2D/3D CAD tool");
+            C_("accessibility", "Parametric 2D/3D CAD tool"));
     }
 
     double GetPixelDensity() override {
@@ -2910,26 +2920,49 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     gtkApp->property_application_id() = "org.solvespace.SolveSpace";
     gtkApp->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
-    gtkApp->update_property(Gtk::Accessible::Property::LABEL, "SolveSpace");
-    gtkApp->update_property(Gtk::Accessible::Property::DESCRIPTION, "Parametric 2D/3D CAD tool");
+    gtkApp->update_property(Gtk::Accessible::Property::LABEL, C_("app-name", "SolveSpace"));
+    gtkApp->update_property(Gtk::Accessible::Property::DESCRIPTION, C_("app-description", "Parametric 2D/3D CAD tool"));
 
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
     
     auto css_provider = Gtk::CssProvider::create();
     css_provider->load_from_data(
+        "@define-color bg_color #f5f5f5;"
+        "@define-color fg_color #333333;"
+        "@define-color header_bg #e0e0e0;"
+        "@define-color header_border #c0c0c0;"
+        "@define-color button_hover rgba(128, 128, 128, 0.1);"
+        "@define-color accent_color #0066cc;"
+        "@define-color accent_fg white;"
+        "@define-color entry_bg white;"
+        "@define-color entry_fg black;"
+        "@define-color border_color #e0e0e0;"
+        
+        "@define-color dark_bg_color #2d2d2d;"
+        "@define-color dark_fg_color #e0e0e0;"
+        "@define-color dark_header_bg #1e1e1e;"
+        "@define-color dark_header_border #3d3d3d;"
+        "@define-color dark_button_hover rgba(255, 255, 255, 0.1);"
+        "@define-color dark_accent_color #3584e4;"
+        "@define-color dark_accent_fg white;"
+        "@define-color dark_entry_bg #3d3d3d;"
+        "@define-color dark_entry_fg #e0e0e0;"
+        "@define-color dark_border_color #3d3d3d;"
+        
         "window.solvespace-window { "
-        "   background-color: #f5f5f5; "
+        "   background-color: @bg_color; "
+        "   color: @fg_color; "
         "}"
         ".solvespace-gl-area { "
         "   background-color: #ffffff; "
         "   border-radius: 2px; "
-        "   border: 1px solid #e0e0e0; "
+        "   border: 1px solid @border_color; "
         "}"
         "headerbar { "
         "   padding: 4px; "
         "   background-image: none; "
-        "   background-color: #e0e0e0; "
-        "   border-bottom: 1px solid #c0c0c0; "
+        "   background-color: @header_bg; "
+        "   border-bottom: 1px solid @header_border; "
         "}"
         "button.menu-button { "
         "   margin: 2px; "
@@ -2938,35 +2971,67 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         "   transition: background-color 200ms ease; "
         "}"
         "button.menu-button:hover { "
-        "   background-color: rgba(128, 128, 128, 0.1); "
+        "   background-color: @button_hover; "
         "}"
         "dialog.solvespace-file-dialog { "
         "   border-radius: 4px; "
         "   padding: 8px; "
+        "   background-color: @bg_color; "
+        "   color: @fg_color; "
         "}"
         "dialog.solvespace-file-dialog button { "
         "   border-radius: 3px; "
         "   padding: 6px 12px; "
         "}"
         "dialog.solvespace-file-dialog button.suggested-action { "
-        "   background-color: #0066cc; "
-        "   color: white; "
+        "   background-color: @accent_color; "
+        "   color: @accent_fg; "
         "}"
         "dialog.solvespace-file-dialog button.destructive-action { "
-        "   background-color: #f5f5f5; "
-        "   color: #333333; "
+        "   background-color: @bg_color; "
+        "   color: @fg_color; "
         "}"
         "entry.editor-text { "
-        "   background-color: white; "
-        "   color: black; "
+        "   background-color: @entry_bg; "
+        "   color: @entry_fg; "
         "   border-radius: 3px; "
         "   padding: 2px; "
-        "   caret-color: #0066cc; "
-        "   selection-background-color: rgba(0, 102, 204, 0.3); "
-        "   selection-color: black; "
+        "   caret-color: @accent_color; "
+        "   selection-background-color: alpha(@accent_color, 0.3); "
+        "   selection-color: @entry_fg; "
         "}"
-        "dialog.solvespace-file-dialog { "
-        "   border-radius: 4px; "
+        
+        "@media (prefers-dark-theme) {"
+        "   window.solvespace-window { "
+        "       background-color: @dark_bg_color; "
+        "       color: @dark_fg_color; "
+        "   }"
+        "   headerbar { "
+        "       background-color: @dark_header_bg; "
+        "       border-bottom: 1px solid @dark_header_border; "
+        "   }"
+        "   button.menu-button:hover { "
+        "       background-color: @dark_button_hover; "
+        "   }"
+        "   dialog.solvespace-file-dialog { "
+        "       background-color: @dark_bg_color; "
+        "       color: @dark_fg_color; "
+        "   }"
+        "   dialog.solvespace-file-dialog button.suggested-action { "
+        "       background-color: @dark_accent_color; "
+        "       color: @dark_accent_fg; "
+        "   }"
+        "   dialog.solvespace-file-dialog button.destructive-action { "
+        "       background-color: @dark_bg_color; "
+        "       color: @dark_fg_color; "
+        "   }"
+        "   entry.editor-text { "
+        "       background-color: @dark_entry_bg; "
+        "       color: @dark_entry_fg; "
+        "       caret-color: @dark_accent_color; "
+        "       selection-background-color: alpha(@dark_accent_color, 0.3); "
+        "       selection-color: @dark_entry_fg; "
+        "   }"
         "}"
     );
     
@@ -3530,14 +3595,30 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         style_provider,
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    // Set locale from user preferences.
-    // This apparently only consults the LANGUAGE environment variable.
-    const char* const* langNames = g_get_language_names();
-    while(*langNames) {
-        if(SetLocale(*langNames++)) break;
-    }
-    if(!*langNames) {
-        SetLocale("en_US");
+    auto settings = GetSettings();
+    std::string savedLocale = settings->ThawString("locale", "");
+    
+    if(!savedLocale.empty()) {
+        if(!SetLocale(savedLocale)) {
+            dbp("Failed to set saved locale: %s", savedLocale.c_str());
+            const char* const* langNames = g_get_language_names();
+            while(*langNames) {
+                if(SetLocale(*langNames++)) break;
+            }
+            if(!*langNames) {
+                SetLocale("en_US");
+            }
+        } else {
+            dbp("Using saved locale: %s", savedLocale.c_str());
+        }
+    } else {
+        const char* const* langNames = g_get_language_names();
+        while(*langNames) {
+            if(SetLocale(*langNames++)) break;
+        }
+        if(!*langNames) {
+            SetLocale("en_US");
+        }
     }
 
     return args;
@@ -3568,10 +3649,26 @@ void RunGui() {
         if (settings) {
             auto theme_binding = Gtk::PropertyExpression<bool>::create(
                 Gtk::Settings::get_type(), settings.get(), "gtk-application-prefer-dark-theme");
-            theme_binding->connect([](bool dark_theme) {
+            theme_binding->connect([settings](bool dark_theme) {
+                dbp("Theme changed: %s", dark_theme ? "dark" : "light");
+                
+                auto display = Gdk::Display::get_default();
+                auto windows = Gtk::Window::list_toplevels();
+                for (auto window : windows) {
+                    if (dark_theme) {
+                        window->add_css_class("dark");
+                    } else {
+                        window->remove_css_class("dark");
+                    }
+                }
+                
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                 SS.GW.Invalidate();
             });
+            
+            bool dark_theme = false;
+            settings->get_property("gtk-application-prefer-dark-theme", dark_theme);
+            dbp("Initial theme: %s", dark_theme ? "dark" : "light");
         }
 
         gtkApp->run();

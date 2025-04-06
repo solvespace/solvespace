@@ -212,8 +212,48 @@ void TextWindow::ScreenChangeAnimationSpeed(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::ANIMATION_SPEED;
 }
 
+void TextWindow::ScreenChangeLanguage(int link, uint32_t v) {
+    std::vector<std::string> availableLocales;
+    const std::set<Locale, LocaleLess> &locales = Locales();
+    
+    for(const Locale &locale : locales) {
+        availableLocales.push_back(locale.language + "_" + locale.region);
+    }
+    
+    if(availableLocales.empty()) {
+        availableLocales.push_back("en_US");
+    }
+    
+    auto settings = GetSettings();
+    std::string currentLocale = settings->ThawString("locale", "");
+    
+    SS.TW.ShowEditControl(3, currentLocale);
+    SS.TW.edit.meaning = Edit::LANGUAGE;
+}
+
 void TextWindow::ShowConfiguration() {
     int i;
+    Printf(true, "%Ft user color (r, g, b)");
+
+    Printf(false, "");
+    Printf(false, "%Ft language / internationalization%E");
+    
+    auto settings = GetSettings();
+    std::string currentLocale = settings->ThawString("locale", "");
+    if(currentLocale.empty()) {
+        const char* const* langNames = g_get_language_names();
+        if(langNames && *langNames) {
+            currentLocale = *langNames;
+        } else {
+            currentLocale = "en_US";
+        }
+    }
+    
+    Printf(false, "%Ba   %Fd%s %Fl%Ll%f[change]%E",
+        currentLocale.c_str(),
+        &ScreenChangeLanguage);
+    
+    Printf(false, "");
     Printf(true, "%Ft user color (r, g, b)");
 
     for(i = 0; i < SS.MODEL_COLORS; i++) {
@@ -578,6 +618,22 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
                 SS.animationSpeed = speed;
             } else {
                 SS.animationSpeed = 800;
+            }
+            break;
+        }
+        
+        case Edit::LANGUAGE: {
+            if(!s.empty()) {
+                auto settings = GetSettings();
+                settings->FreezeString("locale", s);
+                
+                if(SetLocale(s)) {
+                    SS.GW.Invalidate();
+                    SS.TW.Invalidate();
+                    SS.UpdateWindowTitles();
+                } else {
+                    Error(_("Failed to set locale: %s"), s.c_str());
+                }
             }
             break;
         }
