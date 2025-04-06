@@ -1264,6 +1264,27 @@ class GtkWindow : public Gtk::Window {
 
         add_controller(_motion_controller);
 
+        auto close_controller = Gtk::ShortcutController::create();
+        close_controller->set_name("window-close-controller");
+        close_controller->set_scope(Gtk::ShortcutScope::LOCAL);
+        
+        auto close_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
+            if(_receiver->onClose) {
+                _receiver->onClose();
+            }
+            return true;
+        });
+        
+        auto close_trigger = Gtk::AlternativeTrigger::create(
+            Gtk::KeyvalTrigger::create(GDK_KEY_w, Gdk::ModifierType::CONTROL_MASK),
+            Gtk::KeyvalTrigger::create(GDK_KEY_q, Gdk::ModifierType::CONTROL_MASK)
+        );
+        
+        auto close_shortcut = Gtk::Shortcut::create(close_trigger, close_action);
+        close_shortcut->set_action_name("close-window");
+        close_controller->add_shortcut(close_shortcut);
+        add_controller(close_controller);
+        
         signal_close_request().connect(
             [this]() -> bool {
                 if(_receiver->onClose) {
@@ -1502,13 +1523,22 @@ public:
         });
 
         get_gl_widget().set_has_tooltip(true);
-        get_gl_widget().signal_query_tooltip().connect(
-            [this](int x, int y, bool keyboard_tooltip,
-                  const Glib::RefPtr<Gtk::Tooltip> &tooltip) -> bool {
-                tooltip->set_text(_tooltip_text);
-                tooltip->set_tip_area(_tooltip_area);
-                return !_tooltip_text.empty() && (keyboard_tooltip || _is_under_cursor);
+        
+        auto tooltip_controller = Gtk::EventControllerMotion::create();
+        tooltip_controller->set_name("gl-widget-tooltip-controller");
+        
+        auto tooltip_binding = Gtk::PropertyExpression<Glib::ustring>::create(
+            this, "_tooltip_text");
+        
+        tooltip_controller->signal_motion().connect(
+            [this](double x, double y) {
+                if (!_tooltip_text.empty() && _is_under_cursor) {
+                    get_gl_widget().set_tooltip_text(_tooltip_text);
+                    get_gl_widget().set_tooltip_area(_tooltip_area);
+                }
             });
+            
+        get_gl_widget().add_controller(tooltip_controller);
 
         setup_event_controllers();
         setup_state_binding();
@@ -2603,19 +2633,15 @@ public:
 
         auto loop = Glib::MainLoop::create();
         auto response_id = Gtk::ResponseType::CANCEL;
-
-        auto response_controller = Gtk::EventControllerLegacy::create();
-        response_controller->set_name("file-dialog-response-controller");
-        response_controller->signal_event().connect(
-            [&loop, &response_id, this](const GdkEvent* event) -> bool {
-                if (gdk_event_get_event_type(event) == GDK_RESPONSE) {
-                    response_id = static_cast<Gtk::ResponseType>(gtkDialog.get_response());
-                    loop->quit();
-                    return true;
-                }
-                return false;
-            });
-        gtkDialog.add_controller(response_controller);
+        
+        auto response_binding = Gtk::PropertyExpression<int>::create(
+            Gtk::Dialog::get_type(), &gtkDialog, "response");
+        response_binding->connect([&loop, &response_id, this](int response) {
+            if (response != Gtk::ResponseType::NONE) {
+                response_id = static_cast<Gtk::ResponseType>(response);
+                loop->quit();
+            }
+        });
 
         auto shortcut_controller = Gtk::ShortcutController::create();
         shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
