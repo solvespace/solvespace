@@ -2837,11 +2837,39 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     gtkApp = Gtk::Application::create("org.solvespace.SolveSpace");
 
     gtkApp->property_application_id() = "org.solvespace.SolveSpace";
-    gtkApp->set_property("accessible-role", std::string("application"));
-    gtkApp->set_property("accessible-name", std::string("SolveSpace"));
-    gtkApp->set_property("accessible-description", std::string("Parametric 2D/3D CAD tool"));
+    gtkApp->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
+    gtkApp->update_property(Gtk::Accessible::Property::LABEL, "SolveSpace");
+    gtkApp->update_property(Gtk::Accessible::Property::DESCRIPTION, "Parametric 2D/3D CAD tool");
 
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
+    
+    auto css_provider = Gtk::CssProvider::create();
+    css_provider->load_from_data(
+        "window.solvespace-window { "
+        "   background-color: #f5f5f5; "
+        "}"
+        ".solvespace-gl-area { "
+        "   background-color: #ffffff; "
+        "}"
+        "headerbar { "
+        "   padding: 4px; "
+        "   background-image: none; "
+        "   border-bottom: 1px solid #c0c0c0; "
+        "}"
+        "button.menu-button { "
+        "   margin: 2px; "
+        "   padding: 4px 8px; "
+        "}"
+        "dialog.solvespace-file-dialog { "
+        "   border-radius: 4px; "
+        "}"
+    );
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
+    );
 
     auto shortcut_controller = Gtk::ShortcutController::create();
     shortcut_controller->set_scope(Gtk::ShortcutScope::GLOBAL);
