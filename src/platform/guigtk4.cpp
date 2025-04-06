@@ -2830,10 +2830,12 @@ public:
 
         gtkNative->set_title(isSave ? "Save SolveSpace File" : "Open SolveSpace File");
 
-        gtkNative->set_property("accessible-role", Gtk::Accessible::Role::DIALOG);
-        gtkNative->set_property("accessible-name", isSave ? "Save File" : "Open File");
-        gtkNative->set_property("accessible-description",
-            isSave ? "Dialog to save SolveSpace files" : "Dialog to open SolveSpace files");
+        gtkNative->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::DIALOG);
+        gtkNative->update_property(Gtk::Accessible::Property::LABEL, 
+            isSave ? C_("dialog-title", "Save File") : C_("dialog-title", "Open File"));
+        gtkNative->update_property(Gtk::Accessible::Property::DESCRIPTION,
+            isSave ? C_("dialog-description", "Dialog to save SolveSpace files") 
+                   : C_("dialog-description", "Dialog to open SolveSpace files"));
 
         if(isSave) {
             gtkNative->set_current_name("untitled");
@@ -2875,9 +2877,11 @@ public:
             widget->add_css_class(isSave ? "save-dialog" : "open-dialog");
 
             widget->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::DIALOG);
-            widget->update_property(Gtk::Accessible::Property::LABEL, isSave ? "Save SolveSpace File" : "Open SolveSpace File");
+            widget->update_property(Gtk::Accessible::Property::LABEL, 
+                isSave ? C_("dialog-title", "Save SolveSpace File") : C_("dialog-title", "Open SolveSpace File"));
             widget->update_property(Gtk::Accessible::Property::DESCRIPTION, 
-                isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
+                isSave ? C_("dialog-description", "Dialog for saving SolveSpace files") 
+                       : C_("dialog-description", "Dialog for opening SolveSpace files"));
             widget->update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::MODAL);
 
             auto shortcut_controller = Gtk::ShortcutController::create();
