@@ -224,7 +224,7 @@ void TextWindow::ScreenChangeLanguage(int link, uint32_t v) {
         availableLocales.push_back("en_US");
     }
     
-    auto settings = GetSettings();
+    auto settings = SolveSpace::Platform::GetSettings();
     std::string currentLocale = settings->ThawString("locale", "");
     
     SS.TW.ShowEditControl(3, currentLocale);
@@ -238,15 +238,10 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "");
     Printf(false, "%Ft language / internationalization%E");
     
-    auto settings = GetSettings();
+    auto settings = SolveSpace::Platform::GetSettings();
     std::string currentLocale = settings->ThawString("locale", "");
     if(currentLocale.empty()) {
-        const char* const* langNames = g_get_language_names();
-        if(langNames && *langNames) {
-            currentLocale = *langNames;
-        } else {
-            currentLocale = "en_US";
-        }
+        currentLocale = "en_US";
     }
     
     Printf(false, "%Ba   %Fd%s %Fl%Ll%f[change]%E",
@@ -624,12 +619,12 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         
         case Edit::LANGUAGE: {
             if(!s.empty()) {
-                auto settings = GetSettings();
+                auto settings = SolveSpace::Platform::GetSettings();
                 settings->FreezeString("locale", s);
                 
-                if(SetLocale(s)) {
+                if(SolveSpace::SetLocale(s)) {
                     SS.GW.Invalidate();
-                    SS.TW.Invalidate();
+                    SS.TW.ShowConfiguration();
                     SS.UpdateWindowTitles();
                 } else {
                     Error(_("Failed to set locale: %s"), s.c_str());
