@@ -1284,6 +1284,28 @@ class GtkWindow : public Gtk::Window {
     bool _is_fullscreen;
     Glib::RefPtr<Gtk::ConstraintLayout> _constraint_layout;
 
+    void setup_layout_constraints() {
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_vbox, Gtk::Constraint::Attribute::TOP,
+            Gtk::Constraint::Relation::EQ,
+            this, Gtk::Constraint::Attribute::TOP));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_vbox, Gtk::Constraint::Attribute::LEFT,
+            Gtk::Constraint::Relation::EQ,
+            this, Gtk::Constraint::Attribute::LEFT));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_vbox, Gtk::Constraint::Attribute::RIGHT,
+            Gtk::Constraint::Relation::EQ,
+            this, Gtk::Constraint::Attribute::RIGHT));
+            
+        _constraint_layout->add_constraint(Gtk::Constraint::create(
+            &_vbox, Gtk::Constraint::Attribute::BOTTOM,
+            Gtk::Constraint::Relation::EQ,
+            this, Gtk::Constraint::Attribute::BOTTOM));
+    }
+    
     void setup_state_binding() {
         auto state_binding = Gtk::PropertyExpression<Gdk::ToplevelState>::create(property_state());
         state_binding->connect([this](Gdk::ToplevelState state) {
@@ -1491,6 +1513,7 @@ public:
     {
         _constraint_layout = Gtk::ConstraintLayout::create();
         set_layout_manager(_constraint_layout);
+        setup_layout_constraints();
         
         auto css_provider = Gtk::CssProvider::create();
         css_provider->load_from_data(R"css(
@@ -2672,19 +2695,21 @@ public:
         gtkDialog.set_name(isSave ? "save-file-dialog" : "open-file-dialog");
         gtkDialog.set_title(isSave ? "Save File" : "Open File");
 
-        gtkDialog.set_property("accessible-role", std::string("dialog"));
-        gtkDialog.set_property("accessible-name", std::string(isSave ? "Save File" : "Open File"));
-        gtkDialog.set_property("accessible-description",
-            std::string(isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files"));
+        gtkDialog.update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::DIALOG);
+        gtkDialog.update_property(Gtk::Accessible::Property::LABEL, 
+            isSave ? C_("dialog-title", "Save File") : C_("dialog-title", "Open File"));
+        gtkDialog.update_property(Gtk::Accessible::Property::DESCRIPTION,
+            isSave ? C_("dialog-description", "Dialog for saving SolveSpace files") 
+                   : C_("dialog-description", "Dialog for opening SolveSpace files"));
 
         auto cancel_button = gtkDialog.add_button(C_("button", "_Cancel"), Gtk::ResponseType::CANCEL);
         cancel_button->add_css_class("destructive-action");
         cancel_button->add_css_class("cancel-action");
         cancel_button->set_name("cancel-button");
-        cancel_button->set_tooltip_text("Cancel");
+        cancel_button->set_tooltip_text(C_("tooltip", "Cancel"));
 
-        cancel_button->set_property("accessible-role", std::string("button"));
-        cancel_button->set_property("accessible-name", std::string("Cancel"));
+        cancel_button->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::BUTTON);
+        cancel_button->update_property(Gtk::Accessible::Property::LABEL, C_("button", "Cancel"));
         cancel_button->set_property("accessible-description", std::string("Cancel the file operation"));
 
         auto action_button = gtkDialog.add_button(
@@ -2724,6 +2749,14 @@ public:
         response_binding->connect([&loop, &response_id, this](int response) {
             if (response != Gtk::ResponseType::NONE) {
                 response_id = static_cast<Gtk::ResponseType>(response);
+                loop->quit();
+            }
+        });
+        
+        auto visibility_binding = Gtk::PropertyExpression<bool>::create(
+            Gtk::Dialog::get_type(), &gtkDialog, "visible");
+        visibility_binding->connect([&loop, this](bool visible) {
+            if (!visible) {
                 loop->quit();
             }
         });
