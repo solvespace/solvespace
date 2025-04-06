@@ -2597,11 +2597,11 @@ public:
             widget->add_css_class("dialog");
             widget->add_css_class(isSave ? "save-dialog" : "open-dialog");
 
-            widget->set_property("accessible-role", "file_chooser");
-            widget->set_property("accessible-name", isSave ? "Save SolveSpace File" : "Open SolveSpace File");
-            widget->set_property("accessible-description",
+            widget->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::FILE_CHOOSER);
+            widget->update_property(Gtk::Accessible::Property::LABEL, isSave ? "Save SolveSpace File" : "Open SolveSpace File");
+            widget->update_property(Gtk::Accessible::Property::DESCRIPTION,
                 isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
-            widget->set_property("accessible-state", "modal");
+            widget->update_property(Gtk::Accessible::Property::MODAL, true);
 
             auto shortcut_controller = Gtk::ShortcutController::create();
             shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
@@ -3324,12 +3324,12 @@ void RunGui() {
 
         auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
         if (settings) {
-            auto theme_property = settings->property_gtk_application_prefer_dark_theme();
-            theme_property.signal_changed().connect(
-                []() {
-                    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
-                    SS.GW.Invalidate();
-                });
+            auto theme_binding = Gtk::PropertyExpression<bool>::create(
+                Gtk::Settings::get_type(), settings.get(), "gtk-application-prefer-dark-theme");
+            theme_binding->connect([](bool dark_theme) {
+                SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+                SS.GW.Invalidate();
+            });
         }
 
         gtkApp->run();
