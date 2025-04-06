@@ -736,16 +736,16 @@ protected:
         add_controller(shortcut_controller);
 
         add_css_class("solvespace-gl-widget");
-        set_property("accessible-role", "canvas");
-        set_property("accessible-name", "SolveSpace 3D View");
-        set_property("accessible-description", "3D modeling canvas for creating and editing models");
+        update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::CANVAS);
+        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View");
+        update_property(Gtk::Accessible::Property::DESCRIPTION, "Interactive 3D modeling canvas for creating and editing models");
         set_can_focus(true);
 
         auto focus_controller = Gtk::EventControllerFocus::create();
         focus_controller->signal_enter().connect(
             [this]() {
                 grab_focus();
-                set_property("accessible-state", "focused");
+                update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::FOCUSED);
             });
         focus_controller->signal_leave().connect(
             [this]() {
@@ -987,11 +987,17 @@ public:
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 bool handled = on_key_pressed(keyval, keycode, gdk_state);
 
-                if (handled && (keyval == GDK_KEY_Delete ||
-                               keyval == GDK_KEY_BackSpace ||
-                               keyval == GDK_KEY_Tab)) {
-                    _gl_widget.update_property("accessible-busy", "true");
-                    _gl_widget.update_property("accessible-enabled", "true");
+                if (handled) {
+                    if (keyval == GDK_KEY_Delete || 
+                        keyval == GDK_KEY_BackSpace || 
+                        keyval == GDK_KEY_Tab) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::BUSY, true);
+                        _gl_widget.update_property(Gtk::Accessible::Property::ENABLED, true);
+                    }
+                    
+                    if (keyval == GDK_KEY_Delete) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Delete Mode");
+                    }
                 }
 
                 return handled;
@@ -1348,7 +1354,8 @@ public:
         _tooltip_text(""),
         _tooltip_area(),
         _is_under_cursor(false),
-        _is_fullscreen(false) {
+        _is_fullscreen(false)
+    {
         _constraint_layout = Gtk::ConstraintLayout::create();
         _scrollbar.set_orientation(Gtk::Orientation::VERTICAL);
 
