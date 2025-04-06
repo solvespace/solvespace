@@ -474,8 +474,10 @@ public:
             });
         gtkMenu.add_controller(motion_controller);
 
-        gtkMenu.property_visible().signal_changed().connect([&loop, this]() {
-            if (!gtkMenu.get_visible()) {
+        auto visibility_binding = Gtk::PropertyExpression<bool>::create(
+            Gtk::Popover::get_type(), &gtkMenu, "visible");
+        visibility_binding->connect([&loop, this](bool visible) {
+            if (!visible) {
                 loop->quit();
             }
         });
@@ -732,8 +734,9 @@ protected:
         add_controller(shortcut_controller);
 
         add_css_class("solvespace-gl-widget");
-        set_property("accessible-role", std::string("canvas"));
-        set_property("accessible-name", std::string("SolveSpace 3D View"));
+        update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::CANVAS);
+        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View");
+        update_property(Gtk::Accessible::Property::DESCRIPTION, "Interactive 3D modeling canvas for creating and editing models");
         set_can_focus(true);
 
         auto focus_controller = Gtk::EventControllerFocus::create();
@@ -978,6 +981,10 @@ public:
                                keyval == GDK_KEY_Tab)) {
                     _gl_widget.update_property(Gtk::Accessible::Property::BUSY, true);
                     _gl_widget.update_property(Gtk::Accessible::Property::ENABLED, true);
+                    
+                    if (keyval == GDK_KEY_Delete) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Delete Mode");
+                    }
                 }
                 
                 return handled;
@@ -2614,8 +2621,10 @@ public:
         
         gtkDialog.add_controller(shortcut_controller);
 
-        gtkDialog.property_visible().signal_changed().connect([&loop, this]() {
-            if (!gtkDialog.get_visible()) {
+        auto visibility_binding = Gtk::PropertyExpression<bool>::create(
+            Gtk::Dialog::get_type(), &gtkDialog, "visible");
+        visibility_binding->connect([&loop, this](bool visible) {
+            if (!visible) {
                 loop->quit();
             }
         });
@@ -3430,12 +3439,12 @@ void RunGui() {
 
         auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
         if (settings) {
-            auto theme_property = settings->property_gtk_application_prefer_dark_theme();
-            theme_property.signal_changed().connect(
-                []() {
-                    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
-                    SS.GW.Invalidate();
-                });
+            auto theme_binding = Gtk::PropertyExpression<bool>::create(
+                Gtk::Settings::get_type(), settings.get(), "gtk-application-prefer-dark-theme");
+            theme_binding->connect([](bool dark_theme) {
+                SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+                SS.GW.Invalidate();
+            });
         }
 
         gtkApp->run();
