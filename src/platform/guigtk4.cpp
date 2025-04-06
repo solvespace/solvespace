@@ -721,7 +721,19 @@ protected:
         key_controller->signal_key_pressed().connect(
             [this](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
-                return process_key_event(KeyboardEvent::Type::PRESS, keyval, gdk_state);
+                bool handled = process_key_event(KeyboardEvent::Type::PRESS, keyval, gdk_state);
+                
+                if (handled) {
+                    if (keyval == GDK_KEY_Delete) {
+                        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Delete Mode");
+                        update_property(Gtk::Accessible::Property::BUSY, true);
+                    } else if (keyval == GDK_KEY_Escape) {
+                        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View");
+                        update_property(Gtk::Accessible::Property::BUSY, false);
+                    }
+                }
+                
+                return handled;
             }, false);
 
         key_controller->signal_key_released().connect(
@@ -734,8 +746,9 @@ protected:
         add_controller(shortcut_controller);
 
         add_css_class("solvespace-gl-widget");
-        set_property("accessible-role", std::string("canvas"));
-        set_property("accessible-name", std::string("SolveSpace 3D View"));
+        update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::CANVAS);
+        update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View");
+        update_property(Gtk::Accessible::Property::DESCRIPTION, "Interactive 3D modeling canvas for creating and editing models");
         set_can_focus(true);
 
         auto focus_controller = Gtk::EventControllerFocus::create();
