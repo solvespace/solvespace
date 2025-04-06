@@ -2702,14 +2702,11 @@ public:
             widget->add_css_class("dialog");
             widget->add_css_class(isSave ? "save-dialog" : "open-dialog");
 
-            auto accessible = widget->get_accessible();
-            if (accessible) {
-                accessible->set_property("accessible-role", "file-chooser");
-                accessible->set_property("accessible-name", isSave ? "Save SolveSpace File" : "Open SolveSpace File");
-                accessible->set_property("accessible-description",
-                    isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
-                accessible->set_property("accessible-state", std::string("modal"));
-            }
+            widget->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::DIALOG);
+            widget->update_property(Gtk::Accessible::Property::LABEL, isSave ? "Save SolveSpace File" : "Open SolveSpace File");
+            widget->update_property(Gtk::Accessible::Property::DESCRIPTION, 
+                isSave ? "Dialog for saving SolveSpace files" : "Dialog for opening SolveSpace files");
+            widget->update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::MODAL);
 
             auto shortcut_controller = Gtk::ShortcutController::create();
             shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
@@ -2747,10 +2744,7 @@ public:
                             if (button->get_receives_default()) {
                                 button->grab_focus();
 
-                                auto accessible = button->get_accessible();
-                                if (accessible) {
-                                    accessible->set_property("accessible-state", std::string("focused"));
-                                }
+                                button->update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::FOCUSED);
                                 break;
                             }
                         }
