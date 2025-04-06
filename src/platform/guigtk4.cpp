@@ -474,8 +474,10 @@ public:
             });
         gtkMenu.add_controller(motion_controller);
 
-        gtkMenu.property_visible().signal_changed().connect([&loop, this]() {
-            if (!gtkMenu.get_visible()) {
+        auto visibility_binding = Gtk::PropertyExpression<bool>::create(
+            Gtk::Popover::get_type(), &gtkMenu, "visible");
+        visibility_binding->connect([&loop, this](bool visible) {
+            if (!visible) {
                 loop->quit();
             }
         });
@@ -2601,16 +2603,15 @@ public:
 
         gtkDialog.add_controller(shortcut_controller);
 
-        gtkDialog.property_visible().signal_changed().connect([&loop, this]() {
-            if (!gtkDialog.get_visible()) {
+        auto visibility_binding = Gtk::PropertyExpression<bool>::create(
+            Gtk::Dialog::get_type(), &gtkDialog, "visible");
+        visibility_binding->connect([&loop, this](bool visible) {
+            if (!visible) {
                 loop->quit();
             }
         });
 
-        auto accessible = gtkDialog.get_accessible();
-        if (accessible) {
-            accessible->set_property("accessible-state", std::string("modal"));
-        }
+        gtkDialog.update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::MODAL);
 
         gtkDialog.show();
         loop->run();
