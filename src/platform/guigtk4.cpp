@@ -661,10 +661,16 @@ protected:
 
     void setup_event_controllers() {
         auto motion_controller = Gtk::EventControllerMotion::create();
-
+        motion_controller->set_name("gl-widget-motion-controller");
+        
         motion_controller->signal_motion().connect(
             [this, motion_controller](double x, double y) {
                 auto state = motion_controller->get_current_event_state();
+                
+                update_property(Gtk::Accessible::Property::DESCRIPTION, 
+                    Glib::ustring::compose(C_("accessibility", "Pointer at coordinates: %1, %2"), 
+                                          static_cast<int>(x), static_cast<int>(y)));
+                
                 process_pointer_event(MouseEvent::Type::MOTION,
                                      x, y,
                                      static_cast<GdkModifierType>(state));
@@ -673,12 +679,14 @@ protected:
 
         motion_controller->signal_enter().connect(
             [this](double x, double y) {
+                update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::FOCUSED);
                 process_pointer_event(MouseEvent::Type::ENTER, x, y, GdkModifierType(0));
                 return true;
             });
 
         motion_controller->signal_leave().connect(
             [this]() {
+                update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::NONE);
                 double x, y;
                 get_pointer_position(x, y);
                 process_pointer_event(MouseEvent::Type::LEAVE, x, y, GdkModifierType(0));
@@ -688,11 +696,19 @@ protected:
         add_controller(motion_controller);
 
         auto gesture_click = Gtk::GestureClick::create();
+        gesture_click->set_name("gl-widget-click-controller");
         gesture_click->set_button(0); // Listen for any button
         gesture_click->signal_pressed().connect(
             [this, gesture_click](int n_press, double x, double y) {
                 auto state = gesture_click->get_current_event_state();
                 guint button = gesture_click->get_current_button();
+                
+                update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::ACTIVE);
+                
+                update_property(Gtk::Accessible::Property::DESCRIPTION, 
+                    Glib::ustring::compose(C_("accessibility", "Mouse button %1 clicked at %2, %3"), 
+                                          button, static_cast<int>(x), static_cast<int>(y)));
+                
                 process_pointer_event(
                     n_press > 1 ? MouseEvent::Type::DBL_PRESS : MouseEvent::Type::PRESS,
                     x, y, static_cast<GdkModifierType>(state), button);
@@ -703,18 +719,27 @@ protected:
             [this, gesture_click](int n_press, double x, double y) {
                 auto state = gesture_click->get_current_event_state();
                 guint button = gesture_click->get_current_button();
+                
+                update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::NONE);
+                
                 process_pointer_event(MouseEvent::Type::RELEASE, x, y, static_cast<GdkModifierType>(state), button);
                 return true;
             });
         add_controller(gesture_click);
 
         auto scroll_controller = Gtk::EventControllerScroll::create();
+        scroll_controller->set_name("gl-widget-scroll-controller");
         scroll_controller->set_flags(Gtk::EventControllerScroll::Flags::VERTICAL);
         scroll_controller->signal_scroll().connect(
             [this, scroll_controller](double dx, double dy) {
                 double x, y;
                 get_pointer_position(x, y);
                 auto state = scroll_controller->get_current_event_state();
+                
+                update_property(Gtk::Accessible::Property::DESCRIPTION, 
+                    Glib::ustring::compose(C_("accessibility", "Scrolling %1 units vertically"), 
+                                          static_cast<int>(dy)));
+                
                 process_pointer_event(MouseEvent::Type::SCROLL_VERT, x, y, static_cast<GdkModifierType>(state), 0, -dy);
                 return true;
             }, false);
@@ -1465,17 +1490,21 @@ public:
         _is_fullscreen(false)
     {
         _constraint_layout = Gtk::ConstraintLayout::create();
-
+        set_layout_manager(_constraint_layout);
+        
         auto css_provider = Gtk::CssProvider::create();
         css_provider->load_from_data(R"css(
             window.solvespace-window {
                 background-color: @theme_bg_color;
+                color: @theme_fg_color;
             }
             window.solvespace-window.dark {
                 background-color: #303030;
+                color: #e0e0e0;
             }
             window.solvespace-window.light {
                 background-color: #f0f0f0;
+                color: #303030;
             }
             scrollbar {
                 background-color: alpha(@theme_fg_color, 0.1);
@@ -1486,13 +1515,33 @@ public:
                 border-radius: 8px;
                 background-color: alpha(@theme_fg_color, 0.3);
             }
+            scrollbar slider:hover {
+                background-color: alpha(@theme_fg_color, 0.5);
+            }
+            scrollbar slider:active {
+                background-color: alpha(@theme_fg_color, 0.7);
+            }
             .solvespace-gl-area {
                 background-color: @theme_base_color;
                 border-radius: 2px;
                 border: 1px solid @borders;
             }
+            button.menu-button {
+                padding: 4px 8px;
+                border-radius: 3px;
+                background-color: alpha(@theme_fg_color, 0.05);
+                color: @theme_fg_color;
+            }
+            button.menu-button:hover {
+                background-color: alpha(@theme_fg_color, 0.1);
+            }
+            button.menu-button:active {
+                background-color: alpha(@theme_fg_color, 0.15);
+            }
             .solvespace-header {
                 padding: 4px;
+                background-color: @theme_bg_color;
+                border-bottom: 1px solid @borders;
             }
             .solvespace-editor-text {
                 background-color: @theme_base_color;
