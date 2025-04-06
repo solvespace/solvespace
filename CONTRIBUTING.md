@@ -371,9 +371,22 @@ Gtk::StyleContext::add_provider_for_display(
 
 #### Accessibility
 
-GTK4 has improved accessibility support. Ensure all widgets have appropriate accessibility roles and names:
+GTK4 has improved accessibility support. Use the update_property method to set accessibility properties:
 
 ```c++
+// Instead of this (GTK3 style):
 widget->get_accessible()->set_property("accessible-role", "button");
 widget->get_accessible()->set_property("accessible-name", "Save");
+
+// Use this (GTK4 style):
+widget->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::BUTTON);
+widget->update_property(Gtk::Accessible::Property::LABEL, "Save");
+widget->update_property(Gtk::Accessible::Property::DESCRIPTION, "Save the current document");
+```
+
+For operation mode announcements, update the label property:
+
+```c++
+// Announce operation mode for screen readers
+widget->update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Delete Mode");
 ```
