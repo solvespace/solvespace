@@ -276,10 +276,13 @@ public:
 
         _click_controller = Gtk::GestureClick::create();
         _click_controller->set_button(GDK_BUTTON_PRIMARY);
+        
         _click_controller->signal_released().connect(
             [this](int n_press, double x, double y) {
                 if(!_synthetic_event && _receiver->onTrigger) {
+                    update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::ACTIVE);
                     _receiver->onTrigger();
+                    update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::NONE);
                 }
                 return true;
             });
@@ -455,24 +458,28 @@ public:
     void PopUp() override {
         Glib::RefPtr<Glib::MainLoop> loop = Glib::MainLoop::create();
 
-        auto key_controller = Gtk::EventControllerKey::create();
-        key_controller->signal_key_pressed().connect(
-            [this, &loop](guint keyval, guint keycode, Gdk::ModifierType state) -> bool {
-                if (keyval == GDK_KEY_Escape) {
-                    gtkMenu.set_visible(false);
-                    loop->quit();
-                    return true;
-                }
-                return false;
-            }, false);
-        gtkMenu.add_controller(key_controller);
+        auto escape_controller = Gtk::ShortcutController::create();
+        escape_controller->set_scope(Gtk::ShortcutScope::LOCAL);
+        
+        auto escape_trigger = Gtk::KeyvalTrigger::create(GDK_KEY_Escape);
+        auto escape_action = Gtk::CallbackAction::create(
+            [this, &loop](const Glib::VariantBase&) -> bool {
+                gtkMenu.set_visible(false);
+                loop->quit();
+                return true;
+            });
+            
+        auto escape_shortcut = Gtk::Shortcut::create(escape_trigger, escape_action);
+        escape_controller->add_shortcut(escape_shortcut);
+        
+        gtkMenu.add_controller(escape_controller);
 
-        auto motion_controller = Gtk::EventControllerMotion::create();
-        motion_controller->signal_leave().connect(
-            [this, &loop]() {
+        auto focus_controller = Gtk::EventControllerFocus::create();
+        focus_controller->signal_leave().connect(
+            [&loop]() {
                 loop->quit();
             });
-        gtkMenu.add_controller(motion_controller);
+        gtkMenu.add_controller(focus_controller);
 
         auto visibility_binding = Gtk::PropertyExpression<bool>::create(
             Gtk::Popover::get_type(), &gtkMenu, "visible");
@@ -1563,16 +1570,9 @@ public:
         auto tooltip_controller = Gtk::EventControllerMotion::create();
         tooltip_controller->set_name("gl-widget-tooltip-controller");
         
-        auto tooltip_binding = Gtk::PropertyExpression<Glib::ustring>::create(
-            this, "_tooltip_text");
-        
-        tooltip_controller->signal_motion().connect(
-            [this](double x, double y) {
-                if (!_tooltip_text.empty() && _is_under_cursor) {
-                    get_gl_widget().set_tooltip_text(_tooltip_text);
-                    get_gl_widget().set_tooltip_area(_tooltip_area);
-                }
-            });
+        get_gl_widget().property_tooltip_text().bind_property(
+            property_tooltip_text(),
+            Gio::BindingFlags::SYNC_CREATE);
             
         get_gl_widget().add_controller(tooltip_controller);
 
