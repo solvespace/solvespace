@@ -1010,6 +1010,20 @@ public:
                         _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Rectangle Creation Mode");
                     } else if (keyval == GDK_KEY_d || keyval == GDK_KEY_D) {
                         _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Dimension Mode");
+                    } else if (keyval == GDK_KEY_q || keyval == GDK_KEY_Q) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Construction Mode");
+                    } else if (keyval == GDK_KEY_w || keyval == GDK_KEY_W) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Workplane Mode");
+                    } else if (keyval == GDK_KEY_m || keyval == GDK_KEY_M) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Measurement Mode");
+                    } else if (keyval == GDK_KEY_g || keyval == GDK_KEY_G) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Group Mode");
+                    } else if (keyval == GDK_KEY_s || keyval == GDK_KEY_S) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Step Dimension Mode");
+                    } else if (keyval == GDK_KEY_t || keyval == GDK_KEY_T) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Text Mode");
+                    } else if (keyval == GDK_KEY_d || keyval == GDK_KEY_D) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Dimension Mode");
                     } else if (keyval == GDK_KEY_w || keyval == GDK_KEY_W) {
                         _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Workplane Mode");
                     } else if (keyval == GDK_KEY_s || keyval == GDK_KEY_S) {
