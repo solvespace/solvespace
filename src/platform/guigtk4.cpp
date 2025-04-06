@@ -988,11 +988,19 @@ public:
                 GdkModifierType gdk_state = static_cast<GdkModifierType>(state);
                 bool handled = on_key_pressed(keyval, keycode, gdk_state);
 
-                if (handled && (keyval == GDK_KEY_Delete ||
-                               keyval == GDK_KEY_BackSpace ||
-                               keyval == GDK_KEY_Tab)) {
-                    _gl_widget.update_property(Gtk::Accessible::Property::BUSY, true);
-                    _gl_widget.update_property(Gtk::Accessible::Property::ENABLED, true);
+                if (handled) {
+                    if (keyval == GDK_KEY_Delete ||
+                        keyval == GDK_KEY_BackSpace ||
+                        keyval == GDK_KEY_Tab) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::BUSY, true);
+                        _gl_widget.update_property(Gtk::Accessible::Property::ENABLED, true);
+                    }
+                    
+                    if (keyval == GDK_KEY_Delete) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Delete Mode");
+                    } else if (keyval == GDK_KEY_Escape) {
+                        _gl_widget.update_property(Gtk::Accessible::Property::LABEL, "SolveSpace 3D View - Normal Mode");
+                    }
                 }
 
                 return handled;
