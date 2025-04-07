@@ -584,6 +584,14 @@ public:
 
         setup_event_controllers();
     }
+    
+    void announce_operation_mode(const std::string& mode) {
+        update_property(Gtk::Accessible::Property::LABEL, 
+            Glib::ustring::compose(C_("accessibility", "SolveSpace Drawing Area - %1 Mode"), mode));
+            
+        update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::ACTIVE);
+        update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::NONE);
+    }
 
 protected:
     // Work around a bug fixed in GTKMM 3.22:
