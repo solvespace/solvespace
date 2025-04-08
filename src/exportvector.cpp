@@ -6,6 +6,8 @@
 #include <libdxfrw.h>
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 //-----------------------------------------------------------------------------
 // Routines for DXF export
 //-----------------------------------------------------------------------------
@@ -1356,3 +1358,4 @@ void Step2dFileWriter::FinishAndCloseFile() {
     fclose(f);
 }
 
+} // namespace SolveSpace

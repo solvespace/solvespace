@@ -8,6 +8,8 @@
 #include "solvespace.h"
 #include "sketch.h"
 
+namespace SolveSpace {
+
 // Split a string into substrings separated by spaces.
 // Allow quotes to enclose spaces within a string
 static std::vector <std::string> splitString(const std::string line) {
@@ -300,8 +302,6 @@ static void MakeBeziersForArcs(SBezierList *sbl, Vector center, Vector pa, Vecto
     }
 }
 
-namespace SolveSpace {
-
 // Here we read the important section of an IDF file. SolveSpace Entities are directly created by
 // the functions above, which is only OK because of the way linking works. For example points do
 // not have handles for solver parameters (coordinates), they only have their actPoint values
@@ -533,4 +533,4 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     return true;
 }
 
-}
+} // namespace SolveSpace

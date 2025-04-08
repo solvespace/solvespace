@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 void Group::AssembleLoops(bool *allClosed,
                           bool *allCoplanar,
                           bool *allNonZeroLen)
@@ -798,3 +800,4 @@ void Group::DrawContourAreaLabels(Canvas *canvas) {
     }
 }
 
+} // namespace SolveSpace

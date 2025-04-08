@@ -5,6 +5,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 #define VERSION_STRING "\261\262\263" "SolveSpaceREVa"
 
 static int StrStartsWith(const char *str, const char *start) {
@@ -1024,3 +1026,5 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
     SS.images[*filename] = pixmap;
     return true;
 }
+
+} // namespace SolveSpace

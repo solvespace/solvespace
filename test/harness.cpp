@@ -3,6 +3,7 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
+#include <chrono>
 #include <regex>
 #include <cairo.h>
 

@@ -1,9 +1,14 @@
-#include "solvespace.h"
+#include <cstdarg>
+#include <cstdio>
+
 #include <mimalloc.h>
 
 #if defined(WIN32)
 #   include <Windows.h>
 #endif // defined(WIN32)
+
+#include "util.h"
+#include "platform.h"
 
 namespace SolveSpace {
 namespace Platform {

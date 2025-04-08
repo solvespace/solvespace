@@ -10,6 +10,14 @@
 #ifndef SOLVESPACE_SURFACE_H
 #define SOLVESPACE_SURFACE_H
 
+#include <cstdint>
+
+#include "dsc.h"
+#include "polygon.h"
+
+namespace SolveSpace {
+
+class Group;
 class SBezierList;
 class SSurface;
 class SCurvePt;
@@ -435,5 +443,6 @@ public:
     void Clear();
 };
 
-#endif
+} // namespace SolveSpace
 
+#endif
