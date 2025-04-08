@@ -585,7 +585,11 @@ public:
     }
     
     void announce_operation_mode(const std::string& mode) {
-        set_accessible_name(Glib::ustring::compose(C_("accessibility", "SolveSpace Drawing Area - %1 Mode"), mode));
+        update_property(Gtk::Accessible::Property::LABEL, 
+            Glib::ustring::compose(C_("accessibility", "SolveSpace Drawing Area - %1 Mode"), mode));
+            
+        update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::ACTIVE);
+        update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::NONE);
         
         set_can_focus(false);
         set_can_focus(true);
