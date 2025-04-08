@@ -3006,11 +3006,9 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
     
-    auto accessible = gtkApp->get_accessible();
-    if (accessible) {
-        accessible->set_name(C_("app-name", "SolveSpace"));
-        accessible->set_description(C_("app-description", "Parametric 2D/3D CAD tool"));
-    }
+    gtkApp->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
+    gtkApp->update_property(Gtk::Accessible::Property::LABEL, C_("app-name", "SolveSpace"));
+    gtkApp->update_property(Gtk::Accessible::Property::DESCRIPTION, C_("app-description", "Parametric 2D/3D CAD tool"));
     
     auto css_provider = Gtk::CssProvider::create();
     css_provider->load_from_data(
