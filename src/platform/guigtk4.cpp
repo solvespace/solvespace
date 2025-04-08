@@ -3586,26 +3586,61 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto help_shortcut_controller = Gtk::ShortcutController::create();
     help_shortcut_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
 
+    auto help_action = Gtk::CallbackAction::create([](Gtk::Widget&, const Glib::VariantBase&) {
+        dbp("Help requested");
+        return true;
+    });
+    
     auto help_shortcut = Gtk::Shortcut::create(
         Gtk::KeyvalTrigger::create(GDK_KEY_F1),
-        Gtk::CallbackAction::create([](Gtk::Widget&, const Glib::VariantBase&) {
-            dbp("Help requested");
-            return true;
-        })
+        help_action
     );
+    help_shortcut->set_action(help_action);
     help_shortcut_controller->add_shortcut(help_shortcut);
 
 
     style_provider->load_from_data(R"(
+    /* CSS Variables for theming */
+    :root {
+        --bg-color: #f5f5f5;
+        --header-bg-color: #e0e0e0;
+        --header-border-color: #d0d0d0;
+        --text-color: #333333;
+        --hover-bg-color: rgba(0, 0, 0, 0.1);
+        --entry-bg-color: #ffffff;
+        --entry-text-color: #000000;
+        --button-bg-color: #e0e0e0;
+        --button-hover-bg-color: #d0d0d0;
+        --button-active-bg-color: #c0c0c0;
+        --link-color: #0066cc;
+    }
+    
+    /* Dark mode variables */
+    .dark {
+        --bg-color: #2d2d2d;
+        --header-bg-color: #1d1d1d;
+        --header-border-color: #3d3d3d;
+        --text-color: #e0e0e0;
+        --hover-bg-color: rgba(255, 255, 255, 0.1);
+        --entry-bg-color: #3d3d3d;
+        --entry-text-color: #e0e0e0;
+        --button-bg-color: #3d3d3d;
+        --button-hover-bg-color: #4d4d4d;
+        --button-active-bg-color: #5d5d5d;
+        --link-color: #5599ff;
+    }
+
     /* Base window styling */
     window {
-        background-color: #f5f5f5;
+        background-color: var(--bg-color);
+        color: var(--text-color);
     }
 
     headerbar {
-        background-color: #e0e0e0;
-        border-bottom: 1px solid #d0d0d0;
+        background-color: var(--header-bg-color);
+        border-bottom: 1px solid var(--header-border-color);
         padding: 4px;
+        color: var(--text-color);
     }
 
     /* Menu styling */
@@ -3613,22 +3648,29 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         padding: 4px 8px;
         margin: 2px;
         border-radius: 4px;
+        background-color: var(--button-bg-color);
+        color: var(--text-color);
     }
 
     .menu-button:hover {
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: var(--button-hover-bg-color);
+    }
+
+    .menu-button:active {
+        background-color: var(--button-active-bg-color);
     }
 
     .menu-item {
         padding: 6px 8px;
         margin: 1px;
+        color: var(--text-color);
     }
 
     .menu-item:hover {
-        background-color: rgba(0, 0, 0, 0.1);
+        background-color: var(--hover-bg-color);
     }
 
-    /* GL area styling */
+    /* GL area styling - not affected by dark mode */
     .solvespace-gl-area {
         background-color: #ffffff;
     }
@@ -3640,8 +3682,8 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     /* Base entry styling */
     entry {
-        background: white;
-        color: black;
+        background-color: var(--entry-bg-color);
+        color: var(--entry-text-color);
         border-radius: 4px;
         padding: 2px;
         min-height: 24px;
