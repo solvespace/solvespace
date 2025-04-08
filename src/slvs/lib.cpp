@@ -827,10 +827,10 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
         ConstraintBase *c = &con;
         if(c->type == ConstraintBase::Type::WHERE_DRAGGED) {
             EntityBase *e = SK.GetEntity(c->ptA);
-            SYS.dragged.Add(&(e->param[0]));
-            SYS.dragged.Add(&(e->param[1]));
+            SYS.dragged.insert(e->param[0]);
+            SYS.dragged.insert(e->param[1]);
             if (e->type == EntityBase::Type::POINT_IN_3D) {
-                SYS.dragged.Add(&(e->param[2]));
+                SYS.dragged.insert(e->param[2]);
             }
         }
     }
@@ -971,7 +971,7 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
     for(i = 0; i < ssys->ndragged; i++) {
         if(ssys->dragged[i]) {
             hParam hp = { ssys->dragged[i] };
-            SYS.dragged.Add(&hp);
+            SYS.dragged.insert(hp);
         }
     }
 

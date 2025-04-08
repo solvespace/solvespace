@@ -172,6 +172,7 @@ enum class SolveResult : uint32_t {
     TOO_MANY_UNKNOWNS        = 20
 };
 
+using ParamSet = std::unordered_set<hParam, HandleHasher<hParam>>;
 
 #include "sketch.h"
 #include "ui.h"
@@ -229,7 +230,7 @@ public:
 
     // A list of parameters that are being dragged; these are the ones that
     // we should put as close as possible to their initial positions.
-    List<hParam>                    dragged;
+    ParamSet                        dragged;
 
     enum {
         // In general, the tag indicates the subsys that a variable/equation
