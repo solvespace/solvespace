@@ -82,6 +82,61 @@ default: SolveSpace::Platform::FatalError("bad entity type " + std::to_string(ty
     }
 }
 
+static bool Slvs_CanInitiallySatisfy(const ConstraintBase &c) {
+    switch(c.type) {
+    case ConstraintBase::Type::CUBIC_LINE_TANGENT:
+    case ConstraintBase::Type::PARALLEL:
+        // Can't initially satisfy if not projected onto a workplane
+        return c.workplane != EntityBase::FREE_IN_3D;
+
+    case ConstraintBase::Type::PT_PT_DISTANCE:
+    case ConstraintBase::Type::PROJ_PT_DISTANCE:
+    case ConstraintBase::Type::PT_LINE_DISTANCE:
+    case ConstraintBase::Type::PT_PLANE_DISTANCE:
+    case ConstraintBase::Type::PT_FACE_DISTANCE:
+    case ConstraintBase::Type::EQUAL_LENGTH_LINES:
+    case ConstraintBase::Type::EQ_LEN_PT_LINE_D:
+    case ConstraintBase::Type::EQ_PT_LN_DISTANCES:
+    case ConstraintBase::Type::LENGTH_RATIO:
+    case ConstraintBase::Type::ARC_ARC_LEN_RATIO:
+    case ConstraintBase::Type::ARC_LINE_LEN_RATIO:
+    case ConstraintBase::Type::LENGTH_DIFFERENCE:
+    case ConstraintBase::Type::ARC_ARC_DIFFERENCE:
+    case ConstraintBase::Type::ARC_LINE_DIFFERENCE:
+    case ConstraintBase::Type::DIAMETER:
+    case ConstraintBase::Type::EQUAL_RADIUS:
+    case ConstraintBase::Type::EQUAL_LINE_ARC_LEN:
+    case ConstraintBase::Type::PT_IN_PLANE:
+    case ConstraintBase::Type::PT_ON_FACE:
+    case ConstraintBase::Type::PT_ON_CIRCLE:
+    case ConstraintBase::Type::HORIZONTAL:
+    case ConstraintBase::Type::VERTICAL:
+    case ConstraintBase::Type::PERPENDICULAR:
+    case ConstraintBase::Type::ANGLE:
+    case ConstraintBase::Type::EQUAL_ANGLE:
+    case ConstraintBase::Type::ARC_LINE_TANGENT:
+    case ConstraintBase::Type::CURVE_CURVE_TANGENT:
+        return true;
+
+    case ConstraintBase::Type::AT_MIDPOINT:
+        // Can initially satisfy if between a line segment and a workplane
+        return c.ptA == EntityBase::NO_ENTITY;
+
+    case ConstraintBase::Type::POINTS_COINCIDENT:
+    case ConstraintBase::Type::PT_ON_LINE:
+    case ConstraintBase::Type::SYMMETRIC:
+    case ConstraintBase::Type::SYMMETRIC_HORIZ:
+    case ConstraintBase::Type::SYMMETRIC_VERT:
+    case ConstraintBase::Type::SYMMETRIC_LINE:
+    case ConstraintBase::Type::SAME_ORIENTATION:
+    case ConstraintBase::Type::WHERE_DRAGGED:
+    case ConstraintBase::Type::COMMENT:
+        // Can't initially satisfy these constraints
+        return false;
+    }
+    ssassert(false, "Unexpected constraint type");
+}
+
 bool Slvs_IsFreeIn3D(Slvs_Entity e) {
     return e.h == SLVS_FREE_IN_3D;
 }
@@ -818,7 +873,10 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
                 SYS.param.Add(&p);
             }
             constraintParams.Clear();
-            c->ModifyToSatisfy();
+
+            if(Slvs_CanInitiallySatisfy(*c)) {
+                c->ModifyToSatisfy();
+            }
         }
     }
 
@@ -962,7 +1020,10 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
                 SYS.param.Add(&p);
             }
             params.Clear();
-            c.ModifyToSatisfy();
+
+            if(Slvs_CanInitiallySatisfy(c)) {
+                c.ModifyToSatisfy();
+            }
         }
 
         SK.constraint.Add(&c);
