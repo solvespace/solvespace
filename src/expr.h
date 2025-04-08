@@ -7,6 +7,8 @@
 #ifndef SOLVESPACE_EXPR_H
 #define SOLVESPACE_EXPR_H
 
+using SubstitutionMap = std::unordered_map<hParam, Param *, HandleHasher<hParam>>;
+
 class Expr {
 public:
 
@@ -75,7 +77,7 @@ public:
     static bool Tol(double a, double b);
     bool IsZeroConst() const;
     Expr *FoldConstants();
-    void Substitute(hParam oldh, hParam newh);
+    void Substitute(const SubstitutionMap &subMap);
 
     static const hParam NO_PARAMS, MULTIPLE_PARAMS;
     hParam ReferencedParams(ParamList *pl) const;

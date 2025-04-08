@@ -98,119 +98,98 @@ bool System::IsDragged(hParam p) {
     return dragged.find(p) != dragged.end();
 }
 
-Param *System::GetLastParamSubstitution(Param *p) {
-    Param *current = p;
-    while(current->substd != NULL) {
-        current = current->substd;
-        if(current == p) {
-            // Break the loop
-            current->substd = NULL;
-            break;
-        }
-    }
-    return current;
-}
+SubstitutionMap System::SolveBySubstitution() {
+    std::vector<Param *> subVec;
+    std::unordered_map<hParam, size_t, HandleHasher<hParam>> leaves;
 
-void System::SortSubstitutionByDragged(Param *p) {
-    std::vector<Param *> subsParams;
-    Param *by = NULL;
-    Param *current = p;
-    while(current != NULL) {
-        subsParams.push_back(current);
-        if(IsDragged(current->h)) {
-            by = current;
-        }
-        current = current->substd;
-    }
-    if(by == NULL) by = p;
-    for(Param *p : subsParams) {
-       if(p == by) continue;
-       p->substd = by;
-       p->tag = VAR_SUBSTITUTED;
-    }
-    by->substd = NULL;
-    by->tag = 0;
-}
-
-void System::SubstituteParamsByLast(Expr *e) {
-    ssassert(e->op != Expr::Op::PARAM_PTR, "Expected an expression that refer to params via handles");
-
-    if(e->op == Expr::Op::PARAM) {
-        Param *p = param.FindByIdNoOops(e->parh);
-        if(p != NULL) {
-            Param *s = GetLastParamSubstitution(p);
-            if(s != NULL) {
-                e->parh = s->h;
-            }
-        }
-    } else {
-        int c = e->Children();
-        if(c >= 1) {
-            SubstituteParamsByLast(e->a);
-            if(c >= 2) SubstituteParamsByLast(e->b);
-        }
-    }
-}
-
-void System::SolveBySubstitution() {
     for(auto &teq : eq) {
         Expr *tex = teq.e;
 
+        // If we have `(a - b) = 0` where both a and b are parameters, then `a = b` and we can substitute
         if(tex->op    == Expr::Op::MINUS &&
            tex->a->op == Expr::Op::PARAM &&
            tex->b->op == Expr::Op::PARAM)
         {
-            hParam a = tex->a->parh;
-            hParam b = tex->b->parh;
-            if(!(param.FindByIdNoOops(a) && param.FindByIdNoOops(b))) {
+            Param *sub = param.FindByIdNoOops(tex->a->parh);
+            Param *by = param.FindByIdNoOops(tex->b->parh);
+            if(!sub || !by) {
                 // Don't substitute unless they're both solver params;
                 // otherwise it's an equation that can be solved immediately,
                 // or an error to flag later.
                 continue;
             }
 
-            if(a.v == b.v) {
+            if(sub->h == by->h) {
                 teq.tag = EQ_SUBSTITUTED;
                 continue;
             }
 
-            Param *pa = param.FindById(a);
-            Param *pb = param.FindById(b);
-
             // Take the last substitution of parameter a
-            // This resulted in creation of substitution chains
-            Param *last = GetLastParamSubstitution(pa);
-            last->substd = pb;
-            last->tag = VAR_SUBSTITUTED;
+            size_t subIdx = 0;
+            auto it = leaves.find(sub->h);
+            if(it != leaves.end()) {
+                subIdx = it->second;
+                sub = subVec.at(it->second - 1);
+            }
 
-            if(pb->substd != NULL) {
-                // Break the loops
-                GetLastParamSubstitution(pb);
-                // if b loop was broken
-                if(pb->substd == NULL) {
-                    // Clear substitution
-                    pb->tag = 0;
+            // Take the last substitution of parameter b
+            size_t byIdx = 0;
+            it = leaves.find(by->h);
+            if(it != leaves.end()) {
+                byIdx = it->second;
+                by = subVec.at(it->second - 1);
+            }
+
+            // If the last substituton of `a` is a dragged param, keep it
+            // and substitute the other param
+            if(IsDragged(sub->h)) {
+                std::swap(sub, by);
+                std::swap(subIdx, byIdx);
+            }
+
+            if(subIdx > 0) {
+                // The last substitution already exists in the map, so just
+                // change the last substitution to `by`
+                subVec.at(subIdx - 1) = by;
+                // Ensure all existing pointers to `sub` now point to `by`
+                for(auto &p : subVec) {
+                    if(p->h == sub->h) {
+                        p = by;
+                    }
+                }
+                leaves[by->h] = subIdx;
+            } else {
+                if(byIdx == 0) {
+                    // Neither `sub` nor `by` are in the map, so add them and
+                    // set the target index
+                    subVec.push_back(by);
+                    leaves[by->h] = leaves[sub->h] = subVec.size();
+                } else {
+                    // `sub` isn't in the map, but `by` is, so just add `sub` to
+                    // the map with `by` as the target
+                    leaves[sub->h] = byIdx;
                 }
             }
+
+            sub->tag = VAR_SUBSTITUTED;
             teq.tag = EQ_SUBSTITUTED;
         }
     }
 
-    //
-    for(Param &p : param) {
-        SortSubstitutionByDragged(&p);
+    SubstitutionMap subMap;
+    for(auto &sub : leaves) {
+        Param *by = subVec.at(sub.second - 1);
+        if(sub.first != by->h) {
+            subMap[sub.first] = by;
+        }
     }
 
     // Substitute all the equations
     for(auto &req : eq) {
-        SubstituteParamsByLast(req.e);
+        req.e->Substitute(subMap);
     }
 
-    // Substitute all the parameters with last substitutions
-    for(auto &p : param) {
-        if(p.substd == NULL) continue;
-        p.substd = GetLastParamSubstitution(p.substd);
-    }
+    return subMap;
 }
 
 //-----------------------------------------------------------------------------
@@ -434,10 +413,12 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     param.ClearTags();
     eq.ClearTags();
 
+    SubstitutionMap subMap;
+
     // Since we are suppressing dof calculation or allowing redundant, we
     // can't / don't want to catch result of dof checking without substitution
     if(g->suppressDofCalculation || g->allowRedundant || !forceDofCheck) {
-        SolveBySubstitution();
+        subMap = SolveBySubstitution();
     }
 
     // Before solving the big system, see if we can find any equations that
@@ -494,12 +475,9 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     // System solved correctly, so write the new values back in to the
     // main parameter table.
     for(auto &p : param) {
-        double val;
-        if(p.tag == VAR_SUBSTITUTED) {
-            val = p.substd->val;
-        } else {
-            val = p.val;
-        }
+        auto it = subMap.find(p.h);
+        double val = it == subMap.end() ? p.val : it->second->val;
+
         Param *pp = SK.GetParam(p.h);
         pp->val = val;
         pp->known = true;
