@@ -288,8 +288,8 @@ public:
             });
         add_controller(_click_controller);
 
-        set_accessible_role(Gtk::AccessibleRole::MENU_ITEM);
-        set_accessible_name("Menu Item");
+        update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::MENU_ITEM);
+        update_property(Gtk::Accessible::Property::LABEL, "Menu Item");
     }
 
     void set_accel_key(const Gtk::AccelKey &accel_key) {
@@ -538,8 +538,8 @@ public:
 
         button->set_tooltip_text(label + " " + C_("tooltip", "Menu"));
 
-        button->set_accessible_role(Gtk::AccessibleRole::MENU_BUTTON);
-        button->set_accessible_name(label + " " + C_("accessibility", "Menu"));
+        button->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::MENU_BUTTON);
+        button->update_property(Gtk::Accessible::Property::LABEL, label + " " + C_("accessibility", "Menu"));
 
         menuButtons.push_back(button);
         return button;
@@ -577,9 +577,9 @@ public:
 
         set_tooltip_text(C_("tooltip", "SolveSpace Drawing Area - 3D modeling canvas"));
 
-        set_accessible_role(Gtk::AccessibleRole::CANVAS);
-        set_accessible_name(C_("accessibility", "SolveSpace Drawing Area"));
-        set_accessible_description(C_("accessibility", "3D modeling canvas for creating and editing models"));
+        update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::CANVAS);
+        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace Drawing Area"));
+        update_property(Gtk::Accessible::Property::DESCRIPTION, C_("accessibility", "3D modeling canvas for creating and editing models"));
 
         setup_event_controllers();
     }
@@ -1375,8 +1375,8 @@ class GtkWindow : public Gtk::Window {
             Gtk::KeyvalTrigger::create(GDK_KEY_q, Gdk::ModifierType::CONTROL_MASK)
         );
         
+        auto close_action = Gtk::NamedAction::create("close-window");
         auto close_shortcut = Gtk::Shortcut::create(close_trigger, close_action);
-        close_shortcut->set_action_name("close-window");
         close_controller->add_shortcut(close_shortcut);
         add_controller(close_controller);
         
@@ -2503,9 +2503,9 @@ public:
 
         gtkDialog.set_tooltip_text("Message Dialog");
 
-        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
-        gtkDialog.set_accessible_name("Message Dialog");
-        gtkDialog.set_accessible_description("SolveSpace notification dialog");
+        gtkDialog.update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::DIALOG);
+        gtkDialog.update_property(Gtk::Accessible::Property::LABEL, "Message Dialog");
+        gtkDialog.update_property(Gtk::Accessible::Property::DESCRIPTION, "SolveSpace notification dialog");
 
         gtkDialog.show();
         loop->run();
@@ -2696,10 +2696,10 @@ public:
         gtkDialog.set_name(isSave ? "save-file-dialog" : "open-file-dialog");
         gtkDialog.set_title(isSave ? "Save File" : "Open File");
 
-        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
-        gtkDialog.set_accessible_name(
+        gtkDialog.update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::DIALOG);
+        gtkDialog.update_property(Gtk::Accessible::Property::LABEL,
             isSave ? C_("dialog-title", "Save File") : C_("dialog-title", "Open File"));
-        gtkDialog.set_accessible_description(
+        gtkDialog.update_property(Gtk::Accessible::Property::DESCRIPTION,
             isSave ? C_("dialog-description", "Dialog for saving SolveSpace files") 
                    : C_("dialog-description", "Dialog for opening SolveSpace files"));
 
@@ -2709,9 +2709,9 @@ public:
         cancel_button->set_name("cancel-button");
         cancel_button->set_tooltip_text(C_("tooltip", "Cancel"));
 
-        cancel_button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
-        cancel_button->set_accessible_name(C_("button", "Cancel"));
-        cancel_button->set_accessible_description("Cancel the file operation");
+        cancel_button->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::BUTTON);
+        cancel_button->update_property(Gtk::Accessible::Property::LABEL, C_("button", "Cancel"));
+        cancel_button->update_property(Gtk::Accessible::Property::DESCRIPTION, "Cancel the file operation");
 
         auto action_button = gtkDialog.add_button(
             isSave ? C_("button", "_Save") : C_("button", "_Open"),
@@ -3560,11 +3560,12 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
 
     if (settings) {
-        settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
-            [settings]() {
-                SS.GenerateAll(SolveSpaceUI::Generate::ALL);
-                SS.GW.Invalidate();
-            });
+        auto theme_binding = Gtk::PropertyExpression<bool>::create(
+            settings->property_gtk_application_prefer_dark_theme());
+        theme_binding->connect([](const Glib::Value<bool>& value) {
+            SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+            SS.GW.Invalidate();
+        });
     }
 
     std::vector<std::string> args;
@@ -3756,24 +3757,24 @@ void RunGui() {
             settings->get_property("gtk-application-prefer-dark-theme", dark_theme);
             dbp("Initial theme: %s", dark_theme ? "dark" : "light");
             
-            settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
-                [settings]() {
-                    bool dark_theme = false;
-                    settings->get_property("gtk-application-prefer-dark-theme", dark_theme);
-                    dbp("Theme changed: %s", dark_theme ? "dark" : "light");
-                    
-                    auto windows = Gtk::Window::list_toplevels();
-                    for (auto window : windows) {
-                        if (dark_theme) {
-                            window->add_css_class("dark");
-                        } else {
-                            window->remove_css_class("dark");
-                        }
+            auto theme_binding = Gtk::PropertyExpression<bool>::create(
+                settings->property_gtk_application_prefer_dark_theme());
+            theme_binding->connect([settings](const Glib::Value<bool>& value) {
+                bool dark_theme = value.get();
+                dbp("Theme changed: %s", dark_theme ? "dark" : "light");
+                
+                auto windows = Gtk::Window::list_toplevels();
+                for (auto window : windows) {
+                    if (dark_theme) {
+                        window->add_css_class("dark");
+                    } else {
+                        window->remove_css_class("dark");
                     }
-                    
-                    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
-                    SS.GW.Invalidate();
-                });
+                }
+                
+                SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+                SS.GW.Invalidate();
+            });
         }
 
         gtkApp->run();
