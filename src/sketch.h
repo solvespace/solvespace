@@ -624,9 +624,6 @@ public:
     bool        known;
     bool        free;
 
-    // Used only in the solver
-    Param       *substd;
-
     static const hParam NO_PARAM;
 
     void Clear() {}

@@ -500,15 +500,21 @@ Expr *Expr::FoldConstants() {
     return n;
 }
 
-void Expr::Substitute(hParam oldh, hParam newh) {
+void Expr::Substitute(const SubstitutionMap &subMap) {
     ssassert(op != Op::PARAM_PTR, "Expected an expression that refer to params via handles");
 
-    if(op == Op::PARAM && parh == oldh) {
-        parh = newh;
+    if(op == Op::PARAM) {
+        auto it = subMap.find(parh);
+        if(it != subMap.end()) {
+            parh = it->second->h;
+        }
+    } else {
+        int c = Children();
+        if(c >= 1) {
+            a->Substitute(subMap);
+            if(c >= 2) b->Substitute(subMap);
+        }
     }
-    int c = Children();
-    if(c >= 1) a->Substitute(oldh, newh);
-    if(c >= 2) b->Substitute(oldh, newh);
 }
 
 //-----------------------------------------------------------------------------
