@@ -154,6 +154,12 @@
                         "name": "pangomm",
                         "stable-only": true
                     }
+                },
+                {
+                    "type": "file",
+                    "path": "meson.build",
+                    "dest-filename": "meson.build",
+                    "content": "project('pangomm', 'cpp', version: '2.50.2')\nsubdir('pangomm')\n"
                 }
             ],
             "cleanup": [
