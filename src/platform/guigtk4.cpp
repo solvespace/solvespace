@@ -3765,19 +3765,21 @@ void RunGui() {
             dbp("Initial theme: %s", dark_theme ? "dark" : "light");
             
             auto theme_binding = Gtk::PropertyExpression<bool>::create(
-                settings->property_gtk_application_prefer_dark_theme());
-            theme_binding->connect([settings](const Glib::Value<bool>& value) {
-                bool dark_theme = value.get();
-                dbp("Theme changed: %s", dark_theme ? "dark" : "light");
-                
-                auto windows = Gtk::Window::list_toplevels();
-                for (auto window : windows) {
-                    if (dark_theme) {
-                        window->add_css_class("dark");
-                    } else {
-                        window->remove_css_class("dark");
+                Gtk::Settings::get_type(), nullptr, "gtk-application-prefer-dark-theme");
+            theme_binding->watch(
+                settings,
+                [](const Glib::RefPtr<Glib::ObjectBase>& obj, const Glib::Value<bool>& value) {
+                    bool dark_theme = value.get();
+                    dbp("Theme changed: %s", dark_theme ? "dark" : "light");
+                    
+                    auto windows = Gtk::Window::list_toplevels();
+                    for (auto window : windows) {
+                        if (dark_theme) {
+                            window->add_css_class("dark");
+                        } else {
+                            window->remove_css_class("dark");
+                        }
                     }
-                }
                 
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                 SS.GW.Invalidate();
