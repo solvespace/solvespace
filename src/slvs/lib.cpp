@@ -857,7 +857,6 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
     int rank = 0, dof = 0;
     SolveResult status = SYS.Solve(&g, &rank, &dof, &badList, andFindBad, false, false);
     Slvs_SolveResult sr = {};
-    sr.rank = rank;
     sr.dof = dof;
     sr.bad = badList.n;
     sr.result = 0;
