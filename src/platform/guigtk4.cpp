@@ -1777,10 +1777,10 @@ public:
             }
 
             auto theme_binding = Gtk::PropertyExpression<bool>::create(
-                Gtk::Settings::get_type(), nullptr, "gtk-application-prefer-dark-theme");
+                Gtk::Settings::get_type(), "gtk-application-prefer-dark-theme");
             theme_binding->watch(
                 gtkWindow,
-                [this](const Glib::RefPtr<Glib::ObjectBase>& obj, const Glib::Value<bool>& value) {
+                [this](const Glib::Value<bool>& value) {
                     bool dark_theme = value.get();
                     if (dark_theme) {
                         gtkWindow.add_css_class("dark");
@@ -3012,9 +3012,6 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
     
-    gtkApp->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
-    gtkApp->update_property(Gtk::Accessible::Property::LABEL, C_("app-name", "SolveSpace"));
-    gtkApp->update_property(Gtk::Accessible::Property::DESCRIPTION, C_("app-description", "Parametric 2D/3D CAD tool"));
     
     auto css_provider = Gtk::CssProvider::create();
     css_provider->load_from_data(
@@ -3572,10 +3569,10 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     if (settings) {
         auto theme_binding = Gtk::PropertyExpression<bool>::create(
-            Gtk::Settings::get_type(), nullptr, "gtk-application-prefer-dark-theme");
+            Gtk::Settings::get_type(), "gtk-application-prefer-dark-theme");
         theme_binding->watch(
             Gtk::Widget::get_root(),
-            [](const Glib::RefPtr<Glib::ObjectBase>& obj, const Glib::Value<bool>& value) {
+            [](const Glib::Value<bool>& value) {
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                 SS.GW.Invalidate();
             });
@@ -3771,10 +3768,11 @@ void RunGui() {
             dbp("Initial theme: %s", dark_theme ? "dark" : "light");
             
             auto theme_binding = Gtk::PropertyExpression<bool>::create(
-                Gtk::Settings::get_type(), nullptr, "gtk-application-prefer-dark-theme");
+                Gtk::Settings::get_type(), "gtk-application-prefer-dark-theme");
+            
             theme_binding->watch(
                 settings,
-                [](const Glib::RefPtr<Glib::ObjectBase>& obj, const Glib::Value<bool>& value) {
+                [](const Glib::Value<bool>& value) {
                     bool dark_theme = value.get();
                     dbp("Theme changed: %s", dark_theme ? "dark" : "light");
                     
@@ -3786,10 +3784,10 @@ void RunGui() {
                             window->remove_css_class("dark");
                         }
                     }
-                
-                SS.GenerateAll(SolveSpaceUI::Generate::ALL);
-                SS.GW.Invalidate();
-            });
+                    
+                    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+                    SS.GW.Invalidate();
+                });
         }
 
         gtkApp->run();
