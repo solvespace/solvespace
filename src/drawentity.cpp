@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 std::string Entity::DescriptionString() const {
     if(h.isFromRequest()) {
         Request *r = SK.GetRequest(h.request());
@@ -861,3 +863,5 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
     }
     ssassert(false, "Unexpected entity type");
 }
+
+} // namespace SolveSpace

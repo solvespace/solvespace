@@ -9,6 +9,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 // Dot product tolerance for perpendicular; this is on the direction cosine,
 // so it's about 0.001 degrees.
 const double SShell::DOTP_TOL = 1e-5;
@@ -611,3 +613,4 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
     return true;
 }
 
+} // namespace SolveSpace

@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 struct ToolIcon {
     std::string name;
     Command     command;
@@ -246,3 +248,5 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my, UiCanvas *canvas,
 
     return withinToolbar;
 }
+
+} // namespace SolveSpace

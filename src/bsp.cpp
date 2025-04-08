@@ -8,8 +8,10 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-SBsp2 *SBsp2::Alloc() { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }
-SBsp3 *SBsp3::Alloc() { return (SBsp3 *)AllocTemporary(sizeof(SBsp3)); }
+namespace SolveSpace {
+
+SBsp2 *SBsp2::Alloc() { return (SBsp2 *)Platform::AllocTemporary(sizeof(SBsp2)); }
+SBsp3 *SBsp3::Alloc() { return (SBsp3 *)Platform::AllocTemporary(sizeof(SBsp3)); }
 
 SBsp3 *SBsp3::FromMesh(const SMesh *m) {
     SMesh mc = {};
@@ -150,35 +152,35 @@ public:
     Vector     *vneg;
 
     static BspUtil *Alloc() {
-        return (BspUtil *)AllocTemporary(sizeof(BspUtil));
+        return (BspUtil *)Platform::AllocTemporary(sizeof(BspUtil));
     }
 
     void AllocOn() {
-        on = (Vector *)AllocTemporary(sizeof(Vector) * 2);
+        on = (Vector *)Platform::AllocTemporary(sizeof(Vector) * 2);
     }
 
     void AllocTriangle() {
-        btri = (STriangle *)AllocTemporary(sizeof(STriangle));
+        btri = (STriangle *)Platform::AllocTemporary(sizeof(STriangle));
     }
 
     void AllocTriangles() {
-        btri = (STriangle *)AllocTemporary(sizeof(STriangle) * 2);
+        btri = (STriangle *)Platform::AllocTemporary(sizeof(STriangle) * 2);
         ctri = &btri[1];
     }
 
     void AllocQuad() {
-        vpos = (Vector *)AllocTemporary(sizeof(Vector) * 4);
+        vpos = (Vector *)Platform::AllocTemporary(sizeof(Vector) * 4);
     }
 
     void AllocClassify(size_t size) {
         // Allocate a one big piece is faster than a small ones.
-        isPos = (bool *)AllocTemporary(sizeof(bool) * size * 3);
+        isPos = (bool *)Platform::AllocTemporary(sizeof(bool) * size * 3);
         isNeg = &isPos[size];
         isOn  = &isNeg[size];
     }
 
     void AllocVertices(size_t size) {
-        vpos = (Vector *)AllocTemporary(sizeof(Vector) * size * 2);
+        vpos = (Vector *)Platform::AllocTemporary(sizeof(Vector) * size * 2);
         vneg = &vpos[size];
     }
 
@@ -727,3 +729,5 @@ void SBsp2::InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3) {
 
     return;
 }
+
+} // namespace SolveSpace

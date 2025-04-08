@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 void TextWindow::ScreenUnselectAll(int link, uint32_t v) {
     GraphicsWindow::MenuEdit(Command::UNSELECT_ALL);
 }
@@ -584,3 +586,4 @@ void TextWindow::GoToScreen(Screen screen) {
     shown.screen = screen;
 }
 
+} // namespace SolveSpace

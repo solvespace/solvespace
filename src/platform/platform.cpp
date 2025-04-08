@@ -9,8 +9,13 @@
 #   include <CoreFoundation/CFURL.h>
 #   include <CoreFoundation/CFBundle.h>
 #endif
-#include "solvespace.h"
-#include "config.h"
+
+#include <cstring>
+#include <algorithm>
+#include <map>
+
+#include <mimalloc.h>
+
 #if defined(WIN32)
 // Conversely, include Microsoft headers after solvespace.h to avoid clashes.
 #   include <windows.h>
@@ -19,6 +24,10 @@
 #   include <unistd.h>
 #   include <sys/stat.h>
 #endif
+
+#include "platform.h"
+#include "util.h"
+#include "config.h"
 
 namespace SolveSpace {
 namespace Platform {

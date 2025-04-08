@@ -4,7 +4,9 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+#include "solvespace.h"
+
+namespace SolveSpace {
 
 void SShell::MergeCoincidentSurfaces() {
     surface.ClearTags();
@@ -125,3 +127,4 @@ void SShell::MergeCoincidentSurfaces() {
     surface.RemoveTagged();
 }
 
+} // namespace SolveSpace

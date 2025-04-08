@@ -7,9 +7,27 @@
 #ifndef SOLVESPACE_RENDER_H
 #define SOLVESPACE_RENDER_H
 
+#include <cstdint>
+#include <functional>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "dsc.h"
+#include "resource.h"
+#include "srf/surface.h"
+
+typedef struct _cairo cairo_t;
+typedef struct _cairo_surface cairo_surface_t;
+
+namespace SolveSpace {
+
 //-----------------------------------------------------------------------------
 // Interfaces common for all renderers
 //-----------------------------------------------------------------------------
+
+class Pixmap;
 
 enum class StipplePattern : uint32_t;
 
@@ -265,6 +283,9 @@ public:
     bool Pick(const std::function<void()> &drawFn);
 };
 
+template<class Key, class T>
+using handle_map = std::map<Key, T>;
+
 // A canvas that renders onto a 2d surface, performing z-index sorting, occlusion testing, etc,
 // on the CPU.
 class SurfaceRenderer : public ViewportCanvas {
@@ -381,5 +402,7 @@ public:
 //-----------------------------------------------------------------------------
 
 std::shared_ptr<ViewportCanvas> CreateRenderer();
+
+} // namespace SolveSpace
 
 #endif

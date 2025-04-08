@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 std::string Constraint::DescriptionString() const {
     std::string s;
     switch(type) {
@@ -988,3 +990,5 @@ void Constraint::MenuConstrain(Command id) {
 }
 
 #endif /* ! LIBRARY */
+
+} // namespace SolveSpace

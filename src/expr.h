@@ -7,6 +7,16 @@
 #ifndef SOLVESPACE_EXPR_H
 #define SOLVESPACE_EXPR_H
 
+#include <cstdint>
+#include <limits>
+#include <string>
+#include <unordered_map>
+
+#include "dsc.h"
+#include "param.h"
+
+namespace SolveSpace {
+
 using SubstitutionMap = std::unordered_map<hParam, Param *, HandleHasher<hParam>>;
 
 class Expr {
@@ -49,9 +59,6 @@ public:
 
     Expr() = default;
     Expr(double val) : op(Op::CONSTANT) { v = val; }
-
-    static inline Expr *AllocExpr()
-        { return (Expr *)AllocTemporary(sizeof(Expr)); }
 
     static Expr *From(hParam p);
     static Expr *From(double v);
@@ -96,8 +103,8 @@ public:
     // Make a copy, with the parameters (usually referenced by hParam)
     // resolved to pointers to the actual value. This speeds things up
     // considerably.
-    Expr *DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
-                                       IdList<Param,hParam> *thenTry,
+    Expr *DeepCopyWithParamsAsPointers(ParamList *firstTry,
+                                       ParamList *thenTry,
                                        bool foldConstants = false) const;
 
     static Expr *Parse(const std::string &input, std::string *error);
@@ -141,4 +148,7 @@ public:
 
     Expr *Magnitude() const;
 };
+
+} // namespace SolveSpace
+
 #endif

@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 void TextWindow::ShowEditView() {
     Printf(true, "%Ft3D VIEW PARAMETERS%E");
 
@@ -169,3 +171,4 @@ bool TextWindow::EditControlDoneForView(const std::string &s) {
     return true;
 }
 
+} // namespace SolveSpace
