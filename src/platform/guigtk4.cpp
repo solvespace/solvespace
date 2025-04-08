@@ -463,7 +463,7 @@ public:
         
         auto escape_trigger = Gtk::KeyvalTrigger::create(GDK_KEY_Escape);
         auto escape_action = Gtk::CallbackAction::create(
-            [this, &loop](const Glib::VariantBase&) -> bool {
+            [this, &loop](Gtk::Widget&, const Glib::VariantBase&) -> bool {
                 gtkMenu.set_visible(false);
                 loop->quit();
                 return true;
@@ -481,15 +481,12 @@ public:
             });
         gtkMenu.add_controller(motion_controller);
 
-        auto visibility_binding = Gtk::PropertyExpression<bool>::create(
-            Gtk::Popover::get_type(), "visible");
-        auto watch = visibility_binding->watch(
-            [&loop, this](const Glib::Value<bool>& value) {
-                if (!value.get()) {
+        gtkMenu.property_visible().signal_changed().connect(
+            [&loop, this]() {
+                if (!gtkMenu.get_visible()) {
                     loop->quit();
                 }
-            },
-            &gtkMenu);
+            });
 
         gtkMenu.set_visible(true);
 
@@ -592,6 +589,7 @@ public:
         
         set_can_focus(false);
         set_can_focus(true);
+        grab_focus();
     }
 
 protected:
@@ -1009,7 +1007,6 @@ public:
         });
         auto enter_trigger = Gtk::KeyvalTrigger::create(GDK_KEY_Return, Gdk::ModifierType(0));
         auto enter_shortcut = Gtk::Shortcut::create(enter_trigger, enter_action);
-        enter_shortcut->set_action_name("activate-editor");
         _shortcut_controller->add_shortcut(enter_shortcut);
 
         auto escape_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
@@ -1021,7 +1018,6 @@ public:
         });
         auto escape_trigger = Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0));
         auto escape_shortcut = Gtk::Shortcut::create(escape_trigger, escape_action);
-        escape_shortcut->set_action_name("stop-editing");
         _shortcut_controller->add_shortcut(escape_shortcut);
 
         _entry.add_controller(_shortcut_controller);
@@ -2444,7 +2440,6 @@ public:
         auto escape_shortcut = Gtk::Shortcut::create(
             Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
             escape_action);
-        escape_shortcut->set_action_name("escape");
         shortcut_controller->add_shortcut(escape_shortcut);
 
         auto enter_action = Gtk::CallbackAction::create([this, &response, &loop](Gtk::Widget&, const Glib::VariantBase&) {
@@ -2459,7 +2454,6 @@ public:
         auto enter_shortcut = Gtk::Shortcut::create(
             Gtk::KeyvalTrigger::create(GDK_KEY_Return, Gdk::ModifierType(0)),
             enter_action);
-        enter_shortcut->set_action_name("activate-default");
         shortcut_controller->add_shortcut(enter_shortcut);
 
         gtkDialog.add_controller(shortcut_controller);
@@ -2500,20 +2494,18 @@ public:
             });
         gtkDialog.add_controller(response_controller);
 
-        auto dialog_visible_binding = Gtk::PropertyExpression<bool>::create(gtkDialog.property_visible());
-        dialog_visible_binding->connect([&loop, &response, this, &gtkDialog]() {
-            if (!gtkDialog.get_visible()) {
-                loop->quit();
-            }
-        });
+        gtkDialog.property_visible().signal_changed().connect(
+            [&loop, &response, this]() {
+                if (!gtkDialog.get_visible()) {
+                    loop->quit();
+                }
+            });
 
         gtkDialog.set_tooltip_text("Message Dialog");
 
-        auto accessible = gtkDialog.get_accessible();
-        if (accessible) {
-            accessible->set_property("accessible-state", std::string("modal"));
-            accessible->set_property("accessible-role", Gtk::Accessible::Role::DIALOG);
-        }
+        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
+        gtkDialog.set_accessible_name("Message Dialog");
+        gtkDialog.set_accessible_description("SolveSpace notification dialog");
 
         gtkDialog.show();
         loop->run();
@@ -2704,10 +2696,10 @@ public:
         gtkDialog.set_name(isSave ? "save-file-dialog" : "open-file-dialog");
         gtkDialog.set_title(isSave ? "Save File" : "Open File");
 
-        gtkDialog.update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::DIALOG);
-        gtkDialog.update_property(Gtk::Accessible::Property::LABEL, 
+        gtkDialog.set_accessible_role(Gtk::AccessibleRole::DIALOG);
+        gtkDialog.set_accessible_name(
             isSave ? C_("dialog-title", "Save File") : C_("dialog-title", "Open File"));
-        gtkDialog.update_property(Gtk::Accessible::Property::DESCRIPTION,
+        gtkDialog.set_accessible_description(
             isSave ? C_("dialog-description", "Dialog for saving SolveSpace files") 
                    : C_("dialog-description", "Dialog for opening SolveSpace files"));
 
@@ -2717,9 +2709,9 @@ public:
         cancel_button->set_name("cancel-button");
         cancel_button->set_tooltip_text(C_("tooltip", "Cancel"));
 
-        cancel_button->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::BUTTON);
-        cancel_button->update_property(Gtk::Accessible::Property::LABEL, C_("button", "Cancel"));
-        cancel_button->set_property("accessible-description", std::string("Cancel the file operation"));
+        cancel_button->set_accessible_role(Gtk::AccessibleRole::BUTTON);
+        cancel_button->set_accessible_name(C_("button", "Cancel"));
+        cancel_button->set_accessible_description("Cancel the file operation");
 
         auto action_button = gtkDialog.add_button(
             isSave ? C_("button", "_Save") : C_("button", "_Open"),
@@ -2753,22 +2745,20 @@ public:
         auto loop = Glib::MainLoop::create();
         auto response_id = Gtk::ResponseType::CANCEL;
         
-        auto response_binding = Gtk::PropertyExpression<int>::create(
-            Gtk::Dialog::get_type(), &gtkDialog, "response");
-        response_binding->connect([&loop, &response_id, this](int response) {
-            if (response != Gtk::ResponseType::NONE) {
-                response_id = static_cast<Gtk::ResponseType>(response);
-                loop->quit();
-            }
-        });
+        gtkDialog.signal_response().connect(
+            [&loop, &response_id, this](int response) {
+                if (response != Gtk::ResponseType::NONE) {
+                    response_id = static_cast<Gtk::ResponseType>(response);
+                    loop->quit();
+                }
+            });
         
-        auto visibility_binding = Gtk::PropertyExpression<bool>::create(
-            Gtk::Dialog::get_type(), &gtkDialog, "visible");
-        visibility_binding->connect([&loop, this](bool visible) {
-            if (!visible) {
-                loop->quit();
-            }
-        });
+        gtkDialog.property_visible().signal_changed().connect(
+            [&loop, this]() {
+                if (!gtkDialog.get_visible()) {
+                    loop->quit();
+                }
+            });
 
         auto shortcut_controller = Gtk::ShortcutController::create();
         shortcut_controller->set_scope(Gtk::ShortcutScope::LOCAL);
@@ -2781,7 +2771,6 @@ public:
         auto escape_shortcut = Gtk::Shortcut::create(
             Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
             escape_action);
-        escape_shortcut->set_action_name("escape");
         shortcut_controller->add_shortcut(escape_shortcut);
 
         auto enter_action = Gtk::CallbackAction::create([&response_id, &loop, this](Gtk::Widget&, const Glib::VariantBase&) {
@@ -2792,20 +2781,16 @@ public:
         auto enter_shortcut = Gtk::Shortcut::create(
             Gtk::KeyvalTrigger::create(GDK_KEY_Return, Gdk::ModifierType(0)),
             enter_action);
-        enter_shortcut->set_action_name("activate-default");
         shortcut_controller->add_shortcut(enter_shortcut);
 
         gtkDialog.add_controller(shortcut_controller);
 
-        auto visibility_binding = Gtk::PropertyExpression<bool>::create(
-            Gtk::Dialog::get_type(), "visible");
-        auto watch = visibility_binding->watch(
-            [&loop, this](const Glib::Value<bool>& value) {
-                if (!value.get()) {
+        gtkDialog.property_visible().signal_changed().connect(
+            [&loop, this]() {
+                if (!gtkDialog.get_visible()) {
                     loop->quit();
                 }
-            },
-            &gtkDialog);
+            });
 
         gtkDialog.set_modal(true);
 
@@ -2866,21 +2851,20 @@ public:
         int response_id = Gtk::ResponseType::CANCEL;
         auto loop = Glib::MainLoop::create();
 
-        auto response_binding = Gtk::PropertyExpression<int>::create(gtkNative->property_response());
-        response_binding->connect([&response_id, &loop, this]() {
-            int response = gtkNative->get_response();
-            if (response != Gtk::ResponseType::NONE) {
-                response_id = response;
-                loop->quit();
-            }
-        });
+        gtkNative->signal_response().connect(
+            [&response_id, &loop, this](int response) {
+                if (response != Gtk::ResponseType::NONE) {
+                    response_id = response;
+                    loop->quit();
+                }
+            });
 
-        auto visible_binding = Gtk::PropertyExpression<bool>::create(gtkNative->property_visible());
-        visible_binding->connect([&loop, this]() {
-            if (!gtkNative->get_visible()) {
-                loop->quit();
-            }
-        });
+        gtkNative->property_visible().signal_changed().connect(
+            [&loop, this]() {
+                if (!gtkNative->get_visible()) {
+                    loop->quit();
+                }
+            });
 
         if (auto widget = gtkNative->get_widget()) {
             widget->add_css_class("solvespace-file-dialog");
@@ -2906,7 +2890,6 @@ public:
             auto escape_shortcut = Gtk::Shortcut::create(
                 Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
                 escape_action);
-            escape_shortcut->set_action_name("escape");
             shortcut_controller->add_shortcut(escape_shortcut);
 
             auto enter_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
@@ -2916,7 +2899,6 @@ public:
             auto enter_shortcut = Gtk::Shortcut::create(
                 Gtk::KeyvalTrigger::create(GDK_KEY_Return, Gdk::ModifierType(0)),
                 enter_action);
-            enter_shortcut->set_action_name("activate-default");
             shortcut_controller->add_shortcut(enter_shortcut);
 
             widget->add_controller(shortcut_controller);
@@ -3016,11 +2998,12 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     gtkApp = Gtk::Application::create("org.solvespace.SolveSpace");
 
     gtkApp->property_application_id() = "org.solvespace.SolveSpace";
-    gtkApp->set_accessible_role(Gtk::AccessibleRole::APPLICATION);
-    gtkApp->set_accessible_name(C_("app-name", "SolveSpace"));
-    gtkApp->set_accessible_description(C_("app-description", "Parametric 2D/3D CAD tool"));
 
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
+    
+    gtkApp->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
+    gtkApp->update_property(Gtk::Accessible::Property::LABEL, C_("app-name", "SolveSpace"));
+    gtkApp->update_property(Gtk::Accessible::Property::DESCRIPTION, C_("app-description", "Parametric 2D/3D CAD tool"));
     
     auto css_provider = Gtk::CssProvider::create();
     css_provider->load_from_data(
@@ -3577,15 +3560,11 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
 
     if (settings) {
-        auto theme_binding = Gtk::PropertyExpression<bool>::create(
-            Gtk::Settings::get_type(), "gtk-application-prefer-dark-theme");
-        
-        auto watch = theme_binding->watch(
-            [](const Glib::Value<bool>& value) {
+        settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
+            [settings]() {
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                 SS.GW.Invalidate();
-            },
-            settings.get());
+            });
     }
 
     std::vector<std::string> args;
@@ -3598,8 +3577,8 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     auto help_shortcut = Gtk::Shortcut::create(
         Gtk::KeyvalTrigger::create(GDK_KEY_F1),
-        Gtk::CallbackAction::create([](Gtk::Widget& widget, const Glib::VariantBase& args) {
-            SS.ShowHelp();
+        Gtk::CallbackAction::create([](Gtk::Widget&, const Glib::VariantBase&) {
+            dbp("Help requested");
             return true;
         })
     );
@@ -3773,14 +3752,16 @@ void RunGui() {
 
         auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
         if (settings) {
-            auto theme_binding = Gtk::PropertyExpression<bool>::create(
-                Gtk::Settings::get_type(), "gtk-application-prefer-dark-theme");
-            auto watch = theme_binding->watch(
-                [](const Glib::Value<bool>& value) {
-                    bool dark_theme = value.get();
+            bool dark_theme = false;
+            settings->get_property("gtk-application-prefer-dark-theme", dark_theme);
+            dbp("Initial theme: %s", dark_theme ? "dark" : "light");
+            
+            settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
+                [settings]() {
+                    bool dark_theme = false;
+                    settings->get_property("gtk-application-prefer-dark-theme", dark_theme);
                     dbp("Theme changed: %s", dark_theme ? "dark" : "light");
                     
-                    auto display = Gdk::Display::get_default();
                     auto windows = Gtk::Window::list_toplevels();
                     for (auto window : windows) {
                         if (dark_theme) {
@@ -3792,12 +3773,7 @@ void RunGui() {
                     
                     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                     SS.GW.Invalidate();
-                },
-                settings.get());
-            
-            bool dark_theme = false;
-            settings->get_property("gtk-application-prefer-dark-theme", dark_theme);
-            dbp("Initial theme: %s", dark_theme ? "dark" : "light");
+                });
         }
 
         gtkApp->run();
