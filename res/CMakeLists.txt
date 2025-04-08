@@ -91,7 +91,7 @@ elseif(EMSCRIPTEN)
         set(source ${CMAKE_CURRENT_SOURCE_DIR}/${name})
         set(target ${resource_dir}/${name})
         set(resource_list  "${resource_list};${target}" PARENT_SCOPE)
-        set(resource_names "${resource_names};res/${name}" PARENT_SCOPE)
+        set(resource_names "${resource_names};${target}@res/${name}" PARENT_SCOPE)
 
         add_custom_command(
             OUTPUT ${target}

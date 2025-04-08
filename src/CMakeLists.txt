@@ -292,30 +292,28 @@ if(ENABLE_GUI)
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     elseif(EMSCRIPTEN)
         set(SHELL ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/emshell.html)
-        set(LINK_FLAGS
-            --bind --shell-file ${SHELL}
-            --no-heap-copy -s ALLOW_MEMORY_GROWTH=1 -s WASM=1 -s ASYNCIFY=1
-            -s DYNCALLS=1 -s ASSERTIONS=1
-            -s TOTAL_STACK=33554432 -s TOTAL_MEMORY=134217728)
+        target_link_options(solvespace PRIVATE
+            --bind --shell-file ${SHELL} --no-heap-copy
+            "SHELL:-s ALLOW_MEMORY_GROWTH=1" "SHELL:-s WASM=1"
+            "SHELL:-s ASYNCIFY=1" "SHELL:-s DYNCALLS=1" "SHELL:-s ASSERTIONS=1"
+            "SHELL:-s TOTAL_STACK=33554432" "SHELL:-s TOTAL_MEMORY=134217728")
 
         get_target_property(resource_names resources NAMES)
         foreach(resource ${resource_names})
-            list(APPEND LINK_FLAGS --preload-file ${resource})
+            target_link_options(solvespace PRIVATE "SHELL:--preload-file ${resource}")
         endforeach()
 
         if(CMAKE_BUILD_TYPE STREQUAL Debug)
-            list(APPEND LINK_FLAGS
+            target_link_options(solvespace PRIVATE
                 --emrun --emit-symbol-map
-                -s DEMANGLE_SUPPORT=1
-                -s SAFE_HEAP=1)
+                "SHELL:-s DEMANGLE_SUPPORT=1"
+                "SHELL:-s SAFE_HEAP=1")
         endif()
 
         target_sources(solvespace PRIVATE
             platform/guihtml.cpp)
 
-        string(REPLACE ";" " " LINK_FLAGS "${LINK_FLAGS}")
-        set_target_properties(solvespace PROPERTIES
-            LINK_FLAGS "${LINK_FLAGS}")
+        set_target_properties(solvespace PROPERTIES SUFFIX ".html")
         set_source_files_properties(platform/guihtml.cpp PROPERTIES
             OBJECT_DEPENDS ${SHELL})
 
