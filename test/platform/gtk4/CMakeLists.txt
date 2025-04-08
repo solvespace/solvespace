@@ -3,7 +3,6 @@ if(USE_GTK4)
     add_executable(test_gtk4_ui test.cpp)
     target_link_libraries(test_gtk4_ui
         solvespace-core
-        solvespace-gui
         ${GTKMM_LIBRARIES}
     )
     target_include_directories(test_gtk4_ui PRIVATE
