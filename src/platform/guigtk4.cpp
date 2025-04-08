@@ -280,16 +280,16 @@ public:
         _click_controller->signal_released().connect(
             [this](int n_press, double x, double y) {
                 if(!_synthetic_event && _receiver->onTrigger) {
-                    update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::ACTIVE);
+                    set_can_focus(false);
                     _receiver->onTrigger();
-                    update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::NONE);
+                    set_can_focus(true);
                 }
                 return true;
             });
         add_controller(_click_controller);
 
-        set_property("accessible-role", Gtk::Accessible::Role::MENU_ITEM);
-        set_property("accessible-name", _receiver->name);
+        set_accessible_role(Gtk::AccessibleRole::MENU_ITEM);
+        set_accessible_name("Menu Item");
     }
 
     void set_accel_key(const Gtk::AccelKey &accel_key) {
@@ -474,17 +474,17 @@ public:
         
         gtkMenu.add_controller(escape_controller);
 
-        auto focus_controller = Gtk::EventControllerFocus::create();
-        focus_controller->signal_leave().connect(
+        auto motion_controller = Gtk::EventControllerMotion::create();
+        motion_controller->signal_leave().connect(
             [&loop]() {
                 loop->quit();
             });
-        gtkMenu.add_controller(focus_controller);
+        gtkMenu.add_controller(motion_controller);
 
         auto visibility_binding = Gtk::PropertyExpression<bool>::create(
-            Gtk::Popover::get_type(), &gtkMenu, "visible");
-        visibility_binding->connect([&loop, this](bool visible) {
-            if (!visible) {
+            Gtk::Popover::get_type(), "visible");
+        visibility_binding->connect([&loop, this](const Glib::Value<bool>& value) {
+            if (!value.get()) {
                 loop->quit();
             }
         });
@@ -539,8 +539,8 @@ public:
 
         button->set_tooltip_text(label + " " + C_("tooltip", "Menu"));
 
-        button->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::MENU_BUTTON);
-        button->update_property(Gtk::Accessible::Property::LABEL, label + " " + C_("accessibility", "Menu"));
+        button->set_accessible_role(Gtk::AccessibleRole::MENU_BUTTON);
+        button->set_accessible_name(label + " " + C_("accessibility", "Menu"));
 
         menuButtons.push_back(button);
         return button;
@@ -578,19 +578,18 @@ public:
 
         set_tooltip_text(C_("tooltip", "SolveSpace Drawing Area - 3D modeling canvas"));
 
-        update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::CANVAS);
-        update_property(Gtk::Accessible::Property::LABEL, C_("accessibility", "SolveSpace Drawing Area"));
-        update_property(Gtk::Accessible::Property::DESCRIPTION, C_("accessibility", "3D modeling canvas for creating and editing models"));
+        set_accessible_role(Gtk::AccessibleRole::CANVAS);
+        set_accessible_name(C_("accessibility", "SolveSpace Drawing Area"));
+        set_accessible_description(C_("accessibility", "3D modeling canvas for creating and editing models"));
 
         setup_event_controllers();
     }
     
     void announce_operation_mode(const std::string& mode) {
-        update_property(Gtk::Accessible::Property::LABEL, 
-            Glib::ustring::compose(C_("accessibility", "SolveSpace Drawing Area - %1 Mode"), mode));
-            
-        update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::ACTIVE);
-        update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::NONE);
+        set_accessible_name(Glib::ustring::compose(C_("accessibility", "SolveSpace Drawing Area - %1 Mode"), mode));
+        
+        set_can_focus(false);
+        set_can_focus(true);
     }
 
 protected:
@@ -3575,7 +3574,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     if (settings) {
         auto theme_binding = Gtk::PropertyExpression<bool>::create(
-            Gtk::Settings::get_type(), settings.get(), "gtk-application-prefer-dark-theme");
+            Gtk::Settings::get_type(), "gtk-application-prefer-dark-theme");
         theme_binding->connect(
             [](const Glib::Value<bool>& value) {
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
@@ -3769,7 +3768,7 @@ void RunGui() {
         auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
         if (settings) {
             auto theme_binding = Gtk::PropertyExpression<bool>::create(
-                Gtk::Settings::get_type(), settings.get(), "gtk-application-prefer-dark-theme");
+                Gtk::Settings::get_type(), "gtk-application-prefer-dark-theme");
             theme_binding->connect([](const Glib::Value<bool>& value) {
                 bool dark_theme = value.get();
                 dbp("Theme changed: %s", dark_theme ? "dark" : "light");
