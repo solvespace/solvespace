@@ -3574,9 +3574,10 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
 
     if (settings) {
-        auto theme_binding = Gtk::PropertyExpression<bool>::create(settings->property_gtk_application_prefer_dark_theme());
+        auto theme_binding = Gtk::PropertyExpression<bool>::create(
+            Gtk::Settings::get_type(), settings.get(), "gtk-application-prefer-dark-theme");
         theme_binding->connect(
-            []() {
+            [](const Glib::Value<bool>& value) {
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                 SS.GW.Invalidate();
             });
@@ -3587,17 +3588,17 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         args.push_back(argv[i]);
     }
 
-    auto shortcut_controller = Gtk::ShortcutController::create();
-    shortcut_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+    auto help_shortcut_controller = Gtk::ShortcutController::create();
+    help_shortcut_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
 
     auto help_shortcut = Gtk::Shortcut::create(
         Gtk::KeyvalTrigger::create(GDK_KEY_F1),
         Gtk::CallbackAction::create([](Gtk::Widget& widget, const Glib::VariantBase& args) {
-            SS.ShowHelp();
+            SS.GW.ShowContextMenu();
             return true;
         })
     );
-    shortcut_controller->add_shortcut(help_shortcut);
+    help_shortcut_controller->add_shortcut(help_shortcut);
 
 
     style_provider->load_from_data(R"(
@@ -3715,8 +3716,8 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         style_provider,
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    auto settings = GetSettings();
-    std::string savedLocale = settings->ThawString("locale", "");
+    auto platformSettings = GetSettings();
+    std::string savedLocale = platformSettings->ThawString("locale", "");
     
     if(!savedLocale.empty()) {
         if(!SetLocale(savedLocale)) {
@@ -3769,7 +3770,8 @@ void RunGui() {
         if (settings) {
             auto theme_binding = Gtk::PropertyExpression<bool>::create(
                 Gtk::Settings::get_type(), settings.get(), "gtk-application-prefer-dark-theme");
-            theme_binding->connect([settings](bool dark_theme) {
+            theme_binding->connect([](const Glib::Value<bool>& value) {
+                bool dark_theme = value.get();
                 dbp("Theme changed: %s", dark_theme ? "dark" : "light");
                 
                 auto display = Gdk::Display::get_default();
