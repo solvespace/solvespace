@@ -90,7 +90,6 @@ EMSCRIPTEN_BINDINGS(slvs) {
   emscripten::value_object<Slvs_SolveResult>("Slvs_SolveResult")
     .field("result", &Slvs_SolveResult::result)
     .field("dof", &Slvs_SolveResult::dof)
-    .field("rank", &Slvs_SolveResult::rank)
     .field("bad", &Slvs_SolveResult::bad);
 
   emscripten::class_<Quaternion>("Quaternion")

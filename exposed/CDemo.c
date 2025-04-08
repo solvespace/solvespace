@@ -45,7 +45,6 @@ void ExampleStateful()
     Slvs_Vertical(g, p1, wp, p2);
     Slvs_SolveResult res = Slvs_SolveSketch(g, 0);
     printf("res: %i\n", res.result);
-    printf("rank: %i\n", res.rank);
     printf("dof: %i\n", res.dof);
     double p1x = Slvs_GetParamValue(p1.param[0]);
     double p1y = Slvs_GetParamValue(p1.param[1]);
