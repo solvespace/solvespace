@@ -1,3 +1,5 @@
+#include "expr.h"
+
 #include "harness.h"
 
 #define CHECK_PARSE(var, expr) \
