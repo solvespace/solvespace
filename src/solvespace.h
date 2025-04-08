@@ -280,7 +280,7 @@ public:
     void WriteEquationsExceptFor(hConstraint hc, Group *g);
     void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad,
                                         bool forceDofCheck);
-    void SolveBySubstitution();
+    SubstitutionMap SolveBySubstitution();
 
     bool IsDragged(hParam p);
 
@@ -297,9 +297,6 @@ public:
                           bool andFindBad = false, bool andFindFree = false);
 
     void Clear();
-    Param *GetLastParamSubstitution(Param *p);
-    void SubstituteParamsByLast(Expr *e);
-    void SortSubstitutionByDragged(Param *p);
 };
 
 #include "ttf.h"
