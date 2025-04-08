@@ -4,8 +4,11 @@
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
 #include <chrono>
+#include <cmath>
 #include <regex>
 #include <cairo.h>
+
+#include "solvespace.h"
 
 #include "harness.h"
 
@@ -17,7 +20,7 @@
 
 namespace SolveSpace {
 namespace Platform {
-    // These are defined in headless.cpp, and aren't exposed in solvespace.h.
+    // These are defined in guinone.cpp, and aren't exposed in solvespace.h.
     extern std::vector<Platform::Path> fontFiles;
 }
 }

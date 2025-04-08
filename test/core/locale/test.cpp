@@ -1,3 +1,5 @@
+#include "ui.h"
+
 #include "harness.h"
 
 TEST_CASE(parseable) {

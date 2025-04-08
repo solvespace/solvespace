@@ -1,3 +1,5 @@
+#include "solvespace.h"
+
 #include "harness.h"
 
 TEST_CASE(normal_roundtrip) {
