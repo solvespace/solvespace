@@ -1772,17 +1772,20 @@ public:
                 gtkWindow.add_css_class("light");
             }
 
-            auto theme_binding = Gtk::PropertyExpression<bool>::create(settings->property_gtk_application_prefer_dark_theme());
-            theme_binding->connect([this, settings]() {
-                bool dark_theme = settings->property_gtk_application_prefer_dark_theme();
-                if (dark_theme) {
-                    gtkWindow.add_css_class("dark");
-                    gtkWindow.remove_css_class("light");
-                } else {
-                    gtkWindow.add_css_class("light");
-                    gtkWindow.remove_css_class("dark");
-                }
-            });
+            auto theme_binding = Gtk::PropertyExpression<bool>::create(
+                Gtk::Settings::get_type(), nullptr, "gtk-application-prefer-dark-theme");
+            theme_binding->watch(
+                gtkWindow,
+                [this](const Glib::RefPtr<Glib::ObjectBase>& obj, const Glib::Value<bool>& value) {
+                    bool dark_theme = value.get();
+                    if (dark_theme) {
+                        gtkWindow.add_css_class("dark");
+                        gtkWindow.remove_css_class("light");
+                    } else {
+                        gtkWindow.add_css_class("light");
+                        gtkWindow.remove_css_class("dark");
+                    }
+                });
 
             Gtk::StyleContext::add_provider_for_display(
                 gtkWindow.get_display(),
@@ -2771,6 +2774,7 @@ public:
         auto escape_shortcut = Gtk::Shortcut::create(
             Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
             escape_action);
+        escape_shortcut->set_action(escape_action);
         shortcut_controller->add_shortcut(escape_shortcut);
 
         auto enter_action = Gtk::CallbackAction::create([&response_id, &loop, this](Gtk::Widget&, const Glib::VariantBase&) {
@@ -2781,6 +2785,7 @@ public:
         auto enter_shortcut = Gtk::Shortcut::create(
             Gtk::KeyvalTrigger::create(GDK_KEY_Return, Gdk::ModifierType(0)),
             enter_action);
+        enter_shortcut->set_action(enter_action);
         shortcut_controller->add_shortcut(enter_shortcut);
 
         gtkDialog.add_controller(shortcut_controller);
@@ -3001,9 +3006,11 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
     
-    gtkApp->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
-    gtkApp->update_property(Gtk::Accessible::Property::LABEL, C_("app-name", "SolveSpace"));
-    gtkApp->update_property(Gtk::Accessible::Property::DESCRIPTION, C_("app-description", "Parametric 2D/3D CAD tool"));
+    auto accessible = gtkApp->get_accessible();
+    if (accessible) {
+        accessible->set_name(C_("app-name", "SolveSpace"));
+        accessible->set_description(C_("app-description", "Parametric 2D/3D CAD tool"));
+    }
     
     auto css_provider = Gtk::CssProvider::create();
     css_provider->load_from_data(
@@ -3561,11 +3568,13 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     if (settings) {
         auto theme_binding = Gtk::PropertyExpression<bool>::create(
-            settings->property_gtk_application_prefer_dark_theme());
-        theme_binding->connect([](const Glib::Value<bool>& value) {
-            SS.GenerateAll(SolveSpaceUI::Generate::ALL);
-            SS.GW.Invalidate();
-        });
+            Gtk::Settings::get_type(), nullptr, "gtk-application-prefer-dark-theme");
+        theme_binding->watch(
+            Gtk::Widget::get_root(),
+            [](const Glib::RefPtr<Glib::ObjectBase>& obj, const Glib::Value<bool>& value) {
+                SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+                SS.GW.Invalidate();
+            });
     }
 
     std::vector<std::string> args;
