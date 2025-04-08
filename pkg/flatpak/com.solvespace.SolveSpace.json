@@ -56,8 +56,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://download.gnome.org/sources/libsigc++/3.0/libsigc++-3.0.7.tar.xz",
-                    "sha256": "bfbe91c0d094ea6bbc6cbd3909b7d98c6561eea8b6d9c0c25add906a6e83d733",
+                    "url": "https://download.gnome.org/sources/libsigc++/3.6/libsigc++-3.6.0.tar.xz",
+                    "sha256": "c3d23b37dfd6e39f2e09f091b77b1541fbfa17c4f0b6bf5c89baef7229080e17",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "libsigc++",
@@ -83,8 +83,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://download.gnome.org/sources/glibmm/2.68/glibmm-2.68.2.tar.xz",
-                    "sha256": "91e0a8618f7b82db4aaf2648932ea2bcfe626ad030068c18fa2d106fd838d8ad",
+                    "url": "https://download.gnome.org/sources/glibmm/2.78/glibmm-2.78.0.tar.xz",
+                    "sha256": "5d2e872564e2097a48fcd3ac2a5c3e093a6d70098bea1964a0a87ef0e8b0e956",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "glibmm",
@@ -113,8 +113,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://download.gnome.org/sources/cairomm/1.15/cairomm-1.15.4.tar.xz",
-                    "sha256": "4cd9fd959538953dfa606aaa7a31381e3193eebf14d814d97ef928684ee9feb5",
+                    "url": "https://download.gnome.org/sources/cairomm/1.16/cairomm-1.16.2.tar.xz",
+                    "sha256": "6a63bf98a97dda2b0f55e34d1b5f3fb909ef8b70f9b8d382cb1ff3978e7dc13f",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "cairomm",
