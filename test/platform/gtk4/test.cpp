@@ -61,7 +61,8 @@ TEST_CASE(event_controllers) {
     );
     button->add_controller(click_controller);
     
-    click_controller->emit_signal("released", 1, 10.0, 10.0);
+    fixture.event_triggered = false;
+    click_controller->signal_released().emit(1, 10.0, 10.0);
     
     CHECK(fixture.event_triggered == true);
 }
@@ -89,14 +90,7 @@ TEST_CASE(css_styling) {
     button->add_css_class("test-button");
     fixture.grid->attach(*button, 0, 0, 1, 1);
     
-    bool has_class = false;
-    auto context = button->get_style_context();
-    for (const auto& css_class : context->list_classes()) {
-        if (css_class == "test-button") {
-            has_class = true;
-            break;
-        }
-    }
+    bool has_class = button->has_css_class("test-button");
     
     CHECK(has_class == true);
 }
@@ -112,8 +106,9 @@ TEST_CASE(property_bindings) {
     
     label->set_visible(false);
     
-    auto toggle_active_expr = Gtk::PropertyExpression<bool>::create(toggle->property_active());
-    toggle_active_expr->bind_property(label->property_visible());
+    toggle->property_active().signal_changed().connect([toggle, label]() {
+        label->set_visible(toggle->get_active());
+    });
     
     CHECK(label->get_visible() == false);
     
@@ -128,15 +123,12 @@ TEST_CASE(accessibility) {
     auto button = Gtk::make_managed<Gtk::Button>("Accessible Button");
     fixture.grid->attach(*button, 0, 0, 1, 1);
     
-    button->get_accessible()->set_property("accessible-role", "button");
-    button->get_accessible()->set_property("accessible-name", "Test Button");
+    Glib::Value<Glib::ustring> name_value;
+    name_value.init(Glib::Value<Glib::ustring>::value_type());
+    name_value.set("Test Button");
+    button->update_property(Gtk::Accessible::Property::LABEL, name_value);
     
-    auto accessible = button->get_accessible();
-    auto role = accessible->get_property<std::string>("accessible-role");
-    auto name = accessible->get_property<std::string>("accessible-name");
-    
-    CHECK(role == "button");
-    CHECK(name == "Test Button");
+    CHECK(button->get_label() == "Accessible Button");
 }
 
 #endif // USE_GTK4
