@@ -2899,6 +2899,7 @@ public:
             auto escape_shortcut = Gtk::Shortcut::create(
                 Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
                 escape_action);
+            escape_shortcut->set_action(escape_action);
             shortcut_controller->add_shortcut(escape_shortcut);
 
             auto enter_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
@@ -2908,6 +2909,7 @@ public:
             auto enter_shortcut = Gtk::Shortcut::create(
                 Gtk::KeyvalTrigger::create(GDK_KEY_Return, Gdk::ModifierType(0)),
                 enter_action);
+            enter_shortcut->set_action(enter_action);
             shortcut_controller->add_shortcut(enter_shortcut);
 
             widget->add_controller(shortcut_controller);
