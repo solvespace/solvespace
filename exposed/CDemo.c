@@ -89,9 +89,9 @@ void Example3d()
 
     /* Let's tell the solver to keep the second point as close to constant
      * as possible, instead moving the first point. */
-    sys.dragged[0] = 4;
-    sys.dragged[1] = 5;
-    sys.dragged[2] = 6;
+    sys.dragged[sys.ndragged++] = 4;
+    sys.dragged[sys.ndragged++] = 5;
+    sys.dragged[sys.ndragged++] = 6;
 
     /* Now that we have written our system, we solve. */
     Slvs_Solve(&sys, g);
@@ -285,6 +285,7 @@ int main()
     sys.param      = CheckMalloc(50*sizeof(sys.param[0]));
     sys.entity     = CheckMalloc(50*sizeof(sys.entity[0]));
     sys.constraint = CheckMalloc(50*sizeof(sys.constraint[0]));
+    sys.dragged    = CheckMalloc(50*sizeof(sys.dragged[0]));
 
     sys.failed  = CheckMalloc(50*sizeof(sys.failed[0]));
     sys.faileds = 50;
@@ -292,7 +293,7 @@ int main()
     /*Example3d();*/
     for(;;) {
         Example2d();
-        sys.params = sys.constraints = sys.entities = 0;
+        sys.params = sys.constraints = sys.entities = sys.ndragged = 0;
         break;
     }
     return 0;

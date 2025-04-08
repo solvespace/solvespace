@@ -968,7 +968,7 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
         SK.constraint.Add(&c);
     }
 
-    for(i = 0; i < (int)arraylen(ssys->dragged); i++) {
+    for(i = 0; i < ssys->ndragged; i++) {
         if(ssys->dragged[i]) {
             hParam hp = { ssys->dragged[i] };
             SYS.dragged.Add(&hp);
