@@ -47,7 +47,6 @@ bool System::WriteJacobian(int tag) {
     if(mat.eq.size() >= MAX_UNKNOWNS) {
         return false;
     }
-    std::vector<hParam> paramsUsed;
     // In some experimenting, this is almost always the right size.
     // Value is usually between 0 and 20, comes from number of constraints?
     mat.B.sym.reserve(mat.eq.size());
@@ -58,10 +57,10 @@ bool System::WriteJacobian(int tag) {
         Expr *f = e->e->FoldConstants();
         f = f->DeepCopyWithParamsAsPointers(&param, &(SK.param));
 
-        paramsUsed.clear();
+        ParamSet paramsUsed;
         f->ParamsUsedList(&paramsUsed);
 
-        for(hParam &p : paramsUsed) {
+        for(hParam p : paramsUsed) {
             // Find the index of this parameter
             auto it = paramToIndex.find(p.v);
             if(it == paramToIndex.end()) continue;
@@ -74,7 +73,6 @@ bool System::WriteJacobian(int tag) {
                 continue;
             mat.A.sym.insert(i, j) = pd;
         }
-        paramsUsed.clear();
         mat.B.sym.push_back(f);
     }
     return true;
