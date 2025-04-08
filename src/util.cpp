@@ -4,18 +4,25 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
+#include <cstdarg>
+#include <cstdio>
+#include <chrono>
+#include <limits>
+
 #include "solvespace.h"
 
-void SolveSpace::AssertFailure(const char *file, unsigned line, const char *function,
+namespace SolveSpace {
+
+void AssertFailure(const char *file, unsigned line, const char *function,
                                const char *condition, const char *message) {
     std::string formattedMsg;
     formattedMsg += ssprintf("File %s, line %u, function %s:\n", file, line, function);
     formattedMsg += ssprintf("Assertion failed: %s.\n", condition);
     formattedMsg += ssprintf("Message: %s.\n", message);
-    SolveSpace::Platform::FatalError(formattedMsg);
+    Platform::FatalError(formattedMsg);
 }
 
-std::string SolveSpace::ssprintf(const char *fmt, ...)
+std::string ssprintf(const char *fmt, ...)
 {
     va_list va;
 
@@ -57,13 +64,13 @@ char32_t utf8_iterator::operator*()
     return result;
 }
 
-int64_t SolveSpace::GetMilliseconds()
+int64_t GetMilliseconds()
 {
     auto timestamp = std::chrono::steady_clock::now().time_since_epoch();
     return std::chrono::duration_cast<std::chrono::milliseconds>(timestamp).count();
 }
 
-void SolveSpace::MakeMatrix(double *mat,
+void MakeMatrix(double *mat,
                             double a11, double a12, double a13, double a14,
                             double a21, double a22, double a23, double a24,
                             double a31, double a32, double a33, double a34,
@@ -87,7 +94,7 @@ void SolveSpace::MakeMatrix(double *mat,
     mat[15] = a44;
 }
 
-void SolveSpace::MultMatrix(double *mata, double *matb, double *matr) {
+void MultMatrix(double *mata, double *matb, double *matr) {
     for(int i = 0; i < 4; i++) {
         for(int j = 0; j < 4; j++) {
             double s = 0.0;
@@ -178,21 +185,21 @@ static void MessageBox(const char *fmt, va_list va, bool error,
     dialog->ShowModal();
 #endif
 }
-void SolveSpace::Error(const char *fmt, ...)
+void Error(const char *fmt, ...)
 {
     va_list f;
     va_start(f, fmt);
     MessageBox(fmt, f, /*error=*/true);
     va_end(f);
 }
-void SolveSpace::Message(const char *fmt, ...)
+void Message(const char *fmt, ...)
 {
     va_list f;
     va_start(f, fmt);
     MessageBox(fmt, f, /*error=*/false);
     va_end(f);
 }
-void SolveSpace::MessageAndRun(std::function<void()> onDismiss, const char *fmt, ...)
+void MessageAndRun(std::function<void()> onDismiss, const char *fmt, ...)
 {
     va_list f;
     va_start(f, fmt);
@@ -1025,7 +1032,7 @@ bool BBox::Contains(const Point2d &p, double r) const {
            p.y <= (maxp.y + r);
 }
 
-const std::vector<double>& SolveSpace::StipplePatternDashes(StipplePattern pattern) {
+const std::vector<double>& StipplePatternDashes(StipplePattern pattern) {
     static bool initialized;
     static std::vector<double> dashes[(size_t)StipplePattern::LAST + 1];
     if(!initialized) {
@@ -1054,7 +1061,7 @@ const std::vector<double>& SolveSpace::StipplePatternDashes(StipplePattern patte
     return dashes[(size_t)pattern];
 }
 
-double SolveSpace::StipplePatternLength(StipplePattern pattern) {
+double StipplePatternLength(StipplePattern pattern) {
     static bool initialized;
     static double lengths[(size_t)StipplePattern::LAST + 1];
     if(!initialized) {
@@ -1070,3 +1077,5 @@ double SolveSpace::StipplePatternLength(StipplePattern pattern) {
 
     return lengths[(size_t)pattern];
 }
+
+} // namespace SolveSpace

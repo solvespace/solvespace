@@ -3,8 +3,14 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
+
+#include <cstdio>
+#include <string>
+
 #include "solvespace.h"
 #include "config.h"
+
+using namespace SolveSpace;
 
 static void ShowUsage(const std::string &cmd) {
     fprintf(stderr, "Usage: %s <command> <options> <filename> [filename...]", cmd.c_str());

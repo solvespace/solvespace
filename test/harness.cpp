@@ -3,6 +3,7 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
+#include <chrono>
 #include <cstdio>
 #include <random>
 #include <regex>

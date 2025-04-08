@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 const hEntity  EntityBase::FREE_IN_3D = { 0 };
 const hEntity  EntityBase::NO_ENTITY = { 0 };
 
@@ -991,3 +993,5 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             break;
     }
 }
+
+} // namespace SolveSpace

@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 bool PolylineBuilder::Vertex::GetNext(uint32_t kind, Vertex **next, Edge **nextEdge) {
     auto it = std::find_if(edges.begin(), edges.end(), [&](const Edge *e) {
         return e->tag == 0 && e->kind == kind;
@@ -241,3 +243,5 @@ void PolylineBuilder::GenerateOutlines(SOutlineList *sol) {
 
     Generate(startFunc, nextFunc, aloneFunc);
 }
+
+} // namespace SolveSpace

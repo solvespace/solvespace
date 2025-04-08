@@ -8,6 +8,8 @@
 
 #include <set>
 
+namespace SolveSpace {
+
 void SMesh::Clear() {
     l.Clear();
 }
@@ -371,13 +373,13 @@ Vector SMesh::GetCenterOfMass() const {
 }
 
 STriangleLl *STriangleLl::Alloc()
-    { return (STriangleLl *)AllocTemporary(sizeof(STriangleLl)); }
+    { return (STriangleLl *)Platform::AllocTemporary(sizeof(STriangleLl)); }
 SKdNode *SKdNode::Alloc()
-    { return (SKdNode *)AllocTemporary(sizeof(SKdNode)); }
+    { return (SKdNode *)Platform::AllocTemporary(sizeof(SKdNode)); }
 
 SKdNode *SKdNode::From(SMesh *m) {
     int i;
-    STriangle *tra = (STriangle *)AllocTemporary((m->l.n) * sizeof(*tra));
+    STriangle *tra = (STriangle *)Platform::AllocTemporary((m->l.n) * sizeof(*tra));
 
     for(i = 0; i < m->l.n; i++) {
         tra[i] = m->l[i];
@@ -663,7 +665,7 @@ void SKdNode::SnapToMesh(SMesh *m) {
             SnapToVertex(v, &extra);
 
             for(k = 0; k < extra.l.n; k++) {
-                STriangle *tra = (STriangle *)AllocTemporary(sizeof(*tra));
+                STriangle *tra = (STriangle *)Platform::AllocTemporary(sizeof(*tra));
                 *tra = extra.l[k];
                 AddTriangle(tra);
             }
@@ -1215,3 +1217,5 @@ double SMesh::CalculateSurfaceArea(const std::vector<uint32_t> &faces) const {
     }
     return area;
 }
+
+} // namespace SolveSpace

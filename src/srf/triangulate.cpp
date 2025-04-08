@@ -6,7 +6,9 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+#include "solvespace.h"
+
+namespace SolveSpace {
 
 void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
     if(l.n <= 0) return;
@@ -732,3 +734,5 @@ void SPolygon::TriangulateInto(SMesh *m) const {
     p.Clear();
     pm.Clear();
 }
+
+} // namespace SolveSpace

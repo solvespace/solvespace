@@ -4,7 +4,9 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+#include "solvespace.h"
+
+namespace SolveSpace {
 
 typedef struct {
     hSCurve     hc;
@@ -612,3 +614,5 @@ void SShell::Clear() {
     }
     curve.Clear();
 }
+
+} // namespace SolveSpace

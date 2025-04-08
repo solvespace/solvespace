@@ -5,6 +5,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 Vector STriangle::Normal() const {
     Vector ab = b.Minus(a), bc = c.Minus(b);
     return ab.Cross(bc);
@@ -353,12 +355,12 @@ void SEdgeList::CullExtraneousEdges(bool both) {
 // that would naively be O(n).
 //-----------------------------------------------------------------------------
 SKdNodeEdges *SKdNodeEdges::Alloc() {
-    SKdNodeEdges *ne = (SKdNodeEdges *)AllocTemporary(sizeof(SKdNodeEdges));
+    SKdNodeEdges *ne = (SKdNodeEdges *)Platform::AllocTemporary(sizeof(SKdNodeEdges));
     *ne = {};
     return ne;
 }
 SEdgeLl *SEdgeLl::Alloc() {
-    SEdgeLl *sell = (SEdgeLl *)AllocTemporary(sizeof(SEdgeLl));
+    SEdgeLl *sell = (SEdgeLl *)Platform::AllocTemporary(sizeof(SEdgeLl));
     *sell = {};
     return sell;
 }
@@ -919,3 +921,4 @@ void SContour::OffsetInto(SContour *dest, double r) const {
     }
 }
 
+} // namespace SolveSpace

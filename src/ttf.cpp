@@ -41,6 +41,8 @@ extern "C" const char *ft_error_string(int err) {
 
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 //-----------------------------------------------------------------------------
 // Get the list of available font filenames, and load the name for each of
 // them. Only that, though, not the glyphs too.
@@ -443,3 +445,5 @@ double TtfFont::AspectRatio(const std::string &str, bool kerning) {
 
     return dx;
 }
+
+} // namespace SolveSpace

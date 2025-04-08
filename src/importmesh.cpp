@@ -6,9 +6,12 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 #include "sketch.h"
+#include <cstring>
 #include <vector>
 
 #define MIN_POINT_DISTANCE 0.001
+
+namespace SolveSpace {
 
 // we will check for duplicate vertices and keep all their normals
 class vertex {
@@ -113,8 +116,6 @@ static hEntity newLine(EntityList *el, int *id, hEntity p0, hEntity p1) {
     el->Add(&en);
     return en.h;
 }
-
-namespace SolveSpace {
 
 bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *sh) {
     dbp("\nLink STL triangle mesh.");
@@ -253,4 +254,5 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     return true;
 }
 
-}
+} // namespace SolveSpace
+

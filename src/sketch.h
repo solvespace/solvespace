@@ -8,18 +8,29 @@
 #ifndef SOLVESPACE_SKETCH_H
 #define SOLVESPACE_SKETCH_H
 
-class hGroup;
-class hRequest;
-class hEntity;
-class hParam;
-class hStyle;
-class hConstraint;
-class hEquation;
+#include <cstdint>
+#include <string>
+#include <tuple>
+#include <unordered_map>
+#include <vector>
 
-class Entity;
-class Param;
-class Equation;
-class Style;
+#include "dsc.h"
+#include "param.h"
+#include "polygon.h"
+#include "platform/platform.h"
+#include "platform/gui.h"
+#include "srf/surface.h"
+#include "render/render.h"
+
+namespace SolveSpace {
+
+class hConstraint;
+
+class Expr;
+class ExprVector;
+class ExprQuaternion;
+
+enum class SolveResult : uint32_t;
 
 enum class PolyError : uint32_t {
     GOOD              = 0,
@@ -50,6 +61,17 @@ enum class Command : uint32_t;
 
 // All of the hWhatever handles are a 32-bit ID, that is used to represent
 // some data structure in the sketch.
+class hEquation {
+public:
+    uint32_t v;
+
+    inline bool isFromConstraint() const;
+    inline hConstraint constraint() const;
+};
+
+template<>
+struct IsHandleOracle<hEquation> : std::true_type {};
+
 class hGroup {
 public:
     // bits 15: 0   -- group index
@@ -92,17 +114,15 @@ public:
 template<>
 struct IsHandleOracle<hEntity> : std::true_type {};
 
-class hParam {
+class Equation {
 public:
-    // bits 15: 0   -- param index
-    //      31:16   -- request index
-    uint32_t v;
+    int         tag;
+    hEquation   h;
 
-    inline hRequest request() const;
+    Expr        *e;
+
+    void Clear() {}
 };
-
-template<>
-struct IsHandleOracle<hParam> : std::true_type {};
 
 class hStyle {
 public:
@@ -111,6 +131,9 @@ public:
 
 template<>
 struct IsHandleOracle<hStyle> : std::true_type {};
+
+class Entity;
+using EntityList = IdList<Entity,hEntity>;
 
 struct EntityId {
     uint32_t v;     // entity ID, starting from 0
@@ -578,7 +601,7 @@ public:
     bool IsStylable() const;
     bool IsVisible() const;
     bool CanBeDragged() const;
-    
+
     enum class DrawAs { DEFAULT, OVERLAY, HIDDEN, HOVERED, SELECTED };
     void Draw(DrawAs how, Canvas *canvas);
     void GetReferencePoints(std::vector<Vector> *refs);
@@ -614,21 +637,6 @@ public:
                               Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance);
     static Request::Type GetRequestForEntity(EntityBase::Type ent);
 };
-
-class Param {
-public:
-    int         tag;
-    hParam      h;
-
-    double      val;
-    bool        known;
-    bool        free;
-
-    static const hParam NO_PARAM;
-
-    void Clear() {}
-};
-
 
 class hConstraint {
 public:
@@ -813,28 +821,6 @@ public:
                                            Entity *p2);
 };
 
-class hEquation {
-public:
-    uint32_t v;
-
-    inline bool isFromConstraint() const;
-    inline hConstraint constraint() const;
-};
-
-template<>
-struct IsHandleOracle<hEquation> : std::true_type {};
-
-class Equation {
-public:
-    int         tag;
-    hEquation   h;
-
-    Expr        *e;
-
-    void Clear() {}
-};
-
-
 class Style {
 public:
     int         tag;
@@ -1010,5 +996,7 @@ public:
     hEntity     oldPointEnt[MAX_POINTS_IN_ENTITY];
     hRequest    newReq;
 };
+
+} // namespace SolveSpace
 
 #endif

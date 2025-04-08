@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 static int I;
 
 void SShell::MakeFromUnionOf(SShell *a, SShell *b) {
@@ -866,7 +868,7 @@ void SSurface::MakeClassifyingBsp(SShell *shell, SShell *useCurvesFrom) {
 }
 
 SBspUv *SBspUv::Alloc() {
-    return (SBspUv *)AllocTemporary(sizeof(SBspUv));
+    return (SBspUv *)Platform::AllocTemporary(sizeof(SBspUv));
 }
 
 SBspUv *SBspUv::From(SEdgeList *el, SSurface *srf) {
@@ -1044,3 +1046,4 @@ double SBspUv::MinimumDistanceToEdge(Point2d p, SSurface *srf) const {
     return min(d, min(dn, dp));
 }
 
+} // namespace SolveSpace

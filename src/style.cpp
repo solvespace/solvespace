@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 const Style::Default Style::Defaults[] = {
     { { ACTIVE_GRP },   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, 4, true,  StipplePattern::CONTINUOUS },
     { { CONSTRUCTION }, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, 0, false, StipplePattern::CONTINUOUS },
@@ -942,3 +944,5 @@ void TextWindow::ShowStyleInfo() {
 void TextWindow::ScreenAssignSelectionToStyle(int link, uint32_t v) {
     Style::AssignSelectionToStyle(v);
 }
+
+} // namespace SolveSpace

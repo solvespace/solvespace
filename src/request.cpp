@@ -8,6 +8,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_YZ = { 2 };
 const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
@@ -245,3 +247,4 @@ hParam Request::AddParam(ParamList *param, hParam hp) {
     return hp;
 }
 
+} // namespace SolveSpace

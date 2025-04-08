@@ -8,10 +8,21 @@
 #ifndef SOLVESPACE_POLYGON_H
 #define SOLVESPACE_POLYGON_H
 
+#include <cstdint>
+#include <functional>
+#include <unordered_map>
+#include <vector>
+
+#include "dsc.h"
+
+namespace SolveSpace {
+
+class Group;
 class SPointList;
 class SPolygon;
 class SContour;
 class SMesh;
+class SSurface;
 class SBsp3;
 class SOutlineList;
 
@@ -416,5 +427,6 @@ public:
     void GenerateOutlines(SOutlineList *sol);
 };
 
-#endif
+} // namespace SolveSpace
 
+#endif
