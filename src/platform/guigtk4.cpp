@@ -483,11 +483,13 @@ public:
 
         auto visibility_binding = Gtk::PropertyExpression<bool>::create(
             Gtk::Popover::get_type(), "visible");
-        visibility_binding->connect([&loop, this](const Glib::Value<bool>& value) {
-            if (!value.get()) {
-                loop->quit();
-            }
-        });
+        auto watch = visibility_binding->watch(
+            [&loop, this](const Glib::Value<bool>& value) {
+                if (!value.get()) {
+                    loop->quit();
+                }
+            },
+            &gtkMenu);
 
         gtkMenu.set_visible(true);
 
@@ -2796,14 +2798,16 @@ public:
         gtkDialog.add_controller(shortcut_controller);
 
         auto visibility_binding = Gtk::PropertyExpression<bool>::create(
-            Gtk::Dialog::get_type(), &gtkDialog, "visible");
-        visibility_binding->connect([&loop, this](bool visible) {
-            if (!visible) {
-                loop->quit();
-            }
-        });
+            Gtk::Dialog::get_type(), "visible");
+        auto watch = visibility_binding->watch(
+            [&loop, this](const Glib::Value<bool>& value) {
+                if (!value.get()) {
+                    loop->quit();
+                }
+            },
+            &gtkDialog);
 
-        gtkDialog.update_property(Gtk::Accessible::Property::STATE, Gtk::Accessible::State::MODAL);
+        gtkDialog.set_modal(true);
 
         gtkDialog.show();
         loop->run();
@@ -3012,9 +3016,9 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     gtkApp = Gtk::Application::create("org.solvespace.SolveSpace");
 
     gtkApp->property_application_id() = "org.solvespace.SolveSpace";
-    gtkApp->update_property(Gtk::Accessible::Property::ROLE, Gtk::Accessible::Role::APPLICATION);
-    gtkApp->update_property(Gtk::Accessible::Property::LABEL, C_("app-name", "SolveSpace"));
-    gtkApp->update_property(Gtk::Accessible::Property::DESCRIPTION, C_("app-description", "Parametric 2D/3D CAD tool"));
+    gtkApp->set_accessible_role(Gtk::AccessibleRole::APPLICATION);
+    gtkApp->set_accessible_name(C_("app-name", "SolveSpace"));
+    gtkApp->set_accessible_description(C_("app-description", "Parametric 2D/3D CAD tool"));
 
     gtkApp->set_resource_base_path("/org/solvespace/SolveSpace");
     
@@ -3575,11 +3579,13 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     if (settings) {
         auto theme_binding = Gtk::PropertyExpression<bool>::create(
             Gtk::Settings::get_type(), "gtk-application-prefer-dark-theme");
-        theme_binding->connect(
+        
+        auto watch = theme_binding->watch(
             [](const Glib::Value<bool>& value) {
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                 SS.GW.Invalidate();
-            });
+            },
+            settings.get());
     }
 
     std::vector<std::string> args;
@@ -3593,7 +3599,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto help_shortcut = Gtk::Shortcut::create(
         Gtk::KeyvalTrigger::create(GDK_KEY_F1),
         Gtk::CallbackAction::create([](Gtk::Widget& widget, const Glib::VariantBase& args) {
-            SS.GW.ShowContextMenu();
+            SS.ShowHelp();
             return true;
         })
     );
@@ -3769,23 +3775,25 @@ void RunGui() {
         if (settings) {
             auto theme_binding = Gtk::PropertyExpression<bool>::create(
                 Gtk::Settings::get_type(), "gtk-application-prefer-dark-theme");
-            theme_binding->connect([](const Glib::Value<bool>& value) {
-                bool dark_theme = value.get();
-                dbp("Theme changed: %s", dark_theme ? "dark" : "light");
-                
-                auto display = Gdk::Display::get_default();
-                auto windows = Gtk::Window::list_toplevels();
-                for (auto window : windows) {
-                    if (dark_theme) {
-                        window->add_css_class("dark");
-                    } else {
-                        window->remove_css_class("dark");
+            auto watch = theme_binding->watch(
+                [](const Glib::Value<bool>& value) {
+                    bool dark_theme = value.get();
+                    dbp("Theme changed: %s", dark_theme ? "dark" : "light");
+                    
+                    auto display = Gdk::Display::get_default();
+                    auto windows = Gtk::Window::list_toplevels();
+                    for (auto window : windows) {
+                        if (dark_theme) {
+                            window->add_css_class("dark");
+                        } else {
+                            window->remove_css_class("dark");
+                        }
                     }
-                }
-                
-                SS.GenerateAll(SolveSpaceUI::Generate::ALL);
-                SS.GW.Invalidate();
-            });
+                    
+                    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+                    SS.GW.Invalidate();
+                },
+                settings.get());
             
             bool dark_theme = false;
             settings->get_property("gtk-application-prefer-dark-theme", dark_theme);
