@@ -120,6 +120,12 @@
                         "name": "cairomm",
                         "stable-only": true
                     }
+                },
+                {
+                    "type": "file",
+                    "path": "meson.build",
+                    "dest-filename": "meson.build",
+                    "content": "project('cairomm', 'cpp', version: '1.16.2')\nsubdir('cairomm')\n"
                 }
             ],
             "cleanup": [
