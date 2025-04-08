@@ -45,11 +45,17 @@ project(solvespace
     VERSION 3.1
     LANGUAGES C CXX ASM)
 
+if(EMSCRIPTEN)
+    set(INCLUDE_NATIVE_COMPONENTS OFF)
+else()
+    set(INCLUDE_NATIVE_COMPONENTS ON)
+endif()
+
 set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
-set(ENABLE_CLI        ON CACHE BOOL
+set(ENABLE_CLI        ${INCLUDE_NATIVE_COMPONENTS} CACHE BOOL
     "Whether the command line interface is enabled")
-set(ENABLE_TESTS      ON  CACHE BOOL
+set(ENABLE_TESTS      ${INCLUDE_NATIVE_COMPONENTS} CACHE BOOL
     "Whether the test suite will be built and run")
 set(ENABLE_COVERAGE   OFF CACHE BOOL
     "Whether code coverage information will be collected")

@@ -22,7 +22,7 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *) {
 
 extern "C" {
 
-ConstraintBase::Type Slvs_CTypeToConstraintBaseType(int type) {
+static ConstraintBase::Type Slvs_CTypeToConstraintBaseType(int type) {
     switch(type) {
 case SLVS_C_POINTS_COINCIDENT:   return ConstraintBase::Type::POINTS_COINCIDENT;
 case SLVS_C_PT_PT_DISTANCE:      return ConstraintBase::Type::PT_PT_DISTANCE;
@@ -66,7 +66,7 @@ default: SolveSpace::Platform::FatalError("bad constraint type " + std::to_strin
     }
 }
 
-EntityBase::Type Slvs_CTypeToEntityBaseType(int type) {
+static EntityBase::Type Slvs_CTypeToEntityBaseType(int type) {
     switch(type) {
 case SLVS_E_POINT_IN_3D:        return EntityBase::Type::POINT_IN_3D;
 case SLVS_E_POINT_IN_2D:        return EntityBase::Type::POINT_IN_2D;
