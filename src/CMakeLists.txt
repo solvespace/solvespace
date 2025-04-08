@@ -2,10 +2,6 @@ include(GNUInstallDirs)
 
 # configuration
 
-include_directories(
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR})
-
 set(HAVE_SPACEWARE ${SPACEWARE_FOUND})
 
 if(NOT WIN32 OR APPLE)
@@ -64,102 +60,32 @@ if(APPLE)
         ${APPKIT_LIBRARY})
 endif()
 
-# libslvs
-set(libslvs_sources
-    solvespace.h
+# Solver
+add_library(slvs-solver INTERFACE)
+target_sources(slvs-solver INTERFACE
     platform/platform.h
-    util.cpp
+    solvespace.h
+
+    constrainteq.cpp
     entity.cpp
     expr.cpp
-    constrainteq.cpp
-    system.cpp
     platform/platformbase.cpp
-    lib.cpp
+    system.cpp
+    util.cpp
 )
+target_include_directories(slvs-solver SYSTEM INTERFACE
+    ${MIMALLOC_INCLUDE_DIR}
+    ${EIGEN3_INCLUDE_DIRS})
+target_include_directories(slvs-solver INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR})
 
-if(ENABLE_PYTHON_LIB)
-    add_library(slvs STATIC ${libslvs_sources})
-    target_compile_definitions(slvs PRIVATE -DSTATIC_LIB)
-elseif(ENABLE_EMSCRIPTEN_LIB)
-    set(CMAKE_EXECUTABLE_SUFFIX ".js")
-    add_executable(slvs ${libslvs_sources} jslib.cpp)
-else()
-    add_library(slvs SHARED ${libslvs_sources})
-    target_compile_definitions(slvs PRIVATE -DEXPORT_DLL)
-endif()
-
-set_target_properties(slvs PROPERTIES POSITION_INDEPENDENT_CODE ON)
-target_compile_definitions(slvs PRIVATE -DLIBRARY)
-target_link_libraries(slvs PRIVATE mimalloc-static)
-
-target_include_directories(slvs
-    PRIVATE
-        ${MIMALLOC_INCLUDE_DIR}
-        ${EIGEN3_INCLUDE_DIRS}
-    PUBLIC
-        ${CMAKE_SOURCE_DIR}/include)
-
-set_target_properties(slvs PROPERTIES
-    PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/slvs.h
-    VERSION ${PROJECT_VERSION}
-    SOVERSION 1
-)
-
-if(ENABLE_EMSCRIPTEN_LIB)
-    set_target_properties(slvs PROPERTIES LINK_FLAGS "\
-        -l embind \
-        -s MODULARIZE=1\
-        -s EXPORT_NAME=\"solvespace\" \
-        -s SINGLE_FILE=1 \
-        -s INITIAL_MEMORY=536870912 \
-        -s ALLOW_MEMORY_GROWTH \
-        -O3 \
-        -flto \
-        --closure 1")
-endif()
-
+# Needed for CI
 file(WRITE ${CMAKE_BINARY_DIR}/version.env "\
 VERSION_MAJOR=${PROJECT_VERSION_MAJOR}\n\
 VERSION_MINOR=${PROJECT_VERSION_MINOR}\n\
 VERSION_PATCH=0\n\
 VERSION_GIT_HASH=${solvespace_GIT_HASH}\n\
 ")
-
-if(ENABLE_PYTHON_LIB)
-    add_custom_command(
-        OUTPUT lib.c
-        COMMAND cython lib.pyx -o ${CMAKE_CURRENT_BINARY_DIR}/lib.c --include-dir ${CMAKE_SOURCE_DIR}/include --module-name solvespace
-        DEPENDS lib.pyx
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
-    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
-    Python_add_library(solvespace MODULE lib.c)
-    set_target_properties(solvespace PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    target_compile_definitions(solvespace PRIVATE -DEXPORT_DLL)
-    target_link_libraries(
-        solvespace
-    PRIVATE
-        slvs
-        Python::Module
-    )
-    if(SKBUILD)
-        install(TARGETS solvespace DESTINATION ${SKBUILD_PROJECT_NAME})
-    else()
-        install(TARGETS solvespace DESTINATION "slvs")
-        install(
-            DIRECTORY ${CMAKE_SOURCE_DIR}/python/slvs/
-            DESTINATION "slvs"
-        )
-    endif()
-else()
-    # if(NOT WIN32)
-    install(TARGETS slvs
-        LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-    # endif()
-endif()
-
 
 if(ENABLE_GUI OR ENABLE_CLI)
     set(every_platform_SOURCES
@@ -178,26 +104,21 @@ if(ENABLE_GUI OR ENABLE_CLI)
         expr.h
         polygon.h
         sketch.h
-        solvespace.h
         ui.h
-        platform/platform.h
         render/render.h
-        render/gl3shader.h
         srf/surface.h
+
         bsp.cpp
         clipboard.cpp
         confscreen.cpp
         constraint.cpp
-        constrainteq.cpp
         describescreen.cpp
         draw.cpp
         drawconstraint.cpp
         drawentity.cpp
-        entity.cpp
         export.cpp
         exportstep.cpp
         exportvector.cpp
-        expr.cpp
         file.cpp
         generate.cpp
         graphicswin.cpp
@@ -214,13 +135,11 @@ if(ENABLE_GUI OR ENABLE_CLI)
         resource.cpp
         request.cpp
         style.cpp
-        system.cpp
         textscreens.cpp
         textwin.cpp
         toolbar.cpp
         ttf.cpp
         undoredo.cpp
-        util.cpp
         view.cpp
         platform/platform.cpp
         platform/gui.cpp
@@ -236,6 +155,10 @@ if(ENABLE_GUI OR ENABLE_CLI)
         srf/surfinter.cpp
         srf/triangulate.cpp)
 
+    target_include_directories(solvespace-core PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_BINARY_DIR})
+    target_link_libraries(solvespace-core PRIVATE slvs-solver)
     target_link_libraries(solvespace-core PUBLIC slvs_deps)
 
     # solvespace translations
@@ -522,3 +445,5 @@ if(APPLE)
             VERBATIM)
     endif()
 endif()
+
+add_subdirectory(slvs)

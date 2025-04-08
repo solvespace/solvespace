@@ -2,8 +2,9 @@ name: WASM Library
 
 on:
   push:
-    branches: [ master, python, experiments, stateful-c-lib ]
+    branches: [ master ]
     tags: [ v* ]
+  workflow_dispatch:
 
 jobs:
   build-wasmlib:

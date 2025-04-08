@@ -28,6 +28,7 @@ classifiers = [
 wheel.expand-macos-universal-tags = true
 cmake.verbose = true
 cmake.build-type = "RelWithDebInfo"
+build.targets = ["slvs-py"]
 sdist.include = [
   ".git/HEAD",
   ".git/refs"
