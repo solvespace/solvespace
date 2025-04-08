@@ -1,6 +1,9 @@
-#include "solvespace.h"
 #include "slvs.h"
 #include <emscripten/bind.h>
+
+#include "solvespace.h"
+
+using namespace SolveSpace;
 
 struct JsSolveResult {
   int             result;

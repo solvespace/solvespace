@@ -20,6 +20,11 @@
 #   include <GL/glext.h>
 #endif
 
+#include <string>
+#include <vector>
+
+#include "sketch.h"
+
 #if !defined(HAVE_GLES)
 // glDepthRange is in GL1+ but not GLES2, glDepthRangef is in GL4.1+ and GLES2.
 // Consistency!

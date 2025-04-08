@@ -7,8 +7,17 @@
 #ifndef SOLVESPACE_DSC_H
 #define SOLVESPACE_DSC_H
 
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <type_traits>
 #include <vector>
+
+#include "defs.h"
+#include "util.h"
+
+namespace SolveSpace {
 
 /// Trait indicating which types are handle types and should get the associated operators.
 /// Specialize for each handle type and inherit from std::true_type.
@@ -157,9 +166,9 @@ inline double Vector::Element(int i) const {
 inline bool Vector::Equals(Vector v, double tol) const {
     // Quick axis-aligned tests before going further
     const Vector dv = this->Minus(v);
-    if (fabs(dv.x) > tol) return false;
-    if (fabs(dv.y) > tol) return false;
-    if (fabs(dv.z) > tol) return false;
+    if (std::abs(dv.x) > tol) return false;
+    if (std::abs(dv.y) > tol) return false;
+    if (std::abs(dv.z) > tol) return false;
 
     return dv.MagSquared() < tol*tol;
 }
@@ -201,13 +210,13 @@ inline Vector Vector::ScaledBy(const double v) const {
 }
 
 inline void Vector::MakeMaxMin(Vector *maxv, Vector *minv) const {
-    maxv->x = max(maxv->x, x);
-    maxv->y = max(maxv->y, y);
-    maxv->z = max(maxv->z, z);
+    maxv->x = std::max(maxv->x, x);
+    maxv->y = std::max(maxv->y, y);
+    maxv->z = std::max(maxv->z, z);
 
-    minv->x = min(minv->x, x);
-    minv->y = min(minv->y, y);
-    minv->z = min(minv->z, z);
+    minv->x = std::min(minv->x, x);
+    minv->y = std::min(minv->y, y);
+    minv->z = std::min(minv->z, z);
 }
 
 struct VectorHash {
@@ -752,5 +761,7 @@ public:
     bool Overlaps(const BBox &b1) const;
     bool Contains(const Point2d &p, double r = 0.0) const;
 };
+
+} // namespace SolveSpace
 
 #endif

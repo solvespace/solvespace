@@ -5,6 +5,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 void GraphicsWindow::UpdateDraggedPoint(hEntity hp, double mx, double my) {
     Entity *p = SK.GetEntity(hp);
     Vector pos = p->PointGetNum();
@@ -1572,3 +1574,5 @@ void GraphicsWindow::SixDofEvent(Platform::SixDofEvent event) {
     havePainted = false;
     Invalidate();
 }
+
+} // namespace SolveSpace

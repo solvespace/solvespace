@@ -11,6 +11,8 @@
 #include <Eigen/Core>
 #include <Eigen/SparseQR>
 
+namespace SolveSpace {
+
 // The solver will converge all unknowns to within this tolerance. This must
 // always be much less than LENGTH_EPS, and in practice should be much less.
 const double System::CONVERGE_TOLERANCE = (LENGTH_EPS/(1e2));
@@ -609,3 +611,4 @@ void System::MarkParamsFree(bool find) {
     }
 }
 
+} // namespace SolveSpace

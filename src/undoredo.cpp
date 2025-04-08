@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 void SolveSpaceUI::UndoRemember() {
     unsaved = true;
     PushFromCurrentOnto(&undo);
@@ -152,3 +154,4 @@ void SolveSpaceUI::UndoClearState(UndoState *ut) {
     *ut = {};
 }
 
+} // namespace SolveSpace

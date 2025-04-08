@@ -4,7 +4,9 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+#include "solvespace.h"
+
+namespace SolveSpace {
 
 SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
     SSurface ret = {};
@@ -489,4 +491,4 @@ void SSurface::Clear() {
     trim.Clear();
 }
 
-
+} // namespace SolveSpace

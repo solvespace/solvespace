@@ -9,6 +9,8 @@
 #include "solvespace.h"
 #include "config.h"
 
+namespace SolveSpace {
+
 void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
     gn = gn.WithMagnitude(1);
@@ -1266,3 +1268,5 @@ void SolveSpaceUI::ExportAsPngTo(const Platform::Path &filename) {
     // The rest of the work is done in the next redraw.
     GW.Invalidate();
 }
+
+} // namespace SolveSpace
