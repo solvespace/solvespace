@@ -46,6 +46,11 @@ project(solvespace
     LANGUAGES C CXX ASM)
 
 if(EMSCRIPTEN)
+    # Enable optimization. Workaround for "too many locals" error when runs in the browser.
+    if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_compile_options(-O1)
+    endif()
+
     set(INCLUDE_NATIVE_COMPONENTS OFF)
 else()
     set(INCLUDE_NATIVE_COMPONENTS ON)
@@ -192,10 +197,6 @@ endif()
 
 if(APPLE)
     set(CMAKE_FIND_FRAMEWORK FIRST)
-endif()
-
-if(EMSCRIPTEN)
-    set(M_LIBRARY "" CACHE STRING "libm (not necessary)" FORCE)
 endif()
 
 if(ENABLE_GUI OR ENABLE_CLI)
