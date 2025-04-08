@@ -290,7 +290,8 @@ int main()
     sys.failed  = CheckMalloc(50*sizeof(sys.failed[0]));
     sys.faileds = 50;
 
-    /*Example3d();*/
+    Example3d();
+    sys.params = sys.constraints = sys.entities = sys.ndragged = 0;
     for(;;) {
         Example2d();
         sys.params = sys.constraints = sys.entities = sys.ndragged = 0;
