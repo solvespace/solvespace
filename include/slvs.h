@@ -162,8 +162,14 @@ typedef struct {
      * that parameter, and attempt to change it as little as possible even
      * if that requires it to change other parameters more.
      *
-     * Unused members of this array should be set to zero. */
-    Slvs_hParam         dragged[4];
+     * Note that the solver is still allowed to change the values of parameters
+     * specified this way. If you want to lock a dragged entity in place, use
+     * a SLVS_C_WHERE_DRAGGED constraint (though note that it can overconstrain
+     * e.g in case the dragged entity has less than two degrees of freedom in
+     * a workplane or less than 3 degrees of freedom in free space). */
+    Slvs_hParam         *dragged;
+    int                 ndragged;
+
 
     /* If the solver fails, then it can determine which constraints are
      * causing the problem. But this is a relatively slow process (for

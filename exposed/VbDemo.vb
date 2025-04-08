@@ -546,10 +546,8 @@ Module VbDemo
             Public constraint As IntPtr
             Public constraints As Integer
 
-            Public dragged0 As UInteger
-            Public dragged1 As UInteger
-            Public dragged2 As UInteger
-            Public dragged3 As UInteger
+            Public dragged As IntPtr
+            Public ndragged As Integer
 
             Public calculatedFaileds As Integer
 
@@ -799,15 +797,13 @@ Module VbDemo
         ' solution process may be obtained by calling GetResult(),
         ' GetFaileds(), GetDof(), and GetParamByXXX().
         '
-        ' The parameters draggedx (indicated by their handles) will be held
+        ' The parameters dragged (indicated by their handles) will be held
         ' as close as possible to their original positions, even if this
         ' results in large moves for other parameters. This feature may be
         ' useful if, for example, the user is dragging the point whose
-        ' location is defined by those parameters. Unused draggedx
-        ' parameters may be specified as zero.
+        ' location is defined by those parameters.
         Public Sub Solve(ByVal group As UInteger,
-                         ByVal dragged0 As UInteger, ByVal dragged1 As UInteger,
-                         ByVal dragged2 As UInteger, ByVal dragged3 As UInteger,
+                         ByVal dragged As List(Of UInteger),
                          ByVal calculateFaileds As Boolean)
             Dim i As Integer
 
@@ -833,9 +829,16 @@ Module VbDemo
             Next
             Dim f(Constraints.Count()) As UInteger
 
+            Dim dd, d(dragged.Count()) As UInteger
+            i = 0
+            For Each cc In dragged
+                d(i) = dd
+                i += 1
+            Next
+
             Dim sys As Slvs_System
 
-            Dim pgc, egc, cgc As GCHandle
+            Dim pgc, egc, cgc, dgc As GCHandle
             pgc = GCHandle.Alloc(p, GCHandleType.Pinned)
             sys.param = pgc.AddrOfPinnedObject()
             sys.params = Params.Count()
@@ -845,11 +848,9 @@ Module VbDemo
             cgc = GCHandle.Alloc(c, GCHandleType.Pinned)
             sys.constraint = cgc.AddrOfPinnedObject()
             sys.constraints = Constraints.Count()
-
-            sys.dragged0 = dragged0
-            sys.dragged1 = dragged1
-            sys.dragged2 = dragged2
-            sys.dragged3 = dragged3
+            dgc = GCHandle.Alloc(d, GCHandleType.Pinned)
+            sys.dragged = dgc.AddrOfPinnedObject()
+            sys.ndragged = dragged.Count()
 
             Dim fgc As GCHandle
             fgc = GCHandle.Alloc(f, GCHandleType.Pinned)
@@ -882,6 +883,7 @@ Module VbDemo
             pgc.Free()
             egc.Free()
             cgc.Free()
+            dgc.Free()
 
             Result = sys.result
             Dof = sys.dof
@@ -893,11 +895,13 @@ Module VbDemo
             If TypeOf dragged Is Point2d Then
                 Dim p As Point2d
                 p = dragged
-                Solve(group, p.up.H, p.vp.H, 0, 0, calculatedFaileds)
+                Dim d As New List(Of UInteger)({ p.up.H, p.vp.H })
+                Solve(group, d, calculatedFaileds)
             ElseIf TypeOf dragged Is Point3d Then
                 Dim p As Point3d
                 p = dragged
-                Solve(group, p.xp.H, p.yp.H, p.zp.H, 0, calculatedFaileds)
+                Dim d As New List(Of UInteger)({ p.xp.H, p.yp.H, p.zp.H })
+                Solve(group, d, calculatedFaileds)
             Else
                 Throw New Exception("Can't get dragged params for point.")
             End If
@@ -905,7 +909,8 @@ Module VbDemo
         ' or if it's a single distance (e.g., the radius of a circle)
         Public Sub Solve(ByVal group As UInteger, ByVal dragged As Distance,
                          ByVal calculatedFaileds As Boolean)
-            Solve(group, dragged.dp.H, 0, 0, 0, calculatedFaileds)
+            Dim d As New List(Of UInteger)({ dragged.dp.H })
+            Solve(group, d, calculatedFaileds)
         End Sub
         ' or if it's nothing.
         Public Sub Solve(ByVal group As UInteger,
