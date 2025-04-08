@@ -97,9 +97,7 @@ void System::EvalJacobian() {
 }
 
 bool System::IsDragged(hParam p) {
-    const auto b = dragged.begin();
-    const auto e = dragged.end();
-    return e != std::find(b, e, p);
+    return dragged.find(p) != dragged.end();
 }
 
 Param *System::GetLastParamSubstitution(Param *p) {
@@ -563,7 +561,7 @@ void System::Clear() {
     entity.Clear();
     param.Clear();
     eq.Clear();
-    dragged.Clear();
+    dragged.clear();
     mat.A.num.setZero();
     mat.A.sym.setZero();
 }
