@@ -2051,24 +2051,26 @@ class GtkWindow : public Gtk::Window {
 
     void setup_property_bindings() {
         auto settings = Gtk::Settings::get_default();
-        settings->property_gtk_theme_name().signal_changed().connect([this, settings]() {
-            {
-                bool dark_theme = false;
-                settings->get_property("gtk-application-prefer-dark-theme", dark_theme);
-                if (dark_theme) {
-                    add_css_class("dark");
-                    remove_css_class("light");
-                } else {
-                    add_css_class("light");
-                    remove_css_class("dark");
-                }
-
-                Glib::Value<Glib::ustring> desc_value;
-                desc_value.init(Glib::Value<Glib::ustring>::value_type());
-                desc_value.set(std::string("Parametric 2D/3D CAD application") +
-                    (dark_theme ? " (Dark theme)" : " (Light theme)"));
-                update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
+        
+        auto theme_binding = Gtk::PropertyExpression<bool>::create(
+            settings->property_gtk_application_prefer_dark_theme());
+        
+        theme_binding->connect([this, settings]() {
+            bool dark_theme = settings->property_gtk_application_prefer_dark_theme();
+            
+            if (dark_theme) {
+                add_css_class("dark");
+                remove_css_class("light");
+            } else {
+                add_css_class("light");
+                remove_css_class("dark");
             }
+
+            Glib::Value<Glib::ustring> desc_value;
+            desc_value.init(Glib::Value<Glib::ustring>::value_type());
+            desc_value.set(std::string("Parametric 2D/3D CAD application") +
+                (dark_theme ? " (Dark theme)" : " (Light theme)"));
+            update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
         });
     }
 
@@ -2922,6 +2924,20 @@ static gboolean ConsumeSpnavQueue(GIOChannel *, GIOCondition, gpointer data) {
         ProcessSpnavEvent(window, spnavEvent, shiftDown, controlDown);
     }
     return TRUE;
+}
+
+void AnnounceOperationMode(const std::string& mode, Gtk::Window* window) {
+    if (!window) return;
+    
+    Glib::Value<Glib::ustring> label_value;
+    label_value.init(Glib::Value<Glib::ustring>::value_type());
+    label_value.set(C_("accessibility", "SolveSpace 3D View - ") + C_("operation-mode", mode));
+    window->update_property(Gtk::Accessible::Property::DESCRIPTION, label_value);
+    
+    Glib::Value<Glib::ustring> live_value;
+    live_value.init(Glib::Value<Glib::ustring>::value_type());
+    live_value.set("polite");
+    window->update_property(Gtk::Accessible::Property::LIVE, live_value);
 }
 
 void Request3DConnexionEventsForWindow(WindowRef window) {
