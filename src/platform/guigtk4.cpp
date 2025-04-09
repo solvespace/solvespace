@@ -571,6 +571,10 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 
 class GtkGLWidget : public Gtk::GLArea {
     Window *_receiver;
+    Glib::RefPtr<Gtk::DropTarget> _drop_target;
+    std::vector<std::string> _accepted_mime_types;
+    Glib::RefPtr<Gtk::GestureZoom> _zoom_gesture;
+    Glib::RefPtr<Gtk::GestureRotate> _rotate_gesture;
 
 public:
     GtkGLWidget(Platform::Window *receiver) : _receiver(receiver) {
@@ -598,6 +602,8 @@ public:
         update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
 
         setup_event_controllers();
+        setup_drop_target();
+        setup_touch_gestures();
     }
 
     void announce_operation_mode(const std::string& mode) {
@@ -915,6 +921,146 @@ protected:
 
         x = root_x;
         y = root_y;
+    }
+
+    void setup_drop_target() {
+        _accepted_mime_types = {
+            "text/uri-list",               // Standard URI list (most common)
+            "application/x-solvespace",    // SolveSpace files
+            "application/octet-stream",    // Generic binary data
+            "text/plain"                   // Plain text
+        };
+
+        _drop_target = Gtk::DropTarget::create(G_TYPE_STRING, Gdk::DragAction::COPY);
+        _drop_target->set_gtypes(_accepted_mime_types);
+        
+        _drop_target->signal_drop().connect(
+            [this](const Glib::ValueBase& value, double x, double y) -> bool {
+                auto mime_type = _drop_target->get_current_drop()->get_formats().get_mime_types()[0];
+                
+                Glib::Value<Glib::ustring> drop_desc;
+                drop_desc.init(Glib::Value<Glib::ustring>::value_type());
+                drop_desc.set(Glib::ustring::compose(C_("accessibility", "File dropped at %1, %2"), 
+                                                   static_cast<int>(x), static_cast<int>(y)));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, drop_desc);
+                
+                if (mime_type == "text/uri-list") {
+                    Glib::ustring uri_list = Glib::Value<Glib::ustring>(value).get();
+                    std::vector<Glib::ustring> uris = Glib::Regex::split_simple("\\s+", uri_list);
+                    
+                    for (const auto& uri : uris) {
+                        if (uri.empty() || uri[0] == '#') continue; // Skip empty lines and comments
+                        
+                        Glib::ustring file_path;
+                        try {
+                            file_path = Glib::filename_from_uri(uri);
+                        } catch (const Glib::Error& e) {
+                            continue; // Skip invalid URIs
+                        }
+                        
+                        if (_receiver->onFileDrop) {
+                            _receiver->onFileDrop(file_path.c_str());
+                            return true;
+                        }
+                    }
+                }
+                
+                return false;
+            });
+        
+        add_controller(_drop_target);
+    }
+    
+    void setup_touch_gestures() {
+        _zoom_gesture = Gtk::GestureZoom::create();
+        _zoom_gesture->set_name("gl-widget-zoom-gesture");
+        _zoom_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        
+        _zoom_gesture->signal_begin().connect(
+            [this]() {
+                Glib::Value<Glib::ustring> active_desc;
+                active_desc.init(Glib::Value<Glib::ustring>::value_type());
+                active_desc.set(C_("accessibility", "Zoom gesture started"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
+            });
+        
+        _zoom_gesture->signal_scale_changed().connect(
+            [this](double scale) {
+                double scroll_delta = (scale > 1.0) ? -1.0 : 1.0;
+                double x, y;
+                get_pointer_position(x, y);
+                
+                Glib::Value<Glib::ustring> zoom_desc;
+                zoom_desc.init(Glib::Value<Glib::ustring>::value_type());
+                zoom_desc.set(Glib::ustring::compose(C_("accessibility", "Zooming with scale factor %1"), 
+                                                   static_cast<int>(scale * 100) / 100.0));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, zoom_desc);
+                
+                process_pointer_event(MouseEvent::Type::SCROLL_VERT, x, y, 
+                                    GdkModifierType(0), 0, scroll_delta);
+                
+                if (_receiver->onTouchGesture) {
+                    TouchGestureEvent event = {};
+                    event.type = TouchGestureEvent::Type::ZOOM;
+                    event.x = x;
+                    event.y = y;
+                    event.scale = scale;
+                    _receiver->onTouchGesture(event);
+                }
+            });
+        
+        _zoom_gesture->signal_end().connect(
+            [this]() {
+                Glib::Value<Glib::ustring> end_desc;
+                end_desc.init(Glib::Value<Glib::ustring>::value_type());
+                end_desc.set(C_("accessibility", "Zoom gesture ended"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, end_desc);
+            });
+        
+        add_controller(_zoom_gesture);
+        
+        _rotate_gesture = Gtk::GestureRotate::create();
+        _rotate_gesture->set_name("gl-widget-rotate-gesture");
+        _rotate_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        
+        _rotate_gesture->signal_begin().connect(
+            [this]() {
+                Glib::Value<Glib::ustring> active_desc;
+                active_desc.init(Glib::Value<Glib::ustring>::value_type());
+                active_desc.set(C_("accessibility", "Rotation gesture started"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
+            });
+        
+        _rotate_gesture->signal_angle_changed().connect(
+            [this](double angle, double angle_delta) {
+                double x, y;
+                get_pointer_position(x, y);
+                
+                Glib::Value<Glib::ustring> rotate_desc;
+                rotate_desc.init(Glib::Value<Glib::ustring>::value_type());
+                rotate_desc.set(Glib::ustring::compose(C_("accessibility", "Rotating by %1 degrees"), 
+                                                     static_cast<int>(angle_delta * 180 / M_PI)));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, rotate_desc);
+                
+                if (_receiver->onTouchGesture) {
+                    TouchGestureEvent event = {};
+                    event.type = TouchGestureEvent::Type::ROTATE;
+                    event.x = x;
+                    event.y = y;
+                    event.rotation = angle_delta;
+                    _receiver->onTouchGesture(event);
+                }
+            });
+        
+        _rotate_gesture->signal_end().connect(
+            [this]() {
+                Glib::Value<Glib::ustring> end_desc;
+                end_desc.init(Glib::Value<Glib::ustring>::value_type());
+                end_desc.set(C_("accessibility", "Rotation gesture ended"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, end_desc);
+            });
+        
+        add_controller(_rotate_gesture);
     }
 };
 
@@ -3326,6 +3472,14 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         "@define-color dark_entry_fg #e0e0e0;"
         "@define-color dark_border_color #3d3d3d;"
 
+        "/* RTL text support */"
+        "window.solvespace-window[text-direction=\"rtl\"] {"
+        "   direction: rtl;"
+        "}"
+        "window.solvespace-window[text-direction=\"rtl\"] * {"
+        "   text-align: right;"
+        "}"
+
         "window.solvespace-window { "
         "   background-color: @bg_color; "
         "   color: @fg_color; "
@@ -3862,6 +4016,21 @@ std::vector<std::string> InitGui(int argc, char **argv) {
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
                 SS.GW.Invalidate();
             });
+    }
+    
+    std::set<std::string> rtl_languages = {"ar", "he", "fa", "ur", "dv", "ha", "khw", "ks", "ku", "ps", "sd", "ug", "yi"};
+    
+    std::string lang = Glib::get_language_names()[0];
+    if (lang.length() >= 2) {
+        std::string lang_code = lang.substr(0, 2);
+        bool is_rtl = rtl_languages.find(lang_code) != rtl_languages.end();
+        
+        if (is_rtl) {
+            Gtk::Window *window = dynamic_cast<Gtk::Window*>(gtkApp->get_active_window());
+            if (window) {
+                window->set_property("text-direction", "rtl");
+            }
+        }
     }
 
     std::vector<std::string> args;

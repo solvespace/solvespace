@@ -95,6 +95,21 @@ struct KeyboardEvent {
     }
 };
 
+// A touch gesture input event.
+struct TouchGestureEvent {
+    enum class Type {
+        ROTATE,
+        ZOOM,
+        PAN
+    };
+
+    Type type;
+    double x, y;
+    double rotation;  // For rotation gestures, in radians
+    double scale;     // For zoom gestures
+    double dx, dy;    // For pan gestures
+};
+
 std::string AcceleratorDescription(const KeyboardEvent &accel);
 
 //-----------------------------------------------------------------------------
@@ -223,6 +238,8 @@ public:
     std::function<void(double)>         onScrollbarAdjusted;
     std::function<void()>               onContextLost;
     std::function<void()>               onRender;
+    std::function<void(const char*)>    onFileDrop;
+    std::function<void(TouchGestureEvent)> onTouchGesture;
 
     virtual ~Window() = default;
 
@@ -381,6 +398,22 @@ FileDialogRef CreateSaveFileDialog(WindowRef parentWindow);
 
 std::vector<Platform::Path> GetFontFiles();
 void OpenInBrowser(const std::string &url);
+
+// Check if current text direction is RTL
+inline bool IsRTL() {
+    static bool checked = false;
+    static bool is_rtl = false;
+    
+    if (!checked) {
+        // Get current locale and check if it's RTL
+        std::string locale = Glib::get_language_names()[0];
+        std::set<std::string> rtl_langs = {"ar", "he", "fa", "ur", "dv", "ha", "khw", "ks", "ku", "ps", "sd", "ug", "yi"};
+        is_rtl = locale.length() >= 2 && rtl_langs.find(locale.substr(0, 2)) != rtl_langs.end();
+        checked = true;
+    }
+    
+    return is_rtl;
+}
 
 std::vector<std::string> InitGui(int argc, char **argv);
 void RunGui();
