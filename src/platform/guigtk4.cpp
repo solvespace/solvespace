@@ -620,9 +620,11 @@ public:
         mode_label.set(Glib::ustring::compose(C_("accessibility", "SolveSpace Drawing Area - %1 Mode"), mode));
         update_property(Gtk::Accessible::Property::LABEL, mode_label);
 
-        Glib::Value<Glib::ustring> active_desc;
-        active_desc.init(Glib::Value<Glib::ustring>::value_type());
-        active_desc.set("Element is active");
+        auto live_region = Gtk::Accessible::LiveRegion::POLITE;
+        Glib::Value<Gtk::Accessible::LiveRegion> live_value;
+        live_value.init(Glib::Value<Gtk::Accessible::LiveRegion>::value_type());
+        live_value.set(live_region);
+        update_property(Gtk::Accessible::Property::LIVE_REGION, live_value);
         update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
         Glib::Value<Glib::ustring> inactive_desc;
         inactive_desc.init(Glib::Value<Glib::ustring>::value_type());
@@ -2386,17 +2388,7 @@ public:
     }
     
     void announce_operation_mode(const std::string &mode) {
-        Glib::Value<Glib::ustring> label_value;
-        label_value.init(Glib::Value<Glib::ustring>::value_type());
-        label_value.set(C_("accessibility", "SolveSpace 3D View - ") + 
-            C_("operation-mode", mode));
-        update_property(Gtk::Accessible::Property::LABEL, label_value);
-        
-        auto live_region = Gtk::Accessible::LiveRegion::POLITE;
-        Glib::Value<Gtk::Accessible::LiveRegion> live_value;
-        live_value.init(Glib::Value<Gtk::Accessible::LiveRegion>::value_type());
-        live_value.set(live_region);
-        update_property(Gtk::Accessible::Property::LIVE_REGION, live_value);
+        get_gl_widget().announce_operation_mode(mode);
     }
 
 protected:
