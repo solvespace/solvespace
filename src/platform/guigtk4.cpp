@@ -1229,24 +1229,25 @@ public:
 
         auto css_provider = Gtk::CssProvider::create();
         
-        const char* editor_css = 
-        R"css(
-            grid.editor-overlay { 
-                background-color: transparent; 
-            }
-            
-            entry.editor-text { 
-                background-color: white; 
-                color: black; 
-                border-radius: 3px; 
-                padding: 2px; 
-                caret-color: #0066cc; 
-                selection-background-color: rgba(0, 102, 204, 0.3); 
-                selection-color: black; 
-            }
-        )css";
-        
-        css_provider->load_from_data(editor_css);
+        try {
+            auto file = Gio::File::create_for_path(Platform::PathFromResource("platform/css/editor_overlay.css"));
+            css_provider->load_from_file(file);
+        } catch (const Glib::Error& e) {
+            static const char* editor_css = 
+                "grid.editor-overlay { "
+                "    background-color: transparent; "
+                "}"
+                "entry.editor-text { "
+                "    background-color: white; "
+                "    color: black; "
+                "    border-radius: 3px; "
+                "    padding: 2px; "
+                "    caret-color: #0066cc; "
+                "    selection-background-color: rgba(0, 102, 204, 0.3); "
+                "    selection-color: black; "
+                "}";
+            css_provider->load_from_data(editor_css);
+        }
 
         set_name("editor-overlay");
         add_css_class("editor-overlay");
@@ -2086,94 +2087,116 @@ public:
 
         auto css_provider = Gtk::CssProvider::create();
         
-        const char* window_css = 
-        R"css(
-            window.solvespace-window {
-                background-color: @theme_bg_color;
-                color: @theme_fg_color;
-            }
-            window.solvespace-window.dark {
-                background-color: #303030;
-                color: #e0e0e0;
-            }
-            window.solvespace-window.light {
-                background-color: #f0f0f0;
-                color: #303030;
-            }
-            scrollbar {
-                background-color: alpha(@theme_fg_color, 0.1);
-                border-radius: 0;
-            }
-            scrollbar slider {
-                min-width: 16px;
-                border-radius: 8px;
-                background-color: alpha(@theme_fg_color, 0.3);
-            }
-            scrollbar slider:hover {
-                background-color: alpha(@theme_fg_color, 0.5);
-            }
-            scrollbar slider:active {
-                background-color: alpha(@theme_fg_color, 0.7);
-            }
-            .solvespace-gl-area {
-                background-color: @theme_base_color;
-                border-radius: 2px;
-                border: 1px solid @borders;
-            }
-            button.menu-button {
-                padding: 4px 8px;
-                border-radius: 3px;
-                background-color: alpha(@theme_fg_color, 0.05);
-                color: @theme_fg_color;
-            }
-            button.menu-button:hover {
-                background-color: alpha(@theme_fg_color, 0.1);
-            }
-            button.menu-button:active {
-                background-color: alpha(@theme_fg_color, 0.15);
-            }
-            .solvespace-header {
-                padding: 4px;
-                background-color: @theme_bg_color;
-                border-bottom: 1px solid @borders;
-            }
-            .solvespace-editor-text {
-                background-color: @theme_base_color;
-                color: @theme_text_color;
-                border-radius: 3px;
-                padding: 4px;
-                caret-color: @link_color;
-            }
-        )css";
-        
-        const char* theme_colors = 
-        R"css(
-            @define-color bg_color #f5f5f5;
-            @define-color fg_color #333333;
-            @define-color header_bg #e0e0e0;
-            @define-color header_border #c0c0c0;
-            @define-color button_hover rgba(128, 128, 128, 0.1);
-            @define-color accent_color #0066cc;
-            @define-color accent_fg white;
-            @define-color entry_bg white;
-            @define-color entry_fg black;
-            @define-color border_color #e0e0e0;
+        try {
+            auto theme_file = Gio::File::create_for_path(Platform::PathFromResource("platform/css/theme_colors.css"));
+            css_provider->load_from_file(theme_file);
             
-            @define-color dark_bg_color #2d2d2d;
-            @define-color dark_fg_color #e0e0e0;
-            @define-color dark_header_bg #1e1e1e;
-            @define-color dark_header_border #3d3d3d;
-            @define-color dark_button_hover rgba(255, 255, 255, 0.1);
-            @define-color dark_accent_color #3584e4;
-            @define-color dark_accent_fg white;
-            @define-color dark_entry_bg #3d3d3d;
-            @define-color dark_entry_fg #e0e0e0;
-            @define-color dark_border_color #3d3d3d;
-        )css";
-        
-        std::string combined_css = std::string(theme_colors) + "\n" + std::string(window_css);
-        
-        css_provider->load_from_data(combined_css);
+            auto window_file = Gio::File::create_for_path(Platform::PathFromResource("platform/css/window.css"));
+            css_provider->load_from_file(window_file);
+        } catch (const Glib::Error& e) {
+            static const char* theme_colors = 
+                "@define-color bg_color #f5f5f5;"
+                "@define-color fg_color #333333;"
+                "@define-color header_bg #e0e0e0;"
+                "@define-color header_border #c0c0c0;"
+                "@define-color button_hover rgba(128, 128, 128, 0.1);"
+                "@define-color accent_color #0066cc;"
+                "@define-color accent_fg white;"
+                "@define-color entry_bg white;"
+                "@define-color entry_fg black;"
+                "@define-color border_color #e0e0e0;"
+                
+                "@define-color dark_bg_color #2d2d2d;"
+                "@define-color dark_fg_color #e0e0e0;"
+                "@define-color dark_header_bg #1e1e1e;"
+                "@define-color dark_header_border #3d3d3d;"
+                "@define-color dark_button_hover rgba(255, 255, 255, 0.1);"
+                "@define-color dark_accent_color #3584e4;"
+                "@define-color dark_accent_fg white;"
+                "@define-color dark_entry_bg #3d3d3d;"
+                "@define-color dark_entry_fg #e0e0e0;"
+                "@define-color dark_border_color #3d3d3d;";
+            
+            static const char* window_css = 
+                "window.solvespace-window {"
+                "    background-color: @theme_bg_color;"
+                "    color: @theme_fg_color;"
+                "}"
+                "window.solvespace-window.dark {"
+                "    background-color: #303030;"
+                "    color: #e0e0e0;"
+                "}"
+                "window.solvespace-window.light {"
+                "    background-color: #f0f0f0;"
+                "    color: #303030;"
+                "}"
+                "window.solvespace-window[text-direction=\"rtl\"] {"
+                "    direction: rtl;"
+                "}"
+                "window.solvespace-window[text-direction=\"rtl\"] * {"
+                "    text-align: right;"
+                "}"
+                "window.solvespace-window[text-direction=\"rtl\"] button,"
+                "window.solvespace-window[text-direction=\"rtl\"] label,"
+                "window.solvespace-window[text-direction=\"rtl\"] menuitem {"
+                "    margin-left: 8px;"
+                "    margin-right: 0;"
+                "}"
+                "window.solvespace-window[text-direction=\"rtl\"] .solvespace-header {"
+                "    flex-direction: row-reverse;"
+                "}"
+                "window.solvespace-window[text-direction=\"rtl\"] menubar > menuitem {"
+                "    margin-right: 4px;"
+                "    margin-left: 0;"
+                "}"
+                "scrollbar {"
+                "    background-color: alpha(@theme_fg_color, 0.1);"
+                "    border-radius: 0;"
+                "}"
+                "scrollbar slider {"
+                "    min-width: 16px;"
+                "    border-radius: 8px;"
+                "    background-color: alpha(@theme_fg_color, 0.3);"
+                "}"
+                "scrollbar slider:hover {"
+                "    background-color: alpha(@theme_fg_color, 0.5);"
+                "}"
+                "scrollbar slider:active {"
+                "    background-color: alpha(@theme_fg_color, 0.7);"
+                "}"
+                ".solvespace-gl-area {"
+                "    background-color: @theme_base_color;"
+                "    border-radius: 2px;"
+                "    border: 1px solid @borders;"
+                "}"
+                "button.menu-button {"
+                "    padding: 4px 8px;"
+                "    border-radius: 3px;"
+                "    background-color: alpha(@theme_fg_color, 0.05);"
+                "    color: @theme_fg_color;"
+                "}"
+                "button.menu-button:hover {"
+                "    background-color: alpha(@theme_fg_color, 0.1);"
+                "}"
+                "button.menu-button:active {"
+                "    background-color: alpha(@theme_fg_color, 0.15);"
+                "}"
+                ".solvespace-header {"
+                "    padding: 4px;"
+                "    background-color: @theme_bg_color;"
+                "    border-bottom: 1px solid @borders;"
+                "}"
+                ".solvespace-editor-text {"
+                "    background-color: @theme_base_color;"
+                "    color: @theme_text_color;"
+                "    border-radius: 3px;"
+                "    padding: 4px;"
+                "    caret-color: @link_color;"
+                "}";
+            
+            std::string combined_css = std::string(theme_colors) + "\n" + std::string(window_css);
+            css_provider->load_from_data(combined_css);
+        }
 
         set_name("solvespace-window");
         add_css_class("solvespace-window");
