@@ -250,7 +250,7 @@ public:
     Vector HsvToRgb(Vector hsv);
     std::shared_ptr<Pixmap> HsvPattern2d(int w, int h);
     std::shared_ptr<Pixmap> HsvPattern1d(double hue, double sat, int w, int h);
-    void ColorPickerDone();
+    void ColorPickerDone(const RgbaColor& newColor);
     bool DrawOrHitTestColorPicker(UiCanvas *canvas, DrawOrHitHow how,
                                   bool leftDown, double x, double y);
 

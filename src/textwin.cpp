@@ -723,9 +723,9 @@ std::shared_ptr<Pixmap> TextWindow::HsvPattern1d(double hue, double sat, int w, 
     return pixmap;
 }
 
-void TextWindow::ColorPickerDone() {
-    RgbaColor rgb = editControl.colorPicker.rgb;
-    EditControlDone(ssprintf("%.2f, %.2f, %.3f", rgb.redF(), rgb.greenF(), rgb.blueF()));
+void TextWindow::ColorPickerDone(const RgbaColor& newColor) {
+    editControl.colorPicker.rgb = newColor;
+    EditControlDone(ssprintf("%.2f, %.2f, %.3f", newColor.redF(), newColor.greenF(), newColor.blueF()));
 }
 
 bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, bool leftDown,

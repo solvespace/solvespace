@@ -24,6 +24,22 @@ window.solvespace-window[text-direction="rtl"] * {
     text-align: right;
 }
 
+window.solvespace-window[text-direction="rtl"] button,
+window.solvespace-window[text-direction="rtl"] label,
+window.solvespace-window[text-direction="rtl"] menuitem {
+    margin-left: 8px;
+    margin-right: 0;
+}
+
+window.solvespace-window[text-direction="rtl"] .solvespace-header {
+    flex-direction: row-reverse;
+}
+
+window.solvespace-window[text-direction="rtl"] menubar > menuitem {
+    margin-right: 4px;
+    margin-left: 0;
+}
+
 /* Scrollbar styling */
 scrollbar {
     background-color: alpha(@theme_fg_color, 0.1);

@@ -1228,26 +1228,41 @@ public:
         _constraint_layout(Gtk::ConstraintLayout::create()) {
 
         auto css_provider = Gtk::CssProvider::create();
-        css_provider->load_from_data(
-            "grid.editor-overlay { "
-            "   background-color: transparent; "
-            "}"
-            "entry.editor-text { "
-            "   background-color: white; "
-            "   color: black; "
-            "   border-radius: 3px; "
-            "   padding: 2px; "
-            "   caret-color: #0066cc; "
-            "   selection-background-color: rgba(0, 102, 204, 0.3); "
-            "   selection-color: black; "
-            "}"
-        );
+        
+        const char* editor_css = 
+        R"css(
+            grid.editor-overlay { 
+                background-color: transparent; 
+            }
+            
+            entry.editor-text { 
+                background-color: white; 
+                color: black; 
+                border-radius: 3px; 
+                padding: 2px; 
+                caret-color: #0066cc; 
+                selection-background-color: rgba(0, 102, 204, 0.3); 
+                selection-color: black; 
+            }
+        )css";
+        
+        css_provider->load_from_data(editor_css);
 
         set_name("editor-overlay");
         add_css_class("editor-overlay");
         set_row_spacing(4);
         set_column_spacing(4);
         set_row_homogeneous(false);
+        
+        Glib::Value<Glib::ustring> label_value;
+        label_value.init(Glib::Value<Glib::ustring>::value_type());
+        label_value.set(C_("accessibility", "SolveSpace Text Editor"));
+        update_property(Gtk::Accessible::Property::LABEL, label_value);
+        
+        Glib::Value<Glib::ustring> desc_value;
+        desc_value.init(Glib::Value<Glib::ustring>::value_type());
+        desc_value.set(C_("accessibility", "Text input overlay for editing values"));
+        update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
 
         set_layout_manager(_constraint_layout);
         set_column_homogeneous(false);
@@ -2187,6 +2202,35 @@ public:
                 (dark_theme ? C_("theme", "Dark theme") : C_("theme", "Light theme")));
             update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
         });
+        
+        auto settings_impl = dynamic_cast<SettingsImplGtk*>(Platform::GetSettings().get());
+        if(settings_impl) {
+            std::string locale = settings_impl->ThawString("locale", "");
+            bool is_rtl = false;
+            
+            if(!locale.empty()) {
+                std::vector<std::string> rtl_languages = {"ar", "he", "fa", "ur", "ps", "sd", "yi", "dv"};
+                std::string lang_code = locale.substr(0, 2);
+                
+                for(const auto& rtl_lang : rtl_languages) {
+                    if(lang_code == rtl_lang) {
+                        is_rtl = true;
+                        break;
+                    }
+                }
+            }
+            
+            if(is_rtl) {
+                set_property("text-direction", "rtl");
+                
+                Glib::Value<Glib::ustring> rtl_value;
+                rtl_value.init(Glib::Value<Glib::ustring>::value_type());
+                rtl_value.set(C_("accessibility", "Right-to-left text direction"));
+                update_property(Gtk::Accessible::Property::ORIENTATION, rtl_value);
+            } else {
+                set_property("text-direction", "ltr");
+            }
+        }
 
         _hbox.set_hexpand(true);
         _hbox.set_vexpand(true);
