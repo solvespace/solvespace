@@ -240,6 +240,8 @@ public:
     std::function<void()>               onRender;
     std::function<void(const char*)>    onFileDrop;
     std::function<void(TouchGestureEvent)> onTouchGesture;
+    std::function<std::string()>        onDragExport;
+    std::function<void()>               onDragExportCleanup;
 
     virtual ~Window() = default;
 

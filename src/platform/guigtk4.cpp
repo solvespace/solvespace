@@ -572,7 +572,9 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 class GtkGLWidget : public Gtk::GLArea {
     Window *_receiver;
     Glib::RefPtr<Gtk::DropTarget> _drop_target;
+    Glib::RefPtr<Gtk::DragSource> _drag_source;
     std::vector<std::string> _accepted_mime_types;
+    std::vector<std::string> _export_mime_types;
     Glib::RefPtr<Gtk::GestureZoom> _zoom_gesture;
     Glib::RefPtr<Gtk::GestureRotate> _rotate_gesture;
 
@@ -603,6 +605,7 @@ public:
 
         setup_event_controllers();
         setup_drop_target();
+        setup_drag_source();
         setup_touch_gestures();
     }
 
@@ -980,6 +983,64 @@ protected:
             });
         
         add_controller(_drop_target);
+    }
+    
+    void setup_drag_source() {
+        _export_mime_types = {
+            "application/x-solvespace",         // SolveSpace files (.slvs)
+            "model/stl",                        // STL files
+            "application/step",                 // STEP files
+            "application/iges",                 // IGES files
+            "image/svg+xml",                    // SVG files
+            "application/pdf",                  // PDF files
+            "text/uri-list"                     // URI list for file references
+        };
+        
+        _drag_source = Gtk::DragSource::create();
+        _drag_source->set_actions(Gdk::DragAction::COPY);
+        
+        _drag_source->signal_prepare().connect(
+            [this](double x, double y) -> Glib::RefPtr<Gdk::ContentProvider> {
+                Glib::Value<Glib::ustring> drag_desc;
+                drag_desc.init(Glib::Value<Glib::ustring>::value_type());
+                drag_desc.set(C_("accessibility", "Started dragging model for export"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, drag_desc);
+                
+                if (!_receiver->onDragExport) {
+                    return Glib::RefPtr<Gdk::ContentProvider>();
+                }
+                
+                std::string temp_file_path = _receiver->onDragExport();
+                if (temp_file_path.empty()) {
+                    return Glib::RefPtr<Gdk::ContentProvider>();
+                }
+                
+                Glib::ustring uri = Glib::filename_to_uri(temp_file_path);
+                
+                Glib::Value<Glib::ustring> value;
+                value.init(Glib::Value<Glib::ustring>::value_type());
+                value.set(uri);
+                
+                return Gdk::ContentProvider::create_for_value(value);
+            });
+        
+        _drag_source->signal_drag_begin().connect(
+            [this](const Glib::RefPtr<Gdk::Drag>& drag) {
+            });
+        
+        _drag_source->signal_drag_end().connect(
+            [this](const Glib::RefPtr<Gdk::Drag>& drag) {
+                Glib::Value<Glib::ustring> end_desc;
+                end_desc.init(Glib::Value<Glib::ustring>::value_type());
+                end_desc.set(C_("accessibility", "Finished dragging model"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, end_desc);
+                
+                if (_receiver->onDragExportCleanup) {
+                    _receiver->onDragExportCleanup();
+                }
+            });
+        
+        add_controller(_drag_source);
     }
     
     void setup_touch_gestures() {
