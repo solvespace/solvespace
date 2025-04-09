@@ -1115,7 +1115,7 @@ protected:
         _zoom_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
 
         _zoom_gesture->signal_begin().connect(
-            [this]() {
+            [this](Gdk::EventSequence* sequence) {
                 Glib::Value<Glib::ustring> active_desc;
                 active_desc.init(Glib::Value<Glib::ustring>::value_type());
                 active_desc.set(C_("accessibility", "Zoom gesture started"));
@@ -1148,7 +1148,7 @@ protected:
             });
 
         _zoom_gesture->signal_end().connect(
-            [this]() {
+            [this](Gdk::EventSequence* sequence) {
                 Glib::Value<Glib::ustring> end_desc;
                 end_desc.init(Glib::Value<Glib::ustring>::value_type());
                 end_desc.set(C_("accessibility", "Zoom gesture ended"));
@@ -1162,7 +1162,7 @@ protected:
         _rotate_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
 
         _rotate_gesture->signal_begin().connect(
-            [this]() {
+            [this](Gdk::EventSequence* sequence) {
                 Glib::Value<Glib::ustring> active_desc;
                 active_desc.init(Glib::Value<Glib::ustring>::value_type());
                 active_desc.set(C_("accessibility", "Rotation gesture started"));
@@ -1191,7 +1191,7 @@ protected:
             });
 
         _rotate_gesture->signal_end().connect(
-            [this]() {
+            [this](Gdk::EventSequence* sequence) {
                 Glib::Value<Glib::ustring> end_desc;
                 end_desc.init(Glib::Value<Glib::ustring>::value_type());
                 end_desc.set(C_("accessibility", "Rotation gesture ended"));
