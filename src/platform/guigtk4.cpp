@@ -4014,6 +4014,7 @@ void ShowColorPicker(const RgbaColor& initialColor,
     ShowColorPickerImpl(initialColor, onColorSelected);
 }
 }
+}
 
 static Glib::RefPtr<Gtk::Application> gtkApp;
 
@@ -4812,7 +4813,8 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         if (is_rtl) {
             Gtk::Window *window = dynamic_cast<Gtk::Window*>(gtkApp->get_active_window());
             if (window) {
-                window->set_property("text-direction", "rtl");
+                std::string direction = "rtl";
+                window->set_property("text-direction", direction);
             }
         }
     }
