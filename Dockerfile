@@ -27,17 +27,17 @@ RUN apt-get update && apt-get install -y \
 RUN npm install -g stylelint
 
 # Set working directory
-WORKDIR /solvespace
+WORKDIR /app
 
 # Copy source code
-COPY . .
+COPY . /app/
 
 # Initialize submodules
 RUN git submodule update --init extlib/libdxfrw extlib/mimalloc extlib/eigen
 
 # Build SolveSpace with GTK4
-RUN mkdir -p build && \
-    cd build && \
+RUN mkdir -p /app/docker-build && \
+    cd /app/docker-build && \
     cmake .. \
       -DCMAKE_BUILD_TYPE=Release \
       -DENABLE_OPENMP=ON \
