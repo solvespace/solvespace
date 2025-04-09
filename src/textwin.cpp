@@ -328,12 +328,16 @@ void TextWindow::ShowEditControl(int col, const std::string &str, int halfRow) {
 void TextWindow::ShowEditControlWithColorPicker(int col, RgbaColor rgb) {
     SS.ScheduleShowTW();
 
-    editControl.colorPicker.show = true;
     editControl.colorPicker.rgb = rgb;
-    editControl.colorPicker.h = 0;
-    editControl.colorPicker.s = 0;
-    editControl.colorPicker.v = 1;
+    
     ShowEditControl(col, ssprintf("%.2f, %.2f, %.2f", rgb.redF(), rgb.greenF(), rgb.blueF()));
+    
+    Platform::ShowColorPicker(rgb, [this](RgbaColor newColor) {
+        editControl.colorPicker.rgb = newColor;
+        
+        EditControlDone(ssprintf("%.2f, %.2f, %.2f", 
+                                newColor.redF(), newColor.greenF(), newColor.blueF()));
+    });
 }
 
 void TextWindow::ClearScreen() {
@@ -718,216 +722,13 @@ std::shared_ptr<Pixmap> TextWindow::HsvPattern1d(double hue, double sat, int w, 
 }
 
 void TextWindow::ColorPickerDone() {
-    RgbaColor rgb = editControl.colorPicker.rgb;
-    EditControlDone(ssprintf("%.2f, %.2f, %.3f", rgb.redF(), rgb.greenF(), rgb.blueF()));
 }
 
 bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, bool leftDown,
                                           double x, double y)
 {
-    using Platform::Window;
-
-    bool mousePointerAsHand = false;
-
-    if(how == HOVER && !leftDown) {
-        editControl.colorPicker.picker1dActive = false;
-        editControl.colorPicker.picker2dActive = false;
-    }
-
-    if(!editControl.colorPicker.show) return false;
-    if(how == CLICK || (how == HOVER && leftDown)) window->Invalidate();
-
-    static const RgbaColor BaseColor[12] = {
-        RGBi(255,   0,   0),
-        RGBi(  0, 255,   0),
-        RGBi(  0,   0, 255),
-
-        RGBi(  0, 255, 255),
-        RGBi(255,   0, 255),
-        RGBi(255, 255,   0),
-
-        RGBi(255, 127,   0),
-        RGBi(255,   0, 127),
-        RGBi(  0, 255, 127),
-        RGBi(127, 255,   0),
-        RGBi(127,   0, 255),
-        RGBi(  0, 127, 255),
-    };
-
-    double width, height;
-    window->GetContentSize(&width, &height);
-
-    int px = LEFT_MARGIN + CHAR_WIDTH_*editControl.col;
-    int py = (editControl.halfRow - SS.TW.scrollPos)*(LINE_HEIGHT/2);
-
-    py += LINE_HEIGHT + 5;
-
-    static const int WIDTH = 16, HEIGHT = 12;
-    static const int PITCH = 18, SIZE = 15;
-
-    px = min(px, (int)width - (WIDTH*PITCH + 40));
-
-    int pxm = px + WIDTH*PITCH + 11,
-        pym = py + HEIGHT*PITCH + 7;
-
-    int bw = 6;
-    if(how == PAINT) {
-        uiCanvas->DrawRect(px, pxm+bw, py, pym+bw,
-                           /*fillColor=*/{ 50, 50, 50, 255 },
-                           /*outlineColor=*/{},
-                           /*zIndex=*/1);
-        uiCanvas->DrawRect(px+(bw/2), pxm+(bw/2), py+(bw/2), pym+(bw/2),
-                           /*fillColor=*/{ 0, 0, 0, 255 },
-                           /*outlineColor=*/{},
-                           /*zIndex=*/1);
-    } else {
-        if(x < px || x > pxm+(bw/2) ||
-           y < py || y > pym+(bw/2))
-        {
-            return false;
-        }
-    }
-    px += (bw/2);
-    py += (bw/2);
-
-    int i, j;
-    for(i = 0; i < WIDTH/2; i++) {
-        for(j = 0; j < HEIGHT; j++) {
-            Vector rgb;
-            RgbaColor d;
-            if(i == 0 && j < 8) {
-                d = SS.modelColor[j];
-                rgb = Vector::From(d.redF(), d.greenF(), d.blueF());
-            } else if(i == 0) {
-                double a = (j - 8.0)/3.0;
-                rgb = Vector::From(a, a, a);
-            } else {
-                d = BaseColor[j];
-                rgb = Vector::From(d.redF(), d.greenF(), d.blueF());
-                if(i >= 2 && i <= 4) {
-                    double a = (i == 2) ? 0.2 : (i == 3) ? 0.3 : 0.4;
-                    rgb = rgb.Plus(Vector::From(a, a, a));
-                }
-                if(i >= 5 && i <= 7) {
-                    double a = (i == 5) ? 0.7 : (i == 6) ? 0.4 : 0.18;
-                    rgb = rgb.ScaledBy(a);
-                }
-            }
-
-            rgb = rgb.ClampWithin(0, 1);
-            int sx = px + 5 + PITCH*(i + 8) + 4, sy = py + 5 + PITCH*j;
-
-            if(how == PAINT) {
-                uiCanvas->DrawRect(sx, sx+SIZE, sy, sy+SIZE,
-                                   /*fillColor=*/RGBf(rgb.x, rgb.y, rgb.z),
-                                   /*outlineColor=*/{},
-                                   /*zIndex=*/2);
-            } else if(how == CLICK) {
-                if(x >= sx && x <= sx+SIZE && y >= sy && y <= sy+SIZE) {
-                    editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
-                    ColorPickerDone();
-                }
-            } else if(how == HOVER) {
-                if(x >= sx && x <= sx+SIZE && y >= sy && y <= sy+SIZE) {
-                    mousePointerAsHand = true;
-                }
-            }
-        }
-    }
-
-    int hxm, hym;
-    int hx = px + 5, hy = py + 5;
-    hxm = hx + PITCH*7 + SIZE;
-    hym = hy + PITCH*2 + SIZE;
-    if(how == PAINT) {
-        uiCanvas->DrawRect(hx, hxm, hy, hym,
-                           /*fillColor=*/editControl.colorPicker.rgb,
-                           /*outlineColor=*/{},
-                           /*zIndex=*/2);
-    } else if(how == CLICK) {
-        if(x >= hx && x <= hxm && y >= hy && y <= hym) {
-            ColorPickerDone();
-        }
-    } else if(how == HOVER) {
-        if(x >= hx && x <= hxm && y >= hy && y <= hym) {
-            mousePointerAsHand = true;
-        }
-    }
-
-    hy += PITCH*3;
-
-    hxm = hx + PITCH*7 + SIZE;
-    hym = hy + PITCH*1 + SIZE;
-    // The one-dimensional thing to pick the color's value
-    if(how == PAINT) {
-        uiCanvas->DrawPixmap(HsvPattern1d(editControl.colorPicker.h,
-                                          editControl.colorPicker.s,
-                                          hxm-hx, hym-hy),
-                             hx, hy, /*zIndex=*/2);
-
-        int cx = hx+(int)((hxm-hx)*(1.0 - editControl.colorPicker.v));
-        uiCanvas->DrawLine(cx, hy, cx, hym,
-                           /*fillColor=*/{ 0, 0, 0, 255 },
-                           /*outlineColor=*/{},
-                           /*zIndex=*/3);
-    } else if(how == CLICK ||
-          (how == HOVER && leftDown && editControl.colorPicker.picker1dActive))
-    {
-        if(x >= hx && x <= hxm && y >= hy && y <= hym) {
-            editControl.colorPicker.v = 1 - (x - hx)/(hxm - hx);
-
-            Vector rgb = HsvToRgb(Vector::From(
-                            6*editControl.colorPicker.h,
-                            editControl.colorPicker.s,
-                            editControl.colorPicker.v));
-            editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
-
-            editControl.colorPicker.picker1dActive = true;
-        }
-    }
-    // and advance our vertical position
-    hy += PITCH*2;
-
-    hxm = hx + PITCH*7 + SIZE;
-    hym = hy + PITCH*6 + SIZE;
-    // Two-dimensional thing to pick a color by hue and saturation
-    if(how == PAINT) {
-        uiCanvas->DrawPixmap(HsvPattern2d(hxm-hx, hym-hy), hx, hy,
-                             /*zIndex=*/2);
-
-        int cx = hx+(int)((hxm-hx)*editControl.colorPicker.h),
-            cy = hy+(int)((hym-hy)*editControl.colorPicker.s);
-        uiCanvas->DrawLine(cx - 5, cy, cx + 5, cy,
-                           /*fillColor=*/{ 255, 255, 255, 255 },
-                           /*outlineColor=*/{},
-                           /*zIndex=*/3);
-        uiCanvas->DrawLine(cx, cy - 5, cx, cy + 5,
-                           /*fillColor=*/{ 255, 255, 255, 255 },
-                           /*outlineColor=*/{},
-                           /*zIndex=*/3);
-    } else if(how == CLICK ||
-          (how == HOVER && leftDown && editControl.colorPicker.picker2dActive))
-    {
-        if(x >= hx && x <= hxm && y >= hy && y <= hym) {
-            double h = (x - hx)/(hxm - hx),
-                   s = (y - hy)/(hym - hy);
-            editControl.colorPicker.h = h;
-            editControl.colorPicker.s = s;
-
-            Vector rgb = HsvToRgb(Vector::From(
-                            6*editControl.colorPicker.h,
-                            editControl.colorPicker.s,
-                            editControl.colorPicker.v));
-            editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
-
-            editControl.colorPicker.picker2dActive = true;
-        }
-    }
-
-    window->SetCursor(mousePointerAsHand ?
-                      Window::Cursor::HAND :
-                      Window::Cursor::POINTER);
-    return true;
+    return false;
+}
 }
 
 void TextWindow::Paint() {

@@ -44,6 +44,11 @@
 #include <gtkmm/eventcontrollerscroll.h>
 #include <gtkmm/eventcontrollerfocus.h>
 #include <gtkmm/gestureclick.h>
+#include <gtkmm/gesturerotate.h>
+#include <gtkmm/gesturezoom.h>
+#include <gtkmm/dragsource.h>
+#include <gtkmm/droptarget.h>
+#include <gtkmm/colordialog.h>
 #include <gtkmm/label.h>
 #include <gtkmm/shortcutcontroller.h>
 #include <gtkmm/shortcut.h>
@@ -999,12 +1004,19 @@ protected:
         _drag_source = Gtk::DragSource::create();
         _drag_source->set_actions(Gdk::DragAction::COPY);
         
+        _drag_source->set_touch_only(false);  // Allow both mouse and touch
+        
         _drag_source->signal_prepare().connect(
             [this](double x, double y) -> Glib::RefPtr<Gdk::ContentProvider> {
                 Glib::Value<Glib::ustring> drag_desc;
                 drag_desc.init(Glib::Value<Glib::ustring>::value_type());
                 drag_desc.set(C_("accessibility", "Started dragging model for export"));
                 update_property(Gtk::Accessible::Property::DESCRIPTION, drag_desc);
+                
+                Glib::Value<Glib::ustring> announce_value;
+                announce_value.init(Glib::Value<Glib::ustring>::value_type());
+                announce_value.set(C_("accessibility", "Dragging model. Release to export."));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, announce_value);
                 
                 if (!_receiver->onDragExport) {
                     return Glib::RefPtr<Gdk::ContentProvider>();
@@ -1026,6 +1038,21 @@ protected:
         
         _drag_source->signal_drag_begin().connect(
             [this](const Glib::RefPtr<Gdk::Drag>& drag) {
+                auto surface = get_native()->get_surface();
+                if (surface) {
+                    auto snapshot = Gtk::Snapshot::create();
+                    snapshot->append_color(Gdk::RGBA("rgba(0,120,215,0.5)"), 
+                                          Graphene::Rect::create(0, 0, 64, 64));
+                    auto paintable = snapshot->to_paintable(nullptr, Graphene::Size::create(64, 64));
+                    if (paintable) {
+                        drag->set_icon(paintable, 32, 32);
+                    }
+                }
+                
+                Glib::Value<Glib::ustring> state_value;
+                state_value.init(Glib::Value<Glib::ustring>::value_type());
+                state_value.set("Element is being dragged");
+                update_property(Gtk::Accessible::Property::DESCRIPTION, state_value);
             });
         
         _drag_source->signal_drag_end().connect(
@@ -1034,6 +1061,13 @@ protected:
                 end_desc.init(Glib::Value<Glib::ustring>::value_type());
                 end_desc.set(C_("accessibility", "Finished dragging model"));
                 update_property(Gtk::Accessible::Property::DESCRIPTION, end_desc);
+                
+                Glib::Value<Glib::ustring> announce_value;
+                announce_value.init(Glib::Value<Glib::ustring>::value_type());
+                announce_value.set(C_("accessibility", "Model export " + 
+                                    (drag->get_selected_action() == Gdk::DragAction::COPY ? 
+                                     "completed" : "cancelled")));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, announce_value);
                 
                 if (_receiver->onDragExportCleanup) {
                     _receiver->onDragExportCleanup();
@@ -3310,8 +3344,9 @@ public:
 class FileDialogNativeImplGtk final : public FileDialogImplGtk {
 public:
     Glib::RefPtr<Gtk::FileChooserNative> gtkNative;
+    bool isSave;
 
-    FileDialogNativeImplGtk(Gtk::Window &gtkParent, bool isSave) {
+    FileDialogNativeImplGtk(Gtk::Window &gtkParent, bool isSave) : isSave(isSave) {
         gtkNative = Gtk::FileChooserNative::create(
             isSave ? C_("title", "Save File")
                    : C_("title", "Open File"),
@@ -3328,7 +3363,8 @@ public:
         gtkNative->add_css_class("solvespace-file-dialog");
         gtkNative->add_css_class(isSave ? "save-dialog" : "open-dialog");
 
-        gtkNative->set_title(isSave ? "Save SolveSpace File" : "Open SolveSpace File");
+        gtkNative->set_title(isSave ? C_("dialog-title", "Save SolveSpace File") 
+                                    : C_("dialog-title", "Open SolveSpace File"));
 
         gtkNative->set_property("accessible-role", std::string("dialog"));
         
@@ -3340,13 +3376,34 @@ public:
         Glib::Value<Glib::ustring> desc_value;
         desc_value.init(Glib::Value<Glib::ustring>::value_type());
         desc_value.set(isSave ? C_("dialog-description", "Dialog to save SolveSpace files")
-                   : C_("dialog-description", "Dialog to open SolveSpace files"));
+                             : C_("dialog-description", "Dialog to open SolveSpace files"));
         gtkNative->update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
 
-        if(isSave) {
+        if(!isSave) {
+            gtkNative->set_select_multiple(true);
+        } else {
             gtkNative->set_current_name("untitled");
         }
 
+        auto home_dir = Glib::get_home_dir();
+        if(!home_dir.empty()) {
+            gtkNative->set_current_folder(Gio::File::create_for_path(home_dir));
+        }
+
+        gtkNative->set_create_folders(true);
+        
+        gtkNative->set_search_mode(true);
+        
+        gtkNative->set_show_hidden(false);
+        
+        gtkNative->set_default_size(800, 600);
+        
+        if (IsRTL()) {
+            Glib::Value<Glib::ustring> rtl_value;
+            rtl_value.init(Glib::Value<Glib::ustring>::value_type());
+            rtl_value.set("rtl");
+            gtkNative->update_property(Gtk::Accessible::Property::ORIENTATION, rtl_value);
+        }
 
         InitFileChooser(*gtkNative);
     }
@@ -3382,11 +3439,19 @@ public:
             widget->add_css_class(isSave ? "save-dialog" : "open-dialog");
 
             widget->set_property("accessible-role", std::string("dialog"));
-            widget->update_property(Gtk::Accessible::Property::LABEL,
-                isSave ? C_("dialog-title", "Save SolveSpace File") : C_("dialog-title", "Open SolveSpace File"));
-            widget->update_property(Gtk::Accessible::Property::DESCRIPTION,
-                isSave ? C_("dialog-description", "Dialog for saving SolveSpace files")
-                       : C_("dialog-description", "Dialog for opening SolveSpace files"));
+            
+            Glib::Value<Glib::ustring> label_value;
+            label_value.init(Glib::Value<Glib::ustring>::value_type());
+            label_value.set(isSave ? C_("dialog-title", "Save SolveSpace File") 
+                                   : C_("dialog-title", "Open SolveSpace File"));
+            widget->update_property(Gtk::Accessible::Property::LABEL, label_value);
+            
+            Glib::Value<Glib::ustring> desc_value;
+            desc_value.init(Glib::Value<Glib::ustring>::value_type());
+            desc_value.set(isSave ? C_("dialog-description", "Dialog for saving SolveSpace files")
+                                  : C_("dialog-description", "Dialog for opening SolveSpace files"));
+            widget->update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
+            
             Glib::Value<Glib::ustring> modal_value;
             modal_value.init(Glib::Value<Glib::ustring>::value_type());
             modal_value.set("Dialog is modal");
@@ -3403,7 +3468,6 @@ public:
             auto escape_shortcut = Gtk::Shortcut::create(
                 Gtk::KeyvalTrigger::create(GDK_KEY_Escape, Gdk::ModifierType(0)),
                 escape_action);
-            escape_shortcut = Gtk::Shortcut::create(escape_shortcut->get_trigger(), escape_action);
             shortcut_controller->add_shortcut(escape_shortcut);
 
             auto enter_action = Gtk::CallbackAction::create([this](Gtk::Widget&, const Glib::VariantBase&) {
@@ -3413,7 +3477,6 @@ public:
             auto enter_shortcut = Gtk::Shortcut::create(
                 Gtk::KeyvalTrigger::create(GDK_KEY_Return, Gdk::ModifierType(0)),
                 enter_action);
-            enter_shortcut = Gtk::Shortcut::create(enter_shortcut->get_trigger(), enter_action);
             shortcut_controller->add_shortcut(enter_shortcut);
 
             widget->add_controller(shortcut_controller);
@@ -3437,7 +3500,9 @@ public:
                         }
                     }
                     return false; // Allow event propagation
-                });
+                }, 
+                false); // Connect before default handler
+            
             widget->add_controller(key_controller);
 
             widget->set_tooltip_text(
@@ -3496,6 +3561,228 @@ std::vector<Platform::Path> GetFontFiles() {
 
 void OpenInBrowser(const std::string &url) {
     Gio::AppInfo::launch_default_for_uri(url);
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+class ClipboardImplGtk {
+public:
+    Glib::RefPtr<Gdk::Clipboard> clipboard;
+    
+    ClipboardImplGtk() {
+        auto display = Gdk::Display::get_default();
+        if (display) {
+            clipboard = display->get_clipboard();
+        }
+    }
+    
+    void SetText(const std::string &text) {
+        if (clipboard) {
+            clipboard->set_text(text);
+        }
+    }
+    
+    std::string GetText() {
+        std::string result;
+        if (clipboard) {
+            auto future = clipboard->read_text_async();
+            
+            try {
+                result = future.get();
+            } catch (const Glib::Error &e) {
+                dbp("Clipboard error: %s", e.what().c_str());
+            }
+        }
+        return result;
+    }
+    
+    void SetImage(const Glib::RefPtr<Gdk::Texture> &texture) {
+        if (clipboard && texture) {
+            clipboard->set_texture(texture);
+        }
+    }
+    
+    bool HasText() {
+        if (clipboard) {
+            auto formats = clipboard->get_formats();
+            return formats.contain_mime_type("text/plain");
+        }
+        return false;
+    }
+    
+    bool HasImage() {
+        if (clipboard) {
+            auto formats = clipboard->get_formats();
+            return formats.contain_mime_type("image/png") || 
+                   formats.contain_mime_type("image/jpeg") ||
+                   formats.contain_mime_type("image/svg+xml");
+        }
+        return false;
+    }
+    
+    void Clear() {
+        if (clipboard) {
+            clipboard->set_text("");
+        }
+    }
+    
+    void SetData(const std::string &mime_type, const std::vector<uint8_t> &data) {
+        if (clipboard) {
+            auto bytes = Glib::Bytes::create(data.data(), data.size());
+            clipboard->set_content(Gdk::ContentProvider::create_for_bytes(mime_type, bytes));
+        }
+    }
+    
+    std::vector<uint8_t> GetData(const std::string &mime_type) {
+        std::vector<uint8_t> result;
+        if (clipboard) {
+            try {
+                auto future = clipboard->read_async(mime_type);
+                
+                auto value = future.get();
+                
+                if (value.gobj() && G_VALUE_TYPE(value.gobj()) == G_TYPE_BYTES) {
+                    auto bytes = Glib::Value<Glib::Bytes>::cast_dynamic(value).get();
+                    gsize size = 0;
+                    auto data = static_cast<const uint8_t*>(bytes->get_data(size));
+                    result.assign(data, data + size);
+                }
+            } catch (const Glib::Error &e) {
+                dbp("Clipboard error: %s", e.what().c_str());
+            }
+        }
+        return result;
+    }
+};
+
+static std::unique_ptr<ClipboardImplGtk> g_clipboard;
+
+void InitClipboard() {
+    g_clipboard = std::make_unique<ClipboardImplGtk>();
+}
+
+void SetClipboardText(const std::string &text) {
+    if (g_clipboard) {
+        g_clipboard->SetText(text);
+    }
+}
+
+std::string GetClipboardText() {
+    if (g_clipboard) {
+        return g_clipboard->GetText();
+    }
+    return "";
+}
+
+void SetClipboardImage(const Glib::RefPtr<Gdk::Texture> &texture) {
+    if (g_clipboard) {
+        g_clipboard->SetImage(texture);
+    }
+}
+
+bool ClipboardHasText() {
+    if (g_clipboard) {
+        return g_clipboard->HasText();
+    }
+    return false;
+}
+
+bool ClipboardHasImage() {
+    if (g_clipboard) {
+        return g_clipboard->HasImage();
+    }
+    return false;
+}
+
+void ClearClipboard() {
+    if (g_clipboard) {
+        g_clipboard->Clear();
+    }
+}
+
+void SetClipboardData(const std::string &mime_type, const std::vector<uint8_t> &data) {
+    if (g_clipboard) {
+        g_clipboard->SetData(mime_type, data);
+    }
+}
+
+std::vector<uint8_t> GetClipboardData(const std::string &mime_type) {
+    if (g_clipboard) {
+        return g_clipboard->GetData(mime_type);
+    }
+    return {};
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+class ColorPickerImplGtk {
+public:
+    Glib::RefPtr<Gtk::ColorDialog> colorDialog;
+    std::function<void(const RgbaColor&)> callback;
+    
+    ColorPickerImplGtk() {
+        colorDialog = Gtk::ColorDialog::create();
+        colorDialog->set_title(C_("dialog-title", "Choose a Color"));
+        colorDialog->set_modal(true);
+        
+        colorDialog->set_property("accessible-role", std::string("color-chooser"));
+        
+        Glib::Value<Glib::ustring> label_value;
+        label_value.init(Glib::Value<Glib::ustring>::value_type());
+        label_value.set(C_("dialog-title", "Color Picker"));
+        colorDialog->update_property(Gtk::Accessible::Property::LABEL, label_value);
+        
+        Glib::Value<Glib::ustring> desc_value;
+        desc_value.init(Glib::Value<Glib::ustring>::value_type());
+        desc_value.set(C_("dialog-description", "Dialog for selecting colors"));
+        colorDialog->update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
+    }
+    
+    void Show(Gtk::Window& parent, const RgbaColor& initialColor, 
+              std::function<void(const RgbaColor&)> onColorSelected) {
+        Gdk::RGBA gdkColor;
+        gdkColor.set_rgba(initialColor.redF(), initialColor.greenF(), 
+                         initialColor.blueF(), initialColor.alphaF());
+        
+        callback = onColorSelected;
+        
+        colorDialog->choose_rgba(parent, gdkColor, 
+            sigc::mem_fun(*this, &ColorPickerImplGtk::OnColorSelected));
+    }
+    
+private:
+    void OnColorSelected(const Glib::RefPtr<Gio::AsyncResult>& result) {
+        try {
+            Gdk::RGBA gdkColor = colorDialog->choose_rgba_finish(result);
+            
+            RgbaColor color = RGBf(gdkColor.get_red(), gdkColor.get_green(), 
+                                  gdkColor.get_blue(), gdkColor.get_alpha());
+            
+            if (callback) {
+                callback(color);
+            }
+        } catch (const Glib::Error& e) {
+            dbp("Color picker error: %s", e.what().c_str());
+        }
+    }
+};
+
+static std::unique_ptr<ColorPickerImplGtk> g_colorPicker;
+
+void InitColorPicker() {
+    g_colorPicker = std::make_unique<ColorPickerImplGtk>();
+}
+
+void ShowColorPicker(const RgbaColor& initialColor, 
+                    std::function<void(const RgbaColor&)> onColorSelected) {
+    if (g_colorPicker && gtkApp) {
+        auto window = gtkApp->get_active_window();
+        if (window) {
+            g_colorPicker->Show(*window, initialColor, onColorSelected);
+        }
+    }
 }
 
 static Glib::RefPtr<Gtk::Application> gtkApp;
@@ -4324,6 +4611,9 @@ void RunGui() {
     } else {
         unsetenv("GTK_A11Y");
     }
+    
+    InitClipboard();
+    InitColorPicker();
 
     if (!gtkApp->is_registered()) {
         gtkApp->register_application();

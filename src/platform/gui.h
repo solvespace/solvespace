@@ -400,6 +400,7 @@ FileDialogRef CreateSaveFileDialog(WindowRef parentWindow);
 
 std::vector<Platform::Path> GetFontFiles();
 void OpenInBrowser(const std::string &url);
+void ShowColorPicker(const RgbaColor& initialColor, std::function<void(const RgbaColor&)> onColorSelected);
 
 // Check if current text direction is RTL
 inline bool IsRTL() {
