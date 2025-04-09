@@ -925,10 +925,21 @@ protected:
 
     void setup_drop_target() {
         _accepted_mime_types = {
-            "text/uri-list",               // Standard URI list (most common)
-            "application/x-solvespace",    // SolveSpace files
-            "application/octet-stream",    // Generic binary data
-            "text/plain"                   // Plain text
+            "text/uri-list",                    // Standard URI list (most common)
+            "application/x-solvespace",         // SolveSpace files (.slvs)
+            "application/dxf",                  // DXF files
+            "application/acad",                 // AutoCAD files (DWG)
+            "application/vnd.ms-pki.stl",       // STL files
+            "application/octet-stream",         // Generic binary data
+            "model/stl",                        // STL files (alternate MIME)
+            "application/step",                 // STEP files
+            "application/iges",                 // IGES files
+            "application/idf",                  // IDF/EMN files
+            "image/svg+xml",                    // SVG files
+            "application/postscript",           // EPS/PS files
+            "application/pdf",                  // PDF files
+            "text/plain",                       // Text files (including G-code)
+            "application/hpgl"                  // HPGL/PLT files
         };
 
         _drop_target = Gtk::DropTarget::create(G_TYPE_STRING, Gdk::DragAction::COPY);
