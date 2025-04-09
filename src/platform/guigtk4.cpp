@@ -4014,7 +4014,6 @@ void ShowColorPicker(const RgbaColor& initialColor,
     ShowColorPickerImpl(initialColor, onColorSelected);
 }
 }
-}
 
 static Glib::RefPtr<Gtk::Application> gtkApp;
 
