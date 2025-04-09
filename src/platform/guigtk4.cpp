@@ -4008,14 +4008,17 @@ static void ShowColorPickerImpl(const RgbaColor& initialColor,
     }
 }
 
+namespace SolveSpace {
 namespace Platform {
 void ShowColorPicker(const RgbaColor& initialColor,
                     std::function<void(const RgbaColor&)> onColorSelected) {
     ShowColorPickerImpl(initialColor, onColorSelected);
 }
-}
+} // namespace Platform
+} // namespace SolveSpace
 
 static Glib::RefPtr<Gtk::Application> gtkApp;
+static Glib::RefPtr<Gtk::Settings> settings;
 
 std::vector<std::string> InitGui(int argc, char **argv) {
     std::vector<std::string> args;
@@ -5089,6 +5092,7 @@ static void ClearGui() {
     gtkApp.reset();
 }
 
+    RunGui();
     return args;
 }
 
