@@ -586,8 +586,10 @@ class GtkGLWidget : public Gtk::GLArea {
     Glib::RefPtr<Gtk::GestureDrag> _drag_gesture;
     Glib::RefPtr<Gtk::GestureSwipe> _swipe_gesture;
     Glib::RefPtr<Gtk::GesturePan> _pan_gesture;
+    Glib::RefPtr<Gtk::GestureZoom> _pinch_gesture;
     
     double _zoom_scale_start = 1.0;
+    double _pinch_scale_start = 1.0;
     double _last_announced_scale = 1.0;
     double _drag_start_x = 0.0;
     double _drag_start_y = 0.0;
@@ -1145,6 +1147,16 @@ protected:
     }
 
     void setup_touch_gestures() {
+        Glib::Value<bool> touch_value;
+        touch_value.init(Glib::Value<bool>::value_type());
+        touch_value.set(true);
+        update_property(Gtk::Accessible::Property::HAS_TOUCH_INTERFACE, touch_value);
+        
+        Glib::Value<Glib::ustring> live_value;
+        live_value.init(Glib::Value<Glib::ustring>::value_type());
+        live_value.set("polite");
+        update_property(Gtk::Accessible::Property::LIVE, live_value);
+        
         _zoom_gesture = Gtk::GestureZoom::create();
         _zoom_gesture->set_name("gl-widget-zoom-gesture");
         _zoom_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
@@ -1156,20 +1168,19 @@ protected:
                 active_desc.set(C_("accessibility", "Zoom gesture started"));
                 update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
                 
-                Glib::Value<Glib::ustring> live_value;
-                live_value.init(Glib::Value<Glib::ustring>::value_type());
-                live_value.set("polite");
-                update_property(Gtk::Accessible::Property::LIVE, live_value);
-                
                 _zoom_scale_start = 1.0;
             });
             
         _zoom_gesture->signal_scale_changed().connect(
             [this](double scale) {
                 double new_scale = _zoom_scale_start * scale;
+                double x, y;
+                get_pointer_position(x, y);
                 
                 TouchGestureEvent event = {};
                 event.type = TouchGestureEvent::Type::ZOOM;
+                event.x = x;
+                event.y = y;
                 event.zoom_scale = new_scale;
                 
                 if (std::abs(new_scale - _last_announced_scale) > 0.5) {
@@ -1180,6 +1191,10 @@ protected:
                     update_property(Gtk::Accessible::Property::DESCRIPTION, scale_desc);
                     _last_announced_scale = new_scale;
                 }
+                
+                double scroll_delta = (scale > 1.0) ? -1.0 : 1.0;
+                process_pointer_event(MouseEvent::Type::SCROLL_VERT, x, y,
+                                    GdkModifierType(0), 0, scroll_delta);
                 
                 if (_receiver && _receiver->onTouchGesture) {
                     _receiver->onTouchGesture(event);
@@ -1214,6 +1229,8 @@ protected:
             [this](double offset_x, double offset_y) {
                 TouchGestureEvent event = {};
                 event.type = TouchGestureEvent::Type::PAN;
+                event.x = _drag_start_x;
+                event.y = _drag_start_y;
                 event.pan_delta_x = offset_x;
                 event.pan_delta_y = offset_y;
                 
@@ -1251,8 +1268,13 @@ protected:
         
         _swipe_gesture->signal_swipe().connect(
             [this](double velocity_x, double velocity_y) {
+                double x, y;
+                get_pointer_position(x, y);
+                
                 TouchGestureEvent event = {};
                 event.type = TouchGestureEvent::Type::SWIPE;
+                event.x = x;
+                event.y = y;
                 event.swipe_velocity_x = velocity_x;
                 event.swipe_velocity_y = velocity_y;
                 
@@ -1266,7 +1288,9 @@ protected:
                     direction = velocity_y > 0 ? C_("accessibility", "down") : C_("accessibility", "up");
                 }
                 
-                swipe_desc.set(Glib::ustring::compose(C_("accessibility", "Swipe %1 detected"), direction));
+                swipe_desc.set(Glib::ustring::compose(C_("accessibility", "Swipe %1 detected with velocity %2"),
+                                                    direction, 
+                                                    static_cast<int>(std::sqrt(velocity_x*velocity_x + velocity_y*velocity_y))));
                 update_property(Gtk::Accessible::Property::DESCRIPTION, swipe_desc);
                 
                 if (_receiver && _receiver->onTouchGesture) {
@@ -1290,8 +1314,13 @@ protected:
             
         _rotate_gesture->signal_angle_changed().connect(
             [this](double angle, double angle_delta) {
+                double x, y;
+                get_pointer_position(x, y);
+                
                 TouchGestureEvent event = {};
                 event.type = TouchGestureEvent::Type::ROTATE;
+                event.x = x;
+                event.y = y;
                 event.rotation_angle = angle;
                 event.rotation_angle_delta = angle_delta;
                 
@@ -1303,7 +1332,11 @@ protected:
                         C_("accessibility", "clockwise") : 
                         C_("accessibility", "counterclockwise");
                     
-                    rotate_desc.set(Glib::ustring::compose(C_("accessibility", "Rotating %1"), direction));
+                    double degrees = angle_delta * 180.0 / M_PI;
+                    
+                    rotate_desc.set(Glib::ustring::compose(C_("accessibility", "Rotating %1 by %2 degrees"),
+                                                         direction, 
+                                                         static_cast<int>(std::abs(degrees))));
                     update_property(Gtk::Accessible::Property::DESCRIPTION, rotate_desc);
                 }
                 
@@ -1320,75 +1353,61 @@ protected:
                 update_property(Gtk::Accessible::Property::DESCRIPTION, end_desc);
             });
             
-        _pan_gesture = Gtk::GesturePan::create(Gtk::Orientation::HORIZONTAL);
-        _pan_gesture->set_name("gl-widget-pan-gesture");
-        _pan_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        _pinch_gesture = Gtk::GestureZoom::create();
+        _pinch_gesture->set_name("gl-widget-pinch-gesture");
+        _pinch_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
         
-        _pan_gesture->signal_pan().connect(
-            [this](Gtk::PanDirection direction, double offset) {
+        _pinch_gesture->signal_begin().connect(
+            [this](Gdk::EventSequence* sequence) {
                 Glib::Value<Glib::ustring> active_desc;
                 active_desc.init(Glib::Value<Glib::ustring>::value_type());
-                active_desc.set(C_("accessibility", "Pan gesture in progress"));
+                active_desc.set(C_("accessibility", "Pinch gesture started"));
                 update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
+                
+                _pinch_scale_start = 1.0;
+            });
+            
+        _pinch_gesture->signal_scale_changed().connect(
+            [this](double scale) {
+                double new_scale = _pinch_scale_start * scale;
+                double x, y;
+                get_pointer_position(x, y);
+                
+                TouchGestureEvent event = {};
+                event.type = TouchGestureEvent::Type::PINCH;
+                event.x = x;
+                event.y = y;
+                event.pinch_scale = new_scale;
+                
+                std::string direction = scale > 1.0 ? 
+                    C_("accessibility", "expanding") : 
+                    C_("accessibility", "contracting");
+                
+                Glib::Value<Glib::ustring> pinch_desc;
+                pinch_desc.init(Glib::Value<Glib::ustring>::value_type());
+                pinch_desc.set(Glib::ustring::compose(C_("accessibility", "Pinch %1 with scale factor %2"),
+                                                    direction,
+                                                    static_cast<int>(new_scale * 100) / 100.0));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, pinch_desc);
+                
+                if (_receiver && _receiver->onTouchGesture) {
+                    _receiver->onTouchGesture(event);
+                }
+            });
+            
+        _pinch_gesture->signal_end().connect(
+            [this](Gdk::EventSequence* sequence) {
+                Glib::Value<Glib::ustring> end_desc;
+                end_desc.init(Glib::Value<Glib::ustring>::value_type());
+                end_desc.set(C_("accessibility", "Pinch gesture ended"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, end_desc);
             });
             
         add_controller(_zoom_gesture);
         add_controller(_rotate_gesture);
         add_controller(_drag_gesture);
         add_controller(_swipe_gesture);
-        add_controller(_pan_gesture);
-        
-        Glib::Value<bool> touch_value;
-        touch_value.init(Glib::Value<bool>::value_type());
-        touch_value.set(true);
-        update_property(Gtk::Accessible::Property::HAS_TOUCH_INTERFACE, touch_value);
-
-        _zoom_gesture->signal_scale_changed().connect(
-            [this](double scale) {
-                double scroll_delta = (scale > 1.0) ? -1.0 : 1.0;
-                double x, y;
-                get_pointer_position(x, y);
-
-                Glib::Value<Glib::ustring> zoom_desc;
-                zoom_desc.init(Glib::Value<Glib::ustring>::value_type());
-                zoom_desc.set(Glib::ustring::compose(C_("accessibility", "Zooming with scale factor %1"),
-                                                   static_cast<int>(scale * 100) / 100.0));
-                update_property(Gtk::Accessible::Property::DESCRIPTION, zoom_desc);
-
-                process_pointer_event(MouseEvent::Type::SCROLL_VERT, x, y,
-                                    GdkModifierType(0), 0, scroll_delta);
-
-                if (_receiver->onTouchGesture) {
-                    TouchGestureEvent event = {};
-                    event.type = TouchGestureEvent::Type::ZOOM;
-                    event.x = x;
-                    event.y = y;
-                    event.scale = scale;
-                    _receiver->onTouchGesture(event);
-                }
-            });
-
-        _zoom_gesture->signal_end().connect(
-            [this](Gdk::EventSequence* sequence) {
-                Glib::Value<Glib::ustring> end_desc;
-                end_desc.init(Glib::Value<Glib::ustring>::value_type());
-                end_desc.set(C_("accessibility", "Zoom gesture ended"));
-                update_property(Gtk::Accessible::Property::DESCRIPTION, end_desc);
-            });
-
-        add_controller(_zoom_gesture);
-
-        _rotate_gesture = Gtk::GestureRotate::create();
-        _rotate_gesture->set_name("gl-widget-rotate-gesture");
-        _rotate_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
-
-        _rotate_gesture->signal_begin().connect(
-            [this](Gdk::EventSequence* sequence) {
-                Glib::Value<Glib::ustring> active_desc;
-                active_desc.init(Glib::Value<Glib::ustring>::value_type());
-                active_desc.set(C_("accessibility", "Rotation gesture started"));
-                update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
-            });
+        add_controller(_pinch_gesture);
 
         _rotate_gesture->signal_angle_changed().connect(
             [this](double angle, double angle_delta) {
@@ -2041,6 +2060,7 @@ class GtkWindow : public Gtk::Window {
 
     bool _is_under_cursor;
     bool _is_fullscreen;
+    int _last_scale_factor;
     Glib::RefPtr<Gtk::ConstraintLayout> _constraint_layout;
 
     void setup_layout_constraints() {
@@ -2323,11 +2343,28 @@ public:
         _editor_overlay(receiver),
         _scrollbar(Gtk::Adjustment::create(0, 0, 100, 1, 10, 10), Gtk::Orientation::VERTICAL),
         _is_under_cursor(false),
-        _is_fullscreen(false)
+        _is_fullscreen(false),
+        _last_scale_factor(get_scale_factor())
     {
         _constraint_layout = Gtk::ConstraintLayout::create();
         set_layout_manager(_constraint_layout);
         setup_layout_constraints();
+        
+        property_scale_factor().signal_changed().connect([this]() {
+            int new_scale_factor = get_scale_factor();
+            if (new_scale_factor != _last_scale_factor) {
+                Glib::Value<Glib::ustring> scale_desc;
+                scale_desc.init(Glib::Value<Glib::ustring>::value_type());
+                scale_desc.set(Glib::ustring::compose(C_("accessibility", "Display scale changed to %1"), new_scale_factor));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, scale_desc);
+                
+                if (_receiver && _receiver->onScaleFactorChanged) {
+                    _receiver->onScaleFactorChanged(new_scale_factor);
+                }
+                
+                _last_scale_factor = new_scale_factor;
+            }
+        });
 
         auto css_provider = Gtk::CssProvider::create();
         
@@ -4320,7 +4357,30 @@ std::string GetClipboardText() {
 }
 
 void SetClipboardImage(const Glib::RefPtr<Gdk::Texture> &texture) {
-    if (g_clipboard && texture) {
+    if (!g_clipboard) {
+        dbp("Error: Clipboard not initialized");
+        return;
+    }
+    
+    if (!texture) {
+        dbp("Error: Null texture provided to SetClipboardImage");
+        
+        auto window = Gtk::Window::get_active_window();
+        if (window) {
+            Glib::Value<Glib::ustring> error_value;
+            error_value.init(Glib::Value<Glib::ustring>::value_type());
+            error_value.set(C_("accessibility", "Failed to copy image to clipboard: invalid image data"));
+            window->update_property(Gtk::Accessible::Property::DESCRIPTION, error_value);
+            
+            Glib::Value<Glib::ustring> live_value;
+            live_value.init(Glib::Value<Glib::ustring>::value_type());
+            live_value.set("assertive");  // Higher priority for errors
+            window->update_property(Gtk::Accessible::Property::LIVE, live_value);
+        }
+        return;
+    }
+    
+    try {
         g_clipboard->SetImage(texture);
         
         auto window = Gtk::Window::get_active_window();
@@ -4335,17 +4395,32 @@ void SetClipboardImage(const Glib::RefPtr<Gdk::Texture> &texture) {
             live_value.set("polite");
             window->update_property(Gtk::Accessible::Property::LIVE, live_value);
             
-            if (texture) {
-                int width = texture->get_width();
-                int height = texture->get_height();
-                
-                Glib::Value<Glib::ustring> info_value;
-                info_value.init(Glib::Value<Glib::ustring>::value_type());
-                info_value.set(Glib::ustring::compose(
-                    C_("accessibility", "Image size: %1×%2 pixels"),
-                    width, height));
-                window->update_property(Gtk::Accessible::Property::DESCRIPTION, info_value);
-            }
+            int width = texture->get_width();
+            int height = texture->get_height();
+            
+            Glib::Value<Glib::ustring> info_value;
+            info_value.init(Glib::Value<Glib::ustring>::value_type());
+            info_value.set(Glib::ustring::compose(
+                C_("accessibility", "Image size: %1×%2 pixels"),
+                width, height));
+            window->update_property(Gtk::Accessible::Property::DESCRIPTION, info_value);
+        }
+    } catch (const Glib::Error& e) {
+        dbp("Error copying image to clipboard: %s", e.what().c_str());
+        
+        auto window = Gtk::Window::get_active_window();
+        if (window) {
+            Glib::Value<Glib::ustring> error_value;
+            error_value.init(Glib::Value<Glib::ustring>::value_type());
+            error_value.set(Glib::ustring::compose(
+                C_("accessibility", "Failed to copy image to clipboard: %1"),
+                e.what()));
+            window->update_property(Gtk::Accessible::Property::DESCRIPTION, error_value);
+            
+            Glib::Value<Glib::ustring> live_value;
+            live_value.init(Glib::Value<Glib::ustring>::value_type());
+            live_value.set("assertive");  // Higher priority for errors
+            window->update_property(Gtk::Accessible::Property::LIVE, live_value);
         }
     }
 }
@@ -4384,7 +4459,12 @@ std::vector<uint8_t> GetClipboardData(const std::string &mime_type) {
 }
 
 Glib::RefPtr<Gdk::Texture> GetClipboardImage() {
-    if (g_clipboard) {
+    if (!g_clipboard) {
+        dbp("Error: Clipboard not initialized");
+        return Glib::RefPtr<Gdk::Texture>();
+    }
+    
+    try {
         auto image = g_clipboard->GetImage();
         
         auto window = Gtk::Window::get_active_window();
@@ -4414,12 +4494,35 @@ Glib::RefPtr<Gdk::Texture> GetClipboardImage() {
                 error_value.init(Glib::Value<Glib::ustring>::value_type());
                 error_value.set(C_("accessibility", "No image found in clipboard"));
                 window->update_property(Gtk::Accessible::Property::DESCRIPTION, error_value);
+                
+                Glib::Value<Glib::ustring> assertive_value;
+                assertive_value.init(Glib::Value<Glib::ustring>::value_type());
+                assertive_value.set("assertive");
+                window->update_property(Gtk::Accessible::Property::LIVE, assertive_value);
             }
         }
         
         return image;
+    } catch (const Glib::Error& e) {
+        dbp("Error retrieving image from clipboard: %s", e.what().c_str());
+        
+        auto window = Gtk::Window::get_active_window();
+        if (window) {
+            Glib::Value<Glib::ustring> error_value;
+            error_value.init(Glib::Value<Glib::ustring>::value_type());
+            error_value.set(Glib::ustring::compose(
+                C_("accessibility", "Failed to retrieve image from clipboard: %1"),
+                e.what()));
+            window->update_property(Gtk::Accessible::Property::DESCRIPTION, error_value);
+            
+            Glib::Value<Glib::ustring> assertive_value;
+            assertive_value.init(Glib::Value<Glib::ustring>::value_type());
+            assertive_value.set("assertive");
+            window->update_property(Gtk::Accessible::Property::LIVE, assertive_value);
+        }
+        
+        return Glib::RefPtr<Gdk::Texture>();
     }
-    return Glib::RefPtr<Gdk::Texture>();
 }
 
 //-----------------------------------------------------------------------------

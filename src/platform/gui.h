@@ -103,14 +103,19 @@ struct TouchGestureEvent {
     enum class Type {
         ROTATE,
         ZOOM,
-        PAN
+        PAN,
+        SWIPE,
+        PINCH
     };
 
     Type type;
     double x, y;
-    double rotation;  // For rotation gestures, in radians
-    double scale;     // For zoom gestures
-    double dx, dy;    // For pan gestures
+    double rotation_angle;        // For rotation gestures, in radians
+    double rotation_angle_delta;  // Change in rotation angle
+    double zoom_scale;            // For zoom gestures
+    double pan_delta_x, pan_delta_y;  // For pan gestures
+    double swipe_velocity_x, swipe_velocity_y;  // For swipe gestures
+    double pinch_scale;           // For pinch gestures
 };
 
 std::string AcceleratorDescription(const KeyboardEvent &accel);
