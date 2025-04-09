@@ -227,6 +227,13 @@ void TextWindow::ScreenChangeLanguage(int link, uint32_t v) {
     auto settings = SolveSpace::Platform::GetSettings();
     std::string currentLocale = settings->ThawString("locale", "");
     
+    SS.GW.ClearSupplementalPopup();
+    SS.GW.PopupMenuString(C_("status", "Available languages: "));
+    for(size_t i = 0; i < availableLocales.size(); i++) {
+        if(i > 0) SS.GW.PopupMenuString(", ");
+        SS.GW.PopupMenuString(availableLocales[i]);
+    }
+    
     SS.TW.ShowEditControl(3, currentLocale);
     SS.TW.edit.meaning = Edit::LANGUAGE;
 }
@@ -244,9 +251,11 @@ void TextWindow::ShowConfiguration() {
         currentLocale = "en_US";
     }
     
-    Printf(false, "%Ba   %Fd%s %Fl%Ll%f[change]%E",
-        currentLocale.c_str(),
-        &ScreenChangeLanguage);
+    Printf(false, "%Ba   %Fd %f%Ll%Fl language:%E %s",
+        &ScreenChangeLanguage, C_("configuration", "change"),
+        currentLocale.c_str());
+    
+    Printf(false, "%Ft select your preferred language for the user interface");
     
     Printf(false, "");
     Printf(true, "%Ft user color (r, g, b)");
