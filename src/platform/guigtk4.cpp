@@ -1088,7 +1088,7 @@ protected:
             });
 
         _drag_source->signal_drag_end().connect(
-            [this](const Glib::RefPtr<Gdk::Drag>& drag) {
+            [this](const Glib::RefPtr<Gdk::Drag>& drag, bool) {
                 Glib::Value<Glib::ustring> end_desc;
                 end_desc.init(Glib::Value<Glib::ustring>::value_type());
                 end_desc.set(C_("accessibility", "Finished dragging model"));
@@ -3985,6 +3985,13 @@ void ShowColorPicker(const RgbaColor& initialColor,
             g_colorPicker->Show(*window, initialColor, onColorSelected);
         }
     }
+}
+
+namespace Platform {
+void ShowColorPicker(const RgbaColor& initialColor,
+                    std::function<void(const RgbaColor&)> onColorSelected) {
+    ::ShowColorPicker(initialColor, onColorSelected);
+}
 }
 
 static Glib::RefPtr<Gtk::Application> gtkApp;
