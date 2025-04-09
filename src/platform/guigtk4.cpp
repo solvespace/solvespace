@@ -4010,50 +4010,158 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
 
     auto css_provider = Gtk::CssProvider::create();
-    css_provider->load_from_data(
-        "@define-color bg_color #f5f5f5;"
-        "@define-color fg_color #333333;"
-        "@define-color header_bg #e0e0e0;"
-        "@define-color header_border #c0c0c0;"
-        "@define-color button_hover rgba(128, 128, 128, 0.1);"
-        "@define-color accent_color #0066cc;"
-        "@define-color accent_fg white;"
-        "@define-color entry_bg white;"
-        "@define-color entry_fg black;"
-        "@define-color border_color #e0e0e0;"
-
-        "@define-color dark_bg_color #2d2d2d;"
-        "@define-color dark_fg_color #e0e0e0;"
-        "@define-color dark_header_bg #1e1e1e;"
-        "@define-color dark_header_border #3d3d3d;"
-        "@define-color dark_button_hover rgba(255, 255, 255, 0.1);"
-        "@define-color dark_accent_color #3584e4;"
-        "@define-color dark_accent_fg white;"
-        "@define-color dark_entry_bg #3d3d3d;"
-        "@define-color dark_entry_fg #e0e0e0;"
-        "@define-color dark_border_color #3d3d3d;"
-
-        "/* RTL text support */"
-        "window.solvespace-window[text-direction=\"rtl\"] {"
-        "   direction: rtl;"
-        "}"
-        "window.solvespace-window[text-direction=\"rtl\"] * {"
-        "   text-align: right;"
-        "}"
-
-        "window.solvespace-window { "
-        "   background-color: @bg_color; "
-        "   color: @fg_color; "
-        "}"
-        "window.solvespace-window.dark { "
-        "   background-color: @dark_bg_color; "
-        "   color: @dark_fg_color; "
-        "}"
+    
+    bool theme_css_loaded = false;
+    
+    try {
+        auto executable_path = Glib::file_get_contents("/proc/self/exe");
+        auto executable_dir = Glib::path_get_dirname(executable_path);
+        auto css_path = Glib::build_filename(executable_dir, "..", "share", "solvespace", "css", "theme_colors.css");
+        
+        if (Glib::file_test(css_path, Glib::FileTest::EXISTS)) {
+            css_provider->load_from_path(css_path);
+            theme_css_loaded = true;
+            dbp("Loaded theme CSS from file: %s", css_path.c_str());
+        }
+    } catch (const Glib::Error& e) {
+        dbp("Error loading theme CSS from file: %s", e.what().c_str());
+    }
+    
+    if (!theme_css_loaded) {
+        dbp("Using embedded theme CSS fallback");
+        
+        css_provider->load_from_data(
+            "@define-color bg_color #f5f5f5;"
+            "@define-color fg_color #333333;"
+            "@define-color header_bg #e0e0e0;"
+            "@define-color header_border #c0c0c0;"
+            "@define-color button_hover rgba(128, 128, 128, 0.1);"
+            "@define-color accent_color #0066cc;"
+            "@define-color accent_fg white;"
+            "@define-color entry_bg white;"
+            "@define-color entry_fg black;"
+            "@define-color border_color #e0e0e0;"
+            
+            "@define-color dark_bg_color #2d2d2d;"
+            "@define-color dark_fg_color #e0e0e0;"
+            "@define-color dark_header_bg #1e1e1e;"
+            "@define-color dark_header_border #3d3d3d;"
+            "@define-color dark_button_hover rgba(255, 255, 255, 0.1);"
+            "@define-color dark_accent_color #3584e4;"
+            "@define-color dark_accent_fg white;"
+            "@define-color dark_entry_bg #3d3d3d;"
+            "@define-color dark_entry_fg #e0e0e0;"
+            "@define-color dark_border_color #3d3d3d;"
+        );
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+    
+    auto window_css_provider = Gtk::CssProvider::create();
+    bool window_css_loaded = false;
+    
+    try {
+        auto executable_path = Glib::file_get_contents("/proc/self/exe");
+        auto executable_dir = Glib::path_get_dirname(executable_path);
+        auto css_path = Glib::build_filename(executable_dir, "..", "share", "solvespace", "css", "window.css");
+        
+        if (Glib::file_test(css_path, Glib::FileTest::EXISTS)) {
+            window_css_provider->load_from_path(css_path);
+            window_css_loaded = true;
+            dbp("Loaded window CSS from file: %s", css_path.c_str());
+        }
+    } catch (const Glib::Error& e) {
+        dbp("Error loading window CSS from file: %s", e.what().c_str());
+    }
+    
+    if (!window_css_loaded) {
+        dbp("Using embedded window CSS fallback");
+        
+        window_css_provider->load_from_data(
+            "/* RTL text support */"
+            "window.solvespace-window[text-direction=\"rtl\"] {"
+            "   direction: rtl;"
+            "}"
+            "window.solvespace-window[text-direction=\"rtl\"] * {"
+            "   text-align: right;"
+            "}"
+            
+            "window.solvespace-window { "
+            "   background-color: @bg_color; "
+            "   color: @fg_color; "
+            "}"
+            "window.solvespace-window.dark { "
+            "   background-color: @dark_bg_color; "
+            "   color: @dark_fg_color; "
+            "}"
+        );
+    }
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        window_css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+    auto editor_css_provider = Gtk::CssProvider::create();
+    bool editor_css_loaded = false;
+    
+    try {
+        auto executable_path = Glib::file_get_contents("/proc/self/exe");
+        auto executable_dir = Glib::path_get_dirname(executable_path);
+        auto css_path = Glib::build_filename(executable_dir, "..", "share", "solvespace", "css", "editor_overlay.css");
+        
+        if (Glib::file_test(css_path, Glib::FileTest::EXISTS)) {
+            editor_css_provider->load_from_path(css_path);
+            editor_css_loaded = true;
+            dbp("Loaded editor CSS from file: %s", css_path.c_str());
+        }
+    } catch (const Glib::Error& e) {
+        dbp("Error loading editor CSS from file: %s", e.what().c_str());
+    }
+    
+    if (!editor_css_loaded) {
+        dbp("Using embedded editor CSS fallback");
+        
+        editor_css_provider->load_from_data(
+            "grid.editor-overlay { "
+            "   background-color: transparent; "
+            "}"
+            
+            "entry.editor-text { "
+            "   background-color: white; "
+            "   color: black; "
+            "   border-radius: 3px; "
+            "   padding: 2px; "
+            "   caret-color: #0066cc; "
+            "   selection-background-color: rgba(0, 102, 204, 0.3); "
+            "   selection-color: black; "
+            "}"
+        );
+    }
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        editor_css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+    auto gl_css_provider = Gtk::CssProvider::create();
+    gl_css_provider->load_from_data(
         ".solvespace-gl-area { "
         "   background-color: #ffffff; "
         "   border-radius: 2px; "
         "   border: 1px solid @border_color; "
         "}"
+    );
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        gl_css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+    auto header_css_provider = Gtk::CssProvider::create();
+    header_css_provider->load_from_data(
         "headerbar { "
         "   padding: 4px; "
         "   background-image: none; "
@@ -4065,6 +4173,15 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         "   border-bottom: 1px solid @dark_header_border; "
         "   color: @dark_fg_color; "
         "}"
+    );
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        header_css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+    auto button_css_provider = Gtk::CssProvider::create();
+    button_css_provider->load_from_data(
         "button.menu-button { "
         "   margin: 2px; "
         "   padding: 4px 8px; "
@@ -4080,6 +4197,15 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         ".dark button.menu-button:hover { "
         "   background-color: @dark_button_hover; "
         "}"
+    );
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        button_css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+    auto dialog_css_provider = Gtk::CssProvider::create();
+    dialog_css_provider->load_from_data(
         "dialog.solvespace-file-dialog { "
         "   border-radius: 4px; "
         "   padding: 8px; "
@@ -4099,10 +4225,28 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         "   background-color: @accent_color; "
         "   color: @accent_fg; "
         "}"
+    );
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        dialog_css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+    auto button_action_css_provider = Gtk::CssProvider::create();
+    button_action_css_provider->load_from_data(
         "dialog.solvespace-file-dialog button.destructive-action { "
         "   background-color: @bg_color; "
         "   color: @fg_color; "
         "}"
+    );
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        button_action_css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+    auto editor_css_provider = Gtk::CssProvider::create();
+    editor_css_provider->load_from_data(
         "entry.editor-text { "
         "   background-color: @entry_bg; "
         "   color: @entry_fg; "
@@ -4118,7 +4262,15 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         "   selection-background-color: alpha(@dark_accent_color, 0.3); "
         "   selection-color: @entry_fg; "
         "}"
-
+    );
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        editor_css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+        
+    auto media_css_provider = Gtk::CssProvider::create();
+    media_css_provider->load_from_data(
         "@media (prefers-dark-theme) {"
         "   window.solvespace-window { "
         "       background-color: @dark_bg_color; "
@@ -4152,6 +4304,11 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         "   }"
         "}"
     );
+    
+    Gtk::StyleContext::add_provider_for_display(
+        Gdk::Display::get_default(),
+        media_css_provider,
+        GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
     Gtk::StyleContext::add_provider_for_display(
         Gdk::Display::get_default(),
@@ -4178,6 +4335,18 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     shortcut_controller->add_shortcut(open_shortcut);
 
 
+    auto settings = Gtk::Settings::get_default();
+    auto theme_binding = Gtk::PropertyExpression<bool>::create(
+        settings->property_gtk_application_prefer_dark_theme());
+    theme_binding->connect([&gtkWindow, settings]() {
+        bool dark_theme = settings->property_gtk_application_prefer_dark_theme();
+        if (dark_theme) {
+            gtkWindow.add_css_class("dark");
+        } else {
+            gtkWindow.remove_css_class("dark");
+        }
+    });
+    
     auto style_provider = Gtk::CssProvider::create();
     style_provider->load_from_data(R"(
         /* Application-wide styles with improved accessibility */
