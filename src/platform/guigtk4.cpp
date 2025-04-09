@@ -4134,13 +4134,30 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         
     auto gl_css_provider = Gtk::CssProvider::create();
-    gl_css_provider->load_from_data(
-        ".solvespace-gl-area { "
-        "   background-color: #ffffff; "
-        "   border-radius: 2px; "
-        "   border: 1px solid @border_color; "
-        "}"
-    );
+    bool gl_css_loaded = false;
+    
+    try {
+        auto css_path = Glib::build_filename(executable_dir, "..", "share", "solvespace", "css", "gl_area.css");
+        
+        if (Glib::file_test(css_path, Glib::FileTest::EXISTS)) {
+            gl_css_provider->load_from_path(css_path);
+            gl_css_loaded = true;
+            dbp("Loaded GL area CSS from file: %s", css_path.c_str());
+        }
+    } catch (const Glib::Error& e) {
+        dbp("Error loading GL area CSS from file: %s", e.what().c_str());
+    }
+    
+    if (!gl_css_loaded) {
+        dbp("Using embedded GL area CSS fallback");
+        gl_css_provider->load_from_data(
+            ".solvespace-gl-area { "
+            "   background-color: #ffffff; "
+            "   border-radius: 2px; "
+            "   border: 1px solid @border_color; "
+            "}"
+        );
+    }
     
     Gtk::StyleContext::add_provider_for_display(
         Gdk::Display::get_default(),
@@ -4148,19 +4165,36 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         
     auto header_css_provider = Gtk::CssProvider::create();
-    header_css_provider->load_from_data(
-        "headerbar { "
-        "   padding: 4px; "
-        "   background-image: none; "
-        "   background-color: @header_bg; "
-        "   border-bottom: 1px solid @header_border; "
-        "}"
-        ".dark headerbar { "
-        "   background-color: @dark_header_bg; "
-        "   border-bottom: 1px solid @dark_header_border; "
-        "   color: @dark_fg_color; "
-        "}"
-    );
+    bool header_css_loaded = false;
+    
+    try {
+        auto css_path = Glib::build_filename(executable_dir, "..", "share", "solvespace", "css", "header.css");
+        
+        if (Glib::file_test(css_path, Glib::FileTest::EXISTS)) {
+            header_css_provider->load_from_path(css_path);
+            header_css_loaded = true;
+            dbp("Loaded header CSS from file: %s", css_path.c_str());
+        }
+    } catch (const Glib::Error& e) {
+        dbp("Error loading header CSS from file: %s", e.what().c_str());
+    }
+    
+    if (!header_css_loaded) {
+        dbp("Using embedded header CSS fallback");
+        header_css_provider->load_from_data(
+            "headerbar { "
+            "   padding: 4px; "
+            "   background-image: none; "
+            "   background-color: @header_bg; "
+            "   border-bottom: 1px solid @header_border; "
+            "}"
+            ".dark headerbar { "
+            "   background-color: @dark_header_bg; "
+            "   border-bottom: 1px solid @dark_header_border; "
+            "   color: @dark_fg_color; "
+            "}"
+        );
+    }
     
     Gtk::StyleContext::add_provider_for_display(
         Gdk::Display::get_default(),
@@ -4168,23 +4202,40 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         
     auto button_css_provider = Gtk::CssProvider::create();
-    button_css_provider->load_from_data(
-        "button.menu-button { "
-        "   margin: 2px; "
-        "   padding: 4px 8px; "
-        "   border-radius: 3px; "
-        "   transition: background-color 200ms ease; "
-        "}"
-        "button.menu-button:hover { "
-        "   background-color: @button_hover; "
-        "}"
-        ".dark button.menu-button { "
-        "   color: @dark_fg_color; "
-        "}"
-        ".dark button.menu-button:hover { "
-        "   background-color: @dark_button_hover; "
-        "}"
-    );
+    bool button_css_loaded = false;
+    
+    try {
+        auto css_path = Glib::build_filename(executable_dir, "..", "share", "solvespace", "css", "button.css");
+        
+        if (Glib::file_test(css_path, Glib::FileTest::EXISTS)) {
+            button_css_provider->load_from_path(css_path);
+            button_css_loaded = true;
+            dbp("Loaded button CSS from file: %s", css_path.c_str());
+        }
+    } catch (const Glib::Error& e) {
+        dbp("Error loading button CSS from file: %s", e.what().c_str());
+    }
+    
+    if (!button_css_loaded) {
+        dbp("Using embedded button CSS fallback");
+        button_css_provider->load_from_data(
+            "button.menu-button { "
+            "   margin: 2px; "
+            "   padding: 4px 8px; "
+            "   border-radius: 3px; "
+            "   transition: background-color 200ms ease; "
+            "}"
+            "button.menu-button:hover { "
+            "   background-color: @button_hover; "
+            "}"
+            ".dark button.menu-button { "
+            "   color: @dark_fg_color; "
+            "}"
+            ".dark button.menu-button:hover { "
+            "   background-color: @dark_button_hover; "
+            "}"
+        );
+    }
     
     Gtk::StyleContext::add_provider_for_display(
         Gdk::Display::get_default(),
@@ -4192,7 +4243,23 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         
     auto dialog_css_provider = Gtk::CssProvider::create();
-    dialog_css_provider->load_from_data(
+    bool dialog_css_loaded = false;
+    
+    try {
+        auto css_path = Glib::build_filename(executable_dir, "..", "share", "solvespace", "css", "dialog.css");
+        
+        if (Glib::file_test(css_path, Glib::FileTest::EXISTS)) {
+            dialog_css_provider->load_from_path(css_path);
+            dialog_css_loaded = true;
+            dbp("Loaded dialog CSS from file: %s", css_path.c_str());
+        }
+    } catch (const Glib::Error& e) {
+        dbp("Error loading dialog CSS from file: %s", e.what().c_str());
+    }
+    
+    if (!dialog_css_loaded) {
+        dbp("Using embedded dialog CSS fallback");
+        dialog_css_provider->load_from_data(
         "dialog.solvespace-file-dialog { "
         "   border-radius: 4px; "
         "   padding: 8px; "

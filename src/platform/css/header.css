@@ -1,0 +1,12 @@
+headerbar { 
+    padding: 4px; 
+    background-image: none; 
+    background-color: @header_bg; 
+    border-bottom: 1px solid @header_border; 
+}
+
+.dark headerbar { 
+    background-color: @dark_header_bg; 
+    border-bottom: 1px solid @dark_header_border; 
+    color: @dark_fg_color; 
+}

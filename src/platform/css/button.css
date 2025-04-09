@@ -1,0 +1,18 @@
+button.menu-button { 
+    margin: 2px; 
+    padding: 4px 8px; 
+    border-radius: 3px; 
+    transition: background-color 200ms ease; 
+}
+
+button.menu-button:hover { 
+    background-color: @button_hover; 
+}
+
+.dark button.menu-button { 
+    color: @dark_fg_color; 
+}
+
+.dark button.menu-button:hover { 
+    background-color: @dark_button_hover; 
+}

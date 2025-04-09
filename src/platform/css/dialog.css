@@ -1,0 +1,24 @@
+dialog.solvespace-file-dialog { 
+    border-radius: 4px; 
+    padding: 8px; 
+    background-color: @bg_color; 
+    color: @fg_color; 
+}
+
+.dark dialog.solvespace-file-dialog { 
+    background-color: @dark_bg_color; 
+    color: @dark_fg_color; 
+}
+
+dialog.solvespace-file-dialog button { 
+    padding: 4px 8px; 
+    border-radius: 3px; 
+}
+
+dialog.solvespace-file-dialog button:hover { 
+    background-color: @button_hover; 
+}
+
+.dark dialog.solvespace-file-dialog button:hover { 
+    background-color: @dark_button_hover; 
+}
