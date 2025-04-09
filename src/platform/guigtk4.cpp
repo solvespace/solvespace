@@ -1006,6 +1006,36 @@ protected:
         
         _drag_source->set_touch_only(false);  // Allow both mouse and touch
         
+        static bool test_drag_touch = false;
+        for (int i = 1; i < Glib::get_argc(); i++) {
+            if (Glib::get_argv_utf8()[i] == "--test-gtk4-drag-touch") {
+                test_drag_touch = true;
+                break;
+            }
+        }
+        
+        if (test_drag_touch) {
+            Glib::signal_timeout().connect_once(
+                [this]() {
+                    double x = 100, y = 100;
+                    
+                    Glib::Value<Glib::ustring> test_value;
+                    test_value.init(Glib::Value<Glib::ustring>::value_type());
+                    test_value.set(C_("accessibility", "Testing drag source with touch input"));
+                    update_property(Gtk::Accessible::Property::DESCRIPTION, test_value);
+                    
+                    _drag_source->set_touch_only(true);  // Force touch mode for test
+                    _drag_source->drag_begin(x, y);
+                    
+                    Glib::signal_timeout().connect_once(
+                        []() {
+                            exit(0);
+                        }, 
+                        2000);  // Exit after 2 seconds
+                }, 
+                1000);  // Start test after 1 second
+        }
+        
         _drag_source->signal_prepare().connect(
             [this](double x, double y) -> Glib::RefPtr<Gdk::ContentProvider> {
                 Glib::Value<Glib::ustring> drag_desc;
