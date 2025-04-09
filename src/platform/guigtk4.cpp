@@ -1242,7 +1242,7 @@ public:
 
         set_tooltip_text(C_("tooltip", "SolveSpace editor overlay with drawing area and text input"));
 
-        set_property("accessible-role", std::string("panel"));
+        set_property("accessible-role", Gtk::Accessible::Role::GROUP);
         Glib::Value<Glib::ustring> editor_label;
         editor_label.init(Glib::Value<Glib::ustring>::value_type());
         editor_label.set(C_("accessibility", "SolveSpace Editor"));
@@ -1251,6 +1251,16 @@ public:
         editor_desc.init(Glib::Value<Glib::ustring>::value_type());
         editor_desc.set(C_("accessibility", "Drawing area with text input for SolveSpace parametric CAD"));
         update_property(Gtk::Accessible::Property::DESCRIPTION, editor_desc);
+        
+        Glib::Value<bool> has_popup;
+        has_popup.init(Glib::Value<bool>::value_type());
+        has_popup.set(false);
+        update_property(Gtk::Accessible::Property::HAS_POPUP, has_popup);
+        
+        Glib::Value<Glib::ustring> key_shortcuts;
+        key_shortcuts.init(Glib::Value<Glib::ustring>::value_type());
+        key_shortcuts.set(C_("accessibility", "Escape: Cancel, Enter: Confirm"));
+        update_property(Gtk::Accessible::Property::KEY_SHORTCUTS, key_shortcuts);
 
         setup_event_controllers();
 
@@ -1344,11 +1354,26 @@ public:
 
         _entry.set_tooltip_text(C_("tooltip", "Text Input"));
 
-        _entry.set_property("accessible-role", std::string("text_box"));
+        _entry.set_property("accessible-role", Gtk::Accessible::Role::TEXT_BOX);
         Glib::Value<Glib::ustring> label_value;
         label_value.init(Glib::Value<Glib::ustring>::value_type());
         label_value.set(C_("accessibility", "SolveSpace Text Input"));
         _entry.update_property(Gtk::Accessible::Property::LABEL, label_value);
+        
+        Glib::Value<Glib::ustring> desc_value;
+        desc_value.init(Glib::Value<Glib::ustring>::value_type());
+        desc_value.set(C_("accessibility", "Text input field for entering commands and values"));
+        _entry.update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
+        
+        Glib::Value<bool> multiline;
+        multiline.init(Glib::Value<bool>::value_type());
+        multiline.set(false);
+        _entry.update_property(Gtk::Accessible::Property::MULTILINE, multiline);
+        
+        Glib::Value<bool> required;
+        required.init(Glib::Value<bool>::value_type());
+        required.set(false);
+        _entry.update_property(Gtk::Accessible::Property::REQUIRED, required);
 
         Glib::Value<Glib::ustring> desc_value;
         desc_value.init(Glib::Value<Glib::ustring>::value_type());
@@ -1817,11 +1842,21 @@ class GtkWindow : public Gtk::Window {
             }
         });
 
-        set_property("accessible-role", std::string("application"));
+        set_property("accessible-role", Gtk::Accessible::Role::APPLICATION);
         Glib::Value<Glib::ustring> label_value;
         label_value.init(Glib::Value<Glib::ustring>::value_type());
         label_value.set(C_("app-name", "SolveSpace"));
         update_property(Gtk::Accessible::Property::LABEL, label_value);
+        
+        Glib::Value<Glib::ustring> desc_value;
+        desc_value.init(Glib::Value<Glib::ustring>::value_type());
+        desc_value.set(C_("accessibility", "Parametric 2D/3D CAD application"));
+        update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
+        
+        Glib::Value<Gtk::Orientation> orientation;
+        orientation.init(Glib::Value<Gtk::Orientation>::value_type());
+        orientation.set(Gtk::Orientation::VERTICAL);
+        update_property(Gtk::Accessible::Property::ORIENTATION, orientation);
 
         Glib::Value<Glib::ustring> desc_value;
         desc_value.init(Glib::Value<Glib::ustring>::value_type());
