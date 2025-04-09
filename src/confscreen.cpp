@@ -227,12 +227,12 @@ void TextWindow::ScreenChangeLanguage(int link, uint32_t v) {
     auto settings = SolveSpace::Platform::GetSettings();
     std::string currentLocale = settings->ThawString("locale", "");
     
-    SS.GW.ClearSupplementalPopup();
-    SS.GW.PopupMenuString(C_("status", "Available languages: "));
+    SS.TW.Printf(false, "%Ft%f%s%E", C_("status", "Available languages: "));
     for(size_t i = 0; i < availableLocales.size(); i++) {
-        if(i > 0) SS.GW.PopupMenuString(", ");
-        SS.GW.PopupMenuString(availableLocales[i]);
+        if(i > 0) SS.TW.Printf(false, ", ");
+        SS.TW.Printf(false, "%s", availableLocales[i].c_str());
     }
+    SS.TW.Printf(false, "");
     
     SS.TW.ShowEditControl(3, currentLocale);
     SS.TW.edit.meaning = Edit::LANGUAGE;
