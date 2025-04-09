@@ -4013,6 +4013,12 @@ void ShowColorPicker(const RgbaColor& initialColor,
 static Glib::RefPtr<Gtk::Application> gtkApp;
 
 std::vector<std::string> InitGui(int argc, char **argv) {
+    std::vector<std::string> args;
+    for(int i = 0; i < argc; i++) {
+        args.push_back(argv[i]);
+    }
+    
+    InitColorPicker();
     // It would in principle be possible to judiciously use Glib::filename_{from,to}_utf8,
     // but it's not really worth the effort.
     // The setlocale() call is necessary for Glib::get_charset() to detect the system
@@ -5077,4 +5083,8 @@ static void ClearGui() {
     gtkApp.reset();
 }
 
+    return args;
 }
+
+} // namespace Platform
+} // namespace SolveSpace
