@@ -2384,6 +2384,20 @@ public:
             get_gl_widget().trigger_tooltip_query();
         }
     }
+    
+    void announce_operation_mode(const std::string &mode) {
+        Glib::Value<Glib::ustring> label_value;
+        label_value.init(Glib::Value<Glib::ustring>::value_type());
+        label_value.set(C_("accessibility", "SolveSpace 3D View - ") + 
+            C_("operation-mode", mode));
+        update_property(Gtk::Accessible::Property::LABEL, label_value);
+        
+        auto live_region = Gtk::Accessible::LiveRegion::POLITE;
+        Glib::Value<Gtk::Accessible::LiveRegion> live_value;
+        live_value.init(Glib::Value<Gtk::Accessible::LiveRegion>::value_type());
+        live_value.set(live_region);
+        update_property(Gtk::Accessible::Property::LIVE_REGION, live_value);
+    }
 
 protected:
 

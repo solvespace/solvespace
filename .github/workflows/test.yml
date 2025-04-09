@@ -20,6 +20,15 @@ jobs:
         run: .github/scripts/install-ubuntu.sh
       - name: Build & Test
         run: .github/scripts/build-ubuntu.sh
+      - name: Verify CSS Syntax (GTK4 only)
+        run: |
+          if grep -q "USE_GTK4=ON" .github/scripts/build-ubuntu.sh; then
+            echo "GTK4 build detected, verifying CSS syntax..."
+            pip install stylelint
+            python3 scripts/verify_css.py
+          else
+            echo "Not a GTK4 build, skipping CSS verification"
+          fi
 
   test_windows:
     runs-on: windows-2019
