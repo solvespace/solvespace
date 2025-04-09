@@ -967,5 +967,3 @@ void TextWindow::ScrollbarEvent(double newPos) {
         window->Invalidate();
     }
 }
-
-}
