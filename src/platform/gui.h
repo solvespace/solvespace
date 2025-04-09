@@ -433,7 +433,6 @@ inline bool IsRTL() {
         // In non-GTK builds, default to LTR
         is_rtl = false;
 #endif
-#endif
         checked = true;
     }
     
