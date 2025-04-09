@@ -407,8 +407,13 @@ inline bool IsRTL() {
     if (!checked) {
         // Get current locale and check if it's RTL
         std::string locale = Glib::get_language_names()[0];
-        std::set<std::string> rtl_langs = {"ar", "he", "fa", "ur", "dv", "ha", "khw", "ks", "ku", "ps", "sd", "ug", "yi"};
-        is_rtl = locale.length() >= 2 && rtl_langs.find(locale.substr(0, 2)) != rtl_langs.end();
+        // Only include languages that use RTL scripts
+        // Note: Kurdish (ku) has varieties that use different scripts - Sorani uses Arabic (RTL)
+        // while Kurmanji uses Latin script (LTR). We'll need more specific locale detection for Kurdish.
+        std::set<std::string> rtl_langs = {"ar", "he", "fa", "ur", "dv", "ha", "khw", "ks", "ps", "sd", "ug", "yi"};
+        // For Kurdish, check if it's specifically Sorani Kurdish (ckb) which uses RTL
+        bool is_sorani_kurdish = locale.length() >= 3 && locale.substr(0, 3) == "ckb";
+        is_rtl = (locale.length() >= 2 && rtl_langs.find(locale.substr(0, 2)) != rtl_langs.end()) || is_sorani_kurdish;
         checked = true;
     }
     
