@@ -355,11 +355,17 @@ GTK4 provides enhanced CSS styling capabilities. Use CSS classes and styling:
 // Add CSS classes to widgets
 widget->add_css_class("my-custom-class");
 
-// Load CSS data
+// Load CSS from file (preferred method)
 auto css_provider = Gtk::CssProvider::create();
-css_provider->load_from_data(
-    ".my-custom-class { background-color: #f0f0f0; }"
-);
+try {
+    auto css_file = Gio::File::create_for_path(Platform::PathFromResource("platform/css/theme.css"));
+    css_provider->load_from_file(css_file);
+} catch (const Glib::Error& e) {
+    // Fallback to embedded CSS
+    css_provider->load_from_data(
+        ".my-custom-class { background-color: #f0f0f0; }"
+    );
+}
 
 // Apply provider to the display
 Gtk::StyleContext::add_provider_for_display(
@@ -368,6 +374,14 @@ Gtk::StyleContext::add_provider_for_display(
     GTK_STYLE_PROVIDER_PRIORITY_APPLICATION
 );
 ```
+
+Note that GTK4 CSS loaders overwrite previous CSS data rather than appending to it. To apply multiple CSS styles, either:
+1. Combine them into a single file/string before loading, or
+2. Use a different CSS provider instance for each style section.
+
+For better maintainability, CSS should be stored in separate files in the `src/platform/css/` directory with corresponding `.css.h` header files for fallback embedded CSS.
+
+The project includes a CSS syntax verification script (`scripts/verify_css.py`) that runs during CI to catch potential syntax errors that could cause crashes or layout issues. This verification only runs when GTK4 is enabled in the build.
 
 #### Accessibility
 
