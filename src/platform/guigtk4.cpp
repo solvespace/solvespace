@@ -580,11 +580,18 @@ class GtkGLWidget : public Gtk::GLArea {
     Glib::RefPtr<Gtk::DragSource> _drag_source;
     std::vector<std::string> _accepted_mime_types;
     std::vector<std::string> _export_mime_types;
+    
     Glib::RefPtr<Gtk::GestureZoom> _zoom_gesture;
     Glib::RefPtr<Gtk::GestureRotate> _rotate_gesture;
     Glib::RefPtr<Gtk::GestureDrag> _drag_gesture;
     Glib::RefPtr<Gtk::GestureSwipe> _swipe_gesture;
     Glib::RefPtr<Gtk::GesturePan> _pan_gesture;
+    
+    double _zoom_scale_start = 1.0;
+    double _last_announced_scale = 1.0;
+    double _drag_start_x = 0.0;
+    double _drag_start_y = 0.0;
+    double _rotation_angle_start = 0.0;
 
 public:
     GtkGLWidget(Platform::Window *receiver) : _receiver(receiver) {
@@ -595,6 +602,16 @@ public:
         add_css_class("drawing-area");
 
         set_tooltip_text(C_("tooltip", "SolveSpace Drawing Area - 3D modeling canvas"));
+
+        set_hexpand(true);
+        set_vexpand(true);
+        set_size_request(400, 300);
+        
+        auto display = get_display();
+        if (display) {
+            display->property_scale_factor().signal_changed().connect(
+                sigc::mem_fun(*this, &GtkGLWidget::on_scale_factor_changed));
+        }
 
         Glib::Value<Glib::ustring> canvas_desc;
         canvas_desc.init(Glib::Value<Glib::ustring>::value_type());
@@ -617,6 +634,21 @@ public:
         setup_touch_gestures();
     }
 
+    void on_scale_factor_changed() {
+        int scale_factor = get_display()->get_scale_factor();
+        
+        if(_receiver->onScaleFactorChanged) {
+            _receiver->onScaleFactorChanged(scale_factor);
+        }
+        
+        Glib::Value<Glib::ustring> scale_desc;
+        scale_desc.init(Glib::Value<Glib::ustring>::value_type());
+        scale_desc.set(Glib::ustring::compose(C_("accessibility", "Display scale factor changed to %1"), scale_factor));
+        update_property(Gtk::Accessible::Property::DESCRIPTION, scale_desc);
+        
+        queue_render();
+    }
+    
     void announce_operation_mode(const std::string& mode) {
         Glib::Value<Glib::ustring> mode_label;
         mode_label.init(Glib::Value<Glib::ustring>::value_type());
@@ -1123,6 +1155,43 @@ protected:
                 active_desc.init(Glib::Value<Glib::ustring>::value_type());
                 active_desc.set(C_("accessibility", "Zoom gesture started"));
                 update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
+                
+                Glib::Value<Glib::ustring> live_value;
+                live_value.init(Glib::Value<Glib::ustring>::value_type());
+                live_value.set("polite");
+                update_property(Gtk::Accessible::Property::LIVE, live_value);
+                
+                _zoom_scale_start = 1.0;
+            });
+            
+        _zoom_gesture->signal_scale_changed().connect(
+            [this](double scale) {
+                double new_scale = _zoom_scale_start * scale;
+                
+                TouchGestureEvent event = {};
+                event.type = TouchGestureEvent::Type::ZOOM;
+                event.zoom_scale = new_scale;
+                
+                if (std::abs(new_scale - _last_announced_scale) > 0.5) {
+                    Glib::Value<Glib::ustring> scale_desc;
+                    scale_desc.init(Glib::Value<Glib::ustring>::value_type());
+                    scale_desc.set(Glib::ustring::compose(C_("accessibility", "Zoom scale: %1"), 
+                                                         static_cast<int>(new_scale * 100) / 100.0));
+                    update_property(Gtk::Accessible::Property::DESCRIPTION, scale_desc);
+                    _last_announced_scale = new_scale;
+                }
+                
+                if (_receiver && _receiver->onTouchGesture) {
+                    _receiver->onTouchGesture(event);
+                }
+            });
+            
+        _zoom_gesture->signal_end().connect(
+            [this](Gdk::EventSequence* sequence) {
+                Glib::Value<Glib::ustring> end_desc;
+                end_desc.init(Glib::Value<Glib::ustring>::value_type());
+                end_desc.set(C_("accessibility", "Zoom gesture ended"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, end_desc);
             });
             
         _drag_gesture = Gtk::GestureDrag::create();
@@ -1136,6 +1205,44 @@ protected:
                 active_desc.init(Glib::Value<Glib::ustring>::value_type());
                 active_desc.set(C_("accessibility", "Pan gesture started"));
                 update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
+                
+                _drag_start_x = start_x;
+                _drag_start_y = start_y;
+            });
+            
+        _drag_gesture->signal_drag_update().connect(
+            [this](double offset_x, double offset_y) {
+                TouchGestureEvent event = {};
+                event.type = TouchGestureEvent::Type::PAN;
+                event.pan_delta_x = offset_x;
+                event.pan_delta_y = offset_y;
+                
+                if (std::abs(offset_x) > 50 || std::abs(offset_y) > 50) {
+                    Glib::Value<Glib::ustring> pan_desc;
+                    pan_desc.init(Glib::Value<Glib::ustring>::value_type());
+                    
+                    std::string direction;
+                    if (std::abs(offset_x) > std::abs(offset_y)) {
+                        direction = offset_x > 0 ? C_("accessibility", "right") : C_("accessibility", "left");
+                    } else {
+                        direction = offset_y > 0 ? C_("accessibility", "down") : C_("accessibility", "up");
+                    }
+                    
+                    pan_desc.set(Glib::ustring::compose(C_("accessibility", "Panning %1"), direction));
+                    update_property(Gtk::Accessible::Property::DESCRIPTION, pan_desc);
+                }
+                
+                if (_receiver && _receiver->onTouchGesture) {
+                    _receiver->onTouchGesture(event);
+                }
+            });
+            
+        _drag_gesture->signal_drag_end().connect(
+            [this](double offset_x, double offset_y) {
+                Glib::Value<Glib::ustring> end_desc;
+                end_desc.init(Glib::Value<Glib::ustring>::value_type());
+                end_desc.set(C_("accessibility", "Pan gesture ended"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, end_desc);
             });
             
         _swipe_gesture = Gtk::GestureSwipe::create();
@@ -1144,10 +1251,73 @@ protected:
         
         _swipe_gesture->signal_swipe().connect(
             [this](double velocity_x, double velocity_y) {
+                TouchGestureEvent event = {};
+                event.type = TouchGestureEvent::Type::SWIPE;
+                event.swipe_velocity_x = velocity_x;
+                event.swipe_velocity_y = velocity_y;
+                
+                Glib::Value<Glib::ustring> swipe_desc;
+                swipe_desc.init(Glib::Value<Glib::ustring>::value_type());
+                
+                std::string direction;
+                if (std::abs(velocity_x) > std::abs(velocity_y)) {
+                    direction = velocity_x > 0 ? C_("accessibility", "right") : C_("accessibility", "left");
+                } else {
+                    direction = velocity_y > 0 ? C_("accessibility", "down") : C_("accessibility", "up");
+                }
+                
+                swipe_desc.set(Glib::ustring::compose(C_("accessibility", "Swipe %1 detected"), direction));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, swipe_desc);
+                
+                if (_receiver && _receiver->onTouchGesture) {
+                    _receiver->onTouchGesture(event);
+                }
+            });
+            
+        _rotate_gesture = Gtk::GestureRotate::create();
+        _rotate_gesture->set_name("gl-widget-rotate-gesture");
+        _rotate_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        
+        _rotate_gesture->signal_begin().connect(
+            [this](Gdk::EventSequence* sequence) {
                 Glib::Value<Glib::ustring> active_desc;
                 active_desc.init(Glib::Value<Glib::ustring>::value_type());
-                active_desc.set(C_("accessibility", "Swipe gesture detected"));
+                active_desc.set(C_("accessibility", "Rotation gesture started"));
                 update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
+                
+                _rotation_angle_start = 0.0;
+            });
+            
+        _rotate_gesture->signal_angle_changed().connect(
+            [this](double angle, double angle_delta) {
+                TouchGestureEvent event = {};
+                event.type = TouchGestureEvent::Type::ROTATE;
+                event.rotation_angle = angle;
+                event.rotation_angle_delta = angle_delta;
+                
+                if (std::abs(angle_delta) > 0.2) {
+                    Glib::Value<Glib::ustring> rotate_desc;
+                    rotate_desc.init(Glib::Value<Glib::ustring>::value_type());
+                    
+                    std::string direction = angle_delta > 0 ? 
+                        C_("accessibility", "clockwise") : 
+                        C_("accessibility", "counterclockwise");
+                    
+                    rotate_desc.set(Glib::ustring::compose(C_("accessibility", "Rotating %1"), direction));
+                    update_property(Gtk::Accessible::Property::DESCRIPTION, rotate_desc);
+                }
+                
+                if (_receiver && _receiver->onTouchGesture) {
+                    _receiver->onTouchGesture(event);
+                }
+            });
+            
+        _rotate_gesture->signal_end().connect(
+            [this](Gdk::EventSequence* sequence) {
+                Glib::Value<Glib::ustring> end_desc;
+                end_desc.init(Glib::Value<Glib::ustring>::value_type());
+                end_desc.set(C_("accessibility", "Rotation gesture ended"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, end_desc);
             });
             
         _pan_gesture = Gtk::GesturePan::create(Gtk::Orientation::HORIZONTAL);
@@ -1946,6 +2116,25 @@ class GtkWindow : public Gtk::Window {
     }
 
     void setup_event_controllers() {
+        auto display = get_display();
+        if (display) {
+            display->property_scale_factor().signal_changed().connect(
+                [this]() {
+                    int scale_factor = get_scale_factor();
+                    
+                    if (_receiver->onScaleFactorChanged) {
+                        _receiver->onScaleFactorChanged(scale_factor);
+                    }
+                    
+                    Glib::Value<Glib::ustring> scale_desc;
+                    scale_desc.init(Glib::Value<Glib::ustring>::value_type());
+                    scale_desc.set(Glib::ustring::compose(C_("accessibility", "Display scale factor changed to %1"), scale_factor));
+                    update_property(Gtk::Accessible::Property::DESCRIPTION, scale_desc);
+                    
+                    queue_draw();
+                });
+        }
+        
         _motion_controller = Gtk::EventControllerMotion::create();
         _motion_controller->set_name("window-motion-controller");
         _motion_controller->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
@@ -2554,11 +2743,15 @@ public:
     }
 
     double GetPixelDensity() override {
-        return gtkWindow.get_scale_factor();
+        auto display = gtkWindow.get_display();
+        auto monitor = display->get_monitor_at_window(gtkWindow.get_surface());
+        return monitor->get_geometry().get_height() / (monitor->get_height_mm() / 25.4);
     }
 
     double GetDevicePixelRatio() override {
-        return gtkWindow.get_scale_factor();
+        int scale_factor = gtkWindow.get_scale_factor();
+        
+        return scale_factor > 0 ? scale_factor : 1.0;
     }
 
     bool IsVisible() override {
@@ -2901,6 +3094,15 @@ void Close3DConnexion() {}
 
 #if defined(HAVE_SPACEWARE) && (defined(GDK_WINDOWING_X11) || defined(GDK_WINDOWING_WAYLAND))
 static void ProcessSpnavEvent(WindowImplGtk *window, const spnav_event &spnavEvent, bool shiftDown, bool controlDown) {
+    auto gtkWindow = window->GetGtkWindow();
+    
+    if (gtkWindow) {
+        Glib::Value<Glib::ustring> live_value;
+        live_value.init(Glib::Value<Glib::ustring>::value_type());
+        live_value.set("polite");
+        gtkWindow->update_property(Gtk::Accessible::Property::LIVE, live_value);
+    }
+    
     switch(spnavEvent.type) {
         case SPNAV_EVENT_MOTION: {
             SixDofEvent event = {};
@@ -2913,6 +3115,85 @@ static void ProcessSpnavEvent(WindowImplGtk *window, const spnav_event &spnavEve
             event.rotationZ    = (double)spnavEvent.motion.rz * -0.001;
             event.shiftDown    = shiftDown;
             event.controlDown  = controlDown;
+            
+            const double TRANSLATION_THRESHOLD = 5.0;
+            const double ROTATION_THRESHOLD = 0.01;
+            
+            if (gtkWindow) {
+                Glib::Value<Glib::ustring> motion_desc;
+                motion_desc.init(Glib::Value<Glib::ustring>::value_type());
+                
+                if (std::abs(event.translationX) > TRANSLATION_THRESHOLD || 
+                    std::abs(event.translationY) > TRANSLATION_THRESHOLD || 
+                    std::abs(event.translationZ) > TRANSLATION_THRESHOLD) {
+                    
+                    std::string direction;
+                    if (std::abs(event.translationX) > std::abs(event.translationY) && 
+                        std::abs(event.translationX) > std::abs(event.translationZ)) {
+                        direction = event.translationX > 0 ? 
+                            C_("accessibility", "right") : 
+                            C_("accessibility", "left");
+                    } else if (std::abs(event.translationY) > std::abs(event.translationZ)) {
+                        direction = event.translationY > 0 ? 
+                            C_("accessibility", "up") : 
+                            C_("accessibility", "down");
+                    } else {
+                        direction = event.translationZ > 0 ? 
+                            C_("accessibility", "forward") : 
+                            C_("accessibility", "backward");
+                    }
+                    
+                    motion_desc.set(Glib::ustring::compose(
+                        C_("accessibility", "3D mouse translation: %1"), 
+                        direction));
+                } else if (std::abs(event.rotationX) > ROTATION_THRESHOLD || 
+                           std::abs(event.rotationY) > ROTATION_THRESHOLD || 
+                           std::abs(event.rotationZ) > ROTATION_THRESHOLD) {
+                    
+                    std::string axis;
+                    std::string direction;
+                    if (std::abs(event.rotationX) > std::abs(event.rotationY) && 
+                        std::abs(event.rotationX) > std::abs(event.rotationZ)) {
+                        axis = C_("accessibility", "X axis");
+                        direction = event.rotationX > 0 ? 
+                            C_("accessibility", "clockwise") : 
+                            C_("accessibility", "counterclockwise");
+                    } else if (std::abs(event.rotationY) > std::abs(event.rotationZ)) {
+                        axis = C_("accessibility", "Y axis");
+                        direction = event.rotationY > 0 ? 
+                            C_("accessibility", "clockwise") : 
+                            C_("accessibility", "counterclockwise");
+                    } else {
+                        axis = C_("accessibility", "Z axis");
+                        direction = event.rotationZ > 0 ? 
+                            C_("accessibility", "clockwise") : 
+                            C_("accessibility", "counterclockwise");
+                    }
+                    
+                    motion_desc.set(Glib::ustring::compose(
+                        C_("accessibility", "3D mouse rotation: %1 around %2"), 
+                        direction, axis));
+                } else {
+                    return;
+                }
+                
+                if (shiftDown || controlDown) {
+                    std::string modifiers;
+                    if (shiftDown && controlDown) {
+                        modifiers = C_("accessibility", "with Shift and Control");
+                    } else if (shiftDown) {
+                        modifiers = C_("accessibility", "with Shift");
+                    } else {
+                        modifiers = C_("accessibility", "with Control");
+                    }
+                    
+                    Glib::ustring current = motion_desc.get();
+                    motion_desc.set(Glib::ustring::compose("%1 %2", current, modifiers));
+                }
+                
+                gtkWindow->update_property(Gtk::Accessible::Property::DESCRIPTION, motion_desc);
+            }
+            
             if(window->onSixDofEvent) {
                 window->onSixDofEvent(event);
             }
@@ -2923,13 +3204,81 @@ static void ProcessSpnavEvent(WindowImplGtk *window, const spnav_event &spnavEve
             SixDofEvent event = {};
             if(spnavEvent.button.press) {
                 event.type = SixDofEvent::Type::PRESS;
+                
+                if (gtkWindow) {
+                    Glib::Value<Glib::ustring> button_desc;
+                    button_desc.init(Glib::Value<Glib::ustring>::value_type());
+                    
+                    std::string button_info;
+                    switch(spnavEvent.button.bnum) {
+                        case 0:
+                            button_info = C_("accessibility", "Fit view button");
+                            break;
+                        case 1:
+                            button_info = C_("accessibility", "Menu button");
+                            break;
+                        case 2:
+                            button_info = C_("accessibility", "Reset view button");
+                            break;
+                        default:
+                            button_info = Glib::ustring::compose(
+                                C_("accessibility", "Button %1"), 
+                                spnavEvent.button.bnum + 1);
+                            break;
+                    }
+                    
+                    button_desc.set(Glib::ustring::compose(
+                        C_("accessibility", "3D mouse %1 pressed"), 
+                        button_info));
+                        
+                    gtkWindow->update_property(Gtk::Accessible::Property::DESCRIPTION, button_desc);
+                }
             } else {
                 event.type = SixDofEvent::Type::RELEASE;
+                
+                if (gtkWindow) {
+                    Glib::Value<Glib::ustring> button_desc;
+                    button_desc.init(Glib::Value<Glib::ustring>::value_type());
+                    
+                    std::string button_info;
+                    switch(spnavEvent.button.bnum) {
+                        case 0:
+                            button_info = C_("accessibility", "Fit view button");
+                            break;
+                        case 1:
+                            button_info = C_("accessibility", "Menu button");
+                            break;
+                        case 2:
+                            button_info = C_("accessibility", "Reset view button");
+                            break;
+                        default:
+                            button_info = Glib::ustring::compose(
+                                C_("accessibility", "Button %1"), 
+                                spnavEvent.button.bnum + 1);
+                            break;
+                    }
+                    
+                    button_desc.set(Glib::ustring::compose(
+                        C_("accessibility", "3D mouse %1 released"), 
+                        button_info));
+                        
+                    gtkWindow->update_property(Gtk::Accessible::Property::DESCRIPTION, button_desc);
+                }
             }
+            
             switch(spnavEvent.button.bnum) {
-                case 0:  event.button = SixDofEvent::Button::FIT; break;
+                case 0:  
+                    event.button = SixDofEvent::Button::FIT; 
+                    if (gtkWindow && event.type == SixDofEvent::Type::PRESS) {
+                        Glib::Value<Glib::ustring> action_desc;
+                        action_desc.init(Glib::Value<Glib::ustring>::value_type());
+                        action_desc.set(C_("accessibility", "3D view fit to screen"));
+                        gtkWindow->update_property(Gtk::Accessible::Property::DESCRIPTION, action_desc);
+                    }
+                    break;
                 default: return;
             }
+            
             event.shiftDown   = shiftDown;
             event.controlDown = controlDown;
             if(window->onSixDofEvent) {
@@ -3971,8 +4320,33 @@ std::string GetClipboardText() {
 }
 
 void SetClipboardImage(const Glib::RefPtr<Gdk::Texture> &texture) {
-    if (g_clipboard) {
+    if (g_clipboard && texture) {
         g_clipboard->SetImage(texture);
+        
+        auto window = Gtk::Window::get_active_window();
+        if (window) {
+            Glib::Value<Glib::ustring> desc_value;
+            desc_value.init(Glib::Value<Glib::ustring>::value_type());
+            desc_value.set(C_("accessibility", "Image copied to clipboard"));
+            window->update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
+            
+            Glib::Value<Glib::ustring> live_value;
+            live_value.init(Glib::Value<Glib::ustring>::value_type());
+            live_value.set("polite");
+            window->update_property(Gtk::Accessible::Property::LIVE, live_value);
+            
+            if (texture) {
+                int width = texture->get_width();
+                int height = texture->get_height();
+                
+                Glib::Value<Glib::ustring> info_value;
+                info_value.init(Glib::Value<Glib::ustring>::value_type());
+                info_value.set(Glib::ustring::compose(
+                    C_("accessibility", "Image size: %1×%2 pixels"),
+                    width, height));
+                window->update_property(Gtk::Accessible::Property::DESCRIPTION, info_value);
+            }
+        }
     }
 }
 
@@ -4013,13 +4387,33 @@ Glib::RefPtr<Gdk::Texture> GetClipboardImage() {
     if (g_clipboard) {
         auto image = g_clipboard->GetImage();
         
-        if (image) {
-            auto window = Gtk::Window::get_active_window();
-            if (window) {
+        auto window = Gtk::Window::get_active_window();
+        if (window) {
+            Glib::Value<Glib::ustring> live_value;
+            live_value.init(Glib::Value<Glib::ustring>::value_type());
+            live_value.set("polite");
+            window->update_property(Gtk::Accessible::Property::LIVE, live_value);
+            
+            if (image) {
                 Glib::Value<Glib::ustring> desc_value;
                 desc_value.init(Glib::Value<Glib::ustring>::value_type());
                 desc_value.set(C_("accessibility", "Image retrieved from clipboard"));
                 window->update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
+                
+                int width = image->get_width();
+                int height = image->get_height();
+                
+                Glib::Value<Glib::ustring> info_value;
+                info_value.init(Glib::Value<Glib::ustring>::value_type());
+                info_value.set(Glib::ustring::compose(
+                    C_("accessibility", "Image size: %1×%2 pixels"),
+                    width, height));
+                window->update_property(Gtk::Accessible::Property::DESCRIPTION, info_value);
+            } else {
+                Glib::Value<Glib::ustring> error_value;
+                error_value.init(Glib::Value<Glib::ustring>::value_type());
+                error_value.set(C_("accessibility", "No image found in clipboard"));
+                window->update_property(Gtk::Accessible::Property::DESCRIPTION, error_value);
             }
         }
         

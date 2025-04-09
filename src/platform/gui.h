@@ -245,6 +245,7 @@ public:
     std::function<void(TouchGestureEvent)> onTouchGesture;
     std::function<std::string()>        onDragExport;
     std::function<void()>               onDragExportCleanup;
+    std::function<void(int)>            onScaleFactorChanged;
 
     virtual ~Window() = default;
 
