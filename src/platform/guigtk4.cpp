@@ -625,11 +625,11 @@ public:
         live_value.init(Glib::Value<Gtk::Accessible::LiveRegion>::value_type());
         live_value.set(live_region);
         update_property(Gtk::Accessible::Property::LIVE_REGION, live_value);
-        update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
-        Glib::Value<Glib::ustring> inactive_desc;
-        inactive_desc.init(Glib::Value<Glib::ustring>::value_type());
-        inactive_desc.set("Element is inactive");
-        update_property(Gtk::Accessible::Property::DESCRIPTION, inactive_desc);
+        
+        Glib::Value<Glib::ustring> mode_desc;
+        mode_desc.init(Glib::Value<Glib::ustring>::value_type());
+        mode_desc.set(Glib::ustring::compose(C_("accessibility", "Operation mode changed to: %1"), mode));
+        update_property(Gtk::Accessible::Property::DESCRIPTION, mode_desc);
 
         set_can_focus(false);
         set_can_focus(true);
