@@ -582,6 +582,9 @@ class GtkGLWidget : public Gtk::GLArea {
     std::vector<std::string> _export_mime_types;
     Glib::RefPtr<Gtk::GestureZoom> _zoom_gesture;
     Glib::RefPtr<Gtk::GestureRotate> _rotate_gesture;
+    Glib::RefPtr<Gtk::GestureDrag> _drag_gesture;
+    Glib::RefPtr<Gtk::GestureSwipe> _swipe_gesture;
+    Glib::RefPtr<Gtk::GesturePan> _pan_gesture;
 
 public:
     GtkGLWidget(Platform::Window *receiver) : _receiver(receiver) {
@@ -1121,6 +1124,54 @@ protected:
                 active_desc.set(C_("accessibility", "Zoom gesture started"));
                 update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
             });
+            
+        _drag_gesture = Gtk::GestureDrag::create();
+        _drag_gesture->set_name("gl-widget-drag-gesture");
+        _drag_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        _drag_gesture->set_button(0); // Any button
+        
+        _drag_gesture->signal_drag_begin().connect(
+            [this](double start_x, double start_y) {
+                Glib::Value<Glib::ustring> active_desc;
+                active_desc.init(Glib::Value<Glib::ustring>::value_type());
+                active_desc.set(C_("accessibility", "Pan gesture started"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
+            });
+            
+        _swipe_gesture = Gtk::GestureSwipe::create();
+        _swipe_gesture->set_name("gl-widget-swipe-gesture");
+        _swipe_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        
+        _swipe_gesture->signal_swipe().connect(
+            [this](double velocity_x, double velocity_y) {
+                Glib::Value<Glib::ustring> active_desc;
+                active_desc.init(Glib::Value<Glib::ustring>::value_type());
+                active_desc.set(C_("accessibility", "Swipe gesture detected"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
+            });
+            
+        _pan_gesture = Gtk::GesturePan::create(Gtk::Orientation::HORIZONTAL);
+        _pan_gesture->set_name("gl-widget-pan-gesture");
+        _pan_gesture->set_propagation_phase(Gtk::PropagationPhase::CAPTURE);
+        
+        _pan_gesture->signal_pan().connect(
+            [this](Gtk::PanDirection direction, double offset) {
+                Glib::Value<Glib::ustring> active_desc;
+                active_desc.init(Glib::Value<Glib::ustring>::value_type());
+                active_desc.set(C_("accessibility", "Pan gesture in progress"));
+                update_property(Gtk::Accessible::Property::DESCRIPTION, active_desc);
+            });
+            
+        add_controller(_zoom_gesture);
+        add_controller(_rotate_gesture);
+        add_controller(_drag_gesture);
+        add_controller(_swipe_gesture);
+        add_controller(_pan_gesture);
+        
+        Glib::Value<bool> touch_value;
+        touch_value.init(Glib::Value<bool>::value_type());
+        touch_value.set(true);
+        update_property(Gtk::Accessible::Property::HAS_TOUCH_INTERFACE, touch_value);
 
         _zoom_gesture->signal_scale_changed().connect(
             [this](double scale) {
@@ -2947,8 +2998,17 @@ void Request3DConnexionEventsForWindow(WindowRef window) {
         std::static_pointer_cast<WindowImplGtk>(window);
 
     if(spnav_open() != -1) {
-        g_io_add_watch(g_io_channel_unix_new(spnav_fd()), G_IO_IN,
-                       ConsumeSpnavQueue, windowImpl.get());
+        auto channel = g_io_channel_unix_new(spnav_fd());
+        g_io_add_watch(channel, G_IO_IN, ConsumeSpnavQueue, windowImpl.get());
+        
+        if (windowImpl && windowImpl->gtkWindow) {
+            Glib::Value<Glib::ustring> value;
+            value.init(Glib::Value<Glib::ustring>::value_type());
+            value.set(C_("accessibility", "3D mouse connected"));
+            windowImpl->gtkWindow->update_property(Gtk::Accessible::Property::DESCRIPTION, value);
+            
+            AnnounceOperationMode(C_("accessibility", "3D mouse connected and ready"));
+        }
     }
 }
 #endif // HAVE_SPACEWARE && (GDK_WINDOWING_X11 || GDK_WINDOWING_WAYLAND)
@@ -3842,6 +3902,19 @@ public:
         }
         return false;
     }
+    
+    Glib::RefPtr<Gdk::Texture> GetImage() {
+        Glib::RefPtr<Gdk::Texture> result;
+        if (clipboard) {
+            auto future = clipboard->read_texture_async();
+            try {
+                result = future.get();
+            } catch (const Glib::Error &e) {
+                dbp("Clipboard image error: %s", e.what().c_str());
+            }
+        }
+        return result;
+    }
 
     void Clear() {
         if (clipboard) {
@@ -3934,6 +4007,13 @@ std::vector<uint8_t> GetClipboardData(const std::string &mime_type) {
         return g_clipboard->GetData(mime_type);
     }
     return {};
+}
+
+Glib::RefPtr<Gdk::Texture> GetClipboardImage() {
+    if (g_clipboard) {
+        return g_clipboard->GetImage();
+    }
+    return Glib::RefPtr<Gdk::Texture>();
 }
 
 //-----------------------------------------------------------------------------
