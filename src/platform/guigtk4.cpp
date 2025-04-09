@@ -4037,29 +4037,9 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     if (!theme_css_loaded) {
         dbp("Using embedded theme CSS fallback");
         
-        css_provider->load_from_data(
-            "@define-color bg_color #f5f5f5;"
-            "@define-color fg_color #333333;"
-            "@define-color header_bg #e0e0e0;"
-            "@define-color header_border #c0c0c0;"
-            "@define-color button_hover rgba(128, 128, 128, 0.1);"
-            "@define-color accent_color #0066cc;"
-            "@define-color accent_fg white;"
-            "@define-color entry_bg white;"
-            "@define-color entry_fg black;"
-            "@define-color border_color #e0e0e0;"
-            
-            "@define-color dark_bg_color #2d2d2d;"
-            "@define-color dark_fg_color #e0e0e0;"
-            "@define-color dark_header_bg #1e1e1e;"
-            "@define-color dark_header_border #3d3d3d;"
-            "@define-color dark_button_hover rgba(255, 255, 255, 0.1);"
-            "@define-color dark_accent_color #3584e4;"
-            "@define-color dark_accent_fg white;"
-            "@define-color dark_entry_bg #3d3d3d;"
-            "@define-color dark_entry_fg #e0e0e0;"
-            "@define-color dark_border_color #3d3d3d;"
-        );
+        #include "css/theme_colors.css.h"
+        css_provider->load_from_data(theme_colors_css);
+    }
     
     Gtk::StyleContext::add_provider_for_display(
         Gdk::Display::get_default(),
@@ -4086,24 +4066,8 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     if (!window_css_loaded) {
         dbp("Using embedded window CSS fallback");
         
-        window_css_provider->load_from_data(
-            "/* RTL text support */"
-            "window.solvespace-window[text-direction=\"rtl\"] {"
-            "   direction: rtl;"
-            "}"
-            "window.solvespace-window[text-direction=\"rtl\"] * {"
-            "   text-align: right;"
-            "}"
-            
-            "window.solvespace-window { "
-            "   background-color: @bg_color; "
-            "   color: @fg_color; "
-            "}"
-            "window.solvespace-window.dark { "
-            "   background-color: @dark_bg_color; "
-            "   color: @dark_fg_color; "
-            "}"
-        );
+        #include "css/window.css.h"
+        window_css_provider->load_from_data(window_css);
     }
     
     Gtk::StyleContext::add_provider_for_display(
@@ -4253,23 +4217,9 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
         
     auto editor_css_provider = Gtk::CssProvider::create();
-    editor_css_provider->load_from_data(
-        "entry.editor-text { "
-        "   background-color: @entry_bg; "
-        "   color: @entry_fg; "
-        "   border-radius: 3px; "
-        "   padding: 2px; "
-        "   caret-color: @accent_color; "
-        "   selection-background-color: alpha(@accent_color, 0.3); "
-        "}"
-        ".dark entry.editor-text { "
-        "   background-color: @dark_entry_bg; "
-        "   color: @dark_entry_fg; "
-        "   caret-color: @dark_accent_color; "
-        "   selection-background-color: alpha(@dark_accent_color, 0.3); "
-        "   selection-color: @entry_fg; "
-        "}"
-    );
+    
+    #include "css/editor_overlay.css.h"
+    editor_css_provider->load_from_data(editor_overlay_css);
     
     Gtk::StyleContext::add_provider_for_display(
         Gdk::Display::get_default(),
@@ -4343,14 +4293,19 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
 
     auto settings = Gtk::Settings::get_default();
+    
     auto theme_binding = Gtk::PropertyExpression<bool>::create(
-        settings->property_gtk_application_prefer_dark_theme());
-    theme_binding->connect([&gtkWindow, settings]() {
+        G_TYPE_BOOLEAN, 
+        Glib::RefPtr<Glib::ObjectBase>(settings), 
+        "gtk-application-prefer-dark-theme");
+    
+    Gtk::Window* window_ptr = &window;
+    theme_binding->connect([window_ptr, settings]() {
         bool dark_theme = settings->property_gtk_application_prefer_dark_theme();
         if (dark_theme) {
-            gtkWindow.add_css_class("dark");
+            window_ptr->add_css_class("dark");
         } else {
-            gtkWindow.remove_css_class("dark");
+            window_ptr->remove_css_class("dark");
         }
     });
     
@@ -4745,8 +4700,6 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         style_provider,
         GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-    auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
-
     if (settings) {
         settings->property_gtk_application_prefer_dark_theme().signal_changed().connect(
             [](){
@@ -4757,7 +4710,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
 
     std::set<std::string> rtl_languages = {"ar", "he", "fa", "ur", "dv", "ha", "khw", "ks", "ku", "ps", "sd", "ug", "yi"};
 
-    std::string lang = Glib::get_language_names()[0];
+    std::string lang = Glib::get_locale();
     if (lang.length() >= 2) {
         std::string lang_code = lang.substr(0, 2);
         bool is_rtl = rtl_languages.find(lang_code) != rtl_languages.end();
@@ -4974,7 +4927,11 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     return args;
 }
 
-void RunGui() {
+static void RunGui();
+static void ExitGui();
+static void ClearGui();
+
+static void RunGui() {
     const char* display = getenv("DISPLAY");
     if (display && (strncmp(display, ":", 1) == 0)) {
         const char* ci = getenv("CI");
@@ -4998,7 +4955,6 @@ void RunGui() {
 
         gtkApp->hold();
 
-        auto settings = Gtk::Settings::get_for_display(Gdk::Display::get_default());
         if (settings) {
             bool dark_theme = false;
             settings->get_property("gtk-application-prefer-dark-theme", dark_theme);
@@ -5028,16 +4984,14 @@ void RunGui() {
     }
 }
 
-void ExitGui() {
+static void ExitGui() {
     if(gtkApp) {
         gtkApp->quit();
     }
 }
 
-void ClearGui() {
+static void ClearGui() {
     gtkApp.reset();
-}
-
 }
 
 }
