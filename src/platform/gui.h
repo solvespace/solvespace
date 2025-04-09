@@ -7,6 +7,9 @@
 #ifndef SOLVESPACE_GUI_H
 #define SOLVESPACE_GUI_H
 
+#include <set>
+#include <string>
+
 namespace SolveSpace {
 class RgbaColor;
 
@@ -408,15 +411,29 @@ inline bool IsRTL() {
     static bool is_rtl = false;
     
     if (!checked) {
-        // Get current locale and check if it's RTL
-        std::string locale = Glib::get_language_names()[0];
-        // Only include languages that use RTL scripts
-        // Note: Kurdish (ku) has varieties that use different scripts - Sorani uses Arabic (RTL)
-        // while Kurmanji uses Latin script (LTR). We'll need more specific locale detection for Kurdish.
-        std::set<std::string> rtl_langs = {"ar", "he", "fa", "ur", "dv", "ha", "khw", "ks", "ps", "sd", "ug", "yi"};
-        // For Kurdish, check if it's specifically Sorani Kurdish (ckb) which uses RTL
-        bool is_sorani_kurdish = locale.length() >= 3 && locale.substr(0, 3) == "ckb";
-        is_rtl = (locale.length() >= 2 && rtl_langs.find(locale.substr(0, 2)) != rtl_langs.end()) || is_sorani_kurdish;
+#if defined(USE_GTK4) && defined(HAVE_GTKMM)
+        // In GTK builds, check the current locale
+        try {
+            // Get current locale and check if it's RTL
+            std::string locale = Glib::get_language_names()[0];
+            
+            // Only include languages that use RTL scripts
+            std::set<std::string> rtl_langs = {"ar", "he", "fa", "ur", "dv", "ha", "khw", "ks", "ps", "sd", "ug", "yi"};
+            
+            // For Kurdish, check if it's specifically Sorani Kurdish (ckb) which uses RTL
+            // Kurmanji Kurdish (ku_TR) uses Latin script (LTR)
+            bool is_sorani_kurdish = locale.length() >= 3 && locale.substr(0, 3) == "ckb";
+            
+            is_rtl = (locale.length() >= 2 && rtl_langs.find(locale.substr(0, 2)) != rtl_langs.end()) || is_sorani_kurdish;
+        } catch (...) {
+            // If there's any error, default to LTR
+            is_rtl = false;
+        }
+#else
+        // In non-GTK builds, default to LTR
+        is_rtl = false;
+#endif
+#endif
         checked = true;
     }
     
