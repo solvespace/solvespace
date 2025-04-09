@@ -4011,7 +4011,19 @@ std::vector<uint8_t> GetClipboardData(const std::string &mime_type) {
 
 Glib::RefPtr<Gdk::Texture> GetClipboardImage() {
     if (g_clipboard) {
-        return g_clipboard->GetImage();
+        auto image = g_clipboard->GetImage();
+        
+        if (image) {
+            auto window = Gtk::Window::get_active_window();
+            if (window) {
+                Glib::Value<Glib::ustring> desc_value;
+                desc_value.init(Glib::Value<Glib::ustring>::value_type());
+                desc_value.set(C_("accessibility", "Image retrieved from clipboard"));
+                window->update_property(Gtk::Accessible::Property::DESCRIPTION, desc_value);
+            }
+        }
+        
+        return image;
     }
     return Glib::RefPtr<Gdk::Texture>();
 }
@@ -4100,7 +4112,7 @@ void ShowColorPicker(const RgbaColor& initialColor,
 static Glib::RefPtr<Gtk::Application> gtkApp;
 static Glib::RefPtr<Gtk::Settings> settings;
 
-std::vector<std::string> InitGui(int argc, char **argv) {
+static std::vector<std::string> InitGuiCommon(int argc, char **argv) {
     std::vector<std::string> args;
     for(int i = 0; i < argc; i++) {
         args.push_back(argv[i]);
@@ -5105,9 +5117,7 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     return args;
 }
 
-static void RunGui();
-static void ExitGui();
-static void ClearGui();
+}
 
 static void RunGui() {
     const char* display = getenv("DISPLAY");
@@ -5172,6 +5182,14 @@ static void ClearGui() {
     gtkApp.reset();
 }
 
+    return args;
+}
+
+namespace SolveSpace {
+namespace Platform {
+
+std::vector<std::string> InitGui(int argc, char **argv) {
+    auto args = InitGuiCommon(argc, argv);
     RunGui();
     return args;
 }
