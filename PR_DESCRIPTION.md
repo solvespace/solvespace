@@ -1,42 +1,40 @@
 # GTK4 Migration Improvements
 
-This PR enhances the GTK4 migration with the following improvements:
+This PR completes the GTK4 migration for SolveSpace with the following enhancements:
 
 ## Internationalization Support
-- Added language selection in preferences with proper locale handling
-- Marked UI strings for translation using C_() macro with context
-- Implemented fallback mechanism for locale selection
-- Added support for all available locales in the configuration screen
+- Improved language selection in preferences with proper locale handling
+- Added RTL language support for Arabic, Hebrew, Persian, and other RTL languages
+- Enhanced text direction handling in CSS for RTL languages
 
 ## Accessibility Enhancements
-- Improved screen reader support with `update_property` for accessibility properties
-- Added descriptive labels and descriptions for the 3D view canvas
-- Enhanced keyboard navigation with mode announcements for screen readers
-- Added comprehensive operation mode announcements for keyboard actions:
-  - Delete and Escape keys
-  - Drawing tools (Line, Circle, Arc, Rectangle)
-  - Dimension tools
+- Implemented operation mode announcements for screen readers using GTK4's update_property API
+- Added proper accessibility labels and descriptions for UI elements
+- Enhanced keyboard navigation support
 
-## Dark Mode Styling
-- Enhanced CSS styling with proper theme detection
-- Added support for both light and dark themes
-- Ensured 3D canvas colors remain consistent regardless of theme
-- Improved UI element styling for better theme consistency
+## CSS Styling Improvements
+- Extracted CSS from raw strings into separate files for better maintainability
+- Implemented file-based CSS loading with fallback to embedded strings
+- Added dark mode styling with CSS variables
+- Ensured 3D canvas colors remain consistent across theme changes
 
-## Event Controller Improvements
-- Replaced legacy signal handlers with GTK4's event controller system
-- Implemented PropertyExpression for dialog visibility and theme binding
-- Enhanced focus management with EventControllerFocus
-- Improved keyboard and mouse event handling with GTK4's controller-based approach
+## Event Controller Replacements
+- Replaced signal handlers with GTK4 event controllers
+- Implemented PropertyExpression for reactive UI binding
+- Enhanced touch screen support with gesture controllers
 
-## Code Quality Improvements
-- Replaced legacy property access with GTK4's idiomatic accessibility API
-- Enhanced menu button accessibility with proper role and label properties
-- Improved dialog accessibility with GTK4's idiomatic accessibility API
-- Ensured cross-platform compatibility with no Linux-specific code
-- Enhanced layout management using ConstraintLayout for responsive UI
+## Cross-Platform Compatibility
+- Ensured no Linux-specific code is used
+- Maintained compatibility with Windows and macOS builds
+- Updated Flatpak manifest with correct GTK4 dependencies
 
-These changes follow GTK4 best practices and maintain compatibility with future GTK5 migrations.
+## Testing
+- Tested in Ubuntu 24.04 Docker environment
+- Verified language selection and RTL support
+- Tested accessibility features with screen readers
+- Verified dark mode appearance with both light and dark system themes
 
-Link to Devin run: https://app.devin.ai/sessions/149f398947fd4b5ca08e94aa478f4786
+This PR addresses the requirements in issue #1560 for the GTK4 migration.
+
+Link to Devin run: https://app.devin.ai/sessions/80839d35747c407fa31aa0e59c2d85b5
 Requested by: Erkin Alp Güney
