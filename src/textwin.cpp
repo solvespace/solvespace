@@ -831,7 +831,7 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
             } else if(how == CLICK) {
                 if(x >= sx && x <= sx+SIZE && y >= sy && y <= sy+SIZE) {
                     editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
-                    ColorPickerDone();
+                    ColorPickerDone(editControl.colorPicker.rgb);
                 }
             } else if(how == HOVER) {
                 if(x >= sx && x <= sx+SIZE && y >= sy && y <= sy+SIZE) {
@@ -852,7 +852,7 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
                            /*zIndex=*/2);
     } else if(how == CLICK) {
         if(x >= hx && x <= hxm && y >= hy && y <= hym) {
-            ColorPickerDone();
+            ColorPickerDone(editControl.colorPicker.rgb);
         }
     } else if(how == HOVER) {
         if(x >= hx && x <= hxm && y >= hy && y <= hym) {
