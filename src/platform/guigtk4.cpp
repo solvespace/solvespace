@@ -3993,7 +3993,7 @@ void InitColorPicker() {
     g_colorPicker = std::make_unique<ColorPickerImplGtk>();
 }
 
-void ShowColorPicker(const RgbaColor& initialColor,
+static void ShowColorPickerImpl(const RgbaColor& initialColor,
                     std::function<void(const RgbaColor&)> onColorSelected) {
     if (g_colorPicker && gtkApp) {
         auto window = gtkApp->get_active_window();
@@ -4006,7 +4006,7 @@ void ShowColorPicker(const RgbaColor& initialColor,
 namespace Platform {
 void ShowColorPicker(const RgbaColor& initialColor,
                     std::function<void(const RgbaColor&)> onColorSelected) {
-    ::ShowColorPicker(initialColor, onColorSelected);
+    ShowColorPickerImpl(initialColor, onColorSelected);
 }
 }
 
@@ -4311,8 +4311,8 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     auto settings = Gtk::Settings::get_default();
     
     auto theme_binding = Gtk::PropertyExpression<bool>::create(
-        G_TYPE_BOOLEAN, 
-        Glib::RefPtr<Glib::ObjectBase>(settings), 
+        settings->get_type(), 
+        nullptr, 
         "gtk-application-prefer-dark-theme");
     
     Gtk::Window* window_ptr = &window;
