@@ -2248,14 +2248,16 @@ public:
             }
             
             if(is_rtl) {
-                set_property("text-direction", "rtl");
+                std::string direction = "rtl";
+                set_property("text-direction", direction);
                 
                 Glib::Value<Glib::ustring> rtl_value;
                 rtl_value.init(Glib::Value<Glib::ustring>::value_type());
                 rtl_value.set(C_("accessibility", "Right-to-left text direction"));
                 update_property(Gtk::Accessible::Property::ORIENTATION, rtl_value);
             } else {
-                set_property("text-direction", "ltr");
+                std::string direction = "ltr";
+                set_property("text-direction", direction);
             }
         }
 
@@ -3583,7 +3585,8 @@ public:
         gtkNative->set_title(isSave ? C_("dialog-title", "Save SolveSpace File")
                                     : C_("dialog-title", "Open SolveSpace File"));
 
-        gtkNative->set_property("accessible-role", std::string("dialog"));
+        std::string role = "dialog";
+        gtkNative->set_property("accessible-role", role);
 
         Glib::Value<Glib::ustring> label_value;
         label_value.init(Glib::Value<Glib::ustring>::value_type());
@@ -3618,7 +3621,8 @@ public:
         if (IsRTL()) {
             Glib::Value<Glib::ustring> rtl_value;
             rtl_value.init(Glib::Value<Glib::ustring>::value_type());
-            rtl_value.set("rtl");
+            std::string rtl_direction = "rtl";
+            rtl_value.set(rtl_direction);
             gtkNative->update_property(Gtk::Accessible::Property::ORIENTATION, rtl_value);
         }
 
@@ -3945,7 +3949,8 @@ public:
         colorDialog->set_title(C_("dialog-title", "Choose a Color"));
         colorDialog->set_modal(true);
 
-        colorDialog->set_property("accessible-role", std::string("color-chooser"));
+        std::string role = "color-chooser";
+        colorDialog->set_property("accessible-role", role);
 
         Glib::Value<Glib::ustring> label_value;
         label_value.init(Glib::Value<Glib::ustring>::value_type());
