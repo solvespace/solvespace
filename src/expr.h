@@ -76,7 +76,7 @@ public:
     bool DependsOn(hParam p) const;
     static bool Tol(double a, double b);
     bool IsZeroConst() const;
-    Expr *FoldConstants();
+    Expr *FoldConstants(bool allocCopy = true, size_t depth = std::numeric_limits<size_t>::max());
     void Substitute(const SubstitutionMap &subMap);
 
     static const hParam NO_PARAMS, MULTIPLE_PARAMS;
@@ -97,7 +97,8 @@ public:
     // resolved to pointers to the actual value. This speeds things up
     // considerably.
     Expr *DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
-                                       IdList<Param,hParam> *thenTry) const;
+                                       IdList<Param,hParam> *thenTry,
+                                       bool foldConstants = false) const;
 
     static Expr *Parse(const std::string &input, std::string *error);
     static Expr *From(const std::string &input, bool popUpError);
