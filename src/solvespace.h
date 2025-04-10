@@ -257,7 +257,6 @@ public:
             Eigen::SparseMatrix<double> num;
         } A;
 
-        Eigen::VectorXd scale;
         Eigen::VectorXd X;
 
         struct {
