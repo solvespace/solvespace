@@ -277,19 +277,19 @@ bool System::SolveLeastSquares() {
     // Scale the columns; this scale weights the parameters for the least
     // squares solve, so that we can encourage the solver to make bigger
     // changes in some parameters, and smaller in others.
-    mat.scale = VectorXd::Ones(mat.n);
+    VectorXd scale = VectorXd::Ones(mat.n);
     for(int c = 0; c < mat.n; c++) {
         if(IsDragged(mat.param[c])) {
             // It's least squares, so this parameter doesn't need to be all
             // that big to get a large effect.
-            mat.scale[c] = 1 / 20.0;
+            scale[c] = 1 / 20.0;
         }
     }
 
     const int size = mat.A.num.outerSize();
     for(int k = 0; k < size; k++) {
         for(SparseMatrix<double>::InnerIterator it(mat.A.num, k); it; ++it) {
-            it.valueRef() *= mat.scale[it.col()];
+            it.valueRef() *= scale[it.col()];
         }
     }
 
@@ -302,7 +302,7 @@ bool System::SolveLeastSquares() {
     mat.X = mat.A.num.transpose() * z;
 
     for(int c = 0; c < mat.n; c++) {
-        mat.X[c] *= mat.scale[c];
+        mat.X[c] *= scale[c];
     }
     return true;
 }
