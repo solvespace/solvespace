@@ -24,38 +24,34 @@ bool System::WriteJacobian(int tag) {
     mat.A.sym.setZero();
     mat.B.sym.clear();
 
-    for(Param &p : param) {
-        if(p.tag != tag) continue;
-        mat.param.push_back(p.h);
-    }
-    mat.n = mat.param.size();
-
     for(Equation &e : eq) {
         if(e.tag != tag) continue;
         mat.eq.push_back(&e);
     }
-    mat.m = mat.eq.size();
-    mat.A.sym.resize(mat.m, mat.n);
-    mat.A.sym.reserve(Eigen::VectorXi::Constant(mat.n, LikelyPartialCountPerEq));
-
-    // Fill the param id to index map
-    std::map<uint32_t, int> paramToIndex;
-    for(int j = 0; j < mat.n; j++) {
-        paramToIndex[mat.param[j].v] = j;
-    }
-
     if(mat.eq.size() >= MAX_UNKNOWNS) {
         return false;
     }
+    mat.m = mat.eq.size();
+
+    std::unordered_map<uint32_t, int> paramToIndex;
+    for(Param &p : param) {
+        if(p.tag != tag) continue;
+        // Fill the param id to index map
+        paramToIndex[p.h.v] = mat.param.size();
+        mat.param.push_back(p.h);
+    }
+    mat.n = mat.param.size();
+
     // In some experimenting, this is almost always the right size.
     // Value is usually between 0 and 20, comes from number of constraints?
+    mat.A.sym.resize(mat.m, mat.n);
+    mat.A.sym.reserve(Eigen::VectorXi::Constant(mat.n, LikelyPartialCountPerEq));
+
     mat.B.sym.reserve(mat.eq.size());
     for(size_t i = 0; i < mat.eq.size(); i++) {
         Equation *e = mat.eq[i];
-        if(e->tag != tag) continue;
-        // Simplify (fold) then deep-copy the current equation.
-        Expr *f = e->e->FoldConstants();
-        f = f->DeepCopyWithParamsAsPointers(&param, &(SK.param));
+        // Deep-copy and simplify (fold) the current equation.
+        Expr *f = e->e->DeepCopyWithParamsAsPointers(&param, &(SK.param), /*foldConstants=*/true);
 
         ParamSet paramsUsed;
         f->ParamsUsedList(&paramsUsed);
@@ -68,7 +64,7 @@ bool System::WriteJacobian(int tag) {
             const int j = it->second;
             // compute partial derivative of f
             Expr *pd = f->PartialWrt(p);
-            pd = pd->FoldConstants();
+            pd = pd->FoldConstants(/*allocCopy=*/false);
             if(pd->IsZeroConst())
                 continue;
             mat.A.sym.insert(i, j) = pd;
@@ -338,13 +334,15 @@ bool System::NewtonSolve(int tag) {
         // Re-evalute the functions, since the params have just changed.
         for(i = 0; i < mat.m; i++) {
             mat.B.num[i] = (mat.B.sym[i])->Eval();
+            if(IsReasonable(mat.B.num[i])) {
+                // Very bad, and clearly not convergent
+                return false;
+            }
         }
+        
         // Check for convergence
         converged = true;
         for(i = 0; i < mat.m; i++) {
-            if(IsReasonable(mat.B.num[i])) {
-                return false;
-            }
             if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE) {
                 converged = false;
                 break;

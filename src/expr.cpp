@@ -307,8 +307,7 @@ Expr *Expr::DeepCopy() const {
 }
 
 Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
-    IdList<Param,hParam> *thenTry) const
-{
+                                         IdList<Param, hParam> *thenTry, bool foldConstants) const {
     Expr *n = AllocExpr();
     if(op == Op::PARAM) {
         // A param that is referenced by its hParam gets rewritten to go
@@ -328,8 +327,17 @@ Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
 
     *n = *this;
     int c = n->Children();
-    if(c > 0) n->a = a->DeepCopyWithParamsAsPointers(firstTry, thenTry);
-    if(c > 1) n->b = b->DeepCopyWithParamsAsPointers(firstTry, thenTry);
+    if(c > 0) {
+        n->a = a->DeepCopyWithParamsAsPointers(firstTry, thenTry, foldConstants);
+        bool hasConstants = n->a->op == Op::CONSTANT;
+        if(c > 1) {
+            n->b = b->DeepCopyWithParamsAsPointers(firstTry, thenTry, foldConstants);
+            hasConstants |= n->b->op == Op::CONSTANT;
+        }
+        if(hasConstants && foldConstants) {
+            n = n->FoldConstants(false, 0);
+        }
+    }
     return n;
 }
 
@@ -433,13 +441,15 @@ bool Expr::IsZeroConst() const {
     return op == Op::CONSTANT && EXACT(v == 0.0);
 }
 
-Expr *Expr::FoldConstants() {
-    Expr *n = AllocExpr();
-    *n = *this;
-
-    int c = Children();
-    if(c >= 1) n->a = a->FoldConstants();
-    if(c >= 2) n->b = b->FoldConstants();
+Expr *Expr::FoldConstants(bool allocCopy, size_t depth) {
+    Expr *n;
+    
+    if(!allocCopy) {
+        n = this;
+    } else {
+        n = AllocExpr();
+        *n = *this;
+    }
 
     switch(op) {
         case Op::PARAM_PTR:
@@ -452,6 +462,11 @@ Expr *Expr::FoldConstants() {
         case Op::TIMES:
         case Op::DIV:
         case Op::PLUS:
+            if(depth > 0) {
+                n->a = a->FoldConstants(allocCopy, depth - 1);
+                n->b = b->FoldConstants(allocCopy, depth - 1);
+            }
+    
             // If both ops are known, then we can evaluate immediately
             if(n->a->op == Op::CONSTANT && n->b->op == Op::CONSTANT) {
                 double nv = n->Eval();
@@ -490,6 +505,10 @@ Expr *Expr::FoldConstants() {
         case Op::COS:
         case Op::ASIN:
         case Op::ACOS:
+            if(depth > 0) {
+                n->a = a->FoldConstants(allocCopy, depth - 1);
+            }
+
             if(n->a->op == Op::CONSTANT) {
                 double nv = n->Eval();
                 n->op = Op::CONSTANT;
