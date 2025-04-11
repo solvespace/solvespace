@@ -1,5 +1,8 @@
 #!/bin/sh -xe
 
+# Apply patches
+.github/scripts/apply-patches.sh
+
 mkdir build
 cd build
 
