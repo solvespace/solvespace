@@ -172,6 +172,7 @@ enum class SolveResult : uint32_t {
     TOO_MANY_UNKNOWNS        = 20
 };
 
+using ParamSet = std::unordered_set<hParam, HandleHasher<hParam>>;
 
 #include "sketch.h"
 #include "ui.h"
@@ -229,7 +230,7 @@ public:
 
     // A list of parameters that are being dragged; these are the ones that
     // we should put as close as possible to their initial positions.
-    List<hParam>                    dragged;
+    ParamSet                        dragged;
 
     enum {
         // In general, the tag indicates the subsys that a variable/equation
@@ -256,7 +257,6 @@ public:
             Eigen::SparseMatrix<double> num;
         } A;
 
-        Eigen::VectorXd scale;
         Eigen::VectorXd X;
 
         struct {
@@ -279,7 +279,7 @@ public:
     void WriteEquationsExceptFor(hConstraint hc, Group *g);
     void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad,
                                         bool forceDofCheck);
-    void SolveBySubstitution();
+    SubstitutionMap SolveBySubstitution();
 
     bool IsDragged(hParam p);
 
@@ -297,9 +297,6 @@ public:
                           bool andFindBad = false, bool andFindFree = false);
 
     void Clear();
-    Param *GetLastParamSubstitution(Param *p);
-    void SubstituteParamsByLast(Expr *e);
-    void SortSubstitutionByDragged(Param *p);
 };
 
 #include "ttf.h"
