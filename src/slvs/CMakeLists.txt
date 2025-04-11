@@ -26,12 +26,19 @@ if(ENABLE_PYTHON_LIB)
     )
     set_target_properties(slvs-py PROPERTIES LIBRARY_OUTPUT_NAME solvespace)
     if(SKBUILD)
-        install(TARGETS slvs-py DESTINATION ${SKBUILD_PROJECT_NAME})
+        install(TARGETS slvs-py
+            DESTINATION ${SKBUILD_PROJECT_NAME}
+            COMPONENT   python
+        )
     else()
-        install(TARGETS slvs-py DESTINATION "slvs")
+        install(TARGETS slvs-py
+            DESTINATION "slvs"
+            COMPONENT   python
+        )
         install(
             DIRECTORY ${CMAKE_SOURCE_DIR}/python/slvs/
             DESTINATION "slvs"
+            COMPONENT   python
         )
     endif()
 endif()
@@ -65,6 +72,7 @@ set_target_properties(slvs PROPERTIES
 
 # if(NOT WIN32)
 install(TARGETS slvs
+    COMPONENT     slvs
     LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

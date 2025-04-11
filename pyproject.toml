@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core", "Cython", "cmake", "ninja"]
+requires = ["scikit-build-core", "Cython", "cmake==3.31.6", "ninja"]
 build-backend = "scikit_build_core.build"
 
 [project]
@@ -29,6 +29,7 @@ wheel.expand-macos-universal-tags = true
 cmake.verbose = true
 cmake.build-type = "RelWithDebInfo"
 build.targets = ["slvs-py"]
+install.components = ["python"]
 sdist.include = [
   ".git/HEAD",
   ".git/refs"

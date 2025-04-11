@@ -405,10 +405,12 @@ endif()
 if(NOT (WIN32 OR APPLE OR EMSCRIPTEN))
     if(ENABLE_GUI)
         install(TARGETS solvespace
+            COMPONENT   solvespace
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     endif()
     if(ENABLE_CLI)
         install(TARGETS solvespace-cli
+            COMPONENT   solvespace
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     endif()
 endif()
