@@ -99,8 +99,14 @@ bool System::IsDragged(hParam p) {
 }
 
 SubstitutionMap System::SolveBySubstitution() {
+    // Contains pointers to last substitutions in a substitution chain
     std::vector<Param *> subVec;
+    // Maps a parameter to the index of its last substitution in  `subVec`
     std::unordered_map<hParam, size_t, HandleHasher<hParam>> leaves;
+    // Tracks how many slots in `subVec` contain a specific last substitution
+    // (this can happen as slots that once contained a specific substitution
+    //  are updated to point to another over the run of the substitution algorithm)
+    std::unordered_map<hParam, std::vector<size_t>, HandleHasher<hParam>> slotTrack;
 
     for(auto &teq : eq) {
         Expr *tex = teq.e;
@@ -147,18 +153,7 @@ SubstitutionMap System::SolveBySubstitution() {
                 std::swap(subIdx, byIdx);
             }
 
-            if(subIdx > 0) {
-                // The last substitution already exists in the map, so just
-                // change the last substitution to `by`
-                subVec.at(subIdx - 1) = by;
-                // Ensure all existing pointers to `sub` now point to `by`
-                for(auto &p : subVec) {
-                    if(p->h == sub->h) {
-                        p = by;
-                    }
-                }
-                leaves[by->h] = subIdx;
-            } else {
+            if(subIdx == 0) {
                 if(byIdx == 0) {
                     // Neither `sub` nor `by` are in the map, so add them and
                     // set the target index
@@ -169,6 +164,55 @@ SubstitutionMap System::SolveBySubstitution() {
                     // the map with `by` as the target
                     leaves[sub->h] = byIdx;
                 }
+            } else {
+                // `sub` already exists in the map, so just update any slots
+                // that point to it as the last substitution to point to `by`
+                // instead
+                auto it = slotTrack.find(sub->h);
+                if(it == slotTrack.end()) {
+                    // There's only this one slot, so just replace it with `by`
+                    subVec[subIdx - 1] = by;
+
+                    // If `by` was already in the map, that means we now have
+                    // an additional slot where it resides, so add it to the
+                    // slot tracker
+                    if(byIdx != 0) {
+                        // If `by` is already in the slot tracker, we'll get
+                        // back a vector with at least two elements; otherwise
+                        // this access will add a new item to the slot tracker
+                        // with an empty vector
+                        auto &bySlots = slotTrack[by->h];
+                        if(bySlots.empty()) {
+                            bySlots.push_back(byIdx);
+                        }
+                        bySlots.push_back(subIdx);
+                    }
+                } else {
+                    // We have more than one slot pointing to `sub`, so update
+                    // all of the slots to point to `by`
+                    for(size_t i : it->second) {
+                        subVec[i - 1] = by;
+                    }
+
+                    // No more slots are pointing to `sub`, so extract the slot list
+                    // and erase `sub` from the tracker
+                    auto subSlots = std::move(it->second);
+                    slotTrack.erase(it);
+
+                    // Same as above: this access either gives us an existing vector
+                    // with at least two elements, or creates an empty vector
+                    auto &bySlots = slotTrack[by->h];
+                    if(bySlots.empty()) {
+                        bySlots = std::move(subSlots);
+                        if(byIdx != 0) {
+                            bySlots.push_back(byIdx);
+                        }
+                    } else {
+                        bySlots.insert(bySlots.end(), subSlots.begin(), subSlots.end());
+                    }
+                }
+
+                leaves[by->h] = subIdx;
             }
 
             sub->tag = VAR_SUBSTITUTED;
@@ -178,7 +222,7 @@ SubstitutionMap System::SolveBySubstitution() {
 
     SubstitutionMap subMap;
     for(auto &sub : leaves) {
-        Param *by = subVec.at(sub.second - 1);
+        Param *by = subVec[sub.second - 1];
         if(sub.first != by->h) {
             subMap[sub.first] = by;
         }
