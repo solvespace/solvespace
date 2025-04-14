@@ -241,10 +241,32 @@ if(ENABLE_GUI OR ENABLE_CLI)
         set(FORCE_VENDORED_PNG      ON)
         set(FORCE_VENDORED_Freetype ON)
 
+        # There's an issue with the zlib configuration, which doesn't provide a way to
+        # disable the shared or static library builds, and on UNIX sets the base name of
+        # the output for both the static and shared targets to `libz`. As Emscripten doesn't
+        # support shared libraries, CMake converts the shared library target to a static
+        # library and both targets end up with the name `libz.a`, causing Ninja to complain
+        # about different rules generating the same target. As a workaround, temporarily
+        # unset UNIX for Emscripten while the zlib configuration is being processed, and
+        # reset it back afterwards.
+        # NOTE: The unreleased develop branch of zlib after version 1.3.1 allows disabling
+        # the shared library build, which is the proper fix for this issue, so when the
+        # next version of zlib is released and updated as a dependency, `ZLIB_BUILD_SHARED`
+        # should be set to `OFF` instead of this hack.
+        if(EMSCRIPTEN AND UNIX)
+            set(zlib_workaround_unix_was_unset 1)
+            unset(UNIX)
+        endif()
+
         find_vendored_package(ZLIB zlib
             ZLIB_LIBRARY            zlibstatic
             ZLIB_INCLUDE_DIR        ${CMAKE_SOURCE_DIR}/extlib/zlib)
         list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
+
+        if(zlib_workaround_unix_was_unset)
+            set(UNIX 1)
+            unset(zlib_workaround_unix_was_unset)
+        endif()
 
         find_vendored_package(PNG libpng
             SKIP_INSTALL_ALL        ON
