@@ -6,6 +6,7 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
+#include <limits>
 #include "solvespace.h"
 
 ExprVector ExprVector::From(Expr *x, Expr *y, Expr *z) {
@@ -542,7 +543,7 @@ void Expr::Substitute(const SubstitutionMap &subMap) {
 // If multiple params are referenced, then return MULTIPLE_PARAMS.
 //-----------------------------------------------------------------------------
 const hParam Expr::NO_PARAMS       = { 0 };
-const hParam Expr::MULTIPLE_PARAMS = { 1 };
+const hParam Expr::MULTIPLE_PARAMS = { std::numeric_limits<decltype(hParam::v)>::max() };
 hParam Expr::ReferencedParams(ParamList *pl) const {
     if(op == Op::PARAM) {
         if(pl->FindByIdNoOops(parh)) {
