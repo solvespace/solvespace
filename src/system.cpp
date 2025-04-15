@@ -303,7 +303,7 @@ bool System::SolveLeastSquares() {
     return true;
 }
 
-bool System::NewtonSolve(int tag) {
+bool System::NewtonSolve() {
 
     int iter = 0;
     bool converged = false;
@@ -482,7 +482,7 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
         e.tag  = alone;
         p->tag = alone;
         WriteJacobian(alone);
-        if(!NewtonSolve(alone)) {
+        if(!NewtonSolve()) {
             // We don't do the rank test, so let's arbitrarily return
             // the DIDNT_CONVERGE result here.
             rankOk = true;
@@ -503,7 +503,7 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     rankOk = (!g->suppressDofCalculation && !g->allowRedundant) ? TestRank(dof) : true;
 
     // And do the leftovers as one big system
-    if(!NewtonSolve(0)) {
+    if(!NewtonSolve()) {
         goto didnt_converge;
     }
 

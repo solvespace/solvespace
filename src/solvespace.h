@@ -283,7 +283,7 @@ public:
 
     bool IsDragged(hParam p);
 
-    bool NewtonSolve(int tag);
+    bool NewtonSolve();
 
     void MarkParamsFree(bool findFree);
 
