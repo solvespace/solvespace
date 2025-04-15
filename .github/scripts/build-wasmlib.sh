@@ -10,7 +10,7 @@ source ../emsdk/emsdk_env.sh
 mkdir -p build-wasmlib
 cd build-wasmlib
 emcmake cmake .. \
-  -DCMAKE_RELEASE_TYPE=RelWithDebInfo \
+  -DCMAKE_BUILD_TYPE=RelWithDebInfo \
   -DENABLE_GUI="OFF" \
   -DENABLE_CLI="OFF" \
   -DENABLE_TESTS="OFF" \
@@ -18,4 +18,4 @@ emcmake cmake .. \
   -DENABLE_OPENMP="OFF" \
   -DFORCE_VENDORED_Eigen3="ON" \
   -DENABLE_LTO="ON"
-cmake --build . -j$(nproc) slvs-wasm
+cmake --build . -j$(nproc) --target slvs-wasm
