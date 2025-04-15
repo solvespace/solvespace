@@ -1,5 +1,8 @@
 #!/bin/sh -xe
 
+# Apply patches
+.github/scripts/apply-patches.sh
+
 ENABLE_SANITIZERS="OFF"
 if [ "$1" = "release" ]; then
     BUILD_TYPE="RelWithDebInfo"
