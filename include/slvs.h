@@ -10,7 +10,7 @@
 #ifndef __SLVS_H
 #define __SLVS_H
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(STATIC_LIB)
 #   ifdef EXPORT_DLL
 #       define DLL __declspec( dllexport )
 #   else
