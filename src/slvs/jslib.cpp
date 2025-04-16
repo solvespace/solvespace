@@ -2,6 +2,28 @@
 #include "slvs.h"
 #include <emscripten/bind.h>
 
+struct JsSolveResult {
+  int             result;
+  int             dof;
+  size_t          nbad;
+  emscripten::val bad;
+};
+
+static JsSolveResult solveSketch(Slvs_hGroup g, bool calculateFaileds) {
+  JsSolveResult jsResult = {};
+  Slvs_hConstraint *c = nullptr;
+  Slvs_SolveResult ret = Slvs_SolveSketch(g, calculateFaileds ? &c : nullptr);
+  if(c) {
+    jsResult.bad = emscripten::val::global("Uint32Array").new_(ret.nbad);
+    jsResult.bad.call<void>("set", emscripten::typed_memory_view(ret.nbad, c));
+    free(c);
+  }
+  jsResult.result = ret.result;
+  jsResult.dof = ret.dof;
+  jsResult.nbad = ret.nbad;
+  return jsResult;
+}
+
 EMSCRIPTEN_BINDINGS(slvs) {
   emscripten::constant("C_POINTS_COINCIDENT",   SLVS_C_POINTS_COINCIDENT);
   emscripten::constant("C_PT_PT_DISTANCE",      SLVS_C_PT_PT_DISTANCE);
@@ -93,10 +115,11 @@ EMSCRIPTEN_BINDINGS(slvs) {
     .field("other", &Slvs_Constraint::other)
     .field("other2", &Slvs_Constraint::other2);
 
-  emscripten::value_object<Slvs_SolveResult>("Slvs_SolveResult")
-    .field("result", &Slvs_SolveResult::result)
-    .field("dof", &Slvs_SolveResult::dof)
-    .field("bad", &Slvs_SolveResult::bad);
+  emscripten::value_object<JsSolveResult>("Slvs_SolveResult")
+    .field("result", &JsSolveResult::result)
+    .field("dof", &JsSolveResult::dof)
+    .field("nbad", &JsSolveResult::nbad)
+    .field("bad", &JsSolveResult::bad);
 
   emscripten::class_<Quaternion>("Quaternion")
     .constructor<>()
@@ -178,6 +201,6 @@ EMSCRIPTEN_BINDINGS(slvs) {
 
   emscripten::function("getParamValue", &Slvs_GetParamValue);
   emscripten::function("setParamValue", &Slvs_SetParamValue);
-  emscripten::function("solveSketch", &Slvs_SolveSketch);
+  emscripten::function("solveSketch", &solveSketch);
   emscripten::function("clearSketch", &Slvs_ClearSketch);
 }

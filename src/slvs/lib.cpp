@@ -835,7 +835,7 @@ void Slvs_ClearSketch()
     SK.constraint.Clear();
 }
 
-Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
+Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, Slvs_hConstraint **bad = nullptr)
 {
     SYS.Clear();
 
@@ -916,13 +916,23 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
     // }
 
     List<hConstraint> badList;
-    bool andFindBad = calculateFaileds ? true : false;
+    bool andFindBad = bad != nullptr;
 
     int dof = 0;
     SolveResult status = SYS.Solve(&g, &dof, &badList, andFindBad, false, false);
     Slvs_SolveResult sr = {};
     sr.dof = dof;
-    sr.bad = badList.n;
+    sr.nbad = badList.n;
+    if(bad) {
+        if(sr.nbad <= 0) {
+            *bad = nullptr;
+        } else {
+            *bad = static_cast<Slvs_hConstraint *>(malloc(sizeof(Slvs_hConstraint) * sr.nbad));
+            for(int i = 0; i < sr.nbad; ++i) {
+                (*bad)[i] = badList[i].v;
+            }
+        }
+    }
     sr.result = 0;
     switch(status) {
         case SolveResult::OKAY: {
