@@ -27,7 +27,8 @@ export interface Constraint {
 export interface SolveResult {
   result: number;
   dof: number;
-  bad: number;
+  nbad: number;
+  bad: Uint32Array;
 }
 
 export interface Vector {
