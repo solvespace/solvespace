@@ -4,12 +4,14 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
+#include <algorithm>
 #include "solvespace.h"
 #include <slvs.h>
 #include <string>
 
 Sketch SolveSpace::SK = {};
 static System SYS;
+static ParamSet dragged;
 
 void SolveSpace::Platform::FatalError(const std::string &message) {
     fprintf(stderr, "%s", message.c_str());
@@ -829,10 +831,22 @@ void Slvs_MakeQuaternion(double ux, double uy, double uz,
 
 void Slvs_ClearSketch()
 {
+    dragged.clear();
     SYS.Clear();
     SK.param.Clear();
     SK.entity.Clear();
     SK.constraint.Clear();
+}
+
+void Slvs_MarkDragged(Slvs_Entity ptA) {
+    if(Slvs_IsPoint(ptA)) {
+        const size_t params = Slvs_IsPoint3D(ptA) ? 3 : 2;
+        for(size_t i = 0; i < params; ++i) {
+            hParam p = hParam { ptA.param[i] };
+            dragged.insert(p);
+        }
+    }
+    SolveSpace::Platform::FatalError("Invalid entity for marking dragged");
 }
 
 Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, Slvs_hConstraint **bad = nullptr)
@@ -887,16 +901,8 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, Slvs_hConstraint **bad = nullptr
     }
 
     // mark dragged params
-    for(ConstraintBase &con : SK.constraint) {
-        ConstraintBase *c = &con;
-        if(c->type == ConstraintBase::Type::WHERE_DRAGGED) {
-            EntityBase *e = SK.GetEntity(c->ptA);
-            SYS.dragged.insert(e->param[0]);
-            SYS.dragged.insert(e->param[1]);
-            if (e->type == EntityBase::Type::POINT_IN_3D) {
-                SYS.dragged.insert(e->param[2]);
-            }
-        }
+    for(hParam p : dragged) {
+        SYS.dragged.insert(p);
     }
 
     // for(hParam &par : SYS.dragged) {

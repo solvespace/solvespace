@@ -498,6 +498,7 @@ DLL double Slvs_GetParamValue(uint32_t ph);
 DLL void Slvs_SetParamValue(uint32_t ph, double value);
 
 DLL void Slvs_Solve(Slvs_System *sys, uint32_t hg);
+DLL void Slvs_MarkDragged(Slvs_Entity ptA);
 /**
  * Setting `bad` to a non NULL pointer enables finding of bad constraints.
  * If such constraints are found, `bad` is set to a heap allocated array containing
