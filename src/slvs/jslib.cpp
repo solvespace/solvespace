@@ -62,6 +62,12 @@ EMSCRIPTEN_BINDINGS(slvs) {
   emscripten::constant("RESULT_TOO_MANY_UNKNOWNS", SLVS_RESULT_TOO_MANY_UNKNOWNS);
   emscripten::constant("RESULT_REDUNDANT_OKAY", SLVS_RESULT_REDUNDANT_OKAY);
 
+  emscripten::value_array<std::array<uint32_t, 4>>("array_uint32_4")
+    .element(emscripten::index<0>())
+    .element(emscripten::index<1>())
+    .element(emscripten::index<3>())
+    .element(emscripten::index<4>());
+
   emscripten::value_object<Slvs_Entity>("Slvs_Entity")
     .field("h", &Slvs_Entity::h)
     .field("group", &Slvs_Entity::group)
