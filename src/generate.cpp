@@ -422,7 +422,7 @@ void SolveSpaceUI::UpdateCenterOfMass() {
 }
 
 void SolveSpaceUI::MarkDraggedParams() {
-    sys.dragged.Clear();
+    sys.dragged.clear();
 
     for(int i = -1; i < SS.GW.pending.points.n; i++) {
         hEntity hp;
@@ -442,14 +442,14 @@ void SolveSpaceUI::MarkDraggedParams() {
                 case Entity::Type::POINT_N_TRANS:
                 case Entity::Type::POINT_IN_3D:
                 case Entity::Type::POINT_N_ROT_AXIS_TRANS:
-                    sys.dragged.Add(&(pt->param[0]));
-                    sys.dragged.Add(&(pt->param[1]));
-                    sys.dragged.Add(&(pt->param[2]));
+                    sys.dragged.insert(pt->param[0]);
+                    sys.dragged.insert(pt->param[1]);
+                    sys.dragged.insert(pt->param[2]);
                     break;
 
                 case Entity::Type::POINT_IN_2D:
-                    sys.dragged.Add(&(pt->param[0]));
-                    sys.dragged.Add(&(pt->param[1]));
+                    sys.dragged.insert(pt->param[0]);
+                    sys.dragged.insert(pt->param[1]);
                     break;
 
                 default: // Only the entities above can be dragged.
@@ -463,7 +463,7 @@ void SolveSpaceUI::MarkDraggedParams() {
             Entity *dist = SK.GetEntity(circ->distance);
             switch(dist->type) {
                 case Entity::Type::DISTANCE:
-                    sys.dragged.Add(&(dist->param[0]));
+                    sys.dragged.insert(dist->param[0]);
                     break;
 
                 default: // Only the entities above can be dragged.
@@ -476,10 +476,10 @@ void SolveSpaceUI::MarkDraggedParams() {
         if(norm) {
             switch(norm->type) {
                 case Entity::Type::NORMAL_IN_3D:
-                    sys.dragged.Add(&(norm->param[0]));
-                    sys.dragged.Add(&(norm->param[1]));
-                    sys.dragged.Add(&(norm->param[2]));
-                    sys.dragged.Add(&(norm->param[3]));
+                    sys.dragged.insert(norm->param[0]);
+                    sys.dragged.insert(norm->param[1]);
+                    sys.dragged.insert(norm->param[2]);
+                    sys.dragged.insert(norm->param[3]);
                     break;
 
                 default: // Only the entities above can be dragged.

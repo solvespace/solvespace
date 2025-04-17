@@ -7,6 +7,8 @@
 #ifndef SOLVESPACE_EXPR_H
 #define SOLVESPACE_EXPR_H
 
+using SubstitutionMap = std::unordered_map<hParam, Param *, HandleHasher<hParam>>;
+
 class Expr {
 public:
 
@@ -70,12 +72,12 @@ public:
 
     Expr *PartialWrt(hParam p) const;
     double Eval() const;
-    void ParamsUsedList(std::vector<hParam> *list) const;
+    void ParamsUsedList(ParamSet *list) const;
     bool DependsOn(hParam p) const;
     static bool Tol(double a, double b);
     bool IsZeroConst() const;
-    Expr *FoldConstants();
-    void Substitute(hParam oldh, hParam newh);
+    Expr *FoldConstants(bool allocCopy = true, size_t depth = std::numeric_limits<size_t>::max());
+    void Substitute(const SubstitutionMap &subMap);
 
     static const hParam NO_PARAMS, MULTIPLE_PARAMS;
     hParam ReferencedParams(ParamList *pl) const;
@@ -95,7 +97,8 @@ public:
     // resolved to pointers to the actual value. This speeds things up
     // considerably.
     Expr *DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
-                                       IdList<Param,hParam> *thenTry) const;
+                                       IdList<Param,hParam> *thenTry,
+                                       bool foldConstants = false) const;
 
     static Expr *Parse(const std::string &input, std::string *error);
     static Expr *From(const std::string &input, bool popUpError);
