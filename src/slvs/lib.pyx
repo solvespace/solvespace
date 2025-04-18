@@ -1,11 +1,13 @@
 #cython: language_level=3
 from enum import IntEnum, auto
+from libc.stdint cimport uint32_t
+from libc.stdlib cimport free
 
 cdef extern from "slvs.h" nogil:
-    ctypedef int Slvs_hEntity
-    ctypedef int Slvs_hGroup
-    ctypedef int Slvs_hConstraint
-    ctypedef int Slvs_hParam
+    ctypedef uint32_t Slvs_hEntity
+    ctypedef uint32_t Slvs_hGroup
+    ctypedef uint32_t Slvs_hConstraint
+    ctypedef uint32_t Slvs_hParam
 
     ctypedef struct Slvs_Entity:
         Slvs_hEntity h
@@ -35,7 +37,7 @@ cdef extern from "slvs.h" nogil:
     ctypedef struct Slvs_SolveResult:
         int result
         int dof
-        int bad
+        int nbad
 
     void Slvs_QuaternionU(double qw, double qx, double qy, double qz,
                              double *x, double *y, double *z)
@@ -84,7 +86,7 @@ cdef extern from "slvs.h" nogil:
     Slvs_Constraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane)
     Slvs_Constraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity workplane)
 
-    Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup hg, int calculateFaileds) nogil
+    Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup hg, Slvs_hConstraint **bad) nogil
     double Slvs_GetParamValue(int ph)
     double Slvs_SetParamValue(int ph, double value)
     void Slvs_ClearSketch()
@@ -363,7 +365,17 @@ class EntityType(IntEnum):
     ARC_OF_CIRCLE = _SLVS_E_ARC_OF_CIRCLE
 
 def solve_sketch(grouph: int, calculateFaileds: bool):
-    return Slvs_SolveSketch(grouph, calculateFaileds)
+    cdef Slvs_hConstraint *badp = NULL
+    if not calculateFaileds:
+        return Slvs_SolveSketch(grouph, NULL)
+    else:
+        result = Slvs_SolveSketch(grouph, &badp)
+        bad = []
+        if badp != NULL:
+            for i in range(0, result.nbad):
+                bad.append(badp[i])
+            free(badp)
+        return result, bad
 
 def get_param_value(ph: int):
     return Slvs_GetParamValue(ph)

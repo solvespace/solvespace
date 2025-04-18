@@ -207,7 +207,7 @@ typedef struct {
 typedef struct {
     int                 result;
     int                 dof;
-    int                 bad;
+    int                 nbad;
 } Slvs_SolveResult;
 
 /* Our base coordinate system has basis vectors
@@ -498,7 +498,14 @@ DLL double Slvs_GetParamValue(uint32_t ph);
 DLL void Slvs_SetParamValue(uint32_t ph, double value);
 
 DLL void Slvs_Solve(Slvs_System *sys, uint32_t hg);
-DLL Slvs_SolveResult Slvs_SolveSketch(uint32_t hg, int calculateFaileds);
+/**
+ * Setting `bad` to a non NULL pointer enables finding of bad constraints.
+ * If such constraints are found, `bad` is set to a heap allocated array containing
+ * the handles of those constraints, while the `nbad` member of the returned
+ * `Slvs_SolveResult` struct is set to the number of the bad constraints.
+ * NOTE: the user is responsible for freeing the heap allocated memory using `free()`.
+ */
+DLL Slvs_SolveResult Slvs_SolveSketch(uint32_t hg, Slvs_hConstraint **bad);
 DLL void Slvs_ClearSketch();
 
 #ifdef __cplusplus
