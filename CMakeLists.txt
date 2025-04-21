@@ -104,10 +104,12 @@ endif()
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
-    # Link 32 bit SolveSpace with --large-address-aware which allows it to access
-    # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
-    # See https://msdn.microsoft.com/en-us/library/aa366778
-    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--large-address-aware")
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+        # Link 32 bit SolveSpace with --large-address-aware which allows it to access
+        # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
+        # See https://msdn.microsoft.com/en-us/library/aa366778
+        set(CMAKE_EXE_LINKER_FLAGS "-Wl,--large-address-aware")
+    endif()
 endif()
 
 # Ensure that all platforms use 64-bit IEEE floating point operations for consistency;

@@ -307,19 +307,34 @@ nmake
 It is also possible to build SolveSpace using [MinGW][mingw], though
 Space Navigator support will be disabled.
 
-First, ensure that git and gcc are in your `$PATH`. Then, run the following
-in bash:
+The easiest way to build using MinGW is with [MSYS2][msys2]. If you're not using MSYS2, skip
+the installation instructions and ensure that git, cmake, ninja, and gcc are in your `$PATH`.
+
+With MSYS2, you can build either a 32-bit binary or a 64-bit one, depending on the compiler
+used. The following instructions assume you're running the commands inside an `MSYS2 MINGW64`
+terminal window and building a 64-bit version. If you want to build a 32-bit version, you'll
+need to run the commands in an `MSYS2 MINGW32` terminal window and replace `x86_64`
+with `i686` in the installation commands.
+
+First, install Git, GCC, CMake, and Ninja:
+
+```sh
+pacman -Sy mingw-w64-x86_64-git mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
+```
+
+Then, run the following in bash:
 
 ```sh
 mkdir build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make
+cmake .. -DCMAKE_BUILD_TYPE=Release -GNinja
+ninja
 ```
 
 [gitwin]: https://git-scm.com/download/win
-[cmakewin]: http://www.cmake.org/download/#latest
+[cmakewin]: https://www.cmake.org/download/#latest
 [mingw]: http://www.mingw.org/
+[msys2]: https://www.msys2.org/
 
 ## Contributing
 
