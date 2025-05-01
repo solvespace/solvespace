@@ -65,6 +65,7 @@ add_library(slvs-solver INTERFACE)
 target_sources(slvs-solver INTERFACE
     dsc.h
     expr.h
+    handle.h
     param.h
     platform/platform.h
     solvespace.h

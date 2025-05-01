@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <unordered_set>
 
-#include "dsc.h"
+#include "handle.h"
 
 namespace SolveSpace {
 
@@ -39,7 +39,11 @@ public:
     void Clear() {}
 };
 
-using ParamList = IdList<Param,hParam>;
+// Use a forward declaration in order to avoid pulling dsc.h in for units that
+// don't need to use `ParamList`
+template<class T, class H> class IdList;
+
+using ParamList = IdList<Param, hParam>;
 
 using ParamSet = std::unordered_set<hParam, HandleHasher<hParam>>;
 

@@ -13,6 +13,7 @@
 #include <cstdint>
 
 #include "dsc.h"
+#include "handle.h"
 #include "polygon.h"
 
 namespace SolveSpace {
