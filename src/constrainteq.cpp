@@ -247,7 +247,7 @@ void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, const ExprVector &v,
     }
 }
 
-void ConstraintBase::Generate(IdList<Param,hParam> *l) {
+void ConstraintBase::Generate(ParamList *l) {
     switch(type) {
         case Type::PARALLEL:
         case Type::CUBIC_LINE_TANGENT:

@@ -78,8 +78,7 @@ Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
     return req;
 }
 
-void Request::Generate(IdList<Entity,hEntity> *entity,
-                       IdList<Param,hParam> *param)
+void Request::Generate(EntityList *entity, ParamList *param)
 {
     int points = 0;
     Entity::Type et = (Entity::Type)0;
@@ -239,7 +238,7 @@ int Request::IndexOfPoint(hEntity he) const {
     return -1;
 }
 
-hParam Request::AddParam(IdList<Param,hParam> *param, hParam hp) {
+hParam Request::AddParam(ParamList *param, hParam hp) {
     Param pa = {};
     pa.h = hp;
     param->Add(&pa);
