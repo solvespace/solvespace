@@ -860,19 +860,25 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
     }
 
     // add params from constraints
-    IdList<Param, hParam> constraintParams = {};
     for(ConstraintBase &con : SK.constraint) {
         ConstraintBase *c = &con;
         if(c->group.v != shg)
             continue;
-        c->Generate(&constraintParams);
-        if(!constraintParams.IsEmpty()) {
-            for(Param &p : constraintParams) {
-                p.h    = SK.param.AddAndAssignId(&p);
-                c->valP = p.h;
-                SYS.param.Add(&p);
-            }
-            constraintParams.Clear();
+        // If we're solving a sketch twice without calling `Slvs_ClearSketch()` in between,
+        // we already have a constraint param in the sketch, and regeneration would simply
+        // create another one and orphan the existing one. While this doesn't create any
+        // correctness issues, it does waste memory, so identify this case and regenerate
+        // only if we actually need to.
+        if(c->valP.v) {
+            SYS.param.Add(SK.GetParam(c->valP));
+            continue;
+        }
+        // If `valP` is 0, this is either a constraint which doesn't have a param, or one
+        // which we haven't seen before, so try to regenerate.
+        // This generates at most a single additional param
+        c->Generate(&SK.param);
+        if(c->valP.v) {
+            SYS.param.Add(SK.GetParam(c->valP));
 
             if(Slvs_CanInitiallySatisfy(*c)) {
                 c->ModifyToSatisfy();
