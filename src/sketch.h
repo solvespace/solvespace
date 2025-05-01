@@ -959,7 +959,7 @@ inline hEntity hGroup::entity(int i) const
 inline hParam hGroup::param(int i) const
     { hParam r; r.v = 0x80000000 | (v << 16) | (uint32_t)i; return r; }
 inline hEquation hGroup::equation(int i) const
-    { hEquation r; r.v = (v << 16) | 0x80000000 | (uint32_t)i; return r; }
+    { hEquation r; r.v = (v << 2) | 0x80000000 | (uint32_t)i; return r; }
 
 inline bool hRequest::IsFromReferences() const {
     if(*this == Request::HREQUEST_REFERENCE_XY) return true;
@@ -979,21 +979,21 @@ inline hRequest hEntity::request() const
 inline hGroup hEntity::group() const
     { hGroup r; r.v = (v >> 16) & 0x3fff; return r; }
 inline hEquation hEntity::equation(int i) const
-    { hEquation r; r.v = v | 0x40000000 | (uint32_t)i; return r; }
+    { hEquation r; r.v = (v << 2) | 0x40000000 | (uint32_t)i; return r; }
 
 inline hRequest hParam::request() const
     { hRequest r; r.v = (v >> 16); return r; }
 
 
 inline hEquation hConstraint::equation(int i) const
-    { hEquation r; r.v = (v << 16) | (uint32_t)i; return r; }
+    { hEquation r; r.v = (v << 2) | (uint32_t)i; return r; }
 inline hParam hConstraint::param(int i) const
     { hParam r; r.v = v | 0x40000000 | (uint32_t)i; return r; }
 
 inline bool hEquation::isFromConstraint() const
     { if(v & 0xc0000000) return false; else return true; }
 inline hConstraint hEquation::constraint() const
-    { hConstraint r; r.v = (v >> 16); return r; }
+    { hConstraint r; r.v = (v >> 2); return r; }
 
 // The format for entities stored on the clipboard.
 class ClipboardRequest {
