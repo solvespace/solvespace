@@ -581,8 +581,8 @@ void SolveSpaceUI::UpgradeLegacyData() {
             // at workplane origin, and the solver will mess up the sketch if
             // it is not fully constrained.
             case Request::Type::TTF_TEXT: {
-                IdList<Entity,hEntity> entity = {};
-                IdList<Param,hParam>   param = {};
+                EntityList entity = {};
+                ParamList  param = {};
                 r.Generate(&entity, &param);
 
                 // If we didn't load all of the entities and params that this
@@ -621,12 +621,12 @@ void SolveSpaceUI::UpgradeLegacyData() {
     // Constraints saved in versions prior to 3.0 never had any params;
     // version 3.0 introduced params to constraints to avoid the hairy ball problem,
     // so force them where they belong.
-    IdList<Param,hParam> oldParam = {};
+    ParamList oldParam = {};
     SK.param.DeepCopyInto(&oldParam);
     SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
 
     auto AllParamsExistFor = [&](Constraint &c) {
-        IdList<Param,hParam> param = {};
+        ParamList param = {};
         c.Generate(&param);
         bool allParamsExist = true;
         for(Param &p : param) {

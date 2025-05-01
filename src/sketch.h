@@ -293,9 +293,9 @@ public:
     };
     hEntity Remap(hEntity in, int copyNumber);
     void MakeExtrusionLines(EntityList *el, hEntity in);
-    void MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis);
-    void MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in, Vector axis);
-    void MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt, int ai, int af);
+    void MakeLatheCircles(EntityList *el, ParamList *param, hEntity in, Vector pt, Vector axis);
+    void MakeLatheSurfacesSelectable(EntityList *el, hEntity in, Vector axis);
+    void MakeRevolveEndFaces(EntityList *el, hEntity pt, int ai, int af);
     void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
     void CopyEntity(EntityList *el,
                     Entity *ep, int timesApplied, int remap,
@@ -722,7 +722,7 @@ public:
     bool HasLabel() const;
     bool IsProjectible() const;
 
-    void Generate(IdList<Param, hParam> *param);
+    void Generate(ParamList *param);
 
     void GenerateEquations(IdList<Equation,hEquation> *entity,
                            bool forReference = false) const;

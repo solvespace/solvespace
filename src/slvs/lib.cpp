@@ -1000,7 +1000,7 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
 
         SK.entity.Add(&e);
     }
-    IdList<Param, hParam> params = {};
+    ParamList params = {};
     for(i = 0; i < ssys->constraints; i++) {
         Slvs_Constraint *sc = &(ssys->constraint[i]);
         ConstraintBase c = {};

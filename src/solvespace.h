@@ -495,7 +495,7 @@ public:
 
     // These are generated from the above.
     IdList<ENTITY,hEntity>          entity;
-    IdList<Param,hParam>            param;
+    ParamList                       param;
 
     inline CONSTRAINT *GetConstraint(hConstraint h)
         { return constraint.FindById(h); }
@@ -525,7 +525,7 @@ public:
         List<hGroup>                    groupOrder;
         IdList<Request,hRequest>        request;
         IdList<Constraint,hConstraint>  constraint;
-        IdList<Param,hParam>            param;
+        ParamList                       param;
         IdList<Style,hStyle>            style;
         hGroup                          activeGroup;
 

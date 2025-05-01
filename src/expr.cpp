@@ -307,8 +307,8 @@ Expr *Expr::DeepCopy() const {
     return n;
 }
 
-Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
-                                         IdList<Param, hParam> *thenTry, bool foldConstants) const {
+Expr *Expr::DeepCopyWithParamsAsPointers(ParamList *firstTry, ParamList *thenTry,
+                                         bool foldConstants) const {
     Expr *n = AllocExpr();
     if(op == Op::PARAM) {
         // A param that is referenced by its hParam gets rewritten to go

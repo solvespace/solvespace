@@ -225,7 +225,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     PruneOrphans();
 
     // Don't lose our numerical guesses when we regenerate.
-    IdList<Param,hParam> prev = {};
+    ParamList prev = {};
     SK.param.MoveSelfInto(&prev);
     SK.param.ReserveMore(prev.n);
     int oldEntityCount = SK.entity.n;

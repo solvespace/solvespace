@@ -34,7 +34,7 @@ void Group::Clear() {
     remap.clear();
 }
 
-void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
+void Group::AddParam(ParamList *param, hParam hp, double v) {
     Param pa = {};
     pa.h = hp;
     pa.val = v;
@@ -435,8 +435,7 @@ void Group::Activate() {
     SS.ScheduleShowTW();
 }
 
-void Group::Generate(IdList<Entity,hEntity> *entity,
-                     IdList<Param,hParam> *param)
+void Group::Generate(EntityList *entity, ParamList *param)
 {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
     Vector gp = SS.GW.projRight.Plus(SS.GW.projUp);
@@ -868,7 +867,7 @@ hEntity Group::Remap(hEntity in, int copyNumber) {
     return h.entity(it->second.v);
 }
 
-void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
+void Group::MakeExtrusionLines(EntityList *el, hEntity in) {
     Entity *ep = SK.GetEntity(in);
 
     Entity en = {};
@@ -904,7 +903,7 @@ void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
     }
 }
 
-void Group::MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis) {
+void Group::MakeLatheCircles(EntityList *el, ParamList *param, hEntity in, Vector pt, Vector axis) {
     Entity *ep = SK.GetEntity(in);
 
     Entity en = {};
@@ -951,7 +950,7 @@ void Group::MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *p
     }
 }
 
-void Group::MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in, Vector axis) {
+void Group::MakeLatheSurfacesSelectable(EntityList *el, hEntity in, Vector axis) {
     Entity *ep = SK.GetEntity(in);
 
     Entity en = {};
@@ -986,7 +985,7 @@ void Group::MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in,
 // For Revolve and Helix groups the end faces are remapped from an arbitrary
 // point on the sketch. We reference the transformed point but there is
 // no existing normal so we need to define the rotation and timesApplied.
-void Group::MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt, int ai, int af)
+void Group::MakeRevolveEndFaces(EntityList *el, hEntity pt, int ai, int af)
 {
     if(pt.v == 0) return;
     Group *src = SK.GetGroup(opA);
@@ -1023,7 +1022,7 @@ void Group::MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt, int ai, 
     el->Add(&en);
 }
 
-void Group::MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt)
+void Group::MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt)
 {
     if(pt.v == 0) return;
     Group *src = SK.GetGroup(opA);
@@ -1049,7 +1048,7 @@ void Group::MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt)
     el->Add(&en);
 }
 
-void Group::CopyEntity(IdList<Entity,hEntity> *el,
+void Group::CopyEntity(EntityList *el,
                        Entity *ep, int timesApplied, int remap,
                        hParam dx, hParam dy, hParam dz,
                        hParam qw, hParam qvx, hParam qvy, hParam qvz, hParam dist,
