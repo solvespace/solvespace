@@ -4,6 +4,78 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <string>
+#include <unordered_map>
+
+// Helper function to normalize coordinate values for STEP export
+// This avoids tiny floating point errors like 14.9999999993 that lead to open edges
+static double normalizeCoordinate(double val) {
+    // Round values very close to integers to exact integers
+    double intPart;
+    double fracPart = modf(val, &intPart);
+    
+    // Increase precision threshold to be more aggressive in normalization
+    // This handles values like 14.9999999993 -> 15.0
+    const double EPSILON = 0.00001; // Increased from 0.000001
+    
+    // If we're very close to an integer value, snap to it
+    if(fabs(fracPart) < EPSILON) {
+        return intPart;
+    }
+    
+    // If we're very close to a half value, snap to it
+    // This handles values like 14.500000001 -> 14.5
+    if(fabs(fracPart - 0.5) < EPSILON) {
+        return intPart + 0.5;
+    }
+    
+    // Handle values close to common fractions (1/4, 3/4)
+    if(fabs(fracPart - 0.25) < EPSILON) {
+        return intPart + 0.25;
+    }
+    if(fabs(fracPart - 0.75) < EPSILON) {
+        return intPart + 0.75;
+    }
+    
+    // Handle common fractions with denominator 3
+    if(fabs(fracPart - (1.0/3.0)) < EPSILON) {
+        return intPart + (1.0/3.0);
+    }
+    if(fabs(fracPart - (2.0/3.0)) < EPSILON) {
+        return intPart + (2.0/3.0);
+    }
+    
+    return val;
+}
+
+// Helper to generate a unique key for a Bezier curve based on its control points and weights
+static std::string BezierKey(SBezier *sb) {
+    std::string key;
+    char buf[128];
+    
+    for(int i = 0; i <= sb->deg; i++) {
+        sprintf(buf, "%.6f,%.6f,%.6f,%.6f;", 
+            normalizeCoordinate(sb->ctrl[i].x),
+            normalizeCoordinate(sb->ctrl[i].y),
+            normalizeCoordinate(sb->ctrl[i].z),
+            sb->weight[i]);
+        key += buf;
+    }
+
+    // Also check for the same curve in reverse direction
+    std::string keyRev;
+    for(int i = sb->deg; i >= 0; i--) {
+        sprintf(buf, "%.6f,%.6f,%.6f,%.6f;", 
+            normalizeCoordinate(sb->ctrl[i].x),
+            normalizeCoordinate(sb->ctrl[i].y),
+            normalizeCoordinate(sb->ctrl[i].z),
+            sb->weight[i]);
+        keyRev += buf;
+    }
+    
+    // Use the lexicographically smaller key to ensure we treat a curve and its reverse as the same
+    return key < keyRev ? key : keyRev;
+}
 
 void StepFileWriter::WriteHeader() {
     fprintf(f,
@@ -82,6 +154,13 @@ void StepFileWriter::WriteProductHeader() {
 		);
 }
 int StepFileWriter::ExportCurve(SBezier *sb) {
+    static std::unordered_map<std::string, int> curveMap;
+    std::string key = BezierKey(sb);
+
+    if (curveMap.find(key) != curveMap.end()) {
+        return curveMap[key];
+    }
+
     int i, ret = id;
 
     fprintf(f, "#%d=(\n", ret);
@@ -108,11 +187,14 @@ int StepFileWriter::ExportCurve(SBezier *sb) {
     for(i = 0; i <= sb->deg; i++) {
         fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
             id + 1 + i,
-            CO(sb->ctrl[i]));
+            normalizeCoordinate(sb->ctrl[i].x),
+            normalizeCoordinate(sb->ctrl[i].y),
+            normalizeCoordinate(sb->ctrl[i].z));
     }
     fprintf(f, "\n");
 
     id = ret + 1 + (sb->deg + 1);
+    curveMap[key] = ret;
     return ret;
 }
 
@@ -127,7 +209,10 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
     // finish of a previous edge and the start of the next one. So we need
     // the finish of the last Bezier in the loop before we start our process.
     fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-        id, CO(sb->Finish()));
+        id, 
+        normalizeCoordinate(sb->Finish().x),
+        normalizeCoordinate(sb->Finish().y),
+        normalizeCoordinate(sb->Finish().z));
     fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, id);
     int lastFinish = id + 1, prevFinish = lastFinish;
     id += 2;
@@ -138,7 +223,10 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
         int thisFinish;
         if(loop->l.NextAfter(sb) != NULL) {
             fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-                id, CO(sb->Finish()));
+                id, 
+                normalizeCoordinate(sb->Finish().x),
+                normalizeCoordinate(sb->Finish().y),
+                normalizeCoordinate(sb->Finish().z));
             fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, id);
             thisFinish = id + 1;
             id += 2;
@@ -219,7 +307,9 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
         for(j = 0; j <= ss->degn; j++) {
             fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
                 srfid + 1 + j + i*(ss->degn + 1),
-                CO(ss->ctrl[i][j]));
+                normalizeCoordinate(ss->ctrl[i][j].x),
+                normalizeCoordinate(ss->ctrl[i][j].y),
+                normalizeCoordinate(ss->ctrl[i][j].z));
         }
     }
     fprintf(f, "\n");
@@ -257,7 +347,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
         // And create the face inner boundaries from any inner loops that
         // lie within this contour.
         loop = sbls->l.NextAfter(loop);
-        for(; loop; loop = sbls->l.NextAfter(loop)) {
+        for(; loop; loop = sblss.l.NextAfter(loop)) {
             int fib = ExportCurveLoop(loop, /*inner=*/true);
             listOfLoops.Add(&fib);
         }
