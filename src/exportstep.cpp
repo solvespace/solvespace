@@ -347,7 +347,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
         // And create the face inner boundaries from any inner loops that
         // lie within this contour.
         loop = sbls->l.NextAfter(loop);
-        for(; loop; loop = sblss.l.NextAfter(loop)) {
+        for(; loop; loop = sbls->l.NextAfter(loop)) {
             int fib = ExportCurveLoop(loop, /*inner=*/true);
             listOfLoops.Add(&fib);
         }
