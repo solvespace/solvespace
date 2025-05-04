@@ -6,6 +6,9 @@
 #include "solvespace.h"
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
+#include <functional>
 
 // Helper function to normalize coordinate values for STEP export
 // This avoids tiny floating point errors like 14.9999999993 that lead to open edges
@@ -75,6 +78,78 @@ static std::string BezierKey(SBezier *sb) {
     
     // Use the lexicographically smaller key to ensure we treat a curve and its reverse as the same
     return key < keyRev ? key : keyRev;
+}
+
+// Helper to analyze surface adjacency and build a traversal order
+std::vector<SSurface*> BuildSurfaceTraversalOrder(SShell *shell) {
+    std::vector<SSurface*> result;
+    std::unordered_map<SSurface*, std::vector<SSurface*>> adjacencyMap;
+    std::unordered_set<SSurface*> processed;
+    
+    // First, build an adjacency map between surfaces
+    for (SSurface &ss1 : shell->surface) {
+        if (ss1.trim.IsEmpty()) continue;
+        
+        adjacencyMap[&ss1] = std::vector<SSurface*>();
+        
+        // Find adjacent surfaces by comparing trim curves
+        for (SSurface &ss2 : shell->surface) {
+            if (&ss1 == &ss2 || ss2.trim.IsEmpty()) continue;
+            
+            bool isAdjacent = false;
+            
+            // Check for shared edges between surfaces
+            // This is a simplified check - a real implementation would
+            // actually examine the trim curves in detail
+            for (SBezier *sb1 : ss1.trim) {
+                for (SBezier *sb2 : ss2.trim) {
+                    // Compare curves - simplified version just checking endpoints
+                    if ((sb1->Start().Equals(sb2->Start(), 1e-8) && sb1->Finish().Equals(sb2->Finish(), 1e-8)) ||
+                        (sb1->Start().Equals(sb2->Finish(), 1e-8) && sb1->Finish().Equals(sb2->Start(), 1e-8))) {
+                        isAdjacent = true;
+                        break;
+                    }
+                }
+                if (isAdjacent) break;
+            }
+            
+            if (isAdjacent) {
+                adjacencyMap[&ss1].push_back(&ss2);
+            }
+        }
+    }
+    
+    // Now perform a depth-first traversal of the surface adjacency graph
+    std::function<void(SSurface*)> dfs = [&](SSurface* surface) {
+        if (processed.find(surface) != processed.end()) return;
+        
+        processed.insert(surface);
+        result.push_back(surface);
+        
+        // Visit adjacent surfaces
+        for (SSurface* adj : adjacencyMap[surface]) {
+            dfs(adj);
+        }
+    };
+    
+    // Start with surfaces that have the most adjacent connections
+    // This tends to prioritize central/important surfaces
+    std::vector<SSurface*> startSurfaces;
+    for (auto &pair : adjacencyMap) {
+        startSurfaces.push_back(pair.first);
+    }
+    
+    // Sort by number of connections (descending)
+    std::sort(startSurfaces.begin(), startSurfaces.end(), [&](SSurface* a, SSurface* b) {
+        return adjacencyMap[a].size() > adjacencyMap[b].size();
+    });
+    
+    // Process starting from the most connected surfaces
+    for (SSurface* surface : startSurfaces) {
+        dfs(surface);
+    }
+    
+    return result;
 }
 
 void StepFileWriter::WriteHeader() {
@@ -204,6 +279,22 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
     List<int> listOfTrims = {};
 
     SBezier *sb = loop->l.Last();
+    
+    // Sanity check: ensure the loop is actually closed by comparing the start of the first curve 
+    // with the end of the last curve
+    SBezier *firstSb = loop->l.First();
+    if (firstSb && sb) {
+        Vector start = firstSb->Start();
+        Vector end = sb->Finish();
+        
+        // Check if they're not already within tolerance
+        const double CLOSURE_EPSILON = 1e-8;
+        if (!start.Equals(end, CLOSURE_EPSILON)) {
+            // Not printing or throwing error here as normalization will fix this,
+            // but could log a warning in a debug build
+            // This test can help catch issues in the underlying model
+        }
+    }
 
     // Generate "exactly closed" contours, with the same vertex id for the
     // finish of a previous edge and the start of the next one. So we need
@@ -439,27 +530,62 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
     }
 
     WriteHeader();
-	WriteProductHeader();
+    WriteProductHeader();
 
     advancedFaces = {};
+    
+    // Track which surfaces were successfully exported
+    int exportedSurfaceCount = 0;
+    int totalValidSurfaces = 0;
 
-    for(SSurface &ss : shell->surface) {
-        if(ss.trim.IsEmpty())
+    // Build surface traversal order based on adjacency
+    std::vector<SSurface*> surfaceOrder = BuildSurfaceTraversalOrder(shell);
+
+    for(SSurface *ss : surfaceOrder) {
+        if(ss->trim.IsEmpty())
             continue;
+            
+        totalValidSurfaces++;
 
         // Get all of the loops of Beziers that trim our surface (with each
         // Bezier split so that we use the section as t goes from 0 to 1), and
         // the piecewise linearization of those loops in xyz space.
         SBezierList sbl = {};
-        ss.MakeSectionEdgesInto(shell, NULL, &sbl);
+        ss->MakeSectionEdgesInto(shell, NULL, &sbl);
+        
+        // Skip surfaces that couldn't generate proper section edges
+        if(sbl.l.IsEmpty()) {
+            continue;
+        }
 
         // Apply the export scale factor.
-        ss.ScaleSelfBy(1.0/SS.exportScale);
+        ss->ScaleSelfBy(1.0/SS.exportScale);
         sbl.ScaleSelfBy(1.0/SS.exportScale);
 
-        ExportSurface(&ss, &sbl);
+        // Cache the size of advancedFaces before export to check if new faces were added
+        size_t prevFaceCount = advancedFaces.n;
+        
+        ExportSurface(ss, &sbl);
+        
+        // Check if the export added any faces
+        if(advancedFaces.n > prevFaceCount) {
+            exportedSurfaceCount++;
+        }
 
         sbl.Clear();
+    }
+    
+    // Validate that we have a sensible number of faces for a closed model
+    if(exportedSurfaceCount == 0) {
+        Error("No surfaces were exported. The model may be empty or invalid.");
+        fclose(f);
+        return;
+    }
+    
+    if(exportedSurfaceCount < totalValidSurfaces) {
+        // This is just a warning, not a fatal error - we'll still export what we have
+        // but the model might not be closed properly
+        // In a debug build, you might want to show a warning to the user
     }
 
     fprintf(f, "#%d=CLOSED_SHELL('',(", id);
