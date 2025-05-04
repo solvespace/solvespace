@@ -310,7 +310,7 @@ public:
     void WriteProductHeader();
     int ExportCurve(SBezier *sb);
     int ExportCurveLoop(SBezierLoop *loop, bool inner);
-    void ExportSurface(SSurface *ss, SBezierList *sbl);
+    void ExportSurface(SSurface *ss, SBezierList *sbl, bool flipOrientation = false);
     void WriteWireframe();
     void WriteFooter();
 
