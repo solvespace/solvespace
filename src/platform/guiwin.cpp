@@ -1515,6 +1515,7 @@ public:
     void AddButton(std::string _label, Response response, bool isDefault) override {
         int button;
         switch(response) {
+            default:
             case Response::NONE:   ssassert(false, "Invalid response");
             case Response::OK:     button = IDOK;     break;
             case Response::YES:    button = IDYES;    break;
