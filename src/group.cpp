@@ -1192,8 +1192,8 @@ void Group::CopyEntity(EntityList *el,
 
             int i, points;
             bool hasNormal, hasDistance;
-            EntReqTable::GetEntityInfo(ep->type, ep->extraPoints,
-                NULL, &points, &hasNormal, &hasDistance);
+            ssassert(EntReqTable::GetEntityInfo(ep->type, ep->extraPoints,
+                NULL, &points, &hasNormal, &hasDistance), "No entity info");
             for(i = 0; i < points; i++) {
                 en.point[i] = Remap(ep->point[i], remap);
             }

@@ -608,7 +608,7 @@ public:
 
 class EntReqTable {
 public:
-    static bool GetRequestInfo(Request::Type req, int extraPoints,
+    static void GetRequestInfo(Request::Type req, int extraPoints,
                                EntityBase::Type *ent, int *pts, bool *hasNormal, bool *hasDistance);
     static bool GetEntityInfo(EntityBase::Type ent, int extraPoints,
                               Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance);

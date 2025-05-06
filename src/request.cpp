@@ -47,16 +47,16 @@ static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
     if(hasDistance) *hasDistance = te->hasDistance;
 }
 
-bool EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
+void EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
                                  Entity::Type *ent, int *pts, bool *hasNormal, bool *hasDistance)
 {
     for(const EntReqMapping &te : EntReqMap) {
         if(req == te.reqType) {
             CopyEntityInfo(&te, extraPoints, ent, NULL, pts, hasNormal, hasDistance);
-            return true;
+            return;
         }
     }
-    return false;
+    ssassert(false, "No request info");
 }
 
 bool EntReqTable::GetEntityInfo(Entity::Type ent, int extraPoints,
