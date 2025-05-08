@@ -860,7 +860,7 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, int calculateFaileds = 0)
     }
 
     // add params from constraints
-    IdList<Param, hParam> constraintParams = {};
+    ParamList constraintParams = {};
     for(ConstraintBase &con : SK.constraint) {
         ConstraintBase *c = &con;
         if(c->group.v != shg)
@@ -994,7 +994,7 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
 
         SK.entity.Add(&e);
     }
-    IdList<Param, hParam> params = {};
+    ParamList params = {};
     for(i = 0; i < ssys->constraints; i++) {
         Slvs_Constraint *sc = &(ssys->constraint[i]);
         ConstraintBase c = {};
