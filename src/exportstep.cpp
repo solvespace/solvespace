@@ -5,6 +5,238 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+const double PRECISION = 0.001;
+
+/*
+ * Alias struct.
+ */
+typedef struct {
+    int reference;
+    List<int> aliases = {};
+} alias_t;
+
+/*
+ * Cartesian points.
+ */
+typedef struct {
+    alias_t alias;
+    alias_t vertexAlias;
+    Vector v;
+} pointAliases_t;
+
+List<pointAliases_t> pointAliases;
+
+// Check if this point was already defined with a different ID number.
+// inputs:
+//        number -> id of the cartesian point
+//        v -> position of the cartesian point
+//        vertex -> id of the vertex linked to this point (<1 if none)
+// return:
+//        true, if the cartesian point is already defined
+bool HasCartesianPointAnAlias(int number, Vector v, int vertex) {
+    // Look for this point "v" in the alias list.
+    for (pointAliases_t *p = pointAliases.First(); p;
+         p = pointAliases.NextAfter(p)) {
+        if (p->v.Equals(v, PRECISION)) {
+            // This point was already defined.
+            // The new number is just an alias.
+            p->alias.aliases.AddToBeginning(&number);
+            if (vertex > 0) {
+                p->vertexAlias.reference = (p->vertexAlias.reference <= 0 ?
+                                           vertex : p->vertexAlias.reference);
+                p->vertexAlias.aliases.AddToBeginning(&vertex);
+                
+                if (p->vertexAlias.aliases.n == 1)
+                    return false; // add the point and the new vertex
+            }
+            return true;
+        }
+    }
+    
+    // No point was found, it means this is a new point.
+    pointAliases_t newPoint;
+    newPoint.alias.reference = number;
+    newPoint.alias.aliases.AddToBeginning(&number);
+    newPoint.v = v;
+    newPoint.vertexAlias.reference = vertex;
+    if (vertex > 0)
+      newPoint.vertexAlias.aliases.AddToBeginning(&vertex);
+    
+    // A new entry in the list.
+    pointAliases.AddToBeginning(&newPoint);
+    return false;
+}
+
+// Return a cartesian point index; if the point has aliases return the
+// first one.
+// input:
+//        number -> the id of the requested cartesian point
+// return:
+//        number, if the point has no aliases, otherwise its first alias
+int InsertPoint(int number) {
+    // Look for a point with index "number" in the list of aliases.
+    for (pointAliases_t *p = pointAliases.First(); p;
+         p = pointAliases.NextAfter(p)) {
+        for (int *alias = p->alias.aliases.First(); alias;
+             alias = p->alias.aliases.NextAfter(alias)) {
+            if (*alias == number)
+                return p->alias.reference;
+        }
+    }
+    
+    // ERROR: it should never reach this point...
+    return -1;
+}
+
+// Return a vertex index; if the vertex has aliases return the
+// first one.
+// input:
+//        number -> the id of the requested vertex
+// return:
+//        number, if the vertex has no aliases, otherwise its first alias
+int InsertVertex(int number) {
+    // Look for a point with index "number" in the list of vertex aliases.
+    for (pointAliases_t *p = pointAliases.First(); p;
+         p = pointAliases.NextAfter(p)) {
+        for (int *alias = p->vertexAlias.aliases.First(); alias;
+             alias = p->vertexAlias.aliases.NextAfter(alias)) {
+            if (*alias == number)
+                return p->vertexAlias.reference;
+        }
+    }
+    
+    // ERROR: it should never reach this point...
+    return -1;
+}
+
+/*
+ * Curves.
+ */
+typedef struct {
+    alias_t alias;
+    List<int> memberPoints = {};
+} curveAliases_t;
+
+List<curveAliases_t> curveAliases;
+
+// Check whether this curve was already defined with a different ID number.
+// inputs:
+//        number -> id of the curve
+//        points -> list of points that define the curve
+// return:
+//        true, if the curve is already defined
+bool HasBSplineCurveAnAlias(int number, List<int> points) {
+    // Look for this curve in the alias list.
+    for (curveAliases_t *c = curveAliases.First(); c;
+         c = curveAliases.NextAfter(c)) {        
+        if (points.n != c->memberPoints.n) {
+            continue;
+        } else {
+            int matches = 0; // is this the same curve?
+            // FIXME: this hack should work _most_ of the times
+            for (int i = 0; i < points.n; i++) {
+                for (int j = 0; j < points.n; j++) {
+                    if (points.Get(i) == c->memberPoints.Get(j))
+                        matches++;
+                }
+            }
+            
+            if (matches == points.n) {
+                // Add this alias.
+                c->alias.aliases.AddToBeginning(&number);
+                return true;
+            }
+        }
+    }
+    
+    // No curve was found, it means this is a new curve.
+    curveAliases_t newCurve;
+    newCurve.alias.reference = number;
+    newCurve.alias.aliases.AddToBeginning(&number);
+    newCurve.memberPoints = points;
+    
+    // A new entry in the list.
+    curveAliases.AddToBeginning(&newCurve);
+    return false;
+}
+
+// Return a curve index. As above.
+int InsertCurve(int number) {
+    for (curveAliases_t *c = curveAliases.First(); c;
+         c = curveAliases.NextAfter(c)) {
+        for (int *alias = c->alias.aliases.First(); alias;
+             alias = c->alias.aliases.NextAfter(alias)) {
+            if (*alias == number)
+                return c->alias.reference;
+        }
+    }
+    
+    // ERROR: it should never reach this point...
+    return -1;
+}
+
+/*
+ * Edges.
+ */
+typedef struct {
+    alias_t alias;
+    int prevFinish;
+    int thisFinish;
+    int curveId;
+} edgeAliases_t;
+
+List<edgeAliases_t> edgeAliases;
+
+// Check whether this edge was already defined with a different ID number.
+// inputs:
+//        number -> id of the edge
+//        prevFinish, thisFinish -> points of the edge
+//        curveID -> curve of the edge
+// return:
+//        true, if the edge is already defined
+bool HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId) {
+    // Look for this edge in the alias list.
+    for (edgeAliases_t *e = edgeAliases.First(); e;
+         e = edgeAliases.NextAfter(e)) {        
+        if (((prevFinish == e->prevFinish &&
+            thisFinish == e->thisFinish) ||
+            (prevFinish == e->thisFinish &&
+            thisFinish == e->prevFinish)) &&
+            curveId == e->curveId) {
+            e->alias.aliases.AddToBeginning(&number);
+            return true;
+        }
+    }
+  
+    // New edge.
+    edgeAliases_t newEdge;
+    newEdge.alias.reference = number;
+    newEdge.alias.aliases.AddToBeginning(&number);
+    newEdge.prevFinish = prevFinish;
+    newEdge.thisFinish = thisFinish;
+    newEdge.curveId = curveId;
+    
+    edgeAliases.AddToBeginning(&newEdge);
+    return false;
+}
+
+// Return an oriented edge index. As above.
+int InsertOrientedEdge(int number) {
+    int edgeNumber = number - 1;
+    // An oriented edge is always linked to an edge with id = number - 1.
+    for (edgeAliases_t *e = edgeAliases.First(); e;
+         e = edgeAliases.NextAfter(e)) {
+        for (int *alias = e->alias.aliases.First(); alias;
+             alias = e->alias.aliases.NextAfter(alias)) {
+            if (*alias == edgeNumber)
+                return e->alias.reference + 1;
+        }
+    }
+    
+    // ERROR: it should never reach this point...
+    return -1;
+}
+
 void StepFileWriter::WriteHeader() {
     fprintf(f,
 "ISO-10303-21;\n"
@@ -46,7 +278,7 @@ void StepFileWriter::WriteHeader() {
 "SI_UNIT($,.STERADIAN.)\n"
 "SOLID_ANGLE_UNIT()\n"
 ");\n"
-"#167=UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(0.001),#158,\n"
+"#167=UNCERTAINTY_MEASURE_WITH_UNIT(LENGTH_MEASURE(%f),#158,\n"
 "'DISTANCE_ACCURACY_VALUE',\n"
 "'string');\n"
 "#168=(\n"
@@ -60,8 +292,8 @@ void StepFileWriter::WriteHeader() {
 "#171=DIRECTION('',(0.,0.,1.));\n"
 "#172=DIRECTION('',(1.,0.,0.));\n"
 "#173=CARTESIAN_POINT('',(0.,0.,0.));\n"
-"\n"
-    );
+"\n",
+    PRECISION);
 
     // Start the ID somewhere beyond the header IDs.
     id = 200;
@@ -83,35 +315,44 @@ void StepFileWriter::WriteProductHeader() {
 }
 int StepFileWriter::ExportCurve(SBezier *sb) {
     int i, ret = id;
-
-    fprintf(f, "#%d=(\n", ret);
-    fprintf(f, "BOUNDED_CURVE()\n");
-    fprintf(f, "B_SPLINE_CURVE(%d,(", sb->deg);
-    for(i = 0; i <= sb->deg; i++) {
-        fprintf(f, "#%d", ret + i + 1);
-        if(i != sb->deg) fprintf(f, ",");
-    }
-    fprintf(f, "),.UNSPECIFIED.,.F.,.F.)\n");
-    fprintf(f, "B_SPLINE_CURVE_WITH_KNOTS((%d,%d),",
-        (sb->deg + 1), (sb-> deg + 1));
-    fprintf(f, "(0.000,1.000),.UNSPECIFIED.)\n");
-    fprintf(f, "CURVE()\n");
-    fprintf(f, "GEOMETRIC_REPRESENTATION_ITEM()\n");
-    fprintf(f, "RATIONAL_B_SPLINE_CURVE((");
-    for(i = 0; i <= sb->deg; i++) {
-        fprintf(f, "%.10f", sb->weight[i]);
-        if(i != sb->deg) fprintf(f, ",");
-    }
-    fprintf(f, "))\n");
-    fprintf(f, "REPRESENTATION_ITEM('')\n);\n");
+    List<int> curvePoints = {};
 
     for(i = 0; i <= sb->deg; i++) {
-        fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-            id + 1 + i,
-            CO(sb->ctrl[i]));
+        if (!HasCartesianPointAnAlias(id + 1 + i, sb->ctrl[i], -1))
+            fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+                id + 1 + i,
+                CO(sb->ctrl[i]));
     }
-    fprintf(f, "\n");
-
+    
+    for(i = 0; i <= sb->deg; i++) {
+        int point = InsertPoint(id + 1 + i);
+        curvePoints.AddToBeginning(&point);
+    }
+    
+    if (!HasBSplineCurveAnAlias(ret, curvePoints)) {
+        fprintf(f, "#%d=(\n", ret);
+        fprintf(f, "BOUNDED_CURVE()\n");
+        fprintf(f, "B_SPLINE_CURVE(%d,(", sb->deg);
+        for(i = 0; i <= sb->deg; i++) {
+            fprintf(f, "#%d", InsertPoint(ret + i + 1));
+            if(i != sb->deg) fprintf(f, ",");
+        }
+        fprintf(f, "),.UNSPECIFIED.,.F.,.F.)\n");
+        fprintf(f, "B_SPLINE_CURVE_WITH_KNOTS((%d,%d),",
+            (sb->deg + 1), (sb-> deg + 1));
+        fprintf(f, "(0.000,1.000),.UNSPECIFIED.)\n");
+        fprintf(f, "CURVE()\n");
+        fprintf(f, "GEOMETRIC_REPRESENTATION_ITEM()\n");
+        fprintf(f, "RATIONAL_B_SPLINE_CURVE((");
+        for(i = 0; i <= sb->deg; i++) {
+            fprintf(f, "%.10f", sb->weight[i]);
+            if(i != sb->deg) fprintf(f, ",");
+        }
+        fprintf(f, "))\n");
+        fprintf(f, "REPRESENTATION_ITEM('')\n);\n");
+        fprintf(f, "\n");
+    }
+    
     id = ret + 1 + (sb->deg + 1);
     return ret;
 }
@@ -123,13 +364,19 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
 
     SBezier *sb = loop->l.Last();
 
+    int lastFinish, prevFinish;
     // Generate "exactly closed" contours, with the same vertex id for the
     // finish of a previous edge and the start of the next one. So we need
     // the finish of the last Bezier in the loop before we start our process.
-    fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-        id, CO(sb->Finish()));
-    fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, id);
-    int lastFinish = id + 1, prevFinish = lastFinish;
+    if (!HasCartesianPointAnAlias(id, sb->Finish(), id+1)) {
+        fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+            id, CO(sb->Finish()));
+        fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, InsertPoint(id));
+         lastFinish = id + 1; 
+    } else {
+        lastFinish = InsertVertex(id+1);
+    }
+    prevFinish = lastFinish;
     id += 2;
 
     for(sb = loop->l.First(); sb; sb = loop->l.NextAfter(sb)) {
@@ -137,20 +384,27 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
 
         int thisFinish;
         if(loop->l.NextAfter(sb) != NULL) {
-            fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-                id, CO(sb->Finish()));
-            fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, id);
-            thisFinish = id + 1;
+            if (!HasCartesianPointAnAlias(id, sb->Finish(), id+1)) {
+                fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+                    id, CO(sb->Finish()));
+                fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, InsertPoint(id));
+                thisFinish = id + 1;
+            } else {
+                thisFinish = InsertVertex(id+1);
+            }
             id += 2;
         } else {
             thisFinish = lastFinish;
         }
 
-        fprintf(f, "#%d=EDGE_CURVE('',#%d,#%d,#%d,%s);\n",
-            id, prevFinish, thisFinish, curveId, ".T.");
-        fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.T.);\n",
-            id+1, id);
-
+        if (!HasEdgeAnAlias(id, prevFinish, thisFinish,
+            InsertCurve(curveId))) {
+            fprintf(f, "#%d=EDGE_CURVE('',#%d,#%d,#%d,%s);\n",
+                id, prevFinish, thisFinish, InsertCurve(curveId), ".T.");
+            fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.T.);\n",
+                id+1, id);
+        }
+        
         int oe = id+1;
         listOfTrims.Add(&oe);
         id += 2;
@@ -161,7 +415,7 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
     fprintf(f, "#%d=EDGE_LOOP('',(", id);
     int *oe;
     for(oe = listOfTrims.First(); oe; oe = listOfTrims.NextAfter(oe)) {
-        fprintf(f, "#%d", *oe);
+        fprintf(f, "#%d", InsertOrientedEdge(*oe));
         if(listOfTrims.NextAfter(oe) != NULL) fprintf(f, ",");
     }
     fprintf(f, "));\n");
@@ -179,7 +433,20 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
 void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     int i, j, srfid = id;
 
-    // First, we create the untrimmed surface. We always specify a rational
+    // First, define the control points for the untrimmed surface, if they
+    // were not already defined.
+    for(i = 0; i <= ss->degm; i++) {
+        for(j = 0; j <= ss->degn; j++) {
+            if (!HasCartesianPointAnAlias(srfid + 1 + j + i*(ss->degn + 1), 
+                                          ss->ctrl[i][j], -1)) {
+                fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+                    srfid + 1 + j + i*(ss->degn + 1),
+                    CO(ss->ctrl[i][j]));
+            }
+        }
+    }
+    
+    // Then, we create the untrimmed surface. We always specify a rational
     // B-spline surface (in fact, just a Bezier surface).
     fprintf(f, "#%d=(\n", srfid);
     fprintf(f, "BOUNDED_SURFACE()\n");
@@ -187,7 +454,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     for(i = 0; i <= ss->degm; i++) {
         fprintf(f, "(");
         for(j = 0; j <= ss->degn; j++) {
-            fprintf(f, "#%d", srfid + 1 + j + i*(ss->degn + 1));
+            fprintf(f, "#%d", InsertPoint(srfid + 1 + j + i*(ss->degn + 1)));
             if(j != ss->degn) fprintf(f, ",");
         }
         fprintf(f, ")");
@@ -214,14 +481,6 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     fprintf(f, "SURFACE()\n");
     fprintf(f, ");\n");
 
-    // The control points for the untrimmed surface.
-    for(i = 0; i <= ss->degm; i++) {
-        for(j = 0; j <= ss->degn; j++) {
-            fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-                srfid + 1 + j + i*(ss->degn + 1),
-                CO(ss->ctrl[i][j]));
-        }
-    }
     fprintf(f, "\n");
 
     id = srfid + 1 + (ss->degm + 1)*(ss->degn + 1);
@@ -348,6 +607,11 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
         return;
     }
 
+    // Initialization of lists.
+    pointAliases = {};
+    curveAliases = {};
+    edgeAliases = {};
+    
     WriteHeader();
 	WriteProductHeader();
 
@@ -389,6 +653,9 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
 
     fclose(f);
     advancedFaces.Clear();
+    pointAliases.Clear();
+    curveAliases.Clear();
+    edgeAliases.Clear();
 }
 
 void StepFileWriter::WriteWireframe() {
