@@ -760,7 +760,24 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
 // New stuff
 //        } else if(params != NULL) {
         } else { // check all the named parameters
+            // Create a map of parameter names with handles
+            std::unordered_map<std::string, hParam> vars = {};        
+            for(const Request &r : SK.request ) {
+                if (r.type != Request::Type::NAMED_PARAMETER) continue;
+                // TODO: need to check if group is less or equal to this group
+                vars[r.str] = r.h.param(64);
+            }
+            
             bool found = false;
+            
+            if(vars.find(s) != vars.end()) {
+                t = Token::From(TokenType::OPERAND, Expr::Op::PARAM);
+                hParam hp = vars[s];
+                t.expr->parh = hp;
+                found = true;
+            }
+            
+/*
             for(const Request &r : SK.request ) {
                 if (r.type != Request::Type::NAMED_PARAMETER) continue;
                 if(r.str != s) continue;
@@ -769,6 +786,7 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
                 t.expr->parh = hp;
                 found = true;
             }
+*/
             if(!found)
             {
               *error = "'" + s + "' is not a valid variable, function or constant";
