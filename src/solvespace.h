@@ -659,23 +659,24 @@ public:
     Platform::Path saveFile;
     bool        fileLoadError;
     bool        unsaved;
-    typedef struct {
-        char        type;
-        const char *desc;
-        char        fmt;
-        void       *ptr;
-    } SaveTable;
-    static const SaveTable SAVED[];
-    void SaveUsingTable(const Platform::Path &filename, int type);
-    void LoadUsingTable(const Platform::Path &filename, char *key, char *val);
-    struct {
+    struct LoadUnion {
         Group        g;
         Request      r;
         Entity       e;
         Param        p;
         Constraint   c;
         Style        s;
-    } sv;
+
+        void *Get(char tname);
+    };
+    struct SaveDesc {
+        char fmt;
+        void *(*member)(const void *obj);
+    };
+    static const SaveDesc *GetSaveDesc(const char *key);
+    void SaveUsingTable(const Platform::Path &filename, const char *tname, const void *obj);
+    void LoadUsingTable(const Platform::Path &filename, const char *key, const char *val,
+                        LoadUnion &obj);
     static void MenuFile(Command id);
     void Autosave();
     void RemoveAutosave();
