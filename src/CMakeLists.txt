@@ -356,9 +356,24 @@ if(ENABLE_GUI)
             ${FONTCONFIG_LIBRARIES})
     endif()
 
-    if(MSVC)
-        set_target_properties(solvespace PROPERTIES
-            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+    if(WIN32)
+        if(MSVC)
+            set_target_properties(solvespace PROPERTIES
+                LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+        else(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC_VERSION)
+            # Hack to fix broken build with clang (not clang-cl) on Windows with CMake >= 3.22
+            # which unconditionally adds "-Xlinker /MANIFEST:EMBED" to the command line
+            # for non-MSVC and non-MINGW compilers, and breaks the clang build where
+            # manifest are specified through resource files.
+            # See:
+            # https://gitlab.kitware.com/cmake/cmake/-/merge_requests/6929
+            # https://gitlab.kitware.com/cmake/cmake/-/merge_requests/6534
+            # https://gitlab.kitware.com/cmake/cmake/-/issues/22611
+            string(REPLACE " -Xlinker /MANIFEST:EMBED" ""
+                CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE}")
+            target_link_options(solvespace PRIVATE
+                "SHELL:-Xlinker /MANIFEST:NO")
+        endif()
     endif()
 endif()
 
