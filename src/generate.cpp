@@ -87,14 +87,27 @@ bool SolveSpaceUI::PruneGroups(hGroup hg) {
 }
 
 bool SolveSpaceUI::PruneRequests(hGroup hg) {
-    auto e = std::find_if(SK.entity.begin(), SK.entity.end(),
-                          [&](Entity &e) { return e.group == hg && !EntityExists(e.workplane); });
-    if(e != SK.entity.end()) {
-        (deleted.requests)++;
-        SK.entity.RemoveById(e->h);
-        return true;
+    const int requests = SK.request.n;
+    for(Entity &e : SK.entity) {
+        if(e.group != hg) {
+            continue;
+        }
+
+        if(!e.h.isFromRequest()) {
+            continue;
+        }
+
+        if(EntityExists(e.workplane)) {
+            continue;
+        }
+
+        Request *r = SK.GetRequest(e.h.request());
+        r->tag = 1;
     }
-    return false;
+    SK.request.RemoveTagged();
+    deleted.requests += requests - SK.request.n;
+
+    return requests > SK.request.n;
 }
 
 bool SolveSpaceUI::PruneConstraints(hGroup hg) {
