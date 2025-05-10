@@ -43,7 +43,7 @@ void ExampleStateful()
     // Slvs_Entity c1 = Slvs_AddCircle(g, n, center, radius, wp);
 
     Slvs_Vertical(g, p1, wp, p2);
-    Slvs_SolveResult res = Slvs_SolveSketch(g, 0);
+    Slvs_SolveResult res = Slvs_SolveSketch(g, NULL);
     printf("res: %i\n", res.result);
     printf("dof: %i\n", res.dof);
     double p1x = Slvs_GetParamValue(p1.param[0]);
