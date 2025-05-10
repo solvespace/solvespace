@@ -93,8 +93,8 @@ void GraphicsWindow::CopySelection() {
             if(!e->h.isFromRequest()) continue;
             Request *r = SK.GetRequest(e->h.request());
             if(r->type != Request::Type::DATUM_POINT) continue;
-            EntReqTable::GetEntityInfo((Entity::Type)0, e->extraPoints,
-                &req, &pts, NULL, &hasDistance);
+            ssassert(EntReqTable::GetEntityInfo((Entity::Type)0, e->extraPoints,
+                &req, &pts, NULL, &hasDistance), "No entity info");
         }
         if(req == Request::Type::WORKPLANE) continue;
 
@@ -195,8 +195,8 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         SS.MarkGroupDirty(r->group);
         bool hasDistance;
         int i, pts;
-        EntReqTable::GetRequestInfo(r->type, r->extraPoints,
-            NULL, &pts, NULL, &hasDistance);
+        ssassert(EntReqTable::GetRequestInfo(r->type, r->extraPoints,
+            NULL, &pts, NULL, &hasDistance), "No request info");;
         for(i = 0; i < pts; i++) {
             Vector pt = cr->point[i];
             // We need the reflection to occur within the workplane; it may
