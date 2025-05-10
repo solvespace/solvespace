@@ -861,6 +861,11 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
 hEntity Group::Remap(hEntity in, int copyNumber) {
     auto it = remap.find({ in, copyNumber });
     if(it == remap.end()) {
+        // Due to the way the remap value is combined with the group handle into a 32-bit
+        // handle value to generate an entity handle, the mapped value must fit in a 16-bit
+        // variable.
+        // This limit can be lifted once the handle values are extended to 64-bit.
+        ssassert(remap.size() < (1 << 16) - 1, "Too many entities in group");
         std::tie(it, std::ignore) =
             remap.insert({ { in, copyNumber }, { (uint32_t)remap.size() + 1 } });
     }
