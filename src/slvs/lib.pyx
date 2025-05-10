@@ -84,6 +84,7 @@ cdef extern from "slvs.h" nogil:
     Slvs_Constraint Slvs_LengthDiff(Slvs_hGroup grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value, Slvs_Entity workplane)
     Slvs_Constraint Slvs_Dragged(Slvs_hGroup grouph, Slvs_Entity ptA, Slvs_Entity workplane)
 
+    void Slvs_MarkDragged(Slvs_Entity ptA)
     Slvs_SolveResult Slvs_SolveSketch(Slvs_hGroup hg, int calculateFaileds) nogil
     double Slvs_GetParamValue(int ph)
     double Slvs_SetParamValue(int ph, double value)
@@ -361,6 +362,9 @@ class EntityType(IntEnum):
     CUBIC = _SLVS_E_CUBIC
     CIRCLE = _SLVS_E_CIRCLE
     ARC_OF_CIRCLE = _SLVS_E_ARC_OF_CIRCLE
+
+def mark_dragged(ptA: Slvs_Entity):
+    Slvs_MarkDragged(ptA)
 
 def solve_sketch(grouph: int, calculateFaileds: bool):
     return Slvs_SolveSketch(grouph, calculateFaileds)
