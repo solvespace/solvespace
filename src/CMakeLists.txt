@@ -360,7 +360,7 @@ if(ENABLE_GUI)
         if(MSVC)
             set_target_properties(solvespace PROPERTIES
                 LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
-        else(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC_VERSION)
+        elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND MSVC_VERSION)
             # Hack to fix broken build with clang (not clang-cl) on Windows with CMake >= 3.22
             # which unconditionally adds "-Xlinker /MANIFEST:EMBED" to the command line
             # for non-MSVC and non-MINGW compilers, and breaks the clang build where
