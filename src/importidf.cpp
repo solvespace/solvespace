@@ -211,7 +211,7 @@ static Vector ArcCenter(Vector p0, Vector p1, double angle) {
 // indicates a circle centered at x1,y1 passing through x2,y2 and is a complete loop.
 static void CreateEntity(EntityList *el, int *id, hEntity h0, hEntity h1, hEntity hnorm,
                     Vector p0, Vector p1, double angle, bool keepout) {
-    if (angle == 0.0) {
+    if (fabs(angle) < 0.1) {
         //line
         if(p0.Equals(p1)) return;
 
@@ -228,16 +228,14 @@ static void CreateEntity(EntityList *el, int *id, hEntity h0, hEntity h1, hEntit
         if(angle < 0.0) {
             swap(p0,p1);
             swap(h0,h1);
+            angle = fabs(angle);
         }
         // locate the center of the arc
         Vector m = p0.Plus(p1).ScaledBy(0.5);
         Vector perp = Vector::From(p1.y-p0.y, p0.x-p1.x, 0.0).WithMagnitude(1.0);
-        double dist = 0;
-        if (angle != 180) {
-            dist = (p1.Minus(m).Magnitude())/tan(0.5*angle*3.141592653589793/180.0);
-        } else {
-            dist = 0.0;
-        }
+        // half angle in radians
+        double theta = 0.5*angle*PI/180.0;
+        double dist = (p1.Minus(m).Magnitude())*cos(theta)/sin(theta);
         Vector c = m.Minus(perp.ScaledBy(dist));
         hEntity hc = newPoint(el, id, c, /*visible=*/false);
         newArc(el, id, h0, h1, hc, hnorm, keepout);
