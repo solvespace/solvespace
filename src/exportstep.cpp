@@ -7,25 +7,43 @@
 
 const double PRECISION = 0.001;
 
-/*
- * Alias struct.
- */
+//-----------------------------------------------------------------------------
+// Structs to keep track of duplicated entities
+//-----------------------------------------------------------------------------
+// Basic alias.
 typedef struct {
     int reference;
     List<int> aliases = {};
 } alias_t;
 
-/*
- * Cartesian points.
- */
+// Cartesian points.
 typedef struct {
     alias_t alias;
     alias_t vertexAlias;
     Vector v;
 } pointAliases_t;
 
-List<pointAliases_t> pointAliases;
+// Curves.
+typedef struct {
+    alias_t alias;
+    List<int> memberPoints = {};
+} curveAliases_t;
 
+// Edges.
+typedef struct {
+    alias_t alias;
+    int prevFinish;
+    int thisFinish;
+    int curveId;
+} edgeAliases_t;
+
+List<pointAliases_t> pointAliases;
+List<edgeAliases_t> edgeAliases;
+List<curveAliases_t> curveAliases;
+
+//-----------------------------------------------------------------------------
+// Functions for STEP export
+//-----------------------------------------------------------------------------
 // Check if this point was already defined with a different ID number.
 // inputs:
 //        number -> id of the cartesian point
@@ -35,33 +53,35 @@ List<pointAliases_t> pointAliases;
 //        true, if the cartesian point is already defined
 bool HasCartesianPointAnAlias(int number, Vector v, int vertex) {
     // Look for this point "v" in the alias list.
-    for (pointAliases_t *p = pointAliases.First(); p;
-         p = pointAliases.NextAfter(p)) {
-        if (p->v.Equals(v, PRECISION)) {
+    for(pointAliases_t *p = pointAliases.First(); p; p = pointAliases.NextAfter(p)) {
+        if(p->v.Equals(v, PRECISION)) {
             // This point was already defined.
             // The new number is just an alias.
             p->alias.aliases.AddToBeginning(&number);
-            if (vertex > 0) {
+            if(vertex > 0) {
                 p->vertexAlias.reference = (p->vertexAlias.reference <= 0 ?
-                                           vertex : p->vertexAlias.reference);
+                                            vertex : p->vertexAlias.reference);
                 p->vertexAlias.aliases.AddToBeginning(&vertex);
-                
-                if (p->vertexAlias.aliases.n == 1)
-                    return false; // add the point and the new vertex
+
+                if(p->vertexAlias.aliases.n == 1) {
+                    // This is a new vertex: add the point and the new vertex.
+                    return false;
+                }
             }
             return true;
         }
     }
-    
+
     // No point was found, it means this is a new point.
     pointAliases_t newPoint;
     newPoint.alias.reference = number;
     newPoint.alias.aliases.AddToBeginning(&number);
     newPoint.v = v;
     newPoint.vertexAlias.reference = vertex;
-    if (vertex > 0)
-      newPoint.vertexAlias.aliases.AddToBeginning(&vertex);
-    
+    if(vertex > 0) {
+        newPoint.vertexAlias.aliases.AddToBeginning(&vertex);
+    }
+
     // A new entry in the list.
     pointAliases.AddToBeginning(&newPoint);
     return false;
@@ -75,15 +95,15 @@ bool HasCartesianPointAnAlias(int number, Vector v, int vertex) {
 //        number, if the point has no aliases, otherwise its first alias
 int InsertPoint(int number) {
     // Look for a point with index "number" in the list of aliases.
-    for (pointAliases_t *p = pointAliases.First(); p;
-         p = pointAliases.NextAfter(p)) {
-        for (int *alias = p->alias.aliases.First(); alias;
-             alias = p->alias.aliases.NextAfter(alias)) {
-            if (*alias == number)
+    for(pointAliases_t *p = pointAliases.First(); p; p = pointAliases.NextAfter(p)) {
+        int *alias;
+        for(alias = p->alias.aliases.First(); alias; alias = p->alias.aliases.NextAfter(alias)) {
+            if(*alias == number) {
                 return p->alias.reference;
+            }
         }
     }
-    
+
     // ERROR: it should never reach this point...
     return -1;
 }
@@ -96,28 +116,19 @@ int InsertPoint(int number) {
 //        number, if the vertex has no aliases, otherwise its first alias
 int InsertVertex(int number) {
     // Look for a point with index "number" in the list of vertex aliases.
-    for (pointAliases_t *p = pointAliases.First(); p;
-         p = pointAliases.NextAfter(p)) {
-        for (int *alias = p->vertexAlias.aliases.First(); alias;
-             alias = p->vertexAlias.aliases.NextAfter(alias)) {
-            if (*alias == number)
+    for(pointAliases_t *p = pointAliases.First(); p; p = pointAliases.NextAfter(p)) {
+        int *alias;
+        for(alias = p->vertexAlias.aliases.First(); alias;
+            alias = p->vertexAlias.aliases.NextAfter(alias)) {
+            if(*alias == number) {
                 return p->vertexAlias.reference;
+            }
         }
     }
-    
+
     // ERROR: it should never reach this point...
     return -1;
 }
-
-/*
- * Curves.
- */
-typedef struct {
-    alias_t alias;
-    List<int> memberPoints = {};
-} curveAliases_t;
-
-List<curveAliases_t> curveAliases;
 
 // Check whether this curve was already defined with a different ID number.
 // inputs:
@@ -127,34 +138,34 @@ List<curveAliases_t> curveAliases;
 //        true, if the curve is already defined
 bool HasBSplineCurveAnAlias(int number, List<int> points) {
     // Look for this curve in the alias list.
-    for (curveAliases_t *c = curveAliases.First(); c;
-         c = curveAliases.NextAfter(c)) {        
-        if (points.n != c->memberPoints.n) {
+    for(curveAliases_t *c = curveAliases.First(); c; c = curveAliases.NextAfter(c)) {
+        if(points.n != c->memberPoints.n) {
             continue;
         } else {
             int matches = 0; // is this the same curve?
             // FIXME: this hack should work _most_ of the times
-            for (int i = 0; i < points.n; i++) {
-                for (int j = 0; j < points.n; j++) {
-                    if (points.Get(i) == c->memberPoints.Get(j))
+            for(int i = 0; i < points.n; i++) {
+                for(int j = 0; j < points.n; j++) {
+                    if(points.Get(i) == c->memberPoints.Get(j)) {
                         matches++;
+                    }
                 }
             }
-            
-            if (matches == points.n) {
+
+            if(matches == points.n) {
                 // Add this alias.
                 c->alias.aliases.AddToBeginning(&number);
                 return true;
             }
         }
     }
-    
+
     // No curve was found, it means this is a new curve.
     curveAliases_t newCurve;
     newCurve.alias.reference = number;
     newCurve.alias.aliases.AddToBeginning(&number);
     newCurve.memberPoints = points;
-    
+
     // A new entry in the list.
     curveAliases.AddToBeginning(&newCurve);
     return false;
@@ -162,30 +173,18 @@ bool HasBSplineCurveAnAlias(int number, List<int> points) {
 
 // Return a curve index. As above.
 int InsertCurve(int number) {
-    for (curveAliases_t *c = curveAliases.First(); c;
-         c = curveAliases.NextAfter(c)) {
-        for (int *alias = c->alias.aliases.First(); alias;
-             alias = c->alias.aliases.NextAfter(alias)) {
-            if (*alias == number)
+    for(curveAliases_t *c = curveAliases.First(); c; c = curveAliases.NextAfter(c)) {
+        int *alias;
+        for(alias = c->alias.aliases.First(); alias; alias = c->alias.aliases.NextAfter(alias)) {
+            if(*alias == number) {
                 return c->alias.reference;
+            }
         }
     }
-    
+
     // ERROR: it should never reach this point...
     return -1;
 }
-
-/*
- * Edges.
- */
-typedef struct {
-    alias_t alias;
-    int prevFinish;
-    int thisFinish;
-    int curveId;
-} edgeAliases_t;
-
-List<edgeAliases_t> edgeAliases;
 
 // Check whether this edge was already defined with a different ID number.
 // inputs:
@@ -196,18 +195,16 @@ List<edgeAliases_t> edgeAliases;
 //        true, if the edge is already defined
 bool HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId) {
     // Look for this edge in the alias list.
-    for (edgeAliases_t *e = edgeAliases.First(); e;
-         e = edgeAliases.NextAfter(e)) {        
-        if (((prevFinish == e->prevFinish &&
-            thisFinish == e->thisFinish) ||
-            (prevFinish == e->thisFinish &&
-            thisFinish == e->prevFinish)) &&
-            curveId == e->curveId) {
+    for(edgeAliases_t *e = edgeAliases.First(); e; e = edgeAliases.NextAfter(e)) {
+        // Check both directions.
+        if(((prevFinish == e->prevFinish && thisFinish == e->thisFinish) ||
+            (prevFinish == e->thisFinish && thisFinish == e->prevFinish)) &&
+             curveId == e->curveId) {
             e->alias.aliases.AddToBeginning(&number);
             return true;
         }
     }
-  
+
     // New edge.
     edgeAliases_t newEdge;
     newEdge.alias.reference = number;
@@ -215,7 +212,7 @@ bool HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId) {
     newEdge.prevFinish = prevFinish;
     newEdge.thisFinish = thisFinish;
     newEdge.curveId = curveId;
-    
+
     edgeAliases.AddToBeginning(&newEdge);
     return false;
 }
@@ -224,15 +221,15 @@ bool HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId) {
 int InsertOrientedEdge(int number) {
     int edgeNumber = number - 1;
     // An oriented edge is always linked to an edge with id = number - 1.
-    for (edgeAliases_t *e = edgeAliases.First(); e;
-         e = edgeAliases.NextAfter(e)) {
-        for (int *alias = e->alias.aliases.First(); alias;
-             alias = e->alias.aliases.NextAfter(alias)) {
-            if (*alias == edgeNumber)
+    for(edgeAliases_t *e = edgeAliases.First(); e; e = edgeAliases.NextAfter(e)) {
+        int *alias;
+        for(alias = e->alias.aliases.First(); alias; alias = e->alias.aliases.NextAfter(alias)) {
+            if(*alias == edgeNumber) {
                 return e->alias.reference + 1;
+            }
         }
     }
-    
+
     // ERROR: it should never reach this point...
     return -1;
 }
