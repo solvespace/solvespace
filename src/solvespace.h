@@ -305,6 +305,13 @@ public:
 
 class StepFileWriter {
 public:
+    bool HasCartesianPointAnAlias(int number, Vector v, int vertex);
+    int InsertPoint(int number);
+    int InsertVertex(int number);
+    bool HasBSplineCurveAnAlias(int number, std::vector<int> points);
+    int InsertCurve(int number);
+    bool HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId);
+    int InsertOrientedEdge(int number);
     void ExportSurfacesTo(const Platform::Path &filename);
     void WriteHeader();
     void WriteProductHeader();
