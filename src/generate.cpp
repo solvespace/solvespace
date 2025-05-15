@@ -86,46 +86,53 @@ bool SolveSpaceUI::PruneGroups(hGroup hg) {
     return true;
 }
 
-bool SolveSpaceUI::PruneRequests(hGroup hg) {
+bool SolveSpaceUI::PruneRequestsAndConstraints(hGroup hg) {
+    auto entityRequestExists = [](hEntity he, bool checkEntity = false) {
+        if(he == Entity::NO_ENTITY) {
+            return true;
+        }
+
+        if(he.isFromRequest()) {
+            if(SK.request.FindByIdNoOops(he.request()) != nullptr) {
+                return true;
+            }
+        } else if(!checkEntity || SK.entity.FindByIdNoOops(he) != nullptr) {
+            return true;
+        }
+
+        return false;
+    };
+
     const int requests = SK.request.n;
-    for(Entity &e : SK.entity) {
-        if(e.group != hg) {
+    for(Request &r : SK.request) {
+        if(r.group != hg) {
             continue;
         }
 
-        if(!e.h.isFromRequest()) {
+        if(entityRequestExists(r.workplane)) {
             continue;
         }
 
-        if(EntityExists(e.workplane)) {
-            continue;
-        }
-
-        Request *r = SK.GetRequest(e.h.request());
-        r->tag = 1;
+        r.tag = 1;
     }
     SK.request.RemoveTagged();
     deleted.requests += requests - SK.request.n;
 
-    return requests > SK.request.n;
-}
-
-bool SolveSpaceUI::PruneConstraints(hGroup hg) {
     const int constraints = SK.constraint.n;
     for(Constraint &c : SK.constraint) {
-        if(c.group != hg) continue;
+        if(c.group != hg)
+            continue;
 
-        if(EntityExists(c.workplane) &&
-           EntityExists(c.ptA) &&
-           EntityExists(c.ptB) &&
-           EntityExists(c.entityA) &&
-           EntityExists(c.entityB) &&
-           EntityExists(c.entityC) &&
-           EntityExists(c.entityD)) {
+        if(entityRequestExists(c.workplane, true) &&
+           entityRequestExists(c.ptA, true) &&
+           entityRequestExists(c.ptB, true) &&
+           entityRequestExists(c.entityA, true) &&
+           entityRequestExists(c.entityB, true) &&
+           entityRequestExists(c.entityC, true) &&
+           entityRequestExists(c.entityD, true)) {
             continue;
         }
 
-        (deleted.constraints)++;
         if(c.type != Constraint::Type::POINTS_COINCIDENT &&
            c.type != Constraint::Type::HORIZONTAL &&
            c.type != Constraint::Type::VERTICAL) {
@@ -134,10 +141,10 @@ bool SolveSpaceUI::PruneConstraints(hGroup hg) {
 
         c.tag = 1;
     }
-
     SK.constraint.RemoveTagged();
+    deleted.constraints += constraints - SK.constraint.n;
 
-    return constraints > SK.constraint.n;
+    return (requests > SK.request.n) || (constraints > SK.constraint.n);
 }
 
 void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox) {
@@ -215,8 +222,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     // Remove any requests or constraints that refer to a nonexistent
     // group; can check those immediately, since we know what the list
     // of groups should be.
-    while(PruneOrphans())
-        ;
+    PruneOrphans();
 
     // Don't lose our numerical guesses when we regenerate.
     IdList<Param,hParam> prev = {};
@@ -254,7 +260,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
         // The requests and constraints depend on stuff in this or the
         // previous group, so check them after generating.
-        if(PruneRequests(hg) || PruneConstraints(hg))
+        if(PruneRequestsAndConstraints(hg))
             goto pruned;
 
         // Use the previous values for params that we've seen before, as
