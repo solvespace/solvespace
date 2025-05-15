@@ -30,24 +30,24 @@ void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
 }
 
 bool SolveSpaceUI::PruneOrphans() {
-
-    auto r = std::find_if(SK.request.begin(), SK.request.end(),
-                          [&](Request &r) { return !GroupExists(r.group); });
-    if(r != SK.request.end()) {
-        (deleted.requests)++;
-        SK.request.RemoveById(r->h);
-        return true;
+    const int requests = SK.request.n;
+    for(Request &r : SK.request) {
+        if(!GroupExists(r.group))
+            r.tag = 1;
     }
+    SK.request.RemoveTagged();
+    deleted.requests += requests - SK.request.n;
 
-    auto c = std::find_if(SK.constraint.begin(), SK.constraint.end(),
-                          [&](Constraint &c) { return !GroupExists(c.group); });
-    if(c != SK.constraint.end()) {
-        (deleted.constraints)++;
-        (deleted.nonTrivialConstraints)++;
-        SK.constraint.RemoveById(c->h);
-        return true;
+    const int constraints = SK.constraint.n;
+    for(Constraint &c : SK.constraint) {
+        if(!GroupExists(c.group))
+            c.tag = 1;
     }
-    return false;
+    SK.constraint.RemoveTagged();
+    deleted.constraints += constraints - SK.constraint.n;
+    deleted.nonTrivialConstraints += constraints - SK.constraint.n;
+
+    return (requests > SK.request.n) || (constraints > SK.constraint.n);
 }
 
 bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
@@ -111,9 +111,9 @@ bool SolveSpaceUI::PruneRequests(hGroup hg) {
 }
 
 bool SolveSpaceUI::PruneConstraints(hGroup hg) {
-    auto c = std::find_if(SK.constraint.begin(), SK.constraint.end(), [&](Constraint &c) {
-        if(c.group != hg)
-            return false;
+    const int constraints = SK.constraint.n;
+    for(Constraint &c : SK.constraint) {
+        if(c.group != hg) continue;
 
         if(EntityExists(c.workplane) &&
            EntityExists(c.ptA) &&
@@ -122,23 +122,22 @@ bool SolveSpaceUI::PruneConstraints(hGroup hg) {
            EntityExists(c.entityB) &&
            EntityExists(c.entityC) &&
            EntityExists(c.entityD)) {
-            return false;
+            continue;
         }
-        return true;
-    });
 
-    if(c != SK.constraint.end()) {
         (deleted.constraints)++;
-        if(c->type != Constraint::Type::POINTS_COINCIDENT &&
-           c->type != Constraint::Type::HORIZONTAL &&
-           c->type != Constraint::Type::VERTICAL) {
+        if(c.type != Constraint::Type::POINTS_COINCIDENT &&
+           c.type != Constraint::Type::HORIZONTAL &&
+           c.type != Constraint::Type::VERTICAL) {
             (deleted.nonTrivialConstraints)++;
         }
 
-        SK.constraint.RemoveById(c->h);
-        return true;
+        c.tag = 1;
     }
-    return false;
+
+    SK.constraint.RemoveTagged();
+
+    return constraints > SK.constraint.n;
 }
 
 void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox) {
