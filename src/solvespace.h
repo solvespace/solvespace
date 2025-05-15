@@ -765,8 +765,7 @@ public:
     bool EntityExists(hEntity he);
     bool GroupsInOrder(hGroup before, hGroup after);
     bool PruneGroups(hGroup hg);
-    bool PruneRequests(hGroup hg);
-    bool PruneConstraints(hGroup hg);
+    bool PruneRequestsAndConstraints(hGroup hg);
     static void ShowNakedEdges(bool reportOnlyWhenNotOkay);
 
     enum class Generate : uint32_t {
