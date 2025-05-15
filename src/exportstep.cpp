@@ -4,8 +4,10 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <vector>
+#include <iostream>
 
-const double PRECISION = 0.001;
+const double PRECISION = 2*LENGTH_EPS;
 
 //-----------------------------------------------------------------------------
 // Structs to keep track of duplicated entities
@@ -13,7 +15,7 @@ const double PRECISION = 0.001;
 // Basic alias.
 typedef struct {
     int reference;
-    List<int> aliases = {};
+    std::vector<int> aliases;
 } alias_t;
 
 // Cartesian points.
@@ -26,7 +28,7 @@ typedef struct {
 // Curves.
 typedef struct {
     alias_t alias;
-    List<int> memberPoints = {};
+    std::vector<int> memberPoints;
 } curveAliases_t;
 
 // Edges.
@@ -37,9 +39,9 @@ typedef struct {
     int curveId;
 } edgeAliases_t;
 
-List<pointAliases_t> pointAliases;
-List<edgeAliases_t> edgeAliases;
-List<curveAliases_t> curveAliases;
+std::vector<pointAliases_t> pointAliases;
+std::vector<edgeAliases_t> edgeAliases;
+std::vector<curveAliases_t> curveAliases;
 
 //-----------------------------------------------------------------------------
 // Functions for STEP export
@@ -51,19 +53,19 @@ List<curveAliases_t> curveAliases;
 //        vertex -> id of the vertex linked to this point (<1 if none)
 // return:
 //        true, if the cartesian point is already defined
-bool HasCartesianPointAnAlias(int number, Vector v, int vertex) {
+bool StepFileWriter::HasCartesianPointAnAlias(int number, Vector v, int vertex) {
     // Look for this point "v" in the alias list.
-    for(pointAliases_t *p = pointAliases.First(); p; p = pointAliases.NextAfter(p)) {
-        if(p->v.Equals(v, PRECISION)) {
+    for(pointAliases_t &p : pointAliases) {
+        if(p.v.Equals(v, PRECISION)) {
             // This point was already defined.
             // The new number is just an alias.
-            p->alias.aliases.AddToBeginning(&number);
+            p.alias.aliases.push_back(number);
             if(vertex > 0) {
-                p->vertexAlias.reference = (p->vertexAlias.reference <= 0 ?
-                                            vertex : p->vertexAlias.reference);
-                p->vertexAlias.aliases.AddToBeginning(&vertex);
+                p.vertexAlias.reference = (p.vertexAlias.reference <= 0 ?
+                                            vertex : p.vertexAlias.reference);
+                p.vertexAlias.aliases.push_back(vertex);
 
-                if(p->vertexAlias.aliases.n == 1) {
+                if(p.vertexAlias.aliases.size() == 1) {
                     // This is a new vertex: add the point and the new vertex.
                     return false;
                 }
@@ -75,15 +77,15 @@ bool HasCartesianPointAnAlias(int number, Vector v, int vertex) {
     // No point was found, it means this is a new point.
     pointAliases_t newPoint;
     newPoint.alias.reference = number;
-    newPoint.alias.aliases.AddToBeginning(&number);
+    newPoint.alias.aliases.push_back(number);
     newPoint.v = v;
     newPoint.vertexAlias.reference = vertex;
     if(vertex > 0) {
-        newPoint.vertexAlias.aliases.AddToBeginning(&vertex);
+        newPoint.vertexAlias.aliases.push_back(vertex);
     }
 
     // A new entry in the list.
-    pointAliases.AddToBeginning(&newPoint);
+    pointAliases.push_back(newPoint);
     return false;
 }
 
@@ -93,13 +95,12 @@ bool HasCartesianPointAnAlias(int number, Vector v, int vertex) {
 //        number -> the id of the requested cartesian point
 // return:
 //        number, if the point has no aliases, otherwise its first alias
-int InsertPoint(int number) {
+int StepFileWriter::InsertPoint(int number) {
     // Look for a point with index "number" in the list of aliases.
-    for(pointAliases_t *p = pointAliases.First(); p; p = pointAliases.NextAfter(p)) {
-        int *alias;
-        for(alias = p->alias.aliases.First(); alias; alias = p->alias.aliases.NextAfter(alias)) {
-            if(*alias == number) {
-                return p->alias.reference;
+    for(pointAliases_t p : pointAliases) {
+        for(int alias : p.alias.aliases) {
+            if(alias == number) {
+                return p.alias.reference;
             }
         }
     }
@@ -114,14 +115,12 @@ int InsertPoint(int number) {
 //        number -> the id of the requested vertex
 // return:
 //        number, if the vertex has no aliases, otherwise its first alias
-int InsertVertex(int number) {
+int StepFileWriter::InsertVertex(int number) {
     // Look for a point with index "number" in the list of vertex aliases.
-    for(pointAliases_t *p = pointAliases.First(); p; p = pointAliases.NextAfter(p)) {
-        int *alias;
-        for(alias = p->vertexAlias.aliases.First(); alias;
-            alias = p->vertexAlias.aliases.NextAfter(alias)) {
-            if(*alias == number) {
-                return p->vertexAlias.reference;
+    for(pointAliases_t p : pointAliases) {
+        for(int alias : p.vertexAlias.aliases) {
+            if(alias == number) {
+                return p.vertexAlias.reference;
             }
         }
     }
@@ -136,25 +135,25 @@ int InsertVertex(int number) {
 //        points -> list of points that define the curve
 // return:
 //        true, if the curve is already defined
-bool HasBSplineCurveAnAlias(int number, List<int> points) {
+bool StepFileWriter::HasBSplineCurveAnAlias(int number, std::vector<int> points) {
     // Look for this curve in the alias list.
-    for(curveAliases_t *c = curveAliases.First(); c; c = curveAliases.NextAfter(c)) {
-        if(points.n != c->memberPoints.n) {
+    for(curveAliases_t &c : curveAliases) {
+        if(points.size() != c.memberPoints.size()) {
             continue;
         } else {
-            int matches = 0; // is this the same curve?
+            uint matches = 0; // is this the same curve?
             // FIXME: this hack should work _most_ of the times
-            for(int i = 0; i < points.n; i++) {
-                for(int j = 0; j < points.n; j++) {
-                    if(points.Get(i) == c->memberPoints.Get(j)) {
+            for(uint i = 0; i < points.size(); i++) {
+                for(uint j = 0; j < points.size(); j++) {
+                    if(points.at(i) == c.memberPoints.at(j)) {
                         matches++;
                     }
                 }
             }
 
-            if(matches == points.n) {
+            if(matches == points.size()) {
                 // Add this alias.
-                c->alias.aliases.AddToBeginning(&number);
+                c.alias.aliases.push_back(number);
                 return true;
             }
         }
@@ -163,21 +162,20 @@ bool HasBSplineCurveAnAlias(int number, List<int> points) {
     // No curve was found, it means this is a new curve.
     curveAliases_t newCurve;
     newCurve.alias.reference = number;
-    newCurve.alias.aliases.AddToBeginning(&number);
+    newCurve.alias.aliases.push_back(number);
     newCurve.memberPoints = points;
 
     // A new entry in the list.
-    curveAliases.AddToBeginning(&newCurve);
+    curveAliases.push_back(newCurve);
     return false;
 }
 
 // Return a curve index. As above.
-int InsertCurve(int number) {
-    for(curveAliases_t *c = curveAliases.First(); c; c = curveAliases.NextAfter(c)) {
-        int *alias;
-        for(alias = c->alias.aliases.First(); alias; alias = c->alias.aliases.NextAfter(alias)) {
-            if(*alias == number) {
-                return c->alias.reference;
+int StepFileWriter::InsertCurve(int number) {
+    for(curveAliases_t c : curveAliases) {
+        for(int alias : c.alias.aliases) {
+            if(alias == number) {
+                return c.alias.reference;
             }
         }
     }
@@ -193,14 +191,14 @@ int InsertCurve(int number) {
 //        curveID -> curve of the edge
 // return:
 //        true, if the edge is already defined
-bool HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId) {
+bool StepFileWriter::HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId) {
     // Look for this edge in the alias list.
-    for(edgeAliases_t *e = edgeAliases.First(); e; e = edgeAliases.NextAfter(e)) {
+    for(edgeAliases_t &e : edgeAliases) {
         // Check both directions.
-        if(((prevFinish == e->prevFinish && thisFinish == e->thisFinish) ||
-            (prevFinish == e->thisFinish && thisFinish == e->prevFinish)) &&
-             curveId == e->curveId) {
-            e->alias.aliases.AddToBeginning(&number);
+        if(((prevFinish == e.prevFinish && thisFinish == e.thisFinish) ||
+            (prevFinish == e.thisFinish && thisFinish == e.prevFinish)) &&
+             curveId == e.curveId) {
+            e.alias.aliases.push_back(number);
             return true;
         }
     }
@@ -208,24 +206,23 @@ bool HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId) {
     // New edge.
     edgeAliases_t newEdge;
     newEdge.alias.reference = number;
-    newEdge.alias.aliases.AddToBeginning(&number);
+    newEdge.alias.aliases.push_back(number);
     newEdge.prevFinish = prevFinish;
     newEdge.thisFinish = thisFinish;
     newEdge.curveId = curveId;
 
-    edgeAliases.AddToBeginning(&newEdge);
+    edgeAliases.push_back(newEdge);
     return false;
 }
 
 // Return an oriented edge index. As above.
-int InsertOrientedEdge(int number) {
+int StepFileWriter::InsertOrientedEdge(int number) {
     int edgeNumber = number - 1;
     // An oriented edge is always linked to an edge with id = number - 1.
-    for(edgeAliases_t *e = edgeAliases.First(); e; e = edgeAliases.NextAfter(e)) {
-        int *alias;
-        for(alias = e->alias.aliases.First(); alias; alias = e->alias.aliases.NextAfter(alias)) {
-            if(*alias == edgeNumber) {
-                return e->alias.reference + 1;
+    for(edgeAliases_t e : edgeAliases) {
+        for(int alias : e.alias.aliases) {
+            if(alias == edgeNumber) {
+                return e.alias.reference + 1;
             }
         }
     }
@@ -290,7 +287,7 @@ void StepFileWriter::WriteHeader() {
 "#172=DIRECTION('',(1.,0.,0.));\n"
 "#173=CARTESIAN_POINT('',(0.,0.,0.));\n"
 "\n",
-    PRECISION);
+    LENGTH_EPS);
 
     // Start the ID somewhere beyond the header IDs.
     id = 200;
@@ -312,7 +309,7 @@ void StepFileWriter::WriteProductHeader() {
 }
 int StepFileWriter::ExportCurve(SBezier *sb) {
     int i, ret = id;
-    List<int> curvePoints = {};
+    std::vector<int> curvePoints = {};
 
     for(i = 0; i <= sb->deg; i++) {
         if (!HasCartesianPointAnAlias(id + 1 + i, sb->ctrl[i], -1))
@@ -323,7 +320,7 @@ int StepFileWriter::ExportCurve(SBezier *sb) {
     
     for(i = 0; i <= sb->deg; i++) {
         int point = InsertPoint(id + 1 + i);
-        curvePoints.AddToBeginning(&point);
+        curvePoints.push_back(point);
     }
     
     if (!HasBSplineCurveAnAlias(ret, curvePoints)) {
@@ -650,9 +647,9 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
 
     fclose(f);
     advancedFaces.Clear();
-    pointAliases.Clear();
-    curveAliases.Clear();
-    edgeAliases.Clear();
+    pointAliases.clear();
+    curveAliases.clear();
+    edgeAliases.clear();
 }
 
 void StepFileWriter::WriteWireframe() {
