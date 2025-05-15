@@ -448,6 +448,14 @@ hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
     Vector p0 = SK.GetEntity(hep0)->PointGetNum(),
            p1 = SK.GetEntity(hep1)->PointGetNum();
 
+    if(p0.Equals(pinter)) {
+        return hep0;
+    }
+
+    if(p1.Equals(pinter)) {
+        return hep1;
+    }
+
     // Add the two line segments this one gets split into.
     hRequest r0i = AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false),
              ri1 = AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
@@ -582,7 +590,6 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
 
 hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     Entity *e = SK.GetEntity(he);
-    Entity::Type entityType = e->type;
 
     hEntity ret;
     if(e->IsCircle()) {
@@ -597,22 +604,20 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     }
 
     // Finally, delete the request that generated the original entity.
-    Request::Type reqType = EntReqTable::GetRequestForEntity(entityType);
-    SK.request.ClearTags();
-    for(auto &r : SK.request) {
-        if(r.group != activeGroup)
-            continue;
-        if(r.type != reqType)
-            continue;
-
-        // If the user wants to keep the old entities around, they can just
-        // mark them construction first.
-        if(he == r.h.entity(0) && !r.construction) {
-            r.tag = 1;
-            break;
+    if(he.isFromRequest() && he == he.request().entity(0)) {
+        hRequest hr = he.request();
+        // Only delete the original request if we actually made a split
+        // (i.e. the split point is not from the original request)
+        if(hr != ret.request()) {
+            Request *r = SK.GetRequest(hr);
+            // If the user wants to keep the old entities around, they can just
+            // mark them construction first.
+            if(r->group == activeGroup && !r->construction) {
+                r->tag = 1;
+                DeleteTaggedRequests();
+            }
         }
     }
-    DeleteTaggedRequests();
 
     return ret;
 }
