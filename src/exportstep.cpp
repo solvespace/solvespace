@@ -4,47 +4,11 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include <vector>
-#include <iostream>
 
 const double PRECISION = 2*LENGTH_EPS;
 
 //-----------------------------------------------------------------------------
-// Structs to keep track of duplicated entities
-//-----------------------------------------------------------------------------
-// Basic alias.
-typedef struct {
-    int reference;
-    std::vector<int> aliases;
-} alias_t;
-
-// Cartesian points.
-typedef struct {
-    alias_t alias;
-    alias_t vertexAlias;
-    Vector v;
-} pointAliases_t;
-
-// Curves.
-typedef struct {
-    alias_t alias;
-    std::vector<int> memberPoints;
-} curveAliases_t;
-
-// Edges.
-typedef struct {
-    alias_t alias;
-    int prevFinish;
-    int thisFinish;
-    int curveId;
-} edgeAliases_t;
-
-std::vector<pointAliases_t> pointAliases;
-std::vector<edgeAliases_t> edgeAliases;
-std::vector<curveAliases_t> curveAliases;
-
-//-----------------------------------------------------------------------------
-// Functions for STEP export
+// Functions for STEP export: duplication check.
 //-----------------------------------------------------------------------------
 // Check if this point was already defined with a different ID number.
 // inputs:
@@ -141,11 +105,11 @@ bool StepFileWriter::HasBSplineCurveAnAlias(int number, std::vector<int> points)
         if(points.size() != c.memberPoints.size()) {
             continue;
         } else {
-            uint matches = 0; // is this the same curve?
+            size_t matches = 0; // is this the same curve?
             // FIXME: this hack should work _most_ of the times
-            for(uint i = 0; i < points.size(); i++) {
-                for(uint j = 0; j < points.size(); j++) {
-                    if(points.at(i) == c.memberPoints.at(j)) {
+            for(size_t i = 0; i < points.size(); i++) {
+                for(size_t j = 0; j < points.size(); j++) {
+                    if(points[i] == c.memberPoints[j]) {
                         matches++;
                     }
                 }
@@ -231,6 +195,9 @@ int StepFileWriter::InsertOrientedEdge(int number) {
     return -1;
 }
 
+//-----------------------------------------------------------------------------
+// Functions for STEP export: print to file.
+//-----------------------------------------------------------------------------
 void StepFileWriter::WriteHeader() {
     fprintf(f,
 "ISO-10303-21;\n"
