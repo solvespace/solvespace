@@ -322,6 +322,38 @@ public:
     List<int> advancedFaces;
     FILE *f;
     int id;
+
+    // Structs to keep track of duplicated entities.
+    // Basic alias.
+    typedef struct {
+        int reference;
+        std::vector<int> aliases;
+    } alias_t;
+
+    // Cartesian points.
+    typedef struct {
+        alias_t alias;
+        alias_t vertexAlias;
+        Vector v;
+    } pointAliases_t;
+
+    // Curves.
+    typedef struct {
+        alias_t alias;
+        std::vector<int> memberPoints;
+    } curveAliases_t;
+
+    // Edges.
+    typedef struct {
+        alias_t alias;
+        int prevFinish;
+        int thisFinish;
+        int curveId;
+    } edgeAliases_t;
+
+    std::vector<pointAliases_t> pointAliases;
+    std::vector<edgeAliases_t> edgeAliases;
+    std::vector<curveAliases_t> curveAliases;
 };
 
 class VectorFileWriter {
