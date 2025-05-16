@@ -325,11 +325,14 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
         ScheduleShowTW();
         GW.ClearSuper();
 
+        auto deletedStat = deleted;
+        deleted = {};
+
         // People get annoyed if I complain whenever they delete any request,
         // and I otherwise will, since those always come with pt-coincident
         // constraints.
-        if(deleted.requests > 0 || deleted.nonTrivialConstraints > 0 ||
-           deleted.groups > 0)
+        if(deletedStat.requests > 0 || deletedStat.nonTrivialConstraints > 0 ||
+           deletedStat.groups > 0)
         {
             // Don't display any errors until we've regenerated fully. The
             // sketch is not necessarily in a consistent state until we've
@@ -343,13 +346,11 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
                     "     %d constraint%s\n"
                     "     %d group%s"
                     "%s",
-                       deleted.requests, deleted.requests == 1 ? "" : "s",
-                       deleted.constraints, deleted.constraints == 1 ? "" : "s",
-                       deleted.groups, deleted.groups == 1 ? "" : "s",
+                       deletedStat.requests, deletedStat.requests == 1 ? "" : "s",
+                       deletedStat.constraints, deletedStat.constraints == 1 ? "" : "s",
+                       deletedStat.groups, deletedStat.groups == 1 ? "" : "s",
                        undo.cnt > 0 ? "\n\nChoose Edit -> Undo to undelete all elements." : "");
         }
-
-        deleted = {};
     }
 
     FreeAllTemporary();
