@@ -585,6 +585,7 @@ public:
     bool     checkClosedContour;
     bool     cameraNav;
     bool     turntableNav;
+    bool     zoomCenterNav;
     bool     immediatelyEditDimension;
     bool     automaticLineConstraints;
     bool     showToolbar;
