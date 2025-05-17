@@ -122,7 +122,7 @@ struct IsHandleOracle<EntityId> : std::true_type {};
 struct EntityKey {
     hEntity     input;
     int         copyNumber;
-    // (input, copyNumber) gets mapped to ((Request)xxx).entity(h.v)
+    // (input, copyNumber) gets mapped to hGroup::entity(i)
 };
 struct EntityKeyHash {
     size_t operator()(const EntityKey &k) const {
