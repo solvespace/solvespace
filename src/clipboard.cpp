@@ -93,8 +93,8 @@ void GraphicsWindow::CopySelection() {
             if(!e->h.isFromRequest()) continue;
             Request *r = SK.GetRequest(e->h.request());
             if(r->type != Request::Type::DATUM_POINT) continue;
-            EntReqTable::GetEntityInfo((Entity::Type)0, e->extraPoints,
-                &req, &pts, NULL, &hasDistance);
+            ssassert(EntReqTable::GetEntityInfo((Entity::Type)0, e->extraPoints,
+                &req, &pts, NULL, &hasDistance), "No entity info");
         }
         if(req == Request::Type::WORKPLANE) continue;
 
