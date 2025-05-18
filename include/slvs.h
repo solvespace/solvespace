@@ -498,6 +498,7 @@ DLL double Slvs_GetParamValue(uint32_t ph);
 DLL void Slvs_SetParamValue(uint32_t ph, double value);
 
 DLL void Slvs_Solve(Slvs_System *sys, uint32_t hg);
+DLL void Slvs_MarkDragged(Slvs_Entity ptA);
 DLL Slvs_SolveResult Slvs_SolveSketch(uint32_t hg, int calculateFaileds);
 DLL void Slvs_ClearSketch();
 
