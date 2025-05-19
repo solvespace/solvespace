@@ -104,6 +104,8 @@ bool StepFileWriter::HasBSplineCurveAnAlias(int number, std::vector<int> points)
     for(curveAliases_t &c : curveAliases) {
         if(points.size() != c.memberPoints.size()) {
             continue;
+        } if(exportParts && !(c.color.Equals(currentColor))) {
+          continue;
         } else {
             size_t matches = 0; // is this the same curve?
             // FIXME: this hack should work _most_ of the times
@@ -128,6 +130,7 @@ bool StepFileWriter::HasBSplineCurveAnAlias(int number, std::vector<int> points)
     newCurve.alias.reference = number;
     newCurve.alias.aliases.push_back(number);
     newCurve.memberPoints = points;
+    newCurve.color = currentColor;
 
     // A new entry in the list.
     curveAliases.push_back(newCurve);
@@ -138,7 +141,7 @@ bool StepFileWriter::HasBSplineCurveAnAlias(int number, std::vector<int> points)
 int StepFileWriter::InsertCurve(int number) {
     for(curveAliases_t c : curveAliases) {
         for(int alias : c.alias.aliases) {
-            if(alias == number) {
+            if(alias == number && (!exportParts || c.color.Equals(currentColor))) {
                 return c.alias.reference;
             }
         }
@@ -158,6 +161,9 @@ int StepFileWriter::InsertCurve(int number) {
 bool StepFileWriter::HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId) {
     // Look for this edge in the alias list.
     for(edgeAliases_t &e : edgeAliases) {
+        if(exportParts && !(e.color.Equals(currentColor))) {
+          continue;
+        }
         // Check both directions.
         if(((prevFinish == e.prevFinish && thisFinish == e.thisFinish) ||
             (prevFinish == e.thisFinish && thisFinish == e.prevFinish)) &&
@@ -174,6 +180,7 @@ bool StepFileWriter::HasEdgeAnAlias(int number, int prevFinish, int thisFinish, 
     newEdge.prevFinish = prevFinish;
     newEdge.thisFinish = thisFinish;
     newEdge.curveId = curveId;
+    newEdge.color = currentColor;
 
     edgeAliases.push_back(newEdge);
     return false;
@@ -185,7 +192,7 @@ int StepFileWriter::InsertOrientedEdge(int number) {
     // An oriented edge is always linked to an edge with id = number - 1.
     for(edgeAliases_t e : edgeAliases) {
         for(int alias : e.alias.aliases) {
-            if(alias == edgeNumber) {
+            if(alias == edgeNumber && (!exportParts || e.color.Equals(currentColor))) {
                 return e.alias.reference + 1;
             }
         }
@@ -394,6 +401,10 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
 void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     int i, j, srfid = id;
 
+    // Read the colour of the surface: use it to tell apart surfaces
+    // from different parts.
+    currentColor = ss->color;
+
     // First, define the control points for the untrimmed surface, if they
     // were not already defined.
     for(i = 0; i <= ss->degm; i++) {
@@ -406,7 +417,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
             }
         }
     }
-    
+
     // Then, we create the untrimmed surface. We always specify a rational
     // B-spline surface (in fact, just a Bezier surface).
     fprintf(f, "#%d=(\n", srfid);
@@ -572,9 +583,9 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
     pointAliases = {};
     curveAliases = {};
     edgeAliases = {};
-    
+
     WriteHeader();
-	WriteProductHeader();
+    WriteProductHeader();
 
     advancedFaces = {};
 
