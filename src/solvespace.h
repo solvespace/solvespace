@@ -341,6 +341,7 @@ public:
     typedef struct {
         alias_t alias;
         std::vector<int> memberPoints;
+        RgbaColor color;
     } curveAliases_t;
 
     // Edges.
@@ -349,11 +350,14 @@ public:
         int prevFinish;
         int thisFinish;
         int curveId;
+        RgbaColor color;
     } edgeAliases_t;
 
     std::vector<pointAliases_t> pointAliases;
     std::vector<edgeAliases_t> edgeAliases;
     std::vector<curveAliases_t> curveAliases;
+    bool exportParts = true;
+    RgbaColor currentColor;
 };
 
 class VectorFileWriter {
