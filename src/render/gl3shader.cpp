@@ -108,7 +108,7 @@ precision highp float;
     glShaderSource(shader, 1, glSource, glSize);
     glCompileShader(shader);
 
-    GLint infoLen;
+    GLint infoLen = 0;
     glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLen);
     if(infoLen > 1) {
         std::string infoStr(infoLen, '\0');
@@ -116,7 +116,7 @@ precision highp float;
         dbp(infoStr.c_str());
     }
 
-    GLint compiled;
+    GLint compiled = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
     if(!compiled) {
         dbp("Failed to compile shader:\n"
@@ -145,7 +145,7 @@ void Shader::Init(const std::string &vertexRes, const std::string &fragmentRes,
     }
     glLinkProgram(program);
 
-    GLint infoLen;
+    GLint infoLen = 0;
     glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLen);
     if(infoLen > 1) {
         std::string infoStr(infoLen, '\0');
@@ -153,7 +153,7 @@ void Shader::Init(const std::string &vertexRes, const std::string &fragmentRes,
         dbp(infoStr.c_str());
     }
 
-    GLint linked;
+    GLint linked = 0;
     glGetProgramiv(program, GL_LINK_STATUS, &linked);
     ssassert(linked, "Cannot link shader");
 }
@@ -386,7 +386,7 @@ GLuint Generate(const std::vector<double> &pattern) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 
-    GLint size;
+    GLint size = 0;
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &size);
     size /= 2;
 
