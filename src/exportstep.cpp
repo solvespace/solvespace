@@ -5,6 +5,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+#define FP "%.5f"   // Floating Point coordinate precision. Since LENGTH_EPS = 1e-6 output 5 decimal places thus rounding out errors e.g. 0.999999mm
+#define CARTESIAN_POINT_FORMAT "#%d=CARTESIAN_POINT('',(" FP "," FP "," FP "));\n"
 const double PRECISION = 2*LENGTH_EPS;
 
 //-----------------------------------------------------------------------------
@@ -261,7 +263,7 @@ void StepFileWriter::WriteHeader() {
 "#172=DIRECTION('',(1.,0.,0.));\n"
 "#173=CARTESIAN_POINT('',(0.,0.,0.));\n"
 "\n",
-    LENGTH_EPS);
+    PRECISION);
 
     // Start the ID somewhere beyond the header IDs.
     id = 200;
@@ -287,7 +289,7 @@ int StepFileWriter::ExportCurve(SBezier *sb) {
 
     for(i = 0; i <= sb->deg; i++) {
         if (!HasCartesianPointAnAlias(id + 1 + i, sb->ctrl[i], -1))
-            fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+            fprintf(f, CARTESIAN_POINT_FORMAT,
                 id + 1 + i,
                 CO(sb->ctrl[i]));
     }
@@ -337,7 +339,7 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
     // finish of a previous edge and the start of the next one. So we need
     // the finish of the last Bezier in the loop before we start our process.
     if (!HasCartesianPointAnAlias(id, sb->Finish(), id+1)) {
-        fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+        fprintf(f, CARTESIAN_POINT_FORMAT,
             id, CO(sb->Finish()));
         fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, InsertPoint(id));
          lastFinish = id + 1; 
@@ -353,7 +355,7 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
         int thisFinish;
         if(loop->l.NextAfter(sb) != NULL) {
             if (!HasCartesianPointAnAlias(id, sb->Finish(), id+1)) {
-                fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+                fprintf(f, CARTESIAN_POINT_FORMAT,
                     id, CO(sb->Finish()));
                 fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, InsertPoint(id));
                 thisFinish = id + 1;
@@ -411,7 +413,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
         for(j = 0; j <= ss->degn; j++) {
             if (!HasCartesianPointAnAlias(srfid + 1 + j + i*(ss->degn + 1), 
                                           ss->ctrl[i][j], -1)) {
-                fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+                fprintf(f, CARTESIAN_POINT_FORMAT,
                     srfid + 1 + j + i*(ss->degn + 1),
                     CO(ss->ctrl[i][j]));
             }
