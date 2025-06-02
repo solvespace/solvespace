@@ -300,6 +300,42 @@ public:
 
 #include "ttf.h"
 
+class GeoFileWriter {
+public:
+    // Cartesian points.
+    typedef struct {
+        int reference;
+        Vector v;
+    } point_t;
+
+    // Various elements of geo files: curves, faces etc.
+    typedef struct {
+        int reference;
+        std::vector<int> members;
+        RgbaColor color;
+    } geoEl_t;
+
+    std::vector<point_t> points;
+    std::vector<geoEl_t> curves;
+    std::vector<geoEl_t> loops;
+    std::vector<geoEl_t> surfaces;
+    RgbaColor currentColor;
+    bool exportParts = true;
+    float meshSize = 1.0;
+    FILE *f;
+
+    void AddPoint(Vector v);
+    int AddCurve(size_t degree, std::vector<Vector> pointVectors);
+    int AddLoop(std::vector<int> loopMembers);
+    void AddSurface(std::vector<int> surfaceMembers);
+    bool CompareGeoEl(std::vector<int> membersA, std::vector<int> membersB);
+    std::vector<int> GetEdgeMembers(int number);
+    int ExportCurve(SBezier *sb);
+    int ExportCurveLoop(SBezierLoop *loop);
+    void ExportSurface(SSurface *ss, SBezierList *sbl);
+    void ExportSurfacesTo(const Platform::Path &filename);
+};
+
 class StepFileWriter {
 public:
     bool HasCartesianPointAnAlias(int number, Vector v, int vertex);
