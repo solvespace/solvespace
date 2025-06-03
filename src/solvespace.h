@@ -302,7 +302,8 @@ public:
 
 class StepFileWriter {
 public:
-    bool HasCartesianPointAnAlias(int number, Vector v, int vertex);
+    bool HasCartesianPointAnAlias(int number, Vector v, int vertex,
+                                  bool *vertex_has_alias = nullptr);
     int InsertPoint(int number);
     int InsertVertex(int number);
     bool HasBSplineCurveAnAlias(int number, std::vector<int> points);

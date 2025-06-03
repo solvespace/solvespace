@@ -19,7 +19,7 @@ const double PRECISION = 2*LENGTH_EPS;
 //        vertex -> id of the vertex linked to this point (<1 if none)
 // return:
 //        true, if the cartesian point is already defined
-bool StepFileWriter::HasCartesianPointAnAlias(int number, Vector v, int vertex) {
+bool StepFileWriter::HasCartesianPointAnAlias(int number, Vector v, int vertex, bool *vertex_has_alias) {
     // Look for this point "v" in the alias list.
     for(pointAliases_t &p : pointAliases) {
         if(p.v.Equals(v, PRECISION)) {
@@ -31,9 +31,14 @@ bool StepFileWriter::HasCartesianPointAnAlias(int number, Vector v, int vertex) 
                                             vertex : p.vertexAlias.reference);
                 p.vertexAlias.aliases.push_back(vertex);
 
-                if(p.vertexAlias.aliases.size() == 1) {
-                    // This is a new vertex: add the point and the new vertex.
-                    return false;
+                // If the caller is interested let them know if the vertex is new or has an existing alias.
+                if(nullptr != vertex_has_alias) {
+                    if(p.vertexAlias.aliases.size() == 1) {
+                        // This is a new vertex.
+                        *vertex_has_alias = false;
+                    } else {
+                        *vertex_has_alias = true;
+                    }
                 }
             }
             return true;
@@ -338,12 +343,17 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
     // Generate "exactly closed" contours, with the same vertex id for the
     // finish of a previous edge and the start of the next one. So we need
     // the finish of the last Bezier in the loop before we start our process.
-    if (!HasCartesianPointAnAlias(id, sb->Finish(), id+1)) {
+    bool vertex_has_alias;
+    if(!HasCartesianPointAnAlias(id, sb->Finish(), id + 1, &vertex_has_alias)) {
         fprintf(f, CARTESIAN_POINT_FORMAT,
             id, CO(sb->Finish()));
-        fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, InsertPoint(id));
-         lastFinish = id + 1; 
-    } else {
+        fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id + 1, InsertPoint(id));
+        lastFinish = id + 1;
+    } else if(!vertex_has_alias) {
+        fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id + 1, InsertPoint(id));
+        lastFinish = id + 1; 
+    }
+    else {
         lastFinish = InsertVertex(id+1);
     }
     prevFinish = lastFinish;
@@ -354,10 +364,13 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
 
         int thisFinish;
         if(loop->l.NextAfter(sb) != NULL) {
-            if (!HasCartesianPointAnAlias(id, sb->Finish(), id+1)) {
+            if(!HasCartesianPointAnAlias(id, sb->Finish(), id + 1, &vertex_has_alias)) {
                 fprintf(f, CARTESIAN_POINT_FORMAT,
                     id, CO(sb->Finish()));
-                fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, InsertPoint(id));
+                fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id + 1, InsertPoint(id));
+                thisFinish = id + 1;
+            } else if(!vertex_has_alias) {
+                fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id + 1, InsertPoint(id));
                 thisFinish = id + 1;
             } else {
                 thisFinish = InsertVertex(id+1);
