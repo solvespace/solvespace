@@ -395,7 +395,7 @@ void GeoFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
         fprintf(f, "};\n");
 
         // If this loop has over 4 members, it is a plane surface.
-        if(l.members.size() > 4) {
+        if(l.members.size() > 4 || l.members.size() < 3) {
             planeSurfaces.push_back(l.reference);
         }
     }
