@@ -337,7 +337,11 @@ void GeoFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
     curves = {};
     loops = {};
     surfaces = {};
+    // A special list of all the reference numbers of those loops that cannot be on NURBS surfaces:
+    // NURBS surfaces must have 2 < number of edges < 5.
     std::vector<int> planeSurfaces = {};
+    // Another special list with all the edges of each surface.
+    std::vector<geoEl_t> surfacesWithEdges = {};
 
     for(SSurface &ss : shell->surface) {
         if(ss.trim.IsEmpty())
@@ -367,6 +371,7 @@ void GeoFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
         fprintf(f, "//+\n");
         fprintf(f, "Point(%d) = {%f, %f, %f, ms};\n", p.reference, CO(p.v));
     }
+    points.clear();
 
     // Print curves.
     for(geoEl_t c : curves) {
@@ -384,6 +389,7 @@ void GeoFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
                     c.members[1], c.members[2], c.members[3]);
         }
     }
+    curves.clear();
 
     // Print loops.
     for(geoEl_t l : loops) {
@@ -394,7 +400,7 @@ void GeoFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
         }
         fprintf(f, "};\n");
 
-        // If this loop has over 4 members, it is a plane surface.
+        // If this loop has over 4 members, or less than 3, it is a plane surface.
         if(l.members.size() > 4 || l.members.size() < 3) {
             planeSurfaces.push_back(l.reference);
         }
@@ -402,6 +408,16 @@ void GeoFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
 
     // Print surfaces.
     for(geoEl_t s : surfaces) {
+        // Let's record all the edges of each surface.
+        geoEl_t newSurfaceWithEdges;
+        newSurfaceWithEdges.reference = s.reference;
+        for(geoEl_t l : loops) {
+            if(l.reference == s.members[0]) {
+                newSurfaceWithEdges.members.insert(newSurfaceWithEdges.members.end(),
+                                                   l.members.begin(), l.members.end());
+            }
+        }
+
         fprintf(f, "//+\n");
         if(std::find(planeSurfaces.begin(), planeSurfaces.end(), s.members[0]) !=
            planeSurfaces.end()) {
@@ -413,14 +429,71 @@ void GeoFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
         }
         for(size_t i = 1; i < s.members.size(); i++) {
             fprintf(f, ", %d", s.members[i]);
+
+            // Add the curves of this loop to the edges of the surface.
+            for(geoEl_t l : loops) {
+                if(l.reference == s.members[i]) {
+                    newSurfaceWithEdges.members.insert(newSurfaceWithEdges.members.end(),
+                                                       l.members.begin(), l.members.end());
+                }
+            }
         }
         fprintf(f, "};\n");
+
+        // Add the new element to the list.
+        surfacesWithEdges.push_back(newSurfaceWithEdges);
+    }
+    loops.clear();
+
+    // Last index of surfaces.
+    int si = surfaces.back().reference;
+
+    // Print surface loops and volumes.
+    // As a shortcut let's use the same index number for surface loops and volumes.
+    while(!surfacesWithEdges.empty()) {
+        std::vector<int> loopEdges = {};
+        for(int k : (surfacesWithEdges.begin())->members) {
+            loopEdges.push_back(k);
+        }
+        fprintf(f, "//+\n");
+        fprintf(f, "Surface Loop(%d) = {%d", ++si, surfacesWithEdges.front().reference);
+        // Each time a surface is added to the surface loop, remove it from the list.
+        // Keep going until the list is empty.
+        surfacesWithEdges.erase(surfacesWithEdges.begin());
+
+        // Now go through all the surfaces.
+        // If a surface sharing an edge with our loop is found, add that to the loop, erase
+        // that surface from the list and traverse all surfaces again. If no surface is found,
+        // the loop is complete.
+        bool complete = false;
+        while(!complete) {
+            complete = true;
+            NEXT_SURFACE:
+            for(std::vector<geoEl_t>::iterator i = surfacesWithEdges.begin();
+                i != surfacesWithEdges.end(); i++) {
+                for(int j : i->members) {
+                    for(int k : loopEdges) {
+                        if(abs(k) == abs(j)) {
+                            complete = false;
+                            // They share a same edge, same loop.
+                            for(int l : i->members) {
+                                loopEdges.push_back(l);
+                            }
+                            fprintf(f, ", %d", i->reference);
+                            surfacesWithEdges.erase(i);
+                            goto NEXT_SURFACE;
+                        }
+                    }
+                }
+            }
+        }
+        fprintf(f, "};\n");
+        fprintf(f, "//+\n");
+        fprintf(f, "Volume(%d) = {%d};\n", si, si);
     }
 
     fclose(f);
-    points.clear();
-    curves.clear();
-    loops.clear();
     surfaces.clear();
     planeSurfaces.clear();
+    surfacesWithEdges.clear();
 }
