@@ -64,6 +64,12 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
         for(int i = 0; i < pts; i++) {
             AddPointToDraggedList(e->point[i]);
         }
+    } else if(e->type == Entity::Type::FACE_NORMAL_PT ) {
+//           || e->type == Entity::Type::FACE_ROT_NORMAL_PT ) {   // needed for helix and revolve
+// Revolve is unstable because the point is on the axis. Helix drags in axial direction for same reason
+//           || e->type == Entity::Type::FACE_N_ROT_TRANS) {      // needed for linked objects
+// Linking fails possibly because the point[0] is never remapped in Group::CopyEntity
+        AddPointToDraggedList(e->point[0]);
     }
 }
 
