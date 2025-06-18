@@ -502,6 +502,9 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
             uint32_t v = m->FirstIntersectionWith(mp);
             if(v) {
                 sel.entity.v = v;
+                Hover hov = {};
+                hov.selection = sel;
+                hoverList.Add(&hov);
             }
         }
     }
