@@ -13,6 +13,7 @@ Constraints (new and improved):
 
 * Add Parallel and Perpendicular constraints for 2 faces.
 * The equal angle constraint is moved to the `N` shortcut and menu item to allow equal length (`Q`) to be applied to three or four lines.
+* Allow tangent on arcs/lines/splines without coincident endpoints.
 
 Allow these constraints to be applied to more entities at once:
 
@@ -54,6 +55,9 @@ Other User interface changes:
 	* improved "є"
 	* added superscript 5 "⁵"
 	* fiexd crash when typing "£"
+* The the animation speed when changing the 3D view is configurable.
+* Add an 'only unconstrained' option on the Property Browser home screen that shows only unconstrained groups.
+
 
 Other
 
@@ -61,11 +65,17 @@ Other
 * Better Flatpack support.
 * Several bug fixes and usability improvements.
 * Allow 32 bit SolveSpace to access up to 4GB of RAM to allow working on larger projects.
+* STEP Export now exports solid bodies.
 
 Bug fixes:
 
 * `Paste Transformed` on elements that contain a point-line distance does not flip any more.
 * Fix saving assemblies when opened with a relative path on the command line.
+* Windows: The Property Browser remains visible when going full screen (CTRL-F11).
+* Fix crash when linking .STL and .EMN files with extensions in capital letters.
+* Mac: Don't crash on file ops without changing dir.
+* Fix incorrect arc handling when linking IDF files.
+* Windows: avoid (sometimes) showing multiple messages when deleting an entity causes other entities to be removed.
 
 3.1
 ---
