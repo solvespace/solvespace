@@ -308,7 +308,10 @@ public:
     int InsertVertex(int number);
     bool HasBSplineCurveAnAlias(int number, std::vector<int> points);
     int InsertCurve(int number);
-    bool HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId);
+    bool HasEdgeCurveAnAlias(int number, int prevFinish, int thisFinish, int curveId,
+                        bool *flip = nullptr);
+    int InsertEdgeCurve(int number);
+    bool HasOrientedEdgeAnAlias(int number, int edgeCurveId, bool flip);
     int InsertOrientedEdge(int number);
     void ExportSurfacesTo(const Platform::Path &filename);
     void WriteHeader();
@@ -352,11 +355,19 @@ public:
         int thisFinish;
         int curveId;
         RgbaColor color;
-    } edgeAliases_t;
+    } edgeCurveAliases_t;
+
+    // Edges.
+    typedef struct {
+        alias_t alias;
+        int edgeCurveId;
+        bool flip;
+    } orientedEdgeAliases_t;
 
     std::vector<pointAliases_t> pointAliases;
-    std::vector<edgeAliases_t> edgeAliases;
+    std::vector<edgeCurveAliases_t> edgeCurveAliases;
     std::vector<curveAliases_t> curveAliases;
+    std::vector<orientedEdgeAliases_t> orientedEdgeAliases;
     bool exportParts = true;
     RgbaColor currentColor;
 };

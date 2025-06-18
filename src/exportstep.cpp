@@ -158,16 +158,17 @@ int StepFileWriter::InsertCurve(int number) {
     return -1;
 }
 
-// Check whether this edge was already defined with a different ID number.
+// Check whether this edge curve was already defined with a different ID number.
 // inputs:
 //        number -> id of the edge
 //        prevFinish, thisFinish -> points of the edge
 //        curveID -> curve of the edge
+//        flip -> if an edge curve already exists this indicates whether it is in the other direction
 // return:
-//        true, if the edge is already defined
-bool StepFileWriter::HasEdgeAnAlias(int number, int prevFinish, int thisFinish, int curveId) {
+//        true, if the edge curve is already defined
+bool StepFileWriter::HasEdgeCurveAnAlias(int number, int prevFinish, int thisFinish, int curveId, bool *flip) {
     // Look for this edge in the alias list.
-    for(edgeAliases_t &e : edgeAliases) {
+    for(edgeCurveAliases_t &e : edgeCurveAliases) {
         if(exportParts && !(e.color.Equals(currentColor))) {
           continue;
         }
@@ -176,31 +177,76 @@ bool StepFileWriter::HasEdgeAnAlias(int number, int prevFinish, int thisFinish, 
             (prevFinish == e.thisFinish && thisFinish == e.prevFinish)) &&
              curveId == e.curveId) {
             e.alias.aliases.push_back(number);
+            if(nullptr != flip) {
+                if(prevFinish == e.thisFinish && thisFinish == e.prevFinish)
+                    *flip = true;
+                else
+                    *flip = false;
+            }
             return true;
         }
     }
 
-    // New edge.
-    edgeAliases_t newEdge;
-    newEdge.alias.reference = number;
-    newEdge.alias.aliases.push_back(number);
-    newEdge.prevFinish = prevFinish;
-    newEdge.thisFinish = thisFinish;
-    newEdge.curveId = curveId;
-    newEdge.color = currentColor;
+    // New edge curve.
+    edgeCurveAliases_t newEdgeCurve;
+    newEdgeCurve.alias.reference = number;
+    newEdgeCurve.alias.aliases.push_back(number);
+    newEdgeCurve.prevFinish = prevFinish;
+    newEdgeCurve.thisFinish = thisFinish;
+    newEdgeCurve.curveId = curveId;
+    newEdgeCurve.color = currentColor;
 
-    edgeAliases.push_back(newEdge);
+    edgeCurveAliases.push_back(newEdgeCurve);
+    return false;
+}
+
+// Return an edge curve index. As above.
+int StepFileWriter::InsertEdgeCurve(int number) {
+    for(edgeCurveAliases_t e : edgeCurveAliases) {
+        for(int alias : e.alias.aliases) {
+            if(alias == number && (!exportParts || e.color.Equals(currentColor))) {
+                return e.alias.reference;
+            }
+        }
+    }
+
+    // ERROR: it should never reach this point...
+    return -1;
+}
+
+// Check whether this oriented edge curve was already defined with a different ID number.
+// inputs:
+//        number -> id of the edge
+//        edgeCurveId -> curve of the edge
+//        flip -> the direction of the oriented edge
+// return:
+//        true, if the oriented edge is already defined
+bool StepFileWriter::HasOrientedEdgeAnAlias(int number, int edgeCurveId, bool flip) {
+    // Look for this edge in the alias list.
+    for(orientedEdgeAliases_t &e : orientedEdgeAliases) {
+        if((edgeCurveId == e.edgeCurveId) && (flip == e.flip)) {
+            e.alias.aliases.push_back(number);
+            return true;
+        }
+    }
+
+    // New oriented edge.
+    orientedEdgeAliases_t newOrientedEdge;
+    newOrientedEdge.alias.reference = number;
+    newOrientedEdge.alias.aliases.push_back(number);
+    newOrientedEdge.edgeCurveId = edgeCurveId;
+    newOrientedEdge.flip        = flip;
+
+    orientedEdgeAliases.push_back(newOrientedEdge);
     return false;
 }
 
 // Return an oriented edge index. As above.
 int StepFileWriter::InsertOrientedEdge(int number) {
-    int edgeNumber = number - 1;
-    // An oriented edge is always linked to an edge with id = number - 1.
-    for(edgeAliases_t e : edgeAliases) {
+    for(orientedEdgeAliases_t e : orientedEdgeAliases) {
         for(int alias : e.alias.aliases) {
-            if(alias == edgeNumber && (!exportParts || e.color.Equals(currentColor))) {
-                return e.alias.reference + 1;
+            if(alias == number) {
+                return e.alias.reference;
             }
         }
     }
@@ -380,12 +426,18 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
             thisFinish = lastFinish;
         }
 
-        if (!HasEdgeAnAlias(id, prevFinish, thisFinish,
-            InsertCurve(curveId))) {
+        bool flip_edge;
+        if (!HasEdgeCurveAnAlias(id, prevFinish, thisFinish, InsertCurve(curveId), &flip_edge)) {
             fprintf(f, "#%d=EDGE_CURVE('',#%d,#%d,#%d,%s);\n",
                 id, prevFinish, thisFinish, InsertCurve(curveId), ".T.");
-            fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.T.);\n",
-                id+1, id);
+            if(!HasOrientedEdgeAnAlias(id + 1, id, flip_edge)) {
+                fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.T.);\n", id + 1, id);
+            } else {
+                ssassert(false, "Impossible");
+            }
+        } else if(!HasOrientedEdgeAnAlias(id + 1, id, flip_edge)) {
+            fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.%c.);\n", id + 1, InsertEdgeCurve(id),
+                    flip_edge ? 'F' : 'T');
         }
         
         int oe = id+1;
@@ -597,7 +649,8 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
     // Initialization of lists.
     pointAliases = {};
     curveAliases = {};
-    edgeAliases = {};
+    edgeCurveAliases = {};
+    orientedEdgeAliases = {};
 
     WriteHeader();
     WriteProductHeader();
@@ -642,7 +695,8 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
     advancedFaces.Clear();
     pointAliases.clear();
     curveAliases.clear();
-    edgeAliases.clear();
+    edgeCurveAliases.clear();
+    orientedEdgeAliases.clear();
 }
 
 void StepFileWriter::WriteWireframe() {
