@@ -42,7 +42,7 @@ include(GetGitCommitHash)
 
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 project(solvespace
-    VERSION 3.1
+    VERSION 3.2
     LANGUAGES C CXX ASM)
 
 if(EMSCRIPTEN)
