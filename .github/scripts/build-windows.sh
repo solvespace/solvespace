@@ -11,7 +11,7 @@ if [ "$1" = "release" ]; then
     fi
     BUILD_TYPE=RelWithDebInfo
     cmake \
-        -G "Visual Studio 16 2019" \
+        -G "Visual Studio 17 2022" \
         -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
         -DENABLE_OPENMP="${ENABLE_OPENMP}" \
         -DENABLE_LTO=ON \
@@ -20,7 +20,7 @@ if [ "$1" = "release" ]; then
 else
     BUILD_TYPE=Debug
     cmake \
-        -G "Visual Studio 16 2019" \
+        -G "Visual Studio 17 2022" \
         -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
         -DENABLE_OPENMP="ON" \
         -DCMAKE_GENERATOR_PLATFORM="Win32" \

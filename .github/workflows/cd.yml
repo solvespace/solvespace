@@ -32,7 +32,7 @@ jobs:
 
   test_windows:
     needs: [cancel_previous_runs]
-    runs-on: windows-2019
+    runs-on: windows-2022
     name: Test Windows
     steps:
     - uses: actions/checkout@v4
@@ -57,7 +57,7 @@ jobs:
   build_release_windows:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Build Release Windows
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
       - name: Install Dependencies
@@ -75,7 +75,7 @@ jobs:
   build_release_windows_openmp:
     needs: [test_ubuntu, test_windows, test_macos]
     name: Build Release Windows (OpenMP)
-    runs-on: windows-2019
+    runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
       - name: Install Dependencies

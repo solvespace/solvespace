@@ -22,7 +22,7 @@ jobs:
         run: .github/scripts/build-ubuntu.sh
 
   test_windows:
-    runs-on: windows-2019
+    runs-on: windows-2022
     name: Test Windows
     steps:
     - uses: actions/checkout@v4
