@@ -54,8 +54,8 @@ Other User interface changes:
 	* includes the Greek alphabet
 	* improved "є"
 	* added superscript 5 "⁵"
-	* fiexd crash when typing "£"
-* The the animation speed when changing the 3D view is configurable.
+	* fixed crash when typing "£"
+* The animation speed when changing the 3D view is configurable.
 * Add an 'only unconstrained' option on the Property Browser home screen that shows only unconstrained groups.
 
 
