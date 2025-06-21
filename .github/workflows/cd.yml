@@ -150,6 +150,25 @@ jobs:
         name: macos
         path: build/bin/SolveSpace.dmg
 
+  build_release_web:
+    needs: [test_ubuntu, test_windows, test_macos]
+    name: Build Release Web
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Dependencies
+      run: .github/scripts/install-web.sh
+    - name: Build & Pack
+      run: |
+        .github/scripts/build-web.sh release
+        cd build/bin
+        rm *.a || true
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: solvespace_web
+        path: build/bin/
+
   # deploy_snap_amd64:
   #   needs: [test_ubuntu, test_windows, test_macos]
   #   name: Deploy AMD64 Snap
