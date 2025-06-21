@@ -637,12 +637,7 @@ void GraphicsWindow::SplitLinesOrCurves() {
 
     Entity *ea = SK.GetEntity(ha),
            *eb = SK.GetEntity(hb);
-    SPointList inters = {};
-    SBezierList sbla = {},
-                sblb = {};
     Vector pi = Vector::From(0, 0, 0);
-
-    SK.constraint.ClearTags();
 
     // First, decide the point where we're going to make the split.
     bool foundInters = false;
@@ -654,6 +649,8 @@ void GraphicsWindow::SplitLinesOrCurves() {
             p0 = ea->EndpointStart();
             p1 = ea->EndpointFinish();
         }
+
+        SK.constraint.ClearTags();
 
         for(Constraint &c : SK.constraint) {
             if(c.ptA.request() == hb.request() &&
@@ -673,25 +670,30 @@ void GraphicsWindow::SplitLinesOrCurves() {
         }
     } else {
         // Compute the possibly-rational Bezier curves for each of these non-point entities...
+        SBezierList sbla = {}, sblb = {};
         ea->GenerateBezierCurves(&sbla);
         eb->GenerateBezierCurves(&sblb);
         // ... and then compute the points where they intersect, based on those curves.
+        SPointList inters = {};
         sbla.AllIntersectionsWith(&sblb, &inters);
 
         // If there's multiple points, then take the one closest to the mouse pointer.
         if(!inters.l.IsEmpty()) {
             double dmin = VERY_POSITIVE;
-            SPoint *sp;
-            for(sp = inters.l.First(); sp; sp = inters.l.NextAfter(sp)) {
-                double d = ProjectPoint(sp->p).DistanceTo(currentMousePosition);
+            for(const SPoint &sp : inters.l) {
+                double d = ProjectPoint(sp.p).DistanceTo(currentMousePosition);
                 if(d < dmin) {
                     dmin = d;
-                    pi = sp->p;
+                    pi = sp.p;
                 }
             }
+
+            foundInters = true;
         }
 
-        foundInters = true;
+        inters.Clear();
+        sbla.Clear();
+        sblb.Clear();
     }
 
     // Then, actually split the entities.
@@ -736,8 +738,5 @@ void GraphicsWindow::SplitLinesOrCurves() {
     }
 
     // All done, clean up and regenerate.
-    inters.Clear();
-    sbla.Clear();
-    sblb.Clear();
     ClearSelection();
 }
