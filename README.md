@@ -70,8 +70,12 @@ Cutting edge builds from the latest master commit are available as zip archives
 from the following links:
 
 - [macOS](https://nightly.link/solvespace/solvespace/workflows/cd/master/macos.zip)
-- [Windows](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows.zip)
-- [Windows with OpenMP enabled](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows-openmp.zip)
+- [Windows with OpenMP enabled 32bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows.zip)
+- [Windows 32bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows_single_core.zip)
+- [Windows with OpenMP enabled 64bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows_x64.zip)
+- [Windows 64bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows_single_core_x64.zip)
+
+**Please note that the 64bit Windows versions do *not* support 6DOF (SpeceMouse, SpaceNavigator) controllers.**
 
 Extract the downloaded archive and install or execute the contained file as is
 appropriate for your platform.
