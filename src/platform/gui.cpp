@@ -106,6 +106,7 @@ std::vector<FileFilter> MeshFileFilters = {
 
 std::vector<FileFilter> SurfaceFileFilters = {
     { CN_("file-type", "STEP file"), { "step", "stp" } },
+    { CN_("file-type", "Gmsh GEO file"), { "geo" } },
 };
 
 std::vector<FileFilter> VectorFileFilters = {

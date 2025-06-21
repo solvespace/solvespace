@@ -117,6 +117,7 @@ if(ENABLE_GUI OR ENABLE_CLI)
         drawconstraint.cpp
         drawentity.cpp
         export.cpp
+        exportgeo.cpp
         exportstep.cpp
         exportvector.cpp
         file.cpp
