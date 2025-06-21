@@ -390,7 +390,10 @@ SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
 {
     SBezierLoop loop = {};
 
-    if(sbl->l.n < 1) return loop;
+    if(sbl->l.n < 1) {
+        *allClosed = false;
+        return loop;
+    }
     sbl->l.ClearTags();
 
     SBezier *first = &(sbl->l[0]);
