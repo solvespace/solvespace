@@ -69,8 +69,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows
-          path: build/bin/RelWithDebInfo/solvespace.exe
+          name: windows_single_core
+          path: build/bin/RelWithDebInfo/solvespace_single_core.exe
 
   build_release_windows_openmp:
     needs: [test_ubuntu, test_windows, test_macos]
@@ -87,8 +87,44 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-openmp
-          path: build/bin/RelWithDebInfo/solvespace-openmp.exe
+          name: windows
+          path: build/bin/RelWithDebInfo/solvespace.exe
+
+  build_release_windows_x64:
+    needs: [test_ubuntu, test_windows, test_macos]
+    name: Build Release Windows x64
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: .github/scripts/install-windows.sh
+        shell: bash
+      - name: Build & Test
+        run: .github/scripts/build-windows.sh release not_openmp x64
+        shell: bash
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows_single_core_x64
+          path: build/bin/RelWithDebInfo/solvespace_single_core_x64.exe
+
+  build_release_windows_openmp_x64:
+    needs: [test_ubuntu, test_windows, test_macos]
+    name: Build Release Windows (OpenMP) x64
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: .github/scripts/install-windows.sh
+        shell: bash
+      - name: Build & Test
+        run: .github/scripts/build-windows.sh release openmp x64
+        shell: bash
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows_x64
+          path: build/bin/RelWithDebInfo/solvespace_x64.exe
 
   build_release_macos:
     needs: [test_ubuntu, test_windows, test_macos]
@@ -147,7 +183,7 @@ jobs:
 
   upload_release_assets:
     name: Upload Release Assets
-    needs: [build_release_windows, build_release_windows_openmp, build_release_macos]
+    needs: [build_release_windows, build_release_windows_openmp, build_release_windows_x64, build_release_windows_openmp_x64, build_release_macos]
     if: "!cancelled() && github.event_name == 'release'"
     runs-on: ubuntu-latest
     steps:
@@ -171,15 +207,35 @@ jobs:
         asset_path: windows/solvespace.exe
         asset_name: solvespace.exe
         asset_content_type: binary/octet-stream
-    - name: Upload solvespace-openmp.exe
+    - name: Upload solvespace_single_core.exe
       uses: actions/upload-release-asset@v1
       continue-on-error: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: windows-openmp/solvespace-openmp.exe
-        asset_name: solvespace-openmp.exe
+        asset_path: windows-openmp/solvespace_single_core.exe
+        asset_name: solvespace_single_core.exe
+        asset_content_type: binary/octet-stream
+    - name: Upload solvespace_x64.exe
+      uses: actions/upload-release-asset@v1
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
+        asset_path: windows/solvespace_x64.exe
+        asset_name: solvespace_x64.exe
+        asset_content_type: binary/octet-stream
+    - name: Upload solvespace_single_core_x64.exe
+      uses: actions/upload-release-asset@v1
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
+        asset_path: windows-openmp/solvespace_single_core_x64.exe
+        asset_name: solvespace_single_core_x64.exe
         asset_content_type: binary/octet-stream
     - name: Upload SolveSpace.dmg
       uses: actions/upload-release-asset@v1
