@@ -291,31 +291,58 @@ if(ENABLE_GUI)
             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "com.solvespace"
             RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     elseif(EMSCRIPTEN)
-        set(SHELL ${CMAKE_CURRENT_SOURCE_DIR}/platform/html/emshell.html)
-        target_link_options(solvespace PRIVATE
-            --bind --shell-file ${SHELL} --no-heap-copy
-            "SHELL:-s ALLOW_MEMORY_GROWTH=1" "SHELL:-s WASM=1"
-            "SHELL:-s ASYNCIFY=1" "SHELL:-s DYNCALLS=1" "SHELL:-s ASSERTIONS=1"
-            "SHELL:-s TOTAL_STACK=33554432" "SHELL:-s TOTAL_MEMORY=134217728")
+        # Due to the response file hack below, we need a version of Emscripten that
+        # passes arguments via a response file to the `file_packager` utility, but
+        # this was not the case prior to version 4.0.8 of Emscripten.
+        # See https://github.com/emscripten-core/emscripten/pull/24107
+        if(NOT EMSCRIPTEN_VERSION OR EMSCRIPTEN_VERSION VERSION_LESS "4.0.8")
+            message(FATAL_ERROR "The Emscripten build requires at least version 4.0.8")
+        endif()
 
-        get_target_property(resource_names resources NAMES)
-        foreach(resource ${resource_names})
-            target_link_options(solvespace PRIVATE "SHELL:--preload-file ${resource}")
+        set(SHELL "${CMAKE_CURRENT_SOURCE_DIR}/platform/html/emshell.html")
+        # Add internal quotes to paths used in the response file to ensure that paths
+        # that contain spaces are handled correctly
+        set(RESP_LINK_FLAGS
+            --bind --shell-file "\"${SHELL}\"" --no-heap-copy
+            "-s ALLOW_MEMORY_GROWTH=1" "-s WASM=1"
+            "-s ASYNCIFY=1" "-s DYNCALLS=1" "-s ASSERTIONS=1"
+            "-s TOTAL_STACK=33554432" "-s TOTAL_MEMORY=134217728")
+
+        get_target_property(resource_list resources SOURCES)
+        foreach(resource ${resource_list})
+            # Strip everything before `res/...`, and map the source path to the stripped
+            # path in the virtual Emscripten fileystem
+            file(RELATIVE_PATH target_path "${CMAKE_SOURCE_DIR}" "${resource}")
+            list(APPEND RESP_LINK_FLAGS "--preload-file \"${resource}\"@\"${target_path}\"")
         endforeach()
 
         if(CMAKE_BUILD_TYPE STREQUAL Debug)
-            target_link_options(solvespace PRIVATE
+            list(APPEND RESP_LINK_FLAGS
                 --emrun --emit-symbol-map
-                "SHELL:-s DEMANGLE_SUPPORT=1"
-                "SHELL:-s SAFE_HEAP=1")
+                "-s DEMANGLE_SUPPORT=1"
+                "-s SAFE_HEAP=1")
         endif()
 
         target_sources(solvespace PRIVATE
             platform/guihtml.cpp)
 
-        set_target_properties(solvespace PROPERTIES SUFFIX ".html")
-        set_source_files_properties(platform/guihtml.cpp PROPERTIES
-            OBJECT_DEPENDS ${SHELL})
+        # Pass arguments through a response file in order to avoid exceeding the maximum
+        # command line length (the Emscripten tools on Windows are all wrapped by batch
+        # scripts, and as such are subject to the CMD length limit of 8KiB).
+        set(resp_file_path "${CMAKE_CURRENT_BINARY_DIR}/emscripten_flags.rsp")
+        file(GENERATE OUTPUT "${resp_file_path}" CONTENT "$<JOIN:${RESP_LINK_FLAGS},\n>")
+
+        # NOTE: it would be ideal if we could portably specify that linking depends on the
+        # response file (and the files that are specified in it), but unfortunately there
+        # is no way to reliably trigger a relink like that without using LINK_DEPENDS,
+        # which only works with the Ninja and Makefile generators.
+        # This means that using e.g. the Visual Studio of Xcode generators will not work
+        # correctly when any of the link time dependencies changes, so the output artefact
+        # needs to be explicitly deleted in order to trigger a relink.
+        set_target_properties(solvespace PROPERTIES
+            SUFFIX ".html"
+            LINK_FLAGS "@${resp_file_path}"
+            LINK_DEPENDS "${SHELL};${resp_file_path};${resource_list}")
 
         add_custom_command(
             TARGET solvespace POST_BUILD
