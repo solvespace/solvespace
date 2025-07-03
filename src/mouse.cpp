@@ -57,8 +57,8 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
               e->type == Entity::Type::IMAGE)
     {
         int pts;
-        EntReqTable::GetEntityInfo(e->type, e->extraPoints,
-            NULL, &pts, NULL, NULL);
+        ssassert(EntReqTable::GetEntityInfo(e->type, e->extraPoints,
+            NULL, &pts, NULL, NULL), "No entity info");
         for(int i = 0; i < pts; i++) {
             AddPointToDraggedList(e->point[i]);
         }
