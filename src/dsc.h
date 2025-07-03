@@ -7,44 +7,16 @@
 #ifndef SOLVESPACE_DSC_H
 #define SOLVESPACE_DSC_H
 
-#include <type_traits>
+#include <algorithm>
+#include <cmath>
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
-/// Trait indicating which types are handle types and should get the associated operators.
-/// Specialize for each handle type and inherit from std::true_type.
-template<typename T>
-struct IsHandleOracle : std::false_type {};
+#include "defs.h"
+#include "util.h"
 
-// Equality-compare any two instances of a handle type.
-template<typename T>
-static inline typename std::enable_if<IsHandleOracle<T>::value, bool>::type
-operator==(T const &lhs, T const &rhs) {
-    return lhs.v == rhs.v;
-}
-
-// Inequality-compare any two instances of a handle type.
-template<typename T>
-static inline typename std::enable_if<IsHandleOracle<T>::value, bool>::type
-operator!=(T const &lhs, T const &rhs) {
-    return !(lhs == rhs);
-}
-
-// Less-than-compare any two instances of a handle type.
-template<typename T>
-static inline typename std::enable_if<IsHandleOracle<T>::value, bool>::type
-operator<(T const &lhs, T const &rhs) {
-    return lhs.v < rhs.v;
-}
-
-template<class T>
-struct HandleHasher {
-    static_assert(IsHandleOracle<T>::value, "Not a valid handle type");
-
-    inline size_t operator()(const T &h) const {
-        using Hasher = std::hash<decltype(T::v)>;
-        return Hasher{}(h.v);
-    }
-};
+namespace SolveSpace {
 
 class Vector;
 class Vector4;
@@ -157,9 +129,9 @@ inline double Vector::Element(int i) const {
 inline bool Vector::Equals(Vector v, double tol) const {
     // Quick axis-aligned tests before going further
     const Vector dv = this->Minus(v);
-    if (fabs(dv.x) > tol) return false;
-    if (fabs(dv.y) > tol) return false;
-    if (fabs(dv.z) > tol) return false;
+    if (std::abs(dv.x) > tol) return false;
+    if (std::abs(dv.y) > tol) return false;
+    if (std::abs(dv.z) > tol) return false;
 
     return dv.MagSquared() < tol*tol;
 }
@@ -201,13 +173,13 @@ inline Vector Vector::ScaledBy(const double v) const {
 }
 
 inline void Vector::MakeMaxMin(Vector *maxv, Vector *minv) const {
-    maxv->x = max(maxv->x, x);
-    maxv->y = max(maxv->y, y);
-    maxv->z = max(maxv->z, z);
+    maxv->x = std::max(maxv->x, x);
+    maxv->y = std::max(maxv->y, y);
+    maxv->z = std::max(maxv->z, z);
 
-    minv->x = min(minv->x, x);
-    minv->y = min(minv->y, y);
-    minv->z = min(minv->z, z);
+    minv->x = std::min(minv->x, x);
+    minv->y = std::min(minv->y, y);
+    minv->z = std::min(minv->z, z);
 }
 
 struct VectorHash {
@@ -752,5 +724,7 @@ public:
     bool Overlaps(const BBox &b1) const;
     bool Contains(const Point2d &p, double r = 0.0) const;
 };
+
+} // namespace SolveSpace
 
 #endif

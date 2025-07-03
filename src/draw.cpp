@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 bool GraphicsWindow::Selection::Equals(Selection *b) {
     if(entity     != b->entity)     return false;
     if(constraint != b->constraint) return false;
@@ -952,3 +954,5 @@ void GraphicsWindow::Invalidate(bool clearPersistent) {
         window->Invalidate();
     }
 }
+
+} // namespace SolveSpace
