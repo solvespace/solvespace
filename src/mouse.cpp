@@ -62,6 +62,9 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
         for(int i = 0; i < pts; i++) {
             AddPointToDraggedList(e->point[i]);
         }
+    } else if(e->type == Entity::Type::FACE_NORMAL_PT) {
+        dbp("drag face\n");
+        AddPointToDraggedList(e->point[0]);
     }
 }
 
