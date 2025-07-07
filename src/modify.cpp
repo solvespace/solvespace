@@ -461,8 +461,8 @@ hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
     SK.GetEntity(ei1->point[0])->PointForceTo(pinter);
     SK.GetEntity(ei1->point[1])->PointForceTo(p1);
 
-    ReplacePointInConstraints(hep0, e0i->point[0]);
-    ReplacePointInConstraints(hep1, ei1->point[1]);
+    Constraint::ConstrainCoincident(hep0, e0i->point[0]);
+    Constraint::ConstrainCoincident(hep1, ei1->point[1]);
     Constraint::ConstrainCoincident(e0i->point[1], ei1->point[0]);
     return e0i->point[1];
 }
@@ -508,8 +508,8 @@ hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
         SK.GetEntity(arc1->point[1])->PointForceTo(pinter);
         SK.GetEntity(arc1->point[2])->PointForceTo(finish);
 
-        ReplacePointInConstraints(hs, arc0->point[1]);
-        ReplacePointInConstraints(hf, arc1->point[2]);
+        Constraint::ConstrainCoincident(hs, arc0->point[1]);
+        Constraint::ConstrainCoincident(hf, arc1->point[2]);
         Constraint::ConstrainCoincident(arc0->point[2], arc1->point[1]);
         return arc0->point[2];
     }
@@ -575,8 +575,8 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
 
     sbl.Clear();
 
-    ReplacePointInConstraints(hep0, hep0n);
-    ReplacePointInConstraints(hep1, hep1n);
+    Constraint::ConstrainCoincident(hep0, hep0n);
+    Constraint::ConstrainCoincident(hep1, hep1n);
     return hepin;
 }
 
@@ -598,21 +598,18 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
 
     // Finally, delete the request that generated the original entity.
     Request::Type reqType = EntReqTable::GetRequestForEntity(entityType);
-    SK.request.ClearTags();
     for(auto &r : SK.request) {
         if(r.group != activeGroup)
             continue;
         if(r.type != reqType)
             continue;
 
-        // If the user wants to keep the old entities around, they can just
-        // mark them construction first.
+        // Mark old entities as construction
         if(he == r.h.entity(0) && !r.construction) {
-            r.tag = 1;
+            r.construction = true;
             break;
         }
     }
-    DeleteTaggedRequests();
 
     return ret;
 }
