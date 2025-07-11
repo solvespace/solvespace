@@ -125,14 +125,18 @@ void SSurface::BlendRowOrCol(bool row, int this_ij, SSurface *a, int a_ij,
         }
     }
 }
-void SSurface::SplitInHalf(bool byU, SSurface *sa, SSurface *sb) {
-    sa->degm = sb->degm = degm;
-    sa->degn = sb->degn = degn;
-
+void SSurface::SplitInHalf(bool byU, SSurface *sa, SSurface *sb) const {
     // by de Casteljau's algorithm in a projective space; so we must work
     // on points (w*x, w*y, w*z, w) so create a temporary copy
-    SSurface st;
-    st = *this;
+    SSurface st = {};
+
+    // Only copy the data we need into the new object
+    memcpy(st.ctrl, ctrl, sizeof(ctrl));
+    memcpy(st.weight, weight, sizeof(weight));
+
+    st.degm = sa->degm = sb->degm = degm;
+    st.degn = sa->degn = sb->degn = degn;
+
     st.WeightControlPoints();
 
     switch(byU ? degm : degn) {
