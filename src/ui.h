@@ -174,6 +174,9 @@ enum class Command : uint32_t {
     WEBSITE,
     GITHUB,
     ABOUT,
+    // Group navigation
+    GROUP_PREVIOUS,
+    GROUP_NEXT,
 };
 
 class Button;

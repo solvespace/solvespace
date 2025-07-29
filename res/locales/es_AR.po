@@ -2,12 +2,12 @@
 # Copyright (C) 2017 the SolveSpace authors
 # This file is distributed under the same license as the SolveSpace package.
 # Maxi <andesfreedesign@gmail.com>, 2021.
-# 
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
-"POT-Creation-Date: 2025-01-26 21:04+0200\n"
+"POT-Creation-Date: 2025-07-28 21:46-0600\n"
 "PO-Revision-Date: 2021-09-17 \n"
 "Last-Translator: Maxi Vasquez <mvasquez@epet12smandes.edu.ar>\n"
 "Language-Team: AndesFreeDesign\n"
@@ -18,7 +18,7 @@ msgstr ""
 "X-Generator: Poedit 2.4.2\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: clipboard.cpp:314
+#: clipboard.cpp:315
 msgid ""
 "Cut, paste, and copy work only in a workplane.\n"
 "\n"
@@ -28,27 +28,27 @@ msgstr ""
 "\n"
 "Activar uno con Croquis -> En Plano de trabajo."
 
-#: clipboard.cpp:331
+#: clipboard.cpp:332
 msgid "Clipboard is empty; nothing to paste."
 msgstr "El portapapeles está vacío; nada que pegar."
 
-#: clipboard.cpp:378
+#: clipboard.cpp:379
 msgid "Number of copies to paste must be at least one."
 msgstr "El número de copias para pegar debe ser al menos una."
 
-#: clipboard.cpp:394 textscreens.cpp:879
+#: clipboard.cpp:395 textscreens.cpp:882
 msgid "Scale cannot be zero."
 msgstr "La escala no puede ser cero."
 
-#: clipboard.cpp:436
+#: clipboard.cpp:437
 msgid "Select one point to define origin of rotation."
 msgstr "Seleccione un punto para definir el origen de la rotación."
 
-#: clipboard.cpp:448
+#: clipboard.cpp:449
 msgid "Select two points to define translation vector."
 msgstr "Seleccione dos puntos para definir el vector de traslación."
 
-#: clipboard.cpp:458
+#: clipboard.cpp:459
 msgid ""
 "Transformation is identity. So all copies will be exactly on top of each "
 "other."
@@ -56,11 +56,11 @@ msgstr ""
 "La transformación es identidad. Entonces todas las copias estarán "
 "exactamente una encima de la otra."
 
-#: clipboard.cpp:462
+#: clipboard.cpp:463
 msgid "Too many items to paste; split this into smaller pastes."
 msgstr "Demasiados elementos para pegar; divida esto en partes más pequeñas."
 
-#: clipboard.cpp:467
+#: clipboard.cpp:468
 msgid "No workplane active."
 msgstr "Ningún plano de trabajo activo."
 
@@ -68,7 +68,7 @@ msgstr "Ningún plano de trabajo activo."
 msgid "Bad format: specify coordinates as x, y, z"
 msgstr "Formato incorrecto: especifique las coordenadas como x, y, z"
 
-#: confscreen.cpp:420 style.cpp:729 textscreens.cpp:910
+#: confscreen.cpp:420 style.cpp:729 textscreens.cpp:913
 msgid "Bad format: specify color as r, g, b"
 msgstr "Formato incorrecto: especifique color como r, g, b"
 
@@ -878,352 +878,360 @@ msgid "Con&figuration..."
 msgstr "Con&figuración..."
 
 #: graphicswin.cpp:84
+msgid "Previous Group"
+msgstr ""
+
+#: graphicswin.cpp:85
+msgid "Next Group"
+msgstr ""
+
+#: graphicswin.cpp:87
 msgid "&View"
 msgstr "&Vista"
 
-#: graphicswin.cpp:85
+#: graphicswin.cpp:88
 msgid "Zoom &In"
 msgstr "Acer&car"
 
-#: graphicswin.cpp:86
+#: graphicswin.cpp:89
 msgid "Zoom &Out"
 msgstr "Ale&jar"
 
-#: graphicswin.cpp:87
+#: graphicswin.cpp:90
 msgid "Zoom To &Fit"
 msgstr "Ajustar a &Pantalla"
 
-#: graphicswin.cpp:89
+#: graphicswin.cpp:92
 msgid "Align View to &Workplane"
 msgstr "Alinear Vista a &Plano de trabajo"
 
-#: graphicswin.cpp:90
+#: graphicswin.cpp:93
 msgid "Nearest &Ortho View"
 msgstr "Vista &Ortogonal más cercana"
 
-#: graphicswin.cpp:91
+#: graphicswin.cpp:94
 msgid "Nearest &Isometric View"
 msgstr "Vista &Isométrica más cercana"
 
-#: graphicswin.cpp:92
+#: graphicswin.cpp:95
 msgid "&Center View At Point"
 msgstr "&Vista Central en Punto"
 
-#: graphicswin.cpp:94
+#: graphicswin.cpp:97
 msgid "Show Snap &Grid"
 msgstr "Mostrar Enganches &Cuadrícula"
 
-#: graphicswin.cpp:95
+#: graphicswin.cpp:98
 msgid "Darken Inactive Solids"
 msgstr "Oscurecer Sólidos Inactivos"
 
-#: graphicswin.cpp:96
+#: graphicswin.cpp:99
 msgid "Use &Perspective Projection"
 msgstr "Usar &Proyección Perspectiva"
 
-#: graphicswin.cpp:97
+#: graphicswin.cpp:100
 msgid "Show E&xploded View"
 msgstr "Mostrar Vista E&xplotada"
 
-#: graphicswin.cpp:98
+#: graphicswin.cpp:101
 msgid "Dimension &Units"
 msgstr "&Unidades de Cota"
 
-#: graphicswin.cpp:99
+#: graphicswin.cpp:102
 msgid "Dimensions in &Millimeters"
 msgstr "Cotas en &Milímetros"
 
-#: graphicswin.cpp:100
+#: graphicswin.cpp:103
 msgid "Dimensions in M&eters"
 msgstr "Cotas en M&etros"
 
-#: graphicswin.cpp:101
+#: graphicswin.cpp:104
 msgid "Dimensions in &Inches"
 msgstr "Cotas en &Pulgadas"
 
-#: graphicswin.cpp:102
+#: graphicswin.cpp:105
 msgid "Dimensions in &Feet and Inches"
 msgstr "Cotas en &Pies y Pulgadas"
 
-#: graphicswin.cpp:104
+#: graphicswin.cpp:107
 msgid "Show &Toolbar"
 msgstr "Mostrar &Barra de herramientas"
 
-#: graphicswin.cpp:105
+#: graphicswin.cpp:108
 msgid "Show Property Bro&wser"
 msgstr "Mostrar Navegador de Pro&piedades"
 
-#: graphicswin.cpp:107
+#: graphicswin.cpp:110
 msgid "&Full Screen"
 msgstr "&Pantalla Completa"
 
-#: graphicswin.cpp:109
+#: graphicswin.cpp:112
 msgid "&New Group"
 msgstr "&Nuevo Grupo"
 
-#: graphicswin.cpp:110
+#: graphicswin.cpp:113
 msgid "Sketch In &3d"
 msgstr "Croquis En &3d"
 
-#: graphicswin.cpp:111
+#: graphicswin.cpp:114
 msgid "Sketch In New &Workplane"
 msgstr "Croquis En Nuevo &Plano de trabajo"
 
-#: graphicswin.cpp:113
+#: graphicswin.cpp:116
 msgid "Step &Translating"
 msgstr "Paso &Traslación"
 
-#: graphicswin.cpp:114
+#: graphicswin.cpp:117
 msgid "Step &Rotating"
 msgstr "Paso &Rotación"
 
-#: graphicswin.cpp:116
+#: graphicswin.cpp:119
 msgid "E&xtrude"
 msgstr "E&xtrusión"
 
-#: graphicswin.cpp:117
+#: graphicswin.cpp:120
 msgid "&Helix"
 msgstr "&Hélice"
 
-#: graphicswin.cpp:118
+#: graphicswin.cpp:121
 msgid "&Lathe"
 msgstr "&Torno"
 
-#: graphicswin.cpp:119
+#: graphicswin.cpp:122
 msgid "Re&volve"
 msgstr "Re&volución"
 
-#: graphicswin.cpp:121
+#: graphicswin.cpp:124
 msgid "Link / Assemble..."
 msgstr "Enlace / Ensamblar..."
 
-#: graphicswin.cpp:122
+#: graphicswin.cpp:125
 msgid "Link Recent"
 msgstr "Enlace Reciente"
 
-#: graphicswin.cpp:124
+#: graphicswin.cpp:127
 msgid "&Sketch"
 msgstr "&Croquis"
 
-#: graphicswin.cpp:125
+#: graphicswin.cpp:128
 msgid "In &Workplane"
 msgstr "En &Plano de trabajo"
 
-#: graphicswin.cpp:126
+#: graphicswin.cpp:129
 msgid "Anywhere In &3d"
 msgstr "En cualquier lugar en &3d"
 
-#: graphicswin.cpp:128
+#: graphicswin.cpp:131
 msgid "Datum &Point"
 msgstr "&Punto de Referencia"
 
-#: graphicswin.cpp:129
+#: graphicswin.cpp:132
 msgid "Wor&kplane"
 msgstr "&Plano de trabajo"
 
-#: graphicswin.cpp:131
+#: graphicswin.cpp:134
 msgid "Line &Segment"
 msgstr "&Segmento de Línea"
 
-#: graphicswin.cpp:132
+#: graphicswin.cpp:135
 msgid "C&onstruction Line Segment"
 msgstr "S&egmento de Línea de Construcción"
 
-#: graphicswin.cpp:133
+#: graphicswin.cpp:136
 msgid "&Rectangle"
 msgstr "&Rectángulo"
 
-#: graphicswin.cpp:134
+#: graphicswin.cpp:137
 msgid "&Circle"
 msgstr "&Círculo"
 
-#: graphicswin.cpp:135
+#: graphicswin.cpp:138
 msgid "&Arc of a Circle"
 msgstr "&Arco de un Círculo"
 
-#: graphicswin.cpp:136
+#: graphicswin.cpp:139
 msgid "&Bezier Cubic Spline"
 msgstr "Spline Cúbico &Bezier"
 
-#: graphicswin.cpp:138
+#: graphicswin.cpp:141
 msgid "&Text in TrueType Font"
 msgstr "&Texto en Fuente TrueType"
 
-#: graphicswin.cpp:139
+#: graphicswin.cpp:142
 msgid "I&mage"
 msgstr "&Imagen"
 
-#: graphicswin.cpp:141
+#: graphicswin.cpp:144
 msgid "To&ggle Construction"
 msgstr "Al&ternar Construcción"
 
-#: graphicswin.cpp:142
+#: graphicswin.cpp:145
 msgid "Ta&ngent Arc at Point"
 msgstr "Tangente &Arco en el Punto"
 
-#: graphicswin.cpp:143
+#: graphicswin.cpp:146
 msgid "Split Curves at &Intersection"
 msgstr "Dividir Curvas en &Intersección"
 
-#: graphicswin.cpp:145
+#: graphicswin.cpp:148
 msgid "&Constrain"
 msgstr "&Restricción"
 
-#: graphicswin.cpp:146
+#: graphicswin.cpp:149
 msgid "&Distance / Diameter"
 msgstr "&Distancia / Diámetro"
 
-#: graphicswin.cpp:147
+#: graphicswin.cpp:150
 msgid "Re&ference Dimension"
 msgstr "Co&ta de Referencia"
 
-#: graphicswin.cpp:148
+#: graphicswin.cpp:151
 msgid "A&ngle / Equal Angle"
 msgstr "Á&ngulo / Igual ángulo"
 
-#: graphicswin.cpp:149
+#: graphicswin.cpp:152
 msgid "Reference An&gle"
 msgstr "Ángulo de Re&ferencia"
 
-#: graphicswin.cpp:150
+#: graphicswin.cpp:153
 msgid "Other S&upplementary Angle"
 msgstr "Otro Á&ngulo Suplementario"
 
-#: graphicswin.cpp:151
+#: graphicswin.cpp:154
 msgid "Toggle R&eference Dim"
 msgstr "Alternar Cota de R&eferencia"
 
-#: graphicswin.cpp:153
+#: graphicswin.cpp:156
 msgid "&Horizontal"
 msgstr "&Horizontal"
 
-#: graphicswin.cpp:154
+#: graphicswin.cpp:157
 msgid "&Vertical"
 msgstr "&Vertical"
 
-#: graphicswin.cpp:156
+#: graphicswin.cpp:159
 msgid "&On Point / Curve / Plane"
 msgstr "&Sobre Punto / Curva / Plano"
 
-#: graphicswin.cpp:157
+#: graphicswin.cpp:160
 msgid "E&qual Length / Radius"
 msgstr "I&gual Longitud / Radio"
 
-#: graphicswin.cpp:158
+#: graphicswin.cpp:161
 msgid "Length / Arc Ra&tio"
 msgstr "Relación Longi&tud / Arco"
 
-#: graphicswin.cpp:159
+#: graphicswin.cpp:162
 msgid "Length / Arc Diff&erence"
 msgstr "Dif&erencia Longitud / Arco"
 
-#: graphicswin.cpp:160
+#: graphicswin.cpp:163
 msgid "At &Midpoint"
 msgstr "En Punto &Medio"
 
-#: graphicswin.cpp:161
+#: graphicswin.cpp:164
 msgid "S&ymmetric"
 msgstr "S&imetría"
 
-#: graphicswin.cpp:162
+#: graphicswin.cpp:165
 msgid "Para&llel / Tangent"
 msgstr "Para&lela / Tangente"
 
-#: graphicswin.cpp:163
+#: graphicswin.cpp:166
 msgid "&Perpendicular"
 msgstr "&Perpendicular"
 
-#: graphicswin.cpp:164
+#: graphicswin.cpp:167
 msgid "Same Orient&ation"
 msgstr "Misma Orient&ación"
 
-#: graphicswin.cpp:165
+#: graphicswin.cpp:168
 msgid "Lock Point Where &Dragged"
 msgstr "Punto de Bloqueo &Donde se Arrastró"
 
-#: graphicswin.cpp:167
+#: graphicswin.cpp:170
 msgid "Comment"
 msgstr "Comentario"
 
-#: graphicswin.cpp:169
+#: graphicswin.cpp:172
 msgid "&Analyze"
 msgstr "&Analizar"
 
-#: graphicswin.cpp:170
+#: graphicswin.cpp:173
 msgid "Measure &Volume"
 msgstr "Medir &Volumen"
 
-#: graphicswin.cpp:171
+#: graphicswin.cpp:174
 msgid "Measure A&rea"
 msgstr "Medir Á&rea"
 
-#: graphicswin.cpp:172
+#: graphicswin.cpp:175
 msgid "Measure &Perimeter"
 msgstr "Medir &Perímetro"
 
-#: graphicswin.cpp:173
+#: graphicswin.cpp:176
 msgid "Show &Interfering Parts"
 msgstr "Mostrar &Piezas que Interfieren"
 
-#: graphicswin.cpp:174
+#: graphicswin.cpp:177
 msgid "Show &Naked Edges"
 msgstr "Mostrar &Aristas Visibles"
 
-#: graphicswin.cpp:175
+#: graphicswin.cpp:178
 msgid "Show &Center of Mass"
 msgstr "Mostrar &Centro de Masa"
 
-#: graphicswin.cpp:177
+#: graphicswin.cpp:180
 msgid "Show &Underconstrained Points"
 msgstr "Mostrar &Puntos Subrestringidos"
 
-#: graphicswin.cpp:179
+#: graphicswin.cpp:182
 msgid "&Trace Point"
 msgstr "&Punto de Rastro"
 
-#: graphicswin.cpp:180
+#: graphicswin.cpp:183
 msgid "&Stop Tracing..."
 msgstr "Detener ra&streo..."
 
-#: graphicswin.cpp:181
+#: graphicswin.cpp:184
 msgid "Step &Dimension..."
 msgstr "Paso de &Cota..."
 
-#: graphicswin.cpp:183
+#: graphicswin.cpp:186
 msgid "&Help"
 msgstr "&Ayuda"
 
-#: graphicswin.cpp:184
+#: graphicswin.cpp:187
 msgid "&Language"
 msgstr "&Idioma"
 
-#: graphicswin.cpp:185
+#: graphicswin.cpp:188
 msgid "&Website / Manual"
 msgstr "&Sitio Web / Manual"
 
-#: graphicswin.cpp:186
+#: graphicswin.cpp:189
 msgid "&Go to GitHub commit"
 msgstr "Ir a &GitHub"
 
-#: graphicswin.cpp:188
+#: graphicswin.cpp:191
 msgid "&About"
 msgstr "&Acerca"
 
-#: graphicswin.cpp:362
+#: graphicswin.cpp:365
 msgid "(no recent files)"
 msgstr "(no hay archivos recientes)"
 
-#: graphicswin.cpp:370
+#: graphicswin.cpp:373
 #, c-format
 msgid "File '%s' does not exist."
 msgstr "El archivo '%s' no existe."
 
-#: graphicswin.cpp:779
+#: graphicswin.cpp:782
 msgid "No workplane is active, so the grid will not appear."
 msgstr ""
 "No hay ningún plano de trabajo activo, por lo que la cuadrícula no aparecerá."
 
-#: graphicswin.cpp:794
+#: graphicswin.cpp:797
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel "
 "projection.\n"
@@ -1237,20 +1245,20 @@ msgstr ""
 "Para una proyección en perspectiva, modifique el factor de perspectiva en la "
 "pantalla de configuración. Un valor alrededor de 0.3 es típico."
 
-#: graphicswin.cpp:884
+#: graphicswin.cpp:887
 msgid ""
 "Select a point; this point will become the center of the view on screen."
 msgstr ""
 "Seleccione un punto; este punto se convertirá en el centro de la vista en "
 "pantalla."
 
-#: graphicswin.cpp:1193
+#: graphicswin.cpp:1188
 msgid "No additional entities share endpoints with the selected entities."
 msgstr ""
 "Ninguna entidad adicional comparte puntos finales con las entidades "
 "seleccionadas."
 
-#: graphicswin.cpp:1211
+#: graphicswin.cpp:1206
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
@@ -1258,7 +1266,7 @@ msgstr ""
 "Para usar este comando, seleccione un punto u otra entidad de una pieza "
 "vinculada, o convertir un grupo de enlaces en el grupo activo."
 
-#: graphicswin.cpp:1234
+#: graphicswin.cpp:1229
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
@@ -1267,7 +1275,7 @@ msgstr ""
 "Croquis -> En plano de trabajo) para definir el plano para el enganche a "
 "cuadrícula."
 
-#: graphicswin.cpp:1241
+#: graphicswin.cpp:1236
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
@@ -1276,13 +1284,13 @@ msgstr ""
 "comentarios de texto o restricciones con una etiqueta. Para enganchar una "
 "línea, seleccione sus puntos finales."
 
-#: graphicswin.cpp:1326
+#: graphicswin.cpp:1351
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr ""
 "No se seleccionó ningún plano de trabajo. Activando el plano de trabajo "
 "predeterminado para este grupo."
 
-#: graphicswin.cpp:1329
+#: graphicswin.cpp:1354
 msgid ""
 "No workplane is selected, and the active group does not have a default "
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
@@ -1292,7 +1300,7 @@ msgstr ""
 "de trabajo. Intente seleccionar un plano de trabajo o activar un croquis-en-"
 "nuevo-grupo de plano de trabajo."
 
-#: graphicswin.cpp:1350
+#: graphicswin.cpp:1375
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
@@ -1300,47 +1308,47 @@ msgstr ""
 "Selección incorrecta de arco tangente en el punto. Seleccione un solo punto "
 "o no seleccione nada para configurar los parámetros del arco."
 
-#: graphicswin.cpp:1361
+#: graphicswin.cpp:1386
 msgid "click point on arc (draws anti-clockwise)"
 msgstr "clic en el punto en el arco (dibuja en sentido antihorario)"
 
-#: graphicswin.cpp:1362
+#: graphicswin.cpp:1387
 msgid "click to place datum point"
 msgstr "clic para colocar el punto de referencia"
 
-#: graphicswin.cpp:1363
+#: graphicswin.cpp:1388
 msgid "click first point of line segment"
 msgstr "clic en el primer punto del segmento de línea"
 
-#: graphicswin.cpp:1365
+#: graphicswin.cpp:1390
 msgid "click first point of construction line segment"
 msgstr "clic en el primer punto del segmento de línea de construcción"
 
-#: graphicswin.cpp:1366
+#: graphicswin.cpp:1391
 msgid "click first point of cubic segment"
 msgstr "clic en el primer punto del segmento cúbico"
 
-#: graphicswin.cpp:1367
+#: graphicswin.cpp:1392
 msgid "click center of circle"
 msgstr "clic en el centro del círculo"
 
-#: graphicswin.cpp:1368
+#: graphicswin.cpp:1393
 msgid "click origin of workplane"
 msgstr "clic en origen del plano de trabajo"
 
-#: graphicswin.cpp:1369
+#: graphicswin.cpp:1394
 msgid "click one corner of rectangle"
 msgstr "clic en una esquina del rectángulo"
 
-#: graphicswin.cpp:1370
+#: graphicswin.cpp:1395
 msgid "click top left of text"
 msgstr "clic en la parte superior izquierda del texto"
 
-#: graphicswin.cpp:1376
+#: graphicswin.cpp:1401
 msgid "click top left of image"
 msgstr "clic en la parte superior izquierda de la imagen"
 
-#: graphicswin.cpp:1402
+#: graphicswin.cpp:1427
 msgid ""
 "No entities are selected. Select entities before trying to toggle their "
 "construction state."
@@ -1545,7 +1553,7 @@ msgstr ""
 "Seleccione dos entidades que se crucen entre sí (por ejemplo, dos líneas/"
 "círculos/arcos o una línea/círculo/arco y un punto)."
 
-#: modify.cpp:734
+#: modify.cpp:736
 msgid "Can't split; no intersection found."
 msgstr "No se puede dividir; no se encontró ninguna intersección."
 
@@ -1706,128 +1714,128 @@ msgstr ""
 "No se puede dibujar una imagen en 3D; primero, active un plano de trabajo "
 "con Croquis -> En Plano de Trabajo."
 
-#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:583
+#: platform/gui.cpp:91 platform/gui.cpp:96 solvespace.cpp:583
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "Modelos SolveSpace"
 
-#: platform/gui.cpp:89
+#: platform/gui.cpp:95
 msgctxt "file-type"
 msgid "ALL"
 msgstr "TODO"
 
-#: platform/gui.cpp:91
+#: platform/gui.cpp:97
 msgctxt "file-type"
 msgid "IDF circuit board"
 msgstr "Placa circuito IDF"
 
-#: platform/gui.cpp:92
+#: platform/gui.cpp:98
 msgctxt "file-type"
 msgid "STL triangle mesh"
 msgstr "Malla de triángulo STL"
 
-#: platform/gui.cpp:96
+#: platform/gui.cpp:102
 msgctxt "file-type"
 msgid "PNG image"
 msgstr "Imagen PNG"
 
-#: platform/gui.cpp:100
+#: platform/gui.cpp:106
 msgctxt "file-type"
 msgid "STL mesh"
 msgstr "Malla STL"
 
-#: platform/gui.cpp:101
+#: platform/gui.cpp:107
 msgctxt "file-type"
 msgid "Wavefront OBJ mesh"
 msgstr "Malla Wavefront OBJ"
 
-#: platform/gui.cpp:102
+#: platform/gui.cpp:108
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, with viewer"
 msgstr "Malla compatible-Three.js, con visor"
 
-#: platform/gui.cpp:103
+#: platform/gui.cpp:109
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, mesh only"
 msgstr "Malla compatible-Three.js, solo malla"
 
-#: platform/gui.cpp:104
+#: platform/gui.cpp:110
 msgctxt "file-type"
 msgid "VRML text file"
 msgstr "Archivo texto VRML"
 
-#: platform/gui.cpp:108 platform/gui.cpp:115 platform/gui.cpp:122
+#: platform/gui.cpp:114 platform/gui.cpp:121 platform/gui.cpp:128
 msgctxt "file-type"
 msgid "STEP file"
 msgstr "Archivo STEP"
 
-#: platform/gui.cpp:112
+#: platform/gui.cpp:118
 msgctxt "file-type"
 msgid "PDF file"
 msgstr "Archivo PDF"
 
-#: platform/gui.cpp:113
+#: platform/gui.cpp:119
 msgctxt "file-type"
 msgid "Encapsulated PostScript"
 msgstr "PostScript Encapsulado"
 
-#: platform/gui.cpp:114
+#: platform/gui.cpp:120
 msgctxt "file-type"
 msgid "Scalable Vector Graphics"
 msgstr "Gráficos Vectoriales Escalables SVG"
 
-#: platform/gui.cpp:116 platform/gui.cpp:123
+#: platform/gui.cpp:122 platform/gui.cpp:129
 msgctxt "file-type"
 msgid "DXF file (AutoCAD 2007)"
 msgstr "Archivo DXF (AutoCAD 2007)"
 
-#: platform/gui.cpp:117
+#: platform/gui.cpp:123
 msgctxt "file-type"
 msgid "HPGL file"
 msgstr "Archivo HPGL"
 
-#: platform/gui.cpp:118
+#: platform/gui.cpp:124
 msgctxt "file-type"
 msgid "G Code"
 msgstr "G Code"
 
-#: platform/gui.cpp:127
+#: platform/gui.cpp:133
 msgctxt "file-type"
 msgid "AutoCAD DXF and DWG files"
 msgstr "Archivos AutoCAD DXF y DWG"
 
-#: platform/gui.cpp:131
+#: platform/gui.cpp:137
 msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "Valores separados por comas"
 
-#: platform/guigtk.cpp:1434 platform/guimac.mm:1513 platform/guiwin.cpp:1641
+#: platform/guigtk.cpp:1446 platform/guimac.mm:1515 platform/guiwin.cpp:1641
 msgid "untitled"
 msgstr "sin título"
 
-#: platform/guigtk.cpp:1445 platform/guigtk.cpp:1481 platform/guimac.mm:1471
+#: platform/guigtk.cpp:1457 platform/guigtk.cpp:1493 platform/guimac.mm:1473
 #: platform/guiwin.cpp:1639
 msgctxt "title"
 msgid "Save File"
 msgstr "Guardar Archivo"
 
-#: platform/guigtk.cpp:1446 platform/guigtk.cpp:1482 platform/guimac.mm:1454
+#: platform/guigtk.cpp:1458 platform/guigtk.cpp:1494 platform/guimac.mm:1456
 #: platform/guiwin.cpp:1645
 msgctxt "title"
 msgid "Open File"
 msgstr "Abrir Archivo"
 
-#: platform/guigtk.cpp:1449 platform/guigtk.cpp:1488
+#: platform/guigtk.cpp:1461 platform/guigtk.cpp:1500
 msgctxt "button"
 msgid "_Cancel"
 msgstr "_Cancelar"
 
-#: platform/guigtk.cpp:1450 platform/guigtk.cpp:1486
+#: platform/guigtk.cpp:1462 platform/guigtk.cpp:1498
 msgctxt "button"
 msgid "_Save"
 msgstr "_Guardar"
 
-#: platform/guigtk.cpp:1451 platform/guigtk.cpp:1487
+#: platform/guigtk.cpp:1463 platform/guigtk.cpp:1499
 msgctxt "button"
 msgid "_Open"
 msgstr "_Abrir"
@@ -2139,23 +2147,23 @@ msgstr ""
 msgid "Style name cannot be empty"
 msgstr "El nombre del estilo no puede estar vacío"
 
-#: textscreens.cpp:837
+#: textscreens.cpp:840
 msgid "Can't repeat fewer than 1 time."
 msgstr "No se puede repetir menos de 1 vez."
 
-#: textscreens.cpp:841
+#: textscreens.cpp:844
 msgid "Can't repeat more than 999 times."
 msgstr "No se puede repetir más de 999 veces."
 
-#: textscreens.cpp:866
+#: textscreens.cpp:869
 msgid "Group name cannot be empty"
 msgstr "El nombre del grupo no puede estar vacío"
 
-#: textscreens.cpp:918
+#: textscreens.cpp:921
 msgid "Opacity must be between zero and one."
 msgstr "La opacidad debe estar entre cero y uno."
 
-#: textscreens.cpp:953
+#: textscreens.cpp:956
 msgid "Radius cannot be zero or negative."
 msgstr "El radio no puede ser cero o negativo."
 
@@ -2295,21 +2303,6 @@ msgstr "Vista isométrica más cercana"
 msgid "Align view to active workplane"
 msgstr "Alinear vista al plano de trabajo activo"
 
-#: util.cpp:165
-msgctxt "title"
-msgid "Error"
-msgstr "Error"
-
-#: util.cpp:165
-msgctxt "title"
-msgid "Message"
-msgstr "Mensaje"
-
-#: util.cpp:170
-msgctxt "button"
-msgid "&OK"
-msgstr "&Aceptar"
-
 #: view.cpp:127
 msgid "Scale cannot be zero or negative."
 msgstr "La escala no debe ser cero o negativa."
@@ -2317,3 +2310,15 @@ msgstr "La escala no debe ser cero o negativa."
 #: view.cpp:139 view.cpp:148
 msgid "Bad format: specify x, y, z"
 msgstr "Formato incorrecto: especifica x, y, z"
+
+#~ msgctxt "title"
+#~ msgid "Error"
+#~ msgstr "Error"
+
+#~ msgctxt "title"
+#~ msgid "Message"
+#~ msgstr "Mensaje"
+
+#~ msgctxt "button"
+#~ msgid "&OK"
+#~ msgstr "&Aceptar"

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
-"POT-Creation-Date: 2025-01-26 21:04+0200\n"
+"POT-Creation-Date: 2025-07-28 21:46-0600\n"
 "PO-Revision-Date: 2025-01-27 12:58+0200\n"
 "Last-Translator: https://github.com/Symbian9\n"
 "Language-Team: app4soft\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.5\n"
 
-#: clipboard.cpp:314
+#: clipboard.cpp:315
 msgid ""
 "Cut, paste, and copy work only in a workplane.\n"
 "\n"
@@ -27,38 +27,38 @@ msgstr ""
 "\n"
 "Активуйте одну через Креслення -> У площині."
 
-#: clipboard.cpp:331
+#: clipboard.cpp:332
 msgid "Clipboard is empty; nothing to paste."
 msgstr "Буфер обміну порожній; немає чого вставляти."
 
-#: clipboard.cpp:378
+#: clipboard.cpp:379
 msgid "Number of copies to paste must be at least one."
 msgstr "Кількість копій для вставки має бути не менше одної."
 
-#: clipboard.cpp:394 textscreens.cpp:879
+#: clipboard.cpp:395 textscreens.cpp:882
 msgid "Scale cannot be zero."
 msgstr "Масштаб не може бути нульовим."
 
-#: clipboard.cpp:436
+#: clipboard.cpp:437
 msgid "Select one point to define origin of rotation."
 msgstr "Оберіть одну точку для визначення центру обертання."
 
-#: clipboard.cpp:448
+#: clipboard.cpp:449
 msgid "Select two points to define translation vector."
 msgstr "Оберіть дві точки для визначення вектору розміщення."
 
-#: clipboard.cpp:458
+#: clipboard.cpp:459
 msgid ""
 "Transformation is identity. So all copies will be exactly on top of each "
 "other."
 msgstr "Трансформація ідентична, тому усі копії будуть точно одна на одній."
 
-#: clipboard.cpp:462
+#: clipboard.cpp:463
 msgid "Too many items to paste; split this into smaller pastes."
 msgstr ""
 "Забагато об'єктів для вставки; розділіть копіювання на кілька менших етапів."
 
-#: clipboard.cpp:467
+#: clipboard.cpp:468
 msgid "No workplane active."
 msgstr "Немає активної площини."
 
@@ -66,7 +66,7 @@ msgstr "Немає активної площини."
 msgid "Bad format: specify coordinates as x, y, z"
 msgstr "Некоректний формат: визначте координати як X, Y, Z"
 
-#: confscreen.cpp:420 style.cpp:729 textscreens.cpp:910
+#: confscreen.cpp:420 style.cpp:729 textscreens.cpp:913
 msgid "Bad format: specify color as r, g, b"
 msgstr "Некоректний формат: визначте колір як R, G, B"
 
@@ -887,351 +887,359 @@ msgid "Con&figuration..."
 msgstr "&Налаштування..."
 
 #: graphicswin.cpp:84
+msgid "Previous Group"
+msgstr ""
+
+#: graphicswin.cpp:85
+msgid "Next Group"
+msgstr ""
+
+#: graphicswin.cpp:87
 msgid "&View"
 msgstr "&Відображення"
 
-#: graphicswin.cpp:85
+#: graphicswin.cpp:88
 msgid "Zoom &In"
 msgstr "На&близити"
 
-#: graphicswin.cpp:86
+#: graphicswin.cpp:89
 msgid "Zoom &Out"
 msgstr "Від&далити"
 
-#: graphicswin.cpp:87
+#: graphicswin.cpp:90
 msgid "Zoom To &Fit"
 msgstr "Умістити на &Екрані"
 
-#: graphicswin.cpp:89
+#: graphicswin.cpp:92
 msgid "Align View to &Workplane"
 msgstr "Вирівняти Вигляд до Робочої &Площини"
 
-#: graphicswin.cpp:90
+#: graphicswin.cpp:93
 msgid "Nearest &Ortho View"
 msgstr "Найближчий &Ортогональний Вигляд"
 
-#: graphicswin.cpp:91
+#: graphicswin.cpp:94
 msgid "Nearest &Isometric View"
 msgstr "Найближчий &Ізометричний Вигляд"
 
-#: graphicswin.cpp:92
+#: graphicswin.cpp:95
 msgid "&Center View At Point"
 msgstr "&Центрувати Вигляд на Точці"
 
-#: graphicswin.cpp:94
+#: graphicswin.cpp:97
 msgid "Show Snap &Grid"
 msgstr "Показати &Сітку Прикріплення"
 
-#: graphicswin.cpp:95
+#: graphicswin.cpp:98
 msgid "Darken Inactive Solids"
 msgstr "Затінювати Неактивні Тіла"
 
-#: graphicswin.cpp:96
+#: graphicswin.cpp:99
 msgid "Use &Perspective Projection"
 msgstr "Використовувати &Перспективну Проекцію"
 
-#: graphicswin.cpp:97
+#: graphicswin.cpp:100
 msgid "Show E&xploded View"
 msgstr "Показати С&кладальне Креслення"
 
-#: graphicswin.cpp:98
+#: graphicswin.cpp:101
 msgid "Dimension &Units"
 msgstr "Розмірні &Одиниці"
 
-#: graphicswin.cpp:99
+#: graphicswin.cpp:102
 msgid "Dimensions in &Millimeters"
 msgstr "Розміри у &Міліметрах"
 
-#: graphicswin.cpp:100
+#: graphicswin.cpp:103
 msgid "Dimensions in M&eters"
 msgstr "Розміри у &Метрах"
 
-#: graphicswin.cpp:101
+#: graphicswin.cpp:104
 msgid "Dimensions in &Inches"
 msgstr "Розміри у &Дюймах"
 
-#: graphicswin.cpp:102
+#: graphicswin.cpp:105
 msgid "Dimensions in &Feet and Inches"
 msgstr "Розміри в &Футах та Дюймах"
 
-#: graphicswin.cpp:104
+#: graphicswin.cpp:107
 msgid "Show &Toolbar"
 msgstr "Показати Панель &Інструментів"
 
-#: graphicswin.cpp:105
+#: graphicswin.cpp:108
 msgid "Show Property Bro&wser"
 msgstr "Показати Вікно Власти&востей"
 
-#: graphicswin.cpp:107
+#: graphicswin.cpp:110
 msgid "&Full Screen"
 msgstr "&Повний Екран"
 
-#: graphicswin.cpp:109
+#: graphicswin.cpp:112
 msgid "&New Group"
 msgstr "&Нова Група"
 
-#: graphicswin.cpp:110
+#: graphicswin.cpp:113
 msgid "Sketch In &3d"
 msgstr "Креслення у &3D"
 
-#: graphicswin.cpp:111
+#: graphicswin.cpp:114
 msgid "Sketch In New &Workplane"
 msgstr "Креслення у Новій &Площині"
 
-#: graphicswin.cpp:113
+#: graphicswin.cpp:116
 msgid "Step &Translating"
 msgstr "Покрокове &Переміщення"
 
-#: graphicswin.cpp:114
+#: graphicswin.cpp:117
 msgid "Step &Rotating"
 msgstr "Покрокове &Обертання"
 
-#: graphicswin.cpp:116
+#: graphicswin.cpp:119
 msgid "E&xtrude"
 msgstr "Ви&давити"
 
-#: graphicswin.cpp:117
+#: graphicswin.cpp:120
 msgid "&Helix"
 msgstr "&Спіраль"
 
-#: graphicswin.cpp:118
+#: graphicswin.cpp:121
 msgid "&Lathe"
 msgstr "&Виточити"
 
-#: graphicswin.cpp:119
+#: graphicswin.cpp:122
 msgid "Re&volve"
 msgstr "&Обертати"
 
-#: graphicswin.cpp:121
+#: graphicswin.cpp:124
 msgid "Link / Assemble..."
 msgstr "Приєднати / Зібрати..."
 
-#: graphicswin.cpp:122
+#: graphicswin.cpp:125
 msgid "Link Recent"
 msgstr "Приєднати Нещодавні"
 
-#: graphicswin.cpp:124
+#: graphicswin.cpp:127
 msgid "&Sketch"
 msgstr "&Креслення"
 
-#: graphicswin.cpp:125
+#: graphicswin.cpp:128
 msgid "In &Workplane"
 msgstr "У Робочій &Площині"
 
-#: graphicswin.cpp:126
+#: graphicswin.cpp:129
 msgid "Anywhere In &3d"
 msgstr "Будь-де в &3D"
 
-#: graphicswin.cpp:128
+#: graphicswin.cpp:131
 msgid "Datum &Point"
 msgstr "Опорна &Точка"
 
-#: graphicswin.cpp:129
+#: graphicswin.cpp:132
 msgid "Wor&kplane"
 msgstr "Робоча &Площина"
 
-#: graphicswin.cpp:131
+#: graphicswin.cpp:134
 msgid "Line &Segment"
 msgstr "&Відрізок Прямої"
 
-#: graphicswin.cpp:132
+#: graphicswin.cpp:135
 msgid "C&onstruction Line Segment"
 msgstr "Контсрук&ційний Відрізок Прямої"
 
-#: graphicswin.cpp:133
+#: graphicswin.cpp:136
 msgid "&Rectangle"
 msgstr "&Прямокутник"
 
-#: graphicswin.cpp:134
+#: graphicswin.cpp:137
 msgid "&Circle"
 msgstr "&Коло"
 
-#: graphicswin.cpp:135
+#: graphicswin.cpp:138
 msgid "&Arc of a Circle"
 msgstr "&Дуга Кола"
 
-#: graphicswin.cpp:136
+#: graphicswin.cpp:139
 msgid "&Bezier Cubic Spline"
 msgstr "Кубічний Сплайн &Без'є"
 
-#: graphicswin.cpp:138
+#: graphicswin.cpp:141
 msgid "&Text in TrueType Font"
 msgstr "&Текст із TrueType Шрифтом"
 
-#: graphicswin.cpp:139
+#: graphicswin.cpp:142
 msgid "I&mage"
 msgstr "&Зображення"
 
-#: graphicswin.cpp:141
+#: graphicswin.cpp:144
 msgid "To&ggle Construction"
 msgstr "Пере&мкнути Конструктивність"
 
-#: graphicswin.cpp:142
+#: graphicswin.cpp:145
 msgid "Ta&ngent Arc at Point"
 msgstr "Дотична &Дуга на Точці"
 
-#: graphicswin.cpp:143
+#: graphicswin.cpp:146
 msgid "Split Curves at &Intersection"
 msgstr "Розрізати Криві на &Перетині"
 
-#: graphicswin.cpp:145
+#: graphicswin.cpp:148
 msgid "&Constrain"
 msgstr "&Обмежити"
 
-#: graphicswin.cpp:146
+#: graphicswin.cpp:149
 msgid "&Distance / Diameter"
 msgstr "&Відстань / Діаметр"
 
-#: graphicswin.cpp:147
+#: graphicswin.cpp:150
 msgid "Re&ference Dimension"
 msgstr "Від&носний Розмір"
 
-#: graphicswin.cpp:148
+#: graphicswin.cpp:151
 msgid "A&ngle / Equal Angle"
 msgstr "К&ут / Рівний Кут"
 
-#: graphicswin.cpp:149
+#: graphicswin.cpp:152
 msgid "Reference An&gle"
 msgstr "Відносний К&ут"
 
-#: graphicswin.cpp:150
+#: graphicswin.cpp:153
 msgid "Other S&upplementary Angle"
 msgstr "Інший Су&міжний Кут"
 
-#: graphicswin.cpp:151
+#: graphicswin.cpp:154
 msgid "Toggle R&eference Dim"
 msgstr "Перемкнути Від&носність Розмірів"
 
-#: graphicswin.cpp:153
+#: graphicswin.cpp:156
 msgid "&Horizontal"
 msgstr "&Горизонтально"
 
-#: graphicswin.cpp:154
+#: graphicswin.cpp:157
 msgid "&Vertical"
 msgstr "&Вертикально"
 
-#: graphicswin.cpp:156
+#: graphicswin.cpp:159
 msgid "&On Point / Curve / Plane"
 msgstr "&На точці / Кривій / Площині"
 
-#: graphicswin.cpp:157
+#: graphicswin.cpp:160
 msgid "E&qual Length / Radius"
 msgstr "Р&івна Довжина / Радіус"
 
-#: graphicswin.cpp:158
+#: graphicswin.cpp:161
 msgid "Length / Arc Ra&tio"
 msgstr "Пропорція довжин"
 
-#: graphicswin.cpp:159
+#: graphicswin.cpp:162
 msgid "Length / Arc Diff&erence"
 msgstr "Різниця довжин"
 
-#: graphicswin.cpp:160
+#: graphicswin.cpp:163
 msgid "At &Midpoint"
 msgstr "До &Середини"
 
-#: graphicswin.cpp:161
+#: graphicswin.cpp:164
 msgid "S&ymmetric"
 msgstr "Си&метрично"
 
-#: graphicswin.cpp:162
+#: graphicswin.cpp:165
 msgid "Para&llel / Tangent"
 msgstr "Пара&лельно / Дотична"
 
-#: graphicswin.cpp:163
+#: graphicswin.cpp:166
 msgid "&Perpendicular"
 msgstr "&Препендикулярно"
 
-#: graphicswin.cpp:164
+#: graphicswin.cpp:167
 msgid "Same Orient&ation"
 msgstr "Однакова Орієн&тація"
 
-#: graphicswin.cpp:165
+#: graphicswin.cpp:168
 msgid "Lock Point Where &Dragged"
 msgstr "Фіксувати Точку Після &Переміщення"
 
-#: graphicswin.cpp:167
+#: graphicswin.cpp:170
 msgid "Comment"
 msgstr "Коментар"
 
-#: graphicswin.cpp:169
+#: graphicswin.cpp:172
 msgid "&Analyze"
 msgstr "&Аналізувати"
 
-#: graphicswin.cpp:170
+#: graphicswin.cpp:173
 msgid "Measure &Volume"
 msgstr "Обрахувати &Об'єм"
 
-#: graphicswin.cpp:171
+#: graphicswin.cpp:174
 msgid "Measure A&rea"
 msgstr "Обрахувати Пл&ощу"
 
-#: graphicswin.cpp:172
+#: graphicswin.cpp:175
 msgid "Measure &Perimeter"
 msgstr "Обрахувати &Периметр"
 
-#: graphicswin.cpp:173
+#: graphicswin.cpp:176
 msgid "Show &Interfering Parts"
 msgstr "Показати &Дотичні Частини"
 
-#: graphicswin.cpp:174
+#: graphicswin.cpp:177
 msgid "Show &Naked Edges"
 msgstr "Показати &Приховані Ребра"
 
-#: graphicswin.cpp:175
+#: graphicswin.cpp:178
 msgid "Show &Center of Mass"
 msgstr "Показати &Центр Масс"
 
-#: graphicswin.cpp:177
+#: graphicswin.cpp:180
 msgid "Show &Underconstrained Points"
 msgstr "Показати &Надмірно Обмежені Точки"
 
-#: graphicswin.cpp:179
+#: graphicswin.cpp:182
 msgid "&Trace Point"
 msgstr "&Трасувати Точку"
 
-#: graphicswin.cpp:180
+#: graphicswin.cpp:183
 msgid "&Stop Tracing..."
 msgstr "&Зупити Трасування..."
 
-#: graphicswin.cpp:181
+#: graphicswin.cpp:184
 msgid "Step &Dimension..."
 msgstr "Прорахувати &Розмір..."
 
-#: graphicswin.cpp:183
+#: graphicswin.cpp:186
 msgid "&Help"
 msgstr "&Довідка"
 
-#: graphicswin.cpp:184
+#: graphicswin.cpp:187
 msgid "&Language"
 msgstr "&Мова"
 
-#: graphicswin.cpp:185
+#: graphicswin.cpp:188
 msgid "&Website / Manual"
 msgstr "&Вебсайт / Посібник"
 
-#: graphicswin.cpp:186
+#: graphicswin.cpp:189
 msgid "&Go to GitHub commit"
 msgstr "&До коміту на GitHub"
 
-#: graphicswin.cpp:188
+#: graphicswin.cpp:191
 msgid "&About"
 msgstr "&Про програму"
 
-#: graphicswin.cpp:362
+#: graphicswin.cpp:365
 msgid "(no recent files)"
 msgstr "(нємає нещодавніх файлів)"
 
-#: graphicswin.cpp:370
+#: graphicswin.cpp:373
 #, c-format
 msgid "File '%s' does not exist."
 msgstr "Файл '%s' відсутній."
 
-#: graphicswin.cpp:779
+#: graphicswin.cpp:782
 msgid "No workplane is active, so the grid will not appear."
 msgstr "Відсутня активна площина - сітка не відображатиметься."
 
-#: graphicswin.cpp:794
+#: graphicswin.cpp:797
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel "
 "projection.\n"
@@ -1242,16 +1250,16 @@ msgstr ""
 "Встановлено нульовий коефіцієнт перспективи, тому відображення завжди буде "
 "паралельною проєкцією."
 
-#: graphicswin.cpp:884
+#: graphicswin.cpp:887
 msgid ""
 "Select a point; this point will become the center of the view on screen."
 msgstr "Оберіть точку. Ця точка стане центром відображення на екрані."
 
-#: graphicswin.cpp:1193
+#: graphicswin.cpp:1188
 msgid "No additional entities share endpoints with the selected entities."
 msgstr "Жодні сутності не мають спільних кінцевих точок з обраними сутностями."
 
-#: graphicswin.cpp:1211
+#: graphicswin.cpp:1206
 msgid ""
 "To use this command, select a point or other entity from an linked part, or "
 "make a link group the active group."
@@ -1259,7 +1267,7 @@ msgstr ""
 "Для використання цієї команди оберіть точку або іншу сутність з приєднаної "
 "деталі, або зробіть приєднану групу активною."
 
-#: graphicswin.cpp:1234
+#: graphicswin.cpp:1229
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) "
 "to define the plane for the snap grid."
@@ -1267,7 +1275,7 @@ msgstr ""
 "Жодної активної площини. Активуйте площину (в Креслення -> У Робочій "
 "Площині) щоб визначити площину для сітки."
 
-#: graphicswin.cpp:1241
+#: graphicswin.cpp:1236
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints "
 "with a label. To snap a line, select its endpoints."
@@ -1275,13 +1283,13 @@ msgstr ""
 "Неможливо прикріпити ці штуки до сітки; оберіть точки, текстові коментарі чи "
 "обмеження з назвою. Щоб прикріпити лінію, оберіть її кінцеві точки."
 
-#: graphicswin.cpp:1326
+#: graphicswin.cpp:1351
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr ""
 "Жодної робочої площини не обрано. Активую площину за замовченням для цієї "
 "групи."
 
-#: graphicswin.cpp:1329
+#: graphicswin.cpp:1354
 msgid ""
 "No workplane is selected, and the active group does not have a default "
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
@@ -1291,7 +1299,7 @@ msgstr ""
 "замовченням. Спробуйте обрати площину, або активувати групу Креслення У "
 "Робочій Площині."
 
-#: graphicswin.cpp:1350
+#: graphicswin.cpp:1375
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select "
 "nothing to set up arc parameters."
@@ -1299,47 +1307,47 @@ msgstr ""
 "Поганий вибір для дотичної дуги у точці. Оберіть одну точку, або оберіть "
 "нічого щоб налаштувати дугу."
 
-#: graphicswin.cpp:1361
+#: graphicswin.cpp:1386
 msgid "click point on arc (draws anti-clockwise)"
 msgstr "клікніть для встановлення точки дуги (проти годинникової стрілки)"
 
-#: graphicswin.cpp:1362
+#: graphicswin.cpp:1387
 msgid "click to place datum point"
 msgstr "клікніть для встановлення вихідної точки"
 
-#: graphicswin.cpp:1363
+#: graphicswin.cpp:1388
 msgid "click first point of line segment"
 msgstr "клікніть першу точку прямої лінії"
 
-#: graphicswin.cpp:1365
+#: graphicswin.cpp:1390
 msgid "click first point of construction line segment"
 msgstr "клікніть першу точку конструктивної прямої лінії"
 
-#: graphicswin.cpp:1366
+#: graphicswin.cpp:1391
 msgid "click first point of cubic segment"
 msgstr "клікніть першу точку кривої"
 
-#: graphicswin.cpp:1367
+#: graphicswin.cpp:1392
 msgid "click center of circle"
 msgstr "клікніть в місце де буде центр коментаря"
 
-#: graphicswin.cpp:1368
+#: graphicswin.cpp:1393
 msgid "click origin of workplane"
 msgstr "клікніть в центр відліку площини"
 
-#: graphicswin.cpp:1369
+#: graphicswin.cpp:1394
 msgid "click one corner of rectangle"
 msgstr "клікніть для встановлення першого кута прямокутника"
 
-#: graphicswin.cpp:1370
+#: graphicswin.cpp:1395
 msgid "click top left of text"
 msgstr "клікніть для встановлення верхньої лівої межі тексту"
 
-#: graphicswin.cpp:1376
+#: graphicswin.cpp:1401
 msgid "click top left of image"
 msgstr "клікніть для встановлення верхньої лівої межі зображення"
 
-#: graphicswin.cpp:1402
+#: graphicswin.cpp:1427
 msgid ""
 "No entities are selected. Select entities before trying to toggle their "
 "construction state."
@@ -1543,7 +1551,7 @@ msgstr ""
 "Оберіть дві сутності, що перетинаються (наприклад лінії/кола/дуги або лінія/"
 "коло/дуга та точка)"
 
-#: modify.cpp:734
+#: modify.cpp:736
 msgid "Can't split; no intersection found."
 msgstr "Неможливо розділити; відсутній перетин."
 
@@ -1703,128 +1711,128 @@ msgstr ""
 "Неможливо накреслити зображення у 3д; спочатку активуйте робочу площину в "
 "Креслення -> У Робочій Площині."
 
-#: platform/gui.cpp:85 platform/gui.cpp:90 solvespace.cpp:583
+#: platform/gui.cpp:91 platform/gui.cpp:96 solvespace.cpp:583
 msgctxt "file-type"
 msgid "SolveSpace models"
 msgstr "SolveSpace модел"
 
-#: platform/gui.cpp:89
+#: platform/gui.cpp:95
 msgctxt "file-type"
 msgid "ALL"
 msgstr "УСІ"
 
-#: platform/gui.cpp:91
+#: platform/gui.cpp:97
 msgctxt "file-type"
 msgid "IDF circuit board"
 msgstr "IDF друкована плата"
 
-#: platform/gui.cpp:92
+#: platform/gui.cpp:98
 msgctxt "file-type"
 msgid "STL triangle mesh"
 msgstr "STL трикутникова сітка"
 
-#: platform/gui.cpp:96
+#: platform/gui.cpp:102
 msgctxt "file-type"
 msgid "PNG image"
 msgstr "PNG зображення"
 
-#: platform/gui.cpp:100
+#: platform/gui.cpp:106
 msgctxt "file-type"
 msgid "STL mesh"
 msgstr "STL сітка"
 
-#: platform/gui.cpp:101
+#: platform/gui.cpp:107
 msgctxt "file-type"
 msgid "Wavefront OBJ mesh"
 msgstr "Wavefront OBJ меш"
 
-#: platform/gui.cpp:102
+#: platform/gui.cpp:108
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, with viewer"
 msgstr "Three.js-сумісний меш, з переглядачем"
 
-#: platform/gui.cpp:103
+#: platform/gui.cpp:109
 msgctxt "file-type"
 msgid "Three.js-compatible mesh, mesh only"
 msgstr "Three.js-сумісний меш, лише меш"
 
-#: platform/gui.cpp:104
+#: platform/gui.cpp:110
 msgctxt "file-type"
 msgid "VRML text file"
 msgstr "VRML меш, текстовий формат"
 
-#: platform/gui.cpp:108 platform/gui.cpp:115 platform/gui.cpp:122
+#: platform/gui.cpp:114 platform/gui.cpp:121 platform/gui.cpp:128
 msgctxt "file-type"
 msgid "STEP file"
 msgstr "STEP файл"
 
-#: platform/gui.cpp:112
+#: platform/gui.cpp:118
 msgctxt "file-type"
 msgid "PDF file"
 msgstr "PDF файл"
 
-#: platform/gui.cpp:113
+#: platform/gui.cpp:119
 msgctxt "file-type"
 msgid "Encapsulated PostScript"
 msgstr "Encapsulated PostScript"
 
-#: platform/gui.cpp:114
+#: platform/gui.cpp:120
 msgctxt "file-type"
 msgid "Scalable Vector Graphics"
 msgstr "Scalable Vector Graphics, векторний формат"
 
-#: platform/gui.cpp:116 platform/gui.cpp:123
+#: platform/gui.cpp:122 platform/gui.cpp:129
 msgctxt "file-type"
 msgid "DXF file (AutoCAD 2007)"
 msgstr "DXF файл (AutoCAD 2007)"
 
-#: platform/gui.cpp:117
+#: platform/gui.cpp:123
 msgctxt "file-type"
 msgid "HPGL file"
 msgstr "HPGL файл"
 
-#: platform/gui.cpp:118
+#: platform/gui.cpp:124
 msgctxt "file-type"
 msgid "G Code"
 msgstr "G Code"
 
-#: platform/gui.cpp:127
+#: platform/gui.cpp:133
 msgctxt "file-type"
 msgid "AutoCAD DXF and DWG files"
 msgstr "AutoCAD DXF та DWG файли"
 
-#: platform/gui.cpp:131
+#: platform/gui.cpp:137
 msgctxt "file-type"
 msgid "Comma-separated values"
 msgstr "Comma-separated values"
 
-#: platform/guigtk.cpp:1434 platform/guimac.mm:1513 platform/guiwin.cpp:1641
+#: platform/guigtk.cpp:1446 platform/guimac.mm:1515 platform/guiwin.cpp:1641
 msgid "untitled"
 msgstr "без імені"
 
-#: platform/guigtk.cpp:1445 platform/guigtk.cpp:1481 platform/guimac.mm:1471
+#: platform/guigtk.cpp:1457 platform/guigtk.cpp:1493 platform/guimac.mm:1473
 #: platform/guiwin.cpp:1639
 msgctxt "title"
 msgid "Save File"
 msgstr "Зберегти Файл"
 
-#: platform/guigtk.cpp:1446 platform/guigtk.cpp:1482 platform/guimac.mm:1454
+#: platform/guigtk.cpp:1458 platform/guigtk.cpp:1494 platform/guimac.mm:1456
 #: platform/guiwin.cpp:1645
 msgctxt "title"
 msgid "Open File"
 msgstr "Відкрити Файл"
 
-#: platform/guigtk.cpp:1449 platform/guigtk.cpp:1488
+#: platform/guigtk.cpp:1461 platform/guigtk.cpp:1500
 msgctxt "button"
 msgid "_Cancel"
 msgstr "_Скасувати"
 
-#: platform/guigtk.cpp:1450 platform/guigtk.cpp:1486
+#: platform/guigtk.cpp:1462 platform/guigtk.cpp:1498
 msgctxt "button"
 msgid "_Save"
 msgstr "_Зберегти"
 
-#: platform/guigtk.cpp:1451 platform/guigtk.cpp:1487
+#: platform/guigtk.cpp:1463 platform/guigtk.cpp:1499
 msgctxt "button"
 msgid "_Open"
 msgstr "_Відкрити"
@@ -1908,8 +1916,8 @@ msgstr ""
 #: solvespace.cpp:834
 #, c-format
 msgid ""
-"Can't identify file type from file extension of filename '%s'; try .dxf "
-"or .dwg."
+"Can't identify file type from file extension of filename '%s'; try .dxf or ."
+"dwg."
 msgstr ""
 "Неможливо визначити тип файлу з розширення '%s'; спробуйте .dxf чи .dwg."
 
@@ -2131,23 +2139,23 @@ msgstr ""
 msgid "Style name cannot be empty"
 msgstr "Стиль не може містити порожнє ім'я"
 
-#: textscreens.cpp:837
+#: textscreens.cpp:840
 msgid "Can't repeat fewer than 1 time."
 msgstr "Не можливо повторити менше 1 разу."
 
-#: textscreens.cpp:841
+#: textscreens.cpp:844
 msgid "Can't repeat more than 999 times."
 msgstr "Не можливо повторити понад 999 разів."
 
-#: textscreens.cpp:866
+#: textscreens.cpp:869
 msgid "Group name cannot be empty"
 msgstr "Група не може містити порожнє ім'я"
 
-#: textscreens.cpp:918
+#: textscreens.cpp:921
 msgid "Opacity must be between zero and one."
 msgstr "Непрозорість має бути між 0 та 1."
 
-#: textscreens.cpp:953
+#: textscreens.cpp:956
 msgid "Radius cannot be zero or negative."
 msgstr "Радіус не може бути нульовим чи від'ємним."
 
@@ -2287,21 +2295,6 @@ msgstr "Найближчий ізометричний вигляд"
 msgid "Align view to active workplane"
 msgstr "Вирівняти вигляд до активної робочої площини"
 
-#: util.cpp:165
-msgctxt "title"
-msgid "Error"
-msgstr "Помилка"
-
-#: util.cpp:165
-msgctxt "title"
-msgid "Message"
-msgstr "Повідомлення"
-
-#: util.cpp:170
-msgctxt "button"
-msgid "&OK"
-msgstr "&OK"
-
 #: view.cpp:127
 msgid "Scale cannot be zero or negative."
 msgstr "Масштаб не може бути нульовим чи від'ємним."
@@ -2309,6 +2302,18 @@ msgstr "Масштаб не може бути нульовим чи від'єм�
 #: view.cpp:139 view.cpp:148
 msgid "Bad format: specify x, y, z"
 msgstr "Некоректний формат: визначте X, Y, Z"
+
+#~ msgctxt "title"
+#~ msgid "Error"
+#~ msgstr "Помилка"
+
+#~ msgctxt "title"
+#~ msgid "Message"
+#~ msgstr "Повідомлення"
+
+#~ msgctxt "button"
+#~ msgid "&OK"
+#~ msgstr "&OK"
 
 #~ msgid "A&ngle"
 #~ msgstr "К&ут"

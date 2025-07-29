@@ -28,7 +28,13 @@ std::string AcceleratorDescription(const KeyboardEvent &accel) {
 
     switch(accel.key) {
         case KeyboardEvent::Key::FUNCTION:
-            label += ssprintf("F%d", accel.num);
+            if(accel.num == 33) {
+                label += "PageUp";
+            } else if(accel.num == 34) {
+                label += "PageDown";
+            } else {
+                label += ssprintf("F%d", accel.num);
+            }
             break;
 
         case KeyboardEvent::Key::CHARACTER:

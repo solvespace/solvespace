@@ -80,6 +80,9 @@ const MenuEntry Menu[] = {
 #ifndef __APPLE__
 { 1, N_("Con&figuration..."),           Command::CONFIGURATION,    0,       KN, mEdit  },
 #endif
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Previous Group"),              Command::GROUP_PREVIOUS,   F|33,    KN, mEdit  },  // PageUp
+{ 1, N_("Next Group"),                  Command::GROUP_NEXT,       F|34,    KN, mEdit  },  // PageDown
 
 { 0, N_("&View"),                       Command::NONE,             0,       KN, mView  },
 { 1, N_("Zoom &In"),                    Command::ZOOM_IN,          '+',     KN, mView  },
@@ -1291,6 +1294,36 @@ void GraphicsWindow::MenuEdit(Command id) {
             SS.GW.ForceTextWindowShown();
             SS.ScheduleShowTW();
             break;
+
+        case Command::GROUP_PREVIOUS: {
+            // Navigate to previous group
+            for(int i = 0; i < SK.groupOrder.n; i++) {
+                if(SK.groupOrder[i] == SS.GW.activeGroup) {
+                    if(i > 0) {
+                        SS.GW.activeGroup = SK.groupOrder[i - 1];
+                        SK.GetGroup(SS.GW.activeGroup)->Activate();
+                        SS.GW.ClearSuper();
+                    }
+                    break;
+                }
+            }
+            break;
+        }
+
+        case Command::GROUP_NEXT: {
+            // Navigate to next group
+            for(int i = 0; i < SK.groupOrder.n; i++) {
+                if(SK.groupOrder[i] == SS.GW.activeGroup) {
+                    if(i < SK.groupOrder.n - 1) {
+                        SS.GW.activeGroup = SK.groupOrder[i + 1];
+                        SK.GetGroup(SS.GW.activeGroup)->Activate();
+                        SS.GW.ClearSuper();
+                    }
+                    break;
+                }
+            }
+            break;
+        }
 
         default: ssassert(false, "Unexpected menu ID");
     }

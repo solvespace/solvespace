@@ -314,7 +314,13 @@ public:
                 accelKey = gdk_unicode_to_keyval(accel.chr);
             }
         } else if(accel.key == KeyboardEvent::Key::FUNCTION) {
-            accelKey = GDK_KEY_F1 + accel.num - 1;
+            if(accel.num == 33) {
+                accelKey = GDK_KEY_Page_Up;
+            } else if(accel.num == 34) {
+                accelKey = GDK_KEY_Page_Down;
+            } else {
+                accelKey = GDK_KEY_F1 + accel.num - 1;
+            }
         }
 
         Gdk::ModifierType accelMods = {};
@@ -641,6 +647,12 @@ protected:
                   keyval <= GDK_KEY_F12) {
             event.key = KeyboardEvent::Key::FUNCTION;
             event.num = keyval - GDK_KEY_F1 + 1;
+        } else if(keyval == GDK_KEY_Page_Up) {
+            event.key = KeyboardEvent::Key::FUNCTION;
+            event.num = 33;  // PageUp
+        } else if(keyval == GDK_KEY_Page_Down) {
+            event.key = KeyboardEvent::Key::FUNCTION;
+            event.num = 34;  // PageDown
         } else {
             return false;
         }
