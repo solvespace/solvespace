@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 const hConstraint ConstraintBase::NO_CONSTRAINT = { 0 };
 
 bool ConstraintBase::HasLabel() const {
@@ -1057,3 +1059,4 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
     ssassert(false, "Unexpected constraint ID");
 }
 
+} // namespace SolveSpace

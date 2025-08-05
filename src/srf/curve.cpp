@@ -4,7 +4,9 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+#include "solvespace.h"
+
+namespace SolveSpace {
 
 SBezier SBezier::From(Vector4 p0, Vector4 p1) {
     SBezier ret = {};
@@ -878,3 +880,4 @@ STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc, bool backwards) {
     return stb;
 }
 
+} // namespace SolveSpace

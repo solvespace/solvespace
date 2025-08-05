@@ -63,6 +63,10 @@ endif()
 # Solver
 add_library(slvs-solver INTERFACE)
 target_sources(slvs-solver INTERFACE
+    dsc.h
+    expr.h
+    handle.h
+    param.h
     platform/platform.h
     solvespace.h
 
@@ -100,8 +104,6 @@ if(ENABLE_GUI OR ENABLE_CLI)
         solvespace.cpp)
 
     add_library(solvespace-core STATIC
-        dsc.h
-        expr.h
         polygon.h
         sketch.h
         ui.h

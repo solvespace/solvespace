@@ -9,6 +9,22 @@
 #ifndef SOLVESPACE_TTF_H
 #define SOLVESPACE_TTF_H
 
+#include <string>
+
+#include "dsc.h"
+#include "platform/platform.h"
+
+// We declare these in advance instead of simply using FT_Library
+// (defined as typedef FT_LibraryRec_* FT_Library) because including
+// freetype.h invokes indescribable horrors and we would like to avoid
+// doing that every time we include solvespace.h.
+struct FT_LibraryRec_;
+struct FT_FaceRec_;
+
+namespace SolveSpace {
+
+class SBezierList;
+
 class TtfFont {
 public:
     Platform::Path  fontFile; // or resource path/name as res://<path>
@@ -46,5 +62,7 @@ public:
                     SBezierList *sbl, bool kerning, Vector origin, Vector u, Vector v);
     double AspectRatio(const std::string &font, const std::string &str, bool kerning);
 };
+
+} // namespace SolveSpace
 
 #endif

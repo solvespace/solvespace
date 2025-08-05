@@ -7,8 +7,10 @@
 #include "solvespace.h"
 #include "config.h"
 
-SolveSpaceUI SolveSpace::SS = {};
-Sketch SolveSpace::SK = {};
+namespace SolveSpace {
+
+SolveSpaceUI SS = {};
+Sketch SK = {};
 
 void SolveSpaceUI::Init() {
 #if !defined(HEADLESS)
@@ -638,7 +640,7 @@ bool SolveSpaceUI::OkayToStartNewFile() {
     using Platform::MessageDialog;
     dialog->SetType(MessageDialog::Type::QUESTION);
     dialog->SetTitle(C_("title", "Modified File"));
-    if(!SolveSpace::SS.saveFile.IsEmpty()) {
+    if(!SS.saveFile.IsEmpty()) {
         dialog->SetMessage(ssprintf(C_("dialog", "Do you want to save the changes you made to "
                                                  "the sketch “%s”?"), saveFile.raw.c_str()));
     } else {
@@ -1230,3 +1232,5 @@ Group *Sketch::GetRunningMeshGroupFor(hGroup h) {
     }
     return NULL;
 }
+
+} // namespace SolveSpace

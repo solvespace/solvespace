@@ -8,6 +8,26 @@
 #ifndef SOLVESPACE_UI_H
 #define SOLVESPACE_UI_H
 
+#include <cstdint>
+#include <memory>
+#include <set>
+#include <string>
+#include <vector>
+
+#include "dsc.h"
+#include "platform/gui.h"
+#include "sketch.h"
+
+namespace SolveSpace {
+
+class Camera;
+class Lighting;
+class Canvas;
+class UiCanvas;
+class BatchCanvas;
+class ViewportCanvas;
+class Pixmap;
+
 class Locale {
 public:
     std::string language;
@@ -864,5 +884,6 @@ public:
     void SixDofEvent(Platform::SixDofEvent event);
 };
 
+} // namespace SolveSpace
 
 #endif
