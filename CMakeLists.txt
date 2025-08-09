@@ -136,7 +136,7 @@ if(ENABLE_OPENMP)
     find_package( OpenMP REQUIRED )
     if(OPENMP_FOUND)
         add_library(slvs_openmp INTERFACE)
-        target_compile_options(slvs_openmp INTERFACE ${OpenMP_CXX_FLAGS})
+        target_compile_options(slvs_openmp INTERFACE "SHELL:${OpenMP_CXX_FLAGS}")
         target_link_libraries(slvs_openmp INTERFACE
             ${OpenMP_CXX_LIBRARIES})
         target_include_directories(slvs_openmp SYSTEM INTERFACE
