@@ -3,6 +3,8 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
+#include <cstdio>
+#include <random>
 #include <regex>
 #include <cairo.h>
 
@@ -337,19 +339,29 @@ int Test::Case::Register(Test::Case testCase) {
 int main(int argc, char **argv) {
     std::vector<std::string> args = Platform::InitCli(argc, argv);
 
-    std::regex filter(".*");
+    std::string filterPattern = ".*";
+    unsigned int seed = std::random_device{}();
     if(args.size() == 1) {
     } else if(args.size() == 2) {
-        filter = args[1];
+        filterPattern = args[1];
+    } else if(args.size() == 3) {
+        filterPattern = args[1];
+        seed = std::stoul(args[2]);
     } else {
-        fprintf(stderr, "Usage: %s [test filter regex]\n", args[0].c_str());
+        fprintf(stderr, "Usage: %s [test filter regex] [shuffle seed]\n", args[0].c_str());
         return 1;
     }
 
+    fprintf(stderr, "info: using test filter `%s' and seed %u\n", filterPattern.c_str(), seed);
+
     Platform::fontFiles.push_back(HostRoot().Join("Gentium-R.ttf"));
 
+    std::mt19937 g(seed);
+
     // Wreck order dependencies between tests!
-    std::random_shuffle(testCasesPtr->begin(), testCasesPtr->end());
+    std::shuffle(testCasesPtr->begin(), testCasesPtr->end(), g);
+
+    std::regex filter(filterPattern);
 
     auto testStartTime = std::chrono::steady_clock::now();
     size_t ranTally = 0, skippedTally = 0, checkTally = 0, failTally = 0;
