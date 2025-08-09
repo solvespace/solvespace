@@ -243,9 +243,22 @@ if(ENABLE_GUI OR ENABLE_CLI)
         set(FORCE_VENDORED_PNG      ON)
         set(FORCE_VENDORED_Freetype ON)
 
-        find_vendored_package(ZLIB zlib
-            ZLIB_LIBRARY            zlibstatic
-            ZLIB_INCLUDE_DIR        ${CMAKE_SOURCE_DIR}/extlib/zlib)
+        # HACK: This is essentially what `find_vendored_package()` does, except we also
+        # define the ZLIB::ZLIB target to be an alias for zlibstatic before calling
+        # `find_package()` in order to avoid having it defined as an imported target
+        # by the built-in FindZLIB.cmake module, which breaks libpng's png_static
+        # target that relies on ZLIB::ZLIB instead of on zlibstatic.
+        # Once zlib releases its develop branch post 1.3.1, the built-in module will not
+        # generate an imported target since we'll have proper targets, but libpng would
+        # still need to be updated to use ZLIB::ZLIBSTATIC instead of ZLIB::ZLIB, so this
+        # ugly hack will have to stay until both libraries release fixed versions.
+        add_vendored_subdirectory(extlib/zlib)
+        set(ZLIB_LIBRARY      zlibstatic CACHE INTERNAL "")
+        set(ZLIB_INCLUDE_DIR  ${CMAKE_SOURCE_DIR}/extlib/zlib CACHE INTERNAL "")
+        add_library(ZLIB::ZLIB ALIAS ${ZLIB_LIBRARY})
+        find_package(ZLIB REQUIRED)
+        set(ZLIB_FOUND        ${ZLIB_FOUND} CACHE INTERNAL "")
+
         list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
 
         # There's an issue with the zlib configuration, which doesn't provide a way to
@@ -266,10 +279,9 @@ if(ENABLE_GUI OR ENABLE_CLI)
         find_vendored_package(PNG libpng
             SKIP_INSTALL_ALL        ON
             PNG_LIBRARY             png_static
-            PNG_ARM_NEON            "off"
             PNG_SHARED              OFF
             PNG_STATIC              ON
-            PNG_EXECUTABLES         OFF
+            PNG_TOOLS               OFF
             PNG_TESTS               OFF
             PNG_FRAMEWORK           OFF
             PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
