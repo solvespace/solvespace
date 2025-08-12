@@ -30,13 +30,15 @@ else
         -G "Visual Studio 17 2022" \
         -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
         -DENABLE_OPENMP="ON" \
+        -DENABLE_SANITIZERS="ON" \
         -DCMAKE_GENERATOR_PLATFORM="Win32" \
         ..
 fi
 
 cmake --build . --config "${BUILD_TYPE}" -- -maxcpucount
 
-bin/$BUILD_TYPE/solvespace-testsuite.exe
+# Run the tests in the proper environment (required for having the ASan libraries available)
+cmake --build . --config "${BUILD_TYPE}" -t test_solvespace -- -maxcpucount
 
 if [ "$3" = "x64" ]; then
 	if [ "$2" != "openmp" ]; then
