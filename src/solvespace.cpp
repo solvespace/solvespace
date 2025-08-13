@@ -810,8 +810,14 @@ void SolveSpaceUI::MenuFile(Command id) {
             if(!dialog->RunModal()) break;
             dialog->FreezeChoices(settings, "ExportSurfaces");
 
-            StepFileWriter sfw = {};
-            sfw.ExportSurfacesTo(dialog->GetFilename());
+            if(dialog->GetFilename().HasExtension("stp") ||
+               dialog->GetFilename().HasExtension("step")) {
+                StepFileWriter sfw = {};
+                sfw.ExportSurfacesTo(dialog->GetFilename());
+            } else {
+                GeoFileWriter gfw = {};
+                gfw.ExportSurfacesTo(dialog->GetFilename());
+            }
             if (SS.OnSaveFinished) {
                 SS.OnSaveFinished(dialog->GetFilename(), false, false);
             }
