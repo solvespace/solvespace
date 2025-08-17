@@ -1,5 +1,6 @@
 /CMakeCache.txt
 /build*/
+/result
 /test/**/*.diff.*
 /test/**/*.curr.*
 *.trace

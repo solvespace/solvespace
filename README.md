@@ -140,6 +140,43 @@ interface is built as `build/bin/solvespace-cli`. It is possible to build only
 the command-line interface by passing the `-DENABLE_GUI=OFF` flag to the cmake
 invocation.
 
+### Build for [`nix`/NixOS](https://nixos.org)
+
+#### Using nix [flakes](https://nix.dev/concepts/flakes.html)
+
+You will need to enable the experimental features `nix-command` and `flakes`. You may do so by setting the `experimental-features` or `extra-experimental-features` options in `nix.conf` or at the command line.
+
+After that, build SolveSpace as follows:
+
+```sh
+nix build '.?submodules=1' # Optionally, you may add --extra-experimental-features 'nix-command flakes' if you haven't already done so in `nix.conf`.
+```
+
+You may also launch SolveSpace directly with
+```sh
+nix run '.?submodules=1' # Optionally, you may add --extra-experimental-features 'nix-command flakes' if you haven't already done so in `nix.conf`.
+```
+
+A development environment is entered by
+```sh
+nix develop '.?submodules=1' # Optionally, you may add --extra-experimental-features 'nix-command flakes' if you haven't already done so in `nix.conf`.
+
+```
+
+#### Use [nix-build](https://nix.dev/manual/nix/latest/command-ref/nix-build.html) / [nix-shell](https://nix.dev/manual/nix/latest/command-ref/nix-shell.html)
+
+You may build SolveSpace as follows:
+```sh
+nix-build
+```
+
+The resulting binaries will be available in `./result`.
+
+A development is entered by 
+```sh
+nix-shell
+```
+
 ### Building for Windows
 
 Ubuntu will require 20.04 or above. Cross-compiling with WSL is also confirmed
