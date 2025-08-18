@@ -338,6 +338,7 @@ public:
     Vector PointAt(Point2d puv) const;
     void TangentsAt(double u, double v, Vector *tu, Vector *tv, bool retry=true) const;
     Vector NormalAt(Point2d puv) const;
+    double CurvatureAt(Vector point, Vector dir);
     Vector NormalAt(double u, double v) const;
     bool LineEntirelyOutsideBbox(Vector a, Vector b, bool asSegment) const;
     void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const;
