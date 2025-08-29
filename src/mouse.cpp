@@ -1438,7 +1438,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
     Expr *e = Expr::From(s, true);
     if(e) {
         SS.UndoRemember();
-        c->expression = s;
+        c->comment = s;
         
         switch(c->type) {
             case Constraint::Type::PROJ_PT_DISTANCE:

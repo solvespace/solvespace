@@ -710,7 +710,7 @@ public:
 
     bool        reference;  // a ref dimension, that generates no eqs
     std::string comment;    // since comments are represented as constraints
-    std::string expression;
+//    std::string expression;
     
     bool Equals(const ConstraintBase &c) const {
         return type == c.type && group == c.group && workplane == c.workplane &&
