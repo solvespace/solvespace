@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 extern int FLAG;
 
 void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
@@ -591,3 +593,4 @@ void SShell::MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
     }
 }
 
+} // namespace SolveSpace

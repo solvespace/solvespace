@@ -3,7 +3,14 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
+#include <chrono>
+#include <functional>
+#include <string>
+#include <vector>
+
 #include "solvespace.h"
+
+using namespace SolveSpace;
 
 static bool RunBenchmark(std::function<void()> setupFn,
                          std::function<bool()> benchFn,

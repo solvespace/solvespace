@@ -5,6 +5,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 #define FP "%.5f"   // Floating Point coordinate precision. Since LENGTH_EPS = 1e-6 output 5 decimal places thus rounding out errors e.g. 0.999999mm
 #define CARTESIAN_POINT_FORMAT "#%d=CARTESIAN_POINT('',(" FP "," FP "," FP "));\n"
 const double PRECISION = 2*LENGTH_EPS;
@@ -716,3 +718,4 @@ void StepFileWriter::WriteWireframe() {
     curves.Clear();
 }
 
+} // namespace SolveSpace

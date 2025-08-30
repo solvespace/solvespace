@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 typedef void MenuHandler(Command id);
 using MenuKind = Platform::MenuItem::Indicator;
 struct MenuEntry {
@@ -1475,3 +1477,5 @@ bool GraphicsWindow::SuggestLineConstraint(hRequest request, Constraint::Type *t
     }
     return false;
 }
+
+} // namespace SolveSpace

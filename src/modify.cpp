@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 //-----------------------------------------------------------------------------
 // Replace constraints on oldpt with the same constraints on newpt.
 // Useful when splitting, tangent arcing, or removing bezier points.
@@ -745,3 +747,5 @@ void GraphicsWindow::SplitLinesOrCurves() {
     // All done, clean up and regenerate.
     ClearSelection();
 }
+
+} // namespace SolveSpace

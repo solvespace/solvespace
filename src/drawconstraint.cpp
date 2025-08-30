@@ -8,6 +8,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 std::string Constraint::Label() const {
     std::string result;
     if(type == Type::ANGLE) {
@@ -1378,3 +1380,5 @@ bool Constraint::HasLabel() const {
 bool Constraint::ShouldDrawExploded() const {
     return SK.GetGroup(group)->ShouldDrawExploded();
 }
+
+} // namespace SolveSpace

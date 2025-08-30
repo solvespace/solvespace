@@ -9,6 +9,8 @@
 #include <omp.h>
 #endif
 
+namespace SolveSpace {
+
 void TextWindow::ScreenChangeColor(int link, uint32_t v) {
     SS.TW.ShowEditControlWithColorPicker(13, SS.modelColor[v]);
 
@@ -587,3 +589,4 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
     return true;
 }
 
+} // namespace SolveSpace

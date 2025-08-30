@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 //-----------------------------------------------------------------------------
 // A navigation bar that always appears at the top of the window, with a
 // link to bring us back home.
@@ -979,3 +981,4 @@ void TextWindow::EditControlDone(std::string s) {
     }
 }
 
+} // namespace SolveSpace

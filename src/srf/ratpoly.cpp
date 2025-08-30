@@ -5,7 +5,9 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+#include "solvespace.h"
+
+namespace SolveSpace {
 
 // Converge it to better than LENGTH_EPS; we want two points, each
 // independently projected into uv and back, to end up equal with the
@@ -699,3 +701,4 @@ void SSurface::PointOnCurve(const SBezier *curve, double *up, double *vp)
     dbp("didn't converge (surface and curve intersecting)");
 }
 
+} // namespace SolveSpace
