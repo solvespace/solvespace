@@ -360,7 +360,8 @@ public:
         CIRCLE                 = 400,
         ARC_OF_CIRCLE          = 500,
         TTF_TEXT               = 600,
-        IMAGE                  = 700
+        IMAGE                  = 700,
+        NAMED_PARAMETER        = 800
     };
 
     Request::Type type;
@@ -709,7 +710,8 @@ public:
 
     bool        reference;  // a ref dimension, that generates no eqs
     std::string comment;    // since comments are represented as constraints
-
+//    std::string expression;
+    
     bool Equals(const ConstraintBase &c) const {
         return type == c.type && group == c.group && workplane == c.workplane &&
             valA == c.valA && valP == c.valP && ptA == c.ptA && ptB == c.ptB &&
