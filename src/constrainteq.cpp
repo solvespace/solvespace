@@ -297,6 +297,17 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
 //            exA = Expr::From(comment.c_str(), false, &SK.param, NULL);
         exA = Expr::From(comment.c_str(), false, &usedParams, &vars);
+
+        // the expression may have become invalid if a name has been deleted.
+        // return will prevent a crash but silently make the constraint fail.
+        // creating a 1=0 equation will cause a solve fail and (awkward) constraint deletion.
+        if(!exA)
+        {
+          exA = Expr::From(1.0);
+          AddEq(l, exA, 0);
+          return;
+        }
+        
         exLen = exA->Times(Expr::From(valA));
     } else {
         exA = Expr::From(valA);
