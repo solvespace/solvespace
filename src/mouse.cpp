@@ -1377,8 +1377,11 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
             if(c->type == Constraint::Type::DIAMETER && c->other)
                 value /= 2;
 
+            if(c->comment != "") {
+                editValue = c->comment;
+                break;
+            } else if(c->type == Constraint::Type::LENGTH_RATIO || c->type == Constraint::Type::ARC_ARC_LEN_RATIO || c->type == Constraint::Type::ARC_LINE_LEN_RATIO) {
             // Try showing value with default number of digits after decimal first.
-            if(c->type == Constraint::Type::LENGTH_RATIO || c->type == Constraint::Type::ARC_ARC_LEN_RATIO || c->type == Constraint::Type::ARC_LINE_LEN_RATIO) {
                 editValue = ssprintf("%.3f", value);
             } else if(c->type == Constraint::Type::ANGLE) {
                 editValue = SS.DegreeToString(value);
@@ -1431,9 +1434,32 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         return;
     }
 
-    if(Expr *e = Expr::From(s, true)) {
+    // Create a map of parameter names with handles
+    // this needs to be in a function and needs to obey scope rules
+    std::unordered_map<std::string, hParam> vars = {};        
+    for(const Request &r : SK.request ) {
+        if (r.type != Request::Type::NAMED_PARAMETER) continue;
+        // TODO: need to check if group is less or equal to this group
+        vars[r.str] = r.h.param(64);
+    }
+    int usedParams = 0;
+    
+//    if(Expr *e = Expr::From(s, true)) {
+    Expr *e = Expr::From(s, true, &usedParams, &vars);
+    if(e) {
         SS.UndoRemember();
-
+        double distance = 1.0;
+        if(usedParams != 0)
+        {
+          c->comment = s;
+          distance = SS.MmPerUnit();
+        }
+        else
+        {
+          c->comment = "";
+          distance = SS.ExprToMm(e);
+        }
+        
         switch(c->type) {
             case Constraint::Type::PROJ_PT_DISTANCE:
             case Constraint::Type::PT_LINE_DISTANCE:
@@ -1447,9 +1473,11 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
                 // negative distance.
                 bool wasNeg = (c->valA < 0);
                 if(wasNeg) {
-                    c->valA = -SS.ExprToMm(e);
+//                    c->valA = -SS.ExprToMm(e);
+                    c->valA = -distance;
                 } else {
-                    c->valA = SS.ExprToMm(e);
+//                    c->valA = SS.ExprToMm(e);
+                    c->valA = distance;
                 }
                 break;
             }
@@ -1463,7 +1491,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
                 break;
 
             case Constraint::Type::DIAMETER:
-                c->valA = fabs(SS.ExprToMm(e));
+                c->valA = fabs(distance);
 
                 // If displayed and edited as radius, convert back
                 // to diameter
@@ -1473,7 +1501,7 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
 
             default:
                 // These are always positive, and they get the units conversion.
-                c->valA = fabs(SS.ExprToMm(e));
+                c->valA = fabs(distance);
                 break;
         }
         SS.MarkGroupDirty(c->group);

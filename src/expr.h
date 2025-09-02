@@ -100,8 +100,10 @@ public:
                                        IdList<Param,hParam> *thenTry,
                                        bool foldConstants = false) const;
 
-    static Expr *Parse(const std::string &input, std::string *error);
-    static Expr *From(const std::string &input, bool popUpError);
+    static Expr* Parse(const std::string &input, std::string *error);
+//    static Expr* From(const std::string &input, bool popUpError);
+    static Expr* From(const std::string &input, bool popUpError, int* paramCount = 0,
+                    std::unordered_map<std::string, hParam> *paramNames = NULL);
 };
 
 class ExprVector {

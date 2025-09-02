@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------------
 #include <limits>
 #include "solvespace.h"
+#include "sketch.h"
 
 ExprVector ExprVector::From(Expr *x, Expr *y, Expr *z) {
     ExprVector r = { x, y, z};
@@ -643,6 +644,9 @@ public:
     std::string::const_iterator it, end;
     std::vector<Token> stack;
 
+    int *varCnt;
+    std::unordered_map<std::string, hParam> *vars;
+    
     char ReadChar();
     char PeekChar();
 
@@ -654,11 +658,12 @@ public:
 
     int Precedence(Token token);
     Token LexNumber(std::string *error);
+//    Token Lex(std::string *error);
     Token Lex(std::string *error);
     bool Reduce(std::string *error);
     bool Parse(std::string *error, size_t reduceUntil = 0);
-
-    static Expr *Parse(const std::string &input, std::string *error);
+    static Expr* Parse(const std::string &input, std::string *error, int *cntNames = 0,
+                                  std::unordered_map<std::string, hParam> *paramNames = NULL);
 };
 
 ExprParser::Token ExprParser::Token::From(TokenType type, Expr *expr) {
@@ -756,8 +761,21 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
         } else if(s == "pi") {
             t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
             t.expr->v = PI;
-        } else {
-            *error = "'" + s + "' is not a valid variable, function or constant";
+        } else { // check the named parameters
+            bool found = false;
+            if(vars) {
+                if(vars->find(s) != vars->end()) {
+                    t = Token::From(TokenType::OPERAND, Expr::Op::PARAM);
+                    hParam hp = (*vars)[s];
+                    t.expr->parh = hp;
+                    found = true;
+                    if(varCnt) *varCnt += 1;
+                }
+            }
+            if(!found)
+            {
+              *error = "'" + s + "' is not a valid variable, function or constant";
+            }
         }
     } else if(isdigit(c) || c == '.') {
         return LexNumber(error);
@@ -927,8 +945,13 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
     return true;
 }
 
-Expr *ExprParser::Parse(const std::string &input, std::string *error) {
+Expr* ExprParser::Parse(const std::string &input, std::string *error, int *cntNames,
+                                  std::unordered_map<std::string, hParam> *paramNames) {
+
     ExprParser parser;
+    parser.vars = paramNames;
+    parser.varCnt = cntNames;
+    
     parser.it  = input.cbegin();
     parser.end = input.cend();
     if(!parser.Parse(error)) return NULL;
@@ -938,13 +961,14 @@ Expr *ExprParser::Parse(const std::string &input, std::string *error) {
     return r.expr;
 }
 
-Expr *Expr::Parse(const std::string &input, std::string *error) {
+Expr* Expr::Parse(const std::string &input, std::string *error) {    
     return ExprParser::Parse(input, error);
 }
 
-Expr *Expr::From(const std::string &input, bool popUpError) {
+Expr* Expr::From(const std::string &input, bool popUpError, int* paramCount,
+                    std::unordered_map<std::string, hParam> *paramNames) {
     std::string error;
-    Expr *e = ExprParser::Parse(input, &error);
+    Expr *e = ExprParser::Parse(input, &error, paramCount, paramNames);
     if(!e) {
         dbp("Parse/lex error: %s", error.c_str());
         if(popUpError) {
