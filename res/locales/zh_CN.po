@@ -3,6 +3,7 @@
 # This file is distributed under the same license as the SolveSpace package.
 # <lomatus@163.com>, 2020.
 # <liuxilu@live.com>, 2023.
+# <lomatus@163.com>, 2025.
 # 
 # 译词一致性
 # mesh网格 grid格线
@@ -17,7 +18,7 @@
 # 
 msgid ""
 msgstr ""
-"Project-Id-Version: SolveSpace 3.0\n"
+"Project-Id-Version: SolveSpace 3.2\n"
 "Report-Msgid-Bugs-To: phkahler@gmail.com\n"
 "POT-Creation-Date: 2025-01-26 21:04+0200\n"
 "PO-Revision-Date: 2023-04-30 15:58+0800\n"
@@ -311,6 +312,9 @@ msgid ""
 "Select the end point of the arc at which you want it to be tangent to the "
 "line."
 msgstr ""
+"您选择的点不属于弧线, 弧线与线段不共享端点\n"
+"\n"
+"在样条曲线上选择一个您想要与目标线相切的端点."
 
 #: constraint.cpp:158
 msgid ""
@@ -323,8 +327,7 @@ msgstr ""
 "要相切的弧和线段必须有共同端点。约束相切之前，用\"约束 -> 在点上\"来约束它"
 "们。\n"
 "\n"
-"Alternatively select the end point of the arc at which you want it to be "
-"tangent to the line."
+"此外, 可以在曲线上选择一个您想要与目标线相切的端点."
 
 #: constraint.cpp:186
 msgid ""
@@ -334,6 +337,9 @@ msgid ""
 "Select the end point of the spline at which you want it to be tangent to the "
 "line."
 msgstr ""
+"您选中的点不是三次样条曲线端点. 样条线和线段并不共享端点.\n"
+"\n"
+"在样条曲线上选择一个您想要与目标线相切的端点."
 
 #: constraint.cpp:193
 msgid ""
@@ -346,8 +352,7 @@ msgstr ""
 "要相切的三次曲线段和线段必须有共同端点。约束相切之前，使用\"约束 -> 在点上"
 "\"来约束它们。\n"
 "\n"
-"Alternatively select the end point of the cubic spline at which you want it "
-"to be tangent to the line."
+"此外, 可以在三次样条曲线上选择一个您想要与目标线相切的端点."
 
 #: constraint.cpp:237
 msgid ""
@@ -357,6 +362,9 @@ msgid ""
 "Select the end points of both curves at which you want them to be tangent to "
 "each other."
 msgstr ""
+"您选择的端点不属于二个曲线, 曲线并不共有一个端点.\n"
+"\n"
+"在二个曲线上选择一个您想要二者相切的共有端点."
 
 #: constraint.cpp:244
 msgid ""
@@ -366,11 +374,9 @@ msgid ""
 "Alternatively select the end points of both curves at which you want the "
 "curves to be tangent."
 msgstr ""
-"要约束的曲线必须有共同端点。约束相切之前，使用\"约束 -> 在点上\"来约束它"
-"们。\n"
+"要约束的曲线必须有共同端点。约束相切之前，使用\"约束 -> 在点上\"来约束它们。\n"
 "\n"
-"Alternatively select the end points of both curves at which you want the "
-"curves to be tangent."
+"此外, 可以在二个曲线上选择相切的端点."
 
 #: constraint.cpp:303
 msgid ""
@@ -585,8 +591,7 @@ msgstr ""
 "    * 两条以上法线（平行）\n"
 "    * 一条以上线段与一条以上法线（平行）\n"
 "    * 有共同端点的两条弧/线段/贝塞尔曲线（相切）\n"
-"    * two line segments, arcs, or beziers, that do not share an endpoint and "
-"the end point(s) of the curve(s) (tangent)\n"
+"    * 无共同端点的两条线段/曲线/贝塞尔曲线, 及曲线的端点不共有 (相切)\n"
 
 #: constraint.cpp:914
 msgid ""
