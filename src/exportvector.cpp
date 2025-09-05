@@ -134,9 +134,9 @@ public:
                 polyline.flags |= 8 /* 3d polyline */;
             }
             polyline.vertlist.push_back(
-                new DRW_Vertex(start->pos.x, start->pos.y, start->pos.z, 0.0));
+                std::make_shared<DRW_Vertex>(start->pos.x, start->pos.y, start->pos.z, 0.0));
             polyline.vertlist.push_back(
-                new DRW_Vertex(next->pos.x, next->pos.y, next->pos.z, 0.0));
+                std::make_shared<DRW_Vertex>(next->pos.x, next->pos.y, next->pos.z, 0.0));
         };
 
         auto nextFunc = [&](PolylineBuilder::Vertex *next, PolylineBuilder::Edge *e) {
@@ -144,7 +144,7 @@ public:
                 polyline.flags |= 8 /* 3d polyline */;
             }
             polyline.vertlist.push_back(
-                new DRW_Vertex(next->pos.x, next->pos.y, next->pos.z, 0.0));
+                std::make_shared<DRW_Vertex>(next->pos.x, next->pos.y, next->pos.z, 0.0));
         };
 
         auto endFunc = [&]() {
@@ -370,8 +370,7 @@ public:
         assignEntityDefaults(&polyline, hs);
         for(int i = 0; i < lv.n; i++) {
             Vector *v = &lv[i];
-            DRW_Vertex *vertex = new DRW_Vertex(v->x, v->y, v->z, 0.0);
-            polyline.vertlist.push_back(vertex);
+            polyline.vertlist.push_back(std::make_shared<DRW_Vertex>(v->x, v->y, v->z, 0.0));
         }
         dxf->writePolyline(&polyline);
         lv.Clear();
@@ -411,7 +410,7 @@ public:
         makeKnotsFor(&spline);
         for(int i = 0; i <= sb->deg; i++) {
             spline.controllist.push_back(
-                new DRW_Coord(sb->ctrl[i].x, sb->ctrl[i].y, sb->ctrl[i].z));
+                std::make_shared<DRW_Coord>(sb->ctrl[i].x, sb->ctrl[i].y, sb->ctrl[i].z));
             if(isRational) spline.weightlist.push_back(sb->weight[i]);
         }
         dxf->writeSpline(&spline);

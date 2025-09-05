@@ -407,10 +407,10 @@ public:
     // outside, or coincident (with parallel or antiparallel normal) with a
     // shell.
     enum class Class : uint32_t {
-        INSIDE     = 100,
-        OUTSIDE    = 200,
-        COINC_SAME = 300,
-        COINC_OPP  = 400
+        SURF_INSIDE     = 100,
+        SURF_OUTSIDE    = 200,
+        SURF_COINC_SAME = 300,
+        SURF_COINC_OPP  = 400
     };
     static const double DOTP_TOL;
     Class ClassifyRegion(Vector edge_n, Vector inter_surf_n,

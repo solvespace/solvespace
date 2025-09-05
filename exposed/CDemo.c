@@ -27,6 +27,35 @@ static void *CheckMalloc(size_t n)
     return r;
 }
 
+void ExampleStateful()
+{
+    Slvs_hGroup g = 1;
+    Slvs_Entity wp = Slvs_AddBase2D(g);
+    Slvs_Entity p1 = Slvs_AddPoint2D(g, 0.0, 10.0, wp);
+    Slvs_Entity p2 = Slvs_AddPoint2D(g, 5.0, 20.0, wp);
+    Slvs_AddLine2D(g, p1, p2, wp);
+
+    // double w, vx, vy, vz;
+    // Slvs_MakeQuaternion(1, 0, 0, 0, 1, 0, &w, &vx, &vy, &vz);
+    // Slvs_Entity n = Slvs_AddNormal3D(g, w, vx, vy, vz);
+    // Slvs_Entity center = Slvs_AddPoint2D(g, 5.0, 5.0, wp);
+    // Slvs_Entity radius = Slvs_AddDistance(g, 50.0, wp);
+    // Slvs_Entity c1 = Slvs_AddCircle(g, n, center, radius, wp);
+
+    Slvs_Vertical(g, p1, wp, p2);
+    Slvs_SolveResult res = Slvs_SolveSketch(g, NULL);
+    printf("res: %i\n", res.result);
+    printf("dof: %i\n", res.dof);
+    double p1x = Slvs_GetParamValue(p1.param[0]);
+    double p1y = Slvs_GetParamValue(p1.param[1]);
+    double p2x = Slvs_GetParamValue(p2.param[0]);
+    double p2y = Slvs_GetParamValue(p2.param[1]);
+    printf("p1x:%.3f\n", p1x);
+    printf("p1y:%.3f\n", p1y);
+    printf("p2x:%.3f\n", p2x);
+    printf("p2y:%.3f\n", p2y);
+}
+
 /*-----------------------------------------------------------------------------
  * An example of a constraint in 3d. We create a single group, with some
  * entities and constraints.
@@ -60,9 +89,9 @@ void Example3d()
 
     /* Let's tell the solver to keep the second point as close to constant
      * as possible, instead moving the first point. */
-    sys.dragged[0] = 4;
-    sys.dragged[1] = 5;
-    sys.dragged[2] = 6;
+    sys.dragged[sys.ndragged++] = 4;
+    sys.dragged[sys.ndragged++] = 5;
+    sys.dragged[sys.ndragged++] = 6;
 
     /* Now that we have written our system, we solve. */
     Slvs_Solve(&sys, g);
@@ -251,17 +280,21 @@ void Example2d()
 
 int main()
 {
+    ExampleStateful();
+
     sys.param      = CheckMalloc(50*sizeof(sys.param[0]));
     sys.entity     = CheckMalloc(50*sizeof(sys.entity[0]));
     sys.constraint = CheckMalloc(50*sizeof(sys.constraint[0]));
+    sys.dragged    = CheckMalloc(50*sizeof(sys.dragged[0]));
 
     sys.failed  = CheckMalloc(50*sizeof(sys.failed[0]));
     sys.faileds = 50;
 
-    /*Example3d();*/
+    Example3d();
+    sys.params = sys.constraints = sys.entities = sys.ndragged = 0;
     for(;;) {
         Example2d();
-        sys.params = sys.constraints = sys.entities = 0;
+        sys.params = sys.constraints = sys.entities = sys.ndragged = 0;
         break;
     }
     return 0;

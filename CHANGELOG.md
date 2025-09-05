@@ -1,6 +1,82 @@
 Changelog
 =========
 
+3.2
+---
+
+Geometric Modelling Kernel (NURBS)
+
+* Improve the difference boolean operations.
+* Extrude groups have a checkbox to allow skewing - 3 DoF for the extrude direction.
+
+Constraints (new and improved):
+
+* Add Parallel and Perpendicular constraints for 2 faces.
+* The equal angle constraint is moved to the `N` shortcut and menu item to allow equal length (`Q`) to be applied to three or four lines.
+* Allow tangent on arcs/lines/splines without coincident endpoints.
+
+Allow these constraints to be applied to more entities at once:
+
+* More than two line Segments - equal length.
+* More than two Arcs and/or circles - equal diameter/radius.
+* Any number of Lines - horizontal or vertical.
+* More than two points - horizontal or vertical.
+* Point on face can be applied to a point and 1-3 faces at once.
+* More than two points coincident.
+
+Sketching
+
+* `Image` sketch elements are not copied in 3d groups (extrude, lathe, revolve, helix) by default. `Toggle Construction` for an image to get the old behavior.
+* New option to use radius instead of diameter for circle and arc dimensions.
+* Dimensions on arcs default to radius instead of diameter. Uncheck `use radius` in the Property Browser to get diameters.
+* `Text in True Type Font` elements now support basic kerning. Enable it with `apply kerning` in the Property Browser.
+
+Translations (now in 10 languages!)
+
+* Added Czech  cs_CZ.
+* Added Japanese ja_JP.
+* Update translation for French fr_FR, Russian ru_RU, Chinese zh_CN and Ukrainian uk_UA.
+
+Other User interface changes:
+
+* `CTRL+Tab` hides/shows the toolbar.
+* Marquee selection of line segments is now precise.
+* Speed up the animation when moving the view, for example when pressing `F2` or `F3`.
+* Pressing ESC while drawing a sketch entity now deletes the entity rather than completing it.
+* `CTRL+Shift+S` shortcut for "Save As..."
+* New option "use camera mouse navigation" for camera (instead of the default model) rotation navigation.
+* Sketches can be displayed with only dimensions visible (the button controlling visibility of constraints in the Property Browser has a new state).
+* More entity types described in the text screens.
+* A new option to `display the full path in the title bar`; or not.
+* Handle smooth scrolling (mouse wheel zoom) on GTK/Linux.
+* The embedded vector font (used for the UI and labels):
+	* now has many new and improved Chinese characters
+	* includes the Greek alphabet
+	* improved "є"
+	* added superscript 5 "⁵"
+	* fixed crash when typing "£"
+* The animation speed when changing the 3D view is configurable.
+* Add an 'only unconstrained' option on the Property Browser home screen that shows only unconstrained groups.
+
+
+Other
+
+* STEP files export as solid model(s).
+* Merged and improved the experimental Web version (Emscripten port).
+* Better Flatpack support.
+* Several bug fixes and usability improvements.
+* Allow 32 bit SolveSpace to access up to 4GB of RAM to allow working on larger projects.
+
+Bug fixes:
+
+* `Paste Transformed` on elements that contain a point-line distance does not flip any more.
+* Fix saving assemblies when opened with a relative path on the command line.
+* Windows: The Property Browser remains visible when going full screen (CTRL-F11).
+* Fix crash when linking .STL and .EMN files with extensions in capital letters.
+* Mac: Don't crash on file ops without changing dir.
+* Fix incorrect arc handling when linking IDF files.
+* Windows: avoid (sometimes) showing multiple messages when deleting an entity causes other entities to be removed.
+
 3.1
 ---
 

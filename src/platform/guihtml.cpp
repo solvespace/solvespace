@@ -6,10 +6,21 @@
 #include <emscripten.h>
 #include <emscripten/val.h>
 #include <emscripten/html5.h>
+#include <emscripten/bind.h>
 #include "config.h"
 #include "solvespace.h"
 
 using namespace emscripten;
+
+EMSCRIPTEN_BINDINGS(solvespace) {
+    emscripten::class_<std::function<void()>>("VoidFunctor")
+        .constructor<>()
+        .function("opcall", &std::function<void()>::operator());
+
+    emscripten::class_<std::function<void(val)>>("Void1Functor")
+        .constructor<>()
+        .function("opcall", &std::function<void(val)>::operator());
+}
 
 namespace SolveSpace {
 namespace Platform {
@@ -45,32 +56,14 @@ static void HandleError(const char *file, int line, const char *function, const 
     FatalError(message);
 }
 
-static val Wrap(const std::string& str) {
-    // FIXME(emscripten): a nicer way to do this?
-    EM_ASM($Wrap$ret = UTF8ToString($0), str.c_str());
-    return val::global("window")["$Wrap$ret"];
+static val Wrap(const std::function<void()> &functor) {
+    return val(functor)["opcall"].call<val>("bind", val(functor));
 }
 
-static std::string Unwrap(val emStr) {
-    // FIXME(emscripten): a nicer way to do this?
-    val emArray = val::global("window").call<val>("intArrayFromString", emStr, true) ;
-    val::global("window").set("$Wrap$input", emArray);
-    char *strC = (char *)EM_ASM_INT(return allocate($Wrap$input, ALLOC_NORMAL));
-    std::string str(strC, emArray["length"].as<int>());
-    free(strC);
-    return str;
-}
-
-static void CallStdFunction(void *data) {
-    std::function<void()> *func = (std::function<void()> *)data;
-    if(*func) {
-        (*func)();
-    }
-}
-
-static val Wrap(std::function<void()> *func) {
-    EM_ASM($Wrap$ret = Module.dynCall_vi.bind(null, $0, $1), CallStdFunction, func);
-    return val::global("window")["$Wrap$ret"];
+static void RegisterEventListener(const val &target, std::string event, std::function<void()> functor) {
+    std::function<void(val)> wrapper = [functor](val) { if(functor) functor(); };
+    val wrapped = val(wrapper)["opcall"].call<val>("bind", val(wrapper));
+    target.call<void>("addEventListener", event, wrapped);
 }
 
 //-----------------------------------------------------------------------------
@@ -92,37 +85,38 @@ void FatalError(const std::string &message) {
 class SettingsImplHtml : public Settings {
 public:
     void FreezeInt(const std::string &key, uint32_t value) {
-        val::global("localStorage").call<void>("setItem", Wrap(key), value);
+        val::global("localStorage").call<void>("setItem", key, value);
     }
 
     uint32_t ThawInt(const std::string &key, uint32_t defaultValue = 0) {
-        val value = val::global("localStorage").call<val>("getItem", Wrap(key));
+        val value = val::global("localStorage").call<val>("getItem", key);
         if(value == val::null())
         return defaultValue;
         return val::global("parseInt")(value, 0).as<int>();
     }
 
     void FreezeFloat(const std::string &key, double value) {
-        val::global("localStorage").call<void>("setItem", Wrap(key), value);
+        val::global("localStorage").call<void>("setItem", key, value);
     }
 
     double ThawFloat(const std::string &key, double defaultValue = 0.0) {
-        val value = val::global("localStorage").call<val>("getItem", Wrap(key));
+        val value = val::global("localStorage").call<val>("getItem", key);
         if(value == val::null())
         return defaultValue;
         return val::global("parseFloat")(value).as<double>();
     }
 
     void FreezeString(const std::string &key, const std::string &value) {
-        val::global("localStorage").call<void>("setItem", Wrap(key), value);
+        val::global("localStorage").call<void>("setItem", key, value);
     }
 
     std::string ThawString(const std::string &key,
                            const std::string &defaultValue = "") {
-        val value = val::global("localStorage").call<val>("getItem", Wrap(key));
-        if(value == val::null())
-        return defaultValue;
-        return Unwrap(value);
+        val value = val::global("localStorage").call<val>("getItem", key);
+        if(value == val::null()) {
+            return defaultValue;
+        }
+        return value.as<std::string>();
     }
 };
 
@@ -246,22 +240,25 @@ public:
 
         if(mnemonics) {
             val::global("window").call<void>("setLabelWithMnemonic", menuItem->htmlMenuItem,
-                                             Wrap(label));
+                                             label);
         } else {
             val htmlLabel = val::global("document").call<val>("createElement", val("span"));
             htmlLabel["classList"].call<void>("add", val("label"));
-            htmlLabel.set("innerText", Wrap(label));
+            htmlLabel.set("innerText", label);
             menuItem->htmlMenuItem.call<void>("appendChild", htmlLabel);
         }
-        menuItem->htmlMenuItem.call<void>("addEventListener", val("trigger"),
-                                          Wrap(&menuItem->onTrigger));
+        RegisterEventListener(menuItem->htmlMenuItem, "trigger", [menuItem]() {
+            if(menuItem->onTrigger) {
+                menuItem->onTrigger();
+            }
+        });
         htmlMenu.call<void>("appendChild", menuItem->htmlMenuItem);
         return menuItem;
     }
 
     std::shared_ptr<Menu> AddSubMenu(const std::string &label) override {
         val htmlMenuItem = val::global("document").call<val>("createElement", val("li"));
-        val::global("window").call<void>("setLabelWithMnemonic", htmlMenuItem, Wrap(label));
+        val::global("window").call<void>("setLabelWithMnemonic", htmlMenuItem, label);
         htmlMenuItem["classList"].call<void>("add", val("has-submenu"));
         htmlMenu.call<void>("appendChild", htmlMenuItem);
 
@@ -319,7 +316,7 @@ public:
 
     std::shared_ptr<Menu> AddSubMenu(const std::string &label) override {
         val htmlMenuItem = val::global("document").call<val>("createElement", val("li"));
-        val::global("window").call<void>("setLabelWithMnemonic", htmlMenuItem, Wrap(label));
+        val::global("window").call<void>("setLabelWithMnemonic", htmlMenuItem, label);
         htmlMenuBar.call<void>("appendChild", htmlMenuItem);
 
         std::shared_ptr<MenuImplHtml> subMenu = std::make_shared<MenuImplHtml>();
@@ -576,7 +573,6 @@ public:
     val htmlEditor;
     val scrollbarHelper;
 
-    std::function<void()> editingDoneFunc;
     std::shared_ptr<MenuBarImplHtml> menuBar;
 
     WindowImplHtml(val htmlContainer, std::string emCanvasSel) :
@@ -586,12 +582,12 @@ public:
     {
         htmlEditor["classList"].call<void>("add", val("editor"));
         htmlEditor["style"].set("display", "none");
-        editingDoneFunc = [this] {
+        auto editingDoneFunc = [this] {
             if(onEditingDone) {
-                onEditingDone(Unwrap(htmlEditor["value"]));
+                onEditingDone(htmlEditor["value"].as<std::string>());
             }
         };
-        htmlEditor.call<void>("addEventListener", val("trigger"), Wrap(&editingDoneFunc));
+        RegisterEventListener(htmlEditor, "trigger", editingDoneFunc);
         htmlContainer["parentElement"].call<void>("appendChild", htmlEditor);
 
         std::string scrollbarElementQuery = emCanvasSel + "scrollbar";
@@ -612,7 +608,7 @@ public:
                 }
                 this->Invalidate();
             };
-            this->scrollbarHelper.set("onScrollCallback", Wrap(&onScrollCallback));
+            this->scrollbarHelper.set("onScrollCallback", Wrap(onScrollCallback));
         }
 
         sscheck(emscripten_set_resize_callback(
@@ -905,7 +901,7 @@ public:
         dbp("Canvas %s: got context %d", emCanvasSel.c_str(), emContext);
     }
 
-    static int ContextLostCallback(int eventType, const void *reserved, void *data) {
+    static bool ContextLostCallback(int eventType, const void *reserved, void *data) {
         WindowImplHtml *window = (WindowImplHtml *)data;
         dbp("Canvas %s: context lost", window->emCanvasSel.c_str());
         window->emContext = 0;
@@ -916,7 +912,7 @@ public:
         return EM_TRUE;
     }
 
-    static int ContextRestoredCallback(int eventType, const void *reserved, void *data) {
+    static bool ContextRestoredCallback(int eventType, const void *reserved, void *data) {
         WindowImplHtml *window = (WindowImplHtml *)data;
         dbp("Canvas %s: context restored", window->emCanvasSel.c_str());
         window->SetupWebGLContext();
@@ -1045,7 +1041,7 @@ public:
                     double width, double height) override {
         val htmlCanvas =
             val::global("document").call<val>("querySelector", emCanvasSel);
-        htmlCanvas.set("title", Wrap(text));
+        htmlCanvas.set("title", text);
     }
 
     bool IsEditorVisible() override {
@@ -1063,7 +1059,7 @@ public:
         htmlEditor["style"].set("fontSize", std::to_string(fontHeight) + "px");
         htmlEditor["style"].set("minWidth", std::to_string(minWidth) + "px");
         htmlEditor["style"].set("fontFamily", isMonospace ? "monospace" : "sans");
-        htmlEditor.set("value", Wrap(text));
+        htmlEditor.set("value", text);
         htmlEditor.call<void>("focus");
     }
 
@@ -1165,8 +1161,6 @@ public:
     val htmlDescription;
     val htmlButtons;
 
-    std::vector<std::function<void()>> responseFuncs;
-
     bool is_shown = false;
 
     Response latestResponse = Response::NONE;
@@ -1196,17 +1190,17 @@ public:
     }
 
     void SetMessage(std::string message) {
-        htmlMessage.set("innerText", Wrap(message));
+        htmlMessage.set("innerText", message);
     }
 
     void SetDescription(std::string description) {
-        htmlDescription.set("innerText", Wrap(description));
+        htmlDescription.set("innerText", description);
     }
 
     void AddButton(std::string label, Response response, bool isDefault = false) {
         val htmlButton = val::global("document").call<val>("createElement", val("div"));
         htmlButton["classList"].call<void>("add", val("button"));
-        val::global("window").call<void>("setLabelWithMnemonic", htmlButton, Wrap(label));
+        val::global("window").call<void>("setLabelWithMnemonic", htmlButton, label);
         if(isDefault) {
             htmlButton["classList"].call<void>("add", val("default"), val("selected"));
         }
@@ -1223,14 +1217,7 @@ public:
             
             this->is_shown = false;
         };
-        if (responseFuncs.size() == 0) {
-            //FIXME(emscripten): I don't know why but the item in the head of responseFuncs cannot call.
-            // So add dummy item
-            responseFuncs.push_back([]{ });
-        }
-        responseFuncs.push_back(responseFunc);
-        std::function<void()>* callback = &responseFuncs.back();
-        htmlButton.call<void>("addEventListener", val("trigger"), Wrap(callback));
+        RegisterEventListener(htmlButton, "trigger", responseFunc);
 
         htmlButtons.call<void>("appendChild", htmlButton);
     }
@@ -1270,7 +1257,7 @@ MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
 // File dialogs
 //-----------------------------------------------------------------------------
 
-// In emscripten psuedo filesystem, all userdata will be stored in this directory.
+// In emscripten pseudo filesystem, all userdata will be stored in this directory.
 static std::string basePathInFilesystem = "/data/";
 
 
@@ -1364,7 +1351,7 @@ public:
     }
 
     void FreezeChoices(SettingsRef settings, const std::string &key) override {
-        
+        //FIXME(emscripten): implement
     }
 
     void ThawChoices(SettingsRef settings, const std::string &key) override {
@@ -1422,20 +1409,18 @@ std::vector<Platform::Path> GetFontFiles() {
 }
 
 void OpenInBrowser(const std::string &url) {
-    val::global("window").call<void>("open", Wrap(url));
+    val::global("window").call<void>("open", url);
 }
 
 
 void OnSaveFinishedCallback(const Platform::Path& filename, bool is_saveAs, bool is_autosave) {
     dbp("OnSaveFinished(): %s, is_saveAs=%d, is_autosave=%d\n", filename.FileName().c_str(), is_saveAs, is_autosave);
-    std::string filename_str = filename.raw;
-    EM_ASM(saveFileDone(UTF8ToString($0), $1, $2), filename_str.c_str(), is_saveAs, is_autosave);
+    val::global("window").call<void>("saveFileDone", filename.raw, is_saveAs, is_autosave);
 }
 
 std::vector<std::string> InitGui(int argc, char **argv) {
-    static std::function<void()> onBeforeUnload = std::bind(&SolveSpaceUI::Exit, &SS);
-    val::global("window").call<void>("addEventListener", val("beforeunload"),
-                                     Wrap(&onBeforeUnload));
+    std::function<void()> onBeforeUnload = std::bind(&SolveSpaceUI::Exit, &SS);
+    RegisterEventListener(val::global("window"), "beforeunload", onBeforeUnload);
 
     // dbp("Set onSaveFinished");
     SS.OnSaveFinished = OnSaveFinishedCallback;

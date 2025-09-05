@@ -27,6 +27,8 @@ apps:
     desktop: solvespace.desktop
     extensions: [gnome]
     plugs: [opengl, unity7, home, removable-media, gsettings, network]
+    environment:
+      GTK_USE_PORTAL: "0"
   cli:
     command: usr/bin/solvespace-cli
     extensions: [gnome]

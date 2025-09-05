@@ -180,19 +180,43 @@ bool Entity::IsVisible() const {
     return true;
 }
 
+static bool PtCanDrag(hEntity pt) {
+    Entity* p = SK.GetEntity(pt);
+    // a numeric copy can not move
+    if(p->type == Entity::Type::POINT_N_COPY) return false;
+    // these transforms applied zero times can not be moved
+    if(((p->type == Entity::Type::POINT_N_TRANS) ||
+       (p->type == Entity::Type::POINT_N_ROT_AA) ||
+       (p->type == Entity::Type::POINT_N_ROT_AXIS_TRANS))
+        && (p->timesApplied == 0)) return false;
+    return true;
+}
+
 // entities that were created via some copy types will not be
 // draggable with the mouse. We identify the undraggables here
 bool Entity::CanBeDragged() const {
-    // a numeric copy can not move
-    if(type == Entity::Type::POINT_N_COPY) return false;
-    // these transforms applied zero times can not be moved
-    if(((type == Entity::Type::POINT_N_TRANS) ||
-       (type == Entity::Type::POINT_N_ROT_AA) ||
-       (type == Entity::Type::POINT_N_ROT_AXIS_TRANS))
-        && (timesApplied == 0)) return false;
+    if(IsPoint()) {
+        if(!PtCanDrag(h))
+            return false;
+        // are we constrained pt-on-point from a previous group?
+        for(const Constraint &cc : SK.constraint) {
+            if(cc.group == group && cc.type == ConstraintBase::Type::POINTS_COINCIDENT) {
+                if(cc.ptA == h) {
+                    if((SK.GetEntity(cc.ptB)->group < group)
+                      || (!PtCanDrag(cc.ptB)))
+                      return false;
+                }
+                if(cc.ptB == h) {
+                    if((SK.GetEntity(cc.ptA)->group < group)
+                      || (!PtCanDrag(cc.ptA)))
+                      return false;
+                }
+            }
+        }
+    }
     // for these types of entities the first point will indicate draggability
     if(HasEndpoints() || type == Entity::Type::CIRCLE) {
-        return SK.GetEntity(point[0])->CanBeDragged();
+        return PtCanDrag(point[0]);
     }
     // if we're not certain it can't be dragged then default to true
     return true;
@@ -451,7 +475,8 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
             Vector v = topLeft.Minus(botLeft);
             Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
 
-            SS.fonts.PlotString(font, str, sbl, botLeft, u, v);
+            // `extraPoints` is storing kerning boolean
+            SS.fonts.PlotString(font, str, sbl, extraPoints, botLeft, u, v);
             break;
         }
 

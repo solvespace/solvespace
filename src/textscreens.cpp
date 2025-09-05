@@ -57,11 +57,13 @@ void TextWindow::ScreenToggleGroupShown(int link, uint32_t v) {
     SS.GenerateAll();
 }
 void TextWindow::ScreenShowGroupsSpecial(int link, uint32_t v) {
-    bool state = link == 's';
     for(hGroup hg : SK.groupOrder) {
         Group *g = SK.GetGroup(hg);
-
-        g->visible = state;
+        switch(link) {
+        case 's': g->visible = true; break;
+        case 'c': g->visible = g->solved.dof != 0; break;
+        case 'h': g->visible = false; break;
+        }
     }
     SS.GW.persistentDirty = true;
 }
@@ -159,7 +161,8 @@ void TextWindow::ShowListOfGroups() {
         backgroundParity = !backgroundParity;
     }
 
-    Printf(true,  "  %Fl%Ls%fshow all%E / %Fl%Lh%fhide all%E",
+    Printf(true, "  %Fl%Ls%fshow all%E / %Fl%Lc%fonly unconstrained%E / %Fl%Lh%fhide all%E",
+        &(TextWindow::ScreenShowGroupsSpecial),
         &(TextWindow::ScreenShowGroupsSpecial),
         &(TextWindow::ScreenShowGroupsSpecial));
     Printf(true,  "  %Fl%Ls%fline styles%E /"
@@ -194,8 +197,7 @@ void TextWindow::ScreenHoverRequest(int link, uint32_t v) {
     SS.GW.hover.emphasized = true;
 }
 void TextWindow::ScreenHoverConstraint(int link, uint32_t v) {
-    if(!SS.GW.showConstraints) return;
-
+    if( SS.GW.showConstraints == GraphicsWindow::ShowConstraintMode::SCM_NOSHOW ) return;
     hConstraint hc = { v };
     SS.GW.hover.Clear();
     SS.GW.hover.constraint = hc;
@@ -227,8 +229,36 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
     switch(link) {
-        case 's': g->subtype = Group::Subtype::ONE_SIDED; break;
-        case 'S': g->subtype = Group::Subtype::TWO_SIDED; break;
+        case 's':
+            if(g->subtype == Group::Subtype::TWO_SIDED)
+                g->subtype = Group::Subtype::ONE_SIDED;
+            if(g->subtype == Group::Subtype::TWO_SKEWED)
+                g->subtype = Group::Subtype::ONE_SKEWED;
+            break;
+        case 'S':
+            if(g->subtype == Group::Subtype::ONE_SIDED)
+                g->subtype = Group::Subtype::TWO_SIDED;
+            if(g->subtype == Group::Subtype::ONE_SKEWED)
+                g->subtype = Group::Subtype::TWO_SKEWED;
+            break;
+        case 'w':
+            if(g->subtype == Group::Subtype::ONE_SIDED) {
+                g->subtype = Group::Subtype::ONE_SKEWED;
+                break;
+            }
+            if(g->subtype == Group::Subtype::TWO_SIDED) {
+                g->subtype = Group::Subtype::TWO_SKEWED;
+                break;
+            }
+            if(g->subtype == Group::Subtype::ONE_SKEWED) {
+                g->subtype = Group::Subtype::ONE_SIDED;
+                break;
+            }
+            if(g->subtype == Group::Subtype::TWO_SKEWED) {
+                g->subtype = Group::Subtype::TWO_SIDED;
+                break;
+            }
+            break;
 
         case 'k': g->skipFirst = true; break;
         case 'K': g->skipFirst = false; break;
@@ -377,15 +407,34 @@ void TextWindow::ShowGroupInfo() {
         }
         Printf(true, " %Ft%s%E", s);
 
-        bool one = (g->subtype == Group::Subtype::ONE_SIDED);
+        bool one  = ((g->subtype == Group::Subtype::ONE_SIDED) ||
+                     (g->subtype == Group::Subtype::ONE_SKEWED));
+        bool two  = ((g->subtype == Group::Subtype::TWO_SIDED) ||
+                     (g->subtype == Group::Subtype::TWO_SKEWED));
+        bool skew = ((g->subtype == Group::Subtype::ONE_SKEWED) ||
+                     (g->subtype == Group::Subtype::TWO_SKEWED));
+        
+        if (g->type == Group::Type::EXTRUDE) {
+        Printf(false,
+            "%Ba   %f%Ls%Fd%s one-sided%E  "
+                  "%f%LS%Fd%s two-sided%E  "
+                  "%f%Lw%Fd%s skewed%E",
+            &TextWindow::ScreenChangeGroupOption,
+            one ? RADIO_TRUE : RADIO_FALSE,
+            &TextWindow::ScreenChangeGroupOption,
+            two ? RADIO_TRUE : RADIO_FALSE,
+            &TextWindow::ScreenChangeGroupOption,
+            skew ? CHECK_TRUE : CHECK_FALSE);
+        } else {
         Printf(false,
             "%Ba   %f%Ls%Fd%s one-sided%E  "
                   "%f%LS%Fd%s two-sided%E",
             &TextWindow::ScreenChangeGroupOption,
             one ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
-            !one ? RADIO_TRUE : RADIO_FALSE);
-
+            two ? RADIO_TRUE : RADIO_FALSE);        
+        }
+        
         if(g->type == Group::Type::ROTATE || g->type == Group::Type::TRANSLATE) {
             if(g->subtype == Group::Subtype::ONE_SIDED) {
                 bool skip = g->skipFirst;

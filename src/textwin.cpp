@@ -3,6 +3,7 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
+#include <new>
 #include "solvespace.h"
 
 namespace SolveSpace {
@@ -57,7 +58,7 @@ public:
                                /*outlineColor=*/{});
         }
         if(!*(variable)) {
-            int s = 0, f = 24;
+            int s = 0, f = 23;
             RgbaColor color = { 255, 0, 0, 150 };
             uiCanvas->DrawLine(x+s, y-s, x+f, y-f, color, 2);
             uiCanvas->DrawLine(x+s, y-f, x+f, y-s, color, 2);
@@ -83,69 +84,59 @@ public:
     }
 };
 
-class OccludedLinesButton : public Button {
+#include <array>
+class TriStateButton : public Button {
 public:
-    std::shared_ptr<Pixmap> visibleIcon;
-    std::shared_ptr<Pixmap> stippledIcon;
-    std::shared_ptr<Pixmap> invisibleIcon;
+    static const size_t tri = 3;
+
+    TriStateButton(unsigned *variable, const std::array<unsigned, tri> &states,
+                   const std::array<std::string, tri> &tooltips,
+                   const std::array<std::string, tri> &iconNames)
+        : variable(variable), states(states), tooltips(tooltips), iconNames(iconNames) {
+    }
+
+    unsigned *const variable;
+    const std::array<unsigned, tri> states;
+    const std::array<std::string, tri> tooltips;
+    const std::array<std::string, tri> iconNames;
+    std::shared_ptr<Pixmap> icons[tri];
 
     std::string Tooltip() override {
-        switch(SS.GW.drawOccludedAs) {
-            case GraphicsWindow::DrawOccludedAs::INVISIBLE:
-                return "Stipple occluded lines";
-
-            case GraphicsWindow::DrawOccludedAs::STIPPLED:
-                return "Draw occluded lines";
-
-            case GraphicsWindow::DrawOccludedAs::VISIBLE:
-                return "Don't draw occluded lines";
-
-            default: ssassert(false, "Unexpected mode");
-        }
+        for(size_t k = 0; k < tri; ++k)
+            if(*variable == states[k])
+                return tooltips[k];
+        ssassert(false, "Unexpected mode");
     }
 
     void Draw(UiCanvas *uiCanvas, int x, int y, bool asHovered) override {
-        if(visibleIcon == NULL) {
-            visibleIcon = LoadPng("icons/text-window/occluded-visible.png");
-        }
-        if(stippledIcon == NULL) {
-            stippledIcon = LoadPng("icons/text-window/occluded-stippled.png");
-        }
-        if(invisibleIcon == NULL) {
-            invisibleIcon = LoadPng("icons/text-window/occluded-invisible.png");
-        }
+        for(size_t k = 0; k < tri; ++k)
+            if(icons[k] == nullptr)
+                icons[k] = LoadPng("icons/text-window/" + iconNames[k] + ".png");
 
         std::shared_ptr<Pixmap> icon;
-        switch(SS.GW.drawOccludedAs) {
-            case GraphicsWindow::DrawOccludedAs::INVISIBLE: icon = invisibleIcon; break;
-            case GraphicsWindow::DrawOccludedAs::STIPPLED:  icon = stippledIcon;  break;
-            case GraphicsWindow::DrawOccludedAs::VISIBLE:   icon = visibleIcon;   break;
-        }
+        for(size_t k = 0; k < tri; ++k)
+            if(*variable == states[k]) {
+                icon = icons[k];
+                break;
+            }
 
         uiCanvas->DrawPixmap(icon, x, y - 24);
         if(asHovered) {
             uiCanvas->DrawRect(x - 2, x + 26, y + 2, y - 26,
-                               /*fillColor=*/{ 255, 255, 0, 75 },
+                               /*fillColor=*/{255, 255, 0, 75},
                                /*outlineColor=*/{});
         }
     }
 
+
     int AdvanceWidth() override { return 32; }
 
     void Click() override {
-        switch(SS.GW.drawOccludedAs) {
-            case GraphicsWindow::DrawOccludedAs::INVISIBLE:
-                SS.GW.drawOccludedAs = GraphicsWindow::DrawOccludedAs::STIPPLED;
+        for(size_t k = 0; k < tri; ++k)
+            if(*variable == states[k]) {
+                *variable = states[(k + 1) % tri];
                 break;
-
-            case GraphicsWindow::DrawOccludedAs::STIPPLED:
-                SS.GW.drawOccludedAs = GraphicsWindow::DrawOccludedAs::VISIBLE;
-                break;
-
-            case GraphicsWindow::DrawOccludedAs::VISIBLE:
-                SS.GW.drawOccludedAs = GraphicsWindow::DrawOccludedAs::INVISIBLE;
-                break;
-        }
+            }
 
         SS.GenerateAll();
         SS.GW.Invalidate();
@@ -163,8 +154,13 @@ static ShowHideButton pointsButton =
     { &(SS.GW.showPoints),       "point",         "points"                          };
 static ShowHideButton constructionButton =
     { &(SS.GW.showConstruction), "construction",  "construction entities"           };
-static ShowHideButton constraintsButton =
-    { &(SS.GW.showConstraints),  "constraint",    "constraints and dimensions"      };
+static TriStateButton constraintsButton  = {
+    (unsigned *)(&(SS.GW.showConstraints)),
+    {(unsigned)GraphicsWindow::ShowConstraintMode::SCM_SHOW_ALL,
+     (unsigned)GraphicsWindow::ShowConstraintMode::SCM_SHOW_DIM,
+     (unsigned)GraphicsWindow::ShowConstraintMode::SCM_NOSHOW},
+    {"Show only dimensions", "Hide constraints and dimensions", "Show constraints and dimensions"},
+    {"constraint", "constraint-dimo", "constraint-wo"}};
 static FacesButton facesButton;
 static ShowHideButton shadedButton =
     { &(SS.GW.showShaded),       "shaded",        "shaded view of solid model"      };
@@ -174,7 +170,13 @@ static ShowHideButton outlinesButton =
     { &(SS.GW.showOutlines),     "outlines",      "outline of solid model"          };
 static ShowHideButton meshButton =
     { &(SS.GW.showMesh),         "mesh",          "triangle mesh of solid model"    };
-static OccludedLinesButton occludedLinesButton;
+static TriStateButton occludedLinesButton = {
+    (unsigned *)(&(SS.GW.drawOccludedAs)),
+    {(unsigned)GraphicsWindow::DrawOccludedAs::INVISIBLE,
+     (unsigned)GraphicsWindow::DrawOccludedAs::STIPPLED,
+     (unsigned)GraphicsWindow::DrawOccludedAs::VISIBLE},
+    {"Stipple occluded lines", "Draw occluded lines", "Don't draw occluded lines"},
+    {"occluded-invisible", "occluded-stippled", "occluded-visible"}};
 
 static Button *buttons[] = {
     &workplanesButton,
@@ -282,16 +284,17 @@ void TextWindow::Init() {
 void TextWindow::ClearSuper() {
     // Ugly hack, but not so ugly as the next line
     Platform::WindowRef oldWindow = std::move(window);
-    std::shared_ptr<ViewportCanvas> oldCanvas = canvas;
+    std::shared_ptr<ViewportCanvas> oldCanvas = std::move(canvas);
 
     // Cannot use *this = {} here because TextWindow instances
     // are 2.4MB long; this causes stack overflows in prologue
     // when built with MSVC, even with optimizations.
-    memset(this, 0, sizeof(*this));
+    this->~TextWindow();
+    new(this) TextWindow();
 
     // Return old canvas
     window = std::move(oldWindow);
-    canvas = oldCanvas;
+    canvas = std::move(oldCanvas);
 
     HideEditControl();
 
@@ -625,7 +628,7 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
         hoveredButton = NULL;
     }
 
-    double hoveredX, hoveredY;
+    double hoveredX = 0, hoveredY = 0;
     for(Button *button : buttons) {
         if(how == PAINT) {
             button->Draw(uiCanvas, x, y, (button == hoveredButton));

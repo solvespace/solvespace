@@ -172,6 +172,7 @@ enum class SolveResult : uint32_t {
     TOO_MANY_UNKNOWNS        = 20
 };
 
+using ParamSet = std::unordered_set<hParam, HandleHasher<hParam>>;
 
 #include "sketch.h"
 #include "ui.h"
@@ -179,9 +180,15 @@ enum class SolveResult : uint32_t {
 
 
 // Utility functions that are provided in the platform-independent code.
-class utf8_iterator : std::iterator<std::forward_iterator_tag, char32_t> {
+class utf8_iterator {
     const char *p, *n;
 public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = char32_t;
+    using difference_type = std::ptrdiff_t;
+    using pointer = char32_t*;
+    using reference = char32_t&;
+
     utf8_iterator(const char *p) : p(p), n(NULL) {}
     bool           operator==(const utf8_iterator &i) const { return p==i.p; }
     bool           operator!=(const utf8_iterator &i) const { return p!=i.p; }
@@ -223,7 +230,7 @@ public:
 
     // A list of parameters that are being dragged; these are the ones that
     // we should put as close as possible to their initial positions.
-    List<hParam>                    dragged;
+    ParamSet                        dragged;
 
     enum {
         // In general, the tag indicates the subsys that a variable/equation
@@ -250,7 +257,6 @@ public:
             Eigen::SparseMatrix<double> num;
         } A;
 
-        Eigen::VectorXd scale;
         Eigen::VectorXd X;
 
         struct {
@@ -262,7 +268,7 @@ public:
 
     static const double CONVERGE_TOLERANCE;
     int CalculateRank();
-    bool TestRank(int *dof = NULL);
+    bool TestRank(int *dof = NULL, int *rank = NULL);
     static bool SolveLinearSystem(const Eigen::SparseMatrix<double> &A,
                                   const Eigen::VectorXd &B, Eigen::VectorXd *X);
     bool SolveLeastSquares();
@@ -273,16 +279,15 @@ public:
     void WriteEquationsExceptFor(hConstraint hc, Group *g);
     void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad,
                                         bool forceDofCheck);
-    void SolveBySubstitution();
+    SubstitutionMap SolveBySubstitution();
 
     bool IsDragged(hParam p);
 
-    bool NewtonSolve(int tag);
+    bool NewtonSolve();
 
     void MarkParamsFree(bool findFree);
 
-    SolveResult Solve(Group *g, int *rank = NULL, int *dof = NULL,
-                      List<hConstraint> *bad = NULL,
+    SolveResult Solve(Group *g, int *dof = NULL, List<hConstraint> *bad = NULL,
                       bool andFindBad = false, bool andFindFree = false,
                       bool forceDofCheck = false);
 
@@ -291,15 +296,23 @@ public:
                           bool andFindBad = false, bool andFindFree = false);
 
     void Clear();
-    Param *GetLastParamSubstitution(Param *p);
-    void SubstituteParamsByLast(Expr *e);
-    void SortSubstitutionByDragged(Param *p);
 };
 
 #include "ttf.h"
 
 class StepFileWriter {
 public:
+    bool HasCartesianPointAnAlias(int number, Vector v, int vertex,
+                                  bool *vertex_has_alias = nullptr);
+    int InsertPoint(int number);
+    int InsertVertex(int number);
+    bool HasBSplineCurveAnAlias(int number, std::vector<int> points);
+    int InsertCurve(int number);
+    bool HasEdgeCurveAnAlias(int number, int prevFinish, int thisFinish, int curveId,
+                        bool *flip = nullptr);
+    int InsertEdgeCurve(int number);
+    bool HasOrientedEdgeAnAlias(int number, int edgeCurveId, bool flip);
+    int InsertOrientedEdge(int number);
     void ExportSurfacesTo(const Platform::Path &filename);
     void WriteHeader();
     void WriteProductHeader();
@@ -313,6 +326,50 @@ public:
     List<int> advancedFaces;
     FILE *f;
     int id;
+
+    // Structs to keep track of duplicated entities.
+    // Basic alias.
+    typedef struct {
+        int reference;
+        std::vector<int> aliases;
+    } alias_t;
+
+    // Cartesian points.
+    typedef struct {
+        alias_t alias;
+        alias_t vertexAlias;
+        Vector v;
+    } pointAliases_t;
+
+    // Curves.
+    typedef struct {
+        alias_t alias;
+        std::vector<int> memberPoints;
+        RgbaColor color;
+    } curveAliases_t;
+
+    // Edges.
+    typedef struct {
+        alias_t alias;
+        int prevFinish;
+        int thisFinish;
+        int curveId;
+        RgbaColor color;
+    } edgeCurveAliases_t;
+
+    // Edges.
+    typedef struct {
+        alias_t alias;
+        int edgeCurveId;
+        bool flip;
+    } orientedEdgeAliases_t;
+
+    std::vector<pointAliases_t> pointAliases;
+    std::vector<edgeCurveAliases_t> edgeCurveAliases;
+    std::vector<curveAliases_t> curveAliases;
+    std::vector<orientedEdgeAliases_t> orientedEdgeAliases;
+    bool exportParts = true;
+    RgbaColor currentColor;
 };
 
 class VectorFileWriter {
@@ -493,7 +550,7 @@ public:
 
     // These are generated from the above.
     IdList<ENTITY,hEntity>          entity;
-    IdList<Param,hParam>            param;
+    ParamList                       param;
 
     inline CONSTRAINT *GetConstraint(hConstraint h)
         { return constraint.FindById(h); }
@@ -523,7 +580,7 @@ public:
         List<hGroup>                    groupOrder;
         IdList<Request,hRequest>        request;
         IdList<Constraint,hConstraint>  constraint;
-        IdList<Param,hParam>            param;
+        ParamList                       param;
         IdList<Style,hStyle>            style;
         hGroup                          activeGroup;
 
@@ -569,15 +626,19 @@ public:
     double   exportChordTol;
     int      exportMaxSegments;
     int      timeoutRedundantConstr; //milliseconds
+    int      animationSpeed; //milliseconds
     double   cameraTangent;
     double   gridSpacing;
     double   exportScale;
     double   exportOffset;
+    bool     arcDimDefaultDiameter;
+    bool     showFullFilePath;
     bool     fixExportColors;
     bool     exportBackgroundColor;
     bool     drawBackFaces;
     bool     showContourAreas;
     bool     checkClosedContour;
+    bool     cameraNav;
     bool     turntableNav;
     bool     immediatelyEditDimension;
     bool     automaticLineConstraints;
@@ -759,8 +820,7 @@ public:
     bool EntityExists(hEntity he);
     bool GroupsInOrder(hGroup before, hGroup after);
     bool PruneGroups(hGroup hg);
-    bool PruneRequests(hGroup hg);
-    bool PruneConstraints(hGroup hg);
+    bool PruneRequestsAndConstraints(hGroup hg);
     static void ShowNakedEdges(bool reportOnlyWhenNotOkay);
 
     enum class Generate : uint32_t {

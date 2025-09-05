@@ -227,7 +227,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
         }
     }
 
-    if(SS.GW.showConstraints) {
+    if(SS.GW.showConstraints != GraphicsWindow::ShowConstraintMode::SCM_NOSHOW ) {
         if(!out->OutputConstraints(&SK.constraint)) {
             GetEdgesCanvas canvas = {};
             canvas.camera = SS.GW.GetCamera();
@@ -1196,7 +1196,7 @@ void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, S
         }
 
         // Output all the vertices.
-        for(auto sp : spl.l) {
+        for(const auto &sp : spl.l) {
             fprintf(f, "          %f %f %f,\n",
                     sp.p.x / SS.exportScale,
                     sp.p.y / SS.exportScale,

@@ -93,8 +93,8 @@ void GraphicsWindow::CopySelection() {
             if(!e->h.isFromRequest()) continue;
             Request *r = SK.GetRequest(e->h.request());
             if(r->type != Request::Type::DATUM_POINT) continue;
-            EntReqTable::GetEntityInfo((Entity::Type)0, e->extraPoints,
-                &req, &pts, NULL, &hasDistance);
+            ssassert(EntReqTable::GetEntityInfo((Entity::Type)0, e->extraPoints,
+                &req, &pts, NULL, &hasDistance), "No entity info");
         }
         if(req == Request::Type::WORKPLANE) continue;
 
@@ -249,34 +249,40 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             case Constraint::Type::COMMENT:
                 c.disp.offset = c.disp.offset.Plus(trans);
                 break;
-            case Constraint::Type::PT_PT_DISTANCE:
             case Constraint::Type::PT_LINE_DISTANCE:
+                c.valA *= scale;
+                break;
+            case Constraint::Type::PT_PT_DISTANCE:
             case Constraint::Type::PROJ_PT_DISTANCE:
             case Constraint::Type::DIAMETER:
                 c.valA *= fabs(scale);
                 break;
             case Constraint::Type::ARC_LINE_TANGENT: {
-                Entity *line = SK.GetEntity(c.entityB),
-                       *arc  = SK.GetEntity(c.entityA);
-                if(line->type == Entity::Type::ARC_OF_CIRCLE) {
-                    swap(line, arc);
+                if(scale < 0) {
+                    // When mirroring swap the end point of the arc. The reason is that arcs are
+                    // defined as counter-clockwise from the start point to the end point. And we
+                    // swapped its points in mapPoint above to avoid inverting it.
+                    c.other = !c.other;
                 }
-                Constraint::ConstrainArcLineTangent(&c, line, arc);
                 break;
             }
             case Constraint::Type::CUBIC_LINE_TANGENT: {
-                Entity *line  = SK.GetEntity(c.entityB),
-                       *cubic = SK.GetEntity(c.entityA);
-                if(line->type == Entity::Type::CUBIC) {
-                    swap(line, cubic);
-                }
-                Constraint::ConstrainCubicLineTangent(&c, line, cubic);
+                // Nothing to do for CUBIC unlike the ARC_OF_CIRCLE above and below.
                 break;
             }
             case Constraint::Type::CURVE_CURVE_TANGENT: {
-                Entity *eA = SK.GetEntity(c.entityA),
-                       *eB = SK.GetEntity(c.entityB);
-                Constraint::ConstrainCurveCurveTangent(&c, eA, eB);
+                if(scale < 0) {
+                    // When mirroring swap the end points of arcs. The reason is that arcs are
+                    // defined as counter-clockwise from the start point to the end point. And we
+                    // swapped their points in mapPoint above to avoid inverting them.
+                    // CUBIC splines do not need this.
+                    if(EntityBase::Type::ARC_OF_CIRCLE == SK.GetEntity(c.entityA)->type) {
+                        c.other = !c.other;
+                    }
+                    if(EntityBase::Type::ARC_OF_CIRCLE == SK.GetEntity(c.entityB)->type) {
+                        c.other2 = !c.other2;
+                    }
+                }
                 break;
             }
             case Constraint::Type::HORIZONTAL:

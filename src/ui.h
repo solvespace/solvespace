@@ -323,6 +323,7 @@ public:
         LIGHT_AMBIENT         = 118,
         FIND_CONSTRAINT_TIMEOUT = 119,
         EXPLODE_DISTANCE      = 120,
+        ANIMATION_SPEED       = 121,
         // For TTF text
         TTF_TEXT              = 300,
         // For the step dimension screen
@@ -402,6 +403,7 @@ public:
     // All of these are callbacks from the GUI code; first from when
     // we're describing an entity
     static void ScreenEditTtfText(int link, uint32_t v);
+    static void ScreenToggleTtfKerning(int link, uint32_t v);
     static void ScreenSetTtfFont(int link, uint32_t v);
     static void ScreenUnselectAll(int link, uint32_t v);
 
@@ -442,11 +444,14 @@ public:
     static void ScreenShowEditView(int link, uint32_t v);
     static void ScreenGoToWebsite(int link, uint32_t v);
 
+    static void ScreenChangeArcDimDefault(int link, uint32_t v);
+    static void ScreenChangeShowFullFilePath(int link, uint32_t v);
     static void ScreenChangeFixExportColors(int link, uint32_t v);
     static void ScreenChangeExportBackgroundColor(int link, uint32_t v);
     static void ScreenChangeBackFaces(int link, uint32_t v);
     static void ScreenChangeShowContourAreas(int link, uint32_t v);
     static void ScreenChangeCheckClosedContour(int link, uint32_t v);
+    static void ScreenChangeCameraNav(int link, uint32_t v);
     static void ScreenChangeTurntableNav(int link, uint32_t v);
     static void ScreenChangeImmediatelyEditDimension(int link, uint32_t v);
     static void ScreenChangeAutomaticLineConstraints(int link, uint32_t v);
@@ -501,6 +506,7 @@ public:
     static void ScreenChangeGCodeParameter(int link, uint32_t v);
     static void ScreenChangeAutosaveInterval(int link, uint32_t v);
     static void ScreenChangeFindConstraintTimeout(int link, uint32_t v);
+    static void ScreenChangeAnimationSpeed(int link, uint32_t v);
     static void ScreenChangeStyleName(int link, uint32_t v);
     static void ScreenChangeStyleMetric(int link, uint32_t v);
     static void ScreenChangeStyleTextAngle(int link, uint32_t v);
@@ -801,12 +807,16 @@ public:
     bool ToolbarMouseDown(int x, int y);
     Command toolbarHovered;
 
+
     // This sets what gets displayed.
     bool    showWorkplanes;
     bool    showNormals;
     bool    showPoints;
     bool    showConstruction;
-    bool    showConstraints;
+
+    enum class ShowConstraintMode : unsigned { SCM_NOSHOW, SCM_SHOW_ALL, SCM_SHOW_DIM };
+    ShowConstraintMode showConstraints;
+
     bool    showTextWindow;
     bool    showShaded;
     bool    showEdges;
@@ -817,7 +827,7 @@ public:
     bool    showMesh;
     void ToggleBool(bool *v);
 
-    enum class DrawOccludedAs { INVISIBLE, STIPPLED, VISIBLE };
+    enum class DrawOccludedAs : unsigned { INVISIBLE, STIPPLED, VISIBLE };
     DrawOccludedAs drawOccludedAs;
 
     bool    showSnapGrid;

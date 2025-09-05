@@ -448,6 +448,14 @@ hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
     Vector p0 = SK.GetEntity(hep0)->PointGetNum(),
            p1 = SK.GetEntity(hep1)->PointGetNum();
 
+    if(p0.Equals(pinter)) {
+        return hep0;
+    }
+
+    if(p1.Equals(pinter)) {
+        return hep1;
+    }
+
     // Add the two line segments this one gets split into.
     hRequest r0i = AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false),
              ri1 = AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
@@ -582,7 +590,6 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
 
 hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     Entity *e = SK.GetEntity(he);
-    Entity::Type entityType = e->type;
 
     hEntity ret;
     if(e->IsCircle()) {
@@ -597,22 +604,20 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     }
 
     // Finally, delete the request that generated the original entity.
-    Request::Type reqType = EntReqTable::GetRequestForEntity(entityType);
-    SK.request.ClearTags();
-    for(auto &r : SK.request) {
-        if(r.group != activeGroup)
-            continue;
-        if(r.type != reqType)
-            continue;
-
-        // If the user wants to keep the old entities around, they can just
-        // mark them construction first.
-        if(he == r.h.entity(0) && !r.construction) {
-            r.tag = 1;
-            break;
+    if(he.isFromRequest() && he == he.request().entity(0)) {
+        hRequest hr = he.request();
+        // Only delete the original request if we actually made a split
+        // (i.e. the split point is not from the original request)
+        if(hr != ret.request()) {
+            Request *r = SK.GetRequest(hr);
+            // If the user wants to keep the old entities around, they can just
+            // mark them construction first.
+            if(r->group == activeGroup && !r->construction) {
+                r->tag = 1;
+                DeleteTaggedRequests();
+            }
         }
     }
-    DeleteTaggedRequests();
 
     return ret;
 }
@@ -637,12 +642,7 @@ void GraphicsWindow::SplitLinesOrCurves() {
 
     Entity *ea = SK.GetEntity(ha),
            *eb = SK.GetEntity(hb);
-    SPointList inters = {};
-    SBezierList sbla = {},
-                sblb = {};
     Vector pi = Vector::From(0, 0, 0);
-
-    SK.constraint.ClearTags();
 
     // First, decide the point where we're going to make the split.
     bool foundInters = false;
@@ -654,6 +654,8 @@ void GraphicsWindow::SplitLinesOrCurves() {
             p0 = ea->EndpointStart();
             p1 = ea->EndpointFinish();
         }
+
+        SK.constraint.ClearTags();
 
         for(Constraint &c : SK.constraint) {
             if(c.ptA.request() == hb.request() &&
@@ -673,25 +675,30 @@ void GraphicsWindow::SplitLinesOrCurves() {
         }
     } else {
         // Compute the possibly-rational Bezier curves for each of these non-point entities...
+        SBezierList sbla = {}, sblb = {};
         ea->GenerateBezierCurves(&sbla);
         eb->GenerateBezierCurves(&sblb);
         // ... and then compute the points where they intersect, based on those curves.
+        SPointList inters = {};
         sbla.AllIntersectionsWith(&sblb, &inters);
 
         // If there's multiple points, then take the one closest to the mouse pointer.
         if(!inters.l.IsEmpty()) {
             double dmin = VERY_POSITIVE;
-            SPoint *sp;
-            for(sp = inters.l.First(); sp; sp = inters.l.NextAfter(sp)) {
-                double d = ProjectPoint(sp->p).DistanceTo(currentMousePosition);
+            for(const SPoint &sp : inters.l) {
+                double d = ProjectPoint(sp.p).DistanceTo(currentMousePosition);
                 if(d < dmin) {
                     dmin = d;
-                    pi = sp->p;
+                    pi = sp.p;
                 }
             }
+
+            foundInters = true;
         }
 
-        foundInters = true;
+        inters.Clear();
+        sbla.Clear();
+        sblb.Clear();
     }
 
     // Then, actually split the entities.
@@ -736,8 +743,5 @@ void GraphicsWindow::SplitLinesOrCurves() {
     }
 
     // All done, clean up and regenerate.
-    inters.Clear();
-    sbla.Clear();
-    sblb.Clear();
     ClearSelection();
 }

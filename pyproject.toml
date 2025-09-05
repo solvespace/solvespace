@@ -1,0 +1,50 @@
+[build-system]
+requires = ["scikit-build-core", "Cython", "cmake==3.31.6", "ninja"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "slvs"
+version = "0.0.0"
+description="SolveSpace solver wrapped with Cython"
+readme = "README.md"
+authors = [
+  { name = "Koen Schmeets", email = "koen@schmeets.de" },
+]
+requires-python = ">=3.7"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+
+[tool.scikit-build]
+wheel.expand-macos-universal-tags = true
+cmake.verbose = true
+cmake.build-type = "RelWithDebInfo"
+build.targets = ["slvs-py"]
+install.components = ["python"]
+sdist.include = [
+  ".git/HEAD",
+  ".git/refs"
+]
+wheel.packages = ["python/slvs"]
+
+[tool.scikit-build.cmake.define]
+ENABLE_GUI = "OFF"
+ENABLE_CLI = "OFF"
+ENABLE_TESTS = "OFF"
+ENABLE_COVERAGE = "OFF"
+ENABLE_OPENMP = "OFF"
+FORCE_VENDORED_Eigen3 = "ON"
+ENABLE_LTO = "ON"
+ENABLE_PYTHON_LIB = "ON"
+
+[tool.cibuildwheel]
+build-verbosity = 1

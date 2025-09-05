@@ -55,8 +55,8 @@ This includes GCC 5 and later, Clang 3.3 and later, and Visual Studio 12 (2013) 
 
 SolveSpace aims to consist of two general parts: a fully portable core, and platform-specific
 UI and support code. Anything outside of `src/platform/` should only use standard C++11,
-and rely on `src/platform/unixutil.cpp` and `src/platform/w32util.cpp` to interact with
-the OS where this cannot be done through the C++11 standard library.
+and rely on `src/platform/platform.h` to interact with the OS where this cannot be done
+through the C++11 standard library.
 
 #### Libraries
 
@@ -65,7 +65,7 @@ widely supported, used, and understood. SolveSpace also includes a fair amount o
 bespoke containers List and IdList; these provide STL iterators, and can be used when
 convenient, such as when reusing other code.
 
-One notable departure here is the STL I/O threads. SolveSpace does not use STL I/O threads
+One notable departure here is the STL I/O streams. SolveSpace does not use STL I/O streams
 for two reasons: (i) the interface is borderline unusable, and (ii) on Windows it is not
 possible to open files with Unicode paths through STL.
 

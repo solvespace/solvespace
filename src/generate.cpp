@@ -30,24 +30,24 @@ void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
 }
 
 bool SolveSpaceUI::PruneOrphans() {
-
-    auto r = std::find_if(SK.request.begin(), SK.request.end(),
-                          [&](Request &r) { return !GroupExists(r.group); });
-    if(r != SK.request.end()) {
-        (deleted.requests)++;
-        SK.request.RemoveById(r->h);
-        return true;
+    const int requests = SK.request.n;
+    for(Request &r : SK.request) {
+        if(!GroupExists(r.group))
+            r.tag = 1;
     }
+    SK.request.RemoveTagged();
+    deleted.requests += requests - SK.request.n;
 
-    auto c = std::find_if(SK.constraint.begin(), SK.constraint.end(),
-                          [&](Constraint &c) { return !GroupExists(c.group); });
-    if(c != SK.constraint.end()) {
-        (deleted.constraints)++;
-        (deleted.nonTrivialConstraints)++;
-        SK.constraint.RemoveById(c->h);
-        return true;
+    const int constraints = SK.constraint.n;
+    for(Constraint &c : SK.constraint) {
+        if(!GroupExists(c.group))
+            c.tag = 1;
     }
-    return false;
+    SK.constraint.RemoveTagged();
+    deleted.constraints += constraints - SK.constraint.n;
+    deleted.nonTrivialConstraints += constraints - SK.constraint.n;
+
+    return (requests > SK.request.n) || (constraints > SK.constraint.n);
 }
 
 bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
@@ -86,46 +86,65 @@ bool SolveSpaceUI::PruneGroups(hGroup hg) {
     return true;
 }
 
-bool SolveSpaceUI::PruneRequests(hGroup hg) {
-    auto e = std::find_if(SK.entity.begin(), SK.entity.end(),
-                          [&](Entity &e) { return e.group == hg && !EntityExists(e.workplane); });
-    if(e != SK.entity.end()) {
-        (deleted.requests)++;
-        SK.entity.RemoveById(e->h);
-        return true;
-    }
-    return false;
-}
-
-bool SolveSpaceUI::PruneConstraints(hGroup hg) {
-    auto c = std::find_if(SK.constraint.begin(), SK.constraint.end(), [&](Constraint &c) {
-        if(c.group != hg)
-            return false;
-
-        if(EntityExists(c.workplane) &&
-           EntityExists(c.ptA) &&
-           EntityExists(c.ptB) &&
-           EntityExists(c.entityA) &&
-           EntityExists(c.entityB) &&
-           EntityExists(c.entityC) &&
-           EntityExists(c.entityD)) {
-            return false;
+bool SolveSpaceUI::PruneRequestsAndConstraints(hGroup hg) {
+    auto entityRequestExists = [](hEntity he, bool checkEntity = false) {
+        if(he == Entity::NO_ENTITY) {
+            return true;
         }
-        return true;
-    });
 
-    if(c != SK.constraint.end()) {
-        (deleted.constraints)++;
-        if(c->type != Constraint::Type::POINTS_COINCIDENT &&
-           c->type != Constraint::Type::HORIZONTAL &&
-           c->type != Constraint::Type::VERTICAL) {
+        if(he.isFromRequest()) {
+            if(SK.request.FindByIdNoOops(he.request()) != nullptr) {
+                return true;
+            }
+        } else if(!checkEntity || SK.entity.FindByIdNoOops(he) != nullptr) {
+            return true;
+        }
+
+        return false;
+    };
+
+    const int requests = SK.request.n;
+    for(Request &r : SK.request) {
+        if(r.group != hg) {
+            continue;
+        }
+
+        if(entityRequestExists(r.workplane)) {
+            continue;
+        }
+
+        r.tag = 1;
+    }
+    SK.request.RemoveTagged();
+    deleted.requests += requests - SK.request.n;
+
+    const int constraints = SK.constraint.n;
+    for(Constraint &c : SK.constraint) {
+        if(c.group != hg)
+            continue;
+
+        if(entityRequestExists(c.workplane, true) &&
+           entityRequestExists(c.ptA, true) &&
+           entityRequestExists(c.ptB, true) &&
+           entityRequestExists(c.entityA, true) &&
+           entityRequestExists(c.entityB, true) &&
+           entityRequestExists(c.entityC, true) &&
+           entityRequestExists(c.entityD, true)) {
+            continue;
+        }
+
+        if(c.type != Constraint::Type::POINTS_COINCIDENT &&
+           c.type != Constraint::Type::HORIZONTAL &&
+           c.type != Constraint::Type::VERTICAL) {
             (deleted.nonTrivialConstraints)++;
         }
 
-        SK.constraint.RemoveById(c->h);
-        return true;
+        c.tag = 1;
     }
-    return false;
+    SK.constraint.RemoveTagged();
+    deleted.constraints += constraints - SK.constraint.n;
+
+    return (requests > SK.request.n) || (constraints > SK.constraint.n);
 }
 
 void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox) {
@@ -203,11 +222,10 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     // Remove any requests or constraints that refer to a nonexistent
     // group; can check those immediately, since we know what the list
     // of groups should be.
-    while(PruneOrphans())
-        ;
+    PruneOrphans();
 
     // Don't lose our numerical guesses when we regenerate.
-    IdList<Param,hParam> prev = {};
+    ParamList prev = {};
     SK.param.MoveSelfInto(&prev);
     SK.param.ReserveMore(prev.n);
     int oldEntityCount = SK.entity.n;
@@ -242,7 +260,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
         // The requests and constraints depend on stuff in this or the
         // previous group, so check them after generating.
-        if(PruneRequests(hg) || PruneConstraints(hg))
+        if(PruneRequestsAndConstraints(hg))
             goto pruned;
 
         // Use the previous values for params that we've seen before, as
@@ -325,11 +343,14 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
         ScheduleShowTW();
         GW.ClearSuper();
 
+        auto deletedStat = deleted;
+        deleted = {};
+
         // People get annoyed if I complain whenever they delete any request,
         // and I otherwise will, since those always come with pt-coincident
         // constraints.
-        if(deleted.requests > 0 || deleted.nonTrivialConstraints > 0 ||
-           deleted.groups > 0)
+        if(deletedStat.requests > 0 || deletedStat.nonTrivialConstraints > 0 ||
+           deletedStat.groups > 0)
         {
             // Don't display any errors until we've regenerated fully. The
             // sketch is not necessarily in a consistent state until we've
@@ -343,13 +364,11 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
                     "     %d constraint%s\n"
                     "     %d group%s"
                     "%s",
-                       deleted.requests, deleted.requests == 1 ? "" : "s",
-                       deleted.constraints, deleted.constraints == 1 ? "" : "s",
-                       deleted.groups, deleted.groups == 1 ? "" : "s",
+                       deletedStat.requests, deletedStat.requests == 1 ? "" : "s",
+                       deletedStat.constraints, deletedStat.constraints == 1 ? "" : "s",
+                       deletedStat.groups, deletedStat.groups == 1 ? "" : "s",
                        undo.cnt > 0 ? "\n\nChoose Edit -> Undo to undelete all elements." : "");
         }
-
-        deleted = {};
     }
 
     FreeAllTemporary();
@@ -422,7 +441,7 @@ void SolveSpaceUI::UpdateCenterOfMass() {
 }
 
 void SolveSpaceUI::MarkDraggedParams() {
-    sys.dragged.Clear();
+    sys.dragged.clear();
 
     for(int i = -1; i < SS.GW.pending.points.n; i++) {
         hEntity hp;
@@ -442,14 +461,14 @@ void SolveSpaceUI::MarkDraggedParams() {
                 case Entity::Type::POINT_N_TRANS:
                 case Entity::Type::POINT_IN_3D:
                 case Entity::Type::POINT_N_ROT_AXIS_TRANS:
-                    sys.dragged.Add(&(pt->param[0]));
-                    sys.dragged.Add(&(pt->param[1]));
-                    sys.dragged.Add(&(pt->param[2]));
+                    sys.dragged.insert(pt->param[0]);
+                    sys.dragged.insert(pt->param[1]);
+                    sys.dragged.insert(pt->param[2]);
                     break;
 
                 case Entity::Type::POINT_IN_2D:
-                    sys.dragged.Add(&(pt->param[0]));
-                    sys.dragged.Add(&(pt->param[1]));
+                    sys.dragged.insert(pt->param[0]);
+                    sys.dragged.insert(pt->param[1]);
                     break;
 
                 default: // Only the entities above can be dragged.
@@ -463,7 +482,7 @@ void SolveSpaceUI::MarkDraggedParams() {
             Entity *dist = SK.GetEntity(circ->distance);
             switch(dist->type) {
                 case Entity::Type::DISTANCE:
-                    sys.dragged.Add(&(dist->param[0]));
+                    sys.dragged.insert(dist->param[0]);
                     break;
 
                 default: // Only the entities above can be dragged.
@@ -476,10 +495,10 @@ void SolveSpaceUI::MarkDraggedParams() {
         if(norm) {
             switch(norm->type) {
                 case Entity::Type::NORMAL_IN_3D:
-                    sys.dragged.Add(&(norm->param[0]));
-                    sys.dragged.Add(&(norm->param[1]));
-                    sys.dragged.Add(&(norm->param[2]));
-                    sys.dragged.Add(&(norm->param[3]));
+                    sys.dragged.insert(norm->param[0]);
+                    sys.dragged.insert(norm->param[1]);
+                    sys.dragged.insert(norm->param[2]);
+                    sys.dragged.insert(norm->param[3]);
                     break;
 
                 default: // Only the entities above can be dragged.
@@ -536,8 +555,7 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     Group *g = SK.GetGroup(hg);
     g->solved.remove.Clear();
     g->solved.findToFixTimeout = SS.timeoutRedundantConstr;
-    SolveResult how = sys.Solve(g, NULL,
-                                   &(g->solved.dof),
+    SolveResult how = sys.Solve(g, &(g->solved.dof),
                                    &(g->solved.remove),
                                    /*andFindBad=*/!g->allowRedundant,
                                    /*andFindFree=*/andFindFree,

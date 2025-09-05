@@ -24,44 +24,39 @@ bool System::WriteJacobian(int tag) {
     mat.A.sym.setZero();
     mat.B.sym.clear();
 
-    for(Param &p : param) {
-        if(p.tag != tag) continue;
-        mat.param.push_back(p.h);
-    }
-    mat.n = mat.param.size();
-
     for(Equation &e : eq) {
         if(e.tag != tag) continue;
         mat.eq.push_back(&e);
     }
-    mat.m = mat.eq.size();
-    mat.A.sym.resize(mat.m, mat.n);
-    mat.A.sym.reserve(Eigen::VectorXi::Constant(mat.n, LikelyPartialCountPerEq));
-
-    // Fill the param id to index map
-    std::map<uint32_t, int> paramToIndex;
-    for(int j = 0; j < mat.n; j++) {
-        paramToIndex[mat.param[j].v] = j;
-    }
-
     if(mat.eq.size() >= MAX_UNKNOWNS) {
         return false;
     }
-    std::vector<hParam> paramsUsed;
+    mat.m = mat.eq.size();
+
+    std::unordered_map<uint32_t, int> paramToIndex;
+    for(Param &p : param) {
+        if(p.tag != tag) continue;
+        // Fill the param id to index map
+        paramToIndex[p.h.v] = mat.param.size();
+        mat.param.push_back(p.h);
+    }
+    mat.n = mat.param.size();
+
     // In some experimenting, this is almost always the right size.
     // Value is usually between 0 and 20, comes from number of constraints?
+    mat.A.sym.resize(mat.m, mat.n);
+    mat.A.sym.reserve(Eigen::VectorXi::Constant(mat.n, LikelyPartialCountPerEq));
+
     mat.B.sym.reserve(mat.eq.size());
     for(size_t i = 0; i < mat.eq.size(); i++) {
         Equation *e = mat.eq[i];
-        if(e->tag != tag) continue;
-        // Simplify (fold) then deep-copy the current equation.
-        Expr *f = e->e->FoldConstants();
-        f = f->DeepCopyWithParamsAsPointers(&param, &(SK.param));
+        // Deep-copy and simplify (fold) the current equation.
+        Expr *f = e->e->DeepCopyWithParamsAsPointers(&param, &(SK.param), /*foldConstants=*/true);
 
-        paramsUsed.clear();
+        ParamSet paramsUsed;
         f->ParamsUsedList(&paramsUsed);
 
-        for(hParam &p : paramsUsed) {
+        for(hParam p : paramsUsed) {
             // Find the index of this parameter
             auto it = paramToIndex.find(p.v);
             if(it == paramToIndex.end()) continue;
@@ -69,12 +64,11 @@ bool System::WriteJacobian(int tag) {
             const int j = it->second;
             // compute partial derivative of f
             Expr *pd = f->PartialWrt(p);
-            pd = pd->FoldConstants();
+            pd = pd->FoldConstants(/*allocCopy=*/false);
             if(pd->IsZeroConst())
                 continue;
             mat.A.sym.insert(i, j) = pd;
         }
-        paramsUsed.clear();
         mat.B.sym.push_back(f);
     }
     return true;
@@ -97,124 +91,145 @@ void System::EvalJacobian() {
 }
 
 bool System::IsDragged(hParam p) {
-    const auto b = dragged.begin();
-    const auto e = dragged.end();
-    return e != std::find(b, e, p);
+    return dragged.find(p) != dragged.end();
 }
 
-Param *System::GetLastParamSubstitution(Param *p) {
-    Param *current = p;
-    while(current->substd != NULL) {
-        current = current->substd;
-        if(current == p) {
-            // Break the loop
-            current->substd = NULL;
-            break;
-        }
-    }
-    return current;
-}
+SubstitutionMap System::SolveBySubstitution() {
+    // Contains pointers to last substitutions in a substitution chain
+    std::vector<Param *> subVec;
+    // Maps a parameter to the index of its last substitution in  `subVec`
+    std::unordered_map<hParam, size_t, HandleHasher<hParam>> leaves;
+    // Tracks how many slots in `subVec` contain a specific last substitution
+    // (this can happen as slots that once contained a specific substitution
+    //  are updated to point to another over the run of the substitution algorithm)
+    std::unordered_map<hParam, std::vector<size_t>, HandleHasher<hParam>> slotTrack;
 
-void System::SortSubstitutionByDragged(Param *p) {
-    std::vector<Param *> subsParams;
-    Param *by = NULL;
-    Param *current = p;
-    while(current != NULL) {
-        subsParams.push_back(current);
-        if(IsDragged(current->h)) {
-            by = current;
-        }
-        current = current->substd;
-    }
-    if(by == NULL) by = p;
-    for(Param *p : subsParams) {
-       if(p == by) continue;
-       p->substd = by;
-       p->tag = VAR_SUBSTITUTED;
-    }
-    by->substd = NULL;
-    by->tag = 0;
-}
-
-void System::SubstituteParamsByLast(Expr *e) {
-    ssassert(e->op != Expr::Op::PARAM_PTR, "Expected an expression that refer to params via handles");
-
-    if(e->op == Expr::Op::PARAM) {
-        Param *p = param.FindByIdNoOops(e->parh);
-        if(p != NULL) {
-            Param *s = GetLastParamSubstitution(p);
-            if(s != NULL) {
-                e->parh = s->h;
-            }
-        }
-    } else {
-        int c = e->Children();
-        if(c >= 1) {
-            SubstituteParamsByLast(e->a);
-            if(c >= 2) SubstituteParamsByLast(e->b);
-        }
-    }
-}
-
-void System::SolveBySubstitution() {
     for(auto &teq : eq) {
         Expr *tex = teq.e;
 
+        // If we have `(a - b) = 0` where both a and b are parameters, then `a = b` and we can substitute
         if(tex->op    == Expr::Op::MINUS &&
            tex->a->op == Expr::Op::PARAM &&
            tex->b->op == Expr::Op::PARAM)
         {
-            hParam a = tex->a->parh;
-            hParam b = tex->b->parh;
-            if(!(param.FindByIdNoOops(a) && param.FindByIdNoOops(b))) {
+            Param *sub = param.FindByIdNoOops(tex->a->parh);
+            Param *by = param.FindByIdNoOops(tex->b->parh);
+            if(!sub || !by) {
                 // Don't substitute unless they're both solver params;
                 // otherwise it's an equation that can be solved immediately,
                 // or an error to flag later.
                 continue;
             }
 
-            if(a.v == b.v) {
+            if(sub->h == by->h) {
                 teq.tag = EQ_SUBSTITUTED;
                 continue;
             }
 
-            Param *pa = param.FindById(a);
-            Param *pb = param.FindById(b);
-
             // Take the last substitution of parameter a
-            // This resulted in creation of substitution chains
-            Param *last = GetLastParamSubstitution(pa);
-            last->substd = pb;
-            last->tag = VAR_SUBSTITUTED;
-
-            if(pb->substd != NULL) {
-                // Break the loops
-                GetLastParamSubstitution(pb);
-                // if b loop was broken
-                if(pb->substd == NULL) {
-                    // Clear substitution
-                    pb->tag = 0;
-                }
+            size_t subIdx = 0;
+            auto it = leaves.find(sub->h);
+            if(it != leaves.end()) {
+                subIdx = it->second;
+                sub = subVec.at(it->second - 1);
             }
+
+            // Take the last substitution of parameter b
+            size_t byIdx = 0;
+            it = leaves.find(by->h);
+            if(it != leaves.end()) {
+                byIdx = it->second;
+                by = subVec.at(it->second - 1);
+            }
+
+            // If the last substituton of `a` is a dragged param, keep it
+            // and substitute the other param
+            if(IsDragged(sub->h)) {
+                std::swap(sub, by);
+                std::swap(subIdx, byIdx);
+            }
+
+            if(subIdx == 0) {
+                if(byIdx == 0) {
+                    // Neither `sub` nor `by` are in the map, so add them and
+                    // set the target index
+                    subVec.push_back(by);
+                    leaves[by->h] = leaves[sub->h] = subVec.size();
+                } else {
+                    // `sub` isn't in the map, but `by` is, so just add `sub` to
+                    // the map with `by` as the target
+                    leaves[sub->h] = byIdx;
+                }
+            } else {
+                // `sub` already exists in the map, so just update any slots
+                // that point to it as the last substitution to point to `by`
+                // instead
+                auto it = slotTrack.find(sub->h);
+                if(it == slotTrack.end()) {
+                    // There's only this one slot, so just replace it with `by`
+                    subVec[subIdx - 1] = by;
+
+                    // If `by` was already in the map, that means we now have
+                    // an additional slot where it resides, so add it to the
+                    // slot tracker
+                    if(byIdx != 0) {
+                        // If `by` is already in the slot tracker, we'll get
+                        // back a vector with at least two elements; otherwise
+                        // this access will add a new item to the slot tracker
+                        // with an empty vector
+                        auto &bySlots = slotTrack[by->h];
+                        if(bySlots.empty()) {
+                            bySlots.push_back(byIdx);
+                        }
+                        bySlots.push_back(subIdx);
+                    }
+                } else {
+                    // We have more than one slot pointing to `sub`, so update
+                    // all of the slots to point to `by`
+                    for(size_t i : it->second) {
+                        subVec[i - 1] = by;
+                    }
+
+                    // No more slots are pointing to `sub`, so extract the slot list
+                    // and erase `sub` from the tracker
+                    auto subSlots = std::move(it->second);
+                    slotTrack.erase(it);
+
+                    // Same as above: this access either gives us an existing vector
+                    // with at least two elements, or creates an empty vector
+                    auto &bySlots = slotTrack[by->h];
+                    if(bySlots.empty()) {
+                        bySlots = std::move(subSlots);
+                        if(byIdx != 0) {
+                            bySlots.push_back(byIdx);
+                        }
+                    } else {
+                        bySlots.insert(bySlots.end(), subSlots.begin(), subSlots.end());
+                    }
+                }
+
+                leaves[by->h] = subIdx;
+            }
+
+            sub->tag = VAR_SUBSTITUTED;
             teq.tag = EQ_SUBSTITUTED;
         }
     }
 
-    //
-    for(Param &p : param) {
-        SortSubstitutionByDragged(&p);
+    SubstitutionMap subMap;
+    for(auto &sub : leaves) {
+        Param *by = subVec[sub.second - 1];
+        if(sub.first != by->h) {
+            subMap[sub.first] = by;
+        }
     }
 
     // Substitute all the equations
     for(auto &req : eq) {
-        SubstituteParamsByLast(req.e);
+        req.e->Substitute(subMap);
     }
 
-    // Substitute all the parameters with last substitutions
-    for(auto &p : param) {
-        if(p.substd == NULL) continue;
-        p.substd = GetLastParamSubstitution(p.substd);
-    }
+    return subMap;
 }
 
 //-----------------------------------------------------------------------------
@@ -229,12 +244,15 @@ int System::CalculateRank() {
     return result;
 }
 
-bool System::TestRank(int *dof) {
+bool System::TestRank(int *dof, int *rank) {
     EvalJacobian();
     int jacobianRank = CalculateRank();
     // We are calculating dof based on real rank, not mat.m.
     // Using this approach we can calculate real dof even when redundant is allowed.
     if(dof != NULL) *dof = mat.n - jacobianRank;
+    if(rank) {
+        *rank = jacobianRank;
+    }
     return jacobianRank == mat.m;
 }
 
@@ -255,19 +273,19 @@ bool System::SolveLeastSquares() {
     // Scale the columns; this scale weights the parameters for the least
     // squares solve, so that we can encourage the solver to make bigger
     // changes in some parameters, and smaller in others.
-    mat.scale = VectorXd::Ones(mat.n);
+    VectorXd scale = VectorXd::Ones(mat.n);
     for(int c = 0; c < mat.n; c++) {
         if(IsDragged(mat.param[c])) {
             // It's least squares, so this parameter doesn't need to be all
             // that big to get a large effect.
-            mat.scale[c] = 1 / 20.0;
+            scale[c] = 1 / 20.0;
         }
     }
 
     const int size = mat.A.num.outerSize();
     for(int k = 0; k < size; k++) {
         for(SparseMatrix<double>::InnerIterator it(mat.A.num, k); it; ++it) {
-            it.valueRef() *= mat.scale[it.col()];
+            it.valueRef() *= scale[it.col()];
         }
     }
 
@@ -280,12 +298,12 @@ bool System::SolveLeastSquares() {
     mat.X = mat.A.num.transpose() * z;
 
     for(int c = 0; c < mat.n; c++) {
-        mat.X[c] *= mat.scale[c];
+        mat.X[c] *= scale[c];
     }
     return true;
 }
 
-bool System::NewtonSolve(int tag) {
+bool System::NewtonSolve() {
 
     int iter = 0;
     bool converged = false;
@@ -316,13 +334,15 @@ bool System::NewtonSolve(int tag) {
         // Re-evalute the functions, since the params have just changed.
         for(i = 0; i < mat.m; i++) {
             mat.B.num[i] = (mat.B.sym[i])->Eval();
+            if(IsReasonable(mat.B.num[i])) {
+                // Very bad, and clearly not convergent
+                return false;
+            }
         }
+        
         // Check for convergence
         converged = true;
         for(i = 0; i < mat.m; i++) {
-            if(IsReasonable(mat.B.num[i])) {
-                return false;
-            }
             if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE) {
                 converged = false;
                 break;
@@ -414,32 +434,33 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bo
     }
 }
 
-SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
+SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
                           bool andFindBad, bool andFindFree, bool forceDofCheck)
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
 
     bool rankOk;
 
-/*
-    int x;
-    dbp("%d equations", eq.n);
-    for(x = 0; x < eq.n; x++) {
-        dbp("  %.3f = %s = 0", eq[x].e->Eval(), eq[x].e->Print());
-    }
-    dbp("%d parameters", param.n);
-    for(x = 0; x < param.n; x++) {
-        dbp("   param %08x at %.3f", param[x].h.v, param[x].val);
-    } */
+    // int x;
+    // printf("%d equations", eq.n);
+    // for(x = 0; x < eq.n; x++) {
+    //     printf("  %.3f = %s = 0", eq[x].e->Eval(), eq[x].e->Print().c_str());
+    // }
+    // printf("%d parameters", param.n);
+    // for(x = 0; x < param.n; x++) {
+    //     printf("   param %08x at %.3f", param[x].h.v, param[x].val);
+    // }
 
     // All params and equations are assigned to group zero.
     param.ClearTags();
     eq.ClearTags();
 
+    SubstitutionMap subMap;
+
     // Since we are suppressing dof calculation or allowing redundant, we
     // can't / don't want to catch result of dof checking without substitution
     if(g->suppressDofCalculation || g->allowRedundant || !forceDofCheck) {
-        SolveBySubstitution();
+        subMap = SolveBySubstitution();
     }
 
     // Before solving the big system, see if we can find any equations that
@@ -461,7 +482,7 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
         e.tag  = alone;
         p->tag = alone;
         WriteJacobian(alone);
-        if(!NewtonSolve(alone)) {
+        if(!NewtonSolve()) {
             // We don't do the rank test, so let's arbitrarily return
             // the DIDNT_CONVERGE result here.
             rankOk = true;
@@ -482,7 +503,7 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
     rankOk = (!g->suppressDofCalculation && !g->allowRedundant) ? TestRank(dof) : true;
 
     // And do the leftovers as one big system
-    if(!NewtonSolve(0)) {
+    if(!NewtonSolve()) {
         goto didnt_converge;
     }
 
@@ -496,12 +517,9 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
     // System solved correctly, so write the new values back in to the
     // main parameter table.
     for(auto &p : param) {
-        double val;
-        if(p.tag == VAR_SUBSTITUTED) {
-            val = p.substd->val;
-        } else {
-            val = p.val;
-        }
+        auto it = subMap.find(p.h);
+        double val = it == subMap.end() ? p.val : it->second->val;
+
         Param *pp = SK.GetParam(p.h);
         pp->val = val;
         pp->known = true;
@@ -547,7 +565,7 @@ SolveResult System::SolveRank(Group *g, int *rank, int *dof, List<hConstraint> *
         return SolveResult::TOO_MANY_UNKNOWNS;
     }
 
-    bool rankOk = TestRank(dof);
+    bool rankOk = TestRank(dof, rank);
     if(!rankOk) {
         // When we are testing with redundant allowed, we don't want to have additional info
         // about redundants since this test is working only for single redundant constraint
@@ -564,7 +582,7 @@ void System::Clear() {
     entity.Clear();
     param.Clear();
     eq.Clear();
-    dragged.Clear();
+    dragged.clear();
     mat.A.num.setZero();
     mat.A.sym.setZero();
 }

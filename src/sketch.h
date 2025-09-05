@@ -122,7 +122,7 @@ struct IsHandleOracle<EntityId> : std::true_type {};
 struct EntityKey {
     hEntity     input;
     int         copyNumber;
-    // (input, copyNumber) gets mapped to ((Request)xxx).entity(h.v)
+    // (input, copyNumber) gets mapped to hGroup::entity(i)
 };
 struct EntityKeyHash {
     size_t operator()(const EntityKey &k) const {
@@ -204,7 +204,9 @@ public:
         //WORKPLANE_BY_FACE          = 6004,
         // For extrudes, translates, and rotates
         ONE_SIDED                  = 7000,
-        TWO_SIDED                  = 7001
+        TWO_SIDED                  = 7001,
+        ONE_SKEWED                 = 7004,
+        TWO_SKEWED                 = 7005
     };
     Group::Subtype subtype;
 
@@ -291,9 +293,9 @@ public:
     };
     hEntity Remap(hEntity in, int copyNumber);
     void MakeExtrusionLines(EntityList *el, hEntity in);
-    void MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis);
-    void MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in, Vector axis);
-    void MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt, int ai, int af);
+    void MakeLatheCircles(EntityList *el, ParamList *param, hEntity in, Vector pt, Vector axis);
+    void MakeLatheSurfacesSelectable(EntityList *el, hEntity in, Vector axis);
+    void MakeRevolveEndFaces(EntityList *el, hEntity pt, int ai, int af);
     void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
     void CopyEntity(EntityList *el,
                     Entity *ep, int timesApplied, int remap,
@@ -576,7 +578,7 @@ public:
     bool IsStylable() const;
     bool IsVisible() const;
     bool CanBeDragged() const;
-
+    
     enum class DrawAs { DEFAULT, OVERLAY, HIDDEN, HOVERED, SELECTED };
     void Draw(DrawAs how, Canvas *canvas);
     void GetReferencePoints(std::vector<Vector> *refs);
@@ -606,7 +608,7 @@ public:
 
 class EntReqTable {
 public:
-    static bool GetRequestInfo(Request::Type req, int extraPoints,
+    static void GetRequestInfo(Request::Type req, int extraPoints,
                                EntityBase::Type *ent, int *pts, bool *hasNormal, bool *hasDistance);
     static bool GetEntityInfo(EntityBase::Type ent, int extraPoints,
                               Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance);
@@ -621,9 +623,6 @@ public:
     double      val;
     bool        known;
     bool        free;
-
-    // Used only in the solver
-    Param       *substd;
 
     static const hParam NO_PARAM;
 
@@ -723,7 +722,7 @@ public:
     bool HasLabel() const;
     bool IsProjectible() const;
 
-    void Generate(IdList<Param, hParam> *param);
+    void Generate(ParamList *param);
 
     void GenerateEquations(IdList<Equation,hEquation> *entity,
                            bool forReference = false) const;
@@ -806,9 +805,12 @@ public:
     static hConstraint TryConstrain(Constraint::Type type, hEntity ptA, hEntity ptB,
                                     hEntity entityA, hEntity entityB = Entity::NO_ENTITY,
                                     bool other = false, bool other2 = false);
-    static bool ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc);
-    static bool ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic);
-    static bool ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB);
+    static bool ConstrainArcLineTangent(Constraint *c, Entity *line, Entity *arc,
+                                        Entity *arcendpoint);
+    static bool ConstrainCubicLineTangent(Constraint *c, Entity *line, Entity *cubic,
+                                          Entity *curveendpoint);
+    static bool ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB, Entity *p1,
+                                           Entity *p2);
 };
 
 class hEquation {

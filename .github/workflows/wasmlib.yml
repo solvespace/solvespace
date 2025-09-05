@@ -1,0 +1,75 @@
+name: WASM Library
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ v* ]
+  workflow_dispatch:
+
+jobs:
+  build-wasmlib:
+    name: WASM library
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: git submodule update --init extlib/mimalloc extlib/eigen
+      - name: Pack
+        shell: bash
+        run: |
+          .github/scripts/build-wasmlib.sh
+          cd build-wasmlib/bin
+          rm libmimalloc.a || true
+          zip -r slvs-wasmlib.zip .
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: slvs-wasmlib
+          path: build-wasmlib/bin/slvs-wasmlib.zip
+  publish-wasmlib:
+    name: publish WASM library
+    needs: [
+      build-wasmlib,
+    ]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: git submodule update --init extlib/mimalloc extlib/eigen
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14.x'
+          registry-url: https://registry.npmjs.org/
+      - name: prepare
+        shell: bash
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          git fetch --unshallow --tags
+
+          ls artifacts
+          unzip artifacts/slvs-wasmlib/slvs-wasmlib.zip -d js
+          ls js
+
+          # bump version
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            version="${GITHUB_REF##*/}"
+          else
+            mkdir empty-build
+            cd empty-build
+            cmake .. -DENABLE_GUI=OFF -DENABLE_CLI=OFF -DENABLE_TESTS=OFF -DENABLE_COVERAGE=OFF -DENABLE_SANITIZERS=OFF -DENABLE_OPENMP=OFF
+            source version.env
+            cd ..
+            version="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-dev.${GITHUB_RUN_NUMBER}"
+            is_dev="1"
+          fi
+          jq --arg version "${version}" '.version = $version' package.json > package.json.tmp
+          mv package.json.tmp js/package.json
+          cd js
+          if [ "${is_dev}" == "1" ]; then
+            npm publish --access public --tag dev
+          else
+            npm publish --access public --tag stable
+          fi

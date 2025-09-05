@@ -10,7 +10,7 @@
 #ifndef __SLVS_H
 #define __SLVS_H
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(STATIC_LIB)
 #   ifdef EXPORT_DLL
 #       define DLL __declspec( dllexport )
 #   else
@@ -29,6 +29,8 @@ typedef unsigned __int32 uint32_t;
 #else
 #include <stdint.h>
 #endif
+#include <stdbool.h>
+#include <string.h>
 
 typedef uint32_t Slvs_hParam;
 typedef uint32_t Slvs_hEntity;
@@ -38,7 +40,6 @@ typedef uint32_t Slvs_hGroup;
 /* To obtain the 3d (not projected into a workplane) of a constraint or
  * an entity, specify this instead of the workplane. */
 #define SLVS_FREE_IN_3D         0
-
 
 typedef struct {
     Slvs_hParam     h;
@@ -161,8 +162,14 @@ typedef struct {
      * that parameter, and attempt to change it as little as possible even
      * if that requires it to change other parameters more.
      *
-     * Unused members of this array should be set to zero. */
-    Slvs_hParam         dragged[4];
+     * Note that the solver is still allowed to change the values of parameters
+     * specified this way. If you want to lock a dragged entity in place, use
+     * a SLVS_C_WHERE_DRAGGED constraint (though note that it can overconstrain
+     * e.g in case the dragged entity has less than two degrees of freedom in
+     * a workplane or less than 3 degrees of freedom in free space). */
+    Slvs_hParam         *dragged;
+    int                 ndragged;
+
 
     /* If the solver fails, then it can determine which constraints are
      * causing the problem. But this is a relatively slow process (for
@@ -193,11 +200,15 @@ typedef struct {
 #define SLVS_RESULT_INCONSISTENT        1
 #define SLVS_RESULT_DIDNT_CONVERGE      2
 #define SLVS_RESULT_TOO_MANY_UNKNOWNS   3
+#define SLVS_RESULT_REDUNDANT_OKAY      4
     int                 result;
 } Slvs_System;
 
-DLL void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
-
+typedef struct {
+    int                 result;
+    int                 dof;
+    int                 nbad;
+} Slvs_SolveResult;
 
 /* Our base coordinate system has basis vectors
  *     (1, 0, 0)  (0, 1, 0)  (0, 0, 1)
@@ -400,6 +411,103 @@ static inline Slvs_Constraint Slvs_MakeConstraint(Slvs_hConstraint h,
     r.entityB = entityB;
     return r;
 }
+
+DLL bool Slvs_IsFreeIn3D(Slvs_Entity e);
+DLL bool Slvs_Is3D(Slvs_Entity e);
+DLL bool Slvs_IsNone(Slvs_Entity e);
+DLL bool Slvs_IsPoint2D(Slvs_Entity e);
+DLL bool Slvs_IsPoint3D(Slvs_Entity e);
+DLL bool Slvs_IsNormal2D(Slvs_Entity e);
+DLL bool Slvs_IsNormal3D(Slvs_Entity e);
+DLL bool Slvs_IsLine(Slvs_Entity e);
+DLL bool Slvs_IsLine2D(Slvs_Entity e);
+DLL bool Slvs_IsLine3D(Slvs_Entity e);
+DLL bool Slvs_IsCubic(Slvs_Entity e);
+DLL bool Slvs_IsArc(Slvs_Entity e);
+DLL bool Slvs_IsWorkplane(Slvs_Entity e);
+DLL bool Slvs_IsDistance(Slvs_Entity e);
+DLL bool Slvs_IsPoint(Slvs_Entity e);
+DLL bool Slvs_IsCircle(Slvs_Entity e);
+
+static const Slvs_Entity SLVS_E_NONE = { 0 };
+static const Slvs_Entity SLVS_E_FREE_IN_3D = { 0 };
+
+DLL Slvs_Entity Slvs_AddPoint2D(uint32_t grouph, double u, double v, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddPoint3D(uint32_t grouph, double x, double y, double z);
+DLL Slvs_Entity Slvs_AddNormal2D(uint32_t grouph, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddNormal3D(uint32_t grouph, double qw, double qx, double qy, double qz);
+DLL Slvs_Entity Slvs_AddDistance(uint32_t grouph, double value, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddLine2D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddLine3D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB);
+DLL Slvs_Entity Slvs_AddCubic(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slvs_Entity ptC, Slvs_Entity ptD, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddArc(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity start, Slvs_Entity end, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddCircle(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center, Slvs_Entity radius, Slvs_Entity workplane);
+DLL Slvs_Entity Slvs_AddWorkplane(uint32_t grouph, Slvs_Entity origin, Slvs_Entity nm);
+DLL Slvs_Entity Slvs_AddBase2D(uint32_t grouph);
+
+
+DLL Slvs_Constraint Slvs_AddConstraint(uint32_t grouph, int type, Slvs_Entity workplane, double val, Slvs_Entity ptA,
+    Slvs_Entity ptB, Slvs_Entity entityA,
+    Slvs_Entity entityB, Slvs_Entity entityC,
+    Slvs_Entity entityD, int other, int other2);
+DLL Slvs_Constraint Slvs_Coincident(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_Distance(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_Equal(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_EqualAngle(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity entityC,
+                                    Slvs_Entity entityD,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_EqualPointToLine(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+                                    Slvs_Entity entityC, Slvs_Entity entityD,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_Ratio(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_Symmetric(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+                                    Slvs_Entity entityC  ,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_SymmetricH(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_SymmetricV(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_Midpoint(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_Horizontal(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity workplane,
+                                    Slvs_Entity entityB);
+DLL Slvs_Constraint Slvs_Vertical(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity workplane,
+                                    Slvs_Entity entityB);
+DLL Slvs_Constraint Slvs_Diameter(uint32_t grouph, Slvs_Entity entityA, double value);
+DLL Slvs_Constraint Slvs_SameOrientation(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB);
+DLL Slvs_Constraint Slvs_Angle(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
+                                    Slvs_Entity workplane,
+                                    int inverse);
+DLL Slvs_Constraint Slvs_Perpendicular(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+                                    Slvs_Entity workplane,
+                                    int inverse);
+DLL Slvs_Constraint Slvs_Parallel(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_Tangent(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_DistanceProj(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, double value);
+DLL Slvs_Constraint Slvs_LengthDiff(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, double value,
+                                    Slvs_Entity workplane);
+DLL Slvs_Constraint Slvs_Dragged(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity workplane);
+
+DLL double Slvs_GetParamValue(uint32_t ph);
+DLL void Slvs_SetParamValue(uint32_t ph, double value);
+
+DLL void Slvs_Solve(Slvs_System *sys, uint32_t hg);
+DLL void Slvs_MarkDragged(Slvs_Entity ptA);
+/**
+ * Setting `bad` to a non NULL pointer enables finding of bad constraints.
+ * If such constraints are found, `bad` is set to a heap allocated array containing
+ * the handles of those constraints, while the `nbad` member of the returned
+ * `Slvs_SolveResult` struct is set to the number of the bad constraints.
+ * NOTE: the user is responsible for freeing the heap allocated memory using `free()`.
+ */
+DLL Slvs_SolveResult Slvs_SolveSketch(uint32_t hg, Slvs_hConstraint **bad);
+DLL void Slvs_ClearSketch();
 
 #ifdef __cplusplus
 }

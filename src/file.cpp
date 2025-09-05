@@ -246,7 +246,7 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
 
             case 'P': {
                 if(!p->P().IsEmpty()) {
-                    Platform::Path relativePath = p->P().RelativeTo(filename.Parent());
+                    Platform::Path relativePath = p->P().Expand(/*fromCurrentDirectory=*/true).RelativeTo(filename.Expand(/*fromCurrentDirectory=*/true).Parent());
                     ssassert(!relativePath.IsEmpty(), "Cannot relativize path");
                     fprintf(fh, "%s", relativePath.ToPortable().c_str());
                 }
@@ -261,7 +261,7 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
                     [](std::pair<EntityKey, EntityId> &a, std::pair<EntityKey, EntityId> &b) {
                         return a.second.v < b.second.v;
                     });
-                for(auto it : sorted) {
+                for(const auto &it : sorted) {
                     fprintf(fh, "    %d %08x %d\n",
                             it.second.v, it.first.input.v, it.first.copyNumber);
                 }
@@ -285,7 +285,12 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     for(Group &g : SK.group) {
         if(g.type != Group::Type::LINKED) continue;
 
-        if(g.linkFile.RelativeTo(filename).IsEmpty()) {
+        // Expand for "filename" below is needed on Linux when the file was opened with a relative
+        // path on the command line. dialog->RunModal() in SolveSpaceUI::GetFilenameAndSave will
+        // convert the file name to full path on Windows but not on GTK.
+        if(g.linkFile.Expand(/*fromCurrentDirectory=*/true)
+               .RelativeTo(filename.Expand(/*fromCurrentDirectory=*/true))
+               .IsEmpty()) {
             Error("This sketch links the sketch '%s'; it can only be saved "
                   "on the same volume.", g.linkFile.raw.c_str());
             return false;
@@ -576,8 +581,8 @@ void SolveSpaceUI::UpgradeLegacyData() {
             // at workplane origin, and the solver will mess up the sketch if
             // it is not fully constrained.
             case Request::Type::TTF_TEXT: {
-                IdList<Entity,hEntity> entity = {};
-                IdList<Param,hParam>   param = {};
+                EntityList entity = {};
+                ParamList  param = {};
                 r.Generate(&entity, &param);
 
                 // If we didn't load all of the entities and params that this
@@ -616,12 +621,12 @@ void SolveSpaceUI::UpgradeLegacyData() {
     // Constraints saved in versions prior to 3.0 never had any params;
     // version 3.0 introduced params to constraints to avoid the hairy ball problem,
     // so force them where they belong.
-    IdList<Param,hParam> oldParam = {};
+    ParamList oldParam = {};
     SK.param.DeepCopyInto(&oldParam);
     SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
 
     auto AllParamsExistFor = [&](Constraint &c) {
-        IdList<Param,hParam> param = {};
+        ParamList param = {};
         c.Generate(&param);
         bool allParamsExist = true;
         for(Param &p : param) {
@@ -711,7 +716,11 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityLi
 {
     if(strcmp(filename.Extension().c_str(), "emn")==0) {
         return LinkIDF(filename, le, m, sh);
+    } else if(strcmp(filename.Extension().c_str(), "EMN")==0) {
+        return LinkIDF(filename, le, m, sh);
     } else if(strcmp(filename.Extension().c_str(), "stl")==0) {
+        return LinkStl(filename, le, m, sh);    
+    } else if(strcmp(filename.Extension().c_str(), "STL")==0) {
         return LinkStl(filename, le, m, sh);    
     } else {
         return LoadEntitiesFromSlvs(filename, le, m, sh);

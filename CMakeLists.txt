@@ -1,5 +1,7 @@
 # cmake configuration
-cmake_minimum_required(VERSION 3.9...3.19)
+cmake_minimum_required(VERSION 3.18...3.25)
+
+cmake_policy(SET CMP0094 NEW) # for Python*_FIND_STRATEGY=LOCATION
 
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
     message(FATAL_ERROR
@@ -40,14 +42,25 @@ include(GetGitCommitHash)
 
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 project(solvespace
-    VERSION 3.1
+    VERSION 3.2
     LANGUAGES C CXX ASM)
+
+if(EMSCRIPTEN)
+    # Enable optimization. Workaround for "too many locals" error when runs in the browser.
+    if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "Debug")
+        add_compile_options(-O1)
+    endif()
+
+    set(INCLUDE_NATIVE_COMPONENTS OFF)
+else()
+    set(INCLUDE_NATIVE_COMPONENTS ON)
+endif()
 
 set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
-set(ENABLE_CLI        ON CACHE BOOL
+set(ENABLE_CLI        ${INCLUDE_NATIVE_COMPONENTS} CACHE BOOL
     "Whether the command line interface is enabled")
-set(ENABLE_TESTS      ON  CACHE BOOL
+set(ENABLE_TESTS      ${INCLUDE_NATIVE_COMPONENTS} CACHE BOOL
     "Whether the test suite will be built and run")
 set(ENABLE_COVERAGE   OFF CACHE BOOL
     "Whether code coverage information will be collected")
@@ -91,10 +104,12 @@ endif()
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
-    # Link 32 bit SolveSpace with --large-address-aware which allows it to access
-    # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
-    # See https://msdn.microsoft.com/en-us/library/aa366778
-    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--large-address-aware")
+    if(CMAKE_SIZEOF_VOID_P EQUAL 4)
+        # Link 32 bit SolveSpace with --large-address-aware which allows it to access
+        # up to 3GB on a properly configured 32 bit Windows and up to 4GB on 64 bit.
+        # See https://msdn.microsoft.com/en-us/library/aa366778
+        set(CMAKE_EXE_LINKER_FLAGS "-Wl,--large-address-aware")
+    endif()
 endif()
 
 # Ensure that all platforms use 64-bit IEEE floating point operations for consistency;
@@ -121,10 +136,10 @@ if(ENABLE_OPENMP)
     find_package( OpenMP REQUIRED )
     if(OPENMP_FOUND)
         add_library(slvs_openmp INTERFACE)
-        target_compile_options(slvs_openmp INTERFACE ${OpenMP_CXX_FLAGS})
+        target_compile_options(slvs_openmp INTERFACE "SHELL:${OpenMP_CXX_FLAGS}")
         target_link_libraries(slvs_openmp INTERFACE
             ${OpenMP_CXX_LIBRARIES})
-        target_include_directories(slvs_openmp INTERFACE SYSTEM
+        target_include_directories(slvs_openmp SYSTEM INTERFACE
             ${OpenMP_CXX_INCLUDE_DIRS})
         message(STATUS "found OpenMP, compiling with flags: " ${OpenMP_CXX_FLAGS} )
     endif()
@@ -136,44 +151,52 @@ endif()
 
 if(ENABLE_SANITIZERS)
     if(NOT SANITIZERS)
-        set(SANITIZERS "address;undefined")
+        if(MSVC)
+            if(MSVC_VERSION LESS 1928)
+                # Technically 1928 is also used for VS 16.8, but CMake doesn't have a way
+                # to distinguish patch versions of MSVC, so this is good enough
+                message(FATAL_ERROR "Using sanitizers with MSVC requires Visual Studio 16.9 or newer")
+            endif()
+            set(SANITIZERS "address")
+        else()
+            set(SANITIZERS "address;undefined")
+        endif()
     endif()
 
-    if("thread" IN_LIST SANITIZERS)
-        list(REMOVE_ITEM SANITIZERS "thread")
-        list(APPEND SANITIZE_OPTIONS thread)
-    endif()
-    if("address" IN_LIST SANITIZERS)
-        list(REMOVE_ITEM SANITIZERS "address")
-        list(APPEND SANITIZE_OPTIONS address)
-    endif()
-    if("undefined" IN_LIST SANITIZERS)
-        list(REMOVE_ITEM SANITIZERS "undefined")
-        list(APPEND SANITIZE_OPTIONS alignment bounds)
-        list(APPEND SANITIZE_OPTIONS shift signed-integer-overflow integer-divide-by-zero)
-        list(APPEND SANITIZE_OPTIONS null bool enum)
-        list(APPEND SANITIZE_OPTIONS return)
-    endif()
-    if(SANITIZERS)
-        message(FATAL_ERROR "Unknown sanitizer(s) ${SANITIZERS}")
+    foreach(option ${SANITIZERS})
+        if(option STREQUAL "thread" AND NOT MSVC)
+            list(APPEND SANITIZE_OPTIONS thread)
+        elseif(option STREQUAL "address")
+            list(APPEND SANITIZE_OPTIONS address)
+        elseif(option STREQUAL "undefined" AND NOT MSVC)
+            list(APPEND SANITIZE_OPTIONS alignment bounds)
+            list(APPEND SANITIZE_OPTIONS shift signed-integer-overflow integer-divide-by-zero)
+            list(APPEND SANITIZE_OPTIONS null bool enum)
+            list(APPEND SANITIZE_OPTIONS return)
+        else()
+            message(FATAL_ERROR "Unknown sanitizer ${option}")
+        endif()
+    endforeach()
+
+    message(STATUS "Using sanitizer options ${SANITIZE_OPTIONS}")
+
+    if(MSVC)
+        string(REPLACE ";" " /fsanitize=" SANITIZE_OPTIONS "${SANITIZE_OPTIONS}")
+        set(SANITIZE_FLAGS "/Zi /fsanitize=${SANITIZE_OPTIONS}")
     else()
-        message(STATUS "Using sanitizer options ${SANITIZE_OPTIONS}")
-    endif()
-
-    string(REPLACE ";" "," SANITIZE_OPTIONS "${SANITIZE_OPTIONS}")
-
-    if (NOT APPLE)
-        set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS} -fno-sanitize-recover=address,undefined")
-    else()
+        string(REPLACE ";" "," SANITIZE_OPTIONS "${SANITIZE_OPTIONS}")
         set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZE_OPTIONS}")
+        if (NOT APPLE)
+            set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-sanitize-recover=address,undefined")
+        endif()
     endif()
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-omit-frame-pointer -fno-optimize-sibling-calls")
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fuse-ld=gold")
-    else()
-        message(FATAL_ERROR "Sanitizers are only available when using GCC or Clang")
+    elseif(NOT MSVC)
+        message(FATAL_ERROR "Sanitizers are only available when using MSVC, GCC, or Clang")
     endif()
 
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
@@ -183,21 +206,31 @@ endif()
 # common dependencies
 
 if(APPLE)
-    set(CMAKE_FIND_FRAMEWORK LAST)
+    set(CMAKE_FIND_FRAMEWORK FIRST)
 endif()
 
-if(EMSCRIPTEN)
-    set(M_LIBRARY "" CACHE STRING "libm (not necessary)" FORCE)
+if(ENABLE_GUI OR ENABLE_CLI)
+    message(STATUS "Using in-tree libdxfrw")
+    add_subdirectory(extlib/libdxfrw)
 endif()
-
-message(STATUS "Using in-tree libdxfrw")
-add_subdirectory(extlib/libdxfrw)
 
 message(STATUS "Using in-tree mimalloc")
 set(MI_OVERRIDE OFF CACHE BOOL "")
 set(MI_BUILD_SHARED OFF CACHE BOOL "")
 set(MI_BUILD_OBJECT OFF CACHE BOOL "")
 set(MI_BUILD_TESTS OFF CACHE BOOL "")
+if(EMSCRIPTEN)
+    # HACK: We only use mimalloc for the temporary heap, not as a general purpose
+    # allocator. However, the Emscripten port of mimalloc assumes that it is used
+    # as the system allocator, and depends on the slow emmalloc allocator.
+    # We do not want to enable emmalloc, as that would slow down allocations all
+    # over the place, so we must either use mimalloc as the system allocator as
+    # well, or override its definitions to just use the existing system allocator.
+    # The latter option is the least intrusive change from a stability standpoint,
+    # so for now that's what we do here. We can try to convert to mimalloc wholsale
+    # and remove this hack if we find the need to do so in the future.
+    set(MI_EXTRA_CPPDEFS "emmalloc_free=free;emmalloc_memalign=memalign" CACHE INTERNAL "")
+endif()
 add_subdirectory(extlib/mimalloc EXCLUDE_FROM_ALL)
 set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
 
@@ -216,68 +249,97 @@ if(NOT EXISTS "${EIGEN3_INCLUDE_DIRS}")
 endif()
 
 
-if(WIN32 OR APPLE OR EMSCRIPTEN)
-    # On Win32 and macOS we use vendored packages, since there is little to no benefit
-    # to trying to find system versions. In particular, trying to link to libraries from
-    # Homebrew or macOS system libraries into the .app file is highly likely to result
-    # in incompatibilities after upgrades.
+if(ENABLE_GUI OR ENABLE_CLI)
+    if(WIN32 OR APPLE OR EMSCRIPTEN)
+        # On Win32 and macOS we use vendored packages, since there is little to no benefit
+        # to trying to find system versions. In particular, trying to link to libraries from
+        # Homebrew or macOS system libraries into the .app file is highly likely to result
+        # in incompatibilities after upgrades.
 
-    include(FindVendoredPackage)
-    include(AddVendoredSubdirectory)
+        include(FindVendoredPackage)
+        include(AddVendoredSubdirectory)
 
-    set(FORCE_VENDORED_ZLIB     ON)
-    set(FORCE_VENDORED_PNG      ON)
-    set(FORCE_VENDORED_Freetype ON)
+        set(FORCE_VENDORED_ZLIB     ON)
+        set(FORCE_VENDORED_PNG      ON)
+        set(FORCE_VENDORED_Freetype ON)
 
-    find_vendored_package(ZLIB zlib
-        ZLIB_LIBRARY            zlibstatic
-        ZLIB_INCLUDE_DIR        ${CMAKE_SOURCE_DIR}/extlib/zlib)
-    list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
+        # HACK: This is essentially what `find_vendored_package()` does, except we also
+        # define the ZLIB::ZLIB target to be an alias for zlibstatic before calling
+        # `find_package()` in order to avoid having it defined as an imported target
+        # by the built-in FindZLIB.cmake module, which breaks libpng's png_static
+        # target that relies on ZLIB::ZLIB instead of on zlibstatic.
+        # Once zlib releases its develop branch post 1.3.1, the built-in module will not
+        # generate an imported target since we'll have proper targets, but libpng would
+        # still need to be updated to use ZLIB::ZLIBSTATIC instead of ZLIB::ZLIB, so this
+        # ugly hack will have to stay until both libraries release fixed versions.
+        add_vendored_subdirectory(extlib/zlib)
+        set(ZLIB_LIBRARY      zlibstatic CACHE INTERNAL "")
+        set(ZLIB_INCLUDE_DIR  ${CMAKE_SOURCE_DIR}/extlib/zlib CACHE INTERNAL "")
+        add_library(ZLIB::ZLIB ALIAS ${ZLIB_LIBRARY})
+        find_package(ZLIB REQUIRED)
+        set(ZLIB_FOUND        ${ZLIB_FOUND} CACHE INTERNAL "")
 
-    find_vendored_package(PNG libpng
-        SKIP_INSTALL_ALL        ON
-        PNG_LIBRARY             png_static
-        PNG_ARM_NEON            "off"
-        PNG_SHARED              OFF
-        PNG_STATIC              ON
-        PNG_EXECUTABLES         OFF
-        PNG_TESTS               OFF
-        PNG_FRAMEWORK           OFF
-        PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
-    list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
+        list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
 
-    find_vendored_package(Freetype freetype
-        WITH_ZLIB               OFF
-        WITH_BZip2              OFF
-        WITH_PNG                OFF
-        WITH_HarfBuzz           OFF
-        FREETYPE_LIBRARY        freetype
-        FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
+        # There's an issue with the zlib configuration, which doesn't provide a way to
+        # disable the shared or static library builds, and on UNIX sets the base name of
+        # the output for both the static and shared targets to `libz`. As Emscripten doesn't
+        # support shared libraries, CMake converts the shared library target to a static
+        # library and both targets end up with the name `libz.a`, causing Ninja to complain
+        # about different rules generating the same target. As a workaround, force the output
+        # name of the static library target to be different on Emscripten.
+        # NOTE: The unreleased develop branch of zlib after version 1.3.1 allows disabling
+        # the shared library build, which is the proper fix for this issue, so when the
+        # next version of zlib is released and updated as a dependency, `ZLIB_BUILD_SHARED`
+        # should be set to `OFF` instead of this hack.
+        if(EMSCRIPTEN AND UNIX)
+            set_target_properties(${ZLIB_LIBRARY} PROPERTIES OUTPUT_NAME zlibstatic)
+        endif()
 
-    message(STATUS "Using in-tree pixman")
-    set(PIXMAN_FOUND            YES)
-    set(PIXMAN_LIBRARY          pixman)
-    set(PIXMAN_BUILD_TESTS      OFF CACHE BOOL "")
-    set(PIXMAN_BUILD_DEMOS      OFF CACHE BOOL "")
+        find_vendored_package(PNG libpng
+            SKIP_INSTALL_ALL        ON
+            PNG_LIBRARY             png_static
+            PNG_SHARED              OFF
+            PNG_STATIC              ON
+            PNG_TOOLS               OFF
+            PNG_TESTS               OFF
+            PNG_FRAMEWORK           OFF
+            PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
+        list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
-    set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
-    list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
-    add_vendored_subdirectory(extlib/pixman)
+        find_vendored_package(Freetype freetype
+            FT_DISABLE_BZIP2        ON
+            FT_DISABLE_HARFBUZZ     ON
+            FT_DISABLE_BROTLI       ON
+            FT_DISABLE_PNG          ON
+            FREETYPE_LIBRARY        freetype
+            FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
 
-    message(STATUS "Using in-tree cairo")
-    add_vendored_subdirectory(extlib/cairo)
-    set(CAIRO_FOUND             YES)
-    set(CAIRO_LIBRARIES         cairo)
-    set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
-    list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
-else()
-    # On Linux and BSDs we're a good citizen and link to system libraries.
-    find_package(Backtrace)
-    find_package(PkgConfig REQUIRED)
-    find_package(ZLIB REQUIRED)
-    find_package(PNG REQUIRED)
-    find_package(Freetype REQUIRED)
-    find_package(Cairo REQUIRED)
+        message(STATUS "Using in-tree pixman")
+        set(PIXMAN_FOUND            YES)
+        set(PIXMAN_LIBRARY          pixman)
+        set(PIXMAN_BUILD_TESTS      OFF CACHE BOOL "")
+        set(PIXMAN_BUILD_DEMOS      OFF CACHE BOOL "")
+
+        set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
+        list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
+        add_vendored_subdirectory(extlib/pixman)
+
+        message(STATUS "Using in-tree cairo")
+        add_vendored_subdirectory(extlib/cairo)
+        set(CAIRO_FOUND             YES)
+        set(CAIRO_LIBRARIES         cairo)
+        set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
+        list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
+    else()
+        # On Linux and BSDs we're a good citizen and link to system libraries.
+        find_package(Backtrace)
+        find_package(PkgConfig REQUIRED)
+        find_package(ZLIB REQUIRED)
+        find_package(PNG REQUIRED)
+        find_package(Freetype REQUIRED)
+        find_package(Cairo REQUIRED)
+    endif()
 endif()
 
 # GUI dependencies
@@ -431,15 +493,16 @@ if(ENABLE_COVERAGE)
 endif()
 
 # application components
-
-add_subdirectory(res)
+if(ENABLE_GUI OR ENABLE_CLI)
+    add_subdirectory(res)
+    add_subdirectory(exposed)
+endif()
 add_subdirectory(src)
-add_subdirectory(exposed)
 if(ENABLE_TESTS)
     add_subdirectory(test)
 endif()
-if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+if((ENABLE_CLI OR ENABLE_GUI) AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"))
     add_subdirectory(bench)
 else()
-    message(STATUS "Benchmarking disabled in debug builds.")
+    message(STATUS "Benchmarking disabled in debug and library builds.")
 endif()

@@ -34,7 +34,7 @@ void Group::Clear() {
     remap.clear();
 }
 
-void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
+void Group::AddParam(ParamList *param, hParam hp, double v) {
     Param pa = {};
     pa.h = hp;
     pa.val = v;
@@ -412,7 +412,9 @@ bool Group::IsForcedToMesh() const {
 }
 
 bool Group::IsTriangleMeshAssembly() const {
-    return type == Type::LINKED && linkFile.Extension() == "stl";
+    if (type != Type::LINKED) return false;
+    if (!impMesh.IsEmpty() && impShell.IsEmpty()) return true;
+    return false;
 }
 
 std::string Group::DescriptionString() {
@@ -433,8 +435,7 @@ void Group::Activate() {
     SS.ScheduleShowTW();
 }
 
-void Group::Generate(IdList<Entity,hEntity> *entity,
-                     IdList<Param,hParam> *param)
+void Group::Generate(EntityList *entity, ParamList *param)
 {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
     Vector gp = SS.GW.projRight.Plus(SS.GW.projUp);
@@ -498,9 +499,9 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(1), gn.y);
             AddParam(param, h.param(2), gn.z);
             int ai, af;
-            if(subtype == Subtype::ONE_SIDED) {
+            if((subtype == Subtype::ONE_SIDED) || (subtype == Subtype::ONE_SKEWED)) {
                 ai = 0; af = 2;
-            } else if(subtype == Subtype::TWO_SIDED) {
+            } else if((subtype == Subtype::TWO_SIDED) || (subtype == Subtype::TWO_SKEWED)) {
                 ai = -1; af = 1;
             } else ssassert(false, "Unexpected extrusion subtype");
 
@@ -828,10 +829,11 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
                 Minus(Expr::From(h.param(3))->Times(Expr::From(valB))), 6);
             }
         }
-    } else if(type == Type::EXTRUDE) {
+    } else if((type == Type::EXTRUDE) && (subtype != Subtype::ONE_SKEWED) &&
+              (subtype != Subtype::TWO_SKEWED)) {
         if(predef.entityB != Entity::FREE_IN_3D) {
             // The extrusion path is locked along a line, normal to the
-            // specified workplane.
+            // specified workplane. Don't constrain for skewed extrusions.
             Entity *w = SK.GetEntity(predef.entityB);
             ExprVector u = w->Normal()->NormalExprsU();
             ExprVector v = w->Normal()->NormalExprsV();
@@ -859,13 +861,18 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
 hEntity Group::Remap(hEntity in, int copyNumber) {
     auto it = remap.find({ in, copyNumber });
     if(it == remap.end()) {
+        // Due to the way the remap value is combined with the group handle into a 32-bit
+        // handle value to generate an entity handle, the mapped value must fit in a 16-bit
+        // variable.
+        // This limit can be lifted once the handle values are extended to 64-bit.
+        ssassert(remap.size() < (1 << 16) - 1, "Too many entities in group");
         std::tie(it, std::ignore) =
             remap.insert({ { in, copyNumber }, { (uint32_t)remap.size() + 1 } });
     }
     return h.entity(it->second.v);
 }
 
-void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
+void Group::MakeExtrusionLines(EntityList *el, hEntity in) {
     Entity *ep = SK.GetEntity(in);
 
     Entity en = {};
@@ -901,7 +908,7 @@ void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
     }
 }
 
-void Group::MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis) {
+void Group::MakeLatheCircles(EntityList *el, ParamList *param, hEntity in, Vector pt, Vector axis) {
     Entity *ep = SK.GetEntity(in);
 
     Entity en = {};
@@ -948,7 +955,7 @@ void Group::MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *p
     }
 }
 
-void Group::MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in, Vector axis) {
+void Group::MakeLatheSurfacesSelectable(EntityList *el, hEntity in, Vector axis) {
     Entity *ep = SK.GetEntity(in);
 
     Entity en = {};
@@ -983,7 +990,7 @@ void Group::MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in,
 // For Revolve and Helix groups the end faces are remapped from an arbitrary
 // point on the sketch. We reference the transformed point but there is
 // no existing normal so we need to define the rotation and timesApplied.
-void Group::MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt, int ai, int af)
+void Group::MakeRevolveEndFaces(EntityList *el, hEntity pt, int ai, int af)
 {
     if(pt.v == 0) return;
     Group *src = SK.GetGroup(opA);
@@ -1020,7 +1027,7 @@ void Group::MakeRevolveEndFaces(IdList<Entity,hEntity> *el, hEntity pt, int ai, 
     el->Add(&en);
 }
 
-void Group::MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt)
+void Group::MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt)
 {
     if(pt.v == 0) return;
     Group *src = SK.GetGroup(opA);
@@ -1046,7 +1053,7 @@ void Group::MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt)
     el->Add(&en);
 }
 
-void Group::CopyEntity(IdList<Entity,hEntity> *el,
+void Group::CopyEntity(EntityList *el,
                        Entity *ep, int timesApplied, int remap,
                        hParam dx, hParam dy, hParam dz,
                        hParam qw, hParam qvx, hParam qvy, hParam qvz, hParam dist,
@@ -1178,10 +1185,15 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
             break;
 
         default: {
+            if((Entity::Type::IMAGE == ep->type) && (true == ep->construction)) {
+                // Do not copy image entities if they are construction.
+                return;
+            }
+
             int i, points;
             bool hasNormal, hasDistance;
-            EntReqTable::GetEntityInfo(ep->type, ep->extraPoints,
-                NULL, &points, &hasNormal, &hasDistance);
+            ssassert(EntReqTable::GetEntityInfo(ep->type, ep->extraPoints,
+                NULL, &points, &hasNormal, &hasDistance), "No entity info");
             for(i = 0; i < points; i++) {
                 en.point[i] = Remap(ep->point[i], remap);
             }

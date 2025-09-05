@@ -70,6 +70,15 @@ void TextWindow::ScreenChangeExportOffset(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::EXPORT_OFFSET;
 }
 
+void TextWindow::ScreenChangeArcDimDefault(int link, uint32_t v) {
+    SS.arcDimDefaultDiameter = !SS.arcDimDefaultDiameter;
+}
+
+void TextWindow::ScreenChangeShowFullFilePath(int link, uint32_t v) {
+    SS.showFullFilePath = !SS.showFullFilePath;
+    SS.UpdateWindowTitles();
+}
+
 void TextWindow::ScreenChangeFixExportColors(int link, uint32_t v) {
     SS.fixExportColors = !SS.fixExportColors;
 }
@@ -90,6 +99,10 @@ void TextWindow::ScreenChangeTurntableNav(int link, uint32_t v) {
         SS.GW.AnimateOnto(Quaternion::From(Vector::From(-1, 0, 0), Vector::From(0, 0, 1)),
                           SS.GW.offset);
     }
+}
+
+void TextWindow::ScreenChangeCameraNav(int link, uint32_t v) {
+    SS.cameraNav = !SS.cameraNav;
 }
 
 void TextWindow::ScreenChangeImmediatelyEditDimension(int link, uint32_t v) {
@@ -192,6 +205,11 @@ void TextWindow::ScreenChangeAutosaveInterval(int link, uint32_t v) {
 void TextWindow::ScreenChangeFindConstraintTimeout(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, std::to_string(SS.timeoutRedundantConstr));
     SS.TW.edit.meaning = Edit::FIND_CONSTRAINT_TIMEOUT;
+}
+
+void TextWindow::ScreenChangeAnimationSpeed(int link, uint32_t v) {
+    SS.TW.ShowEditControl(3, std::to_string(SS.animationSpeed));
+    SS.TW.edit.meaning = Edit::ANIMATION_SPEED;
 }
 
 void TextWindow::ShowConfiguration() {
@@ -333,11 +351,18 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "  %Fd%f%Ll%s  enable automatic line constraints%E",
         &ScreenChangeAutomaticLineConstraints,
         SS.automaticLineConstraints ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%s  use camera mouse navigation%E", &ScreenChangeCameraNav,
+        SS.cameraNav ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  use turntable mouse navigation%E", &ScreenChangeTurntableNav,
         SS.turntableNav ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  edit newly added dimensions%E",
         &ScreenChangeImmediatelyEditDimension,
         SS.immediatelyEditDimension ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%s  arc default is diameter%E",
+        &ScreenChangeArcDimDefault,
+        SS.arcDimDefaultDiameter ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%s  display the full path in the title bar%E",
+           &ScreenChangeShowFullFilePath, SS.showFullFilePath ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "");
     Printf(false, "%Ft autosave interval (in minutes)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
@@ -346,6 +371,10 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "%Ft redundant constraint timeout (in ms)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
         SS.timeoutRedundantConstr, &ScreenChangeFindConstraintTimeout);
+    Printf(false, "");
+    Printf(false, "%Ft animation speed (in ms; 0 to disable)%E");
+    Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
+        SS.animationSpeed, &ScreenChangeAnimationSpeed);
 
     if(canvas) {
         const char *gl_vendor, *gl_renderer, *gl_version;
@@ -540,6 +569,15 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
                 } else {
                     SS.timeoutRedundantConstr = 1000;
                 }
+            }
+            break;
+        }
+        case Edit::ANIMATION_SPEED: {
+            int speed = atoi(s.c_str());
+            if(speed >= 0) {
+                SS.animationSpeed = speed;
+            } else {
+                SS.animationSpeed = 800;
             }
             break;
         }

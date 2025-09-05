@@ -1,6 +1,6 @@
 ### System information
 
-- **SolveSpace version:** <!--e.g. 3.0~3dd2fc00; go to Help → About...-->
+- **SolveSpace version:** <!--e.g. 3.1~70bde63c; go to Help → About… / SolveSpace → About SolveSpace (macOS)-->
 - **Operating system:** <!--e.g. Debian testing-->
 
 ### Expected behavior

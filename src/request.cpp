@@ -47,16 +47,16 @@ static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
     if(hasDistance) *hasDistance = te->hasDistance;
 }
 
-bool EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
+void EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
                                  Entity::Type *ent, int *pts, bool *hasNormal, bool *hasDistance)
 {
     for(const EntReqMapping &te : EntReqMap) {
         if(req == te.reqType) {
             CopyEntityInfo(&te, extraPoints, ent, NULL, pts, hasNormal, hasDistance);
-            return true;
+            return;
         }
     }
-    return false;
+    ssassert(false, "No request info");
 }
 
 bool EntReqTable::GetEntityInfo(Entity::Type ent, int extraPoints,
@@ -78,8 +78,7 @@ Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
     return req;
 }
 
-void Request::Generate(IdList<Entity,hEntity> *entity,
-                       IdList<Param,hParam> *param)
+void Request::Generate(EntityList *entity, ParamList *param)
 {
     int points = 0;
     Entity::Type et = (Entity::Type)0;
@@ -90,7 +89,8 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     // Request-specific generation.
     switch(type) {
         case Type::TTF_TEXT: {
-            double actualAspectRatio = SS.fonts.AspectRatio(font, str);
+            // `extraPoints` is storing kerning boolean
+            double actualAspectRatio = SS.fonts.AspectRatio(font, str, extraPoints);
             if(EXACT(actualAspectRatio != 0.0)) {
                 // We could load the font, so use the actual value.
                 aspectRatio = actualAspectRatio;
@@ -238,7 +238,7 @@ int Request::IndexOfPoint(hEntity he) const {
     return -1;
 }
 
-hParam Request::AddParam(IdList<Param,hParam> *param, hParam hp) {
+hParam Request::AddParam(ParamList *param, hParam hp) {
     Param pa = {};
     pa.h = hp;
     param->Add(&pa);

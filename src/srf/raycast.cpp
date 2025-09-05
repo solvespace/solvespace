@@ -398,14 +398,14 @@ SShell::Class SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
         // are coincident. Test the edge's surface normal
         // to see if it's with same or opposite normals.
         if(inter_surf_n.Dot(edge_surf_n) > 0) {
-            return Class::COINC_SAME;
+            return Class::SURF_COINC_SAME;
         } else {
-            return Class::COINC_OPP;
+            return Class::SURF_COINC_OPP;
         }
     } else if(dot > 0) {
-        return Class::OUTSIDE;
+        return Class::SURF_OUTSIDE;
     } else {
-        return Class::INSIDE;
+        return Class::SURF_INSIDE;
     }
 }
 
@@ -474,7 +474,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
             swap(inter_edge_n[0], inter_edge_n[1]);
         }
 
-        Class coinc = (surf_n.Dot(inter_surf_n[0])) > 0 ? Class::COINC_SAME : Class::COINC_OPP;
+        Class coinc = (surf_n.Dot(inter_surf_n[0])) > 0 ? Class::SURF_COINC_SAME : Class::SURF_COINC_OPP;
 
         if(fabs(dotp[0]) < DOTP_TOL && fabs(dotp[1]) < DOTP_TOL) {
             // This is actually an edge on face case, just that the face
@@ -484,25 +484,25 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         } else if(fabs(dotp[0]) < DOTP_TOL && dotp[1] > DOTP_TOL) {
             if(edge_n_out.Dot(inter_edge_n[0]) > 0) {
                 *indir  = coinc;
-                *outdir = Class::OUTSIDE;
+                *outdir = Class::SURF_OUTSIDE;
             } else {
-                *indir  = Class::INSIDE;
+                *indir  = Class::SURF_INSIDE;
                 *outdir = coinc;
             }
         } else if(fabs(dotp[0]) < DOTP_TOL && dotp[1] < -DOTP_TOL) {
             if(edge_n_out.Dot(inter_edge_n[0]) > 0) {
                 *indir  = coinc;
-                *outdir = Class::INSIDE;
+                *outdir = Class::SURF_INSIDE;
             } else {
-                *indir  = Class::OUTSIDE;
+                *indir  = Class::SURF_OUTSIDE;
                 *outdir = coinc;
             }
         } else if(dotp[0] > DOTP_TOL && dotp[1] > DOTP_TOL) {
-            *indir  = Class::INSIDE;
-            *outdir = Class::OUTSIDE;
+            *indir  = Class::SURF_INSIDE;
+            *outdir = Class::SURF_OUTSIDE;
         } else if(dotp[0] < -DOTP_TOL && dotp[1] < -DOTP_TOL) {
-            *indir  = Class::OUTSIDE;
-            *outdir = Class::INSIDE;
+            *indir  = Class::SURF_OUTSIDE;
+            *outdir = Class::SURF_INSIDE;
         } else {
             // Edge is tangent to the shell at shell's edge, so can't be
             // a boundary of the surface.
@@ -530,7 +530,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         SBspUv::Class c = (srf.bsp) ? srf.bsp->ClassifyPoint(puv, dummy, &srf) : SBspUv::Class::OUTSIDE;
         if(c == SBspUv::Class::OUTSIDE) continue;
 
-        // Edge-on-face (unless edge-on-edge above superceded)
+        // Edge-on-face (unless edge-on-edge above superseded)
         Point2d pin, pout;
         srf.ClosestPointTo(p.Plus(edge_n_in),  &pin,  /*mustConverge=*/false);
         srf.ClosestPointTo(p.Plus(edge_n_out), &pout, /*mustConverge=*/false);
@@ -557,8 +557,8 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
                 /*asSegment=*/false, /*trimmed=*/true, /*inclTangent=*/false);
 
         // no intersections means it's outside
-        *indir  = Class::OUTSIDE;
-        *outdir = Class::OUTSIDE;
+        *indir  = Class::SURF_OUTSIDE;
+        *outdir = Class::SURF_OUTSIDE;
         double dmin = VERY_POSITIVE;
         bool onEdge = false;
         edge_inters = 0;
@@ -584,11 +584,11 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
                 // Edge does not lie on surface; either strictly inside
                 // or strictly outside
                 if((si->surfNormal).Dot(ray) > 0) {
-                    *indir  = Class::INSIDE;
-                    *outdir = Class::INSIDE;
+                    *indir  = Class::SURF_INSIDE;
+                    *outdir = Class::SURF_INSIDE;
                 } else {
-                    *indir  = Class::OUTSIDE;
-                    *outdir = Class::OUTSIDE;
+                    *indir  = Class::SURF_OUTSIDE;
+                    *outdir = Class::SURF_OUTSIDE;
                 }
                 onEdge = si->onEdge;
             }

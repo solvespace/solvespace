@@ -38,6 +38,8 @@ public:
     size_t                     height;
     size_t                     stride;
     std::vector<uint8_t>       data;
+    int colorType;
+    bool bgr;
 
     static std::shared_ptr<Pixmap> Create(Format format, size_t width, size_t height);
     static std::shared_ptr<Pixmap> FromPng(const uint8_t *data, size_t size, bool flip = false);

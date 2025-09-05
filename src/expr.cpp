@@ -6,6 +6,7 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
+#include <limits>
 #include "solvespace.h"
 
 ExprVector ExprVector::From(Expr *x, Expr *y, Expr *z) {
@@ -306,9 +307,8 @@ Expr *Expr::DeepCopy() const {
     return n;
 }
 
-Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
-    IdList<Param,hParam> *thenTry) const
-{
+Expr *Expr::DeepCopyWithParamsAsPointers(ParamList *firstTry, ParamList *thenTry,
+                                         bool foldConstants) const {
     Expr *n = AllocExpr();
     if(op == Op::PARAM) {
         // A param that is referenced by its hParam gets rewritten to go
@@ -328,8 +328,17 @@ Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
 
     *n = *this;
     int c = n->Children();
-    if(c > 0) n->a = a->DeepCopyWithParamsAsPointers(firstTry, thenTry);
-    if(c > 1) n->b = b->DeepCopyWithParamsAsPointers(firstTry, thenTry);
+    if(c > 0) {
+        n->a = a->DeepCopyWithParamsAsPointers(firstTry, thenTry, foldConstants);
+        bool hasConstants = n->a->op == Op::CONSTANT;
+        if(c > 1) {
+            n->b = b->DeepCopyWithParamsAsPointers(firstTry, thenTry, foldConstants);
+            hasConstants |= n->b->op == Op::CONSTANT;
+        }
+        if(hasConstants && foldConstants) {
+            n = n->FoldConstants(false, 0);
+        }
+    }
     return n;
 }
 
@@ -400,16 +409,11 @@ Expr *Expr::PartialWrt(hParam p) const {
     ssassert(false, "Unexpected operation");
 }
 
-void Expr::ParamsUsedList(std::vector<hParam> *list) const {
+void Expr::ParamsUsedList(ParamSet *list) const {
     if(op == Op::PARAM || op == Op::PARAM_PTR) {
         // leaf: just add ourselves if we aren't already there
         hParam param = (op == Op::PARAM) ? parh : parp->h;
-        if(list->end() != std::find_if(list->begin(), list->end(),
-                                       [=](const hParam &p) { return p.v == param.v; })) {
-            // We found ourselves in the list already, early out.
-            return;
-        }
-        list->push_back(param);
+        list->insert(param);
         return;
     }
 
@@ -438,13 +442,15 @@ bool Expr::IsZeroConst() const {
     return op == Op::CONSTANT && EXACT(v == 0.0);
 }
 
-Expr *Expr::FoldConstants() {
-    Expr *n = AllocExpr();
-    *n = *this;
-
-    int c = Children();
-    if(c >= 1) n->a = a->FoldConstants();
-    if(c >= 2) n->b = b->FoldConstants();
+Expr *Expr::FoldConstants(bool allocCopy, size_t depth) {
+    Expr *n;
+    
+    if(!allocCopy) {
+        n = this;
+    } else {
+        n = AllocExpr();
+        *n = *this;
+    }
 
     switch(op) {
         case Op::PARAM_PTR:
@@ -457,6 +463,11 @@ Expr *Expr::FoldConstants() {
         case Op::TIMES:
         case Op::DIV:
         case Op::PLUS:
+            if(depth > 0) {
+                n->a = a->FoldConstants(allocCopy, depth - 1);
+                n->b = b->FoldConstants(allocCopy, depth - 1);
+            }
+    
             // If both ops are known, then we can evaluate immediately
             if(n->a->op == Op::CONSTANT && n->b->op == Op::CONSTANT) {
                 double nv = n->Eval();
@@ -495,6 +506,10 @@ Expr *Expr::FoldConstants() {
         case Op::COS:
         case Op::ASIN:
         case Op::ACOS:
+            if(depth > 0) {
+                n->a = a->FoldConstants(allocCopy, depth - 1);
+            }
+
             if(n->a->op == Op::CONSTANT) {
                 double nv = n->Eval();
                 n->op = Op::CONSTANT;
@@ -505,15 +520,21 @@ Expr *Expr::FoldConstants() {
     return n;
 }
 
-void Expr::Substitute(hParam oldh, hParam newh) {
+void Expr::Substitute(const SubstitutionMap &subMap) {
     ssassert(op != Op::PARAM_PTR, "Expected an expression that refer to params via handles");
 
-    if(op == Op::PARAM && parh == oldh) {
-        parh = newh;
+    if(op == Op::PARAM) {
+        auto it = subMap.find(parh);
+        if(it != subMap.end()) {
+            parh = it->second->h;
+        }
+    } else {
+        int c = Children();
+        if(c >= 1) {
+            a->Substitute(subMap);
+            if(c >= 2) b->Substitute(subMap);
+        }
     }
-    int c = Children();
-    if(c >= 1) a->Substitute(oldh, newh);
-    if(c >= 2) b->Substitute(oldh, newh);
 }
 
 //-----------------------------------------------------------------------------
@@ -522,7 +543,7 @@ void Expr::Substitute(hParam oldh, hParam newh) {
 // If multiple params are referenced, then return MULTIPLE_PARAMS.
 //-----------------------------------------------------------------------------
 const hParam Expr::NO_PARAMS       = { 0 };
-const hParam Expr::MULTIPLE_PARAMS = { 1 };
+const hParam Expr::MULTIPLE_PARAMS = { std::numeric_limits<decltype(hParam::v)>::max() };
 hParam Expr::ReferencedParams(ParamList *pl) const {
     if(op == Op::PARAM) {
         if(pl->FindByIdNoOops(parh)) {
