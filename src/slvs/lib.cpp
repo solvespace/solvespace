@@ -845,8 +845,9 @@ void Slvs_MarkDragged(Slvs_Entity ptA) {
             hParam p = hParam { ptA.param[i] };
             dragged.insert(p);
         }
+    } else {
+        SolveSpace::Platform::FatalError("Invalid entity for marking dragged");
     }
-    SolveSpace::Platform::FatalError("Invalid entity for marking dragged");
 }
 
 Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, Slvs_hConstraint **bad = nullptr)
