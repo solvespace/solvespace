@@ -31,35 +31,20 @@ void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
     ScheduleGenerateAll();
 }
 
-bool SolveSpaceUI::PruneOrphans() {
-    const int requests = SK.request.n;
-    for(Request &r : SK.request) {
-        if(!GroupExists(r.group))
-            r.tag = 1;
+bool SolveSpaceUI::GroupsInOrder(hGroup hbefore, hGroup hafter) {
+    if(hbefore.v != 0 && hafter.v != 0) {
+        const Group *before = SK.group.FindByIdNoOops(hbefore);
+        if(before == nullptr) {
+            return false;
+        }
+        const Group *after = SK.group.FindByIdNoOops(hafter);
+        if(after == nullptr) {
+            return false;
+        }
+        if(before->order >= after->order) {
+            return false;
+        }
     }
-    SK.request.RemoveTagged();
-    deleted.requests += requests - SK.request.n;
-
-    const int constraints = SK.constraint.n;
-    for(Constraint &c : SK.constraint) {
-        if(!GroupExists(c.group))
-            c.tag = 1;
-    }
-    SK.constraint.RemoveTagged();
-    deleted.constraints += constraints - SK.constraint.n;
-    deleted.nonTrivialConstraints += constraints - SK.constraint.n;
-
-    return (requests > SK.request.n) || (constraints > SK.constraint.n);
-}
-
-bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
-    if(before.v == 0) return true;
-    if(after.v  == 0) return true;
-    if(!GroupExists(before)) return false;
-    if(!GroupExists(after)) return false;
-    int beforep = SK.GetGroup(before)->order;
-    int afterp = SK.GetGroup(after)->order;
-    if(beforep >= afterp) return false;
     return true;
 }
 
@@ -74,9 +59,8 @@ bool SolveSpaceUI::EntityExists(hEntity he) {
     return SK.entity.FindByIdNoOops(he) ? true : false;
 }
 
-bool SolveSpaceUI::PruneGroups(hGroup hg) {
-    Group *g = SK.GetGroup(hg);
-    if(GroupsInOrder(g->opA, hg) &&
+bool SolveSpaceUI::PruneGroup(Group *g) {
+    if(GroupsInOrder(g->opA, g->h) &&
        EntityExists(g->predef.origin) &&
        EntityExists(g->predef.entityB) &&
        EntityExists(g->predef.entityC))
@@ -85,82 +69,35 @@ bool SolveSpaceUI::PruneGroups(hGroup hg) {
     }
     (deleted.groups)++;
     SK.group.RemoveById(g->h);
+    SK.RegenerateGroupOrder();
     return true;
 }
 
-bool SolveSpaceUI::PruneRequestsAndConstraints(hGroup hg) {
-    auto entityRequestExists = [](hEntity he, bool checkEntity = false) {
-        if(he == Entity::NO_ENTITY) {
-            return true;
-        }
 
-        if(he.isFromRequest()) {
-            if(SK.request.FindByIdNoOops(he.request()) != nullptr) {
-                return true;
-            }
-        } else if(!checkEntity || SK.entity.FindByIdNoOops(he) != nullptr) {
-            return true;
-        }
-
-        return false;
-    };
-
-    const int requests = SK.request.n;
-    for(Request &r : SK.request) {
-        if(r.group != hg) {
-            continue;
-        }
-
-        if(entityRequestExists(r.workplane)) {
-            continue;
-        }
-
-        r.tag = 1;
+void Sketch::RegenerateGroupOrder() {
+    using GroupOrderPair = std::pair<int, hGroup>;
+    std::vector<GroupOrderPair> order;
+    order.reserve(group.n);
+    for(auto &g : group) {
+        order.push_back({g.order, g.h});
     }
-    SK.request.RemoveTagged();
-    deleted.requests += requests - SK.request.n;
-
-    const int constraints = SK.constraint.n;
-    for(Constraint &c : SK.constraint) {
-        if(c.group != hg)
-            continue;
-
-        if(entityRequestExists(c.workplane, true) &&
-           entityRequestExists(c.ptA, true) &&
-           entityRequestExists(c.ptB, true) &&
-           entityRequestExists(c.entityA, true) &&
-           entityRequestExists(c.entityB, true) &&
-           entityRequestExists(c.entityC, true) &&
-           entityRequestExists(c.entityD, true)) {
-            continue;
-        }
-
-        if(c.type != Constraint::Type::POINTS_COINCIDENT &&
-           c.type != Constraint::Type::HORIZONTAL &&
-           c.type != Constraint::Type::VERTICAL) {
-            (deleted.nonTrivialConstraints)++;
-        }
-
-        c.tag = 1;
+    std::sort(order.begin(), order.end(), [](const GroupOrderPair &a, GroupOrderPair &b) {
+        return a.first < b.first;
+    });
+    groupOrder.Clear();
+    groupOrder.ReserveMore(group.n);
+    for(auto &p : order) {
+        groupOrder.Add(&p.second);
     }
-    SK.constraint.RemoveTagged();
-    deleted.constraints += constraints - SK.constraint.n;
-
-    return (requests > SK.request.n) || (constraints > SK.constraint.n);
 }
 
-void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox) {
+void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     int first = 0, last = 0, i;
 
     uint64_t startMillis = GetMilliseconds(),
              endMillis;
 
-    SK.groupOrder.Clear();
-    for(auto &g : SK.group) { SK.groupOrder.Add(&g.h); }
-    std::sort(SK.groupOrder.begin(), SK.groupOrder.end(),
-        [](const hGroup &ha, const hGroup &hb) {
-            return SK.GetGroup(ha)->order < SK.GetGroup(hb)->order;
-        });
+    SK.RegenerateGroupOrder();
 
     switch(type) {
         case Generate::DIRTY: {
@@ -211,65 +148,114 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
         }
     }
 
-    // If we're generating entities for display, first we need to find
-    // the bounding box to turn relative chord tolerance to absolute.
-    if(!SS.exportMode && !genForBBox) {
-        GenerateAll(type, andFindFree, /*genForBBox=*/true);
-        BBox box = SK.CalculateEntityBBox(/*includeInvisibles=*/true);
-        Vector size = box.maxp.Minus(box.minp);
-        double maxSize = std::max({ size.x, size.y, size.z });
-        chordTolCalculated = maxSize * chordTol / 100.0;
-    }
-
-    // Remove any requests or constraints that refer to a nonexistent
-    // group; can check those immediately, since we know what the list
-    // of groups should be.
-    PruneOrphans();
-
     // Don't lose our numerical guesses when we regenerate.
     ParamList prev = {};
     SK.param.MoveSelfInto(&prev);
     SK.param.ReserveMore(prev.n);
-    int oldEntityCount = SK.entity.n;
+    const int oldEntityCount = SK.entity.n;
     SK.entity.Clear();
     SK.entity.ReserveMore(oldEntityCount);
 
+    // Prune any requests and constraints that belong to non-existent groups
+    for(auto &r : SK.request) {
+        if(!GroupExists(r.group)) {
+            r.tag = 1;
+        }
+    }
+    for(auto &c : SK.constraint) {
+        if(!GroupExists(c.group)) {
+            c.tag = 1;
+        }
+    }
+
     // Not using range-for because we're using the index inside the loop.
-    for(i = 0; i < SK.groupOrder.n; i++) {
-        hGroup hg = SK.groupOrder[i];
+    for(i = 0; i < SK.groupOrder.n; ) {
+        const hGroup hg = SK.groupOrder[i];
+        Group *g = SK.GetGroup(hg);
 
         // The group may depend on entities or other groups, to define its
         // workplane geometry or for its operands. Those must already exist
         // in a previous group, so check them before generating.
-        if(PruneGroups(hg))
-            goto pruned;
+        if(PruneGroup(g)) {
+            // A group was just removed and the group order was regenerated,
+            // so adjust the first and last indices accordingly.
+            if(i <= last && last < INT_MAX) {
+                --last;
+            }
+            if(i < first && first < INT_MAX) {
+                --first;
+            }
+            // Tag this group's requests for pruning
+            for(auto &r : SK.request) {
+                if(r.group == hg) {
+                    r.tag = 1;
+                }
+            }
+            // Tag this group's constraints for pruning
+            for(auto &c : SK.constraint) {
+                if(c.group == hg) {
+                    c.tag = 1;
+                }
+            }
+            continue;
+        }
 
+        // Regenerate requests, tagging any dead ones for pruning
         int groupRequestIndex = 0;
-        for(auto &req : SK.request) {
-            Request *r = &req;
-            if(r->group != hg) continue;
-            r->groupRequestIndex = groupRequestIndex++;
+        for(auto &r : SK.request) {
+            if(r.group != hg) {
+                continue;
+            }
 
-            r->Generate(&(SK.entity), &(SK.param));
+            // Prune the request if it depends on a pruned workplane
+            if(r.workplane != Entity::NO_ENTITY && r.workplane.isFromRequest()) {
+                const Request *wr = SK.request.FindByIdNoOops(r.workplane.request());
+                if(wr == nullptr || wr->tag) {
+                    r.tag = 1;
+                    continue;
+                }
+            }
+
+            r.groupRequestIndex = groupRequestIndex++;
+            r.Generate(&SK.entity, &SK.param);
         }
-        for(auto &con : SK.constraint) {
-            Constraint *c = &con;
-            if(c->group != hg) continue;
 
-            c->Generate(&(SK.param));
+        // Regenerate the group
+        g->Generate(&SK.entity, &SK.param);
+
+        // Regenerate constraints, tagging any dead ones for pruning
+        for(auto &c : SK.constraint) {
+            if(c.group != hg) {
+                continue;
+            }
+
+            if(!EntityExists(c.workplane) ||
+               !EntityExists(c.ptA) ||
+               !EntityExists(c.ptB) ||
+               !EntityExists(c.entityA) ||
+               !EntityExists(c.entityB) ||
+               !EntityExists(c.entityC) ||
+               !EntityExists(c.entityD)) {
+                if(c.type != Constraint::Type::POINTS_COINCIDENT &&
+                   c.type != Constraint::Type::HORIZONTAL &&
+                   c.type != Constraint::Type::VERTICAL) {
+                    ++deleted.nonTrivialConstraints;
+                }
+
+                c.tag = 1;
+                continue;
+            }
+
+            c.Generate(&SK.param);
         }
-        SK.GetGroup(hg)->Generate(&(SK.entity), &(SK.param));
-
-        // The requests and constraints depend on stuff in this or the
-        // previous group, so check them after generating.
-        if(PruneRequestsAndConstraints(hg))
-            goto pruned;
 
         // Use the previous values for params that we've seen before, as
         // initial guesses for the solver.
         for(auto &p : SK.param) {
             Param *newp = &p;
-            if(newp->known) continue;
+            if(newp->known) {
+                continue;
+            }
 
             Param *prevp = prev.FindByIdNoOops(newp->h);
             if(prevp) {
@@ -288,13 +274,9 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
             if(i >= first && i <= last) {
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
-                Group *g = SK.GetGroup(hg);
-                if(genForBBox) {
+                if(!SS.exportMode) {
                     SolveGroupAndReport(hg, andFindFree);
                     g->GenerateLoops();
-                } else {
-                    g->GenerateShellAndMesh();
-                    g->clean = true;
                 }
             } else {
                 // The group falls outside the range, so just assume that
@@ -304,9 +286,45 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
                     Param *newp = &p;
 
                     Param *prevp = prev.FindByIdNoOops(newp->h);
-                    if(prevp) newp->known = true;
+                    if(prevp) {
+                        newp->known = true;
+                    }
                 }
             }
+        }
+
+        ++i;
+    }
+
+    // Remove any requests that we tagged for pruning
+    const int requests = SK.request.n;
+    SK.request.RemoveTagged();
+    deleted.requests += requests - SK.request.n;
+
+    // Remove any constraints that we tagged for pruning
+    const int constraints = SK.constraint.n;
+    SK.constraint.RemoveTagged();
+    deleted.constraints += constraints - SK.constraint.n;
+
+    // If we're generating entities for display, first we need to find
+    // the bounding box to turn relative chord tolerance to absolute.
+    if(!SS.exportMode) {
+        BBox box = SK.CalculateEntityBBox(/*includeInvisibles=*/true);
+        Vector size = box.maxp.Minus(box.minp);
+        double maxSize = std::max({ size.x, size.y, size.z });
+        chordTolCalculated = maxSize * chordTol / 100.0;
+    }
+
+    // Then generate the shell and mesh
+    for(i = 0; i < SK.groupOrder.n; ++i) {
+        const hGroup hg = SK.groupOrder[i];
+        if(hg == Group::HGROUP_REFERENCES) {
+            continue;
+        }
+        if(i >= first && i <= last) {
+            Group *g = SK.GetGroup(hg);
+            g->GenerateShellAndMesh();
+            g->clean = true;
         }
     }
 
@@ -341,6 +359,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
         // clear all that out.
         if(deleted.groups > 0) {
             SS.TW.ClearSuper();
+            GW.EnsureValidActives();
         }
         ScheduleShowTW();
         GW.ClearSuper();
@@ -389,20 +408,10 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
             case Generate::UNTIL_ACTIVE:    typeStr = "UNTIL_ACTIVE"; break;
         }
         if(endMillis)
-        dbp("Generate::%s%s took %lld ms",
+        dbp("Generate::%s took %lld ms",
             typeStr,
-            (genForBBox ? " (for bounding box)" : ""),
             GetMilliseconds() - startMillis);
     }
-
-    return;
-
-pruned:
-    // Restore the numerical guesses
-    SK.param.Clear();
-    prev.MoveSelfInto(&(SK.param));
-    // Try again
-    GenerateAll(type, andFindFree, genForBBox);
 }
 
 void SolveSpaceUI::ForceReferences() {
@@ -529,13 +538,13 @@ void SolveSpaceUI::WriteEqSystemForGroup(hGroup hg) {
     // And generate all the params for requests in this group
     for(auto &req : SK.request) {
         Request *r = &req;
-        if(r->group != hg) continue;
+        if(r->group != hg || r->tag) continue;
 
         r->Generate(&(sys.entity), &(sys.param));
     }
     for(auto &con : SK.constraint) {
         Constraint *c = &con;
-        if(c->group != hg) continue;
+        if(c->group != hg || c->tag) continue;
 
         c->Generate(&(sys.param));
     }
