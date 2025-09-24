@@ -470,14 +470,50 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     }
 }
 
-void GraphicsWindow::ClearPending(bool scheduleShowTW) {
+void GraphicsWindow::AlternateTool() {
+// Switches between most recent tool and the mouse selector
+    if(SS.GW.activeTool != Command::NONE) {
+        if(pending.command == Command::NONE) {
+            ClearPending(true, false);
+            MenuRequest(SS.GW.activeTool);
+        // rechose tool through menu?
+        } else ClearPending(true, false);
+        SS.GW.Invalidate();
+        SS.ScheduleShowTW();
+    }
+}
+
+void GraphicsWindow::ClearPending(bool scheduleShowTW, bool allowCommandToContinue) {
+// Clears selected tool or, steps of a tool's use (tow point rectangle). 
+// Allows tool to be reactivated after use if specified in toolbar.cpp/Toolbar[]
+    Command temp_store = Command::NONE; 
     pending.points.Clear();
     pending.requests.Clear();
-    pending = {};
+
+    if(pending.command != Command::NONE && allowCommandToContinue) {
+
+        if(CheckIfKeepCommandActive(pending.command)) {
+            temp_store = pending.command;
+        };
+        pending                = {};
+        pending.stored_command = temp_store;
+    // If there is a tool stored, activate it
+    } else if(pending.stored_command != Command::NONE && allowCommandToContinue) {
+        temp_store = pending.stored_command;
+        pending    = {};
+        if(allowCommandToContinue) {
+            pending.command   = temp_store;
+            pending.operation = Pending::COMMAND;
+        }
+    } else {
+        pending = {};
+    }
+
     if(scheduleShowTW) {
         SS.ScheduleShowTW();
     }
 }
+
 
 bool GraphicsWindow::IsFromPending(hRequest r) {
     for(auto &req : pending.requests) {
@@ -797,6 +833,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 hRequest GraphicsWindow::AddRequest(Request::Type type) {
     return AddRequest(type, /*rememberForUndo=*/true);
 }
+
 hRequest GraphicsWindow::AddRequest(Request::Type type, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
 
@@ -1024,7 +1061,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                         }
                     }
 
-                    pending.operation = Pending::DRAGGING_NEW_POINT;
+                    pending.operation   = Pending::DRAGGING_NEW_POINT;
                     pending.point = lns[1].entity(2);
                     pending.description = _("click to place other corner of rectangle");
                     hr = lns[0];
@@ -1168,13 +1205,15 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
             break;
 
         case Pending::DRAGGING_RADIUS:
-            ClearPending();
+            //ClearPending();
             break;
 
         case Pending::DRAGGING_NEW_POINT:
         case Pending::DRAGGING_NEW_ARC_POINT:
             ConstrainPointByHovered(pending.point, &mouse);
             ClearPending();
+            //pending.command   = Command::RECTANGLE;
+            //pending.operation = Pending::COMMAND;
             break;
 
         case Pending::DRAGGING_NEW_CUBIC_POINT: {
