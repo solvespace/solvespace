@@ -15,7 +15,6 @@ CMAKE_PREFIX_PATH=""
 if [ "$2" = "arm64" ]; then
     OSX_ARCHITECTURE="arm64"
     CMAKE_PREFIX_PATH=$(find /tmp/libomp-arm64/libomp -depth 1)
-    git apply cmake/libpng-macos-arm64.patch || echo "Could not apply patch, probably already patched..."
     mkdir build-arm64 || true
     cd build-arm64
 elif [ "$2" = "x86_64" ]; then
