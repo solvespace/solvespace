@@ -2,7 +2,7 @@
 
 if [ "$1" = "ci" ]; then
     armloc=$(brew fetch --bottle-tag=arm64_sequoia libomp | grep -i downloaded | grep tar.gz | cut -f2 -d:)
-    x64loc=$(brew fetch --bottle-tag=sonoma libomp | grep -i downloaded | grep tar.gz | cut -f2 -d:)
+    x64loc=$(brew fetch --bottle-tag=sequoia libomp | grep -i downloaded | grep tar.gz | cut -f2 -d:)
     cp $armloc /tmp/libomp-arm64.tar.gz
     mkdir /tmp/libomp-arm64 || true
     tar -xzvf /tmp/libomp-arm64.tar.gz -C /tmp/libomp-arm64
