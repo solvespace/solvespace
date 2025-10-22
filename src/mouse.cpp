@@ -1387,6 +1387,7 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
 
             if(c->comment != "") {
                 editValue = c->comment;
+                editPlaceholder = "aaaaaaaaaa";
                 break;
             } else if(c->type == Constraint::Type::LENGTH_RATIO || c->type == Constraint::Type::ARC_ARC_LEN_RATIO || c->type == Constraint::Type::ARC_LINE_LEN_RATIO) {
             // Try showing value with default number of digits after decimal first.
@@ -1442,18 +1443,13 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         return;
     }
 
-    // Create a map of parameter names with handles
-    // this needs to be in a function and needs to obey scope rules
-    std::unordered_map<std::string, hParam> vars = {};        
-    for(const Request &r : SK.request ) {
-        if (r.type != Request::Type::NAMED_PARAMETER) continue;
-        // TODO: need to check if group is less or equal to this group
-        vars[r.str] = r.h.param(64);
-    }
+// we will need to reference the group dictionary.
+    Group *gp = SK.GetGroup(c->group);
+    
     int usedParams = 0;
     
 //    if(Expr *e = Expr::From(s, true)) {
-    Expr *e = Expr::From(s, true, &usedParams, &vars);
+    Expr *e = Expr::From(s, true, &usedParams, &gp->dict);
     if(e) {
         SS.UndoRemember();
         double distance = 1.0;

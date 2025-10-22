@@ -209,7 +209,8 @@ public:
     double      valB;
     double      valC;
     RgbaColor   color;
-
+    std::unordered_map<std::string, hParam> dict;
+    
     struct {
         SolveResult         how;
         int                 dof;
@@ -384,7 +385,8 @@ public:
         ARC_OF_CIRCLE          = 500,
         TTF_TEXT               = 600,
         IMAGE                  = 700,
-        NAMED_PARAMETER        = 800
+        NAMED_PARAMETER        = 800,
+        NAMED_CONST_PARAM      = 801
     };
 
     Request::Type type;

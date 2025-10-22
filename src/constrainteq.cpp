@@ -281,22 +281,17 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
     Expr *exA = {};
     Expr *exLen = {};
-        
+
+    // Need to pull the group from this constraint and get its valid names list
+    // then delete the above code
+    Group *g = SK.GetGroup(group);
+    
     // a numeric dimension is stored in valA. When a complex expression is used
     // it is stored in the comment string and the unit scale is in valA.
     if(comment != "") {
-        // Create a map of parameter names with handles
-        // this needs to be in a function and needs to obey scope rules
-        std::unordered_map<std::string, hParam> vars = {};        
-        for(const Request &r : SK.request ) {
-            if (r.type != Request::Type::NAMED_PARAMETER) continue;
-            // TODO: need to check if group is less or equal to this group
-            vars[r.str] = r.h.param(64);
-        }
         int usedParams = 0;
-
-//            exA = Expr::From(comment.c_str(), false, &SK.param, NULL);
-        exA = Expr::From(comment.c_str(), false, &usedParams, &vars);
+//        exA = Expr::From(comment.c_str(), false, &usedParams, &vars);
+        exA = Expr::From(comment.c_str(), false, &usedParams, &(g->dict));
 
         // the expression may have become invalid if a name has been deleted.
         // return will prevent a crash but silently make the constraint fail.

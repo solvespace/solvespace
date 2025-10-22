@@ -217,16 +217,17 @@ std::string Request::DescriptionString() const {
         s = "#ZX";
     } else {
         switch(type) {
-            case Type::WORKPLANE:       s = "workplane";      break;
-            case Type::DATUM_POINT:     s = "datum-point";    break;
-            case Type::LINE_SEGMENT:    s = "line-segment";   break;
-            case Type::CUBIC:           s = "cubic-bezier";   break;
-            case Type::CUBIC_PERIODIC:  s = "periodic-cubic"; break;
-            case Type::CIRCLE:          s = "circle";         break;
-            case Type::ARC_OF_CIRCLE:   s = "arc-of-circle";  break;
-            case Type::TTF_TEXT:        s = "ttf-text";       break;
-            case Type::IMAGE:           s = "image";          break;
-            case Type::NAMED_PARAMETER: s = "parameter";      break;
+            case Type::WORKPLANE:         s = "workplane";      break;
+            case Type::DATUM_POINT:       s = "datum-point";    break;
+            case Type::LINE_SEGMENT:      s = "line-segment";   break;
+            case Type::CUBIC:             s = "cubic-bezier";   break;
+            case Type::CUBIC_PERIODIC:    s = "periodic-cubic"; break;
+            case Type::CIRCLE:            s = "circle";         break;
+            case Type::ARC_OF_CIRCLE:     s = "arc-of-circle";  break;
+            case Type::TTF_TEXT:          s = "ttf-text";       break;
+            case Type::IMAGE:             s = "image";          break;
+            case Type::NAMED_PARAMETER:   s = "parameter";      break;
+            case Type::NAMED_CONST_PARAM: s = "parameter";      break;
         }
     }
     ssassert(s != NULL, "Unexpected request type");
