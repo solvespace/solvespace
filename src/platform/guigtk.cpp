@@ -21,6 +21,7 @@
 #include <gtkmm/menu.h>
 #include <gtkmm/menubar.h>
 #include <gtkmm/messagedialog.h>
+#include <gtkmm/settings.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/separatormenuitem.h>
 #include <gtkmm/tooltip.h>
@@ -456,10 +457,18 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 //-----------------------------------------------------------------------------
 
 class GtkGLWidget : public Gtk::GLArea {
+    struct LastPress {
+        double x, y;
+        guint button;
+        guint32 time;
+        GdkDevice *device;
+    };
+
     Window *_receiver;
+    LastPress _last_press;
 
 public:
-    GtkGLWidget(Platform::Window *receiver) : _receiver(receiver) {
+    GtkGLWidget(Platform::Window *receiver) : _receiver(receiver), _last_press() {
         set_has_depth_buffer(true);
         set_can_focus(true);
         set_events(Gdk::POINTER_MOTION_MASK |
@@ -548,6 +557,59 @@ protected:
         gdk_event_get_state((GdkEvent*)gdk_event, &state);
         guint button;
         gdk_event_get_button((GdkEvent*)gdk_event, &button);
+
+        // In GTK, the sequence of events for a double click is:
+        // - press
+        // - release
+        // - press
+        // - double-press
+        // - release
+        //
+        // Having a press event right before the double press event is inconsistent with
+        // the way double click handling works on Windows and macOS, and may cause receiver
+        // code to treat the sequence as three press events.
+        // To avoid this, we check if a press event happened quickly enough after the
+        // previous one to be considered a double press, and eat it up if a receiver
+        // is set up.
+        // Since we ignore triple press events, we reset the last press data when receiving
+        // the double press event, in order to avoid eating up the third press event of
+        // a triple click sequence.
+        if(gdk_type == GDK_BUTTON_PRESS) {
+            LastPress c = {
+                x, y, button,
+                gdk_event_get_time((GdkEvent*)gdk_event),
+                gdk_event_get_device((GdkEvent*)gdk_event),
+            };
+            LastPress p = _last_press;
+            _last_press = c;
+
+            if(_receiver->onMouseEvent) {
+                const Glib::RefPtr<Gtk::Settings> settings = get_settings();
+                const guint dbl_press_time = settings->
+                    property_gtk_double_click_time().get_value();
+                const double dbl_press_distance = settings->
+                    property_gtk_double_click_distance().get_value();
+
+                if(c.device == p.device &&
+                   c.button == p.button &&
+                   c.time - p.time < dbl_press_time &&
+                   std::abs(c.x - p.x) <= dbl_press_distance &&
+                   std::abs(c.y - p.y) <= dbl_press_distance) {
+                    // Eat this press event, as it'll be followed immediately
+                    // by a double press event
+                    return true;
+                }
+            }
+        } else if(gdk_type == GDK_2BUTTON_PRESS) {
+            const guint32 time = gdk_event_get_time((GdkEvent*)gdk_event);
+            const GdkDevice *device = gdk_event_get_device((GdkEvent*)gdk_event);
+            // A double press event is synthesised by GTK, and has the exact same
+            // time and device as the press event the preceeded it.
+            ssassert(_last_press.time == time && _last_press.device == device,
+                     "double press event not following a press event");
+            // Reset in order to avoid eating the press event for a triple click
+            _last_press = {};
+        }
 
         if(process_pointer_event(type, x, y, state, button))
             return true;
