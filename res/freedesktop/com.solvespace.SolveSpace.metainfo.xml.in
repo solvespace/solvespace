@@ -17,7 +17,7 @@
   </categories>
   <description>
     <p>
-      SolveSpace is a free (GPLv3) parametric 3d CAD tool. Applications include:
+      SolveSpace is a free (GPLv3) parametric 2d/3d CAD (computer-aided design) tool. Applications include:
     </p>
     <ul>
       <li>Modeling 3d parts — draw with extrudes, revolves/helix, and Boolean operations</li>
