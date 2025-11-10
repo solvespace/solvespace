@@ -7,7 +7,8 @@
 
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
-  <update_contact>ryan_AT_ryanpavlik.com</update_contact>
+  <update_contact>rylie_AT_ryliepavlik.com</update_contact>
+  <developer_name>The SolveSpace Community, originally by Jonathan Westhues and other authors</developer_name>
 
   <categories>
     <category>Graphics</category>
