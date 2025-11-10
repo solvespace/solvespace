@@ -2,7 +2,7 @@
     "$schema": "https://raw.githubusercontent.com/TingPing/flatpak-manifest-schema/master/flatpak-manifest.schema",
     "app-id": "com.solvespace.SolveSpace",
     "runtime": "org.freedesktop.Platform",
-    "runtime-version": "21.08",
+    "runtime-version": "25.08",
     "sdk": "org.freedesktop.Sdk",
     "finish-args": [
         "--device=dri",
@@ -26,8 +26,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://download.gnome.org/sources/mm-common/1.0/mm-common-1.0.4.tar.xz",
-                    "sha256": "e954c09b4309a7ef93e13b69260acdc5738c907477eb381b78bb1e414ee6dbd8",
+                    "url": "https://download.gnome.org/sources/mm-common/1.0/mm-common-1.0.7.tar.xz",
+                    "sha256": "494abfce781418259b1e9d8888c73af4de4b6f3be36cc75d9baa8baa0f2a7a39",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "mm-common",
@@ -76,8 +76,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://download.gnome.org/sources/glibmm/2.66/glibmm-2.66.4.tar.xz",
-                    "sha256": "199ace5682d81b15a1d565480b4a950682f2db6402c8aa5dd7217d71edff81d5",
+                    "url": "https://download.gnome.org/sources/glibmm/2.66/glibmm-2.66.8.tar.xz",
+                    "sha256": "64f11d3b95a24e2a8d4166ecff518730f79ecc27222ef41faf7c7e0340fc9329",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "glibmm",
@@ -124,8 +124,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://download.gnome.org/sources/pangomm/2.46/pangomm-2.46.2.tar.xz",
-                    "sha256": "57442ab4dc043877bfe3839915731ab2d693fc6634a71614422fb530c9eaa6f4",
+                    "url": "https://download.gnome.org/sources/pangomm/2.46/pangomm-2.46.4.tar.xz",
+                    "sha256": "b92016661526424de4b9377f1512f59781f41fb16c9c0267d6133ba1cd68db22",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "pangomm",
@@ -146,8 +146,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://download.gnome.org/sources/atkmm/2.28/atkmm-2.28.2.tar.xz",
-                    "sha256": "a0bb49765ceccc293ab2c6735ba100431807d384ffa14c2ebd30e07993fd2fa4",
+                    "url": "https://download.gnome.org/sources/atkmm/2.28/atkmm-2.28.4.tar.xz",
+                    "sha256": "0a142a8128f83c001efb8014ee463e9a766054ef84686af953135e04d28fdab3",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "atkmm",
@@ -172,8 +172,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://download.gnome.org/sources/gtkmm/3.24/gtkmm-3.24.6.tar.xz",
-                    "sha256": "4b3e142e944e1633bba008900605c341a93cfd755a7fa2a00b05d041341f11d6",
+                    "url": "https://download.gnome.org/sources/gtkmm/3.24/gtkmm-3.24.10.tar.xz",
+                    "sha256": "7ab7e2266808716e26c39924ace1fb46da86c17ef39d989624c42314b32b5a76",
                     "x-checker-data": {
                         "type": "gnome",
                         "name": "gtkmm",
@@ -199,8 +199,9 @@
                     "url": "https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz",
                     "sha256": "8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72",
                     "x-checker-data": {
-                        "type": "anitya",
-                        "project-id": 13751,
+                        "type": "html",
+                        "url": "https://eigen.tuxfamily.org/index.php?title=Main_Page",
+                        "version-pattern": "latest stable release</b> is Eigen ([\\d\\.-]+[\\d])",
                         "stable-only": true,
                         "url-template": "https://gitlab.com/libeigen/eigen/-/archive/$version/eigen-$version.tar.gz"
                     }
@@ -216,13 +217,14 @@
             "builddir": true,
             "config-opts": [
                 "-DBUILD_STATIC_LIBS=OFF",
-                "-DENABLE_THREADING=ON"
+                "-DENABLE_THREADING=ON",
+                "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
             ],
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://s3.amazonaws.com/json-c_releases/releases/json-c-0.16.tar.gz",
-                    "sha256": "8e45ac8f96ec7791eaf3bb7ee50e9c2100bbbc87b8d0f1d030c5ba8a0288d96b",
+                    "url": "https://s3.amazonaws.com/json-c_releases/releases/json-c-0.18.tar.gz",
+                    "sha256": "876ab046479166b869afc6896d288183bbc0e5843f141200c677b3e8dfb11724",
                     "x-checker-data": {
                         "type": "anitya",
                         "project-id": 1477,
