@@ -46,6 +46,7 @@
             "name": "sigc++",
             "buildsystem": "meson",
             "config-opts": [
+                "--buildtype=release",
                 "-Dbuild-examples=false"
             ],
             "sources": [
@@ -71,6 +72,7 @@
             "name": "glibmm",
             "buildsystem": "meson",
             "config-opts": [
+                "--buildtype=release",
                 "-Dbuild-examples=false"
             ],
             "sources": [
@@ -121,6 +123,9 @@
         {
             "name": "pangomm",
             "buildsystem": "meson",
+            "config-opts": [
+                "--buildtype=release"
+            ],
             "sources": [
                 {
                     "type": "archive",
@@ -143,6 +148,9 @@
         {
             "name": "atkmm",
             "buildsystem": "meson",
+            "config-opts": [
+                "--buildtype=release"
+            ],
             "sources": [
                 {
                     "type": "archive",
@@ -166,6 +174,7 @@
             "name": "gtkmm",
             "buildsystem": "meson",
             "config-opts": [
+                "--buildtype=release",
                 "-Dbuild-demos=false",
                 "-Dbuild-tests=false"
             ],
@@ -216,6 +225,7 @@
             "buildsystem": "cmake-ninja",
             "builddir": true,
             "config-opts": [
+                "-DCMAKE_BUILD_TYPE=Release",
                 "-DBUILD_STATIC_LIBS=OFF",
                 "-DENABLE_THREADING=ON",
                 "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
@@ -239,6 +249,7 @@
             "buildsystem": "cmake-ninja",
             "builddir": true,
             "config-opts": [
+                "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
                 "-DFLATPAK=ON",
                 "-DENABLE_TESTS=OFF"
             ],
