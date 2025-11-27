@@ -411,8 +411,8 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
                     std::vector <std::string> values = splitString(line);
                     if(values.size() != 4) continue;
                     int c = stoi(values[0]);
-                    double x = stof(values[1]);
-                    double y = stof(values[2]);
+                    double x = stof(values[1]) * scale;
+                    double y = stof(values[2]) * scale;
                     double ang = stof(values[3]);
                     Vector point = Vector::From(x,y,0.0);
                     Vector pTop = Vector::From(x,y,board_thickness);
@@ -471,9 +471,9 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
             case drilled_holes: {
                     std::vector <std::string> values = splitString(line);
                     if(values.size() < 6) continue;
-                    double d = stof(values[0]);
-                    double x = stof(values[1]);
-                    double y = stof(values[2]);
+                    double d = stof(values[0]) * scale;
+                    double x = stof(values[1]) * scale;
+                    double y = stof(values[2]) * scale;
                     bool duplicate = isHoleDuplicate(el, x, y, d / 2);
                     // Only show holes likely to be useful in MCAD to reduce complexity.
                     if(((d > 1.7) || (values[5].compare(0,3,"PIN") == 0)
