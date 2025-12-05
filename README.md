@@ -23,7 +23,7 @@ IRC channel [#solvespace at web.libera.chat][ssirc].
 [ssforum]: http://solvespace.com/forum.pl
 [ssirc]: https://web.libera.chat/#solvespace
 
-## Installation
+# Installation
 
 ### Via Official Packages
 
@@ -117,6 +117,7 @@ sudo dnf install git gcc-c++ cmake zlib-devel libpng-devel \
             fontconfig-devel gtkmm30-devel pangomm-devel \
             mesa-libGL-devel mesa-libGLU-devel libspnav-devel
 ```
+To build the QT version replace `gtkmm30-devel` with `qt6-qtbase-devel` and add `-DUSE_QT_GUI=ON` to the cmake step below
 
 Before building, [check out the project and the necessary submodules](#via-source-code).
 
@@ -131,7 +132,6 @@ make
 # Optionally
 sudo make install
 ```
-
 Link Time Optimization is supported by adding `-DENABLE_LTO=ON` to cmake at the
 expense of longer build time.
 
