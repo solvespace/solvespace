@@ -617,9 +617,15 @@ void Group::Generate(EntityList *entity, ParamList *param)
                        h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
                        h.param(6), NO_PARAM, CopyAs::N_ROT_AA);
 
-                // Arcs are not generated for revolve groups, for now, because our current arc
-                // entity is not chiral, and dragging a revolve may break the arc by inverting it.
-                // MakeLatheCircles(entity, param, he, axis_pos, axis_dir);
+                e = &(entity->Get(i)); // because we copied.
+                if (e->IsPoint()) {
+                // for points this copy is used for the circle centers
+                    CopyEntity(entity, e, 0, REMAP_LATHE_ARC_CENTER,
+                        NO_PARAM, NO_PARAM, NO_PARAM,
+                        NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                        CopyAs::NUMERIC);
+                    MakeLatheCircles(entity, param, he, axis_pos, axis_dir);
+                };
                 MakeLatheSurfacesSelectable(entity, he, axis_dir);
             }
             MakeRevolveEndFaces(entity, pt, ai, af);
@@ -918,8 +924,17 @@ void Group::MakeLatheCircles(EntityList *el, ParamList *param, hEntity in, Vecto
         // A point gets revolved to form an arc.
         en.point[0] = Remap(ep->h, REMAP_LATHE_ARC_CENTER);
         en.point[1] = Remap(ep->h, REMAP_LATHE_START);
-        en.point[2] = en.point[1]; //Remap(ep->h, REMAP_LATHE_END);
-
+        if(type == Type::LATHE) {
+          en.point[2] = en.point[1];
+        } else {
+          en.point[2] = Remap(ep->h, REMAP_LATHE_END);
+          // when rotating the other way we need to swap start and end points
+//          if (SK.GetParam(h.param(3))->val < 0.0)
+//          {
+//            swap(en.point[1], en.point[2]);
+//          }
+        }
+        
         // Get arc center and point on arc.
         Entity *pc = SK.GetEntity(en.point[0]);
         Entity *pp = SK.GetEntity(en.point[1]);
@@ -946,6 +961,13 @@ void Group::MakeLatheCircles(EntityList *el, ParamList *param, hEntity in, Vecto
         // Create basis for the normal.
         Vector nu = pp->numPoint.Minus(pc->numPoint).WithMagnitude(1.0);
         Vector nv = nu.Cross(axis).WithMagnitude(1.0);
+        
+        // this doesn't work here. The angle is always positive on creation.
+        if(type == Type::REVOLVE) {
+          if(SK.GetParam(h.param(3))->val < 0.0)
+            nv = nv.ScaledBy(-1.0);
+        }
+        
         n.numNormal = Quaternion::From(nv, nu);
 
         // The point determines where the normal gets displayed on-screen;
