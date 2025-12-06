@@ -380,6 +380,9 @@ if(ENABLE_GUI)
             COMMENT "Copying UI script filemanagerui.sj"
             VERBATIM)
     elseif(USE_QT_GUI)
+        set_target_properties(solvespace PROPERTIES
+            OUTPUT_NAME solvespace-qt)
+
         target_sources(solvespace PRIVATE
             platform/guiqt.cpp
             platform/guiqt.h)

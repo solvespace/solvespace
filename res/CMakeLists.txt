@@ -182,13 +182,18 @@ else()
                 RENAME      snap.solvespace.png)
         endforeach()
     else()
+        if(USE_QT_GUI)
+            set(SS_EXE solvespace-qt)
+        else()
+            set(SS_EXE solvespace)
+        endif()
         configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/freedesktop/solvespace.desktop.in
-            ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace.desktop)
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace.desktop
+            ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/${SS_EXE}.desktop)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/${SS_EXE}.desktop
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 
-        set(DESKTOP_FILE_NAME solvespace.desktop)
+        set(DESKTOP_FILE_NAME ${SS_EXE}.desktop)
         configure_file(
             ${CMAKE_CURRENT_SOURCE_DIR}/freedesktop/com.solvespace.SolveSpace.metainfo.xml.in
             ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/com.solvespace.SolveSpace.metainfo.xml)
