@@ -98,15 +98,17 @@ You will need `git`. See the platform specific instructions below to install it.
 ### Building for Linux
 
 You will need the usual build tools, CMake, zlib, libpng, cairo, freetype. To
-build the GUI, you will need fontconfig, gtkmm 3.0 (version 3.16 or later),
-pangomm 1.4, OpenGL and OpenGL GLU, and optionally, the Space Navigator client
-library. On a Debian derivative (e.g. Ubuntu) these can be installed with:
+build the GUI, you will need fontconfig, gtkmm 3.0 (version 3.16 or later) for
+GTK, or QT6 for the newer QT interface, pangomm 1.4, OpenGL and OpenGL GLU, 
+and optionally, the Space Navigator client library. 
+
+On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
 ```sh
 sudo apt install git build-essential cmake zlib1g-dev libpng-dev \
             libcairo2-dev libfreetype6-dev libjson-c-dev \
-            libfontconfig1-dev libgtkmm-3.0-dev libpangomm-1.4-dev \
-            libgl-dev libglu-dev libspnav-dev
+            libfontconfig1-dev libpangomm-1.4-dev libgl-dev \
+            libglu-dev libspnav-dev libgtkmm-3.0-dev qt6-base-dev
 ```
 
 On a RedHat derivative (e.g. Fedora) the dependencies can be installed with:
@@ -114,10 +116,13 @@ On a RedHat derivative (e.g. Fedora) the dependencies can be installed with:
 ```sh
 sudo dnf install git gcc-c++ cmake zlib-devel libpng-devel \
             cairo-devel freetype-devel json-c-devel \
-            fontconfig-devel gtkmm30-devel pangomm-devel \
-            mesa-libGL-devel mesa-libGLU-devel libspnav-devel
+            fontconfig-devel pangomm-devel mesa-libGL-devel \
+            mesa-libGLU-devel libspnav-devel gtkmm30-devel \
+            qt6-qtbase-devel
 ```
-To build the QT version replace `gtkmm30-devel` with `qt6-qtbase-devel` and add `-DUSE_QT_GUI=ON` to the cmake step below
+`gtkmm30-devel` is required to build the GTK version and `qt6-qtbase-devel` is required to build the QT version. One or
+the other may be omitted if both versions are not needed. Likewise with `libgtkmm-3.0-dev` and `qt6-base-dev` for Debuntu
+respectively.
 
 Before building, [check out the project and the necessary submodules](#via-source-code).
 
@@ -126,19 +131,20 @@ After that, build SolveSpace as following:
 ```sh
 mkdir build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_OPENMP=ON
+cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_OPENMP=ON [-DENABLE_LTO=ON] [-DUSE_QT_GUI=ON] [-DENABLE_GUI=OFF]
 make
 
 # Optionally
 sudo make install
 ```
-Link Time Optimization is supported by adding `-DENABLE_LTO=ON` to cmake at the
-expense of longer build time.
+Optional:
+ - -DENABLE_LTO=ON: Enable Link Time Optimization at the expense of longer build time.
+ - -DUSE_QT_GUI=ON: Build the newer QT GUI interface.
+ - -DENABLE_GUI=OFF: Build only the command-line interface
 
-The graphical interface is built as `build/bin/solvespace`, and the command-line
-interface is built as `build/bin/solvespace-cli`. It is possible to build only
-the command-line interface by passing the `-DENABLE_GUI=OFF` flag to the cmake
-invocation.
+The GTK graphical interface is built as `build/bin/solvespace`, and the command-line
+interface is built as `build/bin/solvespace-cli`. The QT graphical interface is built
+as `build/bin/solvespace-qt`.
 
 ### Building for Windows
 
