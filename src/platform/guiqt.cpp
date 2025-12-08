@@ -520,6 +520,7 @@ public:
             }
         }
         SetLocale(localeStr);
+        setlocale(LC_NUMERIC, "C");
 
 #ifdef __linux
         QIcon icon("/usr/share/icons/hicolor/48x48/apps/solvespace.png");
