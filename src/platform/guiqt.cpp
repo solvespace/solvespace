@@ -1044,6 +1044,16 @@ int main(int argc, char** argv) {
     // See https://bugreports.qt.io/browse/QTBUG-89812
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
 
+    // Specify the GL version so Qt doesn't use GLES on Wayland, which
+    // doesn't handle "#version 120" shaders.
+    {
+    QSurfaceFormat fmt;
+    fmt.setRenderableType(QSurfaceFormat::OpenGL);
+    fmt.setVersion(3, 2);
+    fmt.setProfile(QSurfaceFormat::CoreProfile);
+    QSurfaceFormat::setDefaultFormat(fmt);
+    }
+
     Platform::SSApplication app(argc, argv);
     Platform::Open3DConnexion();
     SS.Init();
