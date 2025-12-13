@@ -344,6 +344,7 @@ public:
         FIND_CONSTRAINT_TIMEOUT = 119,
         EXPLODE_DISTANCE      = 120,
         ANIMATION_SPEED       = 121,
+        TEXT_SIZE_SCALE       = 122,  
         // For TTF text
         TTF_TEXT              = 300,
         // For the step dimension screen
@@ -518,6 +519,7 @@ public:
     static void ScreenChangeCameraTangent(int link, uint32_t v);
     static void ScreenChangeGridSpacing(int link, uint32_t v);
     static void ScreenChangeExplodeDistance(int link, uint32_t v);
+    static void ScreenChangeTextSizeScale(int link, uint32_t v);
     static void ScreenChangeDigitsAfterDecimal(int link, uint32_t v);
     static void ScreenChangeDigitsAfterDecimalDegree(int link, uint32_t v);
     static void ScreenChangeUseSIPrefixes(int link, uint32_t v);

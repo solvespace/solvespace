@@ -519,7 +519,7 @@ void OpenGl1Renderer::DrawVectorText(const std::string &text, double height,
                                      const Vector &o, const Vector &u, const Vector &v,
                                      hStroke hcs) {
     auto traceEdge = [&](Vector a, Vector b) { DoStippledLine(a, b, hcs); };
-    VectorFont::Builtin()->Trace(height, o, u, v, text, traceEdge, camera);
+    VectorFont::Builtin()->Trace(height*SS.textSizeScale, o, u, v, text, traceEdge, camera);
 }
 
 void OpenGl1Renderer::DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
