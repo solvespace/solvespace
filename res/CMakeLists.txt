@@ -203,7 +203,11 @@ else()
         install(FILES freedesktop/solvespace-mime.xml
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages
             RENAME      solvespace-slvs.xml)
-        
+
+        install(FILES freedesktop/solvespace.thumbnailer
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/thumbnailers
+            RENAME      solvespace.thumbnailer)
+
         install(FILES freedesktop/solvespace-scalable.svg
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps
             RENAME      solvespace.svg)
