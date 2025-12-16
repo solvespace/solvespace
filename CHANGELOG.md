@@ -63,6 +63,7 @@ Other
 
 * STEP files export as solid model(s).
 * Merged and improved the experimental Web version (Emscripten port).
+* Merged a QT front end as an option for Linux builds.
 * Better Flatpack support.
 * Several bug fixes and usability improvements.
 * Allow 32 bit SolveSpace to access up to 4GB of RAM to allow working on larger projects.
