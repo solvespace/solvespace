@@ -176,8 +176,9 @@ public:
         if(timer != NULL) {
             [timer invalidate];
         }
-        timer = [NSTimer scheduledTimerWithTimeInterval:(milliseconds / 1000.0)
+        timer = [NSTimer timerWithTimeInterval:(milliseconds / 1000.0)
             invocation:invocation repeats:NO];
+        [[NSRunLoop currentRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
     }
 
     ~TimerImplCocoa() {
