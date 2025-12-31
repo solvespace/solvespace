@@ -27,6 +27,9 @@
 #include <QSettings>
 #include <QTimer>
 
+#ifdef WIN32
+#    include <windows.h>
+#endif
 
 namespace SolveSpace {
 namespace Platform {
@@ -159,7 +162,7 @@ public:
 
     Platform::Path GetFilename() {
         QStringList files = fileDialogQ.selectedFiles();
-        return Path::From(files.at(0).toStdString());
+        return Path::From(QDir::toNativeSeparators(files[0]).toStdString());
     }
 
     void SetFilename(Platform::Path path) {
@@ -935,6 +938,11 @@ public:
     }
 };
 
+#ifdef WIN32
+// This interferes with our identifier.
+#    undef CreateWindow
+#endif
+
 WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     return std::make_shared<WindowImplQt>(kind,
                 std::static_pointer_cast<WindowImplQt>(parentWindow));
@@ -1044,6 +1052,7 @@ int main(int argc, char** argv) {
     // See https://bugreports.qt.io/browse/QTBUG-89812
     QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
 
+#ifndef WIN32   // Allows using OpenGL 1 on Windows
     // Specify the GL version so Qt doesn't use GLES on Wayland, which
     // doesn't handle "#version 120" shaders.
     {
@@ -1053,6 +1062,7 @@ int main(int argc, char** argv) {
     fmt.setProfile(QSurfaceFormat::CoreProfile);
     QSurfaceFormat::setDefaultFormat(fmt);
     }
+#endif
 
     Platform::SSApplication app(argc, argv);
     Platform::Open3DConnexion();
