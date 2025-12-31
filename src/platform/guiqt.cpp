@@ -29,6 +29,8 @@
 
 #ifdef WIN32
 #    include <windows.h>
+#else
+#    include <fontconfig/fontconfig.h>
 #endif
 
 namespace SolveSpace {
@@ -978,9 +980,9 @@ void Request3DConnexionEventsForWindow(WindowRef window) {}
 //-----------------------------------------------------------------------------
 
 std::vector<Platform::Path> GetFontFiles() {
-#if WIN32
     std::vector<Platform::Path> fonts;
 
+#ifdef WIN32
     std::wstring fontsDirW(MAX_PATH, '\0');
     fontsDirW.resize(GetWindowsDirectoryW(&fontsDirW[0], fontsDirW.length()));
     fontsDirW += L"\\fonts\\";
@@ -992,13 +994,8 @@ std::vector<Platform::Path> GetFontFiles() {
         fonts.push_back(fontsDir.Join(SolveSpace::Platform::Narrow(wfd.cFileName)));
         if (!FindNextFileW(h, &wfd)) break;
     }
-
-    return fonts;
-#endif
-#if UNIX
-    std::vector<Platform::Path> fonts;
-
-    // fontconfig is already initialized by GTK
+#else
+    // FcInit() should have already been called by QFontconfigDatabase.
     FcPattern* pat = FcPatternCreate();
     FcObjectSet* os = FcObjectSetBuild(FC_FILE, (char*)0);
     FcFontSet* fs = FcFontList(0, pat, os);
@@ -1012,12 +1009,9 @@ std::vector<Platform::Path> GetFontFiles() {
     FcFontSetDestroy(fs);
     FcObjectSetDestroy(os);
     FcPatternDestroy(pat);
-
-    return fonts;
-
 #endif
 
-    return std::vector<Platform::Path>();
+    return fonts;
 }
 
 void OpenInBrowser(const std::string& url) {
