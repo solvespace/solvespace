@@ -387,7 +387,7 @@ if(ENABLE_GUI)
             platform/guiqt.cpp
             platform/guiqt.h)
 
-        target_include_directories(solvespace PRIVATE SYSTEM
+        target_include_directories(solvespace SYSTEM PRIVATE
             ${FONTCONFIG_INCLUDE_DIRS})
         target_link_directories(solvespace PRIVATE
             ${FONTCONFIG_LIBRARY_DIRS})
