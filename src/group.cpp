@@ -899,10 +899,8 @@ void Group::MakeExtrusionLines(EntityList *el, hEntity in) {
         en.param[1] = h.param(1);
         en.param[2] = h.param(2);
         en.numPoint = a;
-        // might use the original point, not the remapped one - but surface face uses TOP
-        // using the original point might allow face dragging the sides unconstrained extrusions
-        en.point[0] = Remap(ep->point[0], REMAP_TOP);
-//        en.point[0] = ep->point[0];
+        // we need a point somewhere on the face. Use one from the original line.
+        en.point[0] = ep->point[0];        
         en.numNormal = Quaternion::From(0, ab.x, ab.y, ab.z);
 
         en.group = h;
@@ -1188,6 +1186,7 @@ void Group::CopyEntity(EntityList *el,
             }
             en.numPoint  = (ep->actPoint).ScaledBy(scale);
             en.numNormal = (ep->actNormal).ScaledBy(scale);
+            // the new face needs an associated point
             en.point[0] = Remap(ep->point[0], remap);
             break;
 
