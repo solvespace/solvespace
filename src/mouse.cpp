@@ -65,14 +65,17 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
             AddPointToDraggedList(e->point[i]);
         }
     } else if(e->type == Entity::Type::FACE_NORMAL_PT
-             || e->type == Entity::Type::FACE_N_TRANS           // translate groups work fine
-//             || e->type == Entity::Type::FACE_N_ROT_AA        // rotate groups are unstable dragging
+             || e->type == Entity::Type::FACE_N_TRANS             // this is for translate groups
 
-//           || e->type == Entity::Type::FACE_ROT_NORMAL_PT ) {   // needed for helix and revolve
+            // rotate groups are currently unstable dragging
+//             || e->type == Entity::Type::FACE_N_ROT_AA        
+
 // Revolve is unstable because the point is on axis. Helix drags in axial direction for same reason
+//           || e->type == Entity::Type::FACE_ROT_NORMAL_PT ) {     // needed for helix and revolve
 
-           || e->type == Entity::Type::FACE_N_ROT_TRANS) {      // needed for linked objects
-// Linking fails with old files because faces did not set point[0] prior to version 3.2
+           || e->type == Entity::Type::FACE_N_ROT_TRANS) {        // needed for linked objects
+        // Files save prior to v3.2 didn't specify point[0]
+        // so check existence before using it.
         if(SK.entity.FindByIdNoOops(e->point[0]))
         {
           AddPointToDraggedList(e->point[0]);
