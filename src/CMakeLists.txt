@@ -313,6 +313,8 @@ if(ENABLE_GUI)
             message(FATAL_ERROR "The Emscripten build requires at least version 4.0.8")
         endif()
 
+        target_compile_features(solvespace PRIVATE cxx_std_17)
+
         set(SHELL "${CMAKE_CURRENT_SOURCE_DIR}/platform/html/emshell.html")
         # Add internal quotes to paths used in the response file to ensure that paths
         # that contain spaces are handled correctly
