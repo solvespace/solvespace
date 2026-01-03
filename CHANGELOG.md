@@ -42,6 +42,7 @@ Other User interface changes:
 * `CTRL+Tab` hides/shows the toolbar.
 * Marquee selection of line segments is now precise.
 * Speed up the animation when moving the view, for example when pressing `F2` or `F3`.
+* The animation speed when changing the 3D view is configurable.
 * Pressing ESC while drawing a sketch entity now deletes the entity rather than completing it.
 * `CTRL+Shift+S` shortcut for "Save As..."
 * New option "use camera mouse navigation" for camera (instead of the default model) rotation navigation.
@@ -55,9 +56,8 @@ Other User interface changes:
 	* improved "є"
 	* added superscript 5 "⁵"
 	* fixed crash when typing "£"
-* The animation speed when changing the 3D view is configurable.
 * Add an 'only unconstrained' option on the Property Browser home screen that shows only unconstrained groups.
-
+* Some faces can be gragged. Linked objects can be moved by gragging their faces.
 
 Other
 
@@ -77,6 +77,11 @@ Bug fixes:
 * Mac: Don't crash on file ops without changing dir.
 * Fix incorrect arc handling when linking IDF files.
 * Windows: avoid (sometimes) showing multiple messages when deleting an entity causes other entities to be removed.
+* "Split Curves at Intersection" fixes:
+	* Does not create a zero length edge when splitting lines intersecting in a T shape
+	* Does not create an invisible zero length edge and jump the intersection point to (0, 0, 0) when splitting lines with coincident end points.
+* Fix IDF import with THOU units.
+* macOS: Fix some points not draggable on macOS 26 (Tahoe).
 
 3.1
 ---
