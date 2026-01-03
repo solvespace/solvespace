@@ -45,6 +45,7 @@ endif()
 
 if(EMSCRIPTEN)
     add_executable(slvs-wasm jslib.cpp)
+    target_compile_features(slvs-wasm PRIVATE cxx_std_17)
     target_link_libraries(slvs-wasm PRIVATE slvs-interface embind)
     target_link_options(slvs-wasm PRIVATE
         "SHELL:-s MODULARIZE=1"
