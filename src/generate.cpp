@@ -245,13 +245,31 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
             goto pruned;
 
         int groupRequestIndex = 0;
+        Group *pg = SK.GetGroup(hg);
+        // import the named_parameter dictionary from our parent group
+        // This does not work for sketch groups which don't have opA
+        // what is the right way to get the previous group?
+        pg->dict.clear();
+        if(GroupExists(pg->opA)) {
+          pg->dict = SK.GetGroup(pg->opA)->dict;
+        }
+        else {
+          pg->dict = SK.GetGroup(Group::HGROUP_REFERENCES)->dict;
+        }
+
         for(auto &req : SK.request) {
             Request *r = &req;
             if(r->group != hg) continue;
             r->groupRequestIndex = groupRequestIndex++;
 
             r->Generate(&(SK.entity), &(SK.param));
+            // we only add parameters from this group or overwrite handles
+            if ((r->type == Request::Type::NAMED_PARAMETER)
+              ||(r->type == Request::Type::NAMED_CONST_PARAM)) {
+              pg->dict[r->str] = r->h.param(64);
+            }
         }
+        
         for(auto &con : SK.constraint) {
             Constraint *c = &con;
             if(c->group != hg) continue;

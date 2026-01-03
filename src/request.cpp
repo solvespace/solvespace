@@ -33,6 +33,7 @@ static const EntReqMapping EntReqMap[] = {
 { Request::Type::ARC_OF_CIRCLE,   Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false },
 { Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       4,  false,  true,   false },
 { Request::Type::IMAGE,           Entity::Type::IMAGE,          4,  false,  true,   false },
+{ Request::Type::NAMED_PARAMETER, (Entity::Type)0,              0,  false,  false,  false },
 };
 
 static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
@@ -117,6 +118,9 @@ void Request::Generate(EntityList *entity, ParamList *param)
                 aspectRatio = 1.0;
             }
             break;
+        }
+        case Type::NAMED_PARAMETER: {
+          AddParam(param, h.param(64));
         }
 
         default: // most requests don't do anything else
@@ -213,15 +217,17 @@ std::string Request::DescriptionString() const {
         s = "#ZX";
     } else {
         switch(type) {
-            case Type::WORKPLANE:       s = "workplane";      break;
-            case Type::DATUM_POINT:     s = "datum-point";    break;
-            case Type::LINE_SEGMENT:    s = "line-segment";   break;
-            case Type::CUBIC:           s = "cubic-bezier";   break;
-            case Type::CUBIC_PERIODIC:  s = "periodic-cubic"; break;
-            case Type::CIRCLE:          s = "circle";         break;
-            case Type::ARC_OF_CIRCLE:   s = "arc-of-circle";  break;
-            case Type::TTF_TEXT:        s = "ttf-text";       break;
-            case Type::IMAGE:           s = "image";          break;
+            case Type::WORKPLANE:         s = "workplane";      break;
+            case Type::DATUM_POINT:       s = "datum-point";    break;
+            case Type::LINE_SEGMENT:      s = "line-segment";   break;
+            case Type::CUBIC:             s = "cubic-bezier";   break;
+            case Type::CUBIC_PERIODIC:    s = "periodic-cubic"; break;
+            case Type::CIRCLE:            s = "circle";         break;
+            case Type::ARC_OF_CIRCLE:     s = "arc-of-circle";  break;
+            case Type::TTF_TEXT:          s = "ttf-text";       break;
+            case Type::IMAGE:             s = "image";          break;
+            case Type::NAMED_PARAMETER:   s = "parameter";      break;
+            case Type::NAMED_CONST_PARAM: s = "parameter";      break;
         }
     }
     ssassert(s != NULL, "Unexpected request type");
