@@ -231,6 +231,7 @@ void TextWindow::AddNamedParameter(int link, uint32_t v) {
     Request r = {};
     r.group = hg;
     r.type = Request::Type::NAMED_PARAMETER;
+//    r.type = Request::Type::NAMED_CONST_PARAM;
     r.str = "Edit_Name";
     SK.request.AddAndAssignId(&r);
     r.Generate(&SK.entity, &SK.param);
@@ -378,12 +379,15 @@ void TextWindow::ScreenEditParamName(int link, uint32_t v) {
 }
 void TextWindow::ScreenChangeParamValue(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
-    hParam p = { v };
-    double value = SK.GetParam(p)->val;
+    hRequest hr = { v };
+    Request *r = SK.request.FindByIdNoOops(hr);
+    hParam hp = r->h.param(64);
+    double value = SK.GetParam(hp)->val;
     SS.TW.ShowEditControl(3, ssprintf("%.8f", value));
     SS.TW.edit.meaning = Edit::PARAMETER_VALUE;
     SS.TW.edit.group.v = g->h.v;
-    SS.TW.edit.parameter = p;  
+    SS.TW.edit.request = hr;
+    SS.TW.edit.parameter = hp;
 }
 void TextWindow::ScreenDeleteParameter(int link, uint32_t v) {
     hRequest hr = { v };
@@ -624,7 +628,9 @@ list_items:
     int a = 0;
     for(auto &r : SK.request) {
         // filter on request type for parameters
-        if(r.group == shown.group && r.type == Request::Type::NAMED_PARAMETER) {
+        if(r.group == shown.group &&
+           (r.type == Request::Type::NAMED_PARAMETER || r.type == Request::Type::NAMED_CONST_PARAM))
+        {
             // get the name of our parameter request
             std::string s = r.str;
             // we need a handle to the parameter to get its value
@@ -637,8 +643,8 @@ list_items:
                    &(TextWindow::ScreenEditParamName),
                    s.c_str(),
                    value,
-                   &(TextWindow::ScreenChangeParamValue), hp,
-                   r.h.v, &(TextWindow::ScreenDeleteParameter) );
+                   &(TextWindow::ScreenChangeParamValue), r.h.v, r.h.v,
+                   &(TextWindow::ScreenDeleteParameter) );
             a++;
         }
     }
@@ -650,7 +656,8 @@ list_items:
     a = 0;
     for(auto &r : SK.request) {
 
-        if(r.group == shown.group && r.type != Request::Type::NAMED_PARAMETER) {
+        if(r.group == shown.group && r.type != Request::Type::NAMED_PARAMETER
+            && r.type != Request::Type::NAMED_CONST_PARAM) {
             std::string s = r.DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                    (a & 1) ? 'd' : 'a',
@@ -978,8 +985,9 @@ void TextWindow::EditControlDone(std::string s) {
         case Edit::PARAMETER_VALUE:  // by handle (passed in group handle...)
             if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
                 double ev = e->Eval();
-                Group *g = SK.GetGroup(edit.group);
                 SK.GetParam(edit.parameter)->val = ev;
+                SK.GetRequest(edit.request)->type = Request::Type::NAMED_CONST_PARAM;
+                Group *g = SK.GetGroup(edit.group);
                 SS.MarkGroupDirty(g->h);
             }
             break;

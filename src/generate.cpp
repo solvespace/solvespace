@@ -234,6 +234,8 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     SK.entity.Clear();
     SK.entity.ReserveMore(oldEntityCount);
 
+    // For seeding the name dictionary of each group start with references
+    hGroup hprev = SK.groupOrder[0];
     // Not using range-for because we're using the index inside the loop.
     for(i = 0; i < SK.groupOrder.n; i++) {
         hGroup hg = SK.groupOrder[i];
@@ -244,19 +246,14 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
         if(PruneGroups(hg))
             goto pruned;
 
-        int groupRequestIndex = 0;
         Group *pg = SK.GetGroup(hg);
-        // import the named_parameter dictionary from our parent group
-        // This does not work for sketch groups which don't have opA
-        // what is the right way to get the previous group?
+        // import the named_parameter dictionary from the previous group
         pg->dict.clear();
-        if(GroupExists(pg->opA)) {
-          pg->dict = SK.GetGroup(pg->opA)->dict;
-        }
-        else {
-          pg->dict = SK.GetGroup(Group::HGROUP_REFERENCES)->dict;
-        }
+        pg->dict = SK.GetGroup(hprev)->dict;
+        hprev = hg;
+//          pg->dict = SK.GetGroup(Group::HGROUP_REFERENCES)->dict;
 
+        int groupRequestIndex = 0;
         for(auto &req : SK.request) {
             Request *r = &req;
             if(r->group != hg) continue;

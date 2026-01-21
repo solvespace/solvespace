@@ -23,17 +23,18 @@ struct EntReqMapping {
     bool           hasDistance;
 };
 static const EntReqMapping EntReqMap[] = {
-// request type                   entity type                 pts   xtra?   norml   dist
-{ Request::Type::WORKPLANE,       Entity::Type::WORKPLANE,      1,  false,  true,   false },
-{ Request::Type::DATUM_POINT,     (Entity::Type)0,              1,  false,  false,  false },
-{ Request::Type::LINE_SEGMENT,    Entity::Type::LINE_SEGMENT,   2,  false,  false,  false },
-{ Request::Type::CUBIC,           Entity::Type::CUBIC,          4,  true,   false,  false },
-{ Request::Type::CUBIC_PERIODIC,  Entity::Type::CUBIC_PERIODIC, 3,  true,   false,  false },
-{ Request::Type::CIRCLE,          Entity::Type::CIRCLE,         1,  false,  true,   true  },
-{ Request::Type::ARC_OF_CIRCLE,   Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false },
-{ Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       4,  false,  true,   false },
-{ Request::Type::IMAGE,           Entity::Type::IMAGE,          4,  false,  true,   false },
-{ Request::Type::NAMED_PARAMETER, (Entity::Type)0,              0,  false,  false,  false },
+// request type                     entity type                 pts   xtra?   norml   dist
+{ Request::Type::WORKPLANE,         Entity::Type::WORKPLANE,      1,  false,  true,   false },
+{ Request::Type::DATUM_POINT,       (Entity::Type)0,              1,  false,  false,  false },
+{ Request::Type::LINE_SEGMENT,      Entity::Type::LINE_SEGMENT,   2,  false,  false,  false },
+{ Request::Type::CUBIC,             Entity::Type::CUBIC,          4,  true,   false,  false },
+{ Request::Type::CUBIC_PERIODIC,    Entity::Type::CUBIC_PERIODIC, 3,  true,   false,  false },
+{ Request::Type::CIRCLE,            Entity::Type::CIRCLE,         1,  false,  true,   true  },
+{ Request::Type::ARC_OF_CIRCLE,     Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false },
+{ Request::Type::TTF_TEXT,          Entity::Type::TTF_TEXT,       4,  false,  true,   false },
+{ Request::Type::IMAGE,             Entity::Type::IMAGE,          4,  false,  true,   false },
+{ Request::Type::NAMED_PARAMETER,   (Entity::Type)0,              0,  false,  false,  false },
+{ Request::Type::NAMED_CONST_PARAM, (Entity::Type)0,              0,  false,  false,  false },
 };
 
 static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
@@ -120,8 +121,14 @@ void Request::Generate(EntityList *entity, ParamList *param)
             break;
         }
         case Type::NAMED_PARAMETER: {
-          AddParam(param, h.param(64));
-        }
+            AddParam(param, h.param(64));
+            break;
+            }
+        case Type::NAMED_CONST_PARAM: {
+            hParam hp = AddParam(param, h.param(64));
+            SK.GetParam(hp)->known = true;
+//            SK.GetParam(hp)->free = false;
+        }            
 
         default: // most requests don't do anything else
             break;
