@@ -899,8 +899,8 @@ void Group::MakeExtrusionLines(EntityList *el, hEntity in) {
         en.param[1] = h.param(1);
         en.param[2] = h.param(2);
         en.numPoint = a;
-        // we need a point somewhere on the face. Use one from the original line.
-        en.point[0] = ep->point[0];        
+        // we need a point somewhere on the face, and it must be from the current group.
+        en.point[0] = Remap(ep->point[0], REMAP_TOP);
         en.numNormal = Quaternion::From(0, ab.x, ab.y, ab.z);
 
         en.group = h;
