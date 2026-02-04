@@ -33,6 +33,15 @@ automatically built by the SolveSpace maintainers for each stable release.
 
 [rel]: https://github.com/solvespace/solvespace/releases
 
+### Via _Unofficial_ Distro Packages
+
+Some Linux distributions may provide packages for install from the distro
+specific app repositories. For example, SolveSpace can be installed on
+Debian (and derivatives like Ubuntu and Mint) with `sudo apt install solvespace`.
+While these packages may be behind the current release and will not include the
+latest features in development, the system packages offer a simple alternative for
+installing SolveSpace which should be stable for your operating system.
+
 ### Via Flathub
 
 Official releases can be installed as a Flatpak from Flathub.
@@ -75,15 +84,16 @@ from the following links:
 - [Windows with OpenMP enabled 64bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows_x64.zip)
 - [Windows 64bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows_single_core_x64.zip)
 
-**Please note that the 64bit Windows versions do *not* support 6DOF (SpeceMouse, SpaceNavigator) controllers.**
+**Please note that the 64bit Windows versions do *not* support 6DOF (SpaceMouse, SpaceNavigator) controllers.**
 
-Extract the downloaded archive and install or execute the contained file as is
-appropriate for your platform.
+Extract the downloaded archive and install or run the application as appropriate for your platform.
 
-### Via source code
+# Building from source code
 
-Irrespective of the OS used, before building, check out the project and the
-necessary submodules:
+<a name="via-source-code"></a> <!-- Legacy link -->
+## Getting the source code
+
+Irrespective of the OS used, before building, check out the project and necessary submodules:
 
 ```sh
 git clone https://github.com/solvespace/solvespace
@@ -100,7 +110,7 @@ You will need `git`. See the platform specific instructions below to install it.
 You will need the usual build tools, CMake, zlib, libpng, cairo, freetype. To
 build the GUI, you will need fontconfig, gtkmm 3.0 (version 3.16 or later) for
 GTK, or QT6 for the newer QT interface, pangomm 1.4, OpenGL and OpenGL GLU, 
-and optionally, the Space Navigator client library. 
+and optionally the Space Navigator client library. 
 
 On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
@@ -121,17 +131,16 @@ sudo dnf install git gcc-c++ cmake zlib-devel libpng-devel \
             qt6-qtbase-devel
 ```
 `gtkmm30-devel` is required to build the GTK version and `qt6-qtbase-devel` is required to build the QT version. One or
-the other may be omitted if both versions are not needed. Likewise with `libgtkmm-3.0-dev` and `qt6-base-dev` for Debuntu
-respectively.
+the other may be omitted if both versions are not needed. Likewise with `libgtkmm-3.0-dev` and `qt6-base-dev` for Debian.
 
-Before building, [check out the project and the necessary submodules](#via-source-code).
+Before building, [check out the project and the necessary submodules](#getting-the-source-code).
 
-After that, build SolveSpace as following:
+After that, build SolveSpace as follows:
 
 ```sh
 mkdir build
 cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_OPENMP=ON [-DENABLE_LTO=ON] [-DUSE_QT_GUI=ON] [-DENABLE_GUI=OFF]
+cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_OPENMP=ON [-DENABLE_LTO=ON] [-DUSE_QT_GUI=ON] [-DCMAKE_INSTALL_PREFIX=~/.local] [-DENABLE_GUI=OFF]
 make
 
 # Optionally
@@ -140,11 +149,24 @@ sudo make install
 Optional:
  - -DENABLE_LTO=ON: Enable Link Time Optimization at the expense of longer build time.
  - -DUSE_QT_GUI=ON: Build the newer QT GUI interface.
+ - -DCMAKE_INSTALL_PREFIX=~/.local: Set the install target for `make install`
  - -DENABLE_GUI=OFF: Build only the command-line interface
 
 The GTK graphical interface is built as `build/bin/solvespace`, and the command-line
 interface is built as `build/bin/solvespace-cli`. The QT graphical interface is built
 as `build/bin/solvespace-qt`.
+
+<a name="cmake-install-prefix"></a>The default install target for *nix platforms (including macOS) is typically `/usr/local`.
+Unless you need to install SolveSpace system-wide for use by multiple user accounts, using ~/.local provides the same
+benefits without the need for elevated privileges (e.g. sudo). It's also possible to specify arbitrary install prefixes. This
+allows you to maintain multiple builds, though this is typically only necessary for developers. Using `~/.local` provides the
+benefit of automatic integration with the window manager during install, such as associating .slvs files and adding
+SolveSpace to the system's Applications Menu.
+
+More information is available from the [CMake docs](https://cmake.org/cmake/help/latest/). Reference
+[CMake install](https://cmake.org/cmake/help/latest/command/install.html),
+[CMAKE_INSTALL_PREFIX](https://cmake.org/cmake/help/latest/variable/CMAKE_INSTALL_PREFIX.html) and
+[DESTDIR](https://cmake.org/cmake/help/latest/envvar/DESTDIR.html).
 
 ### Building for Windows
 
@@ -157,7 +179,8 @@ Debian derivative (e.g. Ubuntu) these can be installed with:
 ```sh
 apt-get install git build-essential cmake mingw-w64
 ```
-
+ 
+<!-- Intentionally use old reference unless/until the legacy link is permanently removed -->
 Before building, [check out the project and the necessary submodules](#via-source-code).
 
 Build 64-bit SolveSpace with the following:
@@ -196,7 +219,7 @@ source ./emsdk_env.sh
 cd ..
 ```
 
-Before building, [check out the project and the necessary submodules](#via-source-code).
+Before building, [check out the project and the necessary submodules](#getting-the-source-code).
 
 After that, build SolveSpace as following:
 
@@ -214,6 +237,35 @@ The command-line interface is not available.
 
 [emscripten]: https://emscripten.org/
 
+## Building on OpenBSD
+
+You will need git, cmake, libexecinfo, libpng, gtk3mm and pangomm.
+These can be installed from the ports tree:
+
+```sh
+pkg_add -U git cmake libexecinfo png json-c gtk3mm pangomm
+```
+
+Before building, [check out the project and the necessary submodules](#getting-the-source-code).
+
+After that, build SolveSpace as follows:
+
+```sh
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make
+sudo make install
+```
+
+Unfortunately, on OpenBSD, the produced executables are not filesystem location independent
+and must be installed before use. By default, the graphical interface is installed to
+`/usr/local/bin/solvespace`, and the command-line interface is built as
+`/usr/local/bin/solvespace-cli`. It is possible to build only the command-line interface
+by passing the `-DENABLE_GUI=OFF` flag to the cmake invocation. Review the section on
+[Building for Linux](#building-for-linux) and [CMAKE_INSTALL_PREFIX](#cmake-install-prefix)
+for additional build details.
+
 ## Building on macOS
 
 You will need git, XCode tools, CMake and libomp. Git, CMake and libomp can be installed
@@ -226,7 +278,7 @@ brew install git cmake libomp
 XCode has to be installed via AppStore or [the Apple website][appledeveloper];
 it requires a free Apple ID.
 
-Before building, [check out the project and the necessary submodules](#via-source-code).
+Before building, [check out the project and the necessary submodules](#getting-the-source-code).
 
 After that, build SolveSpace as following:
 
@@ -255,33 +307,6 @@ is `build/bin/SolveSpace.app/Contents/MacOS/solvespace-cli`.
 [homebrew]: https://brew.sh/
 [appledeveloper]: https://developer.apple.com/download/
 
-## Building on OpenBSD
-
-You will need git, cmake, libexecinfo, libpng, gtk3mm and pangomm.
-These can be installed from the ports tree:
-
-```sh
-pkg_add -U git cmake libexecinfo png json-c gtk3mm pangomm
-```
-
-Before building, [check out the project and the necessary submodules](#via-source-code).
-
-After that, build SolveSpace as following:
-
-```sh
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make
-sudo make install
-```
-
-Unfortunately, on OpenBSD, the produced executables are not filesystem location independent
-and must be installed before use. By default, the graphical interface is installed to
-`/usr/local/bin/solvespace`, and the command-line interface is built as
-`/usr/local/bin/solvespace-cli`. It is possible to build only the command-line interface
-by passing the `-DENABLE_GUI=OFF` flag to the cmake invocation.
-
 ## Building on Windows
 
 You will need [git][gitwin], [cmake][cmakewin] and a C++ compiler
@@ -290,7 +315,7 @@ or later is required.
 If gawk is in your path be sure it is a proper Windows port that can handle CL LF line endings.
 If not CMake may fail in libpng due to some awk scripts - issue #1228.
 
-Before building, [check out the project and the necessary submodules](#via-source-code).
+Before building, [check out the project and the necessary submodules](#getting-the-source-code).
 
 ### Building with Visual Studio IDE
 
