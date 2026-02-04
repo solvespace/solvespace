@@ -204,9 +204,11 @@ else()
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages
             RENAME      solvespace-slvs.xml)
 
-        install(FILES freedesktop/solvespace.thumbnailer
-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/thumbnailers
-            RENAME      solvespace.thumbnailer)
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/freedesktop/solvespace.thumbnailer.in
+            ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace.thumbnailer)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace.thumbnailer
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/thumbnailers)
 
         install(FILES freedesktop/solvespace-scalable.svg
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps
