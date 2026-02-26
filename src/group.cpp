@@ -1186,8 +1186,10 @@ void Group::CopyEntity(EntityList *el,
             }
             en.numPoint  = (ep->actPoint).ScaledBy(scale);
             en.numNormal = (ep->actNormal).ScaledBy(scale);
-            // the new face needs an associated point
-            en.point[0] = Remap(ep->point[0], remap);
+            // the new face needs an associated point (old files may not have one)
+            if(ep->point[0].v != 0) {
+                en.point[0] = Remap(ep->point[0], remap);
+            }
             break;
 
         default: {
