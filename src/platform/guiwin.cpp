@@ -581,7 +581,13 @@ public:
                 break;
 
             case Window::Kind::TOOL:
-                style |= WS_POPUPWINDOW|WS_CAPTION;
+                // WS_VSCROLL is included here so the scrollbar space is always
+                // reserved, preventing client area width changes when scrollbar
+                // visibility is toggled. Without this, toggling the scrollbar
+                // changes the client area, and ANGLE does not receive a WM_SIZE,
+                // causing the rendered content to be stretched and the click areas
+                // to be misaligned. See: https://github.com/solvespace/solvespace/issues/681
+                style |= WS_POPUPWINDOW|WS_CAPTION|WS_VSCROLL;
                 break;
         }
         sscheck(hWindow = CreateWindowExW(0, L"SolveSpace", L"", style,
@@ -1351,7 +1357,14 @@ public:
 
     void SetScrollbarVisible(bool visible) override {
         scrollbarVisible = visible;
-        sscheck(ShowScrollBar(hWindow, SB_VERT, visible));
+        // Do not call ShowScrollBar here. The window is created with WS_VSCROLL
+        // so the scrollbar space is always reserved. Toggling scrollbar visibility
+        // via ShowScrollBar changes the client area width without generating a
+        // WM_SIZE event, which causes ANGLE's swap chain to go out of sync with
+        // the window size, resulting in stretched rendering and misaligned click
+        // areas. Instead, ConfigureScrollbar sets page >= range when not scrollable,
+        // which causes Windows to display the scrollbar as inactive automatically.
+        // See: https://github.com/solvespace/solvespace/issues/681
     }
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
