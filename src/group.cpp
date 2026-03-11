@@ -985,7 +985,7 @@ void Group::MakeLatheSurfacesSelectable(EntityList *el, hEntity in, Vector axis)
             en.style = ep->style;
             en.h = Remap(ep->h, REMAP_LINE_TO_FACE);
             en.type = Entity::Type::FACE_NORMAL_PT;
-            en.point[0] = ep->point[0];
+            en.point[0] = Remap(ep->point[0], REMAP_LATHE_START);
             el->Add(&en);
         }
     }
