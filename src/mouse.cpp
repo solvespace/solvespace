@@ -76,9 +76,14 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
            || e->type == Entity::Type::FACE_N_ROT_TRANS) {        // needed for linked objects
         // Files save prior to v3.2 didn't specify point[0]
         // so check existence before using it.
-        if(SK.entity.FindByIdNoOops(e->point[0]))
+        Entity *pt = SK.entity.FindByIdNoOops(e->point[0]);
+        if(pt)
         {
-          AddPointToDraggedList(e->point[0]);
+          // for some reason Revolve top/bottom faces do bad things if they can't be dragged.
+          // but a two sided revolve group will behave OK.
+          if(pt->CanBeDragged()) {
+            AddPointToDraggedList(e->point[0]);
+          }
         }
     }
 }
