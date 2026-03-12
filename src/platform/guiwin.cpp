@@ -1358,19 +1358,24 @@ public:
     void SetScrollbarVisible(bool visible) override {
         scrollbarVisible = visible;
         // Do not call ShowScrollBar here. The window is created with WS_VSCROLL
-        // so the scrollbar space is always reserved. Toggling scrollbar visibility
-        // via ShowScrollBar changes the client area width without generating a
-        // WM_SIZE event, which causes ANGLE's swap chain to go out of sync with
-        // the window size, resulting in stretched rendering and misaligned click
-        // areas. Instead, ConfigureScrollbar sets page >= range when not scrollable,
-        // which causes Windows to display the scrollbar as inactive automatically.
+        // so the scrollbar space is always reserved, and ConfigureScrollbar uses
+        // SIF_DISABLENOSCROLL to disable (rather than hide) the scrollbar when
+        // content fits the view. This ensures the client area width never changes
+        // due to scrollbar state, preventing ANGLE's swap chain from going out of
+        // sync with the window size (which causes stretched rendering and misaligned
+        // click areas on Windows 10/11).
         // See: https://github.com/solvespace/solvespace/issues/681
     }
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
         SCROLLINFO si = {};
         si.cbSize = sizeof(si);
-        si.fMask  = SIF_RANGE|SIF_PAGE;
+        // SIF_DISABLENOSCROLL: when page >= range, disable (grey out) the scrollbar
+        // instead of hiding it. Without this flag, SetScrollInfo would auto-hide the
+        // scrollbar when content fits, changing the client area width without sending
+        // WM_SIZE, which causes rendering and hit-test coordinates to diverge.
+        // See: https://github.com/solvespace/solvespace/issues/681
+        si.fMask  = SIF_RANGE|SIF_PAGE|SIF_DISABLENOSCROLL;
         si.nMin   = (UINT)(min * SCROLLBAR_UNIT);
         si.nMax   = (UINT)(max * SCROLLBAR_UNIT);
         si.nPage  = (UINT)(pageSize * SCROLLBAR_UNIT);
