@@ -313,7 +313,11 @@ static bool RunCommand(const std::vector<std::string> args) {
 
         runner = [&](const Platform::Path &output) {
             StepFileWriter sfw = {};
-            sfw.ExportSurfacesTo(output);
+            if(output.HasExtension("iges") || output.HasExtension("igs")) {
+                sfw.ExportIgesTo(output);
+            } else {
+                sfw.ExportSurfacesTo(output);
+            }
         };
     } else if(args[1] == "regenerate") {
         for(size_t argn = 2; argn < args.size(); argn++) {

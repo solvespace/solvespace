@@ -813,9 +813,14 @@ void SolveSpaceUI::MenuFile(Command id) {
             dialog->FreezeChoices(settings, "ExportSurfaces");
 
             StepFileWriter sfw = {};
-            sfw.ExportSurfacesTo(dialog->GetFilename());
+            const Platform::Path outFile = dialog->GetFilename();
+            if(outFile.HasExtension("iges") || outFile.HasExtension("igs")) {
+                sfw.ExportIgesTo(outFile);
+            } else {
+                sfw.ExportSurfacesTo(outFile);
+            }
             if (SS.OnSaveFinished) {
-                SS.OnSaveFinished(dialog->GetFilename(), false, false);
+                SS.OnSaveFinished(outFile, false, false);
             }
             break;
         }

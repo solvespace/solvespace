@@ -4,6 +4,10 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include "config.h"
+#ifdef HAVE_OPENCASCADE
+#   include "occt_kernel.h"
+#endif
 
 namespace SolveSpace {
 
@@ -642,6 +646,16 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
         return;
     }
 
+#ifdef HAVE_OPENCASCADE
+    // Use OCCT's standards-compliant STEP writer when the library is available.
+    if(!OCCTExportStepFile(filename, shell)) {
+        Error("Couldn't write STEP file '%s'.\n\n"
+              "The OpenCASCADE library reported an error during export.",
+              filename.raw.c_str());
+    }
+    return;
+#endif
+
     f = OpenFile(filename, "wb");
     if(!f) {
         Error("Couldn't write to '%s'", filename.raw.c_str());
@@ -716,6 +730,33 @@ void StepFileWriter::WriteWireframe() {
 
     id += 3;
     curves.Clear();
+}
+
+void StepFileWriter::ExportIgesTo(const Platform::Path &filename) {
+#ifdef HAVE_OPENCASCADE
+    Group  *g     = SK.GetGroup(SS.GW.activeGroup);
+    SShell *shell = &(g->runningShell);
+
+    if(shell->surface.IsEmpty()) {
+        Error("The model does not contain any surfaces to export.%s",
+              !g->runningMesh.l.IsEmpty()
+                  ? "\n\nThe model does contain triangles from a mesh, but "
+                    "a triangle mesh cannot be exported as an IGES file. Try "
+                    "File -> Export Mesh... instead."
+                  : "");
+        return;
+    }
+
+    if(!OCCTExportIgesFile(filename, shell)) {
+        Error("Couldn't write IGES file '%s'.\n\n"
+              "The OpenCASCADE library reported an error during export.",
+              filename.raw.c_str());
+    }
+#else
+    (void)filename;
+    Error("IGES export requires SolveSpace to be built with OpenCASCADE "
+          "(-DENABLE_OPENCASCADE=ON).");
+#endif
 }
 
 } // namespace SolveSpace

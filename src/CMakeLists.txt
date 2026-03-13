@@ -166,6 +166,15 @@ if(ENABLE_GUI OR ENABLE_CLI)
         srf/surfinter.cpp
         srf/triangulate.cpp)
 
+    if(ENABLE_OPENCASCADE)
+        target_sources(solvespace-core PRIVATE occt_kernel.cpp)
+        target_include_directories(solvespace-core SYSTEM PRIVATE
+            ${OpenCASCADE_INCLUDE_DIRS})
+        target_link_libraries(solvespace-core PRIVATE
+            ${OpenCASCADE_LIBRARIES})
+        target_compile_definitions(solvespace-core PRIVATE HAVE_OPENCASCADE)
+    endif()
+
     target_include_directories(solvespace-core PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_BINARY_DIR})

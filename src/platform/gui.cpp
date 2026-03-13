@@ -4,6 +4,7 @@
 // Copyright 2018 whitequark
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include "config.h"
 
 namespace SolveSpace {
 namespace Platform {
@@ -106,6 +107,9 @@ std::vector<FileFilter> MeshFileFilters = {
 
 std::vector<FileFilter> SurfaceFileFilters = {
     { CN_("file-type", "STEP file"), { "step", "stp" } },
+#ifdef HAVE_OPENCASCADE
+    { CN_("file-type", "IGES file"), { "iges", "igs" } },
+#endif
 };
 
 std::vector<FileFilter> VectorFileFilters = {

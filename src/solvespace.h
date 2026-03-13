@@ -170,6 +170,7 @@ public:
     bool HasOrientedEdgeAnAlias(int number, int edgeCurveId, bool flip);
     int InsertOrientedEdge(int number);
     void ExportSurfacesTo(const Platform::Path &filename);
+    void ExportIgesTo(const Platform::Path &filename);
     void WriteHeader();
     void WriteProductHeader();
     int ExportCurve(SBezier *sb);

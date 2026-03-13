@@ -16,4 +16,7 @@
 /* If we use GTK, can we use the native file chooser? */
 #cmakedefine HAVE_GTK_FILECHOOSERNATIVE
 
+/* Do we use OpenCASCADE Technology for geometry operations? */
+#cmakedefine HAVE_OPENCASCADE
+
 #endif

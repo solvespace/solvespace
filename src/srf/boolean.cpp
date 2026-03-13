@@ -5,20 +5,33 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include "config.h"
+#ifdef HAVE_OPENCASCADE
+#   include "occt_kernel.h"
+#endif
 
 namespace SolveSpace {
 
 static int I;
 
 void SShell::MakeFromUnionOf(SShell *a, SShell *b) {
+#ifdef HAVE_OPENCASCADE
+    if(OCCTBooleanUnion(this, a, b)) return;
+#endif
     MakeFromBoolean(a, b, SSurface::CombineAs::UNION);
 }
 
 void SShell::MakeFromDifferenceOf(SShell *a, SShell *b) {
+#ifdef HAVE_OPENCASCADE
+    if(OCCTBooleanDifference(this, a, b)) return;
+#endif
     MakeFromBoolean(a, b, SSurface::CombineAs::DIFFERENCE);
 }
 
 void SShell::MakeFromIntersectionOf(SShell *a, SShell *b) {
+#ifdef HAVE_OPENCASCADE
+    if(OCCTBooleanIntersection(this, a, b)) return;
+#endif
     MakeFromBoolean(a, b, SSurface::CombineAs::INTERSECTION);
 }
 

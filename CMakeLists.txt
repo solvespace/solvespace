@@ -72,6 +72,8 @@ set(ENABLE_OPENMP     OFF CACHE BOOL
     "Whether geometric operations will be parallelized using OpenMP")
 set(ENABLE_LTO        OFF CACHE BOOL
     "Whether interprocedural (global) optimizations are enabled")
+set(ENABLE_OPENCASCADE OFF CACHE BOOL
+    "Whether OpenCASCADE Technology (OCCT) is used for solid-model operations (boolean ops, STEP/IGES export) instead of the built-in geometric kernel")
 option(FORCE_VENDORED_Eigen3
     "Whether we should use our bundled Eigen even in the presence of a system copy"
     OFF)
@@ -496,6 +498,15 @@ if(ENABLE_COVERAGE)
     # this is not useful for us.
     set(COVERAGE_FLAGS -fno-exceptions --coverage)
     set(COVERAGE_LIBRARY --coverage)
+endif()
+
+# OpenCASCADE Technology (optional)
+
+if(ENABLE_OPENCASCADE)
+    find_package(OpenCASCADE REQUIRED)
+    message(STATUS "Using OpenCASCADE: ${OpenCASCADE_INCLUDE_DIRS}")
+    # Propagate the flag to config.h
+    set(HAVE_OPENCASCADE TRUE)
 endif()
 
 # application components
