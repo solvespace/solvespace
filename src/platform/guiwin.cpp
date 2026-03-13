@@ -584,9 +584,10 @@ public:
                 // WS_VSCROLL is included here so the scrollbar space is always
                 // reserved, preventing client area width changes when scrollbar
                 // visibility is toggled. Without this, toggling the scrollbar
-                // changes the client area, and ANGLE does not receive a WM_SIZE,
-                // causing the rendered content to be stretched and the click areas
-                // to be misaligned. See: https://github.com/solvespace/solvespace/issues/681
+                // changes the client area without sending WM_SIZE; the OpenGL
+                // rendering surface is then the wrong width, causing stretched
+                // content and misaligned click areas.
+                // See: https://github.com/solvespace/solvespace/issues/681
                 style |= WS_POPUPWINDOW|WS_CAPTION|WS_VSCROLL;
                 break;
         }
@@ -1361,9 +1362,9 @@ public:
         // so the scrollbar space is always reserved, and ConfigureScrollbar uses
         // SIF_DISABLENOSCROLL to disable (rather than hide) the scrollbar when
         // content fits the view. This ensures the client area width never changes
-        // due to scrollbar state, preventing ANGLE's swap chain from going out of
-        // sync with the window size (which causes stretched rendering and misaligned
-        // click areas on Windows 10/11).
+        // due to scrollbar state, preventing the OpenGL rendering surface from
+        // going out of sync with the window size (which causes stretched rendering
+        // and misaligned click areas on Windows 10/11).
         // See: https://github.com/solvespace/solvespace/issues/681
     }
 
