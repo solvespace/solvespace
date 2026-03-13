@@ -527,10 +527,8 @@ public:
         SetLocale(localeStr);
         setlocale(LC_NUMERIC, "C");
 
-#ifdef __linux
-        QIcon icon("/usr/share/icons/hicolor/48x48/apps/solvespace.png");
+        QIcon icon(":/icons/solvespace.png");
         setWindowIcon(icon);
-#endif
     }
 
     QFont fontEdit;
