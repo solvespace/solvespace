@@ -1,0 +1,6 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+<qresource>
+    <file alias="icons/solvespace.png">freedesktop/solvespace-48x48.png</file>
+</qresource>
+</RCC>
