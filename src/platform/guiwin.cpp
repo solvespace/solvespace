@@ -1350,8 +1350,25 @@ public:
     }
 
     void SetScrollbarVisible(bool visible) override {
-        scrollbarVisible = visible;
-        sscheck(ShowScrollBar(hWindow, SB_VERT, visible));
+        if(scrollbarVisible != visible) {
+            scrollbarVisible = visible;
+            sscheck(ShowScrollBar(hWindow, SB_VERT, visible));
+            // Force the window 1 pixel taller and then restore it's original size.
+            // This somehow fixes the problem where on Windows 10 and 11 toggling
+            // the scroll bar would cause the client area of the text window to
+            // be stretched or compressed horizontally. It looks bad and the
+            // buttons on the toolbar do not line up with the hit areas.
+            // See: https://github.com/solvespace/solvespace/issues/681
+            // This fix is the result of a long discussion with claude-sonnet-4.6
+            // https://github.com/solvespace/solvespace/agents/pull/1680
+            // https://github.com/solvespace/solvespace/pull/1680
+            RECT rc;
+            GetWindowRect(hWindow, &rc);
+            SetWindowPos(hWindow, HWND_TOP, rc.left, rc.top, rc.right - rc.left,
+                         rc.bottom - rc.top + 1, SWP_FRAMECHANGED);
+            SetWindowPos(hWindow, HWND_TOP, rc.left, rc.top, rc.right - rc.left,
+                         rc.bottom - rc.top,     SWP_FRAMECHANGED);
+        }
     }
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
