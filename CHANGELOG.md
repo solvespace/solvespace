@@ -82,6 +82,7 @@ Bug fixes:
 	* Does not create an invisible zero length edge and jump the intersection point to (0, 0, 0) when splitting lines with coincident end points.
 * Fix IDF import with THOU units.
 * macOS: Fix some points not draggable on macOS 26 (Tahoe).
+* Windows 10/11: Fix the button click area in the property browser shifting because the contents were rendered stretched or compressed.
 
 3.1
 ---
