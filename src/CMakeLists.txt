@@ -19,7 +19,7 @@ if(USE_QT_GUI)
     set(CMAKE_AUTOMOC ON)
     find_package(Qt6 COMPONENTS Core Gui OpenGLWidgets Widgets REQUIRED)
     # find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
-    qt_add_resources(RESOURCE_FILES solvespace.qrc)
+    qt_add_resources(RESOURCE_FILES ../res/qt-resources.qrc)
 endif()
 
 # solvespace dependencies
