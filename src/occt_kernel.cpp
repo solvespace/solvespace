@@ -26,7 +26,6 @@
 #include <TColStd_Array1OfInteger.hxx>
 #include <TColStd_Array1OfReal.hxx>
 #include <TColStd_Array2OfReal.hxx>
-#include <TColStd_Array2OfReal.hxx>
 
 // ---- OCCT topology -------------------------------------------------------
 #include <BRep_Builder.hxx>
