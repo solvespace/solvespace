@@ -583,10 +583,11 @@ public:
             case Window::Kind::TOOL:
                 // WS_VSCROLL is included here so the scrollbar space is always
                 // reserved, preventing client area width changes when scrollbar
-                // visibility is toggled. Without this, toggling the scrollbar
-                // changes the client area without sending WM_SIZE; the OpenGL
-                // rendering surface is then the wrong width, causing stretched
-                // content and misaligned click areas.
+                // visibility is toggled. Without this, ShowScrollBar only
+                // redistributes NC vs. client space without changing the outer
+                // HWND bounds, so the OpenGL back buffer (WGL) or swap chain
+                // (ANGLE/D3D) is not resized to match the new client width,
+                // causing stretched content and misaligned click areas.
                 // See: https://github.com/solvespace/solvespace/issues/681
                 style |= WS_POPUPWINDOW|WS_CAPTION|WS_VSCROLL;
                 break;
@@ -1362,9 +1363,10 @@ public:
         // so the scrollbar space is always reserved, and ConfigureScrollbar uses
         // SIF_DISABLENOSCROLL to disable (rather than hide) the scrollbar when
         // content fits the view. This ensures the client area width never changes
-        // due to scrollbar state, preventing the OpenGL rendering surface from
-        // going out of sync with the window size (which causes stretched rendering
-        // and misaligned click areas on Windows 10/11).
+        // due to scrollbar state. ShowScrollBar only redistributes NC vs. client
+        // space without changing the outer HWND bounds; the OpenGL back buffer
+        // (WGL) or swap chain (ANGLE/D3D) is not resized by such a change,
+        // causing stretched rendering and misaligned click areas on Windows 10/11.
         // See: https://github.com/solvespace/solvespace/issues/681
     }
 
@@ -1373,9 +1375,10 @@ public:
         si.cbSize = sizeof(si);
         // SIF_DISABLENOSCROLL: when page >= range, disable (grey out) the scrollbar
         // instead of hiding it. Without this flag, SetScrollInfo would auto-hide the
-        // scrollbar when content fits, changing the client area width without sending
-        // WM_SIZE, which causes rendering and hit-test coordinates to diverge.
-        // See: https://github.com/solvespace/solvespace/issues/681
+        // scrollbar when content fits, changing the client area width; the outer HWND
+        // bounds do not change in that case, so the OpenGL back buffer (WGL) or swap
+        // chain (ANGLE/D3D) is not resized, causing stretched rendering and misaligned
+        // click areas. See: https://github.com/solvespace/solvespace/issues/681
         si.fMask  = SIF_RANGE|SIF_PAGE|SIF_DISABLENOSCROLL;
         si.nMin   = (UINT)(min * SCROLLBAR_UNIT);
         si.nMax   = (UINT)(max * SCROLLBAR_UNIT);
