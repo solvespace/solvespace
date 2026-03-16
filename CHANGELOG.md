@@ -59,11 +59,15 @@ Other User interface changes:
 * Add an 'only unconstrained' option on the Property Browser home screen that shows only unconstrained groups.
 * Some faces can be gragged. Linked objects can be moved by gragging their faces.
 
+Solver
+
+* Merged Python bindings for the geometric constraint solver to master.
+
 Other
 
-* STEP files export as solid model(s).
-* Merged and improved the experimental Web version (Emscripten port).
+* STEP files now export as solid model(s).
 * Merged a QT front end as an option for Linux builds.
+* Merged and improved the experimental Web version (Emscripten port).
 * Better Flatpack support.
 * Several bug fixes and usability improvements.
 * Allow 32 bit SolveSpace to access up to 4GB of RAM to allow working on larger projects.
