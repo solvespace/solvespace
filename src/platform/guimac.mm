@@ -1429,15 +1429,22 @@ public:
     }
 
     void FreezeChoices(SettingsRef settings, const std::string &key) override {
-        if (nsPanel.directoryURL != nil) {
+        // Use fileSystemRepresentation instead of absoluteString — cleaner path,
+        // no percent-encoding, and won't return NULL for valid file URLs
+        NSURL *dir = nsPanel.directoryURL;
+        if (dir != nil && dir.fileSystemRepresentation != nullptr) {
             settings->FreezeString("Dialog_" + key + "_Folder",
-                                   [nsPanel.directoryURL.absoluteString UTF8String]);
+                                [dir.absoluteString UTF8String]  // keep format consistent
+                                    ?: "");  // or guard explicitly
         }
     }
 
     void ThawChoices(SettingsRef settings, const std::string &key) override {
-        nsPanel.directoryURL =
-            [NSURL URLWithString:Wrap(settings->ThawString("Dialog_" + key + "_Folder", ""))];
+        std::string saved = settings->ThawString("Dialog_" + key + "_Folder", "");
+        if (!saved.empty()) {
+            nsPanel.directoryURL = [NSURL URLWithString:Wrap(saved)];
+        }
+        // if empty, leave directoryURL alone — NSSavePanel picks a sensible default
     }
 
     bool RunModal() override {
