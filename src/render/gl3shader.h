@@ -25,14 +25,21 @@
 
 #include "sketch.h"
 
-#if !defined(HAVE_GLES)
-// glDepthRange is in GL1+ but not GLES2, glDepthRangef is in GL4.1+ and GLES2.
-// Consistency!
+#if defined(__APPLE__)
+// macOS legacy GL has glClearDepth/glDepthRange but not the float versions.
 #   define glClearDepthf glClearDepth
 #   define glDepthRangef glDepthRange
 #endif
+// On Linux (GL_GLEXT_PROTOTYPES), glClearDepthf and glDepthRangef are provided
+// by GL/glext.h (GL 4.1 / ARB_ES2_compatibility) and work for both desktop GL
+// and GLES contexts.  On HAVE_GLES platforms they are native.
 
 namespace SolveSpace {
+
+// Returns true if the current GL context is OpenGL ES (detected at runtime).
+// On platforms where HAVE_GLES is defined at compile time, this always returns true.
+bool IsGLES();
+
 
 //-----------------------------------------------------------------------------
 // Floating-point data structures; the layout of these must match shaders

@@ -82,6 +82,11 @@ if(USE_QT_GUI AND USE_GTK4_GUI)
     message(FATAL_ERROR "USE_QT_GUI and USE_GTK4_GUI are mutually exclusive")
 endif()
 
+# gtkmm-4.0 requires C++17; override the default C++11 standard.
+if(USE_GTK4_GUI)
+    set(CMAKE_CXX_STANDARD 17)
+endif()
+
 set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
