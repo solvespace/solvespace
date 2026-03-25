@@ -233,8 +233,18 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: windows-openmp/solvespace_single_core.exe
+        asset_path: windows_single_core/solvespace_single_core.exe
         asset_name: solvespace_single_core.exe
+        asset_content_type: binary/octet-stream
+    - name: Upload solvespace.exe
+      uses: actions/upload-release-asset@v1
+      continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
+        asset_path: windows/solvespace.exe
+        asset_name: solvespace.exe
         asset_content_type: binary/octet-stream
     - name: Upload solvespace_x64.exe
       uses: actions/upload-release-asset@v1
@@ -243,7 +253,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: windows/solvespace_x64.exe
+        asset_path: windows_x64/solvespace_x64.exe
         asset_name: solvespace_x64.exe
         asset_content_type: binary/octet-stream
     - name: Upload solvespace_single_core_x64.exe
@@ -253,7 +263,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: windows-openmp/solvespace_single_core_x64.exe
+        asset_path: windows_single_core_x64/solvespace_single_core_x64.exe
         asset_name: solvespace_single_core_x64.exe
         asset_content_type: binary/octet-stream
     - name: Upload SolveSpace.dmg
