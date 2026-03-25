@@ -286,11 +286,7 @@ void OpenGl3Renderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
     switch(pm->format) {
         case Pixmap::Format::RGBA: format = GL_RGBA;  break;
         case Pixmap::Format::RGB:  format = GL_RGB;   break;
-#if defined(HAVE_GLES)
-        case Pixmap::Format::A:    format = GL_ALPHA; break;
-#else
-        case Pixmap::Format::A:    format = GL_RED;   break;
-#endif
+        case Pixmap::Format::A:    format = IsGLES() ? GL_ALPHA : GL_RED; break;
         case Pixmap::Format::BGRA:
         case Pixmap::Format::BGR:
             ssassert(false, "Unexpected pixmap format");
@@ -447,11 +443,13 @@ void OpenGl3Renderer::Init() {
     renderer = (const char *)glGetString(GL_RENDERER);
     version  = (const char *)glGetString(GL_VERSION);
 
-#if !defined(HAVE_GLES) && !defined(__APPLE__)
-    GLuint array;
-    glGenVertexArrays(1, &array);
-    glBindVertexArray(array);
+    if(!IsGLES()) {
+#if !defined(__APPLE__)
+        GLuint array;
+        glGenVertexArrays(1, &array);
+        glBindVertexArray(array);
 #endif
+    }
     UpdateProjection();
 }
 
