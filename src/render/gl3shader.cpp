@@ -6,7 +6,22 @@
 #include "solvespace.h"
 #include "gl3shader.h"
 
+#include <cstring>
+
 namespace SolveSpace {
+
+bool IsGLES() {
+#if defined(HAVE_GLES)
+    return true;
+#else
+    static int cached = -1;
+    if(cached < 0) {
+        const char *ver = (const char *)glGetString(GL_VERSION);
+        cached = (ver != NULL && strstr(ver, "OpenGL ES") != NULL) ? 1 : 0;
+    }
+    return cached != 0;
+#endif
+}
 
 //-----------------------------------------------------------------------------
 // Floating point data structures
@@ -85,18 +100,18 @@ static GLuint CompileShader(const std::string &res, GLenum type) {
     // Christ, what a trash fire.
 
     const char *prelude;
-#if defined(HAVE_GLES)
-    prelude = R"(
+    if(IsGLES()) {
+        prelude = R"(
 #version 100
 #define TEX_ALPHA a
 precision highp float;
 )";
-#else
-    prelude = R"(
+    } else {
+        prelude = R"(
 #version 120
 #define TEX_ALPHA r
 )";
-#endif
+    }
     std::string src(resData, size);
     src = prelude + src;
 
