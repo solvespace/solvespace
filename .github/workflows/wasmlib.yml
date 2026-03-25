@@ -6,6 +6,11 @@ on:
     tags: [ v* ]
   workflow_dispatch:
 
+# https://docs.npmjs.com/trusted-publishers
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-wasmlib:
     name: WASM library
