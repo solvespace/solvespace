@@ -11,9 +11,9 @@ jobs:
     name: python sdist
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: git submodule update --init extlib/mimalloc extlib/eigen
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.10"
       - name: Pack
@@ -33,7 +33,7 @@ jobs:
           python -m pip install -U setuptools build
           python -m build --sdist
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -61,6 +61,8 @@ jobs:
           "311",
           "312",
           "313",
+          "314",
+          "315",
         ]
         exclude:
           - os_arch: "macos-arm64"
@@ -105,7 +107,7 @@ jobs:
             cibuildwheel_architecture: "aarch64"
             architecture: "aarch64"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - run: git submodule update --init extlib/mimalloc extlib/eigen
@@ -140,7 +142,7 @@ jobs:
             CMAKE_GENERATOR_PLATFORM="${{ matrix.cmake_generator_platform }}"
           CIBW_ENVIRONMENT_PASS_WINDOWS: "CMAKE_GENERATOR CMAKE_GENERATOR_PLATFORM"
           CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=10.12
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: wheel-cp${{ matrix.python_version }}-${{ matrix.os_short }}-${{ matrix.architecture }}
           path: |

@@ -16,7 +16,7 @@ jobs:
     name: WASM library
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: git submodule update --init extlib/mimalloc extlib/eigen
       - name: Pack
         shell: bash

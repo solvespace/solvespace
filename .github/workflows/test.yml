@@ -15,7 +15,7 @@ jobs:
       runs-on: ubuntu-latest
       name: Test Ubuntu
       steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install Dependencies
         run: .github/scripts/install-ubuntu.sh
       - name: Build & Test
@@ -25,7 +25,7 @@ jobs:
     runs-on: windows-2022
     name: Test Windows
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Install Dependencies
       run: .github/scripts/install-windows.sh
       shell: bash
@@ -37,7 +37,7 @@ jobs:
     runs-on: macos-latest
     name: Test macOS
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Install Dependencies
       run: .github/scripts/install-macos.sh ci
     - name: Build & Test
@@ -50,7 +50,7 @@ jobs:
       image: bilelmoussaoui/flatpak-github-actions:freedesktop-21.08
       options: --privileged
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
           fetch-depth: 0
