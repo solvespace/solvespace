@@ -54,9 +54,9 @@ jobs:
     - name: Build & Test
       run: .github/scripts/build-macos.sh debug arm64 && .github/scripts/build-macos.sh debug x86_64
 
-  build_release_windows:
+  build_release_windows_x86:
     needs: [test_ubuntu, test_windows, test_macos]
-    name: Build Release Windows
+    name: Build Release Windows x86
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -69,12 +69,12 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows_single_core
-          path: build/bin/RelWithDebInfo/solvespace_single_core.exe
+          name: windows_single_core_x86
+          path: build/bin/RelWithDebInfo/solvespace_single_core_x86.exe
 
-  build_release_windows_openmp:
+  build_release_windows_openmp_x86:
     needs: [test_ubuntu, test_windows, test_macos]
-    name: Build Release Windows (OpenMP)
+    name: Build Release Windows (OpenMP) x86
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v4
@@ -87,8 +87,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows
-          path: build/bin/RelWithDebInfo/solvespace.exe
+          name: windows_x86
+          path: build/bin/RelWithDebInfo/solvespace_x86.exe
 
   build_release_windows_x64:
     needs: [test_ubuntu, test_windows, test_macos]
@@ -202,77 +202,26 @@ jobs:
 
   upload_release_assets:
     name: Upload Release Assets
-    needs: [build_release_windows, build_release_windows_openmp, build_release_windows_x64, build_release_windows_openmp_x64, build_release_macos]
+    needs:
+      - build_release_windows_x86
+      - build_release_windows_openmp_x86
+      - build_release_windows_x64
+      - build_release_windows_openmp_x64
+      - build_release_macos
     if: "!cancelled() && github.event_name == 'release'"
     runs-on: ubuntu-latest
     steps:
     - name: Download All Workflow Artifacts
       uses: actions/download-artifact@v4
-    - name: Get Release Upload URL
-      id: get_upload_url
-      env:
-        event: ${{ toJson(github.event) }}
-      run: |
-        upload_url=$(echo "$event" | jq -r ".release.upload_url")
-        echo "::set-output name=upload_url::$upload_url"
-        echo "Upload URL: $upload_url"
-    - name: Upload solvespace.exe
-      uses: actions/upload-release-asset@v1
-      continue-on-error: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+    - name: Create release
+      uses: softprops/action-gh-release@v2
       with:
-        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: windows/solvespace.exe
-        asset_name: solvespace.exe
-        asset_content_type: binary/octet-stream
-    - name: Upload solvespace_single_core.exe
-      uses: actions/upload-release-asset@v1
-      continue-on-error: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: windows_single_core/solvespace_single_core.exe
-        asset_name: solvespace_single_core.exe
-        asset_content_type: binary/octet-stream
-    - name: Upload solvespace.exe
-      uses: actions/upload-release-asset@v1
-      continue-on-error: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: windows/solvespace.exe
-        asset_name: solvespace.exe
-        asset_content_type: binary/octet-stream
-    - name: Upload solvespace_x64.exe
-      uses: actions/upload-release-asset@v1
-      continue-on-error: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: windows_x64/solvespace_x64.exe
-        asset_name: solvespace_x64.exe
-        asset_content_type: binary/octet-stream
-    - name: Upload solvespace_single_core_x64.exe
-      uses: actions/upload-release-asset@v1
-      continue-on-error: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: windows_single_core_x64/solvespace_single_core_x64.exe
-        asset_name: solvespace_single_core_x64.exe
-        asset_content_type: binary/octet-stream
-    - name: Upload SolveSpace.dmg
-      uses: actions/upload-release-asset@v1
-      continue-on-error: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.get_upload_url.outputs.upload_url }}
-        asset_path: macos/SolveSpace.dmg
-        asset_name: SolveSpace.dmg
-        asset_content_type: binary/octet-stream
+      
+        files: |
+          windows_x86/solvespace_single_core_x86.exe
+          windows_x86/solvespace_x86.exe
+          windows_x64/solvespace_single_core_x64.exe
+          windows_x64/solvespace_x64.exe
+          macos/SolveSpace.dmg
