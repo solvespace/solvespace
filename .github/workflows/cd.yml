@@ -218,8 +218,8 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          windows_x86/solvespace_single_core_x86.exe
+          windows_single_core_x86/solvespace_single_core_x86.exe
           windows_x86/solvespace_x86.exe
-          windows_x64/solvespace_single_core_x64.exe
+          windows_single_core_x64/solvespace_single_core_x64.exe
           windows_x64/solvespace_x64.exe
           macos/SolveSpace.dmg
