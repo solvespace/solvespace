@@ -61,8 +61,7 @@ jobs:
           "311",
           "312",
           "313",
-          "314",
-          "315",
+          "314"
         ]
         exclude:
           - os_arch: "macos-arm64"
@@ -131,7 +130,7 @@ jobs:
         with:
           platforms: arm64
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.22.0
+        uses: pypa/cibuildwheel@v3.4.0
         env:
           CIBW_BUILD: "cp${{ matrix.python_version }}-*"
           CIBW_PLATFORM: "${{ matrix.os_short }}"
