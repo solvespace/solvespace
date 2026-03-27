@@ -121,7 +121,7 @@ jobs:
           fi
           sed -i.bak "s/^version = .*/version = \"${version}\"/g" pyproject.toml && rm pyproject.toml.bak
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v4
         if: matrix.architecture == 'aarch64'
         with:
           platforms: arm64
@@ -150,7 +150,7 @@ jobs:
     ]
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: prebuilds
       - name: prepare
