@@ -97,8 +97,8 @@ void TextWindow::ScreenChangeBackFaces(int link, uint32_t v) {
 void TextWindow::ScreenChangeTurntableNav(int link, uint32_t v) {
     SS.turntableNav = !SS.turntableNav;
     if(SS.turntableNav) {
-        // If turntable nav is being turned on, align view so Z is vertical
-        SS.GW.AnimateOnto(Quaternion::From(Vector::From(-1, 0, 0), Vector::From(0, 0, 1)),
+        // If turntable nav is being turned on, align view so Y is vertical
+        SS.GW.AnimateOnto(Quaternion::From(Vector::From(-1, 0, 0), Vector::From(0, 1, 0)),
                           SS.GW.offset);
     }
 }
