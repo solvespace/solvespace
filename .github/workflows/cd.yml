@@ -168,6 +168,11 @@ jobs:
       with:
         name: solvespace_web
         path: build/bin/
+    - name: Ping solvespace.com
+      env:
+        WEB_SITE_PING_KEY: ${{ secrets.PULL_WEBVER_KEY }}
+      run: |
+        curl https://solvespace.com/pull-webver.pl?key=${WEB_SITE_PING_KEY}
 
   # deploy_snap_amd64:
   #   needs: [test_ubuntu, test_windows, test_macos]
