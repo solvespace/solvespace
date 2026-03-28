@@ -234,6 +234,8 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     SK.entity.Clear();
     SK.entity.ReserveMore(oldEntityCount);
 
+    // For seeding the name dictionary of each group start with references
+    hGroup hprev = SK.groupOrder[0];
     // Not using range-for because we're using the index inside the loop.
     for(i = 0; i < SK.groupOrder.n; i++) {
         hGroup hg = SK.groupOrder[i];
@@ -244,6 +246,13 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
         if(PruneGroups(hg))
             goto pruned;
 
+        Group *pg = SK.GetGroup(hg);
+        // import the named_parameter dictionary from the previous group
+        pg->dict.clear();
+        pg->dict = SK.GetGroup(hprev)->dict;
+        hprev = hg;
+//          pg->dict = SK.GetGroup(Group::HGROUP_REFERENCES)->dict;
+
         int groupRequestIndex = 0;
         for(auto &req : SK.request) {
             Request *r = &req;
@@ -251,7 +260,13 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
             r->groupRequestIndex = groupRequestIndex++;
 
             r->Generate(&(SK.entity), &(SK.param));
+            // we only add parameters from this group or overwrite handles
+            if ((r->type == Request::Type::NAMED_PARAMETER)
+              ||(r->type == Request::Type::NAMED_CONST_PARAM)) {
+              pg->dict[r->str] = r->h.param(64);
+            }
         }
+        
         for(auto &con : SK.constraint) {
             Constraint *c = &con;
             if(c->group != hg) continue;
