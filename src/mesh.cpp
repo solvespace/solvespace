@@ -115,7 +115,7 @@ void SMesh::Simplify(int start) {
     STriangle *tout = new STriangle[maxTriangles];
     int toutc = 0;
 
-    Vector n = {0, 0, 0};
+    Vector n = {} /*{0, 0, 0}*/;
     Vector *conv = new Vector[maxTriangles * 3];
     int convc = 0;
 

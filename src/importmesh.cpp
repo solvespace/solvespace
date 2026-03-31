@@ -205,7 +205,7 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     int id = 1;
 
     //add the STL origin and normals
-    hEntity origin = newPoint(el, &id, {0.0, 0.0, 0.0});    
+    hEntity origin = newPoint(el, &id, {} /*{0.0, 0.0, 0.0}*/);
     newNormal(el, &id, Quaternion::From({1, 0, 0},{0, 1, 0}), origin);
     newNormal(el, &id, Quaternion::From({0, 1, 0},{0, 0, 1}), origin);
     newNormal(el, &id, Quaternion::From({0, 0, 1},{1, 0, 0}), origin);

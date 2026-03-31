@@ -712,7 +712,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
 
 void SPolygon::TriangulateInto(SMesh *m) const {
     Vector n = normal;
-    if(n.Equals({0.0, 0.0, 0.0})) {
+    if(n.Equals({} /*{0.0, 0.0, 0.0}*/)) {
        n = ComputeNormal();
     }
     Vector u = n.Normal(0);

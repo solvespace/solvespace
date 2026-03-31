@@ -548,8 +548,8 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
             SBspUv::Class c = (ss->bsp) ? ss->bsp->ClassifyEdge(auv, buv, ss) : SBspUv::Class::OUTSIDE;
             if(c != SBspUv::Class::OUTSIDE) {
-                Vector ta = {0, 0, 0};
-                Vector tb = {0, 0, 0};
+                Vector ta = {} /*{0, 0, 0}*/;
+                Vector tb = {} /*{0, 0, 0}*/;
                 ret.ClosestPointTo(a, &(ta.x), &(ta.y));
                 ret.ClosestPointTo(b, &(tb.x), &(tb.y));
 
@@ -754,7 +754,7 @@ void SShell::RewriteSurfaceHandlesForCurves(SShell *a, SShell *b) {
 void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
     booleanFailed = false;
 
-    Vector t = {0, 0, 0};
+    Vector t = {} /*{0, 0, 0}*/;
     Quaternion q = Quaternion::IDENTITY;
     int i = 0;
     SShell *ab;

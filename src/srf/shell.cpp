@@ -549,7 +549,7 @@ void SShell::MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0) {
 
 void SShell::MakeFromCopyOf(SShell *a) {
     ssassert(this != a, "Can't make from copy of self");
-    MakeFromTransformationOf(a, {0, 0, 0}, Quaternion::IDENTITY, 1.0);
+    MakeFromTransformationOf(a, {} /*{0, 0, 0}*/, Quaternion::IDENTITY, 1.0);
 }
 
 void SShell::MakeFromTransformationOf(SShell *a,
