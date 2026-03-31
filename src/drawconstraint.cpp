@@ -1092,11 +1092,10 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
         }
         case Type::ARC_LINE_LEN_RATIO:
         case Type::ARC_LINE_DIFFERENCE: {
-            Vector a, b = Vector::From(0, 0, 0);
-            Vector ref;
             Entity *e = SK.GetEntity(entityA);
-            a = SK.GetEntity(e->point[0])->PointGetNum();
-            b = SK.GetEntity(e->point[1])->PointGetNum();
+            Vector a  = SK.GetEntity(e->point[0])->PointGetNum(),
+                   b = SK.GetEntity(e->point[1])->PointGetNum();
+            Vector ref;
             DoEqualLenTicks(canvas, hcs, a, b, gn, &ref);
             if(refs) refs->push_back(ref);
             DoEqualRadiusTicks(canvas, hcs, entityB, &ref);
