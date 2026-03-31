@@ -249,7 +249,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
         Vector u{1.0, 0.0, 0.0},
                v{0.0, 1.0, 0.0},
                n{0.0, 0.0, 1.0},
-               origin{};    // {0, 0, 0}
+               origin{};
         double cameraTan = 0.0,
                scale = 1.0;
 

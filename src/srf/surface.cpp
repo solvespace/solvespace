@@ -222,7 +222,7 @@ bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool asSegment) const
 void SSurface::MakeTrimEdgesInto(SEdgeList *sel, MakeAs flags,
                                  SCurve *sc, STrimBy *stb)
 {
-    Vector prev = {} /*{0, 0, 0}*/;
+    Vector prev = {};
     bool inCurve = false, empty = true;
     double u = 0, v = 0;
 

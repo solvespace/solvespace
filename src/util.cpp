@@ -784,7 +784,7 @@ Vector Vector::AtIntersectionOfPlaneAndLine(Vector n, double d,
 
     if(fabs(n.Dot(dp)) < LENGTH_EPS) {
         if(parallel) *parallel = true;
-        return {} /*{0, 0, 0}*/;
+        return {};
     }
 
     if(parallel) *parallel = false;
@@ -819,7 +819,7 @@ Vector Vector::AtIntersectionOfPlanes(Vector na, double da,
                        nc.x, nc.y, nc.z);
     if(fabs(det) < 1e-10) { // arbitrary tolerance, not so good
         *parallel = true;
-        return {} /*{0, 0, 0}*/;
+        return {};
     }
     *parallel = false;
 

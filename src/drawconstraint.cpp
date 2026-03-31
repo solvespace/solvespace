@@ -886,7 +886,7 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
         }
 
         case Type::PERPENDICULAR: {
-            Vector u{}, v{};    // {0, 0, 0}
+            Vector u{}, v{};
             Vector rn, ru;
             if(workplane == Entity::FREE_IN_3D) {
                 rn = gn;

@@ -316,7 +316,7 @@ bool SBezierList::GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
     if(!l.IsEmpty()) {
         pt = l[0].Start();
     } else {
-        pt = {} /*{0, 0, 0}*/;
+        pt = {};
     }
     ptFar = ptOffLine = pt;
 
@@ -526,7 +526,7 @@ SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
     if(poly->l.n > 0) {
         ret.point = poly->AnyPoint();
     } else {
-        ret.point = {} /*{0, 0, 0}*/;
+        ret.point = {};
     }
 
     return ret;

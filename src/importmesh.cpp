@@ -87,7 +87,7 @@ static hEntity newNormal(EntityList *el, int *id, Quaternion normal, hEntity p) 
     en.construction = false;
     en.style.v = Style::NORMALS;
     // to be visible we need to add a point.
-//    en.point[0] = newPoint(el, id, {0, 0, 0});
+//    en.point[0] = newPoint(el, id, {});
     en.point[0] = p;
     en.actVisible = true;
     en.forceHidden = false;
@@ -205,7 +205,7 @@ bool LinkStl(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     int id = 1;
 
     //add the STL origin and normals
-    hEntity origin = newPoint(el, &id, {} /*{0.0, 0.0, 0.0}*/);
+    hEntity origin = newPoint(el, &id, {});
     newNormal(el, &id, Quaternion::From({1, 0, 0},{0, 1, 0}), origin);
     newNormal(el, &id, Quaternion::From({0, 1, 0},{0, 0, 1}), origin);
     newNormal(el, &id, Quaternion::From({0, 0, 1},{1, 0, 0}), origin);
