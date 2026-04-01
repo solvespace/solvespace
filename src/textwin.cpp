@@ -945,7 +945,7 @@ void TextWindow::Paint() {
     camera.width      = width;
     camera.height     = height;
     camera.pixelRatio = window->GetDevicePixelRatio();
-    camera.gridFit    = (window->GetDevicePixelRatio() == 1);
+    camera.gridFit    = true;
     camera.LoadIdentity();
     camera.offset.x   = -camera.width  / 2.0;
     camera.offset.y   = -camera.height / 2.0;
