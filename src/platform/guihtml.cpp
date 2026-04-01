@@ -1062,6 +1062,7 @@ public:
         htmlEditor["style"].set("fontFamily", isMonospace ? "monospace" : "sans");
         htmlEditor.set("value", text);
         htmlEditor.call<void>("focus");
+        htmlEditor.call<void>("select");
     }
 
     void HideEditor() override {
