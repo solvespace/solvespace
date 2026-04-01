@@ -96,7 +96,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'g',  "Group.opB.v",              'x',    &(SS.sv.g.opB.v)              },
     { 'g',  "Group.valA",               'f',    &(SS.sv.g.valA)               },
     { 'g',  "Group.valB",               'f',    &(SS.sv.g.valB)               },
-    { 'g',  "Group.valC",               'f',    &(SS.sv.g.valB)               },
+    { 'g',  "Group.valC",               'f',    &(SS.sv.g.valC)               },
     { 'g',  "Group.color",              'c',    &(SS.sv.g.color)              },
     { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
     { 'g',  "Group.skipFirst",          'b',    &(SS.sv.g.skipFirst)          },
