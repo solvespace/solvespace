@@ -73,8 +73,8 @@ Vector Camera::AlignToPixelGrid(Vector v) const {
     if(!gridFit) return v;
 
     v = ProjectPoint3(v);
-    v.x = floor(v.x) + 0.5;
-    v.y = floor(v.y) + 0.5;
+    v.x = (floor(v.x * pixelRatio) + 0.5) / pixelRatio;
+    v.y = (floor(v.y * pixelRatio) + 0.5) / pixelRatio;
     return UnProjectPoint3(v);
 }
 
