@@ -864,8 +864,7 @@ void SolveSpaceUI::ExportMeshTo(const Platform::Path &filename) {
 // not self-intersecting, so not much to do.
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
-    char str[80] = {};
-    strcpy(str, "STL exported mesh");
+    char str[80] = "STL exported mesh";
     fwrite(str, 1, 80, f);
 
     uint32_t n = sm->l.n;

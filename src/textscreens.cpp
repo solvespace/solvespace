@@ -124,7 +124,7 @@ void TextWindow::ShowListOfGroups() {
             if(dof > 999) {
               strcpy(sdof, "###");
             } else {
-              sprintf(sdof, "%-3d", dof);
+              snprintf(sdof, sizeof(sdof), "%-3d", dof);
             }
         }
         std::string suffix;
