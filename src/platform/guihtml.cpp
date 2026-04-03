@@ -832,6 +832,9 @@ public:
                                     void *data) {
         if(emEvent->altKey) return EM_FALSE;
         if(emEvent->repeat) return EM_FALSE;
+        // Pass Ctrl-= through to the browser (for font size increase), symmetric with
+        // Ctrl-minus which is already passed through since it doesn't match any shortcut.
+        if(emEvent->ctrlKey && strcmp(emEvent->key, "=") == 0) return EM_FALSE;
 
         WindowImplHtml *window = (WindowImplHtml *)data;
         KeyboardEvent event = {};
