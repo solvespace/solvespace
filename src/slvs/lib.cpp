@@ -506,8 +506,8 @@ Slvs_Entity Slvs_AddWorkplane(uint32_t grouph, Slvs_Entity origin, Slvs_Entity n
 }
 
 Slvs_Entity Slvs_AddBase2D(uint32_t grouph) {
-    Vector u      = Vector::From(1, 0, 0);
-    Vector v      = Vector::From(0, 1, 0);
+    Vector u      = {1, 0, 0};
+    Vector v      = {0, 1, 0};
     Quaternion q  = Quaternion::From(u, v);
     Slvs_Entity nm = Slvs_AddNormal3D(grouph, q.w, q.vx, q.vy, q.vz);
     return Slvs_AddWorkplane(grouph, Slvs_AddPoint3D(grouph, 0, 0, 0), nm);
@@ -827,8 +827,8 @@ void Slvs_MakeQuaternion(double ux, double uy, double uz,
                          double vx, double vy, double vz,
                          double *qw, double *qx, double *qy, double *qz)
 {
-    Vector u = Vector::From(ux, uy, uz),
-           v = Vector::From(vx, vy, vz);
+    Vector u = {ux, uy, uz},
+           v = {vx, vy, vz};
     Quaternion q = Quaternion::From(u, v);
     *qw = q.w;
     *qx = q.vx;

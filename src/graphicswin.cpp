@@ -392,9 +392,9 @@ void GraphicsWindow::PopulateRecentFiles() {
 
 void GraphicsWindow::Init() {
     scale     = 5;
-    offset    = Vector::From(0, 0, 0);
-    projRight = Vector::From(1, 0, 0);
-    projUp    = Vector::From(0, 1, 0);
+    offset    = {0, 0, 0};
+    projRight = {1, 0, 0};
+    projUp    = {0, 1, 0};
 
     // Make sure those are valid; could get a mouse move without a mouse
     // down if someone depresses the button, then drags into our window.
@@ -816,9 +816,9 @@ void GraphicsWindow::MenuView(Command id) {
         case Command::NEAREST_ORTHO:
         case Command::NEAREST_ISO: {
             static const Vector ortho[3] = {
-                Vector::From(1, 0, 0),
-                Vector::From(0, 1, 0),
-                Vector::From(0, 0, 1)
+                {1, 0, 0},
+                {0, 1, 0},
+                {0, 0, 1}
             };
             double sqrt2 = sqrt(2.0), sqrt6 = sqrt(6.0);
             Quaternion quat0 = Quaternion::From(SS.GW.projRight, SS.GW.projUp);
@@ -1216,7 +1216,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             norm = norm.WithMagnitude(1);
             Quaternion qaa = Quaternion::From(norm, PI/2);
 
-            g->TransformImportedBy(Vector::From(0, 0, 0), qaa);
+            g->TransformImportedBy({0, 0, 0}, qaa);
 
             // and regenerate as necessary.
             SS.MarkGroupDirty(hg);

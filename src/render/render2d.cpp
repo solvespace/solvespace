@@ -202,8 +202,8 @@ void SurfaceRenderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
 //-----------------------------------------------------------------------------
 
 void SurfaceRenderer::CalculateBBox() {
-    bbox.minp = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
-    bbox.maxp = Vector::From(VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE);
+    bbox.minp = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
+    bbox.maxp = {VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE};
 
     for(auto &it : edges) {
         SEdgeList &el = it.second;

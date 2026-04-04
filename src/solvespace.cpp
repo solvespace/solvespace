@@ -539,9 +539,9 @@ void SolveSpaceUI::AfterNewFile() {
     // GenerateAll() expects the view to be valid, because it uses that to
     // fill in default values for extrusion depths etc. (which won't matter
     // here, but just don't let it work on garbage)
-    SS.GW.offset    = Vector::From(0, 0, 0);
-    SS.GW.projRight = Vector::From(1, 0, 0);
-    SS.GW.projUp    = Vector::From(0, 1, 0);
+    SS.GW.offset    = {0, 0, 0};
+    SS.GW.projRight = {1, 0, 0};
+    SS.GW.projUp    = {0, 1, 0};
 
     GenerateAll(Generate::ALL);
 
