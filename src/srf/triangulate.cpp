@@ -614,7 +614,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
         // generate two triangles in the mesh, and cut it out of our polygon.
         // Quads around the perimeter would be rejected by AnyEdgeCrossings.
         std::vector<bool> bottom(lj.n, false); // did we use this quad?
-        Vector tu{}, tv{}; 
+        Vector tu = {}, tv = {}; 
         int i, j;
         for(i = 1; i < (li.n-1); i++) {
             bool prev_flag = false;
@@ -712,7 +712,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
 
 void SPolygon::TriangulateInto(SMesh *m) const {
     Vector n = normal;
-    if(n.Equals({})) {
+    if(n.Equals({0, 0, 0})) {
        n = ComputeNormal();
     }
     Vector u = n.Normal(0);

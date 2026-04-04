@@ -364,9 +364,9 @@ void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv, bool retry
     *tv = tv->ScaledBy(1.0/(den*den));
     
     // Tangent is zero at sungularities like the north pole. Move away a bit and retry. 
-    if(tv->Equals({}) && retry)
+    if(tv->Equals({0, 0, 0}) && retry)
         TangentsAt(u+(0.5-u)*0.00001, v, tu, tv, false);
-    if(tu->Equals({}) && retry)
+    if(tu->Equals({0, 0, 0}) && retry)
         TangentsAt(u, v+(0.5-v)*0.00001, tu, tv, false);
 }
 

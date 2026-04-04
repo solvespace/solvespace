@@ -263,8 +263,8 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const {
 
     // The starting and finishing control points that define our end tangents
     // (if the spline isn't periodic), and the on-curve points.
-    Vector ctrl_s{};
-    Vector ctrl_f{};
+    Vector ctrl_s = {};
+    Vector ctrl_f = {};
     Vector pt[MAX_N+4];
     if(periodic) {
         for(i = 0; i < ep + 3; i++) {

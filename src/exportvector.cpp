@@ -311,10 +311,10 @@ public:
     int findDxfColor(const RgbaColor &src) {
         int best = 0;
         double minDist = VERY_POSITIVE;
-        Vector srcv    = {src.redF(), src.greenF(), src.blueF()};
+        Vector srcv = {src.redF(), src.greenF(), src.blueF()};
         for(int i = 1; i < 256; i++) {
             RgbaColor dst = RGBi(DRW::dxfColors[i][0], DRW::dxfColors[i][1], DRW::dxfColors[i][2]);
-            Vector dstv   = {dst.redF(), dst.greenF(), dst.blueF()};
+            Vector dstv = {dst.redF(), dst.greenF(), dst.blueF()};
             double dist = srcv.Minus(dstv).Magnitude();
             if(dist < minDist || best == 0) {
                 best = i;

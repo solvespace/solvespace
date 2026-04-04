@@ -87,7 +87,7 @@ static hEntity newNormal(EntityList *el, int *id, Quaternion normal, hEntity p) 
     en.construction = false;
     en.style.v = Style::NORMALS;
     // to be visible we need to add a point.
-//    en.point[0] = newPoint(el, id, {});
+//    en.point[0] = newPoint(el, id, {0, 0, 0});
     en.point[0] = p;
     en.actVisible = true;
     en.forceHidden = false;

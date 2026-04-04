@@ -1002,7 +1002,7 @@ void Group::MakeRevolveEndFaces(EntityList *el, hEntity pt, int ai, int af)
 
     // When there is no loop normal (e.g. if the loop is broken), use normal of workplane
     // as fallback, to avoid breaking constraints depending on the faces.
-    if(n.Equals({}) && src->type == Group::Type::DRAWING_WORKPLANE) {
+    if(n.Equals({0, 0, 0}) && src->type == Group::Type::DRAWING_WORKPLANE) {
         n = SK.GetEntity(src->h.entity(0))->Normal()->NormalN();
     }
 
@@ -1039,7 +1039,7 @@ void Group::MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt)
 
     // When there is no loop normal (e.g. if the loop is broken), use normal of workplane
     // as fallback, to avoid breaking constraints depending on the faces.
-    if(n.Equals({}) && src->type == Group::Type::DRAWING_WORKPLANE) {
+    if(n.Equals({0, 0, 0}) && src->type == Group::Type::DRAWING_WORKPLANE) {
         n = SK.GetEntity(src->h.entity(0))->Normal()->NormalN();
     }
 

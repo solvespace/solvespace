@@ -339,8 +339,8 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     
     hEntity hprev;
     hEntity hprevTop;
-    Vector pprev{}; 
-    Vector pprevTop{}; 
+    Vector pprev = {}; 
+    Vector pprevTop = {}; 
     
     double board_thickness = 10.0;
     double scale = 1.0; //mm
@@ -522,7 +522,7 @@ bool LinkIDF(const Platform::Path &filename, EntityList *el, SMesh *m, SShell *s
     double ctc = SS.chordTolCalculated;
     if(ctc == 0.0) SS.chordTolCalculated = 0.1; //mm
     // there should only by one sbls in the sblss unless a board has disjointed parts...
-    sh->MakeFromExtrusionOf(sblss.l.First(), {},
+    sh->MakeFromExtrusionOf(sblss.l.First(), {0, 0, 0},
                                    {0.0, 0.0, board_thickness},
                                    RgbaColor::From(0, 180, 0) );
     SS.chordTolCalculated = ctc;

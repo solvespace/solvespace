@@ -1216,7 +1216,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             norm = norm.WithMagnitude(1);
             Quaternion qaa = Quaternion::From(norm, PI/2);
 
-            g->TransformImportedBy({}, qaa);
+            g->TransformImportedBy({0, 0, 0}, qaa);
 
             // and regenerate as necessary.
             SS.MarkGroupDirty(hg);

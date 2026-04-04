@@ -209,7 +209,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             // Likewise the scale, which could otherwise take us out of the
             // workplane.
             pt = pt.ScaledBy(fabs(scale));
-            pt = pt.ScaleOutOfCsys(u, v, {});
+            pt = pt.ScaleOutOfCsys(u, v, {0, 0, 0});
             pt = pt.Plus(p);
             pt = pt.RotatedAbout(n, theta);
             pt = pt.Plus(trans);
