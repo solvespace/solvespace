@@ -322,7 +322,7 @@ void SolveSpaceUI::Refresh() {
 		// Clear the flag so that if the call to GenerateAll is blocked by a Message or Error, 
 		// subsequent refreshes do not try to Generate again.
         scheduledGenerateAll = false;
-        GenerateAll(Generate::DIRTY, /*andFindFree=*/false, /*genForBBox=*/false);   
+        GenerateAll(Generate::DIRTY, /*andFindFree=*/false);
     }
     if(scheduledShowTW) {
         scheduledShowTW = false;
