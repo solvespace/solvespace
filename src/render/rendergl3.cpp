@@ -490,7 +490,7 @@ void OpenGl3Renderer::DrawVectorText(const std::string &text, double height,
     }
     SEdgeList &lines = eli->lines;
     auto traceEdge = [&](Vector a, Vector b) { lines.AddEdge(a, b); };
-    VectorFont::Builtin()->Trace(height, o, u, v, text, traceEdge, camera);
+    VectorFont::Builtin()->Trace(height*SS.textSizeScale, o, u, v, text, traceEdge, camera);
 }
 
 void OpenGl3Renderer::DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,

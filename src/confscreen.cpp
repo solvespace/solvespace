@@ -453,11 +453,16 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         case Edit::GRID_SPACING: {
             SS.gridSpacing = (float)min(1e4, max(1e-3, SS.StringToMm(s)));
             SS.GW.Invalidate();
-            break;
+            break; 
         }
         case Edit::EXPLODE_DISTANCE: {
             SS.explodeDistance = min(1e4, max(-1e4, SS.StringToMm(s)));
             SS.MarkGroupDirty(SS.GW.activeGroup, true);
+            break;
+        }
+        case Edit::TEXT_SIZE_SCALE: {
+            SS.textSizeScale = (float)min(10.0, max(0.1, SS.StringToMm(s)));
+            SS.GW.Invalidate();
             break;
         }
         case Edit::DIGITS_AFTER_DECIMAL: {
