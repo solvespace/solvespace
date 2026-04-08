@@ -927,16 +927,22 @@ public:
         // sscheck(emscripten_get_element_css_size(emCanvasSel.c_str(), &width, &height));
 
         double devicePixelRatio = GetDevicePixelRatio();
-        width *= devicePixelRatio;
-        height *= devicePixelRatio;
+        int pixelWidth  = (int)(width  * devicePixelRatio);
+        int pixelHeight = (int)(height * devicePixelRatio);
 
         int currentWidth = 0, currentHeight = 0;
         sscheck(emscripten_get_canvas_element_size(emCanvasSel.c_str(), &currentWidth, &currentHeight));
         
-        if ((int)width != currentWidth || (int)height != currentHeight) {
-            // dbp("Canvas %s container current size: (%d, %d)", emCanvasSel.c_str(), (int)currentWidth, (int)currentHeight);
-            // dbp("Canvas %s: resizing to (%d, %d)", emCanvasSel.c_str(), (int)width, (int)height);
-            sscheck(emscripten_set_canvas_element_size(emCanvasSel.c_str(), (int)width, (int)height));
+        if (pixelWidth != currentWidth || pixelHeight != currentHeight) {
+            // dbp("Canvas %s container current size: (%d, %d)", emCanvasSel.c_str(), currentWidth, currentHeight);
+            // dbp("Canvas %s: resizing to (%d, %d)", emCanvasSel.c_str(), pixelWidth, pixelHeight);
+            sscheck(emscripten_set_canvas_element_size(emCanvasSel.c_str(), pixelWidth, pixelHeight));
+            // Set the CSS display size of the canvas to exactly match its physical pixel dimensions.
+            // This ensures pixel-perfect 1:1 rendering by preventing the browser from applying
+            // bilinear interpolation when the canvas bitmap and its CSS display size are mismatched.
+            val canvas = val::global("document").call<val>("querySelector", val(emCanvasSel));
+            canvas["style"].set("width",  std::to_string((double)pixelWidth  / devicePixelRatio) + "px");
+            canvas["style"].set("height", std::to_string((double)pixelHeight / devicePixelRatio) + "px");
         }
     }
 

@@ -326,7 +326,7 @@ Camera GraphicsWindow::GetCamera() const {
     if(window) {
         window->GetContentSize(&camera.width, &camera.height);
         camera.pixelRatio = window->GetDevicePixelRatio();
-        camera.gridFit    = (window->GetDevicePixelRatio() == 1);
+        camera.gridFit    = true;
     } else {    // solvespace-cli
         camera.width = 297.0;   // A4? Whatever...
         camera.height = 210.0;
