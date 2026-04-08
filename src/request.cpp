@@ -23,16 +23,18 @@ struct EntReqMapping {
     bool           hasDistance;
 };
 static const EntReqMapping EntReqMap[] = {
-// request type                   entity type                 pts   xtra?   norml   dist
-{ Request::Type::WORKPLANE,       Entity::Type::WORKPLANE,      1,  false,  true,   false },
-{ Request::Type::DATUM_POINT,     (Entity::Type)0,              1,  false,  false,  false },
-{ Request::Type::LINE_SEGMENT,    Entity::Type::LINE_SEGMENT,   2,  false,  false,  false },
-{ Request::Type::CUBIC,           Entity::Type::CUBIC,          4,  true,   false,  false },
-{ Request::Type::CUBIC_PERIODIC,  Entity::Type::CUBIC_PERIODIC, 3,  true,   false,  false },
-{ Request::Type::CIRCLE,          Entity::Type::CIRCLE,         1,  false,  true,   true  },
-{ Request::Type::ARC_OF_CIRCLE,   Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false },
-{ Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       4,  false,  true,   false },
-{ Request::Type::IMAGE,           Entity::Type::IMAGE,          4,  false,  true,   false },
+// request type                     entity type                 pts   xtra?   norml   dist
+{ Request::Type::WORKPLANE,         Entity::Type::WORKPLANE,      1,  false,  true,   false },
+{ Request::Type::DATUM_POINT,       (Entity::Type)0,              1,  false,  false,  false },
+{ Request::Type::LINE_SEGMENT,      Entity::Type::LINE_SEGMENT,   2,  false,  false,  false },
+{ Request::Type::CUBIC,             Entity::Type::CUBIC,          4,  true,   false,  false },
+{ Request::Type::CUBIC_PERIODIC,    Entity::Type::CUBIC_PERIODIC, 3,  true,   false,  false },
+{ Request::Type::CIRCLE,            Entity::Type::CIRCLE,         1,  false,  true,   true  },
+{ Request::Type::ARC_OF_CIRCLE,     Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false },
+{ Request::Type::TTF_TEXT,          Entity::Type::TTF_TEXT,       4,  false,  true,   false },
+{ Request::Type::IMAGE,             Entity::Type::IMAGE,          4,  false,  true,   false },
+{ Request::Type::NAMED_PARAMETER,   (Entity::Type)0,              0,  false,  false,  false },
+{ Request::Type::NAMED_CONST_PARAM, (Entity::Type)0,              0,  false,  false,  false },
 };
 
 static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
@@ -118,6 +120,15 @@ void Request::Generate(EntityList *entity, ParamList *param)
             }
             break;
         }
+        case Type::NAMED_PARAMETER: {
+            AddParam(param, h.param(64));
+            break;
+            }
+        case Type::NAMED_CONST_PARAM: {
+            hParam hp = AddParam(param, h.param(64));
+            SK.GetParam(hp)->known = true;
+//            SK.GetParam(hp)->free = false;
+        }            
 
         default: // most requests don't do anything else
             break;
@@ -213,15 +224,17 @@ std::string Request::DescriptionString() const {
         s = "#ZX";
     } else {
         switch(type) {
-            case Type::WORKPLANE:       s = "workplane";      break;
-            case Type::DATUM_POINT:     s = "datum-point";    break;
-            case Type::LINE_SEGMENT:    s = "line-segment";   break;
-            case Type::CUBIC:           s = "cubic-bezier";   break;
-            case Type::CUBIC_PERIODIC:  s = "periodic-cubic"; break;
-            case Type::CIRCLE:          s = "circle";         break;
-            case Type::ARC_OF_CIRCLE:   s = "arc-of-circle";  break;
-            case Type::TTF_TEXT:        s = "ttf-text";       break;
-            case Type::IMAGE:           s = "image";          break;
+            case Type::WORKPLANE:         s = "workplane";      break;
+            case Type::DATUM_POINT:       s = "datum-point";    break;
+            case Type::LINE_SEGMENT:      s = "line-segment";   break;
+            case Type::CUBIC:             s = "cubic-bezier";   break;
+            case Type::CUBIC_PERIODIC:    s = "periodic-cubic"; break;
+            case Type::CIRCLE:            s = "circle";         break;
+            case Type::ARC_OF_CIRCLE:     s = "arc-of-circle";  break;
+            case Type::TTF_TEXT:          s = "ttf-text";       break;
+            case Type::IMAGE:             s = "image";          break;
+            case Type::NAMED_PARAMETER:   s = "parameter";      break;
+            case Type::NAMED_CONST_PARAM: s = "parameter";      break;
         }
     }
     ssassert(s != NULL, "Unexpected request type");
