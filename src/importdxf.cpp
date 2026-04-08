@@ -42,9 +42,9 @@ public:
         Vector oldY = blockY;
         Vector oldT = blockT;
 
-        Vector newX = Vector::From(sx, 0.0, 0.0).RotatedAbout(Vector::From(0.0, 0.0, 1.0), angle);
-        Vector newY = Vector::From(0.0, sy, 0.0).RotatedAbout(Vector::From(0.0, 0.0, 1.0), angle);
-        Vector newT = Vector::From(x, y, 0.0);
+        Vector newX = Vector::From(sx, 0.0, 0.0).RotatedAbout({0.0, 0.0, 1.0}, angle);
+        Vector newY = Vector::From(0.0, sy, 0.0).RotatedAbout({0.0, 0.0, 1.0}, angle);
+        Vector newT = {x, y, 0.0};
 
         blockX = oldX.ScaledBy(newX.x).Plus(
                  oldY.ScaledBy(newX.y));
@@ -57,10 +57,10 @@ public:
     }
 
     void clearBlockTransform() {
-        blockX = Vector::From(1.0, 0.0, 0.0);
-        blockY = Vector::From(0.0, 1.0, 0.0);
-        blockZ = Vector::From(0.0, 0.0, 1.0);
-        blockT = Vector::From(0.0, 0.0, 0.0);
+        blockX = {1.0, 0.0, 0.0};
+        blockY = {0.0, 1.0, 0.0};
+        blockZ = {0.0, 0.0, 1.0};
+        blockT = {0.0, 0.0, 0.0};
     }
 
     Vector blockTransform(Vector v) {
@@ -83,18 +83,18 @@ public:
     }
 
     Vector toVector(const DRW_Coord &c, bool transform = true) {
-        Vector result = Vector::From(c.x, c.y, c.z);
+        Vector result = {c.x, c.y, c.z};
         if(transform) return blockTransform(result);
         return result;
     }
 
     Vector toVector(const DRW_Vertex2D &c) {
-        Vector result = Vector::From(c.x, c.y, 0.0);
+        Vector result = {c.x, c.y, 0.0};
         return blockTransform(result);
     }
 
     Vector toVector(const DRW_Vertex &c) {
-        Vector result = Vector::From(c.basePoint.x, c.basePoint.y, c.basePoint.z);
+        Vector result = {c.basePoint.x, c.basePoint.y, c.basePoint.z};
         return blockTransform(result);
     }
 
@@ -105,7 +105,7 @@ public:
     }
 
     Vector polar(double radius, double angle) {
-        return Vector::From(radius * cos(angle), radius * sin(angle), 0.0);
+        return {radius * cos(angle), radius * sin(angle), 0.0};
     }
 
     hRequest createBulge(Vector p0, Vector p1, double bulge) {
@@ -611,7 +611,7 @@ public:
         Vector nz = toVector(data.extPoint);
         Quaternion q = NormalFromExtPoint(nz);
 
-        bool planar = q.RotationN().Equals(Vector::From(0, 0, 1));
+        bool planar = q.RotationN().Equals({0, 0, 1});
         bool onPlane = c.z < LENGTH_EPS;
 
         hEntity oldWorkplane = SS.GW.ActiveWorkplane();
@@ -675,8 +675,8 @@ public:
                 c0.bulge = -c0.bulge;
             }
 
-            Vector p0 = Vector::From(c0.x, c0.y, 0.0);
-            Vector p1 = Vector::From(c1.x, c1.y, 0.0);
+            Vector p0 = {c0.x, c0.y, 0.0};
+            Vector p1 = {c1.x, c1.y, 0.0};
             hStyle hs = styleFor(&data);
 
             if(EXACT(data.vertlist[i]->bulge == 0.0)) {
@@ -712,8 +712,8 @@ public:
                 bulge = -bulge;
             }
 
-            Vector p0 = Vector::From(c0.x, c0.y, c0.z);
-            Vector p1 = Vector::From(c1.x, c1.y, c1.z);
+            Vector p0 = {c0.x, c0.y, c0.z};
+            Vector p1 = {c1.x, c1.y, c1.z};
             hStyle hs = styleFor(&data);
 
             if(EXACT(bulge == 0.0)) {
@@ -828,7 +828,7 @@ public:
         Vector p2 = toVector(data->getTextPoint(), /*transform=*/false);
 
         double angle = data->getAngle() * PI / 180.0;
-        Vector dir = Vector::From(cos(angle), sin(angle), 0.0);
+        Vector dir = {cos(angle), sin(angle), 0.0};
         Vector p3 = p1.Minus(p1.ClosestPointOnLine(p2, dir)).Plus(p1);
         if(p1.Minus(p3).Magnitude() < LENGTH_EPS) {
             p3 = p0.Minus(p0.ClosestPointOnLine(p2, dir)).Plus(p1);

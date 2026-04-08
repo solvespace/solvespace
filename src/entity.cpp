@@ -723,7 +723,7 @@ bool EntityBase::IsFace() const {
 ExprVector EntityBase::FaceGetNormalExprs() const {
     ExprVector r;
     if(type == Type::FACE_NORMAL_PT) {
-        Vector v = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        Vector v = {numNormal.vx, numNormal.vy, numNormal.vz};
         r = ExprVector::From(v.WithMagnitude(1));
     } else if(type == Type::FACE_XPROD) {
         ExprVector vc = ExprVector::From(param[0], param[1], param[2]);
@@ -752,20 +752,20 @@ ExprVector EntityBase::FaceGetNormalExprs() const {
 Vector EntityBase::FaceGetNormalNum() const {
     Vector r;
     if(type == Type::FACE_NORMAL_PT) {
-        r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        r = {numNormal.vx, numNormal.vy, numNormal.vz};
     } else if(type == Type::FACE_XPROD) {
         Vector vc = Vector::From(param[0], param[1], param[2]);
-        Vector vn = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        Vector vn = {numNormal.vx, numNormal.vy, numNormal.vz};
         r = vc.Cross(vn);
     } else if(type == Type::FACE_N_ROT_TRANS) {
         // The numerical normal vector gets the rotation
-        r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        r = {numNormal.vx, numNormal.vy, numNormal.vz};
         Quaternion q = Quaternion::From(param[3], param[4], param[5], param[6]);
         r = q.Rotate(r);
     } else if(type == Type::FACE_N_TRANS) {
-        r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        r = {numNormal.vx, numNormal.vy, numNormal.vz};
     } else if((type == Type::FACE_N_ROT_AA) || (type == Type::FACE_ROT_NORMAL_PT)) {
-        r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        r = {numNormal.vx, numNormal.vy, numNormal.vz};
         Quaternion q = GetAxisAngleQuaternion(3);
         r = q.Rotate(r);
     } else ssassert(false, "Unexpected entity type");

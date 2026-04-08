@@ -668,22 +668,22 @@ Vector TextWindow::HsvToRgb(Vector hsv) {
     while(hmod2 >= 2) hmod2 -= 2;
     double x = (1 - fabs(hmod2 - 1));
     if(hsv.x < 1) {
-        rgb = Vector::From(1, x, 0);
+        rgb = {1, x, 0};
     } else if(hsv.x < 2) {
-        rgb = Vector::From(x, 1, 0);
+        rgb = {x, 1, 0};
     } else if(hsv.x < 3) {
-        rgb = Vector::From(0, 1, x);
+        rgb = {0, 1, x};
     } else if(hsv.x < 4) {
-        rgb = Vector::From(0, x, 1);
+        rgb = {0, x, 1};
     } else if(hsv.x < 5) {
-        rgb = Vector::From(x, 0, 1);
+        rgb = {x, 0, 1};
     } else {
-        rgb = Vector::From(1, 0, x);
+        rgb = {1, 0, x};
     }
     double c = hsv.y*hsv.z;
     double m = 1 - hsv.z;
     rgb = rgb.ScaledBy(c);
-    rgb = rgb.Plus(Vector::From(m, m, m));
+    rgb = rgb.Plus({m, m, m});
 
     return rgb;
 }
@@ -693,7 +693,7 @@ std::shared_ptr<Pixmap> TextWindow::HsvPattern2d(int w, int h) {
     for(size_t j = 0; j < pixmap->height; j++) {
         size_t p = pixmap->stride * j;
         for(size_t i = 0; i < pixmap->width; i++) {
-            Vector hsv = Vector::From(6.0*i/(pixmap->width-1), 1.0*j/(pixmap->height-1), 1);
+            Vector hsv = {6.0*i/(pixmap->width-1), 1.0*j/(pixmap->height-1), 1};
             Vector rgb = HsvToRgb(hsv);
             rgb = rgb.ScaledBy(255);
             pixmap->data[p++] = (uint8_t)rgb.x;
@@ -709,7 +709,7 @@ std::shared_ptr<Pixmap> TextWindow::HsvPattern1d(double hue, double sat, int w, 
     for(size_t i = 0; i < pixmap->height; i++) {
         size_t p = i * pixmap->stride;
         for(size_t j = 0; j < pixmap->width; j++) {
-            Vector hsv = Vector::From(6*hue, sat, 1.0*(pixmap->width - 1 - j)/pixmap->width);
+            Vector hsv = {6*hue, sat, 1.0*(pixmap->width - 1 - j)/pixmap->width};
             Vector rgb = HsvToRgb(hsv);
             rgb = rgb.ScaledBy(255);
             pixmap->data[p++] = (uint8_t)rgb.x;
@@ -800,16 +800,16 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
             RgbaColor d;
             if(i == 0 && j < 8) {
                 d = SS.modelColor[j];
-                rgb = Vector::From(d.redF(), d.greenF(), d.blueF());
+                rgb = {d.redF(), d.greenF(), d.blueF()};
             } else if(i == 0) {
                 double a = (j - 8.0)/3.0;
-                rgb = Vector::From(a, a, a);
+                rgb = {a, a, a};
             } else {
                 d = BaseColor[j];
-                rgb = Vector::From(d.redF(), d.greenF(), d.blueF());
+                rgb = {d.redF(), d.greenF(), d.blueF()};
                 if(i >= 2 && i <= 4) {
                     double a = (i == 2) ? 0.2 : (i == 3) ? 0.3 : 0.4;
-                    rgb = rgb.Plus(Vector::From(a, a, a));
+                    rgb = rgb.Plus({a, a, a});
                 }
                 if(i >= 5 && i <= 7) {
                     double a = (i == 5) ? 0.7 : (i == 6) ? 0.4 : 0.18;
@@ -879,10 +879,10 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
         if(x >= hx && x <= hxm && y >= hy && y <= hym) {
             editControl.colorPicker.v = 1 - (x - hx)/(hxm - hx);
 
-            Vector rgb = HsvToRgb(Vector::From(
+            Vector rgb = HsvToRgb({
                             6*editControl.colorPicker.h,
                             editControl.colorPicker.s,
-                            editControl.colorPicker.v));
+                            editControl.colorPicker.v});
             editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
 
             editControl.colorPicker.picker1dActive = true;
@@ -917,10 +917,10 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
             editControl.colorPicker.h = h;
             editControl.colorPicker.s = s;
 
-            Vector rgb = HsvToRgb(Vector::From(
+            Vector rgb = HsvToRgb({
                             6*editControl.colorPicker.h,
                             editControl.colorPicker.s,
-                            editControl.colorPicker.v));
+                            editControl.colorPicker.v});
             editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
 
             editControl.colorPicker.picker2dActive = true;

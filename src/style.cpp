@@ -233,8 +233,8 @@ double Style::Width(int s) {
 // it won't disappear on file formats with a light background.
 //-----------------------------------------------------------------------------
 RgbaColor Style::RewriteColor(RgbaColor rgbin) {
-    Vector rgb = Vector::From(rgbin.redF(), rgbin.greenF(), rgbin.blueF());
-    rgb = rgb.Minus(Vector::From(1, 1, 1));
+    Vector rgb = {rgbin.redF(), rgbin.greenF(), rgbin.blueF()};
+    rgb = rgb.Minus({1, 1, 1});
     if(rgb.Magnitude() < 0.4 && SS.fixExportColors) {
         // This is an almost-white color in a default style, which is
         // good for the default on-screen view (black bg) but probably
