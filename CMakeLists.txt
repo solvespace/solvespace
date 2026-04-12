@@ -60,6 +60,8 @@ set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
 set(USE_QT_GUI        OFF CACHE BOOL
     "Whether the Qt library used to build graphical interface")
+set(USE_GTK4_GUI      OFF CACHE BOOL
+    "Whether GTK 4 is used instead of GTK 3 for the graphical interface")
 set(ENABLE_CLI        ${INCLUDE_NATIVE_COMPONENTS} CACHE BOOL
     "Whether the command line interface is enabled")
 set(ENABLE_TESTS      ${INCLUDE_NATIVE_COMPONENTS} CACHE BOOL
@@ -75,6 +77,15 @@ set(ENABLE_LTO        OFF CACHE BOOL
 option(FORCE_VENDORED_Eigen3
     "Whether we should use our bundled Eigen even in the presence of a system copy"
     OFF)
+
+if(USE_QT_GUI AND USE_GTK4_GUI)
+    message(FATAL_ERROR "USE_QT_GUI and USE_GTK4_GUI are mutually exclusive")
+endif()
+
+# gtkmm-4.0 requires C++17; override the default C++11 standard.
+if(USE_GTK4_GUI)
+    set(CMAKE_CXX_STANDARD 17)
+endif()
 
 set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
@@ -340,7 +351,7 @@ if(ENABLE_GUI OR ENABLE_CLI)
         find_package(ZLIB REQUIRED)
         find_package(PNG REQUIRED)
         find_package(Freetype REQUIRED)
-        if (NOT USE_QT_GUI OR ENABLE_CLI OR ENABLE_TESTS)
+        if (NOT USE_QT_GUI OR USE_GTK4_GUI OR ENABLE_CLI OR ENABLE_TESTS)
             find_package(Cairo REQUIRED)
         endif()
     endif()
@@ -383,7 +394,10 @@ if(ENABLE_GUI)
         find_package(OpenGL REQUIRED)
         find_package(SpaceWare)
         pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
-        if (NOT USE_QT_GUI)
+        if(USE_GTK4_GUI)
+            pkg_check_modules(JSONC REQUIRED json-c)
+            pkg_check_modules(GTKMM REQUIRED gtkmm-4.0>=4.10)
+        elseif(NOT USE_QT_GUI)
             pkg_check_modules(JSONC REQUIRED json-c)
             pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.18 pangomm-1.4 x11)
         endif()

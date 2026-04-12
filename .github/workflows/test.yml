@@ -21,6 +21,16 @@ jobs:
       - name: Build & Test
         run: .github/scripts/build-ubuntu.sh
 
+  test_ubuntu_gtk4:
+    runs-on: ubuntu-latest
+    name: Test Ubuntu (GTK4)
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Dependencies
+      run: .github/scripts/install-ubuntu-gtk4.sh
+    - name: Build & Test
+      run: .github/scripts/build-ubuntu-gtk4.sh
+
   test_windows:
     runs-on: windows-2022
     name: Test Windows
