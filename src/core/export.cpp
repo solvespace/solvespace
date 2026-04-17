@@ -11,11 +11,12 @@
 
 namespace SolveSpace {
 
+#ifndef SOLVESPACE_CORE_ONLY
 void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
-    Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
+    Vector gn = (SS.projRight).Cross(SS.projUp);
     gn = gn.WithMagnitude(1);
 
-    Group *g = SK.GetGroup(SS.GW.activeGroup);
+    Group *g = SK.GetGroup(SS.activeGroup);
     g->GenerateDisplayItems();
     if(g->displayMesh.IsEmpty()) {
         Error(_("No solid model present; draw one with extrudes and revolves, "
@@ -49,11 +50,11 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
         ut = ut.WithMagnitude(1);
         vt = vt.WithMagnitude(1);
 
-        if(fabs(SS.GW.projUp.Dot(vt)) < fabs(SS.GW.projUp.Dot(ut))) {
+        if(fabs(SS.projUp.Dot(vt)) < fabs(SS.projUp.Dot(ut))) {
             swap(ut, vt);
         }
-        if(SS.GW.projRight.Dot(ut) < 0) ut = ut.ScaledBy(-1);
-        if(SS.GW.projUp.   Dot(vt) < 0) vt = vt.ScaledBy(-1);
+        if(SS.projRight.Dot(ut) < 0) ut = ut.ScaledBy(-1);
+        if(SS.projUp.   Dot(vt) < 0) vt = vt.ScaledBy(-1);
 
         origin = SK.GetEntity(gs.point[0])->PointGetNum();
         n = ut.Cross(vt);
@@ -126,7 +127,9 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
     el.Clear();
     bl.Clear();
 }
+#endif // !SOLVESPACE_CORE_ONLY
 
+#ifndef SOLVESPACE_CORE_ONLY
 // This is an awful temporary hack to replace Constraint::GetEdges until we have proper
 // export through Canvas.
 class GetEdgesCanvas : public Canvas {
@@ -197,8 +200,8 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
     GenerateAll(Generate::ALL);
 
     SMesh *sm = NULL;
-    if(SS.GW.showShaded || SS.GW.drawOccludedAs != GraphicsWindow::DrawOccludedAs::VISIBLE) {
-        Group *g = SK.GetGroup(SS.GW.activeGroup);
+    if(SS.showShaded || SS.drawOccludedAs != SolveSpaceCore::DrawOccludedAs::VISIBLE) {
+        Group *g = SK.GetGroup(SS.activeGroup);
         g->GenerateDisplayItems();
         sm = &(g->displayMesh);
     }
@@ -221,18 +224,20 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
         }
     }
 
-    if(SS.GW.showEdges || SS.GW.showOutlines) {
-        Group *g = SK.GetGroup(SS.GW.activeGroup);
+    if(SS.showEdges || SS.showOutlines) {
+        Group *g = SK.GetGroup(SS.activeGroup);
         g->GenerateDisplayItems();
-        if(SS.GW.showEdges) {
+        if(SS.showEdges) {
             g->displayOutlines.ListTaggedInto(&edges, Style::SOLID_EDGE);
         }
     }
 
-    if(SS.GW.showConstraints != GraphicsWindow::ShowConstraintMode::SCM_NOSHOW ) {
+    if(SS.showConstraints != SolveSpaceCore::ShowConstraintMode::SCM_NOSHOW ) {
         if(!out->OutputConstraints(&SK.constraint)) {
             GetEdgesCanvas canvas = {};
+#ifndef SOLVESPACE_CORE_ONLY
             canvas.camera = SS.GW.GetCamera();
+#endif
             canvas.edges  = &edges;
 
             // The output format cannot represent constraints directly,
@@ -257,16 +262,16 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
 
         ExportWireframeCurves(&edges, &beziers, out);
     } else {
-        Vector u = SS.GW.projRight,
-               v = SS.GW.projUp,
+        Vector u = SS.projRight,
+               v = SS.projUp,
                n = u.Cross(v),
-               origin = SS.GW.offset.ScaledBy(-1);
+               origin = SS.viewOffset.ScaledBy(-1);
 
         out->SetModelviewProjection(u, v, n, origin,
-                                    SS.CameraTangent()*SS.GW.scale, SS.exportScale);
+                                    SS.CameraTangent()*SS.viewScale, SS.exportScale);
 
         ExportLinesAndMesh(&edges, &beziers, sm,
-                           u, v, n, origin, SS.CameraTangent()*SS.GW.scale,
+                           u, v, n, origin, SS.CameraTangent()*SS.viewScale,
                            out);
 
         if(!out->HasCanvasSize()) {
@@ -282,7 +287,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
         }
 
         SS.justExportedInfo.draw = true;
-        GW.Invalidate();
+        SS.Refresh();
     }
 
     edges.Clear();
@@ -383,7 +388,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
 
     // We need the mesh for occlusion testing, but if we don't/can't export it,
     // don't generate it.
-    if(SS.GW.showShaded && out->CanOutputMesh()) {
+    if(SS.showShaded && out->CanOutputMesh()) {
         // Use the BSP routines to generate the split triangles in paint order.
         SBsp3 *bsp = SBsp3::FromMesh(&smp);
         if(bsp) bsp->GenerateInPaintOrder(&sms);
@@ -406,10 +411,10 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
 
         // Generate the edges where a curved surface turns from front-facing
         // to back-facing.
-        if(SS.GW.showEdges || SS.GW.showOutlines) {
+        if(SS.showEdges || SS.showOutlines) {
             root->MakeCertainEdgesInto(sel, EdgeKind::TURNING,
                                        /*coplanarIsInter=*/false, NULL, NULL,
-                                       GW.showOutlines ? Style::OUTLINE : Style::SOLID_EDGE);
+                                       SS.showOutlines ? Style::OUTLINE : Style::SOLID_EDGE);
         }
 
         root->ClearTags();
@@ -428,13 +433,13 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
             // Split the original edge against the mesh
             edges.AddEdge(se->a, se->b, se->auxA);
             root->OcclusionTestLine(*se, &edges, cnt);
-            if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::STIPPLED) {
+            if(SS.drawOccludedAs == SolveSpaceCore::DrawOccludedAs::STIPPLED) {
                 for(SEdge &se : edges.l) {
                     if(se.tag == 1) {
                         se.auxA = Style::HIDDEN_EDGE;
                     }
                 }
-            } else if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::INVISIBLE) {
+            } else if(SS.drawOccludedAs == SolveSpaceCore::DrawOccludedAs::INVISIBLE) {
                 edges.l.RemoveTagged();
             }
 
@@ -812,10 +817,10 @@ void SolveSpaceUI::ExportMeshTo(const Platform::Path &filename) {
     SS.exportMode = true;
     GenerateAll(Generate::ALL);
 
-    Group *g = SK.GetGroup(SS.GW.activeGroup);
+    Group *g = SK.GetGroup(SS.activeGroup);
     g->GenerateDisplayItems();
 
-    SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
+    SMesh *m = &(SK.GetGroup(SS.activeGroup)->displayMesh);
     if(m->IsEmpty()) {
         Error(_("Active group mesh is empty; nothing to export."));
         return;
@@ -843,7 +848,7 @@ void SolveSpaceUI::ExportMeshTo(const Platform::Path &filename) {
         fclose(fMtl);
     } else if(filename.HasExtension("js") ||
               filename.HasExtension("html")) {
-        SOutlineList *e = &(SK.GetGroup(SS.GW.activeGroup)->displayOutlines);
+        SOutlineList *e = &(SK.GetGroup(SS.activeGroup)->displayOutlines);
         ExportMeshAsThreeJsTo(f, filename, m, e);
     } else if(filename.HasExtension("wrl")) {
         ExportMeshAsVrmlTo(f, filename, m);
@@ -856,7 +861,7 @@ void SolveSpaceUI::ExportMeshTo(const Platform::Path &filename) {
 
     SS.justExportedInfo.showOrigin = false;
     SS.justExportedInfo.draw = true;
-    GW.Invalidate();
+    SS.Refresh();
 }
 
 //-----------------------------------------------------------------------------
@@ -1117,10 +1122,10 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
     if(filename.HasExtension("html")) {
         fprintf(f, htmlend,
                 basename.c_str(),
-                SS.GW.scale,
-                CO(SS.GW.offset),
-                CO(SS.GW.projUp),
-                CO(SS.GW.projRight));
+                SS.viewScale,
+                CO(SS.viewOffset),
+                CO(SS.projUp),
+                CO(SS.projRight));
     }
 
     spl.Clear();
@@ -1266,7 +1271,8 @@ void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, S
 void SolveSpaceUI::ExportAsPngTo(const Platform::Path &filename) {
     screenshotFile = filename;
     // The rest of the work is done in the next redraw.
-    GW.Invalidate();
+    SS.Refresh();
 }
+#endif // !SOLVESPACE_CORE_ONLY
 
 } // namespace SolveSpace

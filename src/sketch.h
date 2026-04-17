@@ -18,9 +18,12 @@
 #include "param.h"
 #include "polygon.h"
 #include "platform/platform.h"
-#include "platform/gui.h"
 #include "srf/surface.h"
+
+#ifndef SOLVESPACE_CORE_ONLY
+#include "platform/gui.h"
 #include "render/render.h"
+#endif
 
 namespace SolveSpace {
 
@@ -57,7 +60,9 @@ enum class StipplePattern : uint32_t {
 const std::vector<double> &StipplePatternDashes(StipplePattern pattern);
 double StipplePatternLength(StipplePattern pattern);
 
+#ifndef SOLVESPACE_CORE_ONLY
 enum class Command : uint32_t;
+#endif
 
 // All of the hWhatever handles are a 32-bit ID, that is used to represent
 // some data structure in the sketch.
@@ -132,8 +137,13 @@ public:
 template<>
 struct IsHandleOracle<hStyle> : std::true_type {};
 
+class EntityBase;
+#if !defined(LIBRARY) && !defined(SOLVESPACE_CORE_ONLY)
 class Entity;
-using EntityList = IdList<Entity,hEntity>;
+#endif
+// EntityList uses Entity in all modes; in core-only mode Entity is aliased to EntityBase later.
+// Forward-declare here so IdList sees the name; full definition comes later in this header.
+using EntityList = IdList<EntityBase,hEntity>;
 
 struct EntityId {
     uint32_t v;     // entity ID, starting from 0
@@ -321,7 +331,7 @@ public:
     void MakeRevolveEndFaces(EntityList *el, hEntity pt, int ai, int af);
     void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
     void CopyEntity(EntityList *el,
-                    Entity *ep, int timesApplied, int remap,
+                    EntityBase *ep, int timesApplied, int remap,
                     hParam dx, hParam dy, hParam dz,
                     hParam qw, hParam qvx, hParam qvy, hParam qvz, hParam dist,
                     CopyAs as);
@@ -347,6 +357,9 @@ public:
     template<class T> void GenerateForBoolean(T *a, T *b, T *o, Group::CombineAs how);
     void GenerateDisplayItems();
 
+    SPolygon GetPolygon();
+
+#ifndef SOLVESPACE_CORE_ONLY
     enum class DrawMeshAs { DEFAULT, HOVERED, SELECTED };
     void DrawMesh(DrawMeshAs how, Canvas *canvas);
     void Draw(Canvas *canvas);
@@ -355,10 +368,9 @@ public:
     void DrawContourAreaLabels(Canvas *canvas);
     bool ShouldDrawExploded() const;
 
-    SPolygon GetPolygon();
-
     static void MenuGroup(Command id);
     static void MenuGroup(Command id, Platform::Path linkFile);
+#endif
 };
 
 // A user request for some primitive or derived operation; for example a
@@ -560,37 +572,30 @@ public:
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const;
     void GenerateEquations(IdList<Equation,hEquation> *l) const;
 
-    void Clear() {}
-};
-
-class Entity : public EntityBase {
-public:
-    // Necessary for Entity e = {} to zero-initialize, since
-    // classes with base classes are not aggregates and
-    // the default constructor does not initialize members.
-    //
-    // Note EntityBase({}); without explicitly value-initializing
-    // the base class, MSVC2013 will default-initialize it, leaving
-    // POD members with indeterminate value.
-    Entity() : EntityBase({}), forceHidden(), actPoint(), actNormal(),
-        actDistance(), actVisible(), style(), construction(),
-        beziers(), edges(), edgesChordTol(), screenBBox(), screenBBoxValid() {};
-
-    // A linked entity that was hidden in the source file ends up hidden
-    // here too.
+    // Data members needed by core computation (request generation, file I/O)
     bool        forceHidden;
-
-    // All points/normals/distances have their numerical value; this is
-    // a convenience, to simplify the link/assembly code, so that the
-    // part is entirely described by the entities.
     Vector      actPoint;
     Quaternion  actNormal;
     double      actDistance;
-    // and the shown state also gets saved here, for later import
     bool        actVisible;
-
     hStyle      style;
     bool        construction;
+
+    void CalculateNumerical(bool forExport);
+
+    // Geometry generation (needed by core mesh operations)
+    void ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const;
+    void GenerateBezierCurves(SBezierList *sbl) const;
+    void GenerateEdges(SEdgeList *el);
+
+    void Clear() {}
+};
+
+#ifndef SOLVESPACE_CORE_ONLY
+class Entity : public EntityBase {
+public:
+    Entity() : EntityBase({}),
+        beziers(), edges(), edgesChordTol(), screenBBox(), screenBBoxValid() {};
 
     SBezierList beziers;
     SEdgeList   edges;
@@ -607,15 +612,9 @@ public:
     void GetReferencePoints(std::vector<Vector> *refs);
     int GetPositionOfPoint(const Camera &camera, Point2d p);
 
-    void ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const;
-    void GenerateBezierCurves(SBezierList *sbl) const;
-    void GenerateEdges(SEdgeList *el);
-
     SBezierList *GetOrGenerateBezierCurves();
     SEdgeList *GetOrGenerateEdges();
     BBox GetOrGenerateScreenBBox(bool *hasBBox);
-
-    void CalculateNumerical(bool forExport);
 
     std::string DescriptionString() const;
 
@@ -628,6 +627,10 @@ public:
     Vector ExplodeOffset() const;
     Vector PointGetDrawNum() const;
 };
+#else
+// In core-only mode, Entity is just EntityBase (no draw/visibility methods).
+using Entity = EntityBase;
+#endif // !SOLVESPACE_CORE_ONLY
 
 class EntReqTable {
 public:
@@ -745,19 +748,21 @@ public:
     static ExprVector VectorsParallel3d(ExprVector a, ExprVector b, hParam p);
     static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
 
-    void Clear() {}
-};
-
-class Constraint : public ConstraintBase {
-public:
-    // See Entity::Entity().
-    Constraint() : ConstraintBase({}), disp() {}
-
-    // These define how the constraint is drawn on-screen.
+    // Data members needed by core (export, file I/O)
     struct {
         Vector      offset;
         hStyle      style;
     } disp;
+
+    static hConstraint AddConstraint(ConstraintBase *c, bool rememberForUndo = true);
+
+    void Clear() {}
+};
+
+#ifndef SOLVESPACE_CORE_ONLY
+class Constraint : public ConstraintBase {
+public:
+    Constraint() : ConstraintBase({}) {}
 
     bool IsVisible() const;
     bool IsStylable() const;
@@ -802,7 +807,6 @@ public:
 
     bool ShouldDrawExploded() const;
 
-    static hConstraint AddConstraint(Constraint *c, bool rememberForUndo = true);
     static void MenuConstrain(Command id);
     static void DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA, hEntity ptA);
 
@@ -820,6 +824,10 @@ public:
     static bool ConstrainCurveCurveTangent(Constraint *c, Entity *eA, Entity *eB, Entity *p1,
                                            Entity *p2);
 };
+#else
+// In core-only mode, Constraint is just ConstraintBase (no draw/layout methods).
+using Constraint = ConstraintBase;
+#endif // !SOLVESPACE_CORE_ONLY
 
 class Style {
 public:
@@ -903,10 +911,14 @@ public:
     static void CreateAllDefaultStyles();
     static void CreateDefaultStyle(hStyle h);
     static void FillDefaultStyle(Style *s, const Default *d = NULL, bool factory = false);
+#ifndef SOLVESPACE_CORE_ONLY
     static void FreezeDefaultStyles(Platform::SettingsRef settings);
+#endif
     static void LoadFactoryDefaults();
 
+#ifndef SOLVESPACE_CORE_ONLY
     static void AssignSelectionToStyle(uint32_t v);
+#endif
     static uint32_t CreateCustomStyle(bool rememberForUndo = true);
 
     static RgbaColor RewriteColor(RgbaColor rgb);
@@ -920,8 +932,10 @@ public:
     static double WidthMm(int hs);
     static double TextHeight(hStyle hs);
     static double DefaultTextHeight();
+#ifndef SOLVESPACE_CORE_ONLY
     static Canvas::Stroke Stroke(hStyle hs);
     static Canvas::Stroke Stroke(int hs);
+#endif
     static bool Exportable(int hs);
     static hStyle ForEntity(hEntity he);
     static StipplePattern PatternType(hStyle hs);

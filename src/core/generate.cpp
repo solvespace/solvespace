@@ -10,12 +10,12 @@
 
 namespace SolveSpace {
 
-void SolveSpaceUI::MarkGroupDirtyByEntity(hEntity he) {
+void SolveSpaceCore::MarkGroupDirtyByEntity(hEntity he) {
     Entity *e = SK.GetEntity(he);
     MarkGroupDirty(e->group);
 }
 
-void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
+void SolveSpaceCore::MarkGroupDirty(hGroup hg, bool onlyThis) {
     bool go = false;
     for(auto const &gh : SK.groupOrder) {
         Group *g = SK.GetGroup(gh);
@@ -31,7 +31,7 @@ void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
     ScheduleGenerateAll();
 }
 
-bool SolveSpaceUI::PruneOrphans() {
+bool SolveSpaceCore::PruneOrphans() {
     const int requests = SK.request.n;
     for(Request &r : SK.request) {
         if(!GroupExists(r.group))
@@ -52,7 +52,7 @@ bool SolveSpaceUI::PruneOrphans() {
     return (requests > SK.request.n) || (constraints > SK.constraint.n);
 }
 
-bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
+bool SolveSpaceCore::GroupsInOrder(hGroup before, hGroup after) {
     if(before.v == 0) return true;
     if(after.v  == 0) return true;
     if(!GroupExists(before)) return false;
@@ -63,18 +63,18 @@ bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
     return true;
 }
 
-bool SolveSpaceUI::GroupExists(hGroup hg) {
+bool SolveSpaceCore::GroupExists(hGroup hg) {
     // A nonexistent group is not acceptable
     return SK.group.FindByIdNoOops(hg) ? true : false;
 }
-bool SolveSpaceUI::EntityExists(hEntity he) {
+bool SolveSpaceCore::EntityExists(hEntity he) {
     // A nonexstient entity is acceptable, though, usually just means it
     // doesn't apply.
     if(he == Entity::NO_ENTITY) return true;
     return SK.entity.FindByIdNoOops(he) ? true : false;
 }
 
-bool SolveSpaceUI::PruneGroups(hGroup hg) {
+bool SolveSpaceCore::PruneGroups(hGroup hg) {
     Group *g = SK.GetGroup(hg);
     if(GroupsInOrder(g->opA, hg) &&
        EntityExists(g->predef.origin) &&
@@ -88,7 +88,7 @@ bool SolveSpaceUI::PruneGroups(hGroup hg) {
     return true;
 }
 
-bool SolveSpaceUI::PruneRequestsAndConstraints(hGroup hg) {
+bool SolveSpaceCore::PruneRequestsAndConstraints(hGroup hg) {
     auto entityRequestExists = [](hEntity he, bool checkEntity = false) {
         if(he == Entity::NO_ENTITY) {
             return true;
@@ -149,7 +149,7 @@ bool SolveSpaceUI::PruneRequestsAndConstraints(hGroup hg) {
     return (requests > SK.request.n) || (constraints > SK.constraint.n);
 }
 
-void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox) {
+void SolveSpaceCore::GenerateAll(Generate type, bool andFindFree, bool genForBBox) {
     int first = 0, last = 0, i;
 
     uint64_t startMillis = GetMilliseconds(),
@@ -175,7 +175,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
                 if((!g->clean) || !g->IsSolvedOkay()) {
                     first = min(first, i);
                 }
-                if(g->h == SS.GW.activeGroup) {
+                if(g->h == SS.activeGroup) {
                     last = i;
                 }
             }
@@ -184,7 +184,9 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
                 first = -1;
                 last  = -1;
             } else {
+#ifndef SOLVESPACE_CORE_ONLY
                 SS.nakedEdges.Clear();
+#endif
             }
             break;
         }
@@ -201,7 +203,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
         case Generate::UNTIL_ACTIVE: {
             for(i = 0; i < SK.groupOrder.n; i++) {
-                if(SK.groupOrder[i] == SS.GW.activeGroup)
+                if(SK.groupOrder[i] == SS.activeGroup)
                     break;
             }
 
@@ -318,6 +320,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
         }
     }
 
+#ifndef SOLVESPACE_CORE_ONLY
     // Make sure the point that we're tracing exists.
     if(traced.point.v && !SK.entity.FindByIdNoOops(traced.point)) {
         traced.point = Entity::NO_ENTITY;
@@ -327,23 +330,28 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
         Entity *pt = SK.GetEntity(traced.point);
         traced.path.AddPoint(pt->PointGetNum());
     }
+#endif
 
     prev.Clear();
-    GW.Invalidate();
+    SS.Refresh();
 
+#ifndef SOLVESPACE_CORE_ONLY
     // Remove nonexistent selection items, for same reason we waited till
     // the end to put up a dialog box.
     GW.ClearNonexistentSelectionItems();
+#endif
 
     if(deleted.requests > 0 || deleted.constraints > 0 || deleted.groups > 0) {
         // All sorts of interesting things could have happened; for example,
         // the active group or active workplane could have been deleted. So
         // clear all that out.
+#ifndef SOLVESPACE_CORE_ONLY
         if(deleted.groups > 0) {
             SS.TW.ClearSuper();
         }
         ScheduleShowTW();
         GW.ClearSuper();
+#endif
 
         auto deletedStat = deleted;
         deleted = {};
@@ -375,7 +383,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
     Platform::FreeAllTemporary();
     allConsistent = true;
-    SS.GW.persistentDirty = true;
+    SS.persistentDirty = true;
     SS.centerOfMass.dirty = true;
 
     endMillis = GetMilliseconds();
@@ -405,7 +413,7 @@ pruned:
     GenerateAll(type, andFindFree, genForBBox);
 }
 
-void SolveSpaceUI::ForceReferences() {
+void SolveSpaceCore::ForceReferences() {
     // Force the values of the parameters that define the three reference
     // coordinate systems.
     static const struct {
@@ -436,15 +444,16 @@ void SolveSpaceUI::ForceReferences() {
     }
 }
 
-void SolveSpaceUI::UpdateCenterOfMass() {
-    SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
+void SolveSpaceCore::UpdateCenterOfMass() {
+    SMesh *m = &(SK.GetGroup(SS.activeGroup)->displayMesh);
     SS.centerOfMass.position = m->GetCenterOfMass();
     SS.centerOfMass.dirty = false;
 }
 
-void SolveSpaceUI::MarkDraggedParams() {
+void SolveSpaceCore::MarkDraggedParams() {
     sys.dragged.clear();
 
+#ifndef SOLVESPACE_CORE_ONLY
     for(int i = -1; i < SS.GW.pending.points.n; i++) {
         hEntity hp;
         if(i == -1) {
@@ -508,20 +517,23 @@ void SolveSpaceUI::MarkDraggedParams() {
             }
         }
     }
+#endif
 }
 
-void SolveSpaceUI::SolveGroupAndReport(hGroup hg, bool andFindFree) {
+void SolveSpaceCore::SolveGroupAndReport(hGroup hg, bool andFindFree) {
     SolveGroup(hg, andFindFree);
 
     Group *g = SK.GetGroup(hg);
     bool isOkay = g->solved.how == SolveResult::OKAY ||
                   (g->allowRedundant && g->solved.how == SolveResult::REDUNDANT_OKAY);
     if(!isOkay || (isOkay && !g->IsSolvedOkay())) {
+#ifndef SOLVESPACE_CORE_ONLY
         TextWindow::ReportHowGroupSolved(g->h);
+#endif
     }
 }
 
-void SolveSpaceUI::WriteEqSystemForGroup(hGroup hg) {
+void SolveSpaceCore::WriteEqSystemForGroup(hGroup hg) {
     // Clear out the system to be solved.
     sys.entity.Clear();
     sys.param.Clear();
@@ -552,7 +564,7 @@ void SolveSpaceUI::WriteEqSystemForGroup(hGroup hg) {
     MarkDraggedParams();
 }
 
-void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
+void SolveSpaceCore::SolveGroup(hGroup hg, bool andFindFree) {
     WriteEqSystemForGroup(hg);
     Group *g = SK.GetGroup(hg);
     g->solved.remove.Clear();
@@ -569,7 +581,7 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     Platform::FreeAllTemporary();
 }
 
-SolveResult SolveSpaceUI::TestRankForGroup(hGroup hg, int *rank) {
+SolveResult SolveSpaceCore::TestRankForGroup(hGroup hg, int *rank) {
     Group *g = SK.GetGroup(hg);
     // If we don't calculate dof or redundant is allowed, there is
     // no point to solve rank because this result is not meaningful
@@ -580,12 +592,12 @@ SolveResult SolveSpaceUI::TestRankForGroup(hGroup hg, int *rank) {
     return result;
 }
 
-bool SolveSpaceUI::ActiveGroupsOkay() {
+bool SolveSpaceCore::ActiveGroupsOkay() {
     for(int i = 0; i < SK.groupOrder.n; i++) {
         Group *g = SK.GetGroup(SK.groupOrder[i]);
         if(!g->IsSolvedOkay())
             return false;
-        if(g->h == SS.GW.activeGroup)
+        if(g->h == SS.activeGroup)
             break;
     }
     return true;

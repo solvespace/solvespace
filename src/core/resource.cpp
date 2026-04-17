@@ -948,6 +948,7 @@ void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const 
     }
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const std::string &str,
                        const std::function<void(Vector, Vector)> &traceEdge, const Camera &camera) {
     ssassert(!IsEmpty(), "Expected a loaded font");
@@ -993,6 +994,7 @@ void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const 
         o = o.Plus(u.ScaledBy(glyph.advanceWidth));
     }
 }
+#endif // !SOLVESPACE_CORE_ONLY
 
 //-----------------------------------------------------------------------------
 // Gettext plural expression evaluation
@@ -1490,6 +1492,7 @@ const std::string &Translation::TranslatePlural(const TranslationKey &key, unsig
     return it->second[pluralForm];
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 //-----------------------------------------------------------------------------
 // Locale management
 //-----------------------------------------------------------------------------
@@ -1583,5 +1586,6 @@ const std::string &TranslatePlural(const char *msgctxt, const char *msgid, unsig
     key.ident      = msgid;
     return currentTranslation->TranslatePlural(key, n);
 }
+#endif // !SOLVESPACE_CORE_ONLY
 
 }

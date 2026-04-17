@@ -18,7 +18,7 @@ static int StrStartsWith(const char *str, const char *start) {
 // sketch. This does not leave the program in an acceptable state (with the
 // references created, and so on), so anyone calling this must fix that later.
 //-----------------------------------------------------------------------------
-void SolveSpaceUI::ClearExisting() {
+void SolveSpaceCore::ClearExisting() {
     UndoClearStack(&redo);
     UndoClearStack(&undo);
 
@@ -38,7 +38,7 @@ void SolveSpaceUI::ClearExisting() {
     images.clear();
 }
 
-hGroup SolveSpaceUI::CreateDefaultDrawingGroup() {
+hGroup SolveSpaceCore::CreateDefaultDrawingGroup() {
     Group g = {};
 
     // And an empty group, for the first stuff the user draws.
@@ -55,7 +55,7 @@ hGroup SolveSpaceUI::CreateDefaultDrawingGroup() {
     return g.h;
 }
 
-void SolveSpaceUI::NewFile() {
+void SolveSpaceCore::NewFile() {
     ClearExisting();
 
     // Our initial group, that contains the references.
@@ -72,7 +72,7 @@ void SolveSpaceUI::NewFile() {
     Request r = {};
     r.type = Request::Type::WORKPLANE;
     r.group = Group::HGROUP_REFERENCES;
-    r.workplane = Entity::FREE_IN_3D;
+    r.workplane = EntityBase::FREE_IN_3D;
 
     r.h = Request::HREQUEST_REFERENCE_XY;
     SK.request.Add(&r);
@@ -86,7 +86,7 @@ void SolveSpaceUI::NewFile() {
     CreateDefaultDrawingGroup();
 }
 
-const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
+const SolveSpaceCore::SaveTable SolveSpaceCore::SAVED[] = {
     { 'g',  "Group.h.v",                'x',    &(SS.sv.g.h.v)                },
     { 'g',  "Group.type",               'd',    &(SS.sv.g.type)               },
     { 'g',  "Group.order",              'd',    &(SS.sv.g.order)              },
@@ -222,7 +222,7 @@ struct SAVEDptr {
     uint32_t  &x() { return *((uint32_t *)this); }
 };
 
-void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
+void SolveSpaceCore::SaveUsingTable(const Platform::Path &filename, int type) {
     int i;
     for(i = 0; SAVED[i].type != 0; i++) {
         if(SAVED[i].type != type) continue;
@@ -279,16 +279,16 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
     }
 }
 
-bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
+bool SolveSpaceCore::SaveToFile(const Platform::Path &filename) {
     // Make sure all the entities are regenerated up to date, since they will be exported.
     SS.ScheduleShowTW();
-    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    SS.GenerateAll(SolveSpaceCore::Generate::ALL);
 
     for(Group &g : SK.group) {
         if(g.type != Group::Type::LINKED) continue;
 
         // Expand for "filename" below is needed on Linux when the file was opened with a relative
-        // path on the command line. dialog->RunModal() in SolveSpaceUI::GetFilenameAndSave will
+        // path on the command line. dialog->RunModal() in SolveSpaceCore::GetFilenameAndSave will
         // convert the file name to full path on Windows but not on GTK.
         if(g.linkFile.Expand(/*fromCurrentDirectory=*/true)
                .RelativeTo(filename.Expand(/*fromCurrentDirectory=*/true))
@@ -406,7 +406,7 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     return true;
 }
 
-void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, char *val) {
+void SolveSpaceCore::LoadUsingTable(const Platform::Path &filename, char *key, char *val) {
     int i;
     for(i = 0; SAVED[i].type != 0; i++) {
         if(strcmp(SAVED[i].desc, key)==0) {
@@ -472,7 +472,7 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
     }
 }
 
-bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) {
+bool SolveSpaceCore::LoadFromFile(const Platform::Path &filename, bool canCancel) {
     bool fileIsEmpty = true;
     allConsistent = false;
     fileLoadError = false;
@@ -574,7 +574,7 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
     return true;
 }
 
-void SolveSpaceUI::UpgradeLegacyData() {
+void SolveSpaceCore::UpgradeLegacyData() {
     for(Request &r : SK.request) {
         switch(r.type) {
             // TTF text requests saved in versions prior to 3.0 only have two
@@ -625,7 +625,7 @@ void SolveSpaceUI::UpgradeLegacyData() {
     // so force them where they belong.
     ParamList oldParam = {};
     SK.param.DeepCopyInto(&oldParam);
-    SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
+    SS.GenerateAll(SolveSpaceCore::Generate::REGEN);
 
     auto AllParamsExistFor = [&](Constraint &c) {
         ParamList param = {};
@@ -713,7 +713,7 @@ void SolveSpaceUI::UpgradeLegacyData() {
     oldParam.Clear();
 }
 
-bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
+bool SolveSpaceCore::LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                                         SMesh *m, SShell *sh)
 {
     if(strcmp(filename.Extension().c_str(), "emn")==0) {
@@ -729,7 +729,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityLi
     }
 }
 
-bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
+bool SolveSpaceCore::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
                                         SMesh *m, SShell *sh)
 {
     SSurface srf = {};
@@ -869,6 +869,7 @@ bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityLi
     return true;
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 static Platform::MessageDialog::Response LocateImportedFile(const Platform::Path &filename,
                                                             bool canCancel) {
     Platform::MessageDialogRef dialog = CreateMessageDialog(SS.GW.window);
@@ -876,7 +877,7 @@ static Platform::MessageDialog::Response LocateImportedFile(const Platform::Path
     using Platform::MessageDialog;
     dialog->SetType(MessageDialog::Type::QUESTION);
     dialog->SetTitle(C_("title", "Missing File"));
-    dialog->SetMessage(ssprintf(C_("dialog", "The linked file “%s” is not present."),
+    dialog->SetMessage(ssprintf(C_("dialog", "The linked file "%s" is not present."),
                                 filename.raw.c_str()));
     dialog->SetDescription(C_("dialog", "Do you want to locate it manually?\n\n"
                                         "If you decline, any geometry that depends on "
@@ -891,12 +892,9 @@ static Platform::MessageDialog::Response LocateImportedFile(const Platform::Path
     // FIXME(async): asyncify this call
     return dialog->RunModal();
 }
+#endif // !SOLVESPACE_CORE_ONLY
 
-bool SolveSpaceUI::ReloadAllLinked(const Platform::Path &saveFile, bool canCancel) {
-    Platform::SettingsRef settings = Platform::GetSettings();
-
-    std::map<Platform::Path, Platform::Path, Platform::PathLess> linkMap;
-
+bool SolveSpaceCore::ReloadAllLinked(const Platform::Path &saveFile, bool canCancel) {
     allConsistent = false;
 
     for(Group &g : SK.group) {
@@ -906,25 +904,20 @@ bool SolveSpaceUI::ReloadAllLinked(const Platform::Path &saveFile, bool canCance
         g.impMesh.Clear();
         g.impShell.Clear();
 
-        // If we prompted for this specific file before, don't ask again.
-        if(linkMap.count(g.linkFile)) {
-            g.linkFile = linkMap[g.linkFile];
-        }
-
-try_again:
         if(LoadEntitiesFromFile(g.linkFile, &g.impEntity, &g.impMesh, &g.impShell)) {
             // We loaded the data, good. Now import its dependencies as well.
-            for(Entity &e : g.impEntity) {
-                if(e.type != Entity::Type::IMAGE) continue;
+            for(auto &e : g.impEntity) {
+                if(e.type != EntityBase::Type::IMAGE) continue;
                 if(!ReloadLinkedImage(g.linkFile, &e.file, canCancel)) {
                     return false;
                 }
             }
             if(g.IsTriangleMeshAssembly())
                 g.forceToMesh = true;
-        } else if(linkMap.count(g.linkFile) == 0) {
+#ifndef SOLVESPACE_CORE_ONLY
+        } else {
+            Platform::SettingsRef settings = Platform::GetSettings();
             dbp("Missing file for group: %s", g.name.c_str());
-            // The file was moved; prompt the user for its new location.
             const auto linkFileRelative = g.linkFile.RelativeTo(saveFile);
             switch(LocateImportedFile(linkFileRelative, canCancel)) {
                 case Platform::MessageDialog::Response::YES: {
@@ -934,18 +927,14 @@ try_again:
                     dialog->SuggestFilename(linkFileRelative);
                     if(dialog->RunModal()) {
                         dialog->FreezeChoices(settings, "LinkSketch");
-                        linkMap[g.linkFile] = dialog->GetFilename();
                         g.linkFile = dialog->GetFilename();
-                        goto try_again;
                     } else {
                         if(canCancel) return false;
-                        break;
                     }
+                    break;
                 }
 
                 case Platform::MessageDialog::Response::NO:
-                    linkMap[g.linkFile].Clear();
-                    // Geometry will be pruned by GenerateAll().
                     break;
 
                 case Platform::MessageDialog::Response::CANCEL:
@@ -954,14 +943,12 @@ try_again:
                 default:
                     ssassert(false, "Unexpected dialog response");
             }
-        } else {
-            // User was already asked to and refused to locate a missing linked file.
+#endif
         }
     }
 
     for(Request &r : SK.request) {
         if(r.type != Request::Type::IMAGE) continue;
-
         if(!ReloadLinkedImage(saveFile, &r.file, canCancel)) {
             return false;
         }
@@ -970,6 +957,7 @@ try_again:
     return true;
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
                                      Platform::Path *filename, bool canCancel) {
     Platform::SettingsRef settings = Platform::GetSettings();
@@ -1005,7 +993,11 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
     }
 
     if(promptOpenFile) {
+#ifndef SOLVESPACE_CORE_ONLY
         Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
+#else
+        Platform::FileDialogRef dialog;
+#endif
         dialog->AddFilters(Platform::RasterFileFilters);
         dialog->ThawChoices(settings, "LinkImage");
         dialog->SuggestFilename(filename->RelativeTo(saveFile));
@@ -1026,5 +1018,6 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
     SS.images[*filename] = pixmap;
     return true;
 }
+#endif // !SOLVESPACE_CORE_ONLY
 
 } // namespace SolveSpace

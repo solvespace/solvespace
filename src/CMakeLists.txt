@@ -80,18 +80,21 @@ target_sources(slvs-solver INTERFACE
     platform/platform.h
     solvespace.h
 
-    constrainteq.cpp
-    entity.cpp
-    expr.cpp
+    core/constrainteq.cpp
+    core/entity.cpp
+    core/expr.cpp
     platform/platformbase.cpp
-    system.cpp
-    util.cpp
+    core/system.cpp
+    core/util.cpp
 )
 target_include_directories(slvs-solver SYSTEM INTERFACE
     ${MIMALLOC_INCLUDE_DIR}
     ${EIGEN3_INCLUDE_DIRS})
 target_include_directories(slvs-solver INTERFACE
     ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Core computation library (no GUI dependencies)
+add_subdirectory(core)
 
 # Needed for CI
 file(WRITE ${CMAKE_BINARY_DIR}/version.env "\
@@ -120,52 +123,63 @@ if(ENABLE_GUI OR ENABLE_CLI)
         render/render.h
         srf/surface.h
 
-        bsp.cpp
-        clipboard.cpp
-        confscreen.cpp
-        constraint.cpp
-        describescreen.cpp
-        draw.cpp
-        drawconstraint.cpp
-        drawentity.cpp
-        export.cpp
-        exportstep.cpp
-        exportvector.cpp
-        file.cpp
-        generate.cpp
-        graphicswin.cpp
-        group.cpp
-        groupmesh.cpp
-        importdxf.cpp
-        importidf.cpp
-        importmesh.cpp
-        mesh.cpp
-        modify.cpp
-        mouse.cpp
-        polyline.cpp
-        polygon.cpp
-        resource.cpp
-        request.cpp
-        style.cpp
-        textscreens.cpp
-        textwin.cpp
-        toolbar.cpp
-        ttf.cpp
-        undoredo.cpp
-        view.cpp
+        # Core computation (in core/ subdirectory)
+        core/bsp.cpp
+        core/constraint.cpp
+        core/constrainteq.cpp
+        core/entity.cpp
+        core/export.cpp
+        core/exportstep.cpp
+        core/exportvector.cpp
+        core/expr.cpp
+        core/file.cpp
+        core/generate.cpp
+        core/group.cpp
+        core/groupmesh.cpp
+        core/importdxf.cpp
+        core/importidf.cpp
+        core/importmesh.cpp
+        core/mesh.cpp
+        core/polygon.cpp
+        core/polyline.cpp
+        core/request.cpp
+        core/resource.cpp
+        core/style.cpp
+        core/system.cpp
+        core/ttf.cpp
+        core/undoredo.cpp
+        core/util.cpp
+        core/solvespace_core.cpp
+        core/srf/boolean.cpp
+        core/srf/curve.cpp
+        core/srf/merge.cpp
+        core/srf/ratpoly.cpp
+        core/srf/raycast.cpp
+        core/srf/shell.cpp
+        core/srf/surface.cpp
+        core/srf/surfinter.cpp
+        core/srf/triangulate.cpp
+
+        # UI (in ui/ subdirectory)
+        ui/clipboard.cpp
+        ui/confscreen.cpp
+        ui/describescreen.cpp
+        ui/draw.cpp
+        ui/drawconstraint.cpp
+        ui/drawentity.cpp
+        ui/graphicswin.cpp
+        ui/modify.cpp
+        ui/mouse.cpp
+        ui/textscreens.cpp
+        ui/textwin.cpp
+        ui/toolbar.cpp
+        ui/view.cpp
+
+        # Platform and rendering
         platform/platform.cpp
         platform/gui.cpp
         render/render.cpp
-        render/render2d.cpp
-        srf/boolean.cpp
-        srf/curve.cpp
-        srf/merge.cpp
-        srf/ratpoly.cpp
-        srf/raycast.cpp
-        srf/shell.cpp
-        srf/surface.cpp
-        srf/surfinter.cpp
-        srf/triangulate.cpp)
+        render/render2d.cpp)
 
     target_include_directories(solvespace-core PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}

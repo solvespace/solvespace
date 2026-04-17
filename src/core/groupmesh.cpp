@@ -473,7 +473,7 @@ void Group::GenerateDisplayItems() {
             displayMesh.MakeFromCopyOf(&(pg->displayMesh));
 
             displayOutlines.Clear();
-            if(SS.GW.showEdges || SS.GW.showOutlines) {
+            if(SS.showEdges || SS.showOutlines) {
                 displayOutlines.MakeFromCopyOf(&pg->displayOutlines);
             }
         } else {
@@ -493,7 +493,7 @@ void Group::GenerateDisplayItems() {
 
             displayOutlines.Clear();
 
-            if(SS.GW.showEdges || SS.GW.showOutlines) {
+            if(SS.showEdges || SS.showOutlines) {
                 SOutlineList rawOutlines = {};
                 if(!runningMesh.l.IsEmpty()) {
                     // Triangle mesh only; no shell or emphasized edges.
@@ -515,7 +515,7 @@ void Group::GenerateDisplayItems() {
         displayMesh.PrecomputeTransparency();
 
         // Recalculate mass center if needed
-        if(SS.centerOfMass.draw && SS.centerOfMass.dirty && h == SS.GW.activeGroup) {
+        if(SS.centerOfMass.draw && SS.centerOfMass.dirty && h == SS.activeGroup) {
             SS.UpdateCenterOfMass();
         }
         displayDirty = false;
@@ -557,20 +557,25 @@ bool Group::IsMeshGroup() {
     }
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
-    if(!(SS.GW.showShaded ||
-         SS.GW.drawOccludedAs != GraphicsWindow::DrawOccludedAs::VISIBLE)) return;
+    if(!(SS.showShaded ||
+         SS.drawOccludedAs != SolveSpaceCore::DrawOccludedAs::VISIBLE)) return;
 
     switch(how) {
         case DrawMeshAs::DEFAULT: {
             // Force the shade color to something dim to not distract from
             // the sketch.
             Canvas::Fill fillFront = {};
-            if(!SS.GW.showShaded) {
+            if(!SS.showShaded) {
                 fillFront.layer = Canvas::Layer::DEPTH_ONLY;
             }
+#ifndef SOLVESPACE_CORE_ONLY
             if((type == Type::DRAWING_3D || type == Type::DRAWING_WORKPLANE)
                && SS.GW.dimSolidModel) {
+#else
+            if(false) {
+#endif
                 fillFront.color = Style::Color(Style::DIM_SOLID);
             }
             Canvas::hFill hcfFront = canvas->GetFill(fillFront);
@@ -592,7 +597,7 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
             canvas->DrawMesh(displayMesh, hcfFront, hcfBack);
 
             // Draw mesh edges, for debugging.
-            if(SS.GW.showMesh) {
+            if(SS.showMesh) {
                 Canvas::Stroke strokeTriangle = {};
                 strokeTriangle.zIndex = 1;
                 strokeTriangle.color  = RgbaColor::FromFloat(0.0f, 1.0f, 0.0f);
@@ -611,6 +616,7 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
             break;
         }
 
+#ifndef SOLVESPACE_CORE_ONLY
         case DrawMeshAs::HOVERED: {
             Canvas::Fill fill = {};
             fill.color   = Style::Color(Style::HOVERED);
@@ -645,6 +651,7 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
             canvas->DrawFaces(displayMesh, faces, hcf);
             break;
         }
+#endif
     }
 }
 
@@ -656,19 +663,19 @@ void Group::Draw(Canvas *canvas) {
     GenerateDisplayItems();
     DrawMesh(DrawMeshAs::DEFAULT, canvas);
 
-    if(SS.GW.showEdges) {
+    if(SS.showEdges) {
         Canvas::Stroke strokeEdge = Style::Stroke(Style::SOLID_EDGE);
         strokeEdge.zIndex = 1;
         Canvas::hStroke hcsEdge = canvas->GetStroke(strokeEdge);
 
         canvas->DrawOutlines(displayOutlines, hcsEdge,
-                             SS.GW.showOutlines
+                             SS.showOutlines
                              ? Canvas::DrawOutlinesAs::EMPHASIZED_WITHOUT_CONTOUR
                              : Canvas::DrawOutlinesAs::EMPHASIZED_AND_CONTOUR);
 
-        if(SS.GW.drawOccludedAs != GraphicsWindow::DrawOccludedAs::INVISIBLE) {
+        if(SS.drawOccludedAs != SolveSpaceCore::DrawOccludedAs::INVISIBLE) {
             Canvas::Stroke strokeHidden = Style::Stroke(Style::HIDDEN_EDGE);
-            if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::VISIBLE) {
+            if(SS.drawOccludedAs == SolveSpaceCore::DrawOccludedAs::VISIBLE) {
                 strokeHidden.stipplePattern = StipplePattern::CONTINUOUS;
             }
             strokeHidden.layer  = Canvas::Layer::OCCLUDED;
@@ -679,7 +686,7 @@ void Group::Draw(Canvas *canvas) {
         }
     }
 
-    if(SS.GW.showOutlines) {
+    if(SS.showOutlines) {
         Canvas::Stroke strokeOutline = Style::Stroke(Style::OUTLINE);
         strokeOutline.zIndex = 1;
         Canvas::hStroke hcsOutline = canvas->GetStroke(strokeOutline);
@@ -752,7 +759,7 @@ void Group::DrawFilledPaths(Canvas *canvas) {
         if(s->filled) {
             // This is a filled loop, where the user specified a fill color.
             fill.color = s->fillColor;
-        } else if(h == SS.GW.activeGroup && SS.checkClosedContour &&
+        } else if(h == SS.activeGroup && SS.checkClosedContour &&
                     polyError.how == PolyError::GOOD) {
             // If this is the active group, and we are supposed to check
             // for closed contours, and we do indeed have a closed and
@@ -799,5 +806,6 @@ void Group::DrawContourAreaLabels(Canvas *canvas) {
         canvas->DrawVectorText(label, fontHeight, pos, gr, gu, canvas->GetStroke(stroke));
     }
 }
+#endif // !SOLVESPACE_CORE_ONLY
 
 } // namespace SolveSpace

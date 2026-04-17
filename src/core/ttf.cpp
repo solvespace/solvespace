@@ -58,12 +58,14 @@ TtfFontList::~TtfFontList() {
 void TtfFontList::LoadAll() {
     if(loaded) return;
 
+#ifndef SOLVESPACE_CORE_ONLY
     for(const Platform::Path &font : Platform::GetFontFiles()) {
         TtfFont tf = {};
         tf.fontFile = font;
         if(tf.LoadFromFile(fontLibrary))
             l.Add(&tf);
     }
+#endif
 
     // Add builtin font to end of font list so it is displayed first in the UI
     {

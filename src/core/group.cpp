@@ -46,14 +46,14 @@ void Group::AddParam(ParamList *param, hParam hp, double v) {
 
 bool Group::IsVisible() {
     if(!visible) return false;
-    Group *active = SK.GetGroup(SS.GW.activeGroup);
+    Group *active = SK.GetGroup(SS.activeGroup);
     if(order > active->order) return false;
     return true;
 }
 
 size_t Group::GetNumConstraints() {
     return std::count_if(SK.constraint.begin(), SK.constraint.end(),
-                         [&](Constraint const &c) { return c.group == h; });
+                         [&](ConstraintBase const &c) { return c.group == h; });
 }
 
 Vector Group::ExtrusionGetVector() {
@@ -66,6 +66,7 @@ void Group::ExtrusionForceVectorTo(const Vector &v) {
     SK.GetParam(h.param(2))->val = v.z;
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 void Group::MenuGroup(Command id)  {
     MenuGroup(id, Platform::Path());
 }
@@ -367,6 +368,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
     TextWindow::ScreenSelectGroup(0, gg->h.v);
     SS.GW.AnimateOntoWorkplane();
 }
+#endif // SOLVESPACE_CORE_ONLY
 
 void Group::TransformImportedBy(Vector t, Quaternion q) {
     ssassert(type == Type::LINKED, "Expected a linked group");
@@ -429,9 +431,9 @@ std::string Group::DescriptionString() {
 
 void Group::Activate() {
     if(type == Type::DRAWING_WORKPLANE || type == Type::DRAWING_3D) {
-        SS.GW.showFaces = SS.GW.showFacesDrawing;
+        SS.showFaces = SS.showFacesDrawing;
     } else {
-        SS.GW.showFaces = SS.GW.showFacesNonDrawing;
+        SS.showFaces = SS.showFacesNonDrawing;
     }
     SS.MarkGroupDirty(h); // for good measure; shouldn't be needed
     SS.ScheduleShowTW();
@@ -439,11 +441,11 @@ void Group::Activate() {
 
 void Group::Generate(EntityList *entity, ParamList *param)
 {
-    Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
-    Vector gp = SS.GW.projRight.Plus(SS.GW.projUp);
-    Vector gc = (SS.GW.offset).ScaledBy(-1);
-    gn = gn.WithMagnitude(200/SS.GW.scale);
-    gp = gp.WithMagnitude(200/SS.GW.scale);
+    Vector gn = (SS.projRight).Cross(SS.projUp);
+    Vector gp = SS.projRight.Plus(SS.projUp);
+    Vector gc = (SS.viewOffset).ScaledBy(-1);
+    gn = gn.WithMagnitude(200/SS.viewScale);
+    gp = gp.WithMagnitude(200/SS.viewScale);
     int a, i;
     switch(type) {
         case Type::DRAWING_3D:
@@ -1220,8 +1222,10 @@ void Group::CopyEntity(EntityList *el,
     el->Add(&en);
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 bool Group::ShouldDrawExploded() const {
-    return SS.explode && h == SS.GW.activeGroup && type == Type::DRAWING_WORKPLANE && !SS.exportMode;
+    return SS.explode && h == SS.activeGroup && type == Type::DRAWING_WORKPLANE && !SS.exportMode;
 }
+#endif
 
 } // namespace SolveSpace

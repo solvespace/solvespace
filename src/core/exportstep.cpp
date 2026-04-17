@@ -629,7 +629,7 @@ void StepFileWriter::WriteFooter() {
 }
 
 void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
-    Group *g = SK.GetGroup(SS.GW.activeGroup);
+    Group *g = SK.GetGroup(SS.activeGroup);
     SShell *shell = &(g->runningShell);
 
     if(shell->surface.IsEmpty()) {

@@ -8,6 +8,7 @@
 
 namespace SolveSpace {
 
+#ifndef SOLVESPACE_CORE_ONLY
 std::string Constraint::DescriptionString() const {
     std::string s;
     switch(type) {
@@ -56,8 +57,6 @@ std::string Constraint::DescriptionString() const {
     return ssprintf("c%03x-%s", h.v, s.c_str());
 }
 
-#ifndef LIBRARY
-
 //-----------------------------------------------------------------------------
 // Delete all constraints with the specified type, entityA, ptA. We use this
 // when auto-removing constraints that would become redundant.
@@ -74,14 +73,15 @@ void Constraint::DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA,
         ct->tag = 1;
     }
     SK.constraint.RemoveTagged();
-    // And no need to do anything special, since nothing
-    // ever depends on a constraint. But do clear the
-    // hover, in case the just-deleted constraint was
-    // hovered.
+#ifndef SOLVESPACE_CORE_ONLY
+    // Clear the hover, in case the just-deleted constraint was hovered.
     SS.GW.hover.Clear();
+#endif
 }
 
-hConstraint Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
+#endif // !SOLVESPACE_CORE_ONLY
+
+hConstraint ConstraintBase::AddConstraint(ConstraintBase *c, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
 
     hConstraint hc = SK.constraint.AddAndAssignId(c);
@@ -92,12 +92,14 @@ hConstraint Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
     return c->h;
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
+
 hConstraint Constraint::Constrain(Constraint::Type type, hEntity ptA, hEntity ptB,
                                   hEntity entityA, hEntity entityB,
                                   bool other, bool other2)
 {
     Constraint c = {};
-    c.group = SS.GW.activeGroup;
+    c.group = SS.activeGroup;
     c.workplane = SS.GW.ActiveWorkplane();
     c.type = type;
     c.ptA = ptA;
@@ -113,9 +115,9 @@ hConstraint Constraint::TryConstrain(Constraint::Type type, hEntity ptA, hEntity
                                      hEntity entityA, hEntity entityB,
                                      bool other, bool other2) {
     int rankBefore, rankAfter;
-    SolveResult howBefore = SS.TestRankForGroup(SS.GW.activeGroup, &rankBefore);
+    SolveResult howBefore = SS.TestRankForGroup(SS.activeGroup, &rankBefore);
     hConstraint hc = Constrain(type, ptA, ptB, entityA, entityB, other, other2);
-    SolveResult howAfter = SS.TestRankForGroup(SS.GW.activeGroup, &rankAfter);
+    SolveResult howAfter = SS.TestRankForGroup(SS.activeGroup, &rankAfter);
     // There are two cases where the constraint is clearly redundant:
     //   * If the group wasn't overconstrained and now it is;
     //   * If the group was overconstrained, and adding the constraint doesn't change rank at all.
@@ -257,7 +259,7 @@ void Constraint::MenuConstrain(Command id) {
     std::vector<Constraint> newcons;
 
     Constraint c = {};
-    c.group = SS.GW.activeGroup;
+    c.group = SS.activeGroup;
     c.workplane = SS.GW.ActiveWorkplane();
 
     SS.GW.GroupSelection();
@@ -314,11 +316,11 @@ void Constraint::MenuConstrain(Command id) {
                 return;
             }
             if(c.type == Type::PT_PT_DISTANCE || c.type == Type::PROJ_PT_DISTANCE) {
-                Vector n = SS.GW.projRight.Cross(SS.GW.projUp);
+                Vector n = SS.projRight.Cross(SS.projUp);
                 Vector a = SK.GetEntity(c.ptA)->PointGetNum();
                 Vector b = SK.GetEntity(c.ptB)->PointGetNum();
                 c.disp.offset = n.Cross(a.Minus(b));
-                c.disp.offset = (c.disp.offset).WithMagnitude(50/SS.GW.scale);
+                c.disp.offset = (c.disp.offset).WithMagnitude(50/SS.viewScale);
             } else {
                 c.disp.offset = {};
             }
@@ -590,7 +592,7 @@ void Constraint::MenuConstrain(Command id) {
                 Entity *l0 = SK.GetEntity(gs.entity[0]),
                        *l1 = SK.GetEntity(gs.entity[1]);
 
-                if((l1->group != SS.GW.activeGroup) ||
+                if((l1->group != SS.activeGroup) ||
                    (l1->construction && !(l0->construction)))
                 {
                     swap(l0, l1);
@@ -705,10 +707,10 @@ void Constraint::MenuConstrain(Command id) {
 
             Entity *nfree = SK.GetEntity(c.entityA);
             Entity *nref  = SK.GetEntity(c.entityB);
-            if(nref->group == SS.GW.activeGroup) {
+            if(nref->group == SS.activeGroup) {
                 swap(nref, nfree);
             }
-            if(nfree->group == SS.GW.activeGroup && nref->group != SS.GW.activeGroup) {
+            if(nfree->group == SS.activeGroup && nref->group != SS.activeGroup) {
                 // nfree is free, and nref is locked (since it came from a
                 // previous group); so let's force nfree aligned to nref,
                 // and make convergence easy
@@ -943,7 +945,7 @@ void Constraint::MenuConstrain(Command id) {
             if(gs.points == 1 && gs.n == 1) {
                 c.type = Type::COMMENT;
                 c.ptA = gs.point[0];
-                c.group       = SS.GW.activeGroup;
+                c.group       = SS.activeGroup;
                 c.workplane   = SS.GW.ActiveWorkplane();
                 c.comment     = _("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
                 AddConstraint(&c);
@@ -973,7 +975,7 @@ void Constraint::MenuConstrain(Command id) {
         if(SK.constraint.FindByIdNoOops(nc.h)) {
             Constraint *constraint = SK.GetConstraint(nc.h);
             if(SS.TestRankForGroup(nc.group) == SolveResult::REDUNDANT_OKAY &&
-                    !SK.GetGroup(SS.GW.activeGroup)->allowRedundant &&
+                    !SK.GetGroup(SS.activeGroup)->allowRedundant &&
                     constraint->HasLabel()) {
                 constraint->reference = true;
             }
@@ -989,6 +991,6 @@ void Constraint::MenuConstrain(Command id) {
     SS.GW.ClearSelection();
 }
 
-#endif /* ! LIBRARY */
+#endif /* ! SOLVESPACE_CORE_ONLY */
 
 } // namespace SolveSpace

@@ -6,6 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 #include "sketch.h"
+
 #include <cstring>
 #include <vector>
 

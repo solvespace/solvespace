@@ -3,6 +3,7 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
+#include <set>
 #include <libdxfrw.h>
 #include "solvespace.h"
 
@@ -171,6 +172,7 @@ public:
             }
         }
 
+#ifndef SOLVESPACE_CORE_ONLY
         if(writer->constraint) {
             for(Constraint &c : *writer->constraint) {
                 if(!writer->NeedToOutput(&c)) continue;
@@ -295,7 +297,7 @@ public:
                     case Constraint::Type::COMMENT: {
                         Style *st = SK.style.FindById(c.GetStyle());
                         writeText(xfrm(c.disp.offset), c.Label(),
-                                  Style::TextHeight(c.GetStyle()) / SS.GW.scale,
+                                  Style::TextHeight(c.GetStyle()) / SS.viewScale,
                                   st->textAngle, st->textOrigin, c.GetStyle());
                         break;
                     }
@@ -306,6 +308,7 @@ public:
                 }
             }
         }
+#endif
     }
 
     int findDxfColor(const RgbaColor &src) {
@@ -542,7 +545,7 @@ public:
     }
 };
 
-bool DxfFileWriter::OutputConstraints(IdList<Constraint,hConstraint> *constraint) {
+bool DxfFileWriter::OutputConstraints(IdList<ConstraintBase,hConstraint> *constraint) {
     this->constraint = constraint;
     return true;
 }
@@ -599,14 +602,18 @@ void DxfFileWriter::FinishAndCloseFile() {
     }
 }
 
-bool DxfFileWriter::NeedToOutput(Constraint *c) {
+bool DxfFileWriter::NeedToOutput(ConstraintBase *c) {
     switch(c->type) {
-        case Constraint::Type::PT_PT_DISTANCE:
-        case Constraint::Type::PT_LINE_DISTANCE:
-        case Constraint::Type::DIAMETER:
-        case Constraint::Type::ANGLE:
-        case Constraint::Type::COMMENT:
-            return c->IsVisible();
+        case ConstraintBase::Type::PT_PT_DISTANCE:
+        case ConstraintBase::Type::PT_LINE_DISTANCE:
+        case ConstraintBase::Type::DIAMETER:
+        case ConstraintBase::Type::ANGLE:
+        case ConstraintBase::Type::COMMENT:
+#ifndef SOLVESPACE_CORE_ONLY
+            return static_cast<Constraint *>(c)->IsVisible();
+#else
+            return true;
+#endif
 
         default: // See writeEntities().
             break;
@@ -633,6 +640,7 @@ const char *DxfFileWriter::lineTypeName(StipplePattern stippleType) {
     return "CONTINUOUS";
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 //-----------------------------------------------------------------------------
 // Routines for EPS output
 //-----------------------------------------------------------------------------
@@ -1356,5 +1364,7 @@ void Step2dFileWriter::FinishAndCloseFile() {
     sfw.WriteFooter();
     fclose(f);
 }
+
+#endif // !SOLVESPACE_CORE_ONLY
 
 } // namespace SolveSpace

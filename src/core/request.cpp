@@ -16,7 +16,7 @@ const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
 
 struct EntReqMapping {
     Request::Type  reqType;
-    Entity::Type   entType;
+    EntityBase::Type   entType;
     int            points;
     bool           useExtraPoints;
     bool           hasNormal;
@@ -24,19 +24,19 @@ struct EntReqMapping {
 };
 static const EntReqMapping EntReqMap[] = {
 // request type                   entity type                 pts   xtra?   norml   dist
-{ Request::Type::WORKPLANE,       Entity::Type::WORKPLANE,      1,  false,  true,   false },
-{ Request::Type::DATUM_POINT,     (Entity::Type)0,              1,  false,  false,  false },
-{ Request::Type::LINE_SEGMENT,    Entity::Type::LINE_SEGMENT,   2,  false,  false,  false },
-{ Request::Type::CUBIC,           Entity::Type::CUBIC,          4,  true,   false,  false },
-{ Request::Type::CUBIC_PERIODIC,  Entity::Type::CUBIC_PERIODIC, 3,  true,   false,  false },
-{ Request::Type::CIRCLE,          Entity::Type::CIRCLE,         1,  false,  true,   true  },
-{ Request::Type::ARC_OF_CIRCLE,   Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false },
-{ Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       4,  false,  true,   false },
-{ Request::Type::IMAGE,           Entity::Type::IMAGE,          4,  false,  true,   false },
+{ Request::Type::WORKPLANE,       EntityBase::Type::WORKPLANE,      1,  false,  true,   false },
+{ Request::Type::DATUM_POINT,     (EntityBase::Type)0,              1,  false,  false,  false },
+{ Request::Type::LINE_SEGMENT,    EntityBase::Type::LINE_SEGMENT,   2,  false,  false,  false },
+{ Request::Type::CUBIC,           EntityBase::Type::CUBIC,          4,  true,   false,  false },
+{ Request::Type::CUBIC_PERIODIC,  EntityBase::Type::CUBIC_PERIODIC, 3,  true,   false,  false },
+{ Request::Type::CIRCLE,          EntityBase::Type::CIRCLE,         1,  false,  true,   true  },
+{ Request::Type::ARC_OF_CIRCLE,   EntityBase::Type::ARC_OF_CIRCLE,  3,  false,  true,   false },
+{ Request::Type::TTF_TEXT,        EntityBase::Type::TTF_TEXT,       4,  false,  true,   false },
+{ Request::Type::IMAGE,           EntityBase::Type::IMAGE,          4,  false,  true,   false },
 };
 
 static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
-                           Entity::Type *ent, Request::Type *req,
+                           EntityBase::Type *ent, Request::Type *req,
                            int *pts, bool *hasNormal, bool *hasDistance)
 {
     int points = te->points;
@@ -50,7 +50,7 @@ static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
 }
 
 void EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
-                                 Entity::Type *ent, int *pts, bool *hasNormal, bool *hasDistance)
+                                 EntityBase::Type *ent, int *pts, bool *hasNormal, bool *hasDistance)
 {
     for(const EntReqMapping &te : EntReqMap) {
         if(req == te.reqType) {
@@ -61,7 +61,7 @@ void EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
     ssassert(false, "No request info");
 }
 
-bool EntReqTable::GetEntityInfo(Entity::Type ent, int extraPoints,
+bool EntReqTable::GetEntityInfo(EntityBase::Type ent, int extraPoints,
                                 Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance)
 {
     for(const EntReqMapping &te : EntReqMap) {
@@ -73,7 +73,7 @@ bool EntReqTable::GetEntityInfo(Entity::Type ent, int extraPoints,
     return false;
 }
 
-Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
+Request::Type EntReqTable::GetRequestForEntity(EntityBase::Type ent) {
     Request::Type req;
     ssassert(GetEntityInfo(ent, 0, &req, NULL, NULL, NULL),
              "No entity for request");
@@ -83,7 +83,7 @@ Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
 void Request::Generate(EntityList *entity, ParamList *param)
 {
     int points = 0;
-    Entity::Type et = (Entity::Type)0;
+    EntityBase::Type et = (EntityBase::Type)0;
     bool hasNormal = false;
     bool hasDistance = false;
     int i;
@@ -144,18 +144,18 @@ void Request::Generate(EntityList *entity, ParamList *param)
         Entity p = {};
         p.workplane = workplane;
         // points start from entity 1, except for datum point case
-        p.h = h.entity(i+((et != (Entity::Type)0) ? 1 : 0));
+        p.h = h.entity(i+((et != (EntityBase::Type)0) ? 1 : 0));
         p.group = group;
         p.style = style;
         p.construction = e.construction;
         if(workplane == Entity::FREE_IN_3D) {
-            p.type = Entity::Type::POINT_IN_3D;
+            p.type = EntityBase::Type::POINT_IN_3D;
             // params for x y z
             p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
             p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
             p.param[2] = AddParam(param, h.param(16 + 3*i + 2));
         } else {
-            p.type = Entity::Type::POINT_IN_2D;
+            p.type = EntityBase::Type::POINT_IN_2D;
             // params for u v
             p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
             p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
@@ -171,13 +171,13 @@ void Request::Generate(EntityList *entity, ParamList *param)
         n.style = style;
         n.construction = e.construction;
         if(workplane == Entity::FREE_IN_3D) {
-            n.type = Entity::Type::NORMAL_IN_3D;
+            n.type = EntityBase::Type::NORMAL_IN_3D;
             n.param[0] = AddParam(param, h.param(32+0));
             n.param[1] = AddParam(param, h.param(32+1));
             n.param[2] = AddParam(param, h.param(32+2));
             n.param[3] = AddParam(param, h.param(32+3));
         } else {
-            n.type = Entity::Type::NORMAL_IN_2D;
+            n.type = EntityBase::Type::NORMAL_IN_2D;
             // and this is just a copy of the workplane quaternion,
             // so no params required
         }
@@ -194,13 +194,13 @@ void Request::Generate(EntityList *entity, ParamList *param)
         d.h = h.entity(64);
         d.group = group;
         d.style = style;
-        d.type = Entity::Type::DISTANCE;
+        d.type = EntityBase::Type::DISTANCE;
         d.param[0] = AddParam(param, h.param(64));
         entity->Add(&d);
         e.distance = d.h;
     }
 
-    if(et != (Entity::Type)0) entity->Add(&e);
+    if(et != (EntityBase::Type)0) entity->Add(&e);
 }
 
 std::string Request::DescriptionString() const {

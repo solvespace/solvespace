@@ -19,7 +19,12 @@ void AssertFailure(const char *file, unsigned line, const char *function,
     formattedMsg += ssprintf("File %s, line %u, function %s:\n", file, line, function);
     formattedMsg += ssprintf("Assertion failed: %s.\n", condition);
     formattedMsg += ssprintf("Message: %s.\n", message);
+#ifndef SOLVESPACE_CORE_ONLY
     Platform::FatalError(formattedMsg);
+#else
+    fprintf(stderr, "%s", formattedMsg.c_str());
+    abort();
+#endif
 }
 
 std::string ssprintf(const char *fmt, ...)
@@ -151,6 +156,17 @@ static void MessageBox(const char *fmt, va_list va, bool error,
         description = description.substr(it - description.begin());
     }
 
+#ifdef SOLVESPACE_CORE_ONLY
+    // In core-only mode, fall back to stderr.
+    if (error) {
+        fprintf(stderr, "Error: %s\n", message.c_str());
+    } else {
+        fprintf(stderr, "Message: %s\n", message.c_str());
+    }
+    if(onDismiss) {
+        onDismiss();
+    }
+#else
     Platform::MessageDialogRef dialog = CreateMessageDialog(SS.GW.window);
     if (!dialog) {
         if (error) {
@@ -184,6 +200,7 @@ static void MessageBox(const char *fmt, va_list va, bool error,
     };
     dialog->ShowModal();
 #endif
+#endif // !LIBRARY
 }
 void Error(const char *fmt, ...)
 {

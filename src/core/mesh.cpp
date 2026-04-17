@@ -339,6 +339,7 @@ void SMesh::MakeFromTransformationOf(SMesh *a, Vector trans,
 
 bool SMesh::IsEmpty() const { return (l.IsEmpty()); }
 
+#ifndef SOLVESPACE_CORE_ONLY
 uint32_t SMesh::FirstIntersectionWith(Point2d mp) const {
     Vector rayPoint = SS.GW.UnProjectPoint3({mp.x, mp.y, 0.0});
     Vector rayDir = SS.GW.UnProjectPoint3({mp.x, mp.y, 1.0}).Minus(rayPoint);
@@ -359,6 +360,7 @@ uint32_t SMesh::FirstIntersectionWith(Point2d mp) const {
 
     return face;
 }
+#endif
 
 Vector SMesh::GetCenterOfMass() const {
     Vector center = {};

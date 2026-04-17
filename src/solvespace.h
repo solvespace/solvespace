@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <functional>
+#include <map>
 #include <memory>
 
 #define EIGEN_NO_DEBUG
@@ -19,13 +21,23 @@
 #include "dsc.h"
 #include "polygon.h"
 #include "srf/surface.h"
-#include "render/render.h"
 #include "expr.h"
 #include "sketch.h"
+#include "resource.h"
 #include "ttf.h"
-#include "ui.h"
 
 #include "platform/platform.h"
+
+#ifndef SOLVESPACE_CORE_ONLY
+#include "render/render.h"
+#include "ui.h"
+#else
+// Stub i18n functions for core-only builds (originals in ui.h)
+inline const char *_(const char *msgid) { return msgid; }
+inline const char *C_(const char *, const char *msgid) { return msgid; }
+inline const char *N_(const char *msgid) { return msgid; }
+inline const char *CN_(const char *, const char *msgid) { return msgid; }
+#endif
 
 namespace SolveSpace {
 
@@ -257,7 +269,7 @@ public:
                             bool filled, RgbaColor fillRgb, hStyle hs) = 0;
     virtual void Bezier(SBezier *sb) = 0;
     virtual void Triangle(STriangle *tr) = 0;
-    virtual bool OutputConstraints(IdList<Constraint,hConstraint> *) { return false; }
+    virtual bool OutputConstraints(IdList<ConstraintBase,hConstraint> *) { return false; }
     virtual void Background(RgbaColor color) = 0;
     virtual void StartFile() = 0;
     virtual void FinishAndCloseFile() = 0;
@@ -271,11 +283,11 @@ public:
     };
 
     std::vector<BezierPath>         paths;
-    IdList<Constraint,hConstraint> *constraint;
+    IdList<ConstraintBase,hConstraint> *constraint;
 
     static const char *lineTypeName(StipplePattern stippleType);
 
-    bool OutputConstraints(IdList<Constraint,hConstraint> *constraint) override;
+    bool OutputConstraints(IdList<ConstraintBase,hConstraint> *constraint) override;
 
     void StartPath( RgbaColor strokeRgb, double lineWidth,
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
@@ -288,7 +300,7 @@ public:
     void FinishAndCloseFile() override;
     bool HasCanvasSize() const override { return false; }
     bool CanOutputMesh() const override { return false; }
-    bool NeedToOutput(Constraint *c);
+    bool NeedToOutput(ConstraintBase *c);
 };
 class EpsFileWriter : public VectorFileWriter {
 public:
@@ -388,7 +400,7 @@ public:
     bool CanOutputMesh() const override { return false; }
 };
 
-#ifdef LIBRARY
+#if defined(LIBRARY) || defined(SOLVESPACE_CORE_ONLY)
 #   define ENTITY EntityBase
 #   define CONSTRAINT ConstraintBase
 #else
@@ -424,18 +436,15 @@ public:
 #undef ENTITY
 #undef CONSTRAINT
 
-class SolveSpaceUI {
+// Core engine class: computation, file I/O, solving - no GUI dependencies.
+class SolveSpaceCore {
 public:
-    TextWindow                 *pTW;
-    TextWindow                 &TW;
-    GraphicsWindow              GW;
-
     // The state for undo/redo
     typedef struct UndoState {
         IdList<Group,hGroup>            group;
         List<hGroup>                    groupOrder;
         IdList<Request,hRequest>        request;
-        IdList<Constraint,hConstraint>  constraint;
+        IdList<ConstraintBase,hConstraint>  constraint;
         ParamList                       param;
         IdList<Style,hStyle>            style;
         hGroup                          activeGroup;
@@ -457,11 +466,6 @@ public:
     UndoStack   undo;
     UndoStack   redo;
 
-    std::map<Platform::Path, std::shared_ptr<Pixmap>, Platform::PathLess> images;
-    bool ReloadLinkedImage(const Platform::Path &saveFile, Platform::Path *filename,
-                           bool canCancel);
-
-    void UndoEnableMenus();
     void UndoRemember();
     void UndoUndo();
     void UndoRedo();
@@ -470,7 +474,7 @@ public:
     void UndoClearState(UndoState *ut);
     void UndoClearStack(UndoStack *uk);
 
-    // Little bits of extra configuration state
+    // Configuration state
     enum { MODEL_COLORS = 8 };
     RgbaColor modelColor[MODEL_COLORS];
     Vector   lightDir[2];
@@ -482,24 +486,16 @@ public:
     double   exportChordTol;
     int      exportMaxSegments;
     int      timeoutRedundantConstr; //milliseconds
-    int      animationSpeed; //milliseconds
     double   cameraTangent;
     double   gridSpacing;
     double   exportScale;
     double   exportOffset;
     bool     arcDimDefaultDiameter;
-    bool     showFullFilePath;
     bool     fixExportColors;
     bool     exportBackgroundColor;
     bool     drawBackFaces;
     bool     showContourAreas;
     bool     checkClosedContour;
-    bool     cameraNav;
-    bool     turntableNav;
-    bool     immediatelyEditDimension;
-    bool     automaticLineConstraints;
-    bool     showToolbar;
-    Platform::Path screenshotFile;
     RgbaColor backgroundColor;
     bool     exportShadedTriangles;
     bool     exportPwlCurves;
@@ -549,21 +545,48 @@ public:
     bool usePerspectiveProj;
     double CameraTangent();
 
-    // Some stuff relating to the tangent arcs created non-parametrically
-    // as special requests.
+    // Image cache (used by Request::Generate for aspect ratio)
+    std::map<Platform::Path, std::shared_ptr<Pixmap>, Platform::PathLess> images;
+
+    // Tangent arc settings
     double tangentArcRadius;
     bool tangentArcManual;
     bool tangentArcModify;
 
-    // The platform-dependent code calls this before entering the msg loop
-    void Init();
-    void Exit();
+    // Active editing state (mirrored from GraphicsWindow in UI builds)
+    hGroup  activeGroup;
 
-    // File load/save routines, including the additional files that get
-    // loaded when we have link groups.
+    // Viewport state needed by core export/constraint code
+    Vector  projRight;
+    Vector  projUp;
+    double  viewScale;
+    Vector  viewOffset;
+
+    // Display toggles needed by core mesh/export code
+    bool     showEdges;
+    bool     showOutlines;
+    bool     showShaded;
+    bool     showFaces;
+    bool     showFacesDrawing;
+    bool     showFacesNonDrawing;
+    bool     showMesh;
+
+    enum class ShowConstraintMode : uint32_t {
+        SCM_NO_CONSTRAINT = 0,
+        SCM_SHOW_ALL      = 1,
+        SCM_SHOW_DIM      = 2,
+    };
+    ShowConstraintMode showConstraints;
+
+    enum class DrawOccludedAs : uint32_t {
+        INVISIBLE = 0,
+        STIPPLED  = 1,
+        VISIBLE   = 2,
+    };
+    DrawOccludedAs drawOccludedAs;
+
+    // File load/save
     FILE        *fh;
-    void AfterNewFile();
-    void AddToRecentList(const Platform::Path &filename);
     Platform::Path saveFile;
     bool        fileLoadError;
     bool        unsaved;
@@ -579,28 +602,17 @@ public:
     struct {
         Group        g;
         Request      r;
-        Entity       e;
-        Param        p;
-        Constraint   c;
+        EntityBase       e;
+        Param            p;
+        ConstraintBase   c;
         Style        s;
     } sv;
-    static void MenuFile(Command id);
-    void Autosave();
-    void RemoveAutosave();
     static constexpr size_t MAX_RECENT = 8;
     static constexpr const char *SKETCH_EXT = "slvs";
     static constexpr const char *BACKUP_EXT = "slvs~";
-    std::vector<Platform::Path> recentFiles;
-    bool Load(const Platform::Path &filename);
-    bool GetFilenameAndSave(bool saveAs);
-    bool OkayToStartNewFile();
     hGroup CreateDefaultDrawingGroup();
-    void UpdateWindowTitles();
-    void ClearExisting();
-    void NewFile();
     bool SaveToFile(const Platform::Path &filename);
     bool LoadAutosaveFor(const Platform::Path &filename);
-    std::function<void(const Platform::Path &filename, bool is_saveAs, bool is_autosave)> OnSaveFinished;
     bool LoadFromFile(const Platform::Path &filename, bool canCancel = false);
     void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
@@ -608,16 +620,14 @@ public:
     bool LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
     bool ReloadAllLinked(const Platform::Path &filename, bool canCancel = false);
-    // And the various export options
-    void ExportAsPngTo(const Platform::Path &filename);
-    void ExportMeshTo(const Platform::Path &filename);
+
+#ifndef SOLVESPACE_CORE_ONLY
+    // Export (requires Canvas/rendering - UI builds only)
     void ExportMeshAsStlTo(FILE *f, SMesh *sm);
     void ExportMeshAsObjTo(FILE *fObj, FILE *fMtl, SMesh *sm);
     void ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename,
                                SMesh *sm, SOutlineList *sol);
     void ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, SMesh *sm);
-    void ExportViewOrWireframeTo(const Platform::Path &filename, bool exportWireframe);
-    void ExportSectionTo(const Platform::Path &filename);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
                                VectorFileWriter *out);
     void ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
@@ -625,46 +635,19 @@ public:
                             Vector n, Vector origin,
                             double cameraTan,
                             VectorFileWriter *out);
+#endif
 
-    static void MenuAnalyze(Command id);
-
-    // Additional display stuff
-    struct {
-        SContour    path;
-        hEntity     point;
-    } traced;
-    SEdgeList nakedEdges;
-    struct {
-        bool        draw;
-        Vector      ptA;
-        Vector      ptB;
-    } extraLine;
-    struct {
-        bool        draw, showOrigin;
-        Vector      pt, u, v;
-    } justExportedInfo;
+    // Center of mass
     struct {
         bool   draw;
         bool   dirty;
         Vector position;
     } centerOfMass;
 
-    class Clipboard {
-    public:
-        List<ClipboardRequest>  r;
-        List<Constraint>        c;
-
-        void Clear();
-        bool ContainsEntity(hEntity old);
-        hEntity NewEntityFor(hEntity old);
-    };
-    Clipboard clipboard;
-
     void MarkGroupDirty(hGroup hg, bool onlyThis = false);
     void MarkGroupDirtyByEntity(hEntity he);
 
-    // Consistency checking on the sketch: stuff with missing dependencies
-    // will get deleted automatically.
+    // Consistency checking
     struct {
         int     requests;
         int     groups;
@@ -677,7 +660,6 @@ public:
     bool GroupsInOrder(hGroup before, hGroup after);
     bool PruneGroups(hGroup hg);
     bool PruneRequestsAndConstraints(hGroup hg);
-    static void ShowNakedEdges(bool reportOnlyWhenNotOkay);
 
     enum class Generate : uint32_t {
         DIRTY,
@@ -698,50 +680,146 @@ public:
 
     bool ActiveGroupsOkay();
 
-    // The system to be solved.
+    // The system to be solved
     System     *pSys;
     System     &sys;
 
     // All the TrueType fonts in memory
     TtfFontList fonts;
 
-    // Everything has been pruned, so we know there's no dangling references
-    // to entities that don't exist. Before that, we mustn't try to display
-    // the sketch!
     bool allConsistent;
+    bool persistentDirty;
+
+    // Virtual methods for UI callbacks - overridden by SolveSpaceUI
+    virtual void ScheduleGenerateAll() {}
+    virtual void ScheduleShowTW() {}
+    virtual void Refresh() {}
+    virtual void UndoEnableMenus() {}
+    virtual bool ReloadLinkedImage(const Platform::Path &saveFile,
+                                   Platform::Path *filename,
+                                   bool canCancel) { return false; }
+    virtual void UpdateWindowTitles() {}
+    void ClearExisting();
+    void NewFile();
+    virtual void AfterNewFile() {}
+    virtual void Clear();
+
+    SolveSpaceCore()
+        : pSys(new System()), sys(*pSys) {}
+
+    virtual ~SolveSpaceCore() {
+        delete pSys;
+    }
+};
+
+#ifndef SOLVESPACE_CORE_ONLY
+
+class SolveSpaceUI : public SolveSpaceCore {
+public:
+    TextWindow                 *pTW;
+    TextWindow                 &TW;
+    GraphicsWindow              GW;
+
+    bool ReloadLinkedImage(const Platform::Path &saveFile, Platform::Path *filename,
+                           bool canCancel) override;
+
+    void UndoEnableMenus() override;
+
+    // UI-only configuration
+    int      animationSpeed; //milliseconds
+    bool     showFullFilePath;
+    bool     cameraNav;
+    bool     turntableNav;
+    bool     immediatelyEditDimension;
+    bool     automaticLineConstraints;
+    bool     showToolbar;
+    Platform::Path screenshotFile;
+
+    void Init();
+    void Exit();
+
+    void AfterNewFile() override;
+    void AddToRecentList(const Platform::Path &filename);
+    std::vector<Platform::Path> recentFiles;
+    bool Load(const Platform::Path &filename);
+    bool GetFilenameAndSave(bool saveAs);
+    bool OkayToStartNewFile();
+    void UpdateWindowTitles() override;
+    std::function<void(const Platform::Path &filename, bool is_saveAs, bool is_autosave)> OnSaveFinished;
+    void Autosave();
+    void RemoveAutosave();
+
+    static void MenuFile(Command id);
+    static void MenuAnalyze(Command id);
+    static void MenuHelp(Command id);
+
+    // Viewport-dependent exports
+    void ExportAsPngTo(const Platform::Path &filename);
+    void ExportMeshTo(const Platform::Path &filename);
+    void ExportViewOrWireframeTo(const Platform::Path &filename, bool exportWireframe);
+    void ExportSectionTo(const Platform::Path &filename);
+
+    // Additional display stuff
+    struct {
+        SContour    path;
+        hEntity     point;
+    } traced;
+    SEdgeList nakedEdges;
+    struct {
+        bool        draw;
+        Vector      ptA;
+        Vector      ptB;
+    } extraLine;
+    struct {
+        bool        draw, showOrigin;
+        Vector      pt, u, v;
+    } justExportedInfo;
+
+    class Clipboard {
+    public:
+        List<ClipboardRequest>  r;
+        List<Constraint>        c;
+
+        void Clear();
+        bool ContainsEntity(hEntity old);
+        hEntity NewEntityFor(hEntity old);
+    };
+    Clipboard clipboard;
+
+    static void ShowNakedEdges(bool reportOnlyWhenNotOkay);
 
     bool scheduledGenerateAll;
     bool scheduledShowTW;
     Platform::TimerRef refreshTimer;
     Platform::TimerRef autosaveTimer;
-    void Refresh();
-    void ScheduleShowTW();
-    void ScheduleGenerateAll();
+    void Refresh() override;
+    void ScheduleShowTW() override;
+    void ScheduleGenerateAll() override;
     void ScheduleAutosave();
 
-    static void MenuHelp(Command id);
+    void Clear() override;
 
-    void Clear();
-
-    // We allocate TW and sys on the heap to work around an MSVC problem
-    // where it puts zero-initialized global data in the binary (~30M of zeroes)
-    // in release builds.
     SolveSpaceUI()
-        : pTW(new TextWindow()), TW(*pTW),
-          pSys(new System()), sys(*pSys) {}
+        : SolveSpaceCore(),
+          pTW(new TextWindow()), TW(*pTW) {}
 
     ~SolveSpaceUI() {
         delete pTW;
-        delete pSys;
     }
 };
+
+#endif // !SOLVESPACE_CORE_ONLY
 
 void ImportDxf(const Platform::Path &file);
 void ImportDwg(const Platform::Path &file);
 bool LinkIDF(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh);
 bool LinkStl(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh);
 
+#ifdef SOLVESPACE_CORE_ONLY
+extern SolveSpaceCore SS;
+#else
 extern SolveSpaceUI SS;
+#endif
 extern Sketch SK;
 
 } // namespace SolveSpace

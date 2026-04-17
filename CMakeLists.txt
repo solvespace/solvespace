@@ -211,10 +211,9 @@ if(APPLE)
     set(CMAKE_FIND_FRAMEWORK FIRST)
 endif()
 
-if(ENABLE_GUI OR ENABLE_CLI)
-    message(STATUS "Using in-tree libdxfrw")
-    add_subdirectory(extlib/libdxfrw)
-endif()
+# libdxfrw is needed by core library for DXF import/export
+message(STATUS "Using in-tree libdxfrw")
+add_subdirectory(extlib/libdxfrw)
 
 message(STATUS "Using in-tree mimalloc")
 set(MI_OVERRIDE OFF CACHE BOOL "")
@@ -250,6 +249,15 @@ if(NOT EXISTS "${EIGEN3_INCLUDE_DIRS}")
     message(FATAL_ERROR "Eigen 3 not found on system or in-tree")
 endif()
 
+
+# Core library needs zlib, png, and freetype even without GUI/CLI.
+# Find them unconditionally so solvespace-core-lib can link them.
+if(NOT ENABLE_GUI AND NOT ENABLE_CLI)
+    find_package(PkgConfig REQUIRED)
+    find_package(ZLIB REQUIRED)
+    find_package(PNG REQUIRED)
+    find_package(Freetype REQUIRED)
+endif()
 
 if(ENABLE_GUI OR ENABLE_CLI)
     if(WIN32 OR APPLE OR EMSCRIPTEN)
@@ -512,3 +520,7 @@ if((ENABLE_CLI OR ENABLE_GUI) AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_
 else()
     message(STATUS "Benchmarking disabled in debug and library builds.")
 endif()
+
+# Core API demo
+add_executable(core_api_demo examples/core_api_demo.cpp)
+target_link_libraries(core_api_demo PRIVATE SolveSpace::Core)

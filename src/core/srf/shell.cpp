@@ -200,7 +200,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                              u.RotatedAbout(axis, angles), v.RotatedAbout(axis, angles));
     s0.color = color;
 
-    hEntity face0 = group->Remap(Entity::NO_ENTITY, startMapping);
+    hEntity face0 = group->Remap(EntityBase::NO_ENTITY, startMapping);
     s0.face = face0.v;
 
     s1 = SSurface::FromPlane(
@@ -208,7 +208,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
         u.ScaledBy(-1).RotatedAbout(axis, anglef), v.RotatedAbout(axis, anglef));
     s1.color = color;
 
-    hEntity face1 = group->Remap(Entity::NO_ENTITY, endMapping);
+    hEntity face1 = group->Remap(EntityBase::NO_ENTITY, endMapping);
     s1.face = face1.v;
 
     hSSurface hs0 = surface.AddAndAssignId(&s0);

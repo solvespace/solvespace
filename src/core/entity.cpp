@@ -130,7 +130,7 @@ Expr *EntityBase::CircleGetRadiusExpr() const {
     if(type == Type::CIRCLE) {
         return SK.GetEntity(distance)->DistanceGetExpr();
     } else if(type == Type::ARC_OF_CIRCLE) {
-        return Constraint::Distance(workplane, point[0], point[1]);
+        return ConstraintBase::Distance(workplane, point[0], point[1]);
     } else ssassert(false, "Unexpected entity type");
 }
 
@@ -650,7 +650,7 @@ void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) con
 }
 
 ExprVector EntityBase::PointGetExprsInWorkplane(hEntity wrkpl) const {
-    if(wrkpl == Entity::FREE_IN_3D) {
+    if(wrkpl == EntityBase::FREE_IN_3D) {
         return PointGetExprs();
     }
 
@@ -955,7 +955,7 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             auto it = std::find_if(SK.constraint.begin(), SK.constraint.end(),
                                    [&](ConstraintBase const &con) {
                                        return (con.group == group) &&
-                                              (con.type == Constraint::Type::POINTS_COINCIDENT) &&
+                                              (con.type == ConstraintBase::Type::POINTS_COINCIDENT) &&
                                               ((con.ptA == point[1] && con.ptB == point[2]) ||
                                                (con.ptA == point[2] && con.ptB == point[1]));
                                    });
@@ -963,8 +963,8 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
                 break;
             }
 
-            Expr *ra = Constraint::Distance(workplane, point[0], point[1]);
-            Expr *rb = Constraint::Distance(workplane, point[0], point[2]);
+            Expr *ra = ConstraintBase::Distance(workplane, point[0], point[1]);
+            Expr *rb = ConstraintBase::Distance(workplane, point[0], point[2]);
             AddEq(l, ra->Minus(rb), 0);
             break;
         }
@@ -991,6 +991,257 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
 
         default: // Most entities do not generate equations.
             break;
+    }
+}
+
+void EntityBase::CalculateNumerical(bool forExport) {
+    if(IsPoint()) actPoint = PointGetNum();
+    if(IsNormal()) actNormal = NormalGetNum();
+    if(type == Type::DISTANCE || type == Type::DISTANCE_N_COPY) {
+        actDistance = DistanceGetNum();
+    }
+    if(IsFace()) {
+        actPoint  = FaceGetPointNum();
+        Vector n = FaceGetNormalNum();
+        actNormal = Quaternion::From(0, n.x, n.y, n.z);
+    }
+    if(forExport) {
+#ifndef SOLVESPACE_CORE_ONLY
+        actVisible = static_cast<Entity*>(this)->IsVisible();
+#else
+        actVisible = true;
+#endif
+    } else {
+        actVisible = true;
+    }
+}
+
+void EntityBase::GenerateEdges(SEdgeList *el) {
+    SBezierList sbl = {};
+    GenerateBezierCurves(&sbl);
+
+    for(int i = 0; i < sbl.l.n; i++) {
+        SBezier *sb = &(sbl.l[i]);
+        List<Vector> lv = {};
+        sb->MakePwlInto(&lv);
+        for(int j = 1; j < lv.n; j++) {
+            el->AddEdge(lv[j-1], lv[j], Style::ForEntity(h).v, i);
+        }
+        lv.Clear();
+    }
+    sbl.Clear();
+}
+
+void EntityBase::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const {
+    static const int MAX_N = BandedMatrix::MAX_UNKNOWNS;
+    int ep = extraPoints;
+
+    int n   = periodic ? 3 + ep : ep;
+    ssassert(n < MAX_N, "Too many unknowns");
+    int pts = periodic ? 4 + ep : 2 + ep;
+
+    int i, j, a;
+
+    Vector ctrl_s = {};
+    Vector ctrl_f = {};
+    Vector pt[MAX_N+4];
+    if(periodic) {
+        for(i = 0; i < ep + 3; i++) {
+            pt[i] = SK.GetEntity(point[i])->PointGetNum();
+        }
+        pt[i++] = SK.GetEntity(point[0])->PointGetNum();
+    } else {
+        ctrl_s = SK.GetEntity(point[1])->PointGetNum();
+        ctrl_f = SK.GetEntity(point[ep+2])->PointGetNum();
+        j = 0;
+        pt[j++] = SK.GetEntity(point[0])->PointGetNum();
+        for(i = 2; i <= ep + 1; i++) {
+            pt[j++] = SK.GetEntity(point[i])->PointGetNum();
+        }
+        pt[j++] = SK.GetEntity(point[ep+3])->PointGetNum();
+    }
+
+    double Xx[MAX_N], Xy[MAX_N], Xz[MAX_N];
+    for(a = 0; a < 3; a++) {
+        BandedMatrix bm = {};
+        bm.n = n;
+
+        for(i = 0; i < n; i++) {
+            int im, it, ip;
+            if(periodic) {
+                im = WRAP(i - 1, n);
+                it = i;
+                ip = WRAP(i + 1, n);
+            } else {
+                im = i;
+                it = i + 1;
+                ip = i + 2;
+            }
+            Vector4 A, B, C, D, E;
+            C = Vector4::From((pt[it]).Element(a), 0, 0, 0);
+            B = C.Plus(Vector4::From(0, 0, -1, 0));
+            D = C.Plus(Vector4::From(0, 0, 1, 0));
+            if(i == 0 && !periodic) {
+                A = Vector4::From(ctrl_s.Element(a), 0, 0, 0);
+            } else {
+                A = Vector4::From(pt[im].Element(a), 1, 0, 0);
+            }
+            if(i == (n - 1) && !periodic) {
+                E = Vector4::From(ctrl_f.Element(a), 0, 0, 0);
+            } else {
+                E = Vector4::From((pt[ip]).Element(a), 0, 0, -1);
+            }
+            Vector4 fprev_pp = (C.Minus(B.ScaledBy(2))).Plus(A),
+                    fnext_pp = (C.Minus(D.ScaledBy(2))).Plus(E),
+                    eq       = fprev_pp.Minus(fnext_pp);
+
+            bm.B[i] = -eq.w;
+            if(periodic) {
+                bm.A[i][WRAP(i-2, n)] = eq.x;
+                bm.A[i][WRAP(i-1, n)] = eq.y;
+                bm.A[i][i]            = eq.z;
+            } else {
+                if(i > 0) {
+                    bm.A[i][i - 1] = eq.x;
+                }
+                bm.A[i][i] = eq.y;
+                if(i < (n-1)) {
+                    bm.A[i][i + 1] = eq.z;
+                }
+            }
+        }
+        bm.Solve();
+        double *X = (a == 0) ? Xx :
+                    (a == 1) ? Xy :
+                               Xz;
+        memcpy(X, bm.X, n*sizeof(double));
+    }
+
+    for(i = 0; i < pts - 1; i++) {
+        Vector p0, p1, p2, p3;
+        if(periodic) {
+            p0 = pt[i];
+            int iw = WRAP(i - 1, n);
+            p1 = p0.Plus({Xx[iw], Xy[iw], Xz[iw]});
+        } else if(i == 0) {
+            p0 = pt[0];
+            p1 = ctrl_s;
+        } else {
+            p0 = pt[i];
+            p1 = p0.Plus({Xx[i-1], Xy[i-1], Xz[i-1]});
+        }
+        if(periodic) {
+            p3 = pt[i+1];
+            int iw = WRAP(i, n);
+            p2 = p3.Minus({Xx[iw], Xy[iw], Xz[iw]});
+        } else if(i == (pts - 2)) {
+            p3 = pt[pts-1];
+            p2 = ctrl_f;
+        } else {
+            p3 = pt[i+1];
+            p2 = p3.Minus({Xx[i], Xy[i], Xz[i]});
+        }
+        SBezier sb = SBezier::From(p0, p1, p2, p3);
+        sbl->l.Add(&sb);
+    }
+}
+
+void EntityBase::GenerateBezierCurves(SBezierList *sbl) const {
+    SBezier sb;
+
+    int i = sbl->l.n;
+
+    switch(type) {
+        case Type::LINE_SEGMENT: {
+            Vector a = SK.GetEntity(point[0])->PointGetNum();
+            Vector b = SK.GetEntity(point[1])->PointGetNum();
+            sb = SBezier::From(a, b);
+            sb.entity = h.v;
+            sbl->l.Add(&sb);
+            break;
+        }
+        case Type::CUBIC:
+            ComputeInterpolatingSpline(sbl, /*periodic=*/false);
+            break;
+
+        case Type::CUBIC_PERIODIC:
+            ComputeInterpolatingSpline(sbl, /*periodic=*/true);
+            break;
+
+        case Type::CIRCLE:
+        case Type::ARC_OF_CIRCLE: {
+            Vector center = SK.GetEntity(point[0])->PointGetNum();
+            Quaternion q = SK.GetEntity(normal)->NormalGetNum();
+            Vector u = q.RotationU(), v = q.RotationV();
+            double r = CircleGetRadiusNum();
+            double thetaa, thetab, dtheta;
+
+            if(r < LENGTH_EPS) {
+                break;
+            }
+
+            if(type == Type::CIRCLE) {
+                thetaa = 0;
+                thetab = 2*PI;
+                dtheta = 2*PI;
+            } else {
+                ArcGetAngles(&thetaa, &thetab, &dtheta);
+            }
+            int i, n;
+            if(dtheta > (3*PI/2 + 0.01)) {
+                n = 4;
+            } else if(dtheta > (PI + 0.01)) {
+                n = 3;
+            } else if(dtheta > (PI/2 + 0.01)) {
+                n = 2;
+            } else {
+                n = 1;
+            }
+            dtheta /= n;
+
+            for(i = 0; i < n; i++) {
+                double s, c;
+
+                c = cos(thetaa);
+                s = sin(thetaa);
+                Vector p0 = center.Plus(u.ScaledBy( r*c)).Plus(v.ScaledBy(r*s)),
+                       t0 =             u.ScaledBy(-r*s). Plus(v.ScaledBy(r*c));
+
+                thetaa += dtheta;
+
+                c = cos(thetaa);
+                s = sin(thetaa);
+                Vector p2 = center.Plus(u.ScaledBy( r*c)).Plus(v.ScaledBy(r*s)),
+                       t2 =             u.ScaledBy(-r*s). Plus(v.ScaledBy(r*c));
+
+                Vector p1 = Vector::AtIntersectionOfLines(p0, p0.Plus(t0),
+                                                          p2, p2.Plus(t2),
+                                                          NULL);
+
+                SBezier sb = SBezier::From(p0, p1, p2);
+                sb.weight[1] = cos(dtheta/2);
+                sbl->l.Add(&sb);
+            }
+            break;
+        }
+
+        case Type::TTF_TEXT: {
+            Vector topLeft = SK.GetEntity(point[0])->PointGetNum();
+            Vector botLeft = SK.GetEntity(point[1])->PointGetNum();
+            Vector n = Normal()->NormalN();
+            Vector v = topLeft.Minus(botLeft);
+            Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
+
+            SS.fonts.PlotString(font, str, sbl, extraPoints, botLeft, u, v);
+            break;
+        }
+
+        default:
+            break;
+    }
+
+    for(; i < sbl->l.n; i++) {
+        sbl->l[i].auxA = Style::ForEntity(h).v;
     }
 }
 

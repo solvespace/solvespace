@@ -7,6 +7,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+#ifndef SOLVESPACE_CORE_ONLY
+
 namespace SolveSpace {
 
 void SolveSpaceUI::UndoRemember() {
@@ -33,8 +35,10 @@ void SolveSpaceUI::UndoRedo() {
 }
 
 void SolveSpaceUI::UndoEnableMenus() {
+#ifndef SOLVESPACE_CORE_ONLY
     SS.GW.undoMenuItem->SetEnabled(undo.cnt > 0);
     SS.GW.redoMenuItem->SetEnabled(redo.cnt > 0);
+#endif
 }
 
 void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
@@ -86,7 +90,7 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
     for(auto &src : SK.param) { ut->param.Add(&src); }
     ut->style.ReserveMore(SK.style.n);
     for(auto &src : SK.style) { ut->style.Add(&src); }
-    ut->activeGroup = SS.GW.activeGroup;
+    ut->activeGroup = SS.activeGroup;
 
     uk->write = WRAP(uk->write + 1, MAX_UNDO);
 }
@@ -117,21 +121,23 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     ut->constraint.MoveSelfInto(&(SK.constraint));
     ut->param.MoveSelfInto(&(SK.param));
     ut->style.MoveSelfInto(&(SK.style));
-    SS.GW.activeGroup = ut->activeGroup;
+    SS.activeGroup = ut->activeGroup;
 
     // No need to free it, since a shallow copy was made above
     *ut = {};
 
     // And reset the state everywhere else in the program, since the
     // sketch just changed a lot.
+#ifndef SOLVESPACE_CORE_ONLY
     SS.GW.ClearSuper();
     SS.TW.ClearSuper();
+#endif
     SS.ReloadAllLinked(SS.saveFile);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     SS.ScheduleShowTW();
 
     // Activate the group that was active before.
-    Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
+    Group *activeGroup = SK.GetGroup(SS.activeGroup);
     activeGroup->Activate();
 }
 
@@ -155,3 +161,128 @@ void SolveSpaceUI::UndoClearState(UndoState *ut) {
 }
 
 } // namespace SolveSpace
+
+#else // SOLVESPACE_CORE_ONLY
+
+namespace SolveSpace {
+
+// Core-only undo/redo: full implementation without UI menu updates.
+void SolveSpaceCore::UndoRemember() {
+    unsaved = true;
+    PushFromCurrentOnto(&undo);
+    UndoClearStack(&redo);
+}
+
+void SolveSpaceCore::UndoUndo() {
+    if(undo.cnt <= 0) return;
+    PushFromCurrentOnto(&redo);
+    PopOntoCurrentFrom(&undo);
+}
+
+void SolveSpaceCore::UndoRedo() {
+    if(redo.cnt <= 0) return;
+    PushFromCurrentOnto(&undo);
+    PopOntoCurrentFrom(&redo);
+}
+
+void SolveSpaceCore::PushFromCurrentOnto(UndoStack *uk) {
+    if(uk->cnt == MAX_UNDO) {
+        UndoClearState(&(uk->d[uk->write]));
+    } else {
+        (uk->cnt)++;
+    }
+
+    UndoState *ut = &(uk->d[uk->write]);
+    *ut = {};
+    ut->group.ReserveMore(SK.group.n);
+    for(Group &src : SK.group) {
+        Group dest(src);
+        dest.clean = false;
+        dest.solved = {};
+        dest.polyLoops = {};
+        dest.bezierLoops = {};
+        dest.bezierOpens = {};
+        dest.polyError = {};
+        dest.thisMesh = {};
+        dest.runningMesh = {};
+        dest.thisShell = {};
+        dest.runningShell = {};
+        dest.displayMesh = {};
+        dest.displayOutlines = {};
+        dest.remap = src.remap;
+        dest.impMesh = {};
+        dest.impShell = {};
+        dest.impEntity = {};
+        ut->group.Add(&dest);
+    }
+    for(auto &src : SK.groupOrder) { ut->groupOrder.Add(&src); }
+    ut->request.ReserveMore(SK.request.n);
+    for(auto &src : SK.request) { ut->request.Add(&src); }
+    ut->constraint.ReserveMore(SK.constraint.n);
+    for(auto &src : SK.constraint) {
+        Constraint dest(src);
+        ut->constraint.Add(&dest);
+    }
+    ut->param.ReserveMore(SK.param.n);
+    for(auto &src : SK.param) { ut->param.Add(&src); }
+    ut->style.ReserveMore(SK.style.n);
+    for(auto &src : SK.style) { ut->style.Add(&src); }
+    ut->activeGroup = SS.activeGroup;
+
+    uk->write = WRAP(uk->write + 1, MAX_UNDO);
+}
+
+void SolveSpaceCore::PopOntoCurrentFrom(UndoStack *uk) {
+    ssassert(uk->cnt > 0, "Cannot pop from empty undo stack");
+    (uk->cnt)--;
+    uk->write = WRAP(uk->write - 1, MAX_UNDO);
+
+    UndoState *ut = &(uk->d[uk->write]);
+
+    for(hGroup hg : SK.groupOrder) {
+        Group *g = SK.GetGroup(hg);
+        g->Clear();
+    }
+    SK.group.Clear();
+    SK.groupOrder.Clear();
+    SK.request.Clear();
+    SK.constraint.Clear();
+    SK.param.Clear();
+    SK.style.Clear();
+
+    ut->group.MoveSelfInto(&(SK.group));
+    for(auto &gh : ut->groupOrder) { SK.groupOrder.Add(&gh); }
+    ut->request.MoveSelfInto(&(SK.request));
+    ut->constraint.MoveSelfInto(&(SK.constraint));
+    ut->param.MoveSelfInto(&(SK.param));
+    ut->style.MoveSelfInto(&(SK.style));
+    SS.activeGroup = ut->activeGroup;
+
+    *ut = {};
+
+    SS.ReloadAllLinked(SS.saveFile);
+    SS.GenerateAll(SolveSpaceCore::Generate::ALL);
+}
+
+void SolveSpaceCore::UndoClearStack(UndoStack *uk) {
+    while(uk->cnt > 0) {
+        uk->write = WRAP(uk->write - 1, MAX_UNDO);
+        (uk->cnt)--;
+        UndoClearState(&(uk->d[uk->write]));
+    }
+    *uk = {};
+}
+
+void SolveSpaceCore::UndoClearState(UndoState *ut) {
+    for(auto &g : ut->group) { g.remap.clear(); }
+    ut->group.Clear();
+    ut->request.Clear();
+    ut->constraint.Clear();
+    ut->param.Clear();
+    ut->style.Clear();
+    *ut = {};
+}
+
+} // namespace SolveSpace
+
+#endif // !SOLVESPACE_CORE_ONLY

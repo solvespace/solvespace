@@ -361,10 +361,12 @@ static void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
         arrow = arrow.WithMagnitude(0.01);
         arrow = arrow.Plus(mid);
 
+#ifndef SOLVESPACE_CORE_ONLY
         SS.nakedEdges.AddEdge(surf->PointAt(se->a.x, se->a.y),
                               surf->PointAt(se->b.x, se->b.y));
         SS.nakedEdges.AddEdge(surf->PointAt(mid.x, mid.y),
                               surf->PointAt(arrow.x, arrow.y));
+#endif
     }
 }
 

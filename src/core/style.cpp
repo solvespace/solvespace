@@ -92,27 +92,22 @@ void Style::CreateDefaultStyle(hStyle h) {
 }
 
 void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
+    if(d == NULL) d = &Defaults[0];
+
+#ifndef SOLVESPACE_CORE_ONLY
     Platform::SettingsRef settings = Platform::GetSettings();
 
-    if(d == NULL) d = &Defaults[0];
     s->color         = (factory)
                         ? d->color
                         : settings->ThawColor(CnfColor(d->cnfPrefix), d->color);
     s->width         = (factory)
                         ? d->width
                         : settings->ThawFloat(CnfWidth(d->cnfPrefix), (float)(d->width));
-    s->widthAs       = UnitsAs::PIXELS;
     s->textHeight    = (factory) ? 11.5
                                  : settings->ThawFloat(CnfTextHeight(d->cnfPrefix), 11.5);
-    s->textHeightAs  = UnitsAs::PIXELS;
-    s->textOrigin    = TextOrigin::NONE;
-    s->textAngle     = 0;
-    s->visible       = true;
     s->exportable    = (factory)
                         ? d->exportable
                         : settings->ThawBool(CnfExportable(d->cnfPrefix), d->exportable);
-    s->filled        = false;
-    s->fillColor     = RGBf(0.3, 0.3, 0.3);
     s->stippleType   = (factory)
                         ? d->stippleType
                         : Style::StipplePatternFromString(
@@ -121,6 +116,23 @@ void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
     s->stippleScale  = (factory)
                         ? 15.0
                         : settings->ThawFloat(CnfStippleScale(d->cnfPrefix), 15.0);
+#else
+    // In core-only mode, always use factory defaults (no platform settings).
+    s->color         = d->color;
+    s->width         = d->width;
+    s->textHeight    = 11.5;
+    s->exportable    = d->exportable;
+    s->stippleType   = d->stippleType;
+    s->stippleScale  = 15.0;
+#endif
+
+    s->widthAs       = UnitsAs::PIXELS;
+    s->textHeightAs  = UnitsAs::PIXELS;
+    s->textOrigin    = TextOrigin::NONE;
+    s->textAngle     = 0;
+    s->visible       = true;
+    s->filled        = false;
+    s->fillColor     = RGBf(0.3, 0.3, 0.3);
     s->zIndex        = d->zIndex;
 }
 
@@ -133,6 +145,7 @@ void Style::LoadFactoryDefaults() {
     SS.backgroundColor = RGBi(0, 0, 0);
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 void Style::FreezeDefaultStyles(Platform::SettingsRef settings) {
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
@@ -144,6 +157,7 @@ void Style::FreezeDefaultStyles(Platform::SettingsRef settings) {
         settings->FreezeBool(CnfExportable(d->cnfPrefix), Exportable(d->h.v));
     }
 }
+#endif
 
 uint32_t Style::CreateCustomStyle(bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
@@ -153,6 +167,7 @@ uint32_t Style::CreateCustomStyle(bool rememberForUndo) {
     return hs.v;
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 void Style::AssignSelectionToStyle(uint32_t v) {
     bool showError = false;
     SS.GW.GroupSelection();
@@ -189,13 +204,14 @@ void Style::AssignSelectionToStyle(uint32_t v) {
     }
 
     SS.GW.ClearSelection();
-    SS.GW.Invalidate();
+    SS.Refresh();
 
     // And show that style's info screen in the text window.
     SS.TW.GoToScreen(TextWindow::Screen::STYLE_INFO);
     SS.TW.shown.style.v = v;
     SS.ScheduleShowTW();
 }
+#endif
 
 //-----------------------------------------------------------------------------
 // Look up a style by its handle. If that style does not exist, then create
@@ -276,7 +292,7 @@ RgbaColor Style::FillColor(hStyle h, bool forExport) {
 double Style::Width(hStyle h) {
     Style *s = Get(h);
     switch(s->widthAs) {
-        case UnitsAs::MM:     return s->width * SS.GW.scale;
+        case UnitsAs::MM:     return s->width * SS.viewScale;
         case UnitsAs::PIXELS: return s->width;
     }
     ssassert(false, "Unexpected units");
@@ -287,7 +303,7 @@ double Style::Width(hStyle h) {
 //-----------------------------------------------------------------------------
 double Style::WidthMm(int hs) {
     double widthpx = Width(hs);
-    return widthpx / SS.GW.scale;
+    return widthpx / SS.viewScale;
 }
 
 //-----------------------------------------------------------------------------
@@ -296,7 +312,7 @@ double Style::WidthMm(int hs) {
 double Style::TextHeight(hStyle h) {
     Style *s = Get(h);
     switch(s->textHeightAs) {
-        case UnitsAs::MM:     return s->textHeight * SS.GW.scale;
+        case UnitsAs::MM:     return s->textHeight * SS.viewScale;
         case UnitsAs::PIXELS: return s->textHeight;
     }
     ssassert(false, "Unexpected units");
@@ -307,6 +323,7 @@ double Style::DefaultTextHeight() {
     return TextHeight(hs);
 }
 
+#ifndef SOLVESPACE_CORE_ONLY
 //-----------------------------------------------------------------------------
 // Return the parameters of this style, as a canvas stroke.
 //-----------------------------------------------------------------------------
@@ -332,6 +349,7 @@ Canvas::Stroke Style::Stroke(int hsv) {
     hStyle hs = { (uint32_t) hsv };
     return Style::Stroke(hs);
 }
+#endif // !SOLVESPACE_CORE_ONLY
 
 //-----------------------------------------------------------------------------
 // Should lines and curves from this style appear in the output file? Only
@@ -349,18 +367,15 @@ bool Style::Exportable(int si) {
 // default style.
 //-----------------------------------------------------------------------------
 hStyle Style::ForEntity(hEntity he) {
-    Entity *e = SK.GetEntity(he);
-    // If the entity has a special style, use that. If that style doesn't
-    // exist yet, then it will get created automatically later.
-    if(e->style.v != 0) {
+    EntityBase *e = SK.entity.FindByIdNoOops(he);
+    if(e && e->style.v != 0) {
         return e->style;
     }
 
-    // Otherwise, we use the default rules.
     hStyle hs;
-    if(e->group != SS.GW.activeGroup) {
+    if(e && e->group != SS.activeGroup) {
         hs.v = INACTIVE_GRP;
-    } else if(e->construction) {
+    } else if(e && e->construction) {
         hs.v = CONSTRUCTION;
     } else {
         hs.v = ACTIVE_GRP;
@@ -429,7 +444,7 @@ double Style::StippleScaleMm(hStyle hs) {
     if(s->widthAs == UnitsAs::MM) {
         return s->stippleScale;
     } else if(s->widthAs == UnitsAs::PIXELS) {
-        return s->stippleScale / SS.GW.scale;
+        return s->stippleScale / SS.viewScale;
     }
     return 1.0;
 }
@@ -443,6 +458,7 @@ std::string Style::DescriptionString() const {
 }
 
 
+#ifndef SOLVESPACE_CORE_ONLY
 void TextWindow::ScreenShowListOfStyles(int link, uint32_t v) {
     SS.TW.GoToScreen(Screen::LIST_OF_STYLES);
 }
@@ -518,7 +534,7 @@ void TextWindow::ScreenDeleteStyle(int link, uint32_t v) {
         // the style, so no need to do anything else.
     }
     SS.TW.GoToScreen(Screen::LIST_OF_STYLES);
-    SS.GW.Invalidate();
+    SS.Refresh();
 }
 
 void TextWindow::ScreenChangeStylePatternType(int link, uint32_t v) {
@@ -607,15 +623,15 @@ void TextWindow::ScreenChangeStyleYesNo(int link, uint32_t v) {
         case 'w':
             if(s->widthAs != Style::UnitsAs::MM) {
                 s->widthAs = Style::UnitsAs::MM;
-                s->width /= SS.GW.scale;
-                s->stippleScale /= SS.GW.scale;
+                s->width /= SS.viewScale;
+                s->stippleScale /= SS.viewScale;
             }
             break;
         case 'W':
             if(s->widthAs != Style::UnitsAs::PIXELS) {
                 s->widthAs = Style::UnitsAs::PIXELS;
-                s->width *= SS.GW.scale;
-                s->stippleScale *= SS.GW.scale;
+                s->width *= SS.viewScale;
+                s->stippleScale *= SS.viewScale;
             }
             break;
 
@@ -623,14 +639,14 @@ void TextWindow::ScreenChangeStyleYesNo(int link, uint32_t v) {
         case 'g':
             if(s->textHeightAs != Style::UnitsAs::MM) {
                 s->textHeightAs = Style::UnitsAs::MM;
-                s->textHeight /= SS.GW.scale;
+                s->textHeight /= SS.viewScale;
             }
             break;
 
         case 'G':
             if(s->textHeightAs != Style::UnitsAs::PIXELS) {
                 s->textHeightAs = Style::UnitsAs::PIXELS;
-                s->textHeight *= SS.GW.scale;
+                s->textHeight *= SS.viewScale;
             }
             break;
 
@@ -674,7 +690,7 @@ void TextWindow::ScreenChangeStyleYesNo(int link, uint32_t v) {
             s->textOrigin = (Style::TextOrigin)((uint32_t)s->textOrigin |  (uint32_t)Style::TextOrigin::TOP);
             break;
     }
-    SS.GW.Invalidate(/*clearPersistent=*/true);
+    SS.Refresh(/*clearPersistent=*/true);
 }
 
 bool TextWindow::EditControlDoneForStyles(const std::string &str) {
@@ -944,5 +960,6 @@ void TextWindow::ShowStyleInfo() {
 void TextWindow::ScreenAssignSelectionToStyle(int link, uint32_t v) {
     Style::AssignSelectionToStyle(v);
 }
+#endif // !SOLVESPACE_CORE_ONLY
 
 } // namespace SolveSpace

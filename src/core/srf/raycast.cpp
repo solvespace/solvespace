@@ -605,7 +605,9 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         if(cnt > 5) {
             dbp("can't find a ray that doesn't hit on edge!");
             dbp("on edge = %d, edge_inters = %d", onEdge, edge_inters);
+#ifndef SOLVESPACE_CORE_ONLY
             SS.nakedEdges.AddEdge(ea, eb);
+#endif
             break;
         }
     }
