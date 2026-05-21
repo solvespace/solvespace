@@ -7,6 +7,9 @@
 #include <emscripten/val.h>
 #include <emscripten/html5.h>
 #include <emscripten/bind.h>
+#include <emscripten/fetch.h>
+#include <cstdio>
+#include <cstring>
 #include "config.h"
 #include "solvespace.h"
 
@@ -1265,6 +1268,70 @@ MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
 // In emscripten pseudo filesystem, all userdata will be stored in this directory.
 static std::string basePathInFilesystem = "/data/";
 
+static std::string GetLaunchFileUrl() {
+    val urlParamsClass = val::global("URLSearchParams");
+    if(urlParamsClass.isUndefined() || urlParamsClass.isNull()) {
+        return "";
+    }
+
+    val searchParams = urlParamsClass.new_(val::global("window")["location"]["search"]);
+    for(const char *key : {"url", "file"}) {
+        val value = searchParams.call<val>("get", val(key));
+        if(!value.isNull() && !value.isUndefined()) {
+            std::string launchUrl = value.as<std::string>();
+            if(!launchUrl.empty()) {
+                return launchUrl;
+            }
+        }
+    }
+    return "";
+}
+
+static std::string GetFilenameFromUrl(const std::string &url) {
+    val jsUrlClass = val::global("URL");
+    if(!(jsUrlClass.isUndefined() || jsUrlClass.isNull())) {
+        val absoluteUrl = jsUrlClass.new_(url, val::global("window")["location"]["href"]);
+        std::string pathname = absoluteUrl["pathname"].as<std::string>();
+        if(!pathname.empty()) {
+            std::string fileName = Path::From(pathname).FileName();
+            if(!fileName.empty()) {
+                return fileName;
+            }
+        }
+    }
+    return "opened-from-url.slvs";
+}
+
+static bool DownloadFileToFilesystem(const std::string &url, const std::string &filename) {
+    emscripten_fetch_attr_t fetchAttributes;
+    emscripten_fetch_attr_init(&fetchAttributes);
+    strcpy(fetchAttributes.requestMethod, "GET");
+    fetchAttributes.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_SYNCHRONOUS;
+
+    emscripten_fetch_t *fetch = emscripten_fetch(&fetchAttributes, url.c_str());
+    if(fetch == nullptr) {
+        dbp("Failed to create fetch request for URL: %s", url.c_str());
+        return false;
+    }
+
+    bool success = false;
+    if(fetch->status == 200 && fetch->numBytes > 0) {
+        FILE *file = fopen(filename.c_str(), "wb");
+        if(file != nullptr) {
+            size_t bytesWritten = fwrite(fetch->data, 1, fetch->numBytes, file);
+            fclose(file);
+            success = (bytesWritten == (size_t)fetch->numBytes);
+        }
+    }
+    if(!success) {
+        dbp("Failed to download URL: %s (status=%d, bytes=%llu)",
+            url.c_str(), fetch->status, fetch->numBytes);
+    }
+
+    emscripten_fetch_close(fetch);
+    return success;
+}
+
 
 /* FileDialog that can open, save and browse. Also refer `src/platform/html/filemanagerui.js`.
  */
@@ -1433,7 +1500,30 @@ std::vector<std::string> InitGui(int argc, char **argv) {
     // FIXME(emscripten): get locale from user preferences
     SetLocale("en_US");
 
-    return {};
+    std::vector<std::string> args;
+    for(int i = 0; i < argc; i++) {
+        args.push_back(argv[i]);
+    }
+    if(args.empty()) {
+        args.push_back("solvespace");
+    }
+
+    std::string launchFileUrl = GetLaunchFileUrl();
+    if(args.size() < 2 && !launchFileUrl.empty()) {
+        EM_ASM({
+            try {
+                FS.mkdir(UTF8ToString($0));
+            } catch(e) {}
+        }, basePathInFilesystem.c_str());
+
+        std::string launchFileName = GetFilenameFromUrl(launchFileUrl);
+        std::string launchFilePath = Path::From(basePathInFilesystem).Join(launchFileName).raw;
+        if(DownloadFileToFilesystem(launchFileUrl, launchFilePath)) {
+            args.push_back(launchFilePath);
+        }
+    }
+
+    return args;
 }
 
 static void MainLoopIteration() {
