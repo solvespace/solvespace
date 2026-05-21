@@ -9,6 +9,7 @@
 #include <emscripten/bind.h>
 #include <emscripten/fetch.h>
 #include <cstdio>
+#include <cinttypes>
 #include <cstring>
 #include "config.h"
 #include "solvespace.h"
@@ -1289,12 +1290,17 @@ static std::string GetLaunchFileUrl() {
 
 static std::string GetFilenameFromUrl(const std::string &url) {
     val jsUrlClass = val::global("URL");
-    if(!(jsUrlClass.isUndefined() || jsUrlClass.isNull())) {
-        val absoluteUrl = jsUrlClass.new_(url, val::global("window")["location"]["href"]);
-        std::string pathname = absoluteUrl["pathname"].as<std::string>();
-        if(!pathname.empty()) {
-            std::string fileName = Path::From(pathname).FileName();
-            if(!fileName.empty()) {
+    if(jsUrlClass.isUndefined() || jsUrlClass.isNull()) {
+        return "opened-from-url.slvs";
+    }
+
+    val absoluteUrl = jsUrlClass.new_(url, val::global("window")["location"]["href"]);
+    std::string pathname = absoluteUrl["pathname"].as<std::string>();
+    if(!pathname.empty()) {
+        std::string fileName = Path::From(pathname).FileName();
+        if(!fileName.empty() && fileName != "." && fileName != "..") {
+            if(fileName.find('/') == std::string::npos &&
+               fileName.find('\\') == std::string::npos) {
                 return fileName;
             }
         }
@@ -1320,11 +1326,11 @@ static bool DownloadFileToFilesystem(const std::string &url, const std::string &
         if(file != nullptr) {
             size_t bytesWritten = fwrite(fetch->data, 1, fetch->numBytes, file);
             fclose(file);
-            success = (bytesWritten == (size_t)fetch->numBytes);
+            success = ((uint64_t)bytesWritten == fetch->numBytes);
         }
     }
     if(!success) {
-        dbp("Failed to download URL: %s (status=%d, bytes=%llu)",
+        dbp("Failed to download URL: %s (status=%d, bytes=%" PRIu64 ")",
             url.c_str(), fetch->status, fetch->numBytes);
     }
 
