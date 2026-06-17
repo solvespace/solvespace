@@ -574,6 +574,15 @@ void SolveSpaceUI::AddToRecentList(const Platform::Path &filename) {
     GW.PopulateRecentFiles();
 }
 
+static Platform::Path EnsureSketchExtension(Platform::Path filename) {
+    std::string basename = filename.FileName();
+    if(basename.find('.') == std::string::npos) {
+        filename.raw += ".";
+        filename.raw += SolveSpaceUI::SKETCH_EXT;
+    }
+    return filename;
+}
+
 bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
     Platform::SettingsRef settings = Platform::GetSettings();
     Platform::Path newSaveFile = saveFile;
@@ -594,6 +603,7 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
             dbp("Calling FreezeChoices()...");
             dialog->FreezeChoices(settings, "Sketch");
             newSaveFile = dialog->GetFilename();
+            newSaveFile = EnsureSketchExtension(newSaveFile);
         } else {
             return false;
         }
