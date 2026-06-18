@@ -574,13 +574,37 @@ void SolveSpaceUI::AddToRecentList(const Platform::Path &filename) {
     GW.PopulateRecentFiles();
 }
 
-static Platform::Path EnsureSketchExtension(Platform::Path filename) {
-    std::string basename = filename.FileName();
+bool EnsureSketchExtension(Platform::Path *filename, bool *shouldConfirmOverwrite) {
+    std::string basename = filename->FileName();
     if(basename.find('.') == std::string::npos) {
-        filename.raw += ".";
-        filename.raw += SolveSpaceUI::SKETCH_EXT;
+        filename->raw += ".";
+        filename->raw += SolveSpaceUI::SKETCH_EXT;
+        if(shouldConfirmOverwrite != NULL) {
+            *shouldConfirmOverwrite = FileExists(*filename);
+        }
+        return true;
     }
-    return filename;
+    if(shouldConfirmOverwrite != NULL) {
+        *shouldConfirmOverwrite = false;
+    }
+    return false;
+}
+
+static bool OkayToOverwriteFile(const Platform::Path &filename) {
+    Platform::MessageDialogRef dialog = CreateMessageDialog(SS.GW.window);
+
+    using Platform::MessageDialog;
+    dialog->SetType(MessageDialog::Type::QUESTION);
+    dialog->SetTitle(C_("title", "Overwrite File?"));
+    dialog->SetMessage(ssprintf(C_("dialog", "The file “%s” already exists."),
+                                filename.raw.c_str()));
+    dialog->SetDescription(C_("dialog", "Do you want to replace it?"));
+    dialog->AddButton(C_("button", "&Overwrite"), MessageDialog::Response::YES,
+                      /*isDefault=*/false);
+    dialog->AddButton(C_("button", "&Cancel"), MessageDialog::Response::NO,
+                      /*isDefault=*/true);
+
+    return dialog->RunModal() == MessageDialog::Response::YES;
 }
 
 bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
@@ -603,7 +627,11 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
             dbp("Calling FreezeChoices()...");
             dialog->FreezeChoices(settings, "Sketch");
             newSaveFile = dialog->GetFilename();
-            newSaveFile = EnsureSketchExtension(newSaveFile);
+            bool shouldConfirmOverwrite = false;
+            EnsureSketchExtension(&newSaveFile, &shouldConfirmOverwrite);
+            if(shouldConfirmOverwrite && !OkayToOverwriteFile(newSaveFile)) {
+                return false;
+            }
         } else {
             return false;
         }

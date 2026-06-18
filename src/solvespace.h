@@ -740,6 +740,7 @@ void ImportDxf(const Platform::Path &file);
 void ImportDwg(const Platform::Path &file);
 bool LinkIDF(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh);
 bool LinkStl(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh);
+bool EnsureSketchExtension(Platform::Path *filename, bool *shouldConfirmOverwrite = NULL);
 
 extern SolveSpaceUI SS;
 extern Sketch SK;
