@@ -55,7 +55,7 @@ jobs:
           git fetch --unshallow --tags
 
           ls artifacts
-          unzip artifacts/slvs-wasmlib/slvs-wasmlib.zip -d js
+          unzip artifacts/slvs-wasmlib.zip -d js
           ls js
 
           mkdir empty-build
