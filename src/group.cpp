@@ -788,7 +788,7 @@ void Group::Generate(EntityList *entity, ParamList *param)
     ssassert(false, "Unexpected group type");
 }
 
-bool Group::IsSolvedOkay() {
+bool Group::IsSolvedOkay() const {
     return this->solved.how == SolveResult::OKAY ||
            (this->allowRedundant && this->solved.how == SolveResult::REDUNDANT_OKAY);
 }
