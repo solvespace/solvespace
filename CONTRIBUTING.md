@@ -289,3 +289,9 @@ the following commands in your shell:
     export G_DEBUG=fatal_warnings
     export LIBGL_DEBUG=1
     export MESA_DEBUG=1
+
+### LLM or AI contributions
+
+AI generated contributions are not usually accepted. The codebase here is complex and follows various conventions (see above). As of 2026, LLMs tend to generate excessive code that requires a lot of review and changes. The maintainers do not want to baby sit LLMs (especially with you as a proxy). Walking a human through a PR may be worthwhile, since you can actually learn from the discussion which might make you a better future contributor. Fixing LLM slop is usually a waste of our time.
+
+Having said that, feel free to use AI to understand the code and help you to find a solution that works, is minimal and complete.
