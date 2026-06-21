@@ -89,9 +89,16 @@ const MenuEntry Menu[] = {
 { 1, N_("Zoom To &Fit"),                Command::ZOOM_TO_FIT,      'f',     KN, mView  },
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Align View to &Workplane"),    Command::ONTO_WORKPLANE,   'w',     KN, mView  },
+#ifdef __APPLE__
+{ 1, N_("Nearest &Ortho View"),         Command::NEAREST_ORTHO,    C|'2',   KN, mView  },
+{ 1, N_("Nearest &Isometric View"),     Command::NEAREST_ISO,      C|'3',   KN, mView  },
+{ 1, N_("&Center View At Point"),       Command::CENTER_VIEW,      C|'4',   KN, mView  },
+#else
 { 1, N_("Nearest &Ortho View"),         Command::NEAREST_ORTHO,    F|2,     KN, mView  },
 { 1, N_("Nearest &Isometric View"),     Command::NEAREST_ISO,      F|3,     KN, mView  },
 { 1, N_("&Center View At Point"),       Command::CENTER_VIEW,      F|4,     KN, mView  },
+#endif
+
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Show Snap &Grid"),             Command::SHOW_GRID,        '>',     KC, mView  },
 { 1, N_("Darken Inactive Solids"),      Command::DIM_SOLID_MODEL,  0,       KC, mView  },
