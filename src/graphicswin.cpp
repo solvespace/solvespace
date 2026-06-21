@@ -39,7 +39,7 @@ struct MenuEntry {
 #define KC    MenuKind::CHECK_MARK
 #define KR    MenuKind::RADIO_MARK
 const MenuEntry Menu[] = {
-//lv label                              cmd                        accel    kind
+//lv label                              cmd                        accel    kind  *fn
 { 0, N_("&File"),                       Command::NONE,             0,       KN, NULL   },
 { 1, N_("&New"),                        Command::NEW,              C|'n',   KN, mFile  },
 { 1, N_("&Open..."),                    Command::OPEN,             C|'o',   KN, mFile  },
@@ -62,7 +62,8 @@ const MenuEntry Menu[] = {
 { 0, N_("&Edit"),                       Command::NONE,             0,       KN, NULL   },
 { 1, N_("&Undo"),                       Command::UNDO,             C|'z',   KN, mEdit  },
 { 1, N_("&Redo"),                       Command::REDO,             C|'y',   KN, mEdit  },
-{ 1, N_("Re&generate All"),             Command::REGEN_ALL,        ' ',     KN, mEdit  },
+{ 1, N_("Re&generate All"),             Command::REGEN_ALL,        C|'r',     KN, mEdit  },
+
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Snap Selection to &Grid"),     Command::SNAP_TO_GRID,     '.',     KN, mEdit  },
 { 1, N_("Rotate Imported &90°"),        Command::ROTATE_90,        '9',     KN, mEdit  },
@@ -143,6 +144,8 @@ const MenuEntry Menu[] = {
 { 1, N_("To&ggle Construction"),        Command::CONSTRUCTION,     'g',     KN, mReq   },
 { 1, N_("Ta&ngent Arc at Point"),       Command::TANGENT_ARC,      S|'a',   KN, mReq   },
 { 1, N_("Split Curves at &Intersection"), Command::SPLIT_CURVES,   'i',     KN, mReq   },
+{ 1, N_("Other Tools"),                 Command::NONE,             0,       KN, NULL   },
+{ 2, N_("Alternate Tool"),              Command::ALTERNATE_TOOL,   ' ',     KN, mEdit  },
 
 { 0, N_("&Constrain"),                  Command::NONE,             0,       KN, mCon   },
 { 1, N_("&Distance / Diameter"),        Command::DISTANCE_DIA,     'd',     KN, mCon   },
@@ -1128,6 +1131,11 @@ void GraphicsWindow::MenuEdit(Command id) {
             SS.GW.persistentDirty = true;
             break;
 
+        // this is the space bar alternative tool menu - switch between the most recent tool and mouse
+        case Command::ALTERNATE_TOOL:
+            SS.GW.AlternateTool();
+            break;
+            
         case Command::SELECT_ALL: {
             for(Entity &e : SK.entity) {
                 if(e.group != SS.GW.activeGroup) continue;
@@ -1369,8 +1377,9 @@ void GraphicsWindow::MenuRequest(Command id) {
             }
             s = _("click top left of image"); goto c;
 c:
+            //SS.GW.activeTool        = id;
             SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
-            SS.GW.pending.command = id;
+            SS.GW.pending.command   = id;
             SS.GW.pending.description = s;
             SS.ScheduleShowTW();
             SS.GW.Invalidate(); // repaint toolbar
@@ -1416,11 +1425,15 @@ c:
 
         default: ssassert(false, "Unexpected menu ID");
     }
+    // If tool can be used multiple times, mark as active.
+    if(SS.GW.CheckIfKeepCommandActive(SS.GW.pending.command)) {
+        SS.GW.activeTool = id;//SS.GW.pending.operation;
+    }
 }
 
 void GraphicsWindow::ClearSuper() {
     if(window) window->HideEditor();
-    ClearPending();
+    ClearPending(true); 
     ClearSelection();
     hover.Clear();
     EnsureValidActives();
