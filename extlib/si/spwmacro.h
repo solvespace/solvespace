@@ -1,11 +1,7 @@
 /*----------------------------------------------------------------------
  *  spwmacro.h -- cpp macros we ALWAYS use.
  *
-<<<<<<< spwmacro.h
  *  $Id: spwmacro.h,v 1.3 2001/01/16 01:18:40 HJin Exp $
-=======
- *  $Id: spwmacro.h,v 1.3 2001/01/16 01:18:40 HJin Exp $
->>>>>>> 1.1.1.1.4.1
  *
  *   We always seem to use the same macros.
  *   This is the place we define them.

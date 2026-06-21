@@ -38,7 +38,7 @@ target_link_libraries(slvs_deps INTERFACE
     ${FREETYPE_LIBRARY}
     mimalloc-static)
 
-if(NOT USE_QT_GUI OR ENABLE_CLI)
+if(NOT USE_QT_GUI OR USE_GTK4_GUI OR ENABLE_CLI)
     target_include_directories(slvs_deps SYSTEM INTERFACE ${CAIRO_INCLUDE_DIRS})
     target_link_libraries(slvs_deps INTERFACE ${CAIRO_LIBRARIES})
 endif()
@@ -400,6 +400,22 @@ if(ENABLE_GUI)
             Qt6::Core Qt6::Gui Qt6::OpenGLWidgets Qt6::Widgets
             # Qt5::Core Qt5::Gui Qt5::Widgets
          )
+    elseif(USE_GTK4_GUI)
+        target_sources(solvespace PRIVATE
+            platform/guigtk4.cpp)
+
+        target_include_directories(solvespace SYSTEM PRIVATE
+            ${GTKMM_INCLUDE_DIRS}
+            ${JSONC_INCLUDE_DIRS}
+            ${FONTCONFIG_INCLUDE_DIRS})
+        target_link_directories(solvespace PRIVATE
+            ${GTKMM_LIBRARY_DIRS}
+            ${JSONC_LIBRARY_DIRS}
+            ${FONTCONFIG_LIBRARY_DIRS})
+        target_link_libraries(solvespace PRIVATE
+            ${GTKMM_LIBRARIES}
+            ${JSONC_LIBRARIES}
+            ${FONTCONFIG_LIBRARIES})
     else()
         target_sources(solvespace PRIVATE
             platform/guigtk.cpp)
