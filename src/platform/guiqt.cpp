@@ -137,26 +137,25 @@ class FileDialogImplQt final : public FileDialog {
 public:
     QFileDialog fileDialogQ;
     QStringList filters;
-    QStringList defaultSuffixes;
     bool filtersMod;
-    bool isSaveDialog;
 
-    FileDialogImplQt(QWidget* parent, bool save)
-        : filtersMod(false), isSaveDialog(save) {
+    FileDialogImplQt(QWidget* parent, bool save) : filtersMod(false) {
         fileDialogQ.setParent(parent);
         fileDialogQ.setWindowFlags(Qt::Dialog); // Reset after setParent.
-
-        // NOTE: The file extension is automatically set by the KDE native
-        // dialog and now with the Qt one.
 #if 0
+        // For testing Qt dialog.
         fileDialogQ.setOption(QFileDialog::DontUseNativeDialog);
 #endif
 
         if (save) {
             fileDialogQ.setAcceptMode(QFileDialog::AcceptSave);
+
+            // NOTE: Solvespace requires a file extension for saved files.
+            // The file extension is automatically set by the KDE native
+            // dialog but not with the Qt or Gtk ones, so we must force one.
             QObject::connect(&fileDialogQ, &QFileDialog::filterSelected,
                              [this](const QString &filter) {
-                                 updateDefaultSuffix(filter);
+                                 updateSaveSuffix(filter);
                              });
         }
     }
@@ -194,28 +193,28 @@ public:
 
         //printf("AddFilter \"%s\"\n", fline.toLocal8Bit().data());
         filters.append(fline);
-        defaultSuffixes.append(extensions.empty() ? QString()
-                                                  : QString::fromStdString(extensions.front()));
         filtersMod = true;
     }
 
-    void updateDefaultSuffix(const QString &filter) {
-        if(!isSaveDialog) return;
-
-        int filterIndex = filters.indexOf(filter);
-        if(filterIndex < 0 || filterIndex >= defaultSuffixes.size()) {
-            filterIndex = 0;
-        }
-        if(filterIndex < defaultSuffixes.size()) {
-            fileDialogQ.setDefaultSuffix(defaultSuffixes[filterIndex]);
+    // private
+    void updateSaveSuffix(const QString &filter) {
+        int dot = filter.indexOf('.');
+        int spc = filter.indexOf(' ', dot);
+        int end = filter.indexOf(')', dot);
+        if (dot > 0 && end > dot) {
+            if (spc > 0 && spc < end)
+                end = spc;
+            fileDialogQ.setDefaultSuffix(filter.mid(dot, end - dot));
         }
     }
 
+    // private
     void updateFilters() {
         if (filtersMod) {
             filtersMod = false;
             fileDialogQ.setNameFilters(filters);
-            updateDefaultSuffix(fileDialogQ.selectedNameFilter());
+            if (fileDialogQ.acceptMode() == QFileDialog::AcceptSave)
+                updateSaveSuffix(fileDialogQ.selectedNameFilter());
         }
     }
 
@@ -236,7 +235,8 @@ public:
         fileDialogQ.setDirectory(QDir(QString::fromStdString(val)));
         val = settings->ThawString("Dialog_" + key + "_Filter");
         fileDialogQ.selectNameFilter(QString::fromStdString(val));
-        updateDefaultSuffix(fileDialogQ.selectedNameFilter());
+        if (fileDialogQ.acceptMode() == QFileDialog::AcceptSave)
+            updateSaveSuffix(fileDialogQ.selectedNameFilter());
     }
 
     bool RunModal() override {
