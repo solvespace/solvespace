@@ -145,15 +145,16 @@ public:
         : filtersMod(false), isSaveDialog(save) {
         fileDialogQ.setParent(parent);
         fileDialogQ.setWindowFlags(Qt::Dialog); // Reset after setParent.
-
-        // NOTE: The file extension is automatically set by the KDE native
-        // dialog and now with the Qt one.
 #if 0
+        // For testing Qt dialog.
         fileDialogQ.setOption(QFileDialog::DontUseNativeDialog);
 #endif
 
         if (save) {
             fileDialogQ.setAcceptMode(QFileDialog::AcceptSave);
+            // NOTE: SolveSpace requires a file extension in the filename.
+            // The file extension is automatically set by the KDE native
+            // dialog, while the Qt dialog requires a little more setup.
             QObject::connect(&fileDialogQ, &QFileDialog::filterSelected,
                              [this](const QString &filter) {
                                  updateDefaultSuffix(filter);
