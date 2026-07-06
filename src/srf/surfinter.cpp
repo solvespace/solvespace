@@ -44,12 +44,17 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
                 }
             }
         }
+        if(existing) {
+            // Copy the pwl points while still in the critical section;
+            // existing points into into->curve, which reallocates when
+            // another thread adds a curve.
+            SCurvePt *v;
+            for(v = existing->pts.First(); v; v = existing->pts.NextAfter(v)) {
+                sc.pts.Add(v);
+            }
+        }
     }// end omp critical
     if(existing) {
-        SCurvePt *v;
-        for(v = existing->pts.First(); v; v = existing->pts.NextAfter(v)) {
-            sc.pts.Add(v);
-        }
         if(backwards) sc.pts.Reverse();
         split = sc;
         sc = {};
