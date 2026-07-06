@@ -522,6 +522,72 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         return true;
     }
 
+    if(edge_inters >= 4 && edge_inters % 2 == 0) {
+        // More than two surfaces of our shell meet edge-on-edge along the
+        // given edge: regions of the shell join along a knife edge there
+        // (e.g. two prisms sharing a single edge, issue #1091). The faces
+        // along the knife edge divide the directions perpendicular to the
+        // edge at p into sectors that are alternately inside and outside
+        // the shell, so classify each side of our edge against the face
+        // that lies angularly closest to it: that face bounds the sector
+        // containing it, and its normal points out of that sector iff the
+        // sector is outside the shell.
+        Vector edge_d = (eb.Minus(ea)).WithMagnitude(1);
+        Vector en[2] = { edge_n_in, edge_n_out };
+        Vector ep[2];
+        double bestdot[2] = { VERY_NEGATIVE, VERY_NEGATIVE };
+        Vector bestn[2];
+        for(int i = 0; i < 2; i++) {
+            ep[i] = (en[i].Minus(edge_d.ScaledBy(en[i].Dot(edge_d))))
+                        .WithMagnitude(1);
+        }
+
+        for(SSurface &srf : surface) {
+            if(srf.LineEntirelyOutsideBbox(ea, eb, /*asSegment=*/true)) continue;
+
+            SEdgeList *sel = &(srf.edges);
+            SEdge *se;
+            for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+                if((ea.Equals(se->a) && eb.Equals(se->b)) ||
+                   (eb.Equals(se->a) && ea.Equals(se->b)) ||
+                    p.OnLineSegment(se->a, se->b))
+                {
+                    Point2d pm;
+                    srf.ClosestPointTo(p, &pm, /*mustConverge=*/false);
+                    Vector n = srf.NormalAt(pm);
+                    // A vector tangent to the intersecting surface at p,
+                    // pointing into that face, perpendicular to our edge.
+                    Vector f = ((se->b).Minus(se->a)).Cross(n);
+                    f = f.Minus(edge_d.ScaledBy(f.Dot(edge_d)));
+                    if(f.Magnitude() < LENGTH_EPS) continue;
+                    f = f.WithMagnitude(1);
+                    for(int i = 0; i < 2; i++) {
+                        double dot = ep[i].Dot(f);
+                        if(dot > bestdot[i]) {
+                            bestdot[i] = dot;
+                            bestn[i]   = n;
+                        }
+                    }
+                }
+            }
+        }
+
+        Class *dir[2] = { indir, outdir };
+        for(int i = 0; i < 2; i++) {
+            double dotn = en[i].DirectionCosineWith(bestn[i]);
+            if(bestdot[i] > 0 && fabs(dotn) < DOTP_TOL) {
+                // This side of our edge lies along the nearest face, so
+                // our surface is locally coincident with it there.
+                *dir[i] = (surf_n.Dot(bestn[i]) > 0) ? Class::SURF_COINC_SAME
+                                                     : Class::SURF_COINC_OPP;
+            } else {
+                *dir[i] = (dotn > 0) ? Class::SURF_OUTSIDE
+                                     : Class::SURF_INSIDE;
+            }
+        }
+        return true;
+    }
+
     if(edge_inters != 0) dbp("bad, edge_inters=%d", edge_inters);
 
     // Next, check for edge-on-surface. The ray-casting for edge-inside-shell

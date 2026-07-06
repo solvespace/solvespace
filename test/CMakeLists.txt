@@ -63,6 +63,7 @@ set(testsuite_SOURCES
     request/line_segment/test.cpp
     request/ttf_text/test.cpp
     request/workplane/test.cpp
+    group/boolean_knife_edge/test.cpp
     group/boolean_tangent_edge/test.cpp
     group/link/test.cpp
     group/translate_asy/test.cpp
