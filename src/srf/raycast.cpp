@@ -506,9 +506,18 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
             *indir  = Class::SURF_OUTSIDE;
             *outdir = Class::SURF_INSIDE;
         } else {
-            // Edge is tangent to the shell at shell's edge, so can't be
-            // a boundary of the surface.
-            return false;
+            // Our edge is tangent to the shell at the shell's edge: the
+            // two faces meeting at the shell's edge lie on the same side
+            // of our surface, so the regions on both sides of our edge
+            // get the same class. That's outside the shell if the shell's
+            // edge is convex, and inside if it's concave (reflex).
+            // inter_edge_n[i] points away from face i's material, so the
+            // shell's edge is convex iff face 1's material direction lies
+            // behind face 0's plane.
+            Class c = (inter_edge_n[1].Dot(inter_surf_n[0]) > 0) ?
+                            Class::SURF_OUTSIDE : Class::SURF_INSIDE;
+            *indir  = c;
+            *outdir = c;
         }
         return true;
     }

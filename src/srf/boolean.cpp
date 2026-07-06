@@ -617,14 +617,21 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         ret.EdgeNormalsWithinSurface(auv, buv, &pt, &enin, &enout, &surfn,
                                         se->auxA, into, sha, shb);
 
-        SShell::Class indir_shell, outdir_shell, indir_orig, outdir_orig;
+        // Initialize to a deterministic (if arbitrary) guess, so that if the
+        // classification fails we don't use values from uninitialized stack.
+        SShell::Class indir_shell  = SShell::Class::SURF_OUTSIDE,
+                      outdir_shell = SShell::Class::SURF_OUTSIDE,
+                      indir_orig, outdir_orig;
 
         indir_orig  = SShell::Class::SURF_INSIDE;
         outdir_orig = SShell::Class::SURF_OUTSIDE;
 
-        agnst->ClassifyEdge(&indir_shell, &outdir_shell,
-                            ret.PointAt(auv), ret.PointAt(buv), pt,
-                            enin, enout, surfn);
+        if(!agnst->ClassifyEdge(&indir_shell, &outdir_shell,
+                                ret.PointAt(auv), ret.PointAt(buv), pt,
+                                enin, enout, surfn))
+        {
+            dbp("MakeCopyTrimAgainst: failed to classify orig edge (I=%d)", I+dbg_index);
+        }
 
         if(KeepEdge(type, opA, indir_shell, outdir_shell,
                                indir_orig,  outdir_orig))
@@ -650,14 +657,21 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         ret.EdgeNormalsWithinSurface(auv, buv, &pt, &enin, &enout, &surfn,
                                         se->auxA, into, sha, shb);
 
-        SShell::Class indir_shell, outdir_shell, indir_orig, outdir_orig;
+        // Initialize to a deterministic (if arbitrary) guess, so that if the
+        // classification fails we don't use values from uninitialized stack.
+        SShell::Class indir_shell  = SShell::Class::SURF_OUTSIDE,
+                      outdir_shell = SShell::Class::SURF_OUTSIDE,
+                      indir_orig, outdir_orig;
 
         SBspUv::Class c_this = (origBsp) ? origBsp->ClassifyEdge(auv, buv, &ret) : SBspUv::Class::OUTSIDE;
         TagByClassifiedEdge(c_this, &indir_orig, &outdir_orig);
 
-        agnst->ClassifyEdge(&indir_shell, &outdir_shell,
-                            ret.PointAt(auv), ret.PointAt(buv), pt,
-                            enin, enout, surfn);
+        if(!agnst->ClassifyEdge(&indir_shell, &outdir_shell,
+                                ret.PointAt(auv), ret.PointAt(buv), pt,
+                                enin, enout, surfn))
+        {
+            dbp("MakeCopyTrimAgainst: failed to classify inter edge (I=%d)", I+dbg_index);
+        }
 
         if(KeepEdge(type, opA, indir_shell, outdir_shell,
                                indir_orig,  outdir_orig))
