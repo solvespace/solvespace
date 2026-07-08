@@ -559,8 +559,20 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                 // We are subtracting the portion of our surface that
                 // lies in the shell, so the in-plane edge normal should
                 // point opposite to the surface normal.
+                Vector tnxd = tn.Cross(b.Minus(a));
+                double dot = tnxd.Dot(sn);
+                if(fabs(dot) < SShell::DOTP_TOL*tnxd.Magnitude()*sn.Magnitude()) {
+                    // The surfaces are tangent along this curve, so their
+                    // normals give no orientation for it. Add the edge in
+                    // both directions; the classification against the
+                    // shells keeps the correctly oriented one and
+                    // discards the other.
+                    inter.AddEdge(ta, tb, sc.h.v, 0);
+                    inter.AddEdge(tb, ta, sc.h.v, 1);
+                    continue;
+                }
                 bool bkwds = true;
-                if((tn.Cross(b.Minus(a))).Dot(sn) < 0) bkwds = !bkwds;
+                if(dot < 0) bkwds = !bkwds;
                 if((type == SSurface::CombineAs::DIFFERENCE && !opA) ||
                    (type == SSurface::CombineAs::INTERSECTION)) { // Invert all newly created edges for intersection
                     bkwds = !bkwds;
