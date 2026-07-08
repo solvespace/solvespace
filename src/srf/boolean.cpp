@@ -682,6 +682,24 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                       indir_orig, outdir_orig;
 
         SBspUv::Class c_this = (origBsp) ? origBsp->ClassifyEdge(auv, buv, &ret) : SBspUv::Class::OUTSIDE;
+
+        if(c_this == SBspUv::Class::EDGE_PARALLEL) {
+            // The intersection edge lies exactly along an edge of our
+            // original trim polygon, in the same direction. Whatever trim
+            // is required there, the original edge (which the loop above
+            // classifies identically, since for both edges the decision
+            // reduces to keeping iff the region on the in-side of the shared
+            // line is kept) already provides it, so this edge is redundant.
+            // Keeping it would at best duplicate the original edge exactly
+            // (and get culled below), but if the two copies are split at
+            // different interior points the duplicates survive the cull and
+            // the trim polygon fails to assemble, which shows as a missing
+            // face when several coplanar faces join edge-on-edge across
+            // multiple union steps (issue #1452). Discard it instead.
+            chain.Clear();
+            continue;
+        }
+
         TagByClassifiedEdge(c_this, &indir_orig, &outdir_orig);
 
         if(!agnst->ClassifyEdge(&indir_shell, &outdir_shell,
