@@ -41,26 +41,27 @@ static void FindVertsOnCurve(List<SInter> *l, const SCurve *curve, SShell *sh) {
     Vector amax, amin;
     curve->GetAxisAlignedBounding(&amax, &amin);
 
-    for(const auto &sc : sh->curve) {
-        if(!sc.isExact) continue;
-        
-        Vector cmax, cmin;
-        sc.GetAxisAlignedBounding(&cmax, &cmin);
+    // The vertices of the shell are the endpoints of its trims, not the
+    // endpoints of its curves: an exact intersection curve may extend past
+    // the real geometry on both sides (e.g. out to the padded bounds of a
+    // surface that got enlarged by SShell::MergeCoincidentSurfaces()), and
+    // splitting some other curve at such a phantom point--which is not a
+    // vertex of the trims adjacent across that other curve--produces
+    // T-junctions and naked edges in the triangulated shell (issue #1452).
+    for(const SSurface &ss : sh->surface) {
+        for(const STrimBy &stb : ss.trim) {
+            for(int i = 0; i < 2; i++) {
+                Vector pt = (i == 0) ? stb.start : stb.finish;
+                if(pt.OutsideAndNotOn(amax, amin)) continue;
 
-        if(Vector::BoundingBoxesDisjoint(amax, amin, cmax, cmin)) {
-            // They cannot possibly intersect, no curves to generate
-            continue;
-        }
-        
-        for(int i=0; i<2; i++) {
-            Vector pt = sc.exact.ctrl[ i==0 ? 0 : sc.exact.deg ];
-            double t;
-            curve->exact.ClosestPointTo(pt, &t, /*must converge=*/ false);
-            double d = pt.Minus(curve->exact.PointAt(t)).Magnitude();
-            if((t>LENGTH_EPS) && (t<(1.0-LENGTH_EPS)) && (d < LENGTH_EPS)) {
-                SInter inter;
-                inter.p = pt;
-                l->Add(&inter);
+                double t;
+                curve->exact.ClosestPointTo(pt, &t, /*mustConverge=*/false);
+                double d = pt.Minus(curve->exact.PointAt(t)).Magnitude();
+                if((t > LENGTH_EPS) && (t < (1.0 - LENGTH_EPS)) && (d < LENGTH_EPS)) {
+                    SInter inter = {};
+                    inter.p = pt;
+                    l->Add(&inter);
+                }
             }
         }
     }
