@@ -452,9 +452,15 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
 
     *surfn = NormalAt(muv.x, muv.y);
 
-    // Compute the edge's inner normal in xyz space.
+    // Compute the edge's inner normal in xyz space. Use the configured
+    // chord tolerance as the probe distance, but never more than a
+    // fraction of this edge's own length: the classification must probe
+    // the surfaces close to the edge, and a coarse tolerance on a small
+    // model would otherwise evaluate them far away, or even extrapolate
+    // them outside their domain, and misclassify.
     Vector ab    = (PointAt(auv)).Minus(PointAt(buv)),
-           enxyz = (ab.Cross(*surfn)).WithMagnitude(SS.ChordTolMm());
+           enxyz = (ab.Cross(*surfn)).WithMagnitude(
+                        min(SS.ChordTolMm(), ab.Magnitude() / 10));
     // And based on that, compute the edge's inner normal in uv space. This
     // vector is perpendicular to the edge in xyz, but not necessarily in uv.
     Vector tu, tv, tx, ty;
