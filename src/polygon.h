@@ -362,8 +362,8 @@ public:
     void ListTrianglesInto(std::vector<STriangle *> *tl) const;
     void ClearTags() const;
 
-    void FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter, EdgeOnInfo *info) const;
-    void MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how, bool coplanarIsInter,
+    void FindEdgeOn(Vector a, Vector b, int cnt, EdgeOnInfo *info) const;
+    void MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how,
                               bool *inter, bool *leaky, int auxA = 0) const;
     void MakeOutlinesInto(SOutlineList *sel, EdgeKind tagKind) const;
 

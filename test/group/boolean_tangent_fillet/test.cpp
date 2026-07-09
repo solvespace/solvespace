@@ -24,7 +24,7 @@ TEST_CASE(normal_watertight_volume) {
     SEdgeList el = {};
     bool inters, leaks;
     SKdNode::From(m)->MakeCertainEdgesInto(&el,
-        EdgeKind::NAKED_OR_SELF_INTER, /*coplanarIsInter=*/true, &inters, &leaks);
+        EdgeKind::NAKED_OR_SELF_INTER, &inters, &leaks);
     CHECK_FALSE(inters);
     CHECK_FALSE(leaks);
     CHECK_TRUE(el.l.IsEmpty());

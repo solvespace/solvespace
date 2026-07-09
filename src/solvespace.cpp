@@ -905,7 +905,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
             root->MakeCertainEdgesInto(&(SS.nakedEdges),
-                EdgeKind::SELF_INTER, /*coplanarIsInter=*/false, &inters, &leaks);
+                EdgeKind::SELF_INTER, &inters, &leaks);
 
             SS.GW.Invalidate();
 
@@ -1070,7 +1070,7 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
     SKdNode *root = SKdNode::From(m);
     bool inters, leaks;
     root->MakeCertainEdgesInto(&(SS.nakedEdges),
-        EdgeKind::NAKED_OR_SELF_INTER, /*coplanarIsInter=*/true, &inters, &leaks);
+        EdgeKind::NAKED_OR_SELF_INTER, &inters, &leaks);
 
     if(reportOnlyWhenNotOkay && !inters && !leaks && SS.nakedEdges.l.IsEmpty()) {
         return;

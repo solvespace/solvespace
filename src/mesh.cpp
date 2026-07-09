@@ -86,8 +86,7 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
     // Select the naked edges in our resulting open mesh.
     SKdNode *root = SKdNode::From(&m);
     root->SnapToMesh(&m);
-    root->MakeCertainEdgesInto(sel, EdgeKind::NAKED_OR_SELF_INTER,
-                               /*coplanarIsInter=*/false, NULL, NULL);
+    root->MakeCertainEdgesInto(sel, EdgeKind::NAKED_OR_SELF_INTER, NULL, NULL);
 
     m.Clear();
 }
@@ -830,12 +829,9 @@ void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) const {
 // for the edge from a to b), and increment info->count each time that we
 // find one. If a triangle is found, then report whether it is front- or
 // back-facing using info->frontFacing. And regardless of whether a mate is
-// found, report whether the edge intersects the mesh with info->intersectsMesh;
-// if coplanarIsInter then we count the edge as intersecting if it's coplanar
-// with a triangle in the mesh, otherwise not.
+// found, report whether the edge intersects the mesh with info->intersectsMesh.
 //-----------------------------------------------------------------------------
-void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter,
-                         EdgeOnInfo *info) const
+void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, EdgeOnInfo *info) const
 {
     if(gt && lt) {
         double ac = a.Element(which),
@@ -843,12 +839,12 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter,
         if(ac < c + KDTREE_EPS ||
            bc < c + KDTREE_EPS)
         {
-            lt->FindEdgeOn(a, b, cnt, coplanarIsInter, info);
+            lt->FindEdgeOn(a, b, cnt, info);
         }
         if(ac > c - KDTREE_EPS ||
            bc > c - KDTREE_EPS)
         {
-            gt->FindEdgeOn(a, b, cnt, coplanarIsInter, info);
+            gt->FindEdgeOn(a, b, cnt, info);
         }
         return;
     }
@@ -898,28 +894,27 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter,
                 // The edge crosses the plane of the triangle; now see if
                 // it crosses inside the triangle.
                 if(tr->ContainsPointProjd(b.Minus(a), a)) {
-                    if(coplanarIsInter) {
-                        info->intersectsMesh = true;
+                    Vector p = Vector::AtIntersectionOfPlaneAndLine(
+                                            n, d, a, b, NULL);
+                    Vector ta = tr->a,
+                           tb = tr->b,
+                           tc = tr->c;
+                    if((p.DistanceToLine(ta, tb.Minus(ta)) < LENGTH_EPS) ||
+                       (p.DistanceToLine(tb, tc.Minus(tb)) < LENGTH_EPS) ||
+                       (p.DistanceToLine(tc, ta.Minus(tc)) < LENGTH_EPS))
+                    {
+                        // Intersection lies on edge. This happens when
+                        // our edge is from a triangle coplanar with, or
+                        // tangent to, another triangle in the mesh; for
+                        // example where a surface of a Boolean result
+                        // grazes the interior of a face without cutting
+                        // it. That is a touch, not a crossing: an edge
+                        // that actually passes into the mesh here also
+                        // passes through the interior of the triangles
+                        // on the other side of that edge, and is
+                        // reported there.
                     } else {
-                        Vector p = Vector::AtIntersectionOfPlaneAndLine(
-                                                n, d, a, b, NULL);
-                        Vector ta = tr->a,
-                               tb = tr->b,
-                               tc = tr->c;
-                        if((p.DistanceToLine(ta, tb.Minus(ta)) < LENGTH_EPS) ||
-                           (p.DistanceToLine(tb, tc.Minus(tb)) < LENGTH_EPS) ||
-                           (p.DistanceToLine(tc, ta.Minus(tc)) < LENGTH_EPS))
-                        {
-                            // Intersection lies on edge. This happens when
-                            // our edge is from a triangle coplanar with
-                            // another triangle in the mesh. We don't test
-                            // the edge against triangles whose plane contains
-                            // that edge, but we do end up testing against
-                            // the coplanar triangle's neighbours, which we
-                            // will intersect on their edges.
-                        } else {
-                            info->intersectsMesh = true;
-                        }
+                        info->intersectsMesh = true;
                     }
                 }
             }
@@ -951,7 +946,7 @@ static bool CheckAndAddTrianglePair(std::set<std::pair<STriangle *, STriangle *>
 //    * emphasized edges (i.e., edges where a triangle from one face joins
 //      a triangle from a different face)
 //-----------------------------------------------------------------------------
-void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how, bool coplanarIsInter,
+void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how,
                                    bool *inter, bool *leaky, int auxA) const
 {
     if(inter) *inter = false;
@@ -969,7 +964,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how, bool coplanarIs
             Vector b = tr->vertices[(j + 1) % 3];
 
             SKdNode::EdgeOnInfo info = {};
-            FindEdgeOn(a, b, cnt, coplanarIsInter, &info);
+            FindEdgeOn(a, b, cnt, &info);
 
             switch(how) {
                 case EdgeKind::NAKED_OR_SELF_INTER:
@@ -977,7 +972,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how, bool coplanarIs
                     if(info.count != 1) {
                         // but there may be multiple parallel coincident edges
                         SKdNode::EdgeOnInfo parallelInfo = {};
-                        FindEdgeOn(b, a, -cnt, coplanarIsInter, &parallelInfo);
+                        FindEdgeOn(b, a, -cnt, &parallelInfo);
                         if (info.count != parallelInfo.count) {
                             sel->AddEdge(a, b, auxA);
                             if(leaky) *leaky = true;
@@ -1059,7 +1054,7 @@ void SKdNode::MakeOutlinesInto(SOutlineList *sol, EdgeKind edgeKind) const
             Vector b = tr->vertices[(j + 1) % 3];
 
             SKdNode::EdgeOnInfo info = {};
-            FindEdgeOn(a, b, cnt, /*coplanarIsInter=*/false, &info);
+            FindEdgeOn(a, b, cnt, &info);
             cnt++;
             if(info.count != 1) continue;
             if(CheckAndAddTrianglePair(&edgeTris, tr, info.tr))

@@ -23,7 +23,7 @@ TEST_CASE(normal_inters) {
     SEdgeList el = {};
     bool inters, leaks;
     SKdNode::From(m)->MakeCertainEdgesInto(&el,
-        EdgeKind::SELF_INTER, /*coplanarIsInter=*/false, &inters, &leaks);
+        EdgeKind::SELF_INTER, &inters, &leaks);
     el.Clear();
 
     // The assembly is supposed to interfere.
