@@ -407,8 +407,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
         // Generate the edges where a curved surface turns from front-facing
         // to back-facing.
         if(SS.GW.showEdges || SS.GW.showOutlines) {
-            root->MakeCertainEdgesInto(sel, EdgeKind::TURNING,
-                                       /*coplanarIsInter=*/false, NULL, NULL,
+            root->MakeCertainEdgesInto(sel, EdgeKind::TURNING, NULL, NULL,
                                        GW.showOutlines ? Style::OUTLINE : Style::SOLID_EDGE);
         }
 
