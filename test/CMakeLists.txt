@@ -66,6 +66,7 @@ set(testsuite_SOURCES
     group/boolean_knife_edge/test.cpp
     group/boolean_tangent_edge/test.cpp
     group/boolean_tangent_fillet/test.cpp
+    group/boolean_tangent_spline/test.cpp
     group/link/test.cpp
     group/translate_asy/test.cpp
     group/translate_nd/test.cpp
