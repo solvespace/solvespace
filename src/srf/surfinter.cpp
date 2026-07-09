@@ -199,12 +199,15 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
     {
         // The intersection between a plane and a surface of extrusion
         SSurface *splane, *sext;
+        SShell *shext;
         if(degm == 1 && degn == 1) {
             splane = this;
             sext = b;
+            shext = agnstB;
         } else {
             splane = b;
             sext = this;
+            shext = agnstA;
         }
 
         Vector n = splane->NormalAt(0, 0).WithMagnitude(1), along;
@@ -228,12 +231,48 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             // extrusion, and dp component doesn't matter so zero
             p0 = n.ScaledBy(d).Plus(alu.ScaledBy(pm.Dot(alu)));
 
+            // The extruded curve might be tangent to the plane, e.g. where
+            // a fillet-like surface blends into the flat face it's tangent
+            // to (issue #1291). The numerical line-surface intersection
+            // below can't converge on such a grazing intersection; but the
+            // tangency occurs where the extruded curve ends on the plane,
+            // so the line of intersection is the trim curve that the
+            // surface shares with its neighbour there, and that curve lies
+            // entirely in the plane. Add any such exact curves directly,
+            // like the exact-curve case in the general branch below.
+            List<SBezier> exacts = {};
+            for(SCurve &sc : shext->curve) {
+                if(sc.source == SCurve::Source::INTERSECTION) continue;
+                if(!sc.isExact) continue;
+                if((sc.surfA != sext->h) && (sc.surfB != sext->h)) continue;
+                if(splane->ContainsPlaneCurve(&sc)) {
+                    SBezier bezier = sc.exact;
+                    AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
+                    exacts.Add(&bezier);
+                }
+            }
+
             List<SInter> inters = {};
             sext->AllPointsIntersecting(p0, p0.Plus(dp), &inters,
                 /*asSegment=*/false, /*trimmed=*/false, /*inclTangent=*/true);
 
             SInter *si;
             for(si = inters.First(); si; si = inters.NextAfter(si)) {
+                // If this line was already added exactly above, don't add a
+                // numerical (last-digits different) duplicate of it; the
+                // duplicates would break the trim polygon assembly.
+                bool duplicate = false;
+                SBezier *eb;
+                for(eb = exacts.First(); eb; eb = exacts.NextAfter(eb)) {
+                    double t;
+                    eb->ClosestPointTo(si->p, &t, /*mustConverge=*/false);
+                    if(((eb->PointAt(t)).Minus(si->p)).Magnitude() < LENGTH_EPS) {
+                        duplicate = true;
+                        break;
+                    }
+                }
+                if(duplicate) continue;
+
                 Vector al = along.ScaledBy(0.5);
                 SBezier bezier;
                 bezier = SBezier::From((si->p).Minus(al), (si->p).Plus(al));
@@ -241,6 +280,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             }
 
             inters.Clear();
+            exacts.Clear();
         } else {
             // Direction of extrusion is not parallel to plane; so
             // intersection is projection of extruded curve into our plane.
