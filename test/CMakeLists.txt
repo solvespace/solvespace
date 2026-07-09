@@ -18,6 +18,7 @@ set(testsuite_SOURCES
     analysis/contour_area/test.cpp
     core/expr/test.cpp
     core/locale/test.cpp
+    core/mesh/test.cpp
     core/path/test.cpp
     constraint/points_coincident/test.cpp
     constraint/pt_pt_distance/test.cpp
@@ -63,6 +64,7 @@ set(testsuite_SOURCES
     request/line_segment/test.cpp
     request/ttf_text/test.cpp
     request/workplane/test.cpp
+    group/boolean_grazing_edge/test.cpp
     group/boolean_knife_edge/test.cpp
     group/boolean_tangent_edge/test.cpp
     group/boolean_tangent_fillet/test.cpp
