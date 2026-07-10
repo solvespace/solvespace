@@ -1,6 +1,19 @@
 Changelog
 =========
 
+3.3 - release date TBD
+---
+Geometric Modelling Kernel (NURBS)
+
+Thanks to Claude Fable 5
+* Numerous bug fixes relating to flat surfaces and edges.
+* Some bugs relating to curved surfaces fixed.
+* Significant reduction in red lines, naked edges, and missing surfaces.
+
+Misc:
+* Fix some file dialog issues.
+* small fixes in the web version
+
 3.2
 ---
 
