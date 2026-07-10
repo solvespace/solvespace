@@ -51,8 +51,10 @@ if(EMSCRIPTEN)
         add_compile_options(-O1)
     endif()
 
+    set(INCLUDE_OPENMP ON)
     set(INCLUDE_NATIVE_COMPONENTS OFF)
 else()
+    set(INCLUDE_OPENMP OFF)
     set(INCLUDE_NATIVE_COMPONENTS ON)
 endif()
 
@@ -68,7 +70,7 @@ set(ENABLE_COVERAGE   OFF CACHE BOOL
     "Whether code coverage information will be collected")
 set(ENABLE_SANITIZERS OFF CACHE BOOL
     "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
-set(ENABLE_OPENMP     OFF CACHE BOOL
+set(ENABLE_OPENMP     ${INCLUDE_OPENMP} CACHE BOOL
     "Whether geometric operations will be parallelized using OpenMP")
 set(ENABLE_LTO        OFF CACHE BOOL
     "Whether interprocedural (global) optimizations are enabled")
