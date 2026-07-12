@@ -4,7 +4,7 @@ set -o pipefail
 if [ "$1" = "ci" ]; then
     brew_cache=$(brew --cache)
     brew fetch --bottle-tag=arm64_tahoe libomp >/dev/null
-    brew fetch --bottle-tag=sonoma libomp >/dev/null
+    arch -x86_64 brew fetch --bottle-tag=sonoma libomp >/dev/null
     armloc=$(find "$brew_cache"/downloads -maxdepth 1 -name "*--libomp--*arm64_tahoe.bottle.tar.gz" -print | tail -n1)
     x64loc=$(find "$brew_cache"/downloads -maxdepth 1 -name "*--libomp--*sonoma.bottle.tar.gz" -print | tail -n1)
     [ -n "$armloc" ] || { echo "Failed to locate arm64 libomp bottle in cache" >&2; exit 1; }
