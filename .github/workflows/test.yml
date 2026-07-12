@@ -34,7 +34,7 @@ jobs:
       shell: bash
 
   test_macos:
-    runs-on: macos-latest
+    runs-on: macos-15
     name: Test macOS
     steps:
     - uses: actions/checkout@v6

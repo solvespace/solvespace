@@ -9,7 +9,7 @@ else
     ENABLE_LTO="OFF"
 fi
 
-# this is an option for our Github CI only, since it doesn't have a macos arm64 image yet
+# this is an option for our Github CI only, to cross-compile for both arm64 and x86_64
 CMAKE_GENERATOR="Unix Makefiles"
 CMAKE_PREFIX_PATH=""
 if [ "$2" = "arm64" ]; then
