@@ -750,7 +750,7 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
                 for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
                     Bezier(b);
                 }
-                FinishPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs);
+                FinishPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs, sbl->IsClosed());
             }
         }
     }
