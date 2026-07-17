@@ -71,6 +71,7 @@ set(testsuite_SOURCES
     group/link/test.cpp
     group/translate_asy/test.cpp
     group/translate_nd/test.cpp
+    export/svg/test.cpp
 )
 
 add_executable(solvespace-testsuite

@@ -253,6 +253,7 @@ public:
 
     virtual void StartPath(RgbaColor strokeRgb, double lineWidth,
                             bool filled, RgbaColor fillRgb, hStyle hs) = 0;
+    virtual void ClosePath();
     virtual void FinishPath(RgbaColor strokeRgb, double lineWidth,
                             bool filled, RgbaColor fillRgb, hStyle hs) = 0;
     virtual void Bezier(SBezier *sb) = 0;
@@ -333,6 +334,7 @@ public:
 
     void StartPath( RgbaColor strokeRgb, double lineWidth,
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
+    void ClosePath() override;
     void FinishPath(RgbaColor strokeRgb, double lineWidth,
                     bool filled, RgbaColor fillRgb, hStyle hs) override;
     void Triangle(STriangle *tr) override;
