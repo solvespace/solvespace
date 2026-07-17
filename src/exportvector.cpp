@@ -1135,6 +1135,10 @@ void SvgFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
     fprintf(f, "<path d='");
     prevPt = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
 }
+void SvgFileWriter::ClosePath()
+{
+    fprintf(f, " Z");
+}
 void SvgFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
                                bool filled, RgbaColor fillRgb, hStyle hs)
 {
