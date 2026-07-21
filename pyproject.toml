@@ -27,7 +27,7 @@ classifiers = [
 
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
-cmake.verbose = true
+build.verbose = true
 cmake.build-type = "RelWithDebInfo"
 build.targets = ["slvs-py"]
 install.components = ["python"]
