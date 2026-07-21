@@ -824,7 +824,8 @@ hRequest GraphicsWindow::AddRequest(Request::Type type, bool rememberForUndo) {
     Request r = {};
     r.group = activeGroup;
     Group *g = SK.GetGroup(activeGroup);
-    if(g->type == Group::Type::DRAWING_3D || g->type == Group::Type::DRAWING_WORKPLANE) {
+    if(g->type == Group::Type::DRAWING_3D || g->type == Group::Type::DRAWING_WORKPLANE
+       || type == Request::Type::DATUM_POINT) {
         r.construction = false;
     } else {
         r.construction = true;
