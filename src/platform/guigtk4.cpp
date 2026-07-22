@@ -353,6 +353,13 @@ public:
     }
 };
 
+// A menu tree (a menu bar or a standalone popup menu, together with all of its
+// submenus) shares a single Gio::SimpleActionGroup. That group is inserted into the
+// relevant widget exactly once, under the "ss" prefix. Because the group object is
+// mutable and stays referenced by the widget after insertion, actions added to (or
+// removed from) it later - e.g. when a submenu is repopulated - take effect immediately,
+// with no need to re-insert anything into the widget. This avoids stale/missing actions
+// (which GTK renders as permanently disabled menu items) after a menu is rebuilt.
 class MenuImplGtk4 final : public Menu {
 public:
     Glib::RefPtr<Gio::Menu>                            gioMenu;
@@ -361,9 +368,9 @@ public:
     std::vector<std::shared_ptr<MenuImplGtk4>>         subMenus;
     Glib::RefPtr<Gio::Menu>                            currentSection;
 
-    MenuImplGtk4() {
+    MenuImplGtk4(Glib::RefPtr<Gio::SimpleActionGroup> sharedActionGroup = {}) {
         gioMenu = Gio::Menu::create();
-        actionGroup = Gio::SimpleActionGroup::create();
+        actionGroup = sharedActionGroup ? sharedActionGroup : Gio::SimpleActionGroup::create();
         currentSection = Gio::Menu::create();
         gioMenu->append_section("", currentSection);
     }
@@ -384,7 +391,7 @@ public:
     }
 
     MenuRef AddSubMenu(const std::string &label) override {
-        auto subMenu = std::make_shared<MenuImplGtk4>();
+        auto subMenu = std::make_shared<MenuImplGtk4>(actionGroup);
         subMenus.push_back(subMenu);
 
         currentSection->append_submenu(PrepareMnemonics(label), subMenu->gioMenu);
@@ -427,20 +434,28 @@ public:
         popover->unparent();
     }
 
+    // All submenus of this menu share the same actionGroup, so it only needs to be
+    // inserted into the widget once.
     void InsertActionsInto(Gtk::Widget *widget) {
         widget->insert_action_group("ss", actionGroup);
-        for(auto &sub : subMenus) {
-            sub->InsertActionsInto(widget);
-        }
     }
 
+    // Remove only the actions owned by this submenu (and its children) from the shared
+    // group, then reset the menu model. The shared actionGroup itself is preserved (and
+    // not replaced) since it may already be inserted into a widget; any items added
+    // after Clear() become visible/enabled immediately.
     void Clear() override {
+        for(auto &item : menuItems) {
+            actionGroup->remove_action(item->actionName);
+        }
+        for(auto &sub : subMenus) {
+            sub->Clear();
+        }
         gioMenu->remove_all();
         currentSection = Gio::Menu::create();
         gioMenu->append_section("", currentSection);
         menuItems.clear();
         subMenus.clear();
-        actionGroup = Gio::SimpleActionGroup::create();
     }
 };
 
@@ -460,7 +475,7 @@ public:
     }
 
     MenuRef AddSubMenu(const std::string &label) override {
-        auto subMenu = std::make_shared<MenuImplGtk4>();
+        auto subMenu = std::make_shared<MenuImplGtk4>(actionGroup);
         subMenus.push_back(subMenu);
 
         gioMenu->append_submenu(PrepareMnemonics(label), subMenu->gioMenu);
@@ -469,24 +484,16 @@ public:
     }
 
     void Clear() override {
+        for(auto &sub : subMenus) {
+            sub->Clear();
+        }
         gioMenu->remove_all();
         subMenus.clear();
-        actionGroup = Gio::SimpleActionGroup::create();
     }
 
-    void CollectActions(const std::shared_ptr<MenuImplGtk4> &menu) {
-        for(auto &item : menu->menuItems) {
-            actionGroup->add_action(item->action);
-        }
-        for(auto &sub : menu->subMenus) {
-            CollectActions(sub);
-        }
-    }
-
+    // All submenus share this menu bar's actionGroup, so it only needs to be inserted
+    // into the widget once; there is no need to recursively collect actions.
     void InsertActionsInto(Gtk::Widget *widget) {
-        for(auto &sub : subMenus) {
-            CollectActions(sub);
-        }
         widget->insert_action_group("ss", actionGroup);
     }
 };
