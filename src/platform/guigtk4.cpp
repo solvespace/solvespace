@@ -1033,12 +1033,19 @@ public:
 
     void ShowEditor(double x, double y, double fontHeight, double minWidth,
                     bool isMonospace, const std::string &text) override {
+        if(!gtkWindow.get_editor_overlay().is_editing()) {
+            gtkWindow.remove_action_group("ss");
+        }
         gtkWindow.get_editor_overlay().start_editing(
             (int)x, (int)y, (int)fontHeight, (int)minWidth, isMonospace, text);
     }
 
     void HideEditor() override {
+        bool wasEditing = gtkWindow.get_editor_overlay().is_editing();
         gtkWindow.get_editor_overlay().stop_editing();
+        if(wasEditing && menuBar) {
+            ((MenuBarImplGtk4 *)&*menuBar)->InsertActionsInto(&gtkWindow);
+        }
     }
 
     void SetScrollbarVisible(bool visible) override {
