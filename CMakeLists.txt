@@ -144,6 +144,32 @@ if(ENABLE_OPENMP)
         target_include_directories(slvs_openmp SYSTEM INTERFACE
             ${OpenMP_CXX_INCLUDE_DIRS})
         message(STATUS "found OpenMP, compiling with flags: " ${OpenMP_CXX_FLAGS} )
+		# Explicitly pair OpenMP with Emscripten's pthread engine
+		if(EMSCRIPTEN)
+			# In Emscripten, compiling with OpenMP pulls in the WebAssembly multi-threaded runtime (libc-mt-debug.a)
+			# because OpenMP relies on Web Workers to parallelize loops. However, Emscripten's built-in OpenMP
+			# implementation does not automatically propagate the underlying -pthread linker flags to every
+			# compilation unit.
+			#
+			# When ThinLTO evaluates the final output, any file that didn't explicitly receive the threading context
+			# falls back to single-threaded stubs (library_pthread_stub.o), causing wasm-ld duplicate symbol errors e.g.:
+			#
+			# [2/2] Linking CXX executable bin\solvespace.html
+			# FAILED: bin/solvespace.html
+			# wasm-ld: error: duplicate symbol: emscripten_futex_wait
+			# >>> defined in ./emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libc-mt-debug.a(emscripten_futex_wait.o)
+			# >>> defined in .\emsdk\upstream\emscripten\cache\sysroot\lib\wasm32-emscripten\thinlto\libc-debug.a(library_pthread_stub.o)
+			#
+			# Therefore force -pthread for all compilation units.
+			add_compile_options(-pthread)
+			add_link_options(-pthread)
+			# Avoid the following error in the browser:
+			#	Tried to spawn a new thread, but the thread pool is exhausted.
+			#	This might result in a deadlock unless some threads eventually exit or the code explicitly breaks out to the event loop.
+			#	If you want to increase the pool size, use setting `-sPTHREAD_POOL_SIZE=...`.
+			#	If you want to throw an explicit error instead of the risk of deadlocking in those cases, use setting `-sPTHREAD_POOL_SIZE_STRICT=2`.
+			add_link_options(-sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency)
+		endif()
     endif()
 endif()
 
