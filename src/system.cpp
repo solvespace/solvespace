@@ -359,7 +359,7 @@ void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
     // Generate all the equations from constraints in this group
     for(auto &con : SK.constraint) {
         ConstraintBase *c = &con;
-        if(c->group != g->h) continue;
+        if(c->group != g->h || c->tag) continue;
         if(c->h == hc) continue;
 
         if(c->HasLabel() && c->type != Constraint::Type::COMMENT &&
@@ -403,7 +403,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bo
             }
 
             ConstraintBase *c = &con;
-            if(c->group != g->h) continue;
+            if(c->group != g->h || c->tag) continue;
             if((c->type == Constraint::Type::POINTS_COINCIDENT && a == 0) ||
                (c->type != Constraint::Type::POINTS_COINCIDENT && a == 1))
             {

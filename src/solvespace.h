@@ -420,6 +420,8 @@ public:
 
     BBox CalculateEntityBBox(bool includingInvisible);
     Group *GetRunningMeshGroupFor(hGroup h);
+
+    void RegenerateGroupOrder();
 };
 #undef ENTITY
 #undef CONSTRAINT
@@ -672,11 +674,9 @@ public:
         int     nonTrivialConstraints;
     } deleted;
     bool GroupExists(hGroup hg);
-    bool PruneOrphans();
     bool EntityExists(hEntity he);
-    bool GroupsInOrder(hGroup before, hGroup after);
-    bool PruneGroups(hGroup hg);
-    bool PruneRequestsAndConstraints(hGroup hg);
+    bool GroupsInOrder(hGroup hbefore, hGroup hafter);
+    bool PruneGroup(Group *g);
     static void ShowNakedEdges(bool reportOnlyWhenNotOkay);
 
     enum class Generate : uint32_t {
@@ -686,8 +686,7 @@ public:
         UNTIL_ACTIVE,
     };
 
-    void GenerateAll(Generate type = Generate::DIRTY, bool andFindFree = false,
-                     bool genForBBox = false);
+    void GenerateAll(Generate type = Generate::DIRTY, bool andFindFree = false);
     void SolveGroup(hGroup hg, bool andFindFree);
     void SolveGroupAndReport(hGroup hg, bool andFindFree);
     SolveResult TestRankForGroup(hGroup hg, int *rank = NULL);
