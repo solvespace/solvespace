@@ -203,6 +203,115 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
     return ret;
 }
 
+//-----------------------------------------------------------------------------
+// Insert p as a vertex of the piecewise linear curve sc, if it lies within one
+// of sc's segments (and on sc's exact curve, where we have one) and isn't
+// already one of its points. Returns true if we changed the curve.
+//-----------------------------------------------------------------------------
+static bool InsertVertexIntoCurve(SCurve *sc, Vector p) {
+    for(const SCurvePt &scpt : sc->pts) {
+        if(scpt.p.Equals(p)) return false;
+    }
+
+    int i;
+    for(i = 1; i < sc->pts.n; i++) {
+        Vector a = sc->pts[i-1].p,
+               d = (sc->pts[i].p).Minus(a);
+        double m = d.MagSquared();
+        if(m < LENGTH_EPS*LENGTH_EPS) continue;
+        double t = (p.Minus(a)).Dot(d)/m;
+        if((t <= 0.0) || (t >= 1.0)) continue;
+        if((p.Minus(a.Plus(d.ScaledBy(t)))).Magnitude() > LENGTH_EPS) continue;
+        break;
+    }
+    if(i >= sc->pts.n) return false;
+
+    // The pwl chord of a curved segment is not the curve, so make sure that
+    // the point really lies on the curve and not just near the chord.
+    if(sc->isExact) {
+        double t;
+        sc->exact.ClosestPointTo(p, &t, /*mustConverge=*/false);
+        if((p.Minus(sc->exact.PointAt(t))).Magnitude() > LENGTH_EPS) return false;
+    }
+
+    SCurvePt scpt = {};
+    scpt.p      = p;
+    scpt.vertex = true;
+
+    List<SCurvePt> pts = {};
+    pts.ReserveMore(sc->pts.n + 1);
+    for(int j = 0; j < sc->pts.n; j++) {
+        if(j == i) pts.Add(&scpt);
+        pts.Add(&(sc->pts[j]));
+    }
+    sc->pts.Clear();
+    sc->pts = pts;
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+// A curve of one shell may cross a curve of the other shell at a point that is
+// a vertex of neither input shell, and that lies on no surface which either
+// curve crosses transversally; that happens where the two shells touch without
+// passing through each other, for example where an edge of one runs within a
+// coincident face of the other. MakeCopySplitAgainst() splits curves against
+// surfaces, so at such a point it splits only whichever of the two curves does
+// meet a transversal surface there, and leaves the other one whole. The
+// unsplit curve then contributes a single trim edge whose two halves classify
+// differently, which cannot be represented: the edge is kept or discarded
+// whole, and the trim polygon fails to assemble, so the face is lost.
+//
+// So propagate the splits that we just made. Any vertex that splitting created
+// within a curve from one operand, and that lies within a curve from the other
+// operand, becomes a vertex of that curve too.
+//-----------------------------------------------------------------------------
+void SShell::SplitCurvesAtCrossings() {
+    List<Vector> vert[2] = {};
+    for(SCurve &sc : curve) {
+        int i;
+        if(sc.source == SCurve::Source::A) {
+            i = 0;
+        } else if(sc.source == SCurve::Source::B) {
+            i = 1;
+        } else {
+            continue;
+        }
+        // Only the interior points that a split created; the endpoints of a
+        // curve are its shell's own vertices, and an exact curve's endpoints
+        // may lie outside the real geometry entirely (issue #1452).
+        for(int j = 1; j < sc.pts.n - 1; j++) {
+            if(sc.pts[j].vertex) vert[i].Add(&(sc.pts[j].p));
+        }
+    }
+
+    if(!vert[0].IsEmpty() || !vert[1].IsEmpty()) {
+        for(SCurve &sc : curve) {
+            int i;
+            if(sc.source == SCurve::Source::A) {
+                i = 1;
+            } else if(sc.source == SCurve::Source::B) {
+                i = 0;
+            } else {
+                continue;
+            }
+
+            Vector cmax = {VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE},
+                   cmin = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
+            for(const SCurvePt &scpt : sc.pts) {
+                scpt.p.MakeMaxMin(&cmax, &cmin);
+            }
+
+            for(const Vector &p : vert[i]) {
+                if(p.OutsideAndNotOn(cmax, cmin)) continue;
+                InsertVertexIntoCurve(&sc, p);
+            }
+        }
+    }
+
+    vert[0].Clear();
+    vert[1].Clear();
+}
+
 void SShell::CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into) {
 #pragma omp parallel for
     for(int i=0; i<curve.n; i++) {
@@ -858,6 +967,11 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type) {
     // shell.
     a->CopyCurvesSplitAgainst(/*opA=*/true,  b, this);
     b->CopyCurvesSplitAgainst(/*opA=*/false, a, this);
+
+    // Where the two shells touch without crossing, a curve of one shell can
+    // cross a curve of the other at a point that splitting against surfaces
+    // finds on only one of the two curves; carry those points across.
+    SplitCurvesAtCrossings();
 
     // Generate the intersection curves for each surface in A against all
     // the surfaces in B (which is all of the intersection curves).
