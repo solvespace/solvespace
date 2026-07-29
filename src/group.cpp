@@ -20,6 +20,7 @@ const hGroup Group::HGROUP_REFERENCES = { 1 };
 // memory. This clears and frees them all.
 //-----------------------------------------------------------------------------
 void Group::Clear() {
+    solved.remove.Clear();
     polyLoops.Clear();
     bezierLoops.Clear();
     bezierOpens.Clear();
