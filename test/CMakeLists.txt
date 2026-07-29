@@ -66,6 +66,7 @@ set(testsuite_SOURCES
     request/workplane/test.cpp
     group/boolean_coplanar_union/test.cpp
     group/boolean_cross_vertex/test.cpp
+    group/boolean_cross_vertex_tangent_crossing/test.cpp
     group/boolean_knife_edge/test.cpp
     group/boolean_tangent_crossing/test.cpp
     group/boolean_tangent_edge/test.cpp
