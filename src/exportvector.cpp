@@ -674,7 +674,9 @@ static std::string MakeStipplePattern(StipplePattern pattern, double scale, char
 
         case StipplePattern::FREEHAND:
         case StipplePattern::ZIGZAG:
-            ssassert(false, "Freehand and zigzag export not implemented");
+            dbp("Freehand and zigzag export not implemented; "
+                "exporting as continuous line");
+            break;
     }
     std::replace(result.begin(), result.end(), '_', delimiter);
     return result;
