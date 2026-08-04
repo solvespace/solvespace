@@ -339,6 +339,7 @@ public:
     void ClosestPointTo(Vector p, double *u, double *v, bool mustConverge=true);
     bool ClosestPointNewton(Vector p, double *u, double *v, bool mustConverge=true) const;
 
+    bool EdgeCurveIntersection(double *u, double *v, SBezier *curve) const;
     bool PointIntersectingLine(Vector p0, Vector p1, double *u, double *v) const;
     Vector ClosestPointOnThisAndSurface(SSurface *srf2, Vector p);
     void PointOnSurfaces(SSurface *s1, SSurface *s2, double *u, double *v);

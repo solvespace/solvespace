@@ -222,6 +222,33 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
             l->Add(&inter);
         } else {
             // Might not converge if line is almost tangent to surface...
+
+            // It is common for this to happen along a surface boundary so check one
+            SBezier edge = {};
+            if(fabs(inter.p.x - 0.5) > fabs(inter.p.y - 0.5)) {
+            // u is closer to 0 or 1 than v
+              if(inter.p.x < 0.5) {
+                for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[0][n]; edge.weight[n]=weight[0][n]; }
+                edge.deg = degn;
+
+              }
+              else { // u > 0.5
+                for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[degm][n]; edge.weight[n]=weight[degm][n]; }
+                edge.deg = degn;              
+
+              }
+            } else {
+            // v is closer to 0 or 1
+              if(inter.p.y < 0.5) {
+                for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[n][0]; edge.weight[n]=weight[n][0]; }
+                edge.deg = degm;
+              
+              } else { // v > 0.5
+                for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[n][degn]; edge.weight[n]=weight[n][degn]; }
+                edge.deg = degm;
+              
+              }
+            }
         }
         return;
     }
