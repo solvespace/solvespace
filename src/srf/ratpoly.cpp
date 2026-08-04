@@ -503,6 +503,57 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool mustConve
     return false;
 }
 
+// This checks the nearest edge of our surface for intersection with curve.
+// It is common for curve/surface intersection to fail because the curve
+// is tangent to the surface at the intersection point, which is often on
+// the edge of the surface - that's just how people design things...
+bool SSurface::EdgeCurveIntersection(double *u, double *v, SBezier *curve) const
+{
+    SBezier edge = {};
+    // we already have a starting point in space
+    Vector p = PointAt(*u, *v);
+    if(fabs(*u - 0.5) > fabs(*v - 0.5)) {
+    // u is closer to 0 or 1 than v
+      if(*u < 0.5) {
+        for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[0][n]; edge.weight[n]=weight[0][n]; }
+        edge.deg = degn;
+        if (edge.PointOnThisAndCurve(curve, &p)) {
+            edge.ClosestPointTo(p, v); *u=0.0;
+            dbp("found U=0.0, V=%g point=(%.3f %.3f %.3f)", *v, CO(p) );
+            return true;
+        }
+      }
+      else { // u > 0.5
+        for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[degm][n]; edge.weight[n]=weight[degm][n]; }
+        edge.deg = degn;              
+        if (edge.PointOnThisAndCurve(curve, &p)) {
+            edge.ClosestPointTo(p, v); *u=1.0;
+            dbp("found U=1.0, V=%g point=(%.3f %.3f %.3f)", *v, CO(p) );
+            return true;
+        }
+      }
+    } else {
+    // v is closer to 0 or 1
+      if(*v < 0.5) {
+        for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[n][0]; edge.weight[n]=weight[n][0]; }
+        edge.deg = degm;
+        if (edge.PointOnThisAndCurve(curve, &p)) {
+            edge.ClosestPointTo(p, u); *v=0.0;
+            dbp("found U=%g, V=0.0 point=(%.3f %.3f %.3f)", *u, CO(p));
+            return true;
+        }      
+      } else { // v > 0.5
+        for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[n][degn]; edge.weight[n]=weight[n][degn]; }
+        edge.deg = degm;
+        if (edge.PointOnThisAndCurve(curve, &p)) {
+            edge.ClosestPointTo(p, u); *v=1.0;
+            dbp("found U=%g, V=1.0 point=(%.3f %.3f %.3f)", *u, CO(p));
+            return true;
+        }            
+      }
+    }
+    return false;
+}
 bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v) const
 {
     int i;
@@ -521,7 +572,7 @@ bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
             break;
         }
 
-        // Check for convergence
+        // Check for convergence - success exits
         if(pi.Equals(p, RATPOLY_EPS)) return true;
 
         n = tu.Cross(tv);
@@ -533,6 +584,14 @@ bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
         double du = dp.Dot(tx), dv = dp.Dot(ty);
         *u += du / tx.MagSquared();
         *v += dv / ty.MagSquared();
+    }
+    // Lets try the edge of the surface against the line before giving up
+    SBezier curve = {};
+    curve.ctrl[0] = p0; curve.weight[0] = 1.0;
+    curve.ctrl[1] = p1; curve.weight[1] = 1.0;
+    curve.deg = 1;
+    if (EdgeCurveIntersection(u,v, &curve)) {
+      return true;
     }
     dbp("didn't converge (surface intersecting line)");
     return false;
