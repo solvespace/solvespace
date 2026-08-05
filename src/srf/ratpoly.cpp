@@ -519,6 +519,7 @@ bool SSurface::EdgeCurveIntersection(double *u, double *v, SBezier *curve) const
         edge.deg = degn;
         if (edge.PointOnThisAndCurve(curve, &p)) {
             edge.ClosestPointTo(p, v); *u=0.0;
+            dbp("found U=0.0, V=%g point=(%.3f %.3f %.3f)", *v, CO(p) );
             return true;
         }
       }
@@ -527,6 +528,7 @@ bool SSurface::EdgeCurveIntersection(double *u, double *v, SBezier *curve) const
         edge.deg = degn;              
         if (edge.PointOnThisAndCurve(curve, &p)) {
             edge.ClosestPointTo(p, v); *u=1.0;
+            dbp("found U=1.0, V=%g point=(%.3f %.3f %.3f)", *v, CO(p) );
             return true;
         }
       }
@@ -537,6 +539,7 @@ bool SSurface::EdgeCurveIntersection(double *u, double *v, SBezier *curve) const
         edge.deg = degm;
         if (edge.PointOnThisAndCurve(curve, &p)) {
             edge.ClosestPointTo(p, u); *v=0.0;
+            dbp("found U=%g, V=0.0", *u);
             return true;
         }      
       } else { // v > 0.5
@@ -544,6 +547,7 @@ bool SSurface::EdgeCurveIntersection(double *u, double *v, SBezier *curve) const
         edge.deg = degm;
         if (edge.PointOnThisAndCurve(curve, &p)) {
             edge.ClosestPointTo(p, u); *v=1.0;
+            dbp("found U=%g, V=1.0", *u);
             return true;
         }            
       }
