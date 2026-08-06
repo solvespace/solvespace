@@ -200,8 +200,12 @@ bool SolveSpaceUI::Load(const Platform::Path &filename) {
         saveFile.Clear();
         NewFile();
     }
+    // Capture whether loading modified the document (e.g. the user relocated
+    // a missing image, which sets unsaved in ReloadLinkedImage) before
+    // AfterNewFile() resets it (issue #1238).
+    bool unsavedDuringLoad = unsaved;
     AfterNewFile();
-    unsaved = autosaveLoaded;
+    unsaved = autosaveLoaded || unsavedDuringLoad;
     return fileLoaded;
 }
 
