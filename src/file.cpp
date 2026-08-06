@@ -1016,7 +1016,10 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
             if(pixmap == NULL) {
                 Error("The image '%s' is corrupted.", filename->raw.c_str());
             }
-            // We know where the file is now, good.
+            // We know where the file is now, good. The updated path must be
+            // written back to the .slvs file, so mark the document unsaved
+            // (issue #1238).
+            SS.unsaved = true;
         } else if(canCancel) {
             return false;
         }
