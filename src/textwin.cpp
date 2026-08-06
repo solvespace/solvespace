@@ -333,9 +333,15 @@ void TextWindow::ShowEditControlWithColorPicker(int col, RgbaColor rgb) {
 
     editControl.colorPicker.show = true;
     editControl.colorPicker.rgb = rgb;
-    editControl.colorPicker.h = 0;
-    editControl.colorPicker.s = 0;
-    editControl.colorPicker.v = 1;
+
+    // Convert the current RGB color to HSV so the picker reflects it, rather
+    // than always resetting to black (issue #1127).
+    Vector hs = RgbToHsv({rgb.redF(), rgb.greenF(), rgb.blueF()});
+
+    editControl.colorPicker.h = hs.x;
+    editControl.colorPicker.s = hs.y;
+    editControl.colorPicker.v = hs.z;
+
     ShowEditControl(col, ssprintf("%.2f, %.2f, %.2f", rgb.redF(), rgb.greenF(), rgb.blueF()));
 }
 
@@ -686,6 +692,32 @@ Vector TextWindow::HsvToRgb(Vector hsv) {
     rgb = rgb.Plus({m, m, m});
 
     return rgb;
+}
+
+//----------------------------------------------------------------------------
+// Given (x, y, z) = (r, g, b) in [0,1), [0,1], [0,1], return (x, y, z) =
+// (h, s, v) all in  [0,6), [0,1], [0,1].
+//----------------------------------------------------------------------------
+Vector TextWindow::RgbToHsv(Vector rgb) {
+
+    Vector hsv;
+    double r = rgb.x, g = rgb.y, b = rgb.z;
+    double max = fmax(r, fmax(g, b)), min = fmin(r, fmin(g, b));
+    double delta = max - min;
+
+    double h = 0, s = 0, v = 1 - min;
+    if(delta != 0 && v != 0) {
+        s = delta / v;
+        if(max == r)      h = (g - b) / delta;
+        else if(max == g) h = 2 + (b - r) / delta;
+        else              h = 4 + (r - g) / delta;
+        if(h < 0) h += 1;
+    }
+
+    hsv.x = h;
+    hsv.y = s;
+    hsv.z = v;
+    return hsv;
 }
 
 std::shared_ptr<Pixmap> TextWindow::HsvPattern2d(int w, int h) {

@@ -268,6 +268,7 @@ public:
     Button *hoveredButton;
 
     Vector HsvToRgb(Vector hsv);
+    Vector RgbToHsv(Vector rgb);
     std::shared_ptr<Pixmap> HsvPattern2d(int w, int h);
     std::shared_ptr<Pixmap> HsvPattern1d(double hue, double sat, int w, int h);
     void ColorPickerDone();
