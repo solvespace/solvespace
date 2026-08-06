@@ -107,6 +107,17 @@ void SBezier::ClosestPointTo(Vector p, double *t, bool mustConverge) const {
     }
 }
 
+bool SBezier::PointOnNonparallelCurve(const SBezier *curve, Vector *p) const {
+    if(deg + curve->deg == 2) {  // check for parallel lines
+        Vector d1 = ctrl[1].Minus(ctrl[0]).WithMagnitude(1.0);
+        Vector d2 = curve->ctrl[1].Minus(curve->ctrl[0]).WithMagnitude(1.0);
+        if(fabs(1.0 - d1.Dot(d2)) < 10*RATPOLY_EPS) {
+            return false;
+        }
+    }
+    return PointOnThisAndCurve(curve, p);
+}
+
 bool SBezier::PointOnThisAndCurve(const SBezier *sbb, Vector *p) const {
     double ta, tb;
     this->ClosestPointTo(*p, &ta, /*mustConverge=*/false);
@@ -517,7 +528,7 @@ bool SSurface::EdgeCurveIntersection(double *u, double *v, SBezier *curve) const
       if(*u < 0.5) {
         for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[0][n]; edge.weight[n]=weight[0][n]; }
         edge.deg = degn;
-        if (edge.PointOnThisAndCurve(curve, &p)) {
+        if (edge.PointOnNonparallelCurve(curve, &p)) {
             edge.ClosestPointTo(p, v); *u=0.0;
             dbp("found U=0.0, V=%g point=(%.3f %.3f %.3f)", *v, CO(p) );
             return true;
@@ -526,7 +537,7 @@ bool SSurface::EdgeCurveIntersection(double *u, double *v, SBezier *curve) const
       else { // u > 0.5
         for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[degm][n]; edge.weight[n]=weight[degm][n]; }
         edge.deg = degn;              
-        if (edge.PointOnThisAndCurve(curve, &p)) {
+        if (edge.PointOnNonparallelCurve(curve, &p)) {
             edge.ClosestPointTo(p, v); *u=1.0;
             dbp("found U=1.0, V=%g point=(%.3f %.3f %.3f)", *v, CO(p) );
             return true;
@@ -537,7 +548,7 @@ bool SSurface::EdgeCurveIntersection(double *u, double *v, SBezier *curve) const
       if(*v < 0.5) {
         for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[n][0]; edge.weight[n]=weight[n][0]; }
         edge.deg = degm;
-        if (edge.PointOnThisAndCurve(curve, &p)) {
+        if (edge.PointOnNonparallelCurve(curve, &p)) {
             edge.ClosestPointTo(p, u); *v=0.0;
             dbp("found U=%g, V=0.0 point=(%.3f %.3f %.3f)", *u, CO(p));
             return true;
@@ -545,7 +556,7 @@ bool SSurface::EdgeCurveIntersection(double *u, double *v, SBezier *curve) const
       } else { // v > 0.5
         for(int n=0;n<4;n++) { edge.ctrl[n]=ctrl[n][degn]; edge.weight[n]=weight[n][degn]; }
         edge.deg = degm;
-        if (edge.PointOnThisAndCurve(curve, &p)) {
+        if (edge.PointOnNonparallelCurve(curve, &p)) {
             edge.ClosestPointTo(p, u); *v=1.0;
             dbp("found U=%g, V=1.0 point=(%.3f %.3f %.3f)", *u, CO(p));
             return true;
