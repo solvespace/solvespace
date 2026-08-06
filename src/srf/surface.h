@@ -96,6 +96,7 @@ public:
     Vector TangentAt(double t) const;
     void ClosestPointTo(Vector p, double *t, bool mustConverge=true) const;
     void SplitAt(double t, SBezier *bef, SBezier *aft) const;
+    bool PointOnNonparallelCurve(const SBezier *curve, Vector *p) const;
     bool PointOnThisAndCurve(const SBezier *sbb, Vector *p) const;
 
     Vector Start() const;
