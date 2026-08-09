@@ -26,10 +26,14 @@ TEST_CASE(normal_watertight_volume) {
     bool inters, leaks;
     SKdNode::From(m)->MakeCertainEdgesInto(&el,
         EdgeKind::NAKED_OR_SELF_INTER, /*coplanarIsInter=*/true, &inters, &leaks);
+    // Free the edge list before checking. CHECK_* returns from the test case on
+    // failure, so checking first leaks the list whenever the check that matters
+    // fails, and the leak report then buries the actual failure.
+    bool noEdges = el.l.IsEmpty();
+    el.Clear();
     CHECK_FALSE(inters);
     CHECK_FALSE(leaks);
-    CHECK_TRUE(el.l.IsEmpty());
-    el.Clear();
+    CHECK_TRUE(noEdges);
 
     // The expected volume: A is 30*20*10 extruded down, B is 20*20*10 up,
     // C is 10*20*10 on top of B, and D is 10 wide by 5 deep, spanning from
