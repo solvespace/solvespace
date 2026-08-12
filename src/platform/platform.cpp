@@ -21,6 +21,7 @@
 #   include <windows.h>
 #   include <shellapi.h>
 #else
+#   include <dirent.h>
 #   include <unistd.h>
 #   include <sys/stat.h>
 #endif
@@ -36,6 +37,46 @@ namespace Platform {
 // Not persisted in settings. When non-empty, GetFontFiles() will scan this
 // directory instead of the system font directory.
 std::string customFontsFolder;
+
+bool IsFontFile(const Path &path) {
+    return path.HasExtension("ttf") || path.HasExtension("otf");
+}
+
+std::vector<Path> GetFontsFromDirectory(const std::string &directory) {
+    std::vector<Path> fonts;
+
+#if defined(WIN32)
+    std::wstring dirW = Widen(directory);
+    WIN32_FIND_DATAW wfd;
+    HANDLE h = FindFirstFileW((dirW + L"\\*").c_str(), &wfd);
+    while(h != INVALID_HANDLE_VALUE) {
+        std::string name = Narrow(wfd.cFileName);
+        if(name != "." && name != "..") {
+            Path fontPath = Path::From(directory).Join(name);
+            if(IsFontFile(fontPath)) {
+                fonts.push_back(fontPath);
+            }
+        }
+        if(!FindNextFileW(h, &wfd)) break;
+    }
+#else
+    DIR *dir = opendir(directory.c_str());
+    if(dir != NULL) {
+        struct dirent *entry;
+        while((entry = readdir(dir)) != NULL) {
+            std::string name = entry->d_name;
+            if(name == "." || name == "..") continue;
+            Path fontPath = Path::From(directory).Join(name);
+            if(IsFontFile(fontPath)) {
+                fonts.push_back(fontPath);
+            }
+        }
+        closedir(dir);
+    }
+#endif
+
+    return fonts;
+}
 
 //-----------------------------------------------------------------------------
 // UTF-8 ⟷ UTF-16 conversion, on Windows.

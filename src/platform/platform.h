@@ -79,6 +79,9 @@ const void *LoadResource(const std::string &name, size_t *size);
 // directory instead of the system font directory.
 extern std::string customFontsFolder;
 
+bool IsFontFile(const Path &path);
+std::vector<Path> GetFontsFromDirectory(const std::string &directory);
+
 // Startup and command-line argument handling.
 std::vector<std::string> InitCli(int argc, char **argv);
 

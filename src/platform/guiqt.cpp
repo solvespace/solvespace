@@ -11,10 +11,6 @@
 #include "platform.h"
 #include "guiqt.h"
 
-#ifndef WIN32
-#    include <dirent.h>
-#endif
-
 #include <QApplication>
 #include <QAction>
 #include <QActionGroup>
@@ -1010,37 +1006,7 @@ std::vector<Platform::Path> GetFontFiles() {
     // If a custom fonts folder was specified via --fonts-folder, scan it
     // instead of the system fonts. This is per-session and not persisted.
     if(!customFontsFolder.empty()) {
-#ifdef WIN32
-        std::wstring fontsDirW = Widen(customFontsFolder);
-        WIN32_FIND_DATAW wfd;
-        HANDLE h = FindFirstFileW((fontsDirW + L"\\*").c_str(), &wfd);
-        while (h != INVALID_HANDLE_VALUE) {
-            std::string name = Narrow(wfd.cFileName);
-            if(name != "." && name != "..") {
-                Platform::Path fontPath = Platform::Path::From(customFontsFolder).Join(name);
-                if(fontPath.HasExtension("ttf") || fontPath.HasExtension("otf")) {
-                    fonts.push_back(fontPath);
-                }
-            }
-            if (!FindNextFileW(h, &wfd)) break;
-        }
-#else
-        DIR *dir = opendir(customFontsFolder.c_str());
-        if(dir != NULL) {
-            struct dirent *entry;
-            while((entry = readdir(dir)) != NULL) {
-                std::string name = entry->d_name;
-                if(name == "." || name == "..") continue;
-                Platform::Path fontPath =
-                    Platform::Path::From(customFontsFolder).Join(name);
-                if(fontPath.HasExtension("ttf") || fontPath.HasExtension("otf")) {
-                    fonts.push_back(fontPath);
-                }
-            }
-            closedir(dir);
-        }
-#endif
-        return fonts;
+        return Platform::GetFontsFromDirectory(customFontsFolder);
     }
 
 #ifdef WIN32

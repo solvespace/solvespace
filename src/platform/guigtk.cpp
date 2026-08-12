@@ -3,7 +3,6 @@
 //
 // Copyright 2018 whitequark
 //-----------------------------------------------------------------------------
-#include <dirent.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -1602,21 +1601,7 @@ std::vector<Platform::Path> GetFontFiles() {
     // If a custom fonts folder was specified via --fonts-folder, scan it
     // instead of the system fonts. This is per-session and not persisted.
     if(!customFontsFolder.empty()) {
-        DIR *dir = opendir(customFontsFolder.c_str());
-        if(dir != NULL) {
-            struct dirent *entry;
-            while((entry = readdir(dir)) != NULL) {
-                std::string name = entry->d_name;
-                if(name == "." || name == "..") continue;
-                Platform::Path fontPath =
-                    Platform::Path::From(customFontsFolder).Join(name);
-                if(fontPath.HasExtension("ttf") || fontPath.HasExtension("otf")) {
-                    fonts.push_back(fontPath);
-                }
-            }
-            closedir(dir);
-        }
-        return fonts;
+        return Platform::GetFontsFromDirectory(customFontsFolder);
     }
 
     // fontconfig is already initialized by GTK
