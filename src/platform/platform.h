@@ -74,6 +74,11 @@ void RemoveFile(const Platform::Path &filename);
 // Resource loading function.
 const void *LoadResource(const std::string &name, size_t *size);
 
+// Custom fonts folder, set per-session via the --fonts-folder CLI option.
+// Not persisted in settings. When non-empty, GetFontFiles() will scan this
+// directory instead of the system font directory.
+extern std::string customFontsFolder;
+
 // Startup and command-line argument handling.
 std::vector<std::string> InitCli(int argc, char **argv);
 

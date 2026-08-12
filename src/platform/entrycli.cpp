@@ -34,6 +34,9 @@ Common options:
         For non-export commands, the unit is %%, and the default is 1.0 %%.
     -b, --bg-color <on|off>
         Whether to export the background colour in vector formats. Defaults to off.
+    --fonts-folder <path>
+        Use a custom fonts folder instead of the system fonts. This is applied
+        per-session and is not saved in settings.
 
 Commands:
     version
@@ -182,6 +185,14 @@ static bool RunCommand(const std::vector<std::string> args) {
         } else return false;
     };
 
+    auto ParseFontsFolder = [&](size_t &argn) {
+        if(argn + 1 < args.size() && args[argn] == "--fonts-folder") {
+            argn++;
+            Platform::customFontsFolder = args[argn];
+            return true;
+        } else return false;
+    };
+
     unsigned width = 0, height = 0;
     if(args[1] == "version") {
         fprintf(stderr, "SolveSpace version %s \n\n", PACKAGE_VERSION);
@@ -201,7 +212,8 @@ static bool RunCommand(const std::vector<std::string> args) {
                  ParseOutputPattern(argn) ||
                  ParseViewDirection(argn) ||
                  ParseChordTolerance(argn) ||
-                 ParseSize(argn))) {
+                 ParseSize(argn) ||
+                 ParseFontsFolder(argn))) {
                 fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
@@ -253,7 +265,8 @@ static bool RunCommand(const std::vector<std::string> args) {
                  ParseOutputPattern(argn) ||
                  ParseViewDirection(argn) ||
                  ParseChordTolerance(argn) ||
-                 ParseBgColor(argn))) {
+                 ParseBgColor(argn) ||
+                 ParseFontsFolder(argn))) {
                 fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
@@ -276,7 +289,8 @@ static bool RunCommand(const std::vector<std::string> args) {
         for(size_t argn = 2; argn < args.size(); argn++) {
             if(!(ParseInputFile(argn) ||
                  ParseOutputPattern(argn) ||
-                 ParseChordTolerance(argn))) {
+                 ParseChordTolerance(argn) ||
+                 ParseFontsFolder(argn))) {
                 fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
@@ -291,7 +305,8 @@ static bool RunCommand(const std::vector<std::string> args) {
         for(size_t argn = 2; argn < args.size(); argn++) {
             if(!(ParseInputFile(argn) ||
                  ParseOutputPattern(argn) ||
-                 ParseChordTolerance(argn))) {
+                 ParseChordTolerance(argn) ||
+                 ParseFontsFolder(argn))) {
                 fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
@@ -305,7 +320,8 @@ static bool RunCommand(const std::vector<std::string> args) {
     } else if(args[1] == "export-surfaces") {
         for(size_t argn = 2; argn < args.size(); argn++) {
             if(!(ParseInputFile(argn) ||
-                 ParseOutputPattern(argn))) {
+                 ParseOutputPattern(argn) ||
+                 ParseFontsFolder(argn))) {
                 fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
@@ -318,7 +334,8 @@ static bool RunCommand(const std::vector<std::string> args) {
     } else if(args[1] == "regenerate") {
         for(size_t argn = 2; argn < args.size(); argn++) {
             if(!(ParseInputFile(argn) ||
-                 ParseChordTolerance(argn))) {
+                 ParseChordTolerance(argn) ||
+                 ParseFontsFolder(argn))) {
                 fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }

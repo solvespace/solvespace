@@ -11,6 +11,10 @@
 #include "platform.h"
 #include "guiqt.h"
 
+#ifndef WIN32
+#    include <dirent.h>
+#endif
+
 #include <QApplication>
 #include <QAction>
 #include <QActionGroup>
@@ -1003,6 +1007,42 @@ void Request3DConnexionEventsForWindow(WindowRef window) {}
 std::vector<Platform::Path> GetFontFiles() {
     std::vector<Platform::Path> fonts;
 
+    // If a custom fonts folder was specified via --fonts-folder, scan it
+    // instead of the system fonts. This is per-session and not persisted.
+    if(!customFontsFolder.empty()) {
+#ifdef WIN32
+        std::wstring fontsDirW = Widen(customFontsFolder);
+        WIN32_FIND_DATAW wfd;
+        HANDLE h = FindFirstFileW((fontsDirW + L"\\*").c_str(), &wfd);
+        while (h != INVALID_HANDLE_VALUE) {
+            std::string name = Narrow(wfd.cFileName);
+            if(name != "." && name != "..") {
+                Platform::Path fontPath = Platform::Path::From(customFontsFolder).Join(name);
+                if(fontPath.HasExtension("ttf") || fontPath.HasExtension("otf")) {
+                    fonts.push_back(fontPath);
+                }
+            }
+            if (!FindNextFileW(h, &wfd)) break;
+        }
+#else
+        DIR *dir = opendir(customFontsFolder.c_str());
+        if(dir != NULL) {
+            struct dirent *entry;
+            while((entry = readdir(dir)) != NULL) {
+                std::string name = entry->d_name;
+                if(name == "." || name == "..") continue;
+                Platform::Path fontPath =
+                    Platform::Path::From(customFontsFolder).Join(name);
+                if(fontPath.HasExtension("ttf") || fontPath.HasExtension("otf")) {
+                    fonts.push_back(fontPath);
+                }
+            }
+            closedir(dir);
+        }
+#endif
+        return fonts;
+    }
+
 #ifdef WIN32
     std::wstring fontsDirW(MAX_PATH, '\0');
     fontsDirW.resize(GetWindowsDirectoryW(&fontsDirW[0], fontsDirW.length()));
@@ -1080,6 +1120,20 @@ int main(int argc, char** argv) {
 #endif
 
     Platform::SSApplication app(argc, argv);
+
+    // Parse the --fonts-folder option (per-session, not persisted in settings).
+    for(int i = 1; i < argc; i++) {
+        if(std::string(argv[i]) == "--fonts-folder" && i + 1 < argc) {
+            Platform::customFontsFolder = argv[i + 1];
+            // Remove the option and its value from the args list.
+            for(int j = i; j < argc - 2; j++) {
+                argv[j] = argv[j + 2];
+            }
+            argc -= 2;
+            break;
+        }
+    }
+
     Platform::Open3DConnexion();
     SS.Init();
 

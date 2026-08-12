@@ -13,6 +13,16 @@ using namespace SolveSpace;
 int main(int argc, char** argv) {
     std::vector<std::string> args = Platform::InitGui(argc, argv);
 
+    // Parse the --fonts-folder option (per-session, not persisted in settings).
+    for(size_t i = 1; i < args.size(); i++) {
+        if(args[i] == "--fonts-folder" && i + 1 < args.size()) {
+            Platform::customFontsFolder = args[i + 1];
+            // Remove the option and its value from the args list.
+            args.erase(args.begin() + i, args.begin() + i + 2);
+            break;
+        }
+    }
+
     Platform::Open3DConnexion();
     SS.Init();
 

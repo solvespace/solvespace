@@ -32,6 +32,11 @@
 namespace SolveSpace {
 namespace Platform {
 
+// Custom fonts folder, set per-session via the --fonts-folder CLI option.
+// Not persisted in settings. When non-empty, GetFontFiles() will scan this
+// directory instead of the system font directory.
+std::string customFontsFolder;
+
 //-----------------------------------------------------------------------------
 // UTF-8 ⟷ UTF-16 conversion, on Windows.
 //-----------------------------------------------------------------------------

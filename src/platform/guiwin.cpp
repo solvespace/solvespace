@@ -1687,6 +1687,25 @@ FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
 std::vector<Platform::Path> GetFontFiles() {
     std::vector<Platform::Path> fonts;
 
+    // If a custom fonts folder was specified via --fonts-folder, scan it
+    // instead of the system fonts. This is per-session and not persisted.
+    if(!customFontsFolder.empty()) {
+        std::wstring fontsDirW = Widen(customFontsFolder);
+        WIN32_FIND_DATAW wfd;
+        HANDLE h = FindFirstFileW((fontsDirW + L"\\*").c_str(), &wfd);
+        while(h != INVALID_HANDLE_VALUE) {
+            std::string name = Narrow(wfd.cFileName);
+            if(name != "." && name != "..") {
+                Platform::Path fontPath = Platform::Path::From(customFontsFolder).Join(name);
+                if(fontPath.HasExtension("ttf") || fontPath.HasExtension("otf")) {
+                    fonts.push_back(fontPath);
+                }
+            }
+            if(!FindNextFileW(h, &wfd)) break;
+        }
+        return fonts;
+    }
+
     std::wstring fontsDirW(MAX_PATH, '\0');
     fontsDirW.resize(GetWindowsDirectoryW(&fontsDirW[0], fontsDirW.length()));
     fontsDirW += L"\\fonts\\";

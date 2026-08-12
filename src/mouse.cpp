@@ -824,8 +824,7 @@ hRequest GraphicsWindow::AddRequest(Request::Type type, bool rememberForUndo) {
     Request r = {};
     r.group = activeGroup;
     Group *g = SK.GetGroup(activeGroup);
-    if(g->type == Group::Type::DRAWING_3D || g->type == Group::Type::DRAWING_WORKPLANE
-       || type == Request::Type::DATUM_POINT) {
+    if(g->type == Group::Type::DRAWING_3D || g->type == Group::Type::DRAWING_WORKPLANE) {
         r.construction = false;
     } else {
         r.construction = true;
@@ -989,7 +988,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
             switch(pending.command) {
                 case Command::DATUM_POINT:
                     hr = AddRequest(Request::Type::DATUM_POINT);
-                    SK.GetEntity(hr.entity(0))->PointForceTo(v);
+                    SK.GetEntity(hr.entity(0))->PointForceTo(v);    
                     ConstrainPointByHovered(hr.entity(0), &mouse);
 
                     ClearSuper();

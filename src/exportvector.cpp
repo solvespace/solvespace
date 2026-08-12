@@ -104,11 +104,10 @@ public:
                     type.path.push_back(-sw);
                     break;
 
-                case StipplePattern::FREEHAND:
-                case StipplePattern::ZIGZAG:
-                    // Not implemented; exported as continuous.
-                    break;
-            }
+        case StipplePattern::FREEHAND:
+        case StipplePattern::ZIGZAG:
+            break;
+    }
             dxf->writeLineType(&type);
         }
     }
@@ -675,7 +674,7 @@ static std::string MakeStipplePattern(StipplePattern pattern, double scale, char
         case StipplePattern::FREEHAND:
         case StipplePattern::ZIGZAG:
             dbp("Freehand and zigzag export not implemented; "
-                "exporting as continuous line");
+                "exporting as continauous line");
             break;
     }
     std::replace(result.begin(), result.end(), '_', delimiter);
