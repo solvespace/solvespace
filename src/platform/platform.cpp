@@ -33,8 +33,8 @@
 namespace SolveSpace {
 namespace Platform {
 
-// Custom fonts folder, set per-session via the --fonts-folder CLI option.
-// Not persisted in settings. When non-empty, GetFontFiles() will scan this
+// The custom fonts folder override. This is set by the CLI or from the
+// persisted user settings; when non-empty, GetFontFiles() will scan this
 // directory instead of the system font directory.
 std::string customFontsFolder;
 

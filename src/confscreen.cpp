@@ -214,6 +214,11 @@ void TextWindow::ScreenChangeAnimationSpeed(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::ANIMATION_SPEED;
 }
 
+void TextWindow::ScreenChangeFontsFolder(int link, uint32_t v) {
+    SS.TW.ShowEditControl(36, Platform::customFontsFolder);
+    SS.TW.edit.meaning = Edit::FONTS_FOLDER;
+}
+
 void TextWindow::ShowConfiguration() {
     int i;
     Printf(true, "%Ft user color (r, g, b)");
@@ -365,6 +370,11 @@ void TextWindow::ShowConfiguration() {
         SS.arcDimDefaultDiameter ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  display the full path in the title bar%E",
            &ScreenChangeShowFullFilePath, SS.showFullFilePath ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "");
+    Printf(false, "%Ft fonts folder%E");
+    Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
+        Platform::customFontsFolder.empty() ? "<default>" : Platform::customFontsFolder.c_str(),
+        &ScreenChangeFontsFolder);
     Printf(false, "");
     Printf(false, "%Ft autosave interval (in minutes)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
@@ -581,6 +591,10 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
             } else {
                 SS.animationSpeed = 800;
             }
+            break;
+        }
+        case Edit::FONTS_FOLDER: {
+            Platform::customFontsFolder = s;
             break;
         }
 

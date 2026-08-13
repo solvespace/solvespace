@@ -129,6 +129,10 @@ void SolveSpaceUI::Init() {
     }
     // Autosave timer
     autosaveInterval = settings->ThawInt("AutosaveInterval", 5);
+    // Custom font folder override
+    if(Platform::customFontsFolder.empty()) {
+        Platform::customFontsFolder = settings->ThawString("CustomFontsFolder", "");
+    }
     // Locale
     std::string locale = settings->ThawString("Locale", "");
     if(!locale.empty()) {
@@ -311,6 +315,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeFloat("GCode_PlungeFeed", gCode.plungeFeed);
     // Show toolbar in the graphics window
     settings->FreezeBool("ShowToolbar", showToolbar);
+    // Custom font folder override
+    settings->FreezeString("CustomFontsFolder", Platform::customFontsFolder);
     // Autosave timer
     settings->FreezeInt("AutosaveInterval", autosaveInterval);
 

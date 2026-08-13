@@ -345,6 +345,7 @@ public:
         FIND_CONSTRAINT_TIMEOUT = 119,
         EXPLODE_DISTANCE      = 120,
         ANIMATION_SPEED       = 121,
+        FONTS_FOLDER          = 122,
         // For TTF text
         TTF_TEXT              = 300,
         // For the step dimension screen
@@ -528,6 +529,7 @@ public:
     static void ScreenChangeAutosaveInterval(int link, uint32_t v);
     static void ScreenChangeFindConstraintTimeout(int link, uint32_t v);
     static void ScreenChangeAnimationSpeed(int link, uint32_t v);
+    static void ScreenChangeFontsFolder(int link, uint32_t v);
     static void ScreenChangeStyleName(int link, uint32_t v);
     static void ScreenChangeStyleMetric(int link, uint32_t v);
     static void ScreenChangeStyleTextAngle(int link, uint32_t v);
