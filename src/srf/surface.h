@@ -402,6 +402,7 @@ public:
     void MakeFromIntersectionOf(SShell *a, SShell *b);
     void MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type);
     void CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into);
+    void SplitCurvesAtCrossings();
     void CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSurface::CombineAs type);
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
     void MakeClassifyingBsps(SShell *useCurvesFrom);
