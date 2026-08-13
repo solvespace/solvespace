@@ -111,11 +111,26 @@ bool SBezier::PointOnNonparallelCurve(const SBezier *curve, Vector *p) const {
     if(deg + curve->deg == 2) {  // check for parallel lines
         Vector d1 = ctrl[1].Minus(ctrl[0]).WithMagnitude(1.0);
         Vector d2 = curve->ctrl[1].Minus(curve->ctrl[0]).WithMagnitude(1.0);
-        if(fabs(1.0 - d1.Dot(d2)) < 10*RATPOLY_EPS) {
+        // I'm not sure what the angle tollerance should be here.
+        if(d1.Cross(d2).Magnitude() < LENGTH_EPS) {
             return false;
         }
     }
-    return PointOnThisAndCurve(curve, p);
+    // we will not tail call here because of one more check afterward.
+    if(!PointOnThisAndCurve(curve, p)) {
+        return false;
+    }
+    // if it did converge we need to verify that it is not a parallel situation
+    // since it will not have converged all the way and would produce bad results.
+    double ta, tb;
+    this->ClosestPointTo(*p, &ta, /*mustConverge=*/false);
+    curve->ClosestPointTo(*p, &tb, /*mustConverge=*/false);
+    Vector da = this->TangentAt(ta).WithMagnitude(1),
+           db = curve->TangentAt(tb).WithMagnitude(1);
+    if(da.Cross(db).Magnitude() < LENGTH_EPS) {
+        return false;
+    }
+    return true;    
 }
 
 bool SBezier::PointOnThisAndCurve(const SBezier *sbb, Vector *p) const {
