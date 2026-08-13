@@ -8,9 +8,11 @@ Geometric Modelling Kernel (NURBS)
 Thanks to Claude Fable 5
 * Numerous bug fixes relating to flat surfaces and edges.
 * Some bugs relating to curved surfaces fixed.
+* Fixes when edges intersect tangent on the edge of a surface.
 * Significant reduction in red lines, naked edges, and missing surfaces.
 
 Misc:
+* Initialize the color picker to the current color instead of black.
 * Fix some file dialog issues.
 * small fixes in the web version
 
