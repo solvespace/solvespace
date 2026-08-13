@@ -222,6 +222,7 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
             l->Add(&inter);
         } else {
             // Might not converge if line is almost tangent to surface...
+            dbp("AllPointsIntersectingUntrimmed failed");
         }
         return;
     }
