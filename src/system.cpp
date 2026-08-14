@@ -316,32 +316,70 @@ bool System::NewtonSolve() {
     for(i = 0; i < mat.m; i++) {
         mat.B.num[i] = (mat.B.sym[i])->Eval();
     }
+
+    // Where we were before we took the step, so that we can take a different
+    // one from the same operating point when the first is no good.
+    std::vector<double> prevVal(mat.n);
+
+    // Take the Newton step,
+    //      J(x_n) (x_{n+1} - x_n) = 0 - F(x_n)
+    // scaled by relax, and re-evaluate the functions, since the params have
+    // just changed. Returns false if that took us somewhere clearly useless.
+    auto takeStep = [&](double relax) {
+        for(int k = 0; k < mat.n; k++) {
+            Param *p = param.FindById(mat.param[k]);
+            p->val = prevVal[k] - relax*mat.X[k];
+            if(IsReasonable(p->val)) return false;
+        }
+        for(int k = 0; k < mat.m; k++) {
+            mat.B.num[k] = (mat.B.sym[k])->Eval();
+            if(IsReasonable(mat.B.num[k])) return false;
+        }
+        return true;
+    };
+
+    // The radius of the region around our operating point that we trust the
+    // linearization in.
+    double trust = 0;
+
     do {
         // And evaluate the Jacobian at our initial operating point.
         EvalJacobian();
 
         if(!SolveLeastSquares()) break;
 
-        // Take the Newton step;
-        //      J(x_n) (x_{n+1} - x_n) = 0 - F(x_n)
         for(i = 0; i < mat.n; i++) {
-            Param *p = param.FindById(mat.param[i]);
-            p->val -= mat.X[i];
-            if(IsReasonable(p->val)) {
+            prevVal[i] = param.FindById(mat.param[i])->val;
+        }
+        const double err = mat.B.num.squaredNorm();
+        const double stepNorm = mat.X.norm();
+        if(iter == 0) trust = stepNorm/2;
+
+        // A Newton step is only as good as the linearization of F about our
+        // operating point, so where F is strongly curved the full step can
+        // land much further from the solution than it started; and if it
+        // lands near a critical point of F, then the step after that one is
+        // enormous, and the geometry runs away to nowhere. So don't go
+        // further than the distance we currently trust that linearization
+        // over, and grow that distance only as steps keep working out.
+        bool accepted = false;
+        for(int tries = 0; tries < 12 && !accepted && stepNorm > 0; tries++) {
+            double relax = (stepNorm > trust) ? trust/stepNorm : 1.0;
+            accepted = takeStep(relax) && mat.B.num.squaredNorm() < err;
+            if(!accepted) trust /= 4;
+        }
+        if(accepted) {
+            trust *= 2;
+        } else {
+            // Nothing along this direction is an improvement, so just take
+            // the whole thing, like we always used to; if that was a bad
+            // idea, then the iteration limit below will catch it.
+            if(!takeStep(1.0)) {
                 // Very bad, and clearly not convergent
                 return false;
             }
         }
 
-        // Re-evalute the functions, since the params have just changed.
-        for(i = 0; i < mat.m; i++) {
-            mat.B.num[i] = (mat.B.sym[i])->Eval();
-            if(IsReasonable(mat.B.num[i])) {
-                // Very bad, and clearly not convergent
-                return false;
-            }
-        }
-        
         // Check for convergence
         converged = true;
         for(i = 0; i < mat.m; i++) {
