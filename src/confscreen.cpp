@@ -215,7 +215,7 @@ void TextWindow::ScreenChangeAnimationSpeed(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeFontsFolder(int link, uint32_t v) {
-    SS.TW.ShowEditControl(36, Platform::customFontsFolder);
+    SS.TW.ShowEditControl(13, Platform::customFontsFolder);
     SS.TW.edit.meaning = Edit::FONTS_FOLDER;
 }
 
