@@ -22,6 +22,7 @@ void SolveSpaceUI::Init() {
 
     SS.tangentArcRadius = 10.0;
     SS.explodeDistance = 1.0;
+    SS.textSizeScale = 1.0;
 
     // Then, load the registry settings.
     // Default list of colors for the model material

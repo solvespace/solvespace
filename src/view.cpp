@@ -59,6 +59,11 @@ void TextWindow::ShowEditView() {
     Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
         SS.MmToString(SS.explodeDistance).c_str(),
         &ScreenChangeExplodeDistance, 0);
+    Printf(false, "");
+    Printf(false, "%Ft text size scale%E");
+    Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
+        SS.MmToString(SS.textSizeScale).c_str(),
+        &ScreenChangeTextSizeScale, 0);
 
 }
 
@@ -115,6 +120,11 @@ void TextWindow::ScreenChangeCameraTangent(int link, uint32_t v) {
 void TextWindow::ScreenChangeExplodeDistance(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, SS.MmToString(SS.explodeDistance, true));
     SS.TW.edit.meaning = Edit::EXPLODE_DISTANCE;
+} 
+
+void TextWindow::ScreenChangeTextSizeScale(int link, uint32_t v) {
+    SS.TW.ShowEditControl(3, SS.MmToString(SS.textSizeScale, true));
+    SS.TW.edit.meaning = Edit::TEXT_SIZE_SCALE;
 }
 
 bool TextWindow::EditControlDoneForView(const std::string &s) {
