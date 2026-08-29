@@ -1,0 +1,30 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.solvespace">
+    <uses-feature android:glEsVersion="0x00020000" android:required="true"/>
+    <application
+        android:label="SolveSpace"
+        android:theme="@android:style/Theme.Holo"
+        android:icon="@drawable/ic_launcher"
+        android:allowBackup="true"
+        android:resizeableActivity="true"
+        android:hardwareAccelerated="true">
+        <activity
+            android:name=".SolveSpaceActivity"
+            android:configChanges="orientation|screenSize|screenLayout"
+            android:windowSoftInputMode="adjustPan"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:host="*"
+                      android:mimeType="application/x-solvespace"
+                      android:pathPattern=".*\\.slvs"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

@@ -3,7 +3,9 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
+#ifndef __ANDROID__
 #include <zlib.h>
+#endif
 #include <png.h>
 #include <regex>
 #include "solvespace.h"
@@ -27,7 +29,7 @@ std::string LoadString(const std::string &name) {
 
     return result;
 }
-
+#ifndef __ANDROID__
 std::string LoadStringFromGzip(const std::string &name) {
     size_t deflatedSize;
     const void *data = Platform::LoadResource(name, &deflatedSize);
@@ -59,7 +61,7 @@ std::string LoadStringFromGzip(const std::string &name) {
 
     return result;
 }
-
+#endif
 std::shared_ptr<Pixmap> LoadPng(const std::string &name) {
     size_t size;
     const void *data = Platform::LoadResource(name, &size);
@@ -669,7 +671,13 @@ size_t BitmapFont::GetWidth(const std::string &str) {
 }
 
 BitmapFont BitmapFont::Create() {
-    BitmapFont Font = BitmapFont::From(LoadStringFromGzip("fonts/unifont.hex.gz"));
+    BitmapFont Font = BitmapFont::From(
+    #ifdef __ANDROID__
+        LoadString("fonts/unifont.hex")
+    #else
+        LoadStringFromGzip("fonts/unifont.hex.gz")
+    #endif
+    );
     // Unifont doesn't have a glyph for U+0020.
     Font.AddGlyph(0x0020, Pixmap::Create(Pixmap::Format::RGB, 8, 16));
     Font.AddGlyph(0xE000, LoadPng("fonts/private/0-check-false.png"));
@@ -886,7 +894,13 @@ const VectorFont::Glyph &VectorFont::GetGlyph(char32_t codepoint) {
 VectorFont *VectorFont::Builtin() {
     static VectorFont Font;
     if(Font.IsEmpty()) {
-        Font = VectorFont::From(LoadStringFromGzip("fonts/unicode.lff.gz"));
+        Font = VectorFont::From(
+        #ifdef __ANDROID__
+            LoadString("fonts/unicode.lff")
+        #else
+            LoadStringFromGzip("fonts/unicode.lff.gz")
+        #endif
+        );
     }
     return &Font;
 }

@@ -15,12 +15,14 @@
 #include <map>
 
 #include <mimalloc.h>
-
 #if defined(WIN32)
 // Conversely, include Microsoft headers after solvespace.h to avoid clashes.
 #   include <windows.h>
 #   include <shellapi.h>
 #else
+#ifdef __ANDROID__
+#   include <android/asset_manager_jni.h>
+#endif
 #   include <unistd.h>
 #   include <sys/stat.h>
 #endif
@@ -154,9 +156,24 @@ Path Path::CurrentDirectory() {
 
 std::string Path::FileName() const {
     std::string fileName = raw;
+#ifdef __ANDROID__
+    std::string SEPARATOR;
+    if (fileName.size() > 8 && !fileName.compare(0, 8, "content:")) {
+        SEPARATOR = "%2F";
+    } else {
+        SEPARATOR = "/";
+    }
+    const size_t siz = SEPARATOR.size();
+#else
+    constexpr size_t siz = 1;
+#endif
     size_t slash = fileName.rfind(SEPARATOR);
-    if(slash != std::string::npos) {
-        fileName = fileName.substr(slash + 1);
+    if(slash != std::string::npos
+#ifdef __ANDROID__
+        ||(siz==3 && (slash=fileName.rfind("%3A")) != std::string::npos)
+#endif
+    ) {
+        fileName = fileName.substr(slash + siz);
     }
     return fileName;
 }
@@ -186,6 +203,21 @@ bool Path::HasExtension(std::string theirExt) const {
 }
 
 Path Path::WithExtension(std::string ext) const {
+#ifdef __ANDROID__
+    // A Storage Access Framework content URI is a document reference, not a
+    // filesystem path; rewriting it would break the URI. Companion files
+    // (e.g. autosave "*.slvs~") cannot live next to the document, so map them
+    // into the app's private storage, keyed by the URI.
+    if(raw.compare(0, 8, "content:") == 0) {
+        std::string dir = AndroidInternalStoragePath();
+        if(dir.empty()) {
+            // No Java context available; leave the path untouched rather
+            // than fabricating a broken document URI.
+            return *this;
+        }
+        return From(dir + "/" + AndroidContentKey(raw.c_str()) + "." + ext);
+    }
+#endif
     Path withExt = *this;
     size_t dot = withExt.raw.rfind('.');
     if(dot != std::string::npos) {
@@ -212,6 +244,14 @@ static void FindPrefix(const std::string &raw, size_t *pos) {
             *pos = raw.find('\\', slashAt + 1);
         }
     }
+#elif defined(__ANDROID__)
+    if(raw.compare(0, 8, "content:") == 0) {
+        // A Storage Access Framework content URI acts as its own root; there
+        // are no path components below it that can be expanded/relativized.
+        *pos = 8;
+    } else if(!raw.empty() && raw[0] == '/') {
+        *pos = 1;
+    }
 #else
     if(!raw.empty() && raw[0] == '/') {
         *pos = 1;
@@ -220,9 +260,13 @@ static void FindPrefix(const std::string &raw, size_t *pos) {
 }
 
 bool Path::IsAbsolute() const {
+#ifdef __ANDROID__
+    return true;
+#else
     size_t pos;
     FindPrefix(raw, &pos);
     return pos != std::string::npos;
+#endif
 }
 
 // Removes one component from the end of the path.
@@ -279,6 +323,13 @@ Path Path::Join(const Path &other) const {
 // On Windows, additionally prepends the UNC prefix to absolute paths without one.
 // Returns an empty path if a ".." component would escape from the root.
 Path Path::Expand(bool fromCurrentDirectory) const {
+#ifdef __ANDROID__
+    // Storage Access Framework content URIs are opaque to filesystem
+    // semantics (no "." / "..", no real parent); never mangle them.
+    if(raw.compare(0, 8, "content:") == 0) {
+        return *this;
+    }
+#endif
     Path source;
     Path expanded;
 
@@ -416,6 +467,31 @@ std::string Path::ToPortable() const {
 FILE *OpenFile(const Platform::Path &filename, const char *mode) {
     ssassert(filename.raw.length() == strlen(filename.raw.c_str()),
              "Unexpected null byte in middle of a path");
+#ifdef __ANDROID__
+    if(filename.raw.compare(0, 8, "content:") == 0) {
+        // Storage Access Framework URIs cannot be opened with fopen(); open
+        // them through the Java activity's ContentResolver and wrap the
+        // returned descriptor in a FILE*. The Java side detaches the fd, so
+        // ownership transfers to us and fclose() will release it.
+        std::string jmode;
+        if(strcmp(mode, "rb") == 0) jmode = "r";
+        else if(strcmp(mode, "wb") == 0) jmode = "w";
+        else if(strcmp(mode, "ab") == 0) jmode = "wa";
+        else if(strcmp(mode, "r+b") == 0 || strcmp(mode, "rb+") == 0) jmode = "rw";
+        else if(strcmp(mode, "w+b") == 0 || strcmp(mode, "wb+") == 0) jmode = "rwt";
+        else if(strcmp(mode, "a+b") == 0 || strcmp(mode, "ab+") == 0) jmode = "rwa";
+        else jmode = mode;
+
+        int fd = AndroidOpenContentFile(filename.raw.c_str(), jmode.c_str());
+        if(fd < 0) return NULL;
+        FILE *f = fdopen(fd, mode);
+        if(f == NULL) {
+            close(fd);
+            return NULL;
+        }
+        return f;
+    }
+#endif
 #if defined(WIN32)
     return _wfopen(Widen(filename.Expand(/*fromCurrentDirectory=*/true).raw).c_str(), Widen(mode).c_str());
 #else
@@ -433,6 +509,14 @@ bool FileExists(const Platform::Path &filename) {
 void RemoveFile(const Platform::Path &filename) {
     ssassert(filename.raw.length() == strlen(filename.raw.c_str()),
              "Unexpected null byte in middle of a path");
+#ifdef __ANDROID__
+    if(filename.raw.compare(0, 8, "content:") == 0) {
+        // Storage Access Framework URIs must be deleted through the
+        // Java activity (DocumentsContract), not unlink().
+        AndroidDeleteContentFile(filename.raw.c_str());
+        return;
+    }
+#endif
 #if defined(WIN32)
     _wremove(Widen(filename.Expand().raw).c_str());
 #else
@@ -536,7 +620,7 @@ static Platform::Path ResourcePath(const std::string &name) {
     return Path::From("res/" + name);
 }
 
-#elif !defined(WIN32)
+#elif !defined(WIN32) && !defined(__ANDROID__)
 
 #    if defined(__linux__)
 static const char *selfSymlink = "/proc/self/exe";
@@ -594,13 +678,36 @@ static Platform::Path ResourcePath(const std::string &name) {
 #endif
 
 #if !defined(WIN32)
-
+#ifdef __ANDROID__
+AAssetManager * amgr;
+static bool ReadAsset(const char *name, std::string *data) {
+    AAsset * asset = AAssetManager_open(amgr, name, AASSET_MODE_UNKNOWN);
+    if (!asset) {
+        return false;
+    }
+    off_t size = AAsset_getLength(asset);
+    data->resize(size);
+    char *buf = (char*)data->data();
+    if (!AAsset_read(asset, buf, size)) {
+        AAsset_close(asset);
+        return false;
+    }
+    AAsset_close(asset);
+    return true;
+}
+#endif
 const void *LoadResource(const std::string &name, size_t *size) {
     static std::map<std::string, std::string> cache;
 
     auto it = cache.find(name);
     if(it == cache.end()) {
-        ssassert(ReadFile(ResourcePath(name), &cache[name]), "Cannot read resource");
+        ssassert(
+        #ifdef __ANDROID__
+            ReadAsset(name.c_str(), &cache[name]),
+        #else
+            ReadFile(ResourcePath(name), &cache[name]),
+        #endif
+            ("Cannot read resource "+name).c_str());
         it = cache.find(name);
     }
 

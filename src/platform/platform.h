@@ -6,6 +6,10 @@
 
 #ifndef SOLVESPACE_PLATFORM_H
 #define SOLVESPACE_PLATFORM_H
+#ifdef __ANDROID__
+#include <android/asset_manager.h>
+#include <jni.h>
+#endif
 
 #include <string>
 #include <vector>
@@ -80,6 +84,23 @@ std::vector<std::string> InitCli(int argc, char **argv);
 // Temporary arena functions.
 void *AllocTemporary(size_t size);
 void FreeAllTemporary();
+
+// Android Env
+#ifdef __ANDROID__
+extern AAssetManager *amgr;
+extern JNIEnv* GetJNIEnv();
+// Open a Storage Access Framework content URI through the Java activity's
+// ContentResolver. Returns an owned file descriptor (>= 0) on success, or -1
+// on failure. The descriptor must be closed by the caller (e.g. via fclose).
+int AndroidOpenContentFile(const char *uri, const char *mode);
+// Delete a Storage Access Framework content URI through the Java activity.
+void AndroidDeleteContentFile(const char *uri);
+// Absolute path of the app's private files directory (getFilesDir()).
+std::string AndroidInternalStoragePath();
+// Maps a content URI to a filesystem-safe name (used as a key for
+// autosave/backup companions that must live in private storage).
+std::string AndroidContentKey(const char *uri);
+#endif
 
 } // namespace Platform
 } // namespace SolveSpace

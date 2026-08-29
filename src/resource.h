@@ -26,7 +26,9 @@ namespace Platform {
 } // namespace Platform
 
 std::string LoadString(const std::string &name);
+#ifndef __ANDROID__
 std::string LoadStringFromGzip(const std::string &name);
+#endif
 std::shared_ptr<Pixmap> LoadPng(const std::string &name);
 
 class Pixmap {

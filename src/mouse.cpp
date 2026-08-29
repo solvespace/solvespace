@@ -810,9 +810,10 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     }
 
     menu->PopUp();
-
+#ifndef __ANDROID__
     context.active = false;
     SS.ScheduleShowTW();
+#endif
 }
 
 hRequest GraphicsWindow::AddRequest(Request::Type type) {
@@ -961,8 +962,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
     }
     SS.TW.HideEditControl();
 
-    if(SS.showToolbar) {
-        if(ToolbarMouseDown((int)mx, (int)my)) return;
+    if(SS.showToolbar && ToolbarMouseDown((int)mx, (int)my)) {
+        return;
     }
 
     // This will be clobbered by MouseMoved below.
@@ -1367,6 +1368,10 @@ void GraphicsWindow::MouseLeftUp(double mx, double my, bool shiftDown, bool ctrl
         default:
             break;  // do nothing
     }
+
+    if (SS.showToolbar) {
+        ToolbarMouseUp((int)mx, (int)my);
+    }
 }
 
 void GraphicsWindow::EditConstraint(hConstraint constraint) {
@@ -1524,6 +1529,7 @@ void GraphicsWindow::MouseLeave() {
     if(!context.active) {
         hover.Clear();
         toolbarHovered = Command::NONE;
+        toolbarPressed = Command::NONE;
         Invalidate();
     }
     SS.extraLine.draw = false;

@@ -131,7 +131,7 @@ bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
         window->SetTooltip("", 0, 0, 0, 0);
     }
 
-    return withinToolbar;
+    return withinToolbar || toolbarPressed != Command::NONE;
 }
 
 bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
@@ -141,12 +141,29 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
 
-    Command hitCommand;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &hitCommand, NULL, NULL);
-    if(hitCommand != Command::NONE) {
-        SS.GW.ActivateCommand(hitCommand);
+    Command commandHit;
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &commandHit, NULL, NULL);
+    if (commandHit != toolbarPressed) {
+        toolbarPressed = commandHit;
+    }
+    if (commandHit != toolbarHovered) {
+        toolbarHovered = commandHit;
+        Invalidate();
     }
     return withinToolbar;
+}
+
+bool GraphicsWindow::ToolbarMouseUp(int x, int y) {
+    double w, h;
+    window->GetContentSize(&w, &h);
+    x += ((int)w/2);
+    y += ((int)h/2);
+    Command commandHit;
+    if (ToolbarDrawOrHitTest(x, y, NULL, &commandHit, NULL, NULL) && commandHit == toolbarPressed && commandHit != Command::NONE) {
+        ActivateCommand(commandHit);
+    }
+    toolbarPressed = Command::NONE;
+    return false;
 }
 
 bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my, UiCanvas *canvas,

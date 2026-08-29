@@ -22,6 +22,11 @@ if(USE_QT_GUI)
     qt_add_resources(RESOURCE_FILES ../res/qt-resources.qrc)
 endif()
 
+if(ANDROID)
+    set_property(TARGET dxfrw PROPERTY
+        POSITION_INDEPENDENT_CODE ON)
+endif()
+
 # solvespace dependencies
 add_library(slvs_deps INTERFACE)
 target_include_directories(slvs_deps SYSTEM INTERFACE
@@ -38,7 +43,7 @@ target_link_libraries(slvs_deps INTERFACE
     ${FREETYPE_LIBRARY}
     mimalloc-static)
 
-if(NOT USE_QT_GUI OR ENABLE_CLI)
+if(NOT USE_QT_GUI AND NOT ANDROID OR ENABLE_CLI)
     target_include_directories(slvs_deps SYSTEM INTERFACE ${CAIRO_INCLUDE_DIRS})
     target_link_libraries(slvs_deps INTERFACE ${CAIRO_LIBRARIES})
 endif()
@@ -106,7 +111,8 @@ if(ENABLE_GUI OR ENABLE_CLI)
         platform/guiwin.cpp
         platform/guigtk.cpp
         platform/guimac.mm
-        platform/guihtml.cpp)
+        platform/guihtml.cpp
+        platform/guidroid.cpp)
 
     # solvespace library
 
@@ -172,7 +178,14 @@ if(ENABLE_GUI OR ENABLE_CLI)
         ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(solvespace-core PRIVATE slvs-solver)
     target_link_libraries(solvespace-core PUBLIC slvs_deps)
-
+	if(ANDROID)
+		set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+		set_target_properties(solvespace-core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+        target_link_libraries(solvespace-core
+            PUBLIC
+            ${droid-lib}
+            ${log-lib})
+    endif()
     # solvespace translations
 
     if(HAVE_GETTEXT)
@@ -260,11 +273,18 @@ endif()
 # solvespace graphical executable
 
 if(ENABLE_GUI)
-    add_executable(solvespace WIN32 MACOSX_BUNDLE
-        ${solvespace_core_gl_SOURCES}
-        $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+    if(ANDROID)
+        add_library(solvespace
+            SHARED
+            ${solvespace_core_gl_SOURCES}
+            $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+    else()
+        add_executable(solvespace WIN32 MACOSX_BUNDLE
+            ${solvespace_core_gl_SOURCES}
+            $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+    endif()
 
-    if(NOT USE_QT_GUI)
+    if(NOT USE_QT_GUI AND NOT ANDROID)
         target_sources(solvespace PRIVATE platform/entrygui.cpp)
     endif()
 
@@ -400,6 +420,50 @@ if(ENABLE_GUI)
             Qt6::Core Qt6::Gui Qt6::OpenGLWidgets Qt6::Widgets
             # Qt5::Core Qt5::Gui Qt5::Widgets
          )
+    elseif(ANDROID)
+        target_sources(solvespace PRIVATE
+            platform/guidroid.cpp)
+        file(GLOB_RECURSE java_src platform/java/*.java)
+        set(LIBDIR lib/${ANDROID_ABI})
+        if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+            set(HOME $ENV{USERPROFILE})
+        else()
+            set(HOME $ENV{HOME})
+        endif()
+        file(TO_NATIVE_PATH ${HOME}/.android/debug.keystore kspath)
+        add_custom_command(
+            OUTPUT ${CMAKE_BINARY_DIR}/cls.txt
+            COMMAND javac -cp ${ANDROID_JAR} -source 1.8 -target 1.8
+                    -d classes
+                    ${java_src} gen/com/solvespace/R.java
+            COMMAND dir /s /b classes\\*.class > cls.txt
+            DEPENDS ${java_src} aapt_pre
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Compiling java"
+            VERBATIM)
+        add_custom_command(
+            OUTPUT ${CMAKE_BINARY_DIR}/classes.dex
+            COMMAND ${BUILD_TOOL}/d8 --output ./ --lib ${ANDROID_JAR} --min-api 21 @cls.txt
+            DEPENDS ${CMAKE_BINARY_DIR}/cls.txt
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Dexing classes to dex"
+            VERBATIM)
+        add_custom_command(
+            OUTPUT  ${CMAKE_BINARY_DIR}/bin/app.apk
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${LIBDIR}
+            COMMAND ${CMAKE_STRIP} -s
+                    -o ${LIBDIR}/libsolvespace.so
+                    bin/libsolvespace.so
+            COMMAND jar -u -f bin/res.apk classes.dex ${LIBDIR}/libsolvespace.so
+            COMMAND ${BUILD_TOOL}/apksigner sign --ks ${kspath} --ks-pass pass:android --v2-signing-enabled false --out bin/app.apk bin/res.apk
+            DEPENDS ${CMAKE_BINARY_DIR}/classes.dex solvespace
+            WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+            COMMENT "Packaging"
+            VERBATIM)
+        add_custom_target(gen_apk ALL
+            DEPENDS ${CMAKE_BINARY_DIR}/bin/app.apk)
+        set_directory_properties(PROPERTIES ADDITIONAL_CLEAN_FILES
+            ${CMAKE_BINARY_DIR}/classes/)
     else()
         target_sources(solvespace PRIVATE
             platform/guigtk.cpp)

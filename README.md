@@ -346,6 +346,68 @@ ninja
 [mingw]: http://www.mingw.org/
 [msys2]: https://www.msys2.org/
 
+## Building for Android (Experimental)
+
+> [!NOTE]
+> This port contains many critical bugs and unimplemented core functions.
+
+Before building, [check out the project and the necessary submodules](#via-source-code).
+
+> [!TIP]
+> Android port doesn't need extlib/angle, extlib/cairo, extlib/pixman submodules.
+
+### Building with Android NDK
+
+First, install Android NDK and Build-Tools via sdkmanager(CLI or Android Studio) or download from [website](https://developer.android.com/ndk/downloads/)
+
+and install Java, make/ninja and cmake:
+
+```sh
+# Linux
+sudo apt install default-jre cmake
+# macOS
+brew install openjdk@17 cmake
+# Windows
+winget install --id EclipseAdoptium.Temurin.17.JDK -e -h
+winget install --id Kitware.CMake -e -h
+```
+
+Also keep an `android.jar` file from Android Platforms or elsewhere like
+[Sable/android-platforms](//github.com/Sable/android-platforms).
+
+After that, build SolveSpace as following:
+
+```sh
+cmake -Bbuild -S. -DCMAKE_TOOLCHAIN_FILE=$ANDROID_SDK_ROOT/ndk/xx.xx/build/cmake/android.toolchain.cmake
+    -DANDROID_JAR=/path/to/android.jar -DBUILD_TOOL=$ANDROID_SDK_ROOT/build-tool/xx.xx/
+    -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-21 -DENABLE_CLI=OFF -DENABLE_TESTS=OFF 
+    -DENABLE_LTO=ON -DENABLE_OPENMP=ON -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j8
+```
+
+This will build an app.apk in the `build/bin` directory, and then install it with
+`adb install --no-streaming build/bin/app.apk`.
+
+### Building on Termux
+
+First, install tools for building apk:
+
+```sh
+pkg i openjdk-21 d8 aapt apksigner cmake make clang eigen
+wget -c -k -O /path/to/android.jar https://raw.githubusercontent.com/Sable/android-platforms/master/android-36/android.jar
+```
+
+After that, build SolveSpace as following:
+
+```sh
+cmake -Bbuild -S. -DENABLE_CLI=OFF -DENABLE_TESTS=OFF 
+    -DANDROID_JAR=/path/to/android.jar -DBUILD_TOOL=$PREFIX/bin -DENABLE_OPENMP=ON
+    -DENABLE_CLI=OFF -DENABLE_TESTS=OFF -DENABLE_LTO=ON -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j8
+```
+
+To install the generated apk, run `xdg-open build/bin/app.apk`.
+
 ## Contributing
 
 See the [guide for contributors](CONTRIBUTING.md) for the best way to file issues, contribute code,

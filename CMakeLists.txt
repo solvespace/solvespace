@@ -78,6 +78,17 @@ option(FORCE_VENDORED_Eigen3
 
 set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
+if(ANDROID)
+    set(ANDROID_JAR CACHE STRING "Path to android.jar")
+    set(BUILD_TOOL  CACHE STRING "Path to build tool root")
+    if(NOT BUILD_TOOL)
+        message(FATAL_ERROR "Require BUILD_TOOL")
+    endif()
+    if(NOT ANDROID_JAR)
+        message(FATAL_ERROR "Require ANDROID_JAR")
+    endif()
+endif()
+
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/bin)
 if("${CMAKE_GENERATOR}" STREQUAL "Xcode")
@@ -139,6 +150,9 @@ if(ENABLE_OPENMP)
     if(OPENMP_FOUND)
         add_library(slvs_openmp INTERFACE)
         target_compile_options(slvs_openmp INTERFACE "SHELL:${OpenMP_CXX_FLAGS}")
+        if(ANDROID)
+            set(OpenMP_CXX_LIBRARIES -fopenmp -static-openmp)
+        endif()
         target_link_libraries(slvs_openmp INTERFACE
             ${OpenMP_CXX_LIBRARIES})
         target_include_directories(slvs_openmp SYSTEM INTERFACE
@@ -278,7 +292,7 @@ endif()
 
 
 if(ENABLE_GUI OR ENABLE_CLI)
-    if(WIN32 OR APPLE OR EMSCRIPTEN)
+    if(WIN32 OR APPLE OR EMSCRIPTEN OR ANDROID)
         # On Win32 and macOS we use vendored packages, since there is little to no benefit
         # to trying to find system versions. In particular, trying to link to libraries from
         # Homebrew or macOS system libraries into the .app file is highly likely to result
@@ -287,7 +301,9 @@ if(ENABLE_GUI OR ENABLE_CLI)
         include(FindVendoredPackage)
         include(AddVendoredSubdirectory)
 
-        set(FORCE_VENDORED_ZLIB     ON)
+        if(NOT ANDROID)
+            set(FORCE_VENDORED_ZLIB     ON)
+        endif()
         set(FORCE_VENDORED_PNG      ON)
         set(FORCE_VENDORED_Freetype ON)
 
@@ -300,14 +316,19 @@ if(ENABLE_GUI OR ENABLE_CLI)
         # generate an imported target since we'll have proper targets, but libpng would
         # still need to be updated to use ZLIB::ZLIBSTATIC instead of ZLIB::ZLIB, so this
         # ugly hack will have to stay until both libraries release fixed versions.
-        add_vendored_subdirectory(extlib/zlib)
-        set(ZLIB_LIBRARY      zlibstatic CACHE INTERNAL "")
-        set(ZLIB_INCLUDE_DIR  ${CMAKE_SOURCE_DIR}/extlib/zlib CACHE INTERNAL "")
-        add_library(ZLIB::ZLIB ALIAS ${ZLIB_LIBRARY})
-        find_package(ZLIB REQUIRED)
-        set(ZLIB_FOUND        ${ZLIB_FOUND} CACHE INTERNAL "")
-
-        list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
+        if(ANDROID)
+            find_library(log-lib log)
+            find_library(droid-lib android)
+        else()
+            add_vendored_subdirectory(extlib/zlib)
+            set(ZLIB_LIBRARY      zlibstatic CACHE INTERNAL "")
+            set(ZLIB_INCLUDE_DIR  ${CMAKE_SOURCE_DIR}/extlib/zlib CACHE INTERNAL "")
+            add_library(ZLIB::ZLIB ALIAS ${ZLIB_LIBRARY})
+            find_package(ZLIB REQUIRED)
+            set(ZLIB_FOUND        ${ZLIB_FOUND} CACHE INTERNAL "")
+    
+            list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
+        endif()
 
         # There's an issue with the zlib configuration, which doesn't provide a way to
         # disable the shared or static library builds, and on UNIX sets the base name of
@@ -343,22 +364,24 @@ if(ENABLE_GUI OR ENABLE_CLI)
             FREETYPE_LIBRARY        freetype
             FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
 
-        message(STATUS "Using in-tree pixman")
-        set(PIXMAN_FOUND            YES)
-        set(PIXMAN_LIBRARY          pixman)
-        set(PIXMAN_BUILD_TESTS      OFF CACHE BOOL "")
-        set(PIXMAN_BUILD_DEMOS      OFF CACHE BOOL "")
-
-        set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
-        list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
-        add_vendored_subdirectory(extlib/pixman)
-
-        message(STATUS "Using in-tree cairo")
-        add_vendored_subdirectory(extlib/cairo)
-        set(CAIRO_FOUND             YES)
-        set(CAIRO_LIBRARIES         cairo)
-        set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
-        list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
+        if(NOT ANDROID)
+            message(STATUS "Using in-tree pixman")
+            set(PIXMAN_FOUND            YES)
+            set(PIXMAN_LIBRARY          pixman)
+            set(PIXMAN_BUILD_TESTS      OFF CACHE BOOL "")
+            set(PIXMAN_BUILD_DEMOS      OFF CACHE BOOL "")
+    
+            set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
+            list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
+            add_vendored_subdirectory(extlib/pixman)
+    
+            message(STATUS "Using in-tree cairo")
+            add_vendored_subdirectory(extlib/cairo)
+            set(CAIRO_FOUND             YES)
+            set(CAIRO_LIBRARIES         cairo)
+            set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
+            list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
+        endif()
     else()
         # On Linux and BSDs we're a good citizen and link to system libraries.
         find_package(Backtrace)
@@ -405,6 +428,8 @@ if(ENABLE_GUI)
         find_library(APPKIT_LIBRARY AppKit REQUIRED)
     elseif(EMSCRIPTEN)
         # Everything is built in
+    elseif(ANDROID)
+        set(OPENGL_LIBRARIES EGL GLESv2)
     else()
         find_package(OpenGL REQUIRED)
         find_package(SpaceWare)
@@ -533,7 +558,7 @@ add_subdirectory(src)
 if(ENABLE_TESTS)
     add_subdirectory(test)
 endif()
-if((ENABLE_CLI OR ENABLE_GUI) AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo"))
+if((ENABLE_CLI OR ENABLE_GUI) AND (CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo") AND (NOT ANDROID))
     add_subdirectory(bench)
 else()
     message(STATUS "Benchmarking disabled in debug and library builds.")
