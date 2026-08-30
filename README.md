@@ -363,13 +363,14 @@ First, install Android NDK and Build-Tools via sdkmanager(CLI or Android Studio)
 and install Java, make/ninja and cmake:
 
 ```sh
-# Linux
-sudo apt install default-jre cmake
+# Ubuntu/Debian
+sudo apt install default-jre cmake make
 # macOS
-brew install openjdk@17 cmake
+brew install openjdk@17 cmake make
 # Windows
 winget install --id EclipseAdoptium.Temurin.17.JDK -e -h
 winget install --id Kitware.CMake -e -h
+winget install --id Ninja-build.Ninja -e -h
 ```
 
 Also keep an `android.jar` file from Android Platforms or elsewhere like
@@ -401,7 +402,8 @@ After that, build SolveSpace as following:
 
 ```sh
 cmake -Bbuild -S. -DENABLE_CLI=OFF -DENABLE_TESTS=OFF 
-    -DANDROID_JAR=/path/to/android.jar -DBUILD_TOOL=$PREFIX/bin -DENABLE_OPENMP=ON
+    -DANDROID_JAR=/path/to/android.jar -DBUILD_TOOL=$PREFIX/bin
+    -DANDROID_ABI=arm64-v8a -DENABLE_OPENMP=ON
     -DENABLE_CLI=OFF -DENABLE_TESTS=OFF -DENABLE_LTO=ON -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j8
 ```

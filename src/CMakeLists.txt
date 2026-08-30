@@ -427,8 +427,15 @@ if(ENABLE_GUI)
         set(LIBDIR lib/${ANDROID_ABI})
         if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
             set(HOME $ENV{USERPROFILE})
+            set(LIST_CLS dir /s /b classes\\*.class)
         else()
             set(HOME $ENV{HOME})
+            set(LIST_CLS find classes -name *.class)
+        endif()
+        if(CMAKE_BUILD_TYPE STREQUAL "Release")
+            set(strip ${CMAKE_STRIP} -s ${LIBDIR}/libsolvespace.so)
+        else()
+            set(strip "")
         endif()
         file(TO_NATIVE_PATH ${HOME}/.android/debug.keystore kspath)
         add_custom_command(
@@ -436,7 +443,7 @@ if(ENABLE_GUI)
             COMMAND javac -cp ${ANDROID_JAR} -source 1.8 -target 1.8
                     -d classes
                     ${java_src} gen/com/solvespace/R.java
-            COMMAND dir /s /b classes\\*.class > cls.txt
+            COMMAND ${LIST_CLS} > cls.txt
             DEPENDS ${java_src} aapt_pre
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Compiling java"
@@ -450,12 +457,10 @@ if(ENABLE_GUI)
             VERBATIM)
         add_custom_command(
             OUTPUT  ${CMAKE_BINARY_DIR}/bin/app.apk
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${LIBDIR}
-            COMMAND ${CMAKE_STRIP} -s
-                    -o ${LIBDIR}/libsolvespace.so
-                    bin/libsolvespace.so
+            COMMAND ${strip}
             COMMAND jar -u -f bin/res.apk classes.dex ${LIBDIR}/libsolvespace.so
-            COMMAND ${BUILD_TOOL}/apksigner sign --ks ${kspath} --ks-pass pass:android --v2-signing-enabled false --out bin/app.apk bin/res.apk
+            COMMAND ${BUILD_TOOL}/zipalign -f -p 4 bin/res.apk bin/app.apk
+            COMMAND ${BUILD_TOOL}/apksigner sign --ks ${kspath} --ks-pass pass:android --v2-signing-enabled false bin/app.apk
             DEPENDS ${CMAKE_BINARY_DIR}/classes.dex solvespace
             WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
             COMMENT "Packaging"

@@ -245,7 +245,7 @@ static void FindPrefix(const std::string &raw, size_t *pos) {
         }
     }
 #elif defined(__ANDROID__)
-    if(raw.compare(0, 8, "content:") == 0) {
+    if(strncmp("content:", raw.c_str(), 8) == 0) {
         // A Storage Access Framework content URI acts as its own root; there
         // are no path components below it that can be expanded/relativized.
         *pos = 8;
@@ -260,13 +260,9 @@ static void FindPrefix(const std::string &raw, size_t *pos) {
 }
 
 bool Path::IsAbsolute() const {
-#ifdef __ANDROID__
-    return true;
-#else
     size_t pos;
     FindPrefix(raw, &pos);
     return pos != std::string::npos;
-#endif
 }
 
 // Removes one component from the end of the path.

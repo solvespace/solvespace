@@ -762,6 +762,24 @@ Java_com_solvespace_SolveSpaceActivity_nativeOnWindowChanged(JNIEnv *env, jclass
     }
 }
 
+extern "C" JNIEXPORT void JNICALL
+Java_com_solvespace_SolveSpaceActivity_nativeSetSurface(JNIEnv *env, jclass jc, jobject surf) {
+    if (g_NativeWindow) {
+        ANativeWindow_release(g_NativeWindow);
+    }
+    g_NativeWindow = ANativeWindow_fromSurface(env, surf);
+    ANativeWindow_acquire(g_NativeWindow);
+    if (gSurface != EGL_NO_SURFACE) {
+        eglDestroySurface(gDisplay, gSurface);
+    }
+    eglMakeCurrent(gDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    gSurface = EGL_NO_SURFACE;
+    for (auto& win : g_Windows) {
+        win.second->CreateSurface();
+    }
+    Java_com_solvespace_SolveSpaceActivity_nativeOnWindowChanged(env, jc, g_CurrentWindow);
+}
+
 static time_t lastDown = 0;
 static double lastDist = 0.;
 #define DBL_TIMEOUT 300L

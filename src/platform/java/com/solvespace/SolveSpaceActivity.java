@@ -42,6 +42,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
     private SurfaceView sv;
     private PopupWindow pw;
     private long pmenu;
+    private boolean fromCreate;
 
     // Vertical scrollbar (rendered as the SurfaceView foreground).
     private GradientDrawable mScrollbar;
@@ -96,6 +97,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         sv.setOnGenericMotionListener(this);
         sv.setOnTouchListener(this);
         registerForContextMenu(sv);
+        fromCreate = true;
     }
 
     public final void sendDelayed(final long timer, long timeout) {
@@ -139,7 +141,12 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
 
     @Override
     public void surfaceCreated(SurfaceHolder p1) {
-        nativeInit(p1.getSurface(), getAssets());
+        if (fromCreate) {
+            nativeInit(p1.getSurface(), getAssets());
+            fromCreate = false;
+        } else {
+            nativeSetSurface(p1.getSurface());
+        }
     }
 
     @Override
@@ -460,11 +467,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
     public boolean onGenericMotion(View v, MotionEvent ev) {
         float density = getDensity();
         float dist = ev.getAxisValue(MotionEvent.AXIS_VSCROLL);
-        v.postOnAnimation(new Runnable(){
-            public void run() {
-                nativeOnMotionEvent(ev.getAction(), ev.getX()/density, ev.getY()/density, dist, ev.getButtonState(), ev.getMetaState());
-            }
-        });
+        v.postOnAnimation(new Motion(ev.getAction(), ev.getX()/density, ev.getY()/density, dist, ev.getButtonState(), ev.getMetaState()));
         return true;
     }
 
@@ -494,11 +497,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         } else {
             dist = 0.;
         }
-        v.postOnAnimation(new Runnable(){
-            public void run() {
-                nativeOnMotionEvent(act, x, y, dist, bstat, meta);
-            }
-        });
+        v.postOnAnimation(new Motion(act, x, y, dist, bstat, meta));
         return true;
     }
 
@@ -591,10 +590,28 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
 
     private native void nativeInit(Surface suf, AssetManager amgr);
     private native void nativeClear();
+    private native void nativeSetSurface(Surface suf);
     protected static native boolean nativeOnMotionEvent(int action, float x, float y, double dist, int button, int metastate);
     private static native boolean nativeOnKeyEvent(int keystate, int keyCode, int metastate);
     private static native void nativeOnWindowChanged(int winId);
     private static native void nativeOnEditorDone(String text);
     private static native void nativeOnCreateContextMenu(Menu menu, long pemnu);
     private static native void nativeOnContextMenuClosed(long pmenu);
+
+    static class Motion implements Runnable {
+        int act, button, metastate;
+        float x, y;
+        double dist;
+        public Motion(int ac, float x, float y, double dis, int btn, int mt) {
+            act = ac;
+            this.x = x;
+            this.y = y;
+            dist = dis;
+            button = btn;
+            metastate = mt;
+        }
+        public void run() {
+            nativeOnMotionEvent(act, x, y, dist, button, metastate);
+        }
+    }
 }
