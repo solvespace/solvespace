@@ -1,24 +1,21 @@
 package com.solvespace;
 
 import android.app.*;
-import android.os.*;
-import android.view.*;
-import android.widget.*;
-import android.content.res.*;
 import android.content.*;
-import android.provider.DocumentsContract;
-import android.net.*;
-import android.opengl.*;
-import android.util.*;
-import java.io.*;
-import java.util.*;
+import android.content.res.*;
 import android.graphics.*;
 import android.graphics.drawable.*;
 import android.graphics.fonts.*;
+import android.net.*;
+import android.os.*;
+import android.provider.DocumentsContract;
 import android.text.*;
+import android.util.*;
+import android.view.*;
 import android.view.inputmethod.*;
-import java.lang.reflect.*;
-import android.view.ContextMenu.*;
+import android.widget.*;
+import java.io.*;
+import java.util.*;
 
 public class SolveSpaceActivity extends Activity
 implements SurfaceHolder.Callback2, ActionBar.OnNavigationListener,
@@ -57,6 +54,10 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
     private boolean mScrollVisible;
     // True while the user is actively dragging the scrollbar thumb.
     private boolean mScrollDragging;
+
+    // Mouse states
+    private float currX, currY;
+    private int mouseDown;
 
     // Layout constants for the scrollbar.
     private static final int SCROLLBAR_TRACK_PADDING = 6; // dp
@@ -102,9 +103,9 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
 
     public final void sendDelayed(final long timer, long timeout) {
         if (timeout < 0) {
-            Choreographer.getInstance().postFrameCallback(new Choreographer.FrameCallback(){
-                public void doFrame(long p) {
-                    MainHandler.nativeRun(timer, true);
+            sv.postOnAnimation(new Runnable(){
+                public void run() {
+                    MainHandler.nativeRun(timer);
                 }
             });
         } else {
@@ -142,7 +143,21 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
     @Override
     public void surfaceCreated(SurfaceHolder p1) {
         if (fromCreate) {
-            nativeInit(p1.getSurface(), getAssets());
+            String[] lcs;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                LocaleList lclst = getResources().getConfiguration().getLocales();
+                final int siz = lclst.size();
+                lcs = new String[siz];
+                for (int i=0; i<siz; i++) {
+                    Locale lc = lclst.get(i);
+                    lcs[i] = lc.getLanguage()+"_"+lc.getCountry();
+                }
+            } else {
+                lcs = new String[1];
+                Locale lc = Locale.getDefault();
+                lcs[0] = lc.getLanguage()+"_"+lc.getCountry();
+            }
+            nativeInit(p1.getSurface(), getAssets(), lcs);
             fromCreate = false;
         } else {
             nativeSetSurface(p1.getSurface());
@@ -159,7 +174,10 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
 
     public void popup(long pmenu) {
         this.pmenu = pmenu;
-        sv.showContextMenu();
+        if (currX >= 0 && currY >= 0)
+            sv.showContextMenu(currX, currY);
+        else
+            sv.showContextMenu();
     }
 
     @Override
@@ -218,7 +236,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
 
     // Stores the scrollbar configuration and redraws the thumb.
     // All geometry arguments are in normalized scrollbar units.
-    private void setScrollbar(double min, double max, double page, double pos, boolean visible) {
+    protected void setScrollbar(double min, double max, double page, double pos, boolean visible) {
         mScrollMin = min;
         mScrollMax = max;
         mScrollPage = page;
@@ -256,14 +274,6 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         // right inset relative to the right gravity of the layer.
         mScrollbar.setBounds(mViewWidth-mScrollbarWidth, top, mViewWidth, bottom);
         mScrollbar.invalidateSelf();
-    }
-
-    // Called from input handling to feed back the adjusted scroll position.
-    // pos is in normalized scrollbar units (matching the C++ SCROLLBAR_UNIT).
-    private void setScrollbarPos(double pos) {
-        mScrollPos = pos;
-        // Notify the native side so it can react to the scroll adjustment.
-        nativeOnScrollbarAdjusted(pos);
     }
 
     // Callback from C++ that the scroll position was adjusted by the user.
@@ -466,7 +476,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
     @Override
     public boolean onGenericMotion(View v, MotionEvent ev) {
         float density = getDensity();
-        float dist = ev.getAxisValue(MotionEvent.AXIS_VSCROLL);
+        float dist = ev.getAxisValue(MotionEvent.AXIS_VSCROLL)/density;
         v.postOnAnimation(new Motion(ev.getAction(), ev.getX()/density, ev.getY()/density, dist, ev.getButtonState(), ev.getMetaState()));
         return true;
     }
@@ -483,12 +493,26 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
             return true;
         }
 
+        int act = ev.getActionMasked(), meta=ev.getMetaState();
         int count = ev.getPointerCount();
-        final int bstat = count == 1 ? MotionEvent.BUTTON_PRIMARY : count == 2 ?MotionEvent.BUTTON_SECONDARY : MotionEvent.BUTTON_TERTIARY;
-        final int act = ev.getActionMasked(), meta=ev.getMetaState();
-        final float x, y;
-        x = ev.getX()/density;
-        y = ev.getY()/density;
+        int bstat;
+        float x = ev.getX(), y = ev.getY();
+        if (ev.isFromSource(InputDevice.SOURCE_MOUSE)) {
+            bstat = ev.getButtonState();
+            // scrcpy --mouse=uhid would loss the buttonstate when action up
+            if (act == MotionEvent.ACTION_DOWN)
+                mouseDown = bstat;
+            else if (act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_CANCEL) {
+                bstat = mouseDown;
+                mouseDown = 0;
+            }
+            currX = x;
+            currY = y;
+        } else {
+            bstat = count == 1 ? MotionEvent.BUTTON_PRIMARY : count == 2 ?MotionEvent.BUTTON_SECONDARY : MotionEvent.BUTTON_TERTIARY;
+            currX = -1.f;
+            currY = -1.f;
+        }
         final double dist;
         if (count == 2) {
             float x1 = ev.getX(0), x2 = ev.getX(1);
@@ -497,7 +521,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         } else {
             dist = 0.;
         }
-        v.postOnAnimation(new Motion(act, x, y, dist, bstat, meta));
+        v.postOnAnimation(new Motion(act, x/density, y/density, dist, bstat, meta));
         return true;
     }
 
@@ -519,10 +543,10 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
             if (xInScrollbar(ev, sbLeft) &&
                 (y >= 0 && y <= height)) {
                 mScrollDragging = true;
-                setScrollbarPos((y - thumbH * 0.5)*range/height);
+                nativeOnScrollbarAdjusted((y - thumbH * 0.5)*range/height);
             }
         } else if (act == MotionEvent.ACTION_MOVE && mScrollDragging) {
-            setScrollbarPos((y - thumbH * 0.5)*range/height);
+            nativeOnScrollbarAdjusted((y - thumbH * 0.5)*range/height);
         } else if (act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_CANCEL) {
             mScrollDragging = false;
         }
@@ -534,18 +558,16 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent ev) {
-        if (nativeOnKeyEvent(ev.getAction(), keyCode, ev.getMetaState())) {
-            return true;
-        }
-        return super.onKeyDown(keyCode, ev);
+        if (!super.onKeyDown(keyCode, ev))
+            sv.postOnAnimation(new Key(ev));
+        return true;
     }
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent ev) {
-        if (nativeOnKeyEvent(ev.getAction(), keyCode, ev.getMetaState())) {
-            return true;
-        }
-        return super.onKeyUp(keyCode, ev);
+        if (!super.onKeyUp(keyCode, ev))
+            sv.postOnAnimation(new Key(ev));
+        return true;
     }
 
     public void onWinAdded(boolean isTop) {
@@ -574,7 +596,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         return true;
     }
 
-    public void toast(String tst) {
+    private void toast(String tst) {
         Toast.makeText(this, tst, 0).show();
     }
 
@@ -588,11 +610,11 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         return arr;
     }
 
-    private native void nativeInit(Surface suf, AssetManager amgr);
+    private native void nativeInit(Surface suf, AssetManager amgr, String[] strs);
     private native void nativeClear();
     private native void nativeSetSurface(Surface suf);
     protected static native boolean nativeOnMotionEvent(int action, float x, float y, double dist, int button, int metastate);
-    private static native boolean nativeOnKeyEvent(int keystate, int keyCode, int metastate);
+    protected static native boolean nativeOnKeyEvent(int keystate, int keyCode, int metastate);
     private static native void nativeOnWindowChanged(int winId);
     private static native void nativeOnEditorDone(String text);
     private static native void nativeOnCreateContextMenu(Menu menu, long pemnu);
@@ -613,5 +635,25 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         public void run() {
             nativeOnMotionEvent(act, x, y, dist, button, metastate);
         }
+    }
+
+    static class Key implements Runnable {
+        int act, keyenc, meta;
+        public Key(KeyEvent ke) {
+            act = ke.getAction();
+            int kcode = ke.getKeyCode();
+            if (kcode >= KeyEvent.KEYCODE_F1 && kcode <= KeyEvent.KEYCODE_F12)
+                keyenc = -kcode;
+            else
+                keyenc = ke.getUnicodeChar(0);
+            meta = ke.getMetaState();
+        }
+        public void run() {
+            nativeOnKeyEvent(act, keyenc, meta);
+        }
+    }
+
+    public void finish() {
+        super.finish();
     }
 }

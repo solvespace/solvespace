@@ -1368,10 +1368,6 @@ void GraphicsWindow::MouseLeftUp(double mx, double my, bool shiftDown, bool ctrl
         default:
             break;  // do nothing
     }
-
-    if (SS.showToolbar) {
-        ToolbarMouseUp((int)mx, (int)my);
-    }
 }
 
 void GraphicsWindow::EditConstraint(hConstraint constraint) {
@@ -1529,7 +1525,6 @@ void GraphicsWindow::MouseLeave() {
     if(!context.active) {
         hover.Clear();
         toolbarHovered = Command::NONE;
-        toolbarPressed = Command::NONE;
         Invalidate();
     }
     SS.extraLine.draw = false;

@@ -8,10 +8,10 @@ public class MainHandler extends Handler
     @Override
     public void handleMessage(Message msg) {
         if (msg.what == HD_NRUN)
-            nativeRun((Long)msg.obj, false);
+            nativeRun((Long)msg.obj);
         else if (msg.what == HD_RET)
             throw new RuntimeException();
     }
 
-    public final static native void nativeRun(long obj, boolean frame);
+    public final static native void nativeRun(long obj);
 }

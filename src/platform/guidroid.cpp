@@ -23,6 +23,7 @@
 
 #include "gui.h"
 #include "solvespace.h"
+#include "ui.h"
 
 namespace SolveSpace {
 namespace Platform {
@@ -62,6 +63,7 @@ static jmethodID g_DeleteContentFileMethod = nullptr;
 static jmethodID g_GetInternalStoragePathMethod = nullptr;
 static jmethodID g_Finish = nullptr;
 static jmethodID g_GetSysFonts = nullptr;
+static jmethodID g_InvalidateMenu = nullptr;
 // Menu
 static jmethodID g_Add = nullptr;
 static jmethodID g_AddSubMenu = nullptr;
@@ -372,13 +374,19 @@ public:
         jobject item = env->CallObjectMethod(menu, g_Add, 0, id, 0, str);
         env->DeleteLocalRef(str);
         if (alt) {
-            env->CallObjectMethod(item, g_SetAlphabeticShortcut, alt);
+            // TODO: verify whether the Alt key works
+            env->CallObjectMethod(item, g_SetAlphabeticShortcut, alt, AMETA_ALT_ON);
         }
         ref = env->NewWeakGlobalRef(item);
         env->CallObjectMethod(item, g_SetCheckable, 0!=(stat&MITM_CHECKABLE));
         env->CallObjectMethod(item, g_SetEnabled, 0!=(stat&MITM_ENABLED));
         env->CallObjectMethod(item, g_SetChecked, 0!=(stat&MITM_CHECKED));
         env->CallVoidMethod(item, g_SetShowAsAction, 1);
+    }
+
+    static TimerRef GetTimer() {
+        static TimerRef ref = CreateTimer();
+        return ref;
     }
 };
 
@@ -506,6 +514,7 @@ private:
     double m_ScrollPage = 0.0;
     double m_ScrollPos = 0.0;
     bool m_ScrollVis = false;
+    TimerRef m_Inval;
 
 public:
     int id;
@@ -595,6 +604,12 @@ public:
 
     void SetMenuBar(MenuBarRef newMenuBar) override {
         m_MenuBar = newMenuBar;
+        if (!m_Visible || id != g_CurrentWindow)
+            return;
+        JNIEnv *env = GetJNIEnv();
+        if (env && g_Activity) {
+            env->CallVoidMethod(g_Activity, g_InvalidateMenu);
+        }
     }
 
     void GetContentSize(double *width, double *height) override {
@@ -683,10 +698,23 @@ public:
                             m_ScrollPos, m_ScrollVis);
     }
 
+    void Render() {
+        if (m_EGLContext.isCurrent()) {
+            if (onRender) {
+                onRender();
+                m_EGLContext.SwapBuffers();
+            }
+        }
+    }
+
     void Invalidate() override {
         JNIEnv *env = GetJNIEnv();
         if (env && g_Activity) {
-            env->CallVoidMethod(g_Activity, g_SendDelayedMethod, this, -1L);
+            if (!m_Inval) {
+                m_Inval = CreateTimer();
+                m_Inval->onTimeout = std::bind(&WindowImplAndroid::Render, this);
+            }
+            m_Inval->RunAfterNextFrame();
         }
     }
 
@@ -698,14 +726,6 @@ public:
         }
     }
 
-    __inline__ void Render() {
-        if (m_EGLContext.isCurrent()) {
-            if (onRender) {
-                onRender();
-                m_EGLContext.SwapBuffers();
-            }
-        }
-    }
 
     __inline__ bool MakeCurrent() {
         UpdateScrollbar();
@@ -726,11 +746,28 @@ WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_solvespace_SolveSpaceActivity_nativeInit(JNIEnv* env, jobject thiz, jobject surface, jobject jamgr) {
+Java_com_solvespace_SolveSpaceActivity_nativeInit(JNIEnv* env, jobject thiz, jobject surface, jobject jamgr, jobjectArray strs) {
     g_Activity = env->NewGlobalRef(thiz);
     amgr = AAssetManager_fromJava(env, jamgr);
 	g_NativeWindow = ANativeWindow_fromSurface(env, surface);
 	ANativeWindow_acquire(g_NativeWindow);
+    jsize siz = 0, i = 0;
+    if (strs && (siz=env->GetArrayLength(strs))) {
+        for (i=0; i<siz; i++) {
+            jstring str = (jstring)env->GetObjectArrayElement(strs, i);
+            const char *chars = env->GetStringUTFChars(str, nullptr);
+            if (chars != nullptr) {
+                if (SetLocale(chars)) {
+                    i = siz; // after this loop, i = siz+1
+                }
+                env->ReleaseStringUTFChars(str, chars);
+            }
+            env->DeleteLocalRef(str);
+        }
+    }
+    if (i <= siz) {
+        SetLocale("en_US");
+    }
 	SS.Init();
 }
 
@@ -851,22 +888,24 @@ Java_com_solvespace_SolveSpaceActivity_nativeOnMotionEvent(JNIEnv *env, jclass j
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_solvespace_SolveSpaceActivity_nativeOnKeyEvent(JNIEnv *env, jclass jc, jint keyact, jint keycode, jint metastate) {
+Java_com_solvespace_SolveSpaceActivity_nativeOnKeyEvent(JNIEnv *env, jclass jc, jint keyact, jint keyenc, jint metastate) {
     if (g_CurrentWindow >= g_NextWindowId) {
         return false;
     }
+    if (keyact == 0)
+        return false; // key char from getUnicodeChar() would failed sometimes and trigger the command::none
     auto win = g_Windows[g_CurrentWindow];
     KeyboardEvent event = {};
     if (keyact == AKEY_EVENT_ACTION_DOWN)
         event.type = KeyboardEvent::Type::PRESS;
     else if (keyact == AKEY_EVENT_ACTION_UP)
         event.type = KeyboardEvent::Type::RELEASE;
-    if (keycode >= AKEYCODE_F1 && keycode <= AKEYCODE_F12) {
+    if (keyenc < 0) {
         event.key = KeyboardEvent::Key::FUNCTION;
-        event.num = keycode - AKEYCODE_F1 + 1;
+        event.num = -keyenc - AKEYCODE_F1 + 1;
     } else {
         event.key = KeyboardEvent::Key::CHARACTER;
-        event.num = keycode;
+        event.chr = keyenc;
     }
     event.shiftDown = metastate & AMETA_SHIFT_ON;
     event.controlDown = metastate & AMETA_CTRL_ON;
@@ -911,7 +950,9 @@ Java_com_solvespace_SolveSpaceActivity_onOptionsItemSelected(JNIEnv *env, jobjec
     }
     auto item = pfunc->second;
     if (item->onTrigger){
-        item->onTrigger();
+        auto timer = MenuItemImplAndroid::GetTimer();
+        timer->onTimeout = item->onTrigger;
+        timer->RunAfter(0);
         return true;
     }
     return false;
@@ -977,6 +1018,7 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
                                                       "()Ljava/lang/String;");
     g_Finish = env->GetMethodID(activityClass, "finish", "()V");
     g_GetSysFonts = env->GetStaticMethodID(activityClass, "getSysFonts", "()[Ljava/lang/String;");
+    g_InvalidateMenu = env->GetMethodID(activityClass, "invalidateOptionsMenu", "()V");
 
     jclass menuClz = env->FindClass("android/view/Menu");
     ssassert(menuClz != NULL, "Failed to find Menu class");
@@ -986,7 +1028,11 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
     jclass itemClz = env->FindClass("android/view/MenuItem");
     ssassert(itemClz != NULL, "Failed to find MenuItem class");
     g_GetItemId = env->GetMethodID(itemClz, "getItemId", "()I");
-    g_SetAlphabeticShortcut = env->GetMethodID(itemClz, "setAlphabeticShortcut", "(C)Landroid/view/MenuItem;");
+    jmethodID setAlphaShort = env->GetMethodID(itemClz, "setAlphabeticShortcut", "(CI)Landroid/view/MenuItem;");
+    if (setAlphaShort == nullptr) {
+        setAlphaShort = env->GetMethodID(itemClz, "setAlphabeticShortcut", "(C)Landroid/view/MenuItem;");
+    }
+    g_SetAlphabeticShortcut = setAlphaShort;
     g_SetCheckable = env->GetMethodID(itemClz, "setCheckable", "(Z)Landroid/view/MenuItem;");
     g_SetChecked = env->GetMethodID(itemClz, "setChecked", "(Z)Landroid/view/MenuItem;");
 	g_SetEnabled = env->GetMethodID(itemClz, "setEnabled", "(Z)Landroid/view/MenuItem;");
@@ -1109,12 +1155,20 @@ SettingsRef GetSettings() {
 }
 
 class TimerImplAndroid final : public Timer {
-    void RunAfter(unsigned int milliseconds) override {
+private:
+    void post(jlong milliseconds) {
         JNIEnv *env = GetJNIEnv();
         if (!(env && g_Activity)) {
             return;
         }
         env->CallVoidMethod(g_Activity, g_SendDelayedMethod, this, milliseconds);
+    }
+public:
+    void RunAfter(unsigned int milliseconds) override {
+        post(milliseconds);
+    }
+    void RunAfterNextFrame() override {
+        post(-1L);
     }
 };
 
@@ -1123,12 +1177,8 @@ TimerRef CreateTimer() {
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_solvespace_MainHandler_nativeRun(JNIEnv* env, jclass clazz, void *timer, jboolean frame) {
-    if (frame) {
-        ((WindowImplAndroid*)timer)->Render();
-        return;
-    }
-    auto func = ((Timer*)timer)->onTimeout;
+Java_com_solvespace_MainHandler_nativeRun(JNIEnv* env, jclass clazz, Timer *timer) {
+    auto func = timer->onTimeout;
     if (func) func();
 }
 

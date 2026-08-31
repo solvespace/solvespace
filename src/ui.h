@@ -826,9 +826,7 @@ public:
     void ToolbarDraw(UiCanvas *canvas);
     bool ToolbarMouseMoved(int x, int y);
     bool ToolbarMouseDown(int x, int y);
-    bool ToolbarMouseUp(int x, int y);
     Command toolbarHovered;
-    Command toolbarPressed;
 
 
     // This sets what gets displayed.

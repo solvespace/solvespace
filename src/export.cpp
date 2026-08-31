@@ -1018,17 +1018,9 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
     if(filename.HasExtension("html")) {
         fprintf(f, htmlbegin,
                 THREE_FN.c_str(),
-                #ifdef __ANDROID__
-                LoadString("threejs/"+THREE_FN).c_str(),
-                #else
                 LoadStringFromGzip("threejs/" + THREE_FN + ".gz").c_str(),
-                #endif
                 HAMMER_FN.c_str(),
-                #ifdef __ANDROID__
-                LoadString("threejs/"+HAMMER_FN).c_str(),
-                #else
                 LoadStringFromGzip("threejs/" + HAMMER_FN + ".gz").c_str(),
-                #endif
                 CONTROLS_FN.c_str(),
                 LoadString("threejs/" + CONTROLS_FN).c_str());
     }
