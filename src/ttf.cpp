@@ -59,7 +59,9 @@ void TtfFontList::LoadAll() {
     if(loaded) return;
 
     for(const Platform::Path &font : Platform::GetFontFiles()) {
-        TtfFont tf = {.fontFile = font, .faceIndex = 0};
+        TtfFont tf = {};
+        tf.fontFile = font;
+        tf.faceIndex = 0;
         if(tf.LoadFromFile(fontLibrary, true)) {
             // load all fonts in .ttc
             long nface = tf.fontFace->num_faces;
@@ -67,7 +69,9 @@ void TtfFontList::LoadAll() {
             tf.fontFace = NULL;
             l.Add(&tf);
             for (long i=1; i<nface; i++) {
-                TtfFont tf = {.fontFile = font, .faceIndex = i};
+                TtfFont tf = {};
+                tf.fontFile = font;
+                tf.faceIndex = i;
                 if (tf.LoadFromFile(fontLibrary, false)) {
                     l.Add(&tf);
                 }
@@ -77,7 +81,8 @@ void TtfFontList::LoadAll() {
 
     // Add builtin font to end of font list so it is displayed first in the UI
     {
-        TtfFont tf = {.faceIndex = 0};
+        TtfFont tf = {};
+        tf.faceIndex = 0;
         tf.SetResourceID("fonts/BitstreamVeraSans-Roman-builtin.ttf");
         if(tf.LoadFromResource(fontLibrary))
             l.Add(&tf);
