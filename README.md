@@ -354,7 +354,7 @@ ninja
 Before building, [check out the project and the necessary submodules](#via-source-code).
 
 > [!TIP]
-> Android port doesn't need extlib/angle, extlib/cairo, extlib/pixman submodules.
+> Android port doesn't need extlib/angle, extlib/cairo, extlib/pixman, extlib/zlib submodules.
 
 ### Building with Android NDK
 
@@ -381,7 +381,7 @@ After that, build SolveSpace as following:
 ```sh
 cmake -Bbuild -S. -DCMAKE_TOOLCHAIN_FILE=$ANDROID_SDK_ROOT/ndk/xx.xx/build/cmake/android.toolchain.cmake
     -DANDROID_JAR=/path/to/android.jar -DBUILD_TOOL=$ANDROID_SDK_ROOT/build-tool/xx.xx/
-    -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-21 -DENABLE_CLI=OFF -DENABLE_TESTS=OFF 
+    -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-21 
     -DENABLE_LTO=ON -DENABLE_OPENMP=ON -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j8
 ```
@@ -394,18 +394,18 @@ This will build an app.apk in the `build/bin` directory, and then install it wit
 First, install tools for building apk:
 
 ```sh
-pkg i openjdk-21 d8 aapt apksigner cmake make clang eigen
+pkg i openjdk-21 d8 aapt apksigner cmake make clang ndk-multilib eigen zlib
 wget -c -k -O /path/to/android.jar https://raw.githubusercontent.com/Sable/android-platforms/master/android-36/android.jar
 ```
 
 After that, build SolveSpace as following:
 
 ```sh
-cmake -Bbuild -S. -DENABLE_CLI=OFF -DENABLE_TESTS=OFF 
+cmake -Bbuild -S.
     -DANDROID_JAR=/path/to/android.jar -DBUILD_TOOL=$PREFIX/bin
-    -DANDROID_ABI=arm64-v8a -DENABLE_OPENMP=ON
-    -DENABLE_CLI=OFF -DENABLE_TESTS=OFF -DENABLE_LTO=ON -DCMAKE_BUILD_TYPE=Debug
-cmake --build build -j8
+    -DANDROID_ABI=arm64-v8a -DENABLE_OPENMP=ON -DENABLE_LTO=ON -DCMAKE_BUILD_TYPE=Debug
+    -DZLIB_ROOT=/system/lib64 -DEIGEN3_INCLUDE_DIRS=$PREFIX/include/eigen3
+make -Cbuild -j8
 ```
 
 To install the generated apk, run `xdg-open build/bin/app.apk`.

@@ -23,7 +23,6 @@
 
 #include "gui.h"
 #include "solvespace.h"
-#include "ui.h"
 
 namespace SolveSpace {
 namespace Platform {
@@ -64,6 +63,7 @@ static jmethodID g_GetInternalStoragePathMethod = nullptr;
 static jmethodID g_Finish = nullptr;
 static jmethodID g_GetSysFonts = nullptr;
 static jmethodID g_InvalidateMenu = nullptr;
+static jmethodID g_FileName = nullptr;
 // Menu
 static jmethodID g_Add = nullptr;
 static jmethodID g_AddSubMenu = nullptr;
@@ -174,6 +174,20 @@ std::string AndroidContentKey(const char *uri) {
     return key;
 }
 
+std::string DroidFileName(const char *uri) {
+    JNIEnv *env = GetJNIEnv();
+    if (!env || !g_Activity) {
+        return "";
+    }
+    jstring juri = env->NewStringUTF(uri);
+    jstring jstr = (jstring)env->CallObjectMethod(g_Activity, g_FileName, juri);
+    env->DeleteLocalRef(juri);
+    const char *str = env->GetStringUTFChars(jstr, NULL);
+    std::string ret = str ? str : "";
+    if (str) env->ReleaseStringUTFChars(jstr, str);
+    env->DeleteLocalRef(jstr);
+    return ret;
+}
 //-----------------------------------------------------------------------------
 // EGL and GL context management
 //-----------------------------------------------------------------------------
@@ -819,6 +833,7 @@ Java_com_solvespace_SolveSpaceActivity_nativeSetSurface(JNIEnv *env, jclass jc, 
 
 static time_t lastDown = 0;
 static double lastDist = 0.;
+static bool doubleClicked = false;
 #define DBL_TIMEOUT 300L
 
 extern "C" JNIEXPORT jboolean JNICALL
@@ -830,12 +845,19 @@ Java_com_solvespace_SolveSpaceActivity_nativeOnMotionEvent(JNIEnv *env, jclass j
     MouseEvent event = {.x = x, .y = y};
     event.shiftDown = state & AMETA_SHIFT_ON;
     event.controlDown = state & AMETA_CTRL_ON;
+    if (act != AMOTION_EVENT_ACTION_MOVE)
+        doubleClicked = false;
     switch (act) {
         case AMOTION_EVENT_ACTION_DOWN: {
             struct timespec ts;
             clock_gettime(CLOCK_BOOTTIME, &ts);
             time_t tm = ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
-            event.type = tm - lastDown < DBL_TIMEOUT ? MouseEvent::Type::DBL_PRESS : MouseEvent::Type::PRESS;
+            if (tm - lastDown < DBL_TIMEOUT) {
+                event.type = MouseEvent::Type::DBL_PRESS;
+                doubleClicked = true;
+            } else {
+                event.type = MouseEvent::Type::PRESS;
+            }
             lastDown = tm;
             lastDist = dist;
             break;
@@ -855,6 +877,9 @@ Java_com_solvespace_SolveSpaceActivity_nativeOnMotionEvent(JNIEnv *env, jclass j
                 win->onRender = fun;
             }
             event.type = MouseEvent::Type::MOTION;
+            // map doubleClicked move to middle clicked move for orbiting
+            if (doubleClicked)
+                button = AMOTION_EVENT_BUTTON_TERTIARY;
             break;
         case AMOTION_EVENT_ACTION_UP:
         case AMOTION_EVENT_ACTION_POINTER_UP:
@@ -1019,6 +1044,7 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
     g_Finish = env->GetMethodID(activityClass, "finish", "()V");
     g_GetSysFonts = env->GetStaticMethodID(activityClass, "getSysFonts", "()[Ljava/lang/String;");
     g_InvalidateMenu = env->GetMethodID(activityClass, "invalidateOptionsMenu", "()V");
+    g_FileName = env->GetMethodID(activityClass, "fileName", "(Ljava/lang/String;)Ljava/lang/String;");
 
     jclass menuClz = env->FindClass("android/view/Menu");
     ssassert(menuClz != NULL, "Failed to find Menu class");

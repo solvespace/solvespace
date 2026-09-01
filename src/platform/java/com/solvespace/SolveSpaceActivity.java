@@ -3,6 +3,7 @@ package com.solvespace;
 import android.app.*;
 import android.content.*;
 import android.content.res.*;
+import android.database.*;
 import android.graphics.*;
 import android.graphics.drawable.*;
 import android.graphics.fonts.*;
@@ -373,10 +374,11 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         String fnam = fname;
         if (fnam == null) return null;
         // Apply filters
-        int pt = fnam.lastIndexOf(".");
+        String name = fileName(fnam);
+        int pt = name.lastIndexOf(".");
         int l = exts == null ? 0 : exts.length;
         if (pt >= 0 && l > 0) {
-            String ext = fnam.substring(pt+1, fnam.length());
+            String ext = name.substring(pt+1, name.length());
             int i=0;
             for (; i<l ;i++) {
                 if (ext.equals(exts[i])) {
@@ -436,6 +438,19 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         }
     }
 
+    public String fileName(String uri) {
+        Cursor cur = getContentResolver().query(Uri.parse(uri),
+            new String[]{DocumentsContract.Document.COLUMN_DISPLAY_NAME},
+            null, null, null);
+        String name = null;
+        if (cur != null) {
+            if (cur.moveToFirst()) {
+                name = cur.getString(0);
+            }
+            cur.close();
+        }
+        return name;
+    }
     /**
      * Deletes a Storage Access Framework content URI via DocumentsContract.
      * Called from native code (Platform::RemoveFile).

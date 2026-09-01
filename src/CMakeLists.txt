@@ -22,11 +22,6 @@ if(USE_QT_GUI)
     qt_add_resources(RESOURCE_FILES ../res/qt-resources.qrc)
 endif()
 
-if(ANDROID)
-    set_property(TARGET dxfrw PROPERTY
-        POSITION_INDEPENDENT_CODE ON)
-endif()
-
 # solvespace dependencies
 add_library(slvs_deps INTERFACE)
 target_include_directories(slvs_deps SYSTEM INTERFACE

@@ -100,6 +100,7 @@ std::string AndroidInternalStoragePath();
 // Maps a content URI to a filesystem-safe name (used as a key for
 // autosave/backup companions that must live in private storage).
 std::string AndroidContentKey(const char *uri);
+std::string DroidFileName(const char *uri);
 #endif
 
 } // namespace Platform

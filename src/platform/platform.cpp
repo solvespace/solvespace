@@ -157,25 +157,16 @@ Path Path::CurrentDirectory() {
 std::string Path::FileName() const {
     std::string fileName = raw;
 #ifdef __ANDROID__
-    std::string SEPARATOR;
-    if (fileName.size() > 8 && !fileName.compare(0, 8, "content:")) {
-        SEPARATOR = "%2F";
-    } else {
-        SEPARATOR = "/";
-    }
-    const size_t siz = SEPARATOR.size();
+    if (fileName.compare(0, 8, "content:") == 0)
+        return DroidFileName(fileName.c_str());
 #else
     constexpr size_t siz = 1;
-#endif
     size_t slash = fileName.rfind(SEPARATOR);
-    if(slash != std::string::npos
-#ifdef __ANDROID__
-        ||(siz==3 && (slash=fileName.rfind("%3A")) != std::string::npos)
-#endif
-    ) {
+    if(slash != std::string::npos) {
         fileName = fileName.substr(slash + siz);
     }
     return fileName;
+#endif
 }
 
 std::string Path::FileStem() const {
