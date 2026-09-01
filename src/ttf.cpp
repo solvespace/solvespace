@@ -59,15 +59,25 @@ void TtfFontList::LoadAll() {
     if(loaded) return;
 
     for(const Platform::Path &font : Platform::GetFontFiles()) {
-        TtfFont tf = {};
-        tf.fontFile = font;
-        if(tf.LoadFromFile(fontLibrary))
+        TtfFont tf = {.fontFile = font, .faceIndex = 0};
+        if(tf.LoadFromFile(fontLibrary, true)) {
+            // load all fonts in .ttc
+            long nface = tf.fontFace->num_faces;
+            FT_Done_Face(tf.fontFace);
+            tf.fontFace = NULL;
             l.Add(&tf);
+            for (long i=1; i<nface; i++) {
+                TtfFont tf = {.fontFile = font, .faceIndex = i};
+                if (tf.LoadFromFile(fontLibrary, false)) {
+                    l.Add(&tf);
+                }
+            }
+        }
     }
 
     // Add builtin font to end of font list so it is displayed first in the UI
     {
-        TtfFont tf = {};
+        TtfFont tf = {.faceIndex = 0};
         tf.SetResourceID("fonts/BitstreamVeraSans-Roman-builtin.ttf");
         if(tf.LoadFromResource(fontLibrary))
             l.Add(&tf);
@@ -137,7 +147,10 @@ double TtfFontList::AspectRatio(const std::string &font, const std::string &str,
 // entities that reference us will store it.
 //-----------------------------------------------------------------------------
 std::string TtfFont::FontFileBaseName() const {
-    return fontFile.FileName();
+    std::string name = fontFile.FileName();
+    if (faceIndex > 0)
+        name = name + "#" + std::to_string(faceIndex);
+    return name;
 }
 
 //-----------------------------------------------------------------------------
@@ -164,7 +177,7 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool keepOpen) {
     // We don't use OpenFile() here to let freetype do its own memory management.
     // This is OK because on Linux/OS X we just delegate to fopen and on Windows
     // we only look into C:\Windows\Fonts, which has a known short path.
-    if(int fterr = FT_Open_Face(fontLibrary, &args, 0, &fontFace)) {
+    if(int fterr = FT_Open_Face(fontLibrary, &args, faceIndex, &fontFace)) {
         dbp("freetype: loading font from file '%s' failed: %s",
             fontFile.raw.c_str(), ft_error_string(fterr));
         return false;
@@ -189,7 +202,7 @@ bool TtfFont::LoadFromResource(FT_Library fontLibrary, bool keepOpen) {
     FT_Long size = static_cast<FT_Long>(_size);
     const FT_Byte *buffer = reinterpret_cast<const FT_Byte*>(_buffer);
 
-    if(int fterr = FT_New_Memory_Face(fontLibrary, buffer, size, 0, &fontFace)) {
+    if(int fterr = FT_New_Memory_Face(fontLibrary, buffer, size, faceIndex, &fontFace)) {
             dbp("freetype: loading font '%s' from memory failed: %s",
                 fontFile.raw.c_str(), ft_error_string(fterr));
             return false;
