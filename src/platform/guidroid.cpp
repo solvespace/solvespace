@@ -87,9 +87,7 @@ static jmethodID g_PutFloat = nullptr;
 static jmethodID g_PutString = nullptr;
 static jmethodID g_Commit = nullptr;
 
-static ANativeWindow *g_NativeWindow = nullptr;
 static EGLDisplay gDisplay = EGL_NO_DISPLAY;
-static EGLSurface gSurface = EGL_NO_SURFACE;
 
 JNIEnv* GetJNIEnv() {
     ssassert(g_JavaVM != NULL, "g_JavaVM is NULL");
@@ -195,11 +193,15 @@ std::string DroidFileName(const char *uri) {
 class EGLContextManager {
 private:
     EGLContext m_Context;
+    EGLSurface m_Surf = EGL_NO_SURFACE;
     static EGLConfig m_Config;
 
 public:
-    EGLContextManager() : 
-        m_Context(EGL_NO_CONTEXT) {}
+    ANativeWindow *m_NativeWindow;
+    EGLContextManager() :
+        m_Context(EGL_NO_CONTEXT),
+        m_Surf(EGL_NO_SURFACE),
+        m_NativeWindow(nullptr) {}
 
     bool Initialize() {
         if (gDisplay == EGL_NO_DISPLAY) {
@@ -258,15 +260,14 @@ public:
     }
 
     bool CreateSurface() {
-        if (!g_NativeWindow) return false;
-        gSurface = eglGetCurrentSurface(EGL_DRAW); 
-        if (gSurface == EGL_NO_SURFACE) {
-            gSurface = eglCreateWindowSurface(gDisplay, m_Config, (EGLNativeWindowType)g_NativeWindow, NULL);
-            dbp("create surface");
-        } else dbp("surf %p", gSurface);
+        if (!m_NativeWindow) return false;
+        if (m_Surf == EGL_NO_SURFACE) {
+            m_Surf = eglCreateWindowSurface(gDisplay, m_Config, (EGLNativeWindowType)m_NativeWindow, NULL);
+            dbp("create surf %p", m_Surf);
+        } else dbp("surf %p", m_Surf);
 
         // Make current
-        if (!eglMakeCurrent(gDisplay, gSurface, gSurface, m_Context)) {
+        if (!eglMakeCurrent(gDisplay, m_Surf, m_Surf, m_Context)) {
             ALOGE("Failed to make EGL context current");
             return false;
         }
@@ -277,9 +278,9 @@ public:
     void DestroySurface() {
         if (gDisplay != EGL_NO_DISPLAY) {
             eglMakeCurrent(gDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-            if (gSurface != EGL_NO_SURFACE) {
-                eglDestroySurface(gDisplay, gSurface);
-                gSurface = EGL_NO_SURFACE;
+            if (m_Surf != EGL_NO_SURFACE) {
+                eglDestroySurface(gDisplay, m_Surf);
+                m_Surf = EGL_NO_SURFACE;
             }
         }
     }
@@ -294,20 +295,17 @@ public:
             eglTerminate(gDisplay);
             gDisplay = EGL_NO_DISPLAY;
         }
+        ANativeWindow_release(m_NativeWindow);
     }
 
-    void SwapBuffers() {
-        if (gDisplay != EGL_NO_DISPLAY && gSurface != EGL_NO_SURFACE) {
-            eglSwapBuffers(gDisplay, gSurface);
+    __inline__ void SwapBuffers() {
+        if (gDisplay != EGL_NO_DISPLAY && m_Surf != EGL_NO_SURFACE) {
+            eglSwapBuffers(gDisplay, m_Surf);
         }
     }
 
-    bool MakeCurrent() {
-        return eglMakeCurrent(gDisplay, gSurface, gSurface, m_Context);
-    }
-
-    bool isCurrent() const {
-        return eglGetCurrentContext() == m_Context;
+    __inline__ bool MakeCurrent() {
+        return eglMakeCurrent(gDisplay, m_Surf, m_Surf, m_Context);
     }
 };
 
@@ -409,7 +407,6 @@ jint MenuItemImplAndroid::nextId = 1;
 
 class MenuImplAndroid final : public Menu, public Attachable, public std::enable_shared_from_this<MenuImplAndroid> {
 public:
-
     std::vector<std::shared_ptr<Attachable>> menus;
     std::string title;
     jchar alt = '\0';
@@ -513,35 +510,39 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 //-----------------------------------------------------------------------------
 // Global window map (Android typically has one main window)
 static int g_NextWindowId = 0;
-static int g_CurrentWindow = 0;
 extern "C" JNIEXPORT void JNICALL
 Java_com_solvespace_SolveSpaceActivity_nativeOnWindowChanged(JNIEnv *env, jclass jc, jint winId);
 class WindowImplAndroid final : public Window {
 private:
-    EGLContextManager m_EGLContext;
     bool m_Visible;
     bool m_FullScreen;
     std::string m_Title;
     MenuBarRef m_MenuBar;
-    double m_ScrollMin = 0.0;
-    double m_ScrollMax = 1.0;
-    double m_ScrollPage = 0.0;
-    double m_ScrollPos = 0.0;
+    float m_ScrollMin = 0.0;
+    float m_ScrollMax = 1.0;
+    float m_ScrollPage = 0.0;
+    float m_ScrollPos = 0.0;
     bool m_ScrollVis = false;
     TimerRef m_Inval;
 
 public:
     int id;
+    EGLContextManager m_EGLContext;
 
     WindowImplAndroid(Window::Kind kind) : 
         m_Visible(false),
         m_FullScreen(false) {
+        id = g_NextWindowId;
         // Android typically has only one window (the activity)
         JNIEnv *env = GetJNIEnv();
         if (env && g_Activity) {
-            env->CallVoidMethod(g_Activity, g_OnWinAdded, kind == Kind::TOPLEVEL);
+            jobject jsurf = env->CallObjectMethod(g_Activity, g_OnWinAdded, id);
+            ANativeWindow *navWin = ANativeWindow_fromSurface(env, jsurf);
+            ANativeWindow_acquire(navWin);
+            m_EGLContext.m_NativeWindow = navWin;
+            m_EGLContext.Initialize();
         }
-        m_EGLContext.Initialize();
+        g_NextWindowId++;
     }
 
     ~WindowImplAndroid() override {
@@ -558,12 +559,7 @@ public:
         JNIEnv* env = GetJNIEnv();
         if (!env || !g_Activity) return 1.0;
 
-        jmethodID getDensity = g_GetDensity;
-        if (getDensity) {
-            jfloat density = env->CallFloatMethod(g_Activity, getDensity);
-            return density;
-        }
-        return 1.0;
+        return env->CallFloatMethod(g_Activity, g_GetDensity);
     }
 
     double GetPixelDensity() override {
@@ -571,7 +567,7 @@ public:
     }
 
     bool IsVisible() override {
-        return m_Visible && g_NativeWindow != nullptr;
+        return m_Visible;
     }
 
     void SetVisible(bool visible) override {
@@ -581,9 +577,6 @@ public:
 
     void Focus() override {
         // Android windows are always focused when visible
-        JNIEnv *env = GetJNIEnv();
-        if (env)
-        Java_com_solvespace_SolveSpaceActivity_nativeOnWindowChanged(env, env->GetObjectClass(g_Activity), id);
     }
 
     bool IsFullScreen() override {
@@ -605,20 +598,18 @@ public:
 
     void SetTitle(const std::string &title) override {
         m_Title = title;
+        if (id != 0) return;
         JNIEnv* env = GetJNIEnv();
         if (env && g_Activity) {
-            jmethodID setTitleMethod = g_SetTitle;
-            if (setTitleMethod) {
-                jstring jTitle = env->NewStringUTF(title.c_str());
-                env->CallVoidMethod(g_Activity, setTitleMethod, id, jTitle);
-                env->DeleteLocalRef(jTitle);
-            }
+            jstring jTitle = env->NewStringUTF(title.c_str());
+            env->CallVoidMethod(g_Activity, g_SetTitle, jTitle);
+            env->DeleteLocalRef(jTitle);
         }
     }
 
     void SetMenuBar(MenuBarRef newMenuBar) override {
         m_MenuBar = newMenuBar;
-        if (!m_Visible || id != g_CurrentWindow)
+        if (!m_Visible || id != 0)
             return;
         JNIEnv *env = GetJNIEnv();
         if (env && g_Activity) {
@@ -628,8 +619,8 @@ public:
 
     void GetContentSize(double *width, double *height) override {
         float pixelRatio = GetDevicePixelRatio();
-        *width = ANativeWindow_getWidth(g_NativeWindow) / pixelRatio;
-        *height = ANativeWindow_getHeight(g_NativeWindow) / pixelRatio;
+        *width = ANativeWindow_getWidth(m_EGLContext.m_NativeWindow) / pixelRatio;
+        *height = ANativeWindow_getHeight(m_EGLContext.m_NativeWindow) / pixelRatio;
     }
 
     void SetMinContentSize(double width, double height) override {
@@ -667,7 +658,7 @@ public:
         if (!(env && g_Activity)) return;
         jstring jText = env->NewStringUTF(text.c_str());
         env->CallVoidMethod(g_Activity, g_ShowEditorMethod, 
-                            (float)x, (float)y, (float)fontHeight, (float)minWidth, isMonospace, jText);
+                            id, (float)x, (float)y, (float)fontHeight, (float)minWidth, isMonospace, jText);
         env->DeleteLocalRef(jText);
     }
 
@@ -680,16 +671,14 @@ public:
 
     void SetScrollbarVisible(bool visible) override {
         m_ScrollVis = visible;
-        if (id == g_CurrentWindow)
-            UpdateScrollbar();
+        UpdateScrollbar();
     }
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
         m_ScrollMin = min;
         m_ScrollMax = max;
         m_ScrollPage = pageSize;
-        if (id == g_CurrentWindow)
-            UpdateScrollbar();
+        UpdateScrollbar();
     }
 
     double GetScrollbarPosition() override {
@@ -698,8 +687,7 @@ public:
 
     void SetScrollbarPosition(double pos) override {
         m_ScrollPos = pos;
-        if (id == g_CurrentWindow)
-            UpdateScrollbar();
+        UpdateScrollbar();
     }
 
     // Pushes the current scrollbar geometry to the Java layer, which draws the
@@ -708,16 +696,15 @@ public:
         JNIEnv *env = GetJNIEnv();
         if (!(env && g_Activity) || !g_SetScrollbar) return;
         env->CallVoidMethod(g_Activity, g_SetScrollbar,
-                            m_ScrollMin, m_ScrollMax, m_ScrollPage,
+                            id, m_ScrollMin, m_ScrollMax, m_ScrollPage,
                             m_ScrollPos, m_ScrollVis);
     }
 
     void Render() {
-        if (m_EGLContext.isCurrent()) {
-            if (onRender) {
-                onRender();
-                m_EGLContext.SwapBuffers();
-            }
+        if (onRender) {
+            m_EGLContext.MakeCurrent();
+            onRender();
+            m_EGLContext.SwapBuffers();
         }
     }
 
@@ -740,7 +727,6 @@ public:
         }
     }
 
-
     __inline__ bool MakeCurrent() {
         UpdateScrollbar();
         return m_EGLContext.MakeCurrent();
@@ -754,17 +740,14 @@ static std::unordered_map<int, std::shared_ptr<WindowImplAndroid>> g_Windows;
 
 WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     auto window = std::make_shared<WindowImplAndroid>(kind);
-    window->id = g_NextWindowId;
-    g_Windows[g_NextWindowId++] = window;
+    g_Windows[window->id] = window;
     return window;
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_solvespace_SolveSpaceActivity_nativeInit(JNIEnv* env, jobject thiz, jobject surface, jobject jamgr, jobjectArray strs) {
+Java_com_solvespace_SolveSpaceActivity_nativeInit(JNIEnv* env, jobject thiz, jobject jamgr, jobjectArray strs) {
     g_Activity = env->NewGlobalRef(thiz);
     amgr = AAssetManager_fromJava(env, jamgr);
-	g_NativeWindow = ANativeWindow_fromSurface(env, surface);
-	ANativeWindow_acquire(g_NativeWindow);
     jsize siz = 0, i = 0;
     if (strs && (siz=env->GetArrayLength(strs))) {
         for (i=0; i<siz; i++) {
@@ -791,44 +774,33 @@ Java_com_solvespace_SolveSpaceActivity_nativeClear(JNIEnv* env, jobject thiz) {
 	SK.Clear();
 	g_Windows.clear();
 	g_NextWindowId = 0;
-	g_CurrentWindow = 0;
 	MenuItemImplAndroid::nextId = 1;
 	MenuItemImplAndroid::item_map.clear();
     env->DeleteGlobalRef(g_Activity);
 	g_Activity = nullptr;
-	if (g_NativeWindow) {
-		ANativeWindow_release(g_NativeWindow);
-		g_NativeWindow = nullptr;
-	}
 	amgr = nullptr;
 }
 
 void JNICALL
 Java_com_solvespace_SolveSpaceActivity_nativeOnWindowChanged(JNIEnv *env, jclass jc, jint winId) {
     if (winId < g_NextWindowId) {
-        g_CurrentWindow = winId;
-        auto win = g_Windows[winId];
-        win->MakeCurrent();
-        win->Invalidate();
+        g_Windows[winId]->Invalidate();
     }
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_solvespace_SolveSpaceActivity_nativeSetSurface(JNIEnv *env, jclass jc, jobject surf) {
-    if (g_NativeWindow) {
-        ANativeWindow_release(g_NativeWindow);
+Java_com_solvespace_SolveSpaceActivity_nativeSetSurface(JNIEnv *env, jclass jc, jint wid, jobject surf) {
+    auto win = g_Windows[wid].get();
+    auto eglCont = &win->m_EGLContext;
+    if (eglCont->m_NativeWindow) {
+        ANativeWindow_release(eglCont->m_NativeWindow);
     }
-    g_NativeWindow = ANativeWindow_fromSurface(env, surf);
-    ANativeWindow_acquire(g_NativeWindow);
-    if (gSurface != EGL_NO_SURFACE) {
-        eglDestroySurface(gDisplay, gSurface);
-    }
-    eglMakeCurrent(gDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-    gSurface = EGL_NO_SURFACE;
-    for (auto& win : g_Windows) {
-        win.second->CreateSurface();
-    }
-    Java_com_solvespace_SolveSpaceActivity_nativeOnWindowChanged(env, jc, g_CurrentWindow);
+    eglCont->m_NativeWindow = ANativeWindow_fromSurface(env, surf);
+    ANativeWindow_acquire(eglCont->m_NativeWindow);
+    eglCont->DestroySurface();
+    eglCont->CreateSurface();
+    win->UpdateScrollbar();
+    win->Invalidate();
 }
 
 static time_t lastDown = 0;
@@ -837,11 +809,8 @@ static bool doubleClicked = false;
 #define DBL_TIMEOUT 300L
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_solvespace_SolveSpaceActivity_nativeOnMotionEvent(JNIEnv *env, jclass jc, jint act, jfloat x, jfloat y, jdouble dist, jint button, jint state) {
-    if (g_CurrentWindow >= g_NextWindowId) {
-        return false;
-    }
-    auto win = g_Windows[g_CurrentWindow];
+Java_com_solvespace_SolveSpaceActivity_nativeOnMotionEvent(JNIEnv *env, jclass jc, jint wid, jint act, jfloat x, jfloat y, jdouble dist, jint button, jint state) {
+    auto win = g_Windows[wid];
     MouseEvent event = {.x = x, .y = y};
     event.shiftDown = state & AMETA_SHIFT_ON;
     event.controlDown = state & AMETA_CTRL_ON;
@@ -913,13 +882,10 @@ Java_com_solvespace_SolveSpaceActivity_nativeOnMotionEvent(JNIEnv *env, jclass j
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_solvespace_SolveSpaceActivity_nativeOnKeyEvent(JNIEnv *env, jclass jc, jint keyact, jint keyenc, jint metastate) {
-    if (g_CurrentWindow >= g_NextWindowId) {
-        return false;
-    }
+Java_com_solvespace_SolveSpaceActivity_nativeOnKeyEvent(JNIEnv *env, jclass jc, jint wid, jint keyact, jint keyenc, jint metastate) {
     if (keyact == 0)
         return false; // key char from getUnicodeChar() would failed sometimes and trigger the command::none
-    auto win = g_Windows[g_CurrentWindow];
+    auto win = g_Windows[wid];
     KeyboardEvent event = {};
     if (keyact == AKEY_EVENT_ACTION_DOWN)
         event.type = KeyboardEvent::Type::PRESS;
@@ -938,18 +904,15 @@ Java_com_solvespace_SolveSpaceActivity_nativeOnKeyEvent(JNIEnv *env, jclass jc, 
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_solvespace_SolveSpaceActivity_nativeOnEditorDone(JNIEnv *env, jclass clz, jstring str) {
-    auto win = g_Windows[g_CurrentWindow];
+Java_com_solvespace_SolveSpaceActivity_nativeOnEditorDone(JNIEnv *env, jclass clz, jint wid, jstring str) {
+    auto win = g_Windows[wid];
     const char * cstr = env->GetStringUTFChars(str, NULL);
     win->onEditingDone(cstr);
 }
 
 extern "C" JNIEXPORT void JNICALL
-Java_com_solvespace_SolveSpaceActivity_nativeOnScrollbarAdjusted(JNIEnv *env, jobject thiz, jdouble pos) {
-    if (g_CurrentWindow >= g_NextWindowId) {
-        return;
-    }
-    auto win = g_Windows[g_CurrentWindow];
+Java_com_solvespace_SolveSpaceActivity_nativeOnScrollbarAdjusted(JNIEnv *env, jobject thiz, jint wid, jdouble pos) {
+    auto win = g_Windows[wid];
     auto adjust = win->onScrollbarAdjusted;
     if (adjust) {
         adjust(pos);
@@ -958,11 +921,9 @@ Java_com_solvespace_SolveSpaceActivity_nativeOnScrollbarAdjusted(JNIEnv *env, jo
 
 extern "C" JNIEXPORT jboolean JNICALL
 Java_com_solvespace_SolveSpaceActivity_onCreateOptionsMenu(JNIEnv *env, jobject thiz, jobject menu) {
-    int currWin = g_CurrentWindow;
-    if (currWin >= g_NextWindowId)
-        return false;
+    if (g_NextWindowId == 0) return false;
     env->CallVoidMethod(menu, g_Clear);
-    g_Windows[currWin]->InvalidateMenu(env, menu);
+    g_Windows[0]->InvalidateMenu(env, menu);
     return true;
 }
 
@@ -1020,7 +981,7 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
     // Cache method IDs
     g_IsEditorVisibleMethod = env->GetMethodID(activityClass, "isEditorVisible", "()Z");
     g_ShowEditorMethod = env->GetMethodID(activityClass, "showEditor", 
-                                          "(FFFFZLjava/lang/String;)V");
+                                          "(IFFFFZLjava/lang/String;)V");
     g_HideEditorMethod = env->GetMethodID(activityClass, "hideEditor", "()V");
     g_ShowMessageDialogMethod = env->GetMethodID(activityClass, "showMessageDialog", 
                                                 "(Ljava/lang/String;Ljava/lang/String;I)I");
@@ -1029,11 +990,11 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
 	g_SendDelayedMethod = env->GetMethodID(activityClass, "sendDelayed",
 										"(JJ)V");
 	g_SetTitle = env->GetMethodID(activityClass, "setWinTitle",
-								"(ILjava/lang/String;)V");
-	g_OnWinAdded = env->GetMethodID(activityClass, "onWinAdded", "(Z)V");
+								"(Ljava/lang/String;)V");
+	g_OnWinAdded = env->GetMethodID(activityClass, "onWinAdded", "(I)Landroid/view/Surface;");
     g_GetPreferences = env->GetMethodID(activityClass, "getPreferences", "(I)Landroid/content/SharedPreferences;");
     g_GetDensity = env->GetMethodID(activityClass, "getDensity", "()F");
-    g_SetScrollbar = env->GetMethodID(activityClass, "setScrollbar", "(DDDDZ)V");
+    g_SetScrollbar = env->GetMethodID(activityClass, "setScrollbar", "(IFFFFZ)V");
 	g_Popup = env->GetMethodID(activityClass, "popup", "(J)V");
     g_OpenContentFileMethod = env->GetMethodID(activityClass, "openContentFile",
                                                "(Ljava/lang/String;Ljava/lang/String;)I");

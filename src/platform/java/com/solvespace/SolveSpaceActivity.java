@@ -6,6 +6,7 @@ import android.content.res.*;
 import android.database.*;
 import android.graphics.*;
 import android.graphics.drawable.*;
+import android.graphics.drawable.shapes.*;
 import android.graphics.fonts.*;
 import android.net.*;
 import android.os.*;
@@ -22,7 +23,7 @@ public class SolveSpaceActivity extends Activity
 implements SurfaceHolder.Callback2, ActionBar.OnNavigationListener,
 View.OnTouchListener, View.OnGenericMotionListener, TextView.OnEditorActionListener,
 DialogInterface.OnCancelListener, DialogInterface.OnClickListener,
-PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
+PopupWindow.OnDismissListener, DialogInterface.OnDismissListener, View.OnClickListener
 {
     private final static String TAG = "SolveSpace";
     private final static int
@@ -35,42 +36,43 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
     }
 
     private Handler hand = new MainHandler();
-    private ArrayList<String> wins;
-    private ArrayAdapter<String> sa;
-    private SurfaceView sv;
+    private SurfaceView[] svs;
     private PopupWindow pw;
     private long pmenu;
-    private boolean fromCreate;
+    private int inited;
 
     // Vertical scrollbar (rendered as the SurfaceView foreground).
-    private GradientDrawable mScrollbar;
-    private int mScrollbarWidth = 6;
-    private int mViewWidth;
-    private int mViewHeight;
-    // Scrollbar geometry in normalized units (matching the C++ side).
-    private double mScrollMin;
-    private double mScrollMax;
-    private double mScrollPage;
-    private double mScrollPos;
-    private boolean mScrollVisible;
+    private int mScrollbarWidth = 8;
     // True while the user is actively dragging the scrollbar thumb.
     private boolean mScrollDragging;
 
     // Mouse states
     private float currX, currY;
     private int mouseDown;
+    private int currWid;
 
     // Layout constants for the scrollbar.
-    private static final int SCROLLBAR_TRACK_PADDING = 6; // dp
+    private static final int SCROLLBAR_TRACK_PADDING = 8; // dp
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+        View hand = findViewById(R.id.hand);
+        hand.setTag(0);
+        hand.setOnClickListener(this);
         Configuration conf = getResources().getConfiguration();
         notifyOrientation(conf);
-        super.onCreate(savedInstanceState);
-        SurfaceView sv = new SurfaceView(this);
-        this.sv = sv;
+        SurfaceView sv = findViewById(R.id.surf);
+        sv.setTag(0);
+        sv.setTag(R.id.scroll, new ScrollHolder());
+        SurfaceView tv = findViewById(R.id.surf2);
+        tv.setTag(1);
+        tv.setTag(R.id.scroll, new ScrollHolder());
+        svs = new SurfaceView[]{
+            sv, tv
+        };
 
         // Build the foreground as a LayerDrawable containing the vertical
         // scrollbar thumb pinned to the right edge (gravity=right). The C++
@@ -79,32 +81,29 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         float density = getResources().getDisplayMetrics().density;
         int sbWidth = (int)(SCROLLBAR_TRACK_PADDING * density);
         mScrollbarWidth = sbWidth;
-        GradientDrawable thumb = new GradientDrawable();
-        thumb.setColor(0x80ffffff);
-        mScrollbar = thumb;
+        Shape rect = new RectShape();
+        ShapeDrawable thumb = new ShapeDrawable(rect);
+        thumb.getPaint().setColor(0x80ffffff);
+        thumb.setAlpha(0);
         sv.setForeground(thumb);
+        thumb = new ShapeDrawable(rect);
+        thumb.getPaint().setColor(0x80ffffff);
+        thumb.setAlpha(0);
+        tv.setForeground(thumb);
 
-        setContentView(sv, new ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        ));
-        wins = new ArrayList<>();
-        sa = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, wins);
-        sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        ActionBar act = getActionBar();
-        act.setDisplayShowTitleEnabled(false);
-        act.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
-        act.setListNavigationCallbacks(sa, this);
         sv.getHolder().addCallback(this);
+        tv.getHolder().addCallback(this);
         sv.setOnGenericMotionListener(this);
+        tv.setOnGenericMotionListener(this);
         sv.setOnTouchListener(this);
+        tv.setOnTouchListener(this);
         registerForContextMenu(sv);
-        fromCreate = true;
+        inited = 2;
     }
 
     public final void sendDelayed(final long timer, long timeout) {
         if (timeout < 0) {
-            sv.postOnAnimation(new Runnable(){
+            svs[0].postOnAnimation(new Runnable(){
                 public void run() {
                     MainHandler.nativeRun(timer);
                 }
@@ -119,12 +118,40 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
     public native boolean onCreateOptionsMenu(Menu menu);
 
     private void notifyOrientation(Configuration conf) {
-        View v = getWindow().getDecorView();
-        v.setSystemUiVisibility(
-            conf.orientation == Configuration.ORIENTATION_LANDSCAPE ?
+        View dv = getWindow().getDecorView();
+        boolean isVert = conf.orientation == Configuration.ORIENTATION_PORTRAIT;
+        dv.setSystemUiVisibility(
+            isVert ? 0 :
             (View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN)
-            : 0
         );
+        LinearLayout v = findViewById(R.id.drawer);
+        View hand = findViewById(R.id.hand);
+        RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams)v.getLayoutParams();
+        ViewGroup.LayoutParams handParams = hand.getLayoutParams();
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        int dp8 = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8, dm);
+        int opening = 1-(Integer)hand.getTag();
+        if (isVert) {
+            params.width = params.MATCH_PARENT;
+            params.height = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 320, dm);
+            params.removeRule(RelativeLayout.ALIGN_PARENT_END);
+            params.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            params.setMarginEnd(0);
+            handParams.height = dp8;
+            handParams.width = params.MATCH_PARENT;
+            params.bottomMargin = opening*(dp8 - params.height);
+            v.setOrientation(LinearLayout.VERTICAL);
+        } else {
+            params.width = (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 400, dm);
+            params.height = params.MATCH_PARENT;
+            params.removeRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+            params.addRule(RelativeLayout.ALIGN_PARENT_END);
+            handParams.height = params.MATCH_PARENT;
+            handParams.width = dp8;
+            params.setMarginEnd(opening*(dp8 - params.width));
+            params.bottomMargin = 0;
+            v.setOrientation(LinearLayout.HORIZONTAL);
+        }
     }
 
     @Override
@@ -135,15 +162,16 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
     }
 
     @Override
-    public void surfaceChanged(SurfaceHolder p1, int p2, int p3, int p4) {
-        mViewWidth = p3;
-        mViewHeight = p4;
-        nativeOnWindowChanged(getActionBar().getSelectedNavigationIndex());
+    public void surfaceChanged(SurfaceHolder p1, int format, int width, int height) {
+        int i = p1==svs[0].getHolder() ? 0:1;
+        nativeOnWindowChanged(i);
     }
 
     @Override
     public void surfaceCreated(SurfaceHolder p1) {
-        if (fromCreate) {
+        if (inited >= 0)
+            inited--;
+        if (inited == 0) {
             String[] lcs;
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 LocaleList lclst = getResources().getConfiguration().getLocales();
@@ -158,10 +186,14 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
                 Locale lc = Locale.getDefault();
                 lcs[0] = lc.getLanguage()+"_"+lc.getCountry();
             }
-            nativeInit(p1.getSurface(), getAssets(), lcs);
-            fromCreate = false;
-        } else {
-            nativeSetSurface(p1.getSurface());
+            nativeInit(getAssets(), lcs);
+        } else if (inited < 0) {
+            for (int i=0;i<svs.length;i++) {
+                if (svs[i].getHolder() == p1) {
+                    nativeSetSurface(i, p1.getSurface());
+                    break;
+                }
+            }
         }
     }
 
@@ -175,10 +207,11 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
 
     public void popup(long pmenu) {
         this.pmenu = pmenu;
+        View v = svs[currWid];
         if (currX >= 0 && currY >= 0)
-            sv.showContextMenu(currX, currY);
+            v.showContextMenu(currX, currY);
         else
-            sv.showContextMenu();
+            v.showContextMenu();
     }
 
     @Override
@@ -204,7 +237,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         super.onDestroy();
     }
 
-    public void showEditor(float x, float y, float fontHeight, float minWidth, boolean isMono, String text) {
+    public void showEditor(int wid, float x, float y, float fontHeight, float minWidth, boolean isMono, String text) {
         EditText ed = new EditText(this);
         if (isMono) ed.setTypeface(Typeface.MONOSPACE);
         ed.setImeOptions(EditorInfo.IME_ACTION_DONE);
@@ -212,6 +245,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         ed.setOnEditorActionListener(this);
         ed.setTextColor(0xff000000);
         ed.setFocusable(true);
+        ed.setTag(wid);
         PopupWindow pw = new PopupWindow(
             ed,
             ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -227,9 +261,11 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         pw.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
         pw.setOnDismissListener(this);
         float density = getDensity();
-        int xi = (int)(x * density)-ed.getPaddingLeft();
-        int yi = (int)(y * density)+getActionBar().getHeight();
-        pw.showAtLocation(getWindow().getDecorView(), Gravity.TOP|Gravity.LEFT, xi, yi);
+        int[] loc = new int[2];
+        svs[wid].getLocationInWindow(loc);
+        loc[0] += (int)(x * density)-ed.getPaddingLeft();
+        loc[1] += (int)(y * density)-ed.getPaddingTop();
+        pw.showAtLocation(getWindow().getDecorView(), Gravity.TOP|Gravity.LEFT, loc[0], loc[1]);
         ed.requestFocus();
     }
 
@@ -237,34 +273,28 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
 
     // Stores the scrollbar configuration and redraws the thumb.
     // All geometry arguments are in normalized scrollbar units.
-    protected void setScrollbar(double min, double max, double page, double pos, boolean visible) {
-        mScrollMin = min;
-        mScrollMax = max;
-        mScrollPage = page;
-        mScrollPos = pos;
-        mScrollVisible = visible;
-        layoutScrollbar();
-    }
-
-    // Updates the LayerDrawable item (thumb) geometry: its horizontal width
-    // (via the right inset, keeping it pinned to the right gravity), and its
-    // vertical start/length via top/bottom insets. Hidden when not visible.
-    private void layoutScrollbar() {
-        if (mScrollbar == null) return;
-        if (!mScrollVisible || mViewHeight <= 0 ||
-            mScrollMax <= mScrollMin) {
-            mScrollbar.setAlpha(0);
+    protected void setScrollbar(int wid, float min, float max, float page, float pos, boolean visible) {
+        SurfaceView v = svs[wid];
+        ScrollHolder holder = (ScrollHolder)v.getTag(R.id.scroll);
+        holder.min = min;
+        holder.max = max;
+        holder.page = page;
+        holder.pos = pos;
+        holder.visible = visible;
+        Drawable scrollbar = v.getForeground();
+        if (scrollbar == null) return;
+        int height = v.getHeight();
+        if (!visible || height <= 0 ||
+            max <= min) {
+            scrollbar.setAlpha(0);
             return;
         }
-        mScrollbar.setAlpha(0x80);
 
-        int height = mViewHeight;
-
-        double range = Math.max(1e-6, mScrollMax - mScrollMin);
+        double range = Math.max(1e-6, max - min);
         // Thumb length is proportional to the page size within the range.
-        int thumbH = (int)(mScrollPage / (mScrollMax - mScrollMin) * height);
+        int thumbH = (int)(page / (max - min) * height);
 
-        double ratio = (mScrollPos - mScrollMin) / range;
+        double ratio = (pos - min) / range;
         if (ratio < 0) ratio = 0;
         if (ratio > 1) ratio = 1;
         int top = (int)(ratio * height);
@@ -273,18 +303,20 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
 
         // Pin the thumb to the right edge; its width is controlled by the
         // right inset relative to the right gravity of the layer.
-        mScrollbar.setBounds(mViewWidth-mScrollbarWidth, top, mViewWidth, bottom);
-        mScrollbar.invalidateSelf();
+        int width = v.getWidth();
+        scrollbar.setBounds(width - mScrollbarWidth, top, width, bottom);
+        scrollbar.setAlpha(0x80);
     }
 
     // Callback from C++ that the scroll position was adjusted by the user.
-    private native void nativeOnScrollbarAdjusted(double pos);
+    private native void nativeOnScrollbarAdjusted(int wid, double pos);
 
     @Override
     public void onDismiss() {
         PopupWindow pw = this.pw;
         if (pw != null) {
-            nativeOnEditorDone(((EditText)pw.getContentView()).getText().toString());
+            EditText ed = (EditText)pw.getContentView();
+            nativeOnEditorDone((Integer)ed.getTag(), ed.getText().toString());
         }
     }
 
@@ -492,7 +524,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
     public boolean onGenericMotion(View v, MotionEvent ev) {
         float density = getDensity();
         float dist = ev.getAxisValue(MotionEvent.AXIS_VSCROLL)/density;
-        v.postOnAnimation(new Motion(ev.getAction(), ev.getX()/density, ev.getY()/density, dist, ev.getButtonState(), ev.getMetaState()));
+        v.postOnAnimation(new Motion(((Integer)v.getTag()), ev.getAction(), ev.getX()/density, ev.getY()/density, dist, ev.getButtonState(), ev.getMetaState()));
         return true;
     }
 
@@ -502,7 +534,7 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
     @Override
     public boolean onTouch(View v, MotionEvent ev) {
         float density = getDensity();
-        handleScrollbarTouch(ev, density);
+        handleScrollbarTouch(v, ev, density);
 
         if (mScrollDragging) {
             return true;
@@ -515,11 +547,13 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         if (ev.isFromSource(InputDevice.SOURCE_MOUSE)) {
             bstat = ev.getButtonState();
             // scrcpy --mouse=uhid would loss the buttonstate when action up
-            if (act == MotionEvent.ACTION_DOWN)
+            if (act == MotionEvent.ACTION_DOWN) {
                 mouseDown = bstat;
-            else if (act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_CANCEL) {
+                currWid = (Integer)v.getTag();
+            } else if (act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_CANCEL) {
                 bstat = mouseDown;
                 mouseDown = 0;
+                currWid = 0;
             }
             currX = x;
             currY = y;
@@ -536,78 +570,69 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         } else {
             dist = 0.;
         }
-        v.postOnAnimation(new Motion(act, x/density, y/density, dist, bstat, meta));
+        v.postOnAnimation(new Motion(((Integer)v.getTag()), act, x/density, y/density, dist, bstat, meta));
         return true;
     }
 
     // Adjusts the scroll position when the user touches or drags the scrollbar
     // thumb/track, and refreshes the drawn thumb to follow the finger.
-    private void handleScrollbarTouch(MotionEvent ev, float density) {
-        double height = mViewHeight/density;
-        if (!mScrollVisible || height <= 0) return;
+    private void handleScrollbarTouch(View v, MotionEvent ev, float density) {
+        int wid = (Integer)v.getTag();
+        float height = v.getHeight()/density;
+        int width = v.getWidth();
+        ScrollHolder holder = (ScrollHolder)v.getTag(R.id.scroll);
+        if (!holder.visible || height <= 0) return;
         float y = ev.getY() / density;
-        double range = Math.max(1e-6, mScrollMax - mScrollMin);
-        double scale = mScrollPage / (mScrollMax - mScrollMin);
+        double range = Math.max(1e-6, holder.max - holder.min);
+        double scale = holder.page / (holder.max - holder.min);
         int thumbH = (int)(height * scale);
 
         int act = ev.getActionMasked();
         if (act == MotionEvent.ACTION_DOWN) {
             // Begin dragging if the touch is on the thumb or in the scrollbar
             // track area on the right edge.
-            int sbLeft = mViewWidth - mScrollbarWidth - (int)(SCROLLBAR_TRACK_PADDING*density);
-            if (xInScrollbar(ev, sbLeft) &&
+            int sbLeft = width - mScrollbarWidth - (int)(SCROLLBAR_TRACK_PADDING*density);
+            if (xInScrollbar(ev, sbLeft, width) &&
                 (y >= 0 && y <= height)) {
                 mScrollDragging = true;
-                nativeOnScrollbarAdjusted((y - thumbH * 0.5)*range/height);
+                nativeOnScrollbarAdjusted(wid, (y - thumbH * 0.5)*range/height);
             }
         } else if (act == MotionEvent.ACTION_MOVE && mScrollDragging) {
-            nativeOnScrollbarAdjusted((y - thumbH * 0.5)*range/height);
+            nativeOnScrollbarAdjusted(wid, (y - thumbH * 0.5)*range/height);
         } else if (act == MotionEvent.ACTION_UP || act == MotionEvent.ACTION_CANCEL) {
             mScrollDragging = false;
         }
     }
 
-    private boolean xInScrollbar(MotionEvent ev, int sbLeft) {
-        return ev.getX() >= sbLeft && ev.getX() <= mViewWidth;
+    private boolean xInScrollbar(MotionEvent ev, int sbLeft, int width) {
+        return ev.getX() >= sbLeft && ev.getX() <= width;
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent ev) {
         if (!super.onKeyDown(keyCode, ev))
-            sv.postOnAnimation(new Key(ev));
+            svs[0].postOnAnimation(new Key(0, ev));
         return true;
     }
 
     @Override
     public boolean onKeyUp(int keyCode, KeyEvent ev) {
         if (!super.onKeyUp(keyCode, ev))
-            sv.postOnAnimation(new Key(ev));
+            svs[0].postOnAnimation(new Key(0, ev));
         return true;
     }
 
-    public void onWinAdded(boolean isTop) {
-        int count = sa.getCount();
-        sa.add("#"+count);
-        sa.notifyDataSetChanged();
-        if (isTop)
-            getActionBar().setSelectedNavigationItem(count);
+    public Surface onWinAdded(int wid) {
+        return svs[wid].getHolder().getSurface();
     }
 
-    public void setWinTitle(int winId, String title) {
-        wins.set(winId, title);
-        sa.notifyDataSetChanged();
-    }
-
-    @Override
-    public boolean onNavigationItemSelected(int p1, long p2) {
-        nativeOnWindowChanged(p1);
-        invalidateOptionsMenu();
-        return true;
+    public void setWinTitle(String title) {
+        getActionBar().setTitle(title);
     }
 
     @Override
     public boolean onEditorAction(TextView p1, int p2, KeyEvent p3) {
-        nativeOnEditorDone(p1.getText().toString());
+        nativeOnEditorDone((Integer)p1.getTag(), p1.getText().toString());
         return true;
     }
 
@@ -625,21 +650,38 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
         return arr;
     }
 
-    private native void nativeInit(Surface suf, AssetManager amgr, String[] strs);
+    @Override
+    public void onClick(View v) {
+        int opening = (Integer)v.getTag();
+        LinearLayout lr = findViewById(R.id.drawer);
+        ViewGroup.LayoutParams handParams = v.getLayoutParams();
+        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams)lr.getLayoutParams();
+        DisplayMetrics dm = getResources().getDisplayMetrics();
+        if (lr.getOrientation() == LinearLayout.VERTICAL) {
+            params.bottomMargin = opening*(handParams.height - (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 320, dm));
+        } else {
+            params.setMarginEnd(opening*(handParams.width - (int)TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 400, dm)));
+        }
+        lr.requestLayout();
+        v.setTag(1-opening);
+    }
+
+    private native void nativeInit(AssetManager amgr, String[] strs);
     private native void nativeClear();
-    private native void nativeSetSurface(Surface suf);
-    protected static native boolean nativeOnMotionEvent(int action, float x, float y, double dist, int button, int metastate);
-    protected static native boolean nativeOnKeyEvent(int keystate, int keyCode, int metastate);
+    private native void nativeSetSurface(int wid, Surface suf);
+    protected static native boolean nativeOnMotionEvent(int wid, int action, float x, float y, double dist, int button, int metastate);
+    protected static native boolean nativeOnKeyEvent(int wid, int keystate, int keyCode, int metastate);
     private static native void nativeOnWindowChanged(int winId);
-    private static native void nativeOnEditorDone(String text);
+    private static native void nativeOnEditorDone(int wid, String text);
     private static native void nativeOnCreateContextMenu(Menu menu, long pemnu);
     private static native void nativeOnContextMenuClosed(long pmenu);
 
     static class Motion implements Runnable {
-        int act, button, metastate;
+        int id, act, button, metastate;
         float x, y;
         double dist;
-        public Motion(int ac, float x, float y, double dis, int btn, int mt) {
+        public Motion(int wid, int ac, float x, float y, double dis, int btn, int mt) {
+            id = wid;
             act = ac;
             this.x = x;
             this.y = y;
@@ -648,13 +690,14 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
             metastate = mt;
         }
         public void run() {
-            nativeOnMotionEvent(act, x, y, dist, button, metastate);
+            nativeOnMotionEvent(id, act, x, y, dist, button, metastate);
         }
     }
 
     static class Key implements Runnable {
-        int act, keyenc, meta;
-        public Key(KeyEvent ke) {
+        int id, act, keyenc, meta;
+        public Key(int wid, KeyEvent ke) {
+            id = wid;
             act = ke.getAction();
             int kcode = ke.getKeyCode();
             if (kcode >= KeyEvent.KEYCODE_F1 && kcode <= KeyEvent.KEYCODE_F12)
@@ -664,11 +707,12 @@ PopupWindow.OnDismissListener, DialogInterface.OnDismissListener
             meta = ke.getMetaState();
         }
         public void run() {
-            nativeOnKeyEvent(act, keyenc, meta);
+            nativeOnKeyEvent(id, act, keyenc, meta);
         }
     }
 
-    public void finish() {
-        super.finish();
+    static class ScrollHolder {
+        float min, max, page, pos;
+        boolean visible;
     }
 }
