@@ -11,6 +11,9 @@ Thanks to Claude Fable 5
 * Fixes when edges intersect tangent on the edge of a surface.
 * Significant reduction in red lines, naked edges, and missing surfaces.
 
+Solver:
+* Improved ability to solve constraints with large dimensions/values.
+
 Misc:
 * Initialize the color picker to the current color instead of black.
 * Fix some file dialog issues.
