@@ -159,14 +159,13 @@ std::string Path::FileName() const {
 #ifdef __ANDROID__
     if (fileName.compare(0, 8, "content:") == 0)
         return DroidFileName(fileName.c_str());
-#else
+#endif
     constexpr size_t siz = 1;
     size_t slash = fileName.rfind(SEPARATOR);
     if(slash != std::string::npos) {
         fileName = fileName.substr(slash + siz);
     }
     return fileName;
-#endif
 }
 
 std::string Path::FileStem() const {
