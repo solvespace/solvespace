@@ -146,6 +146,13 @@ void TextWindow::ScreenChangeCanvasSizeAuto(int link, uint32_t v) {
     SS.GW.Invalidate();
 }
 
+void TextWindow::ScreenChangeMouseScrollAction(int link, uint32_t v) {
+    if(link == 'c') {
+        SS.mouseScrollAction = (SolveSpaceUI::MouseScrollAction)v;
+    }
+    SS.GW.Invalidate();
+}
+
 void TextWindow::ScreenChangeCanvasSize(int link, uint32_t v) {
     double d;
     switch(v) {
@@ -377,6 +384,23 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "%Ft animation speed (in ms; 0 to disable)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
         SS.animationSpeed, &ScreenChangeAnimationSpeed);
+
+    #if defined(__APPLE__)
+        Printf(false, "");
+        Printf(false, "%Ft mouse scroll / touch pad action");
+        Printf(false, "%Ba   %f%D%Lc%Fd%s auto%E  "
+                            "%f%D%Lc%Fd%s pan%E  "
+                            "%f%D%Lc%Fd%s zoom%E",
+            &ScreenChangeMouseScrollAction,
+            SolveSpaceUI::MouseScrollAction::AUTO,
+            (SS.mouseScrollAction == SolveSpaceUI::MouseScrollAction::AUTO) ? RADIO_TRUE : RADIO_FALSE,
+            &ScreenChangeMouseScrollAction,
+            SolveSpaceUI::MouseScrollAction::PAN,
+            (SS.mouseScrollAction == SolveSpaceUI::MouseScrollAction::PAN) ? RADIO_TRUE : RADIO_FALSE,
+            &ScreenChangeMouseScrollAction,
+            SolveSpaceUI::MouseScrollAction::ZOOM,
+            (SS.mouseScrollAction == SolveSpaceUI::MouseScrollAction::ZOOM) ? RADIO_TRUE : RADIO_FALSE);
+    #endif
 
     if(canvas) {
         const char *gl_vendor, *gl_renderer, *gl_version;
