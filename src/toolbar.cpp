@@ -12,85 +12,67 @@ namespace SolveSpace {
 struct ToolIcon {
     std::string name;
     Command     command;
+    bool        keep_active;
     const char *tooltip;
     std::shared_ptr<Pixmap> pixmap;
 };
 static ToolIcon Toolbar[] = {
-    { "line",            Command::LINE_SEGMENT,
-      N_("Sketch line segment"),                              {} },
-    { "rectangle",       Command::RECTANGLE,
-      N_("Sketch rectangle"),                                 {} },
-    { "circle",          Command::CIRCLE,
-      N_("Sketch circle"),                                    {} },
-    { "arc",             Command::ARC,
-      N_("Sketch arc of a circle"),                           {} },
-    { "text",            Command::TTF_TEXT,
-      N_("Sketch curves from text in a TrueType font"),       {} },
-    { "image",           Command::IMAGE,
-      N_("Sketch image from a file"),                         {} },
-    { "tangent-arc",     Command::TANGENT_ARC,
-      N_("Create tangent arc at selected point"),             {} },
-    { "bezier",          Command::CUBIC,
-      N_("Sketch cubic Bezier spline"),                       {} },
-    { "point",           Command::DATUM_POINT,
-      N_("Sketch datum point"),                               {} },
-    { "construction",    Command::CONSTRUCTION,
-      N_("Toggle construction"),                              {} },
-    { "trim",            Command::SPLIT_CURVES,
-      N_("Split lines / curves where they intersect"),        {} },
-    { "",                Command::NONE, "",                   {} },
+    // name              command         keep_active   tooltip                                           pixmap
+    { "line",            Command::LINE_SEGMENT,    1,  N_("Sketch line segment"),                              {} },
+    { "rectangle",       Command::RECTANGLE,       1,  N_("Sketch rectangle"),                                 {} },
+    { "circle",          Command::CIRCLE,          1,  N_("Sketch circle"),                                    {} },
+    { "arc",             Command::ARC,             1,  N_("Sketch arc of a circle"),                           {} },
+    { "text",            Command::TTF_TEXT,        1,  N_("Sketch curves from text in a TrueType font"),       {} },
+    { "image",           Command::IMAGE,           1,  N_("Sketch image from a file"),                         {} },
+    { "tangent-arc",     Command::TANGENT_ARC,     1,  N_("Create tangent arc at selected point"),             {} },
+    { "bezier",          Command::CUBIC,           1,  N_("Sketch cubic Bezier spline"),                       {} },
+    { "point",           Command::DATUM_POINT,     1,  N_("Sketch datum point"),                               {} },
+    { "construction",    Command::CONSTRUCTION,    1,  N_("Toggle construction"),                              {} },
+    { "trim",            Command::SPLIT_CURVES,    1,  N_("Split lines / curves where they intersect"),        {} },
+    { "",                Command::NONE,            0,     "",                                                  {} },
 
-    { "length",          Command::DISTANCE_DIA,
-      N_("Constrain distance / diameter / length"),           {} },
-    { "angle",           Command::ANGLE,
-      N_("Constrain angle"),                                  {} },
-    { "horiz",           Command::HORIZONTAL,
-      N_("Constrain to be horizontal"),                       {} },
-    { "vert",            Command::VERTICAL,
-      N_("Constrain to be vertical"),                         {} },
-    { "parallel",        Command::PARALLEL,
-      N_("Constrain to be parallel or tangent"),              {} },
-    { "perpendicular",   Command::PERPENDICULAR,
-      N_("Constrain to be perpendicular"),                    {} },
-    { "pointonx",        Command::ON_ENTITY,
-      N_("Constrain point on line / curve / plane / point"),  {} },
-    { "symmetric",       Command::SYMMETRIC,
-      N_("Constrain symmetric"),                              {} },
-    { "equal",           Command::EQUAL,
-      N_("Constrain equal length / radius / angle"),          {} },
-    { "same-orientation",Command::ORIENTED_SAME,
-      N_("Constrain normals in same orientation"),            {} },
-    { "other-supp",      Command::OTHER_ANGLE,
-      N_("Other supplementary angle"),                        {} },
-    { "ref",             Command::REFERENCE,
-      N_("Toggle reference dimension"),                       {} },
-    { "",                Command::NONE, "",                   {} },
+    { "length",          Command::DISTANCE_DIA,    1,  N_("Constrain distance / diameter / length"),           {} },
+    { "angle",           Command::ANGLE,           1,  N_("Constrain angle"),                                  {} },
+    { "horiz",           Command::HORIZONTAL,      1,  N_("Constrain to be horizontal"),                       {} },
+    { "vert",            Command::VERTICAL,        1,  N_("Constrain to be vertical"),                         {} },
+    { "parallel",        Command::PARALLEL,        1,  N_("Constrain to be parallel or tangent"),              {} },
+    { "perpendicular",   Command::PERPENDICULAR,   1,  N_("Constrain to be perpendicular"),                    {} },
+    { "pointonx",        Command::ON_ENTITY,       1,  N_("Constrain point on line / curve / plane / point"),  {} },
+    { "symmetric",       Command::SYMMETRIC,       1,  N_("Constrain symmetric"),                              {} },
+    { "equal",           Command::EQUAL,           1,  N_("Constrain equal length / radius / angle"),          {} },
+    { "same-orientation",Command::ORIENTED_SAME,   1,  N_("Constrain normals in same orientation"),            {} },
+    { "other-supp",      Command::OTHER_ANGLE,     1,  N_("Other supplementary angle"),                        {} },
+    { "ref",             Command::REFERENCE,       1,  N_("Toggle reference dimension"),                       {} },
+    { "",                Command::NONE,            0,     "",                                                  {} },
 
-    { "extrude",         Command::GROUP_EXTRUDE,
-      N_("New group extruding active sketch"),                {} },
-    { "lathe",           Command::GROUP_LATHE,
-      N_("New group rotating active sketch"),                 {} },
-    { "helix",           Command::GROUP_HELIX,
-      N_("New group helix from active sketch"),               {} },
-    { "revolve",         Command::GROUP_REVOLVE,
-      N_("New group revolve active sketch"),                  {} },
-    { "step-rotate",     Command::GROUP_ROT,
-      N_("New group step and repeat rotating"),               {} },
-    { "step-translate",  Command::GROUP_TRANS,
-      N_("New group step and repeat translating"),            {} },
-    { "sketch-in-plane", Command::GROUP_WRKPL,
-      N_("New group in new workplane (thru given entities)"), {} },
-    { "sketch-in-3d",    Command::GROUP_3D,
-      N_("New group in 3d"),                                  {} },
-    { "assemble",        Command::GROUP_LINK,
-      N_("New group linking / assembling file"),              {} },
-    { "",                Command::NONE, "",                   {} },
+    { "extrude",         Command::GROUP_EXTRUDE,   1,  N_("New group extruding active sketch"),                {} },
+    { "lathe",           Command::GROUP_LATHE,     1,  N_("New group rotating active sketch"),                 {} },
+    { "helix",           Command::GROUP_HELIX,     1,  N_("New group helix from active sketch"),               {} },
+    { "revolve",         Command::GROUP_REVOLVE,   1,  N_("New group revolve active sketch"),                  {} },
+    { "step-rotate",     Command::GROUP_ROT,       1,  N_("New group step and repeat rotating"),               {} },
+    { "step-translate",  Command::GROUP_TRANS,     1,  N_("New group step and repeat translating"),            {} },
+    { "sketch-in-plane", Command::GROUP_WRKPL,     1,  N_("New group in new workplane (thru given entities)"), {} },
+    { "sketch-in-3d",    Command::GROUP_3D,        1,  N_("New group in 3d"),                                  {} },
+    { "assemble",        Command::GROUP_LINK,      1,  N_("New group linking / assembling file"),              {} },
+    { "",                Command::NONE, "",        0,                                                            {} },
 
-    { "in3d",            Command::NEAREST_ISO,
-      N_("Nearest isometric view"),                           {} },
-    { "ontoworkplane",   Command::ONTO_WORKPLANE,
-      N_("Align view to active workplane"),                   {} },
+    { "in3d",            Command::NEAREST_ISO,     0,  N_("Nearest isometric view"),                           {} },
+    { "ontoworkplane",   Command::ONTO_WORKPLANE,  0,  N_("Align view to active workplane"),                   {} },
 };
+
+bool GraphicsWindow::CheckIfKeepCommandActive(Command theCom) {
+    for(ToolIcon &icon : Toolbar) {
+        if(theCom == icon.command) {
+            if(icon.keep_active)
+                return true;
+            else
+                return false;
+        }
+    }
+
+    return false; // no match found
+}
+
 
 void GraphicsWindow::ToolbarDraw(UiCanvas *canvas) {
     ToolbarDrawOrHitTest(0, 0, canvas, NULL, NULL, NULL);
