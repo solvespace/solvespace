@@ -271,13 +271,47 @@ void ConstraintBase::Generate(ParamList *l) {
 }
 
 void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
-                                       bool forReference) const {
-    if(reference && !forReference) return;
+                                       bool forReference) const {    
+    if(reference && !forReference) {
+        return;
+    }
 
-    Expr *exA = Expr::From(valA);
+    // comments don't create equations
+    if(type == Type::COMMENT) return;
+
+    Expr *exA = {};
+    Expr *exLen = {};
+
+    // Need to pull the group from this constraint and get its valid names list
+    // then delete the above code
+    Group *g = SK.GetGroup(group);
+    
+    // a numeric dimension is stored in valA. When a complex expression is used
+    // it is stored in the comment string and the unit scale is in valA.
+    if(comment != "") {
+        int usedParams = 0;
+//        exA = Expr::From(comment.c_str(), false, &usedParams, &vars);
+        exA = Expr::From(comment.c_str(), false, &usedParams, &(g->dict));
+
+        // the expression may have become invalid if a name has been deleted.
+        // return will prevent a crash but silently make the constraint fail.
+        // creating a 1=0 equation will cause a solve fail and (awkward) constraint deletion.
+        if(!exA)
+        {
+          exA = Expr::From(1.0);
+          AddEq(l, exA, 0);
+          return;
+        }
+        
+        exLen = exA->Times(Expr::From(valA));
+    } else {
+        exA = Expr::From(valA);
+        exLen = Expr::From(valA);
+    }
+    
     switch(type) {
         case Type::PT_PT_DISTANCE:
-            AddEq(l, Distance(workplane, ptA, ptB)->Minus(exA), 0);
+            AddEq(l, Distance(workplane, ptA, ptB)->Minus(exLen), 0);
             return;
 
         case Type::PROJ_PT_DISTANCE: {
@@ -288,18 +322,18 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
             ExprVector pp = SK.GetEntity(entityA)->VectorGetExprs();
             pp = pp.WithMagnitude(Expr::From(1.0));
 
-            AddEq(l, (dp.Dot(pp))->Minus(exA), 0);
+            AddEq(l, (dp.Dot(pp))->Minus(exLen), 0);
             return;
         }
 
         case Type::PT_LINE_DISTANCE:
             AddEq(l,
-                PointLineDistance(workplane, ptA, entityA)->Minus(exA), 0);
+                PointLineDistance(workplane, ptA, entityA)->Minus(exLen), 0);
             return;
 
         case Type::PT_PLANE_DISTANCE: {
             ExprVector pt = SK.GetEntity(ptA)->PointGetExprs();
-            AddEq(l, (PointPlaneDistance(pt, entityA))->Minus(exA), 0);
+            AddEq(l, (PointPlaneDistance(pt, entityA))->Minus(exLen), 0);
             return;
         }
 
@@ -308,7 +342,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
             EntityBase *f = SK.GetEntity(entityA);
             ExprVector p0 = f->FaceGetPointExprs();
             ExprVector n = f->FaceGetNormalExprs();
-            AddEq(l, (pt.Minus(p0)).Dot(n)->Minus(exA), 0);
+            AddEq(l, (pt.Minus(p0)).Dot(n)->Minus(exLen), 0);
             return;
         }
 
@@ -454,7 +488,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
             EntityBase *b = SK.GetEntity(entityB);
             Expr *la = Distance(workplane, a->point[0], a->point[1]);
             Expr *lb = Distance(workplane, b->point[0], b->point[1]);
-            AddEq(l, (la->Minus(lb))->Minus(exA), 0);
+            AddEq(l, (la->Minus(lb))->Minus(exLen), 0);
             return;
         }
         
@@ -520,7 +554,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                 theta2 = (Expr::From(2*PI))->Minus(costheta2->ACos());
             }
             // And write the equation; (r1*theta1) - ( r2*theta2) = some difference
-            AddEq(l, (r1->Times(theta1))->Minus(r2->Times(theta2))->Minus(exA), 0);
+            AddEq(l, (r1->Times(theta1))->Minus(r2->Times(theta2))->Minus(exLen), 0);
             return;
         }
         
@@ -558,14 +592,14 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                 theta1 = (Expr::From(2*PI))->Minus(costheta1->ACos());
             }
             // And write the equation; (r1*theta1) - ( length) = some difference
-            AddEq(l, (r1->Times(theta1))->Minus(ll)->Minus(exA), 0);
+            AddEq(l, (r1->Times(theta1))->Minus(ll)->Minus(exLen), 0);
             return;
         }
         
         case Type::DIAMETER: {
             EntityBase *circle = SK.GetEntity(entityA);
             Expr *r = circle->CircleGetRadiusExpr();
-            AddEq(l, (r->Times(Expr::From(2)))->Minus(exA), 0);
+            AddEq(l, (r->Times(Expr::From(2)))->Minus(exLen), 0);
             return;
         }
 
