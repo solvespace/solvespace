@@ -87,6 +87,8 @@ void SolveSpaceUI::Init() {
     cameraNav = settings->ThawBool("CameraNav", false);
     // Use turntable mouse navigation
     turntableNav = settings->ThawBool("TurntableNav", false);
+    // Zoom keeping view centered
+    zoomCenterNav = settings->ThawBool("ZoomCenterNav", false);
     // Immediately edit dimension
     immediatelyEditDimension = settings->ThawBool("ImmediatelyEditDimension", true);
     // Check that contours are closed and not self-intersecting
@@ -278,6 +280,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeBool("CameraNav", cameraNav);
     // Use turntable mouse navigation
     settings->FreezeBool("TurntableNav", turntableNav);
+    // Zoom keeping view centered
+    settings->FreezeBool("ZoomCenterNav", zoomCenterNav);
     // Immediately edit dimensions
     settings->FreezeBool("ImmediatelyEditDimension", immediatelyEditDimension);
     // Enable automatic constrains for lines

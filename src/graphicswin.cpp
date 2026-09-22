@@ -726,15 +726,25 @@ double GraphicsWindow::ZoomToFit(const Camera &camera,
 }
 
 
-void GraphicsWindow::ZoomToMouse(double zoomMultiplyer) {
-    double offsetRight = offset.Dot(projRight);
-    double offsetUp    = offset.Dot(projUp);
+void GraphicsWindow::ZoomToMouse(double zoomMultiplyer, bool centered) {
+    double offsetRight, offsetUp;
+    double righti, upi;
 
-    double width, height;
-    window->GetContentSize(&width, &height);
+    // Mouse edit operations currently track the pointer relative to the
+    // initial button press position, so centered is currently ignored during
+    // edits.
+    bool trackPointer = (pending.operation != Pending::NONE) || (! centered);
 
-    double righti = currentMousePosition.x / scale - offsetRight;
-    double upi    = currentMousePosition.y / scale - offsetUp;
+    if (trackPointer) {
+        offsetRight = offset.Dot(projRight);
+        offsetUp    = offset.Dot(projUp);
+
+        double width, height;
+        window->GetContentSize(&width, &height);
+
+        righti = currentMousePosition.x / scale - offsetRight;
+        upi    = currentMousePosition.y / scale - offsetUp;
+    }
 
     // zoomMultiplyer of 1 gives a default zoom factor of 1.2x: zoomMultiplyer * 1.2
     // zoom = adjusted zoom negative zoomMultiplyer will zoom out, positive will zoom in
@@ -742,11 +752,13 @@ void GraphicsWindow::ZoomToMouse(double zoomMultiplyer) {
 
     scale *= exp(0.1823216 * zoomMultiplyer); // ln(1.2) = 0.1823216
 
-    double rightf = currentMousePosition.x / scale - offsetRight;
-    double upf    = currentMousePosition.y / scale - offsetUp;
+    if (trackPointer) {
+        double rightf = currentMousePosition.x / scale - offsetRight;
+        double upf    = currentMousePosition.y / scale - offsetUp;
 
-    offset = offset.Plus(projRight.ScaledBy(rightf - righti));
-    offset = offset.Plus(projUp.ScaledBy(upf - upi));
+        offset = offset.Plus(projRight.ScaledBy(rightf - righti));
+        offset = offset.Plus(projUp.ScaledBy(upf - upi));
+    }
 
     if(SS.TW.shown.screen == TextWindow::Screen::EDIT_VIEW) {
         if(havePainted) {
@@ -761,11 +773,11 @@ void GraphicsWindow::ZoomToMouse(double zoomMultiplyer) {
 void GraphicsWindow::MenuView(Command id) {
     switch(id) {
         case Command::ZOOM_IN:
-            SS.GW.ZoomToMouse(1);
+            SS.GW.ZoomToMouse(1, SS.zoomCenterNav);
             break;
 
         case Command::ZOOM_OUT:
-            SS.GW.ZoomToMouse(-1);
+            SS.GW.ZoomToMouse(-1, SS.zoomCenterNav);
             break;
 
         case Command::ZOOM_TO_FIT:

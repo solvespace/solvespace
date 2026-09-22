@@ -107,6 +107,10 @@ void TextWindow::ScreenChangeCameraNav(int link, uint32_t v) {
     SS.cameraNav = !SS.cameraNav;
 }
 
+void TextWindow::ScreenChangeZoomNav(int link, uint32_t v) {
+    SS.zoomCenterNav = !SS.zoomCenterNav;
+}
+
 void TextWindow::ScreenChangeImmediatelyEditDimension(int link, uint32_t v) {
     SS.immediatelyEditDimension = !SS.immediatelyEditDimension;
     SS.GW.Invalidate(/*clearPersistent=*/true);
@@ -357,6 +361,8 @@ void TextWindow::ShowConfiguration() {
         SS.cameraNav ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  use turntable mouse navigation%E", &ScreenChangeTurntableNav,
         SS.turntableNav ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%s  zoom keeping view centered%E", &ScreenChangeZoomNav,
+        SS.zoomCenterNav ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  edit newly added dimensions%E",
         &ScreenChangeImmediatelyEditDimension,
         SS.immediatelyEditDimension ? CHECK_TRUE : CHECK_FALSE);
