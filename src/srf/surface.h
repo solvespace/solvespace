@@ -116,6 +116,7 @@ public:
 
     bool IsInPlane(Vector n, double d) const;
     bool IsCircle(Vector axis, Vector *center, double *r) const;
+    bool IsLine(Vector *dir) const;
     bool IsRational() const;
 
     SBezier TransformedBy(Vector t, Quaternion q, double scale) const;

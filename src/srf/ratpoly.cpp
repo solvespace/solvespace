@@ -15,6 +15,13 @@ namespace SolveSpace {
 // and convergence should be fast by now.
 #define RATPOLY_EPS (LENGTH_EPS/(1e2))
 
+// Two directions count as parallel when the sine of the angle between them
+// falls below this, whether they are the directions of two straight segments
+// or the tangents of two curves at a point. That is the same angle that the
+// 1 - cos(angle) test this replaces accepted at 10*RATPOLY_EPS, but written
+// linearly in the angle.
+#define PARALLEL_EPS (4.5e-4)
+
 static inline double Bernstein(int k, int deg, double t) {
 // indexed by [degree][k][exponent]
     static const double bernstein_coeff[4][4][4] = {
@@ -108,11 +115,24 @@ void SBezier::ClosestPointTo(Vector p, double *t, bool mustConverge) const {
 }
 
 bool SBezier::PointOnNonparallelCurve(const SBezier *curve, Vector *p) const {
-    if(deg + curve->deg == 2) {  // check for parallel lines
-        Vector d1 = ctrl[1].Minus(ctrl[0]).WithMagnitude(1.0);
-        Vector d2 = curve->ctrl[1].Minus(curve->ctrl[0]).WithMagnitude(1.0);
-        // I'm not sure what the angle tollerance should be here.
-        if(d1.Cross(d2).Magnitude() < LENGTH_EPS) {
+    // Two straight segments running along the same line have no single
+    // intersection point to find: either they miss each other entirely, or
+    // they are coincident and the iteration below reports whichever point it
+    // happened to start from. Reject that pair. Note that being straight is a
+    // property of the control points, not of the degree; a Bezier whose
+    // control points are collinear is a line whatever its degree, and the
+    // edges that EdgeCurveIntersection() hands us carry whatever degree the
+    // surface has in that direction, not the degree their shape deserves.
+    Vector d1, d2;
+    if(IsLine(&d1) && curve->IsLine(&d2)) {
+        // The magnitude of the cross product of two unit vectors is the sine
+        // of the angle between them. That is zero for parallel and for
+        // antiparallel alike, so the direction the edge happens to run in
+        // doesn't matter, and it is linear in the angle near zero, unlike
+        // 1 - d1.Dot(d2), which is quadratic there and so rejects a cone the
+        // square root of the tolerance wide. It is also the quantity that
+        // matters: Vector::ClosestPointBetweenLines() divides by its square.
+        if(d1.Cross(d2).Magnitude() < PARALLEL_EPS) {
             return false;
         }
     }
@@ -120,15 +140,29 @@ bool SBezier::PointOnNonparallelCurve(const SBezier *curve, Vector *p) const {
     if(!PointOnThisAndCurve(curve, p)) {
         return false;
     }
-    // if it did converge we need to verify that it is not a parallel situation
-    // since it will not have converged all the way and would produce bad results.
+
+    // The test above is global; it rejects a pair of curves that run along
+    // each other for their whole length. The same degeneracy arises at a
+    // single point, where two genuinely curved edges touch tangentially, and
+    // it is just as fatal there. PointOnThisAndCurve() stops as soon as its
+    // two points agree to within RATPOLY_EPS, and along a tangency that is
+    // already true of the seed it starts from, so it converges immediately and
+    // returns that seed. The seed is wherever our caller's subdivision
+    // happened to stop, not a feature of either curve; it typically lands a
+    // micron or two from a vertex that already exists, which is close enough
+    // to be mistaken for that vertex and far enough not to weld to it. So
+    // require that the curves really do cross at the point we found.
+    //
+    // The parameters are recomputed from that point rather than threaded out
+    // of PointOnThisAndCurve(), so that this measures the tangents where the
+    // answer is, and so that this stays a test on the result and not on the
+    // path the iteration took to reach it.
     double ta, tb;
     this->ClosestPointTo(*p, &ta, /*mustConverge=*/false);
     curve->ClosestPointTo(*p, &tb, /*mustConverge=*/false);
     Vector da = this->TangentAt(ta).WithMagnitude(1),
            db = curve->TangentAt(tb).WithMagnitude(1);
-    // for some reason using RATPOLY_EPS here causes leaks in one of the test cases?
-    if(da.Cross(db).Magnitude() < LENGTH_EPS) {
+    if(da.Cross(db).Magnitude() < PARALLEL_EPS) {
         return false;
     }
     return true;    

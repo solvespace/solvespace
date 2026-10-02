@@ -172,6 +172,26 @@ bool SBezier::IsCircle(Vector axis, Vector *center, double *r) const {
     return true;
 }
 
+//-----------------------------------------------------------------------------
+// Is this Bezier just a straight line segment? It is if all of its control
+// points are collinear, whatever its degree and whatever its weights; the
+// curve is then some reparameterization of the line from start to finish. If
+// yes, return the direction of that line, normalized.
+//-----------------------------------------------------------------------------
+bool SBezier::IsLine(Vector *dir) const {
+    int i;
+    Vector d = (ctrl[deg]).Minus(ctrl[0]);
+    if(d.Magnitude() < LENGTH_EPS) {
+        // Degenerate, so there's no direction to report.
+        return false;
+    }
+    for(i = 1; i < deg; i++) {
+        if((ctrl[i]).DistanceToLine(ctrl[0], d) > LENGTH_EPS) return false;
+    }
+    *dir = d.WithMagnitude(1);
+    return true;
+}
+
 bool SBezier::IsRational() const {
     int i;
     for(i = 0; i <= deg; i++) {
