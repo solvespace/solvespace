@@ -12,6 +12,7 @@ fi
 # this is an option for our Github CI only, since it doesn't have a macos arm64 image yet
 CMAKE_GENERATOR="Unix Makefiles"
 CMAKE_PREFIX_PATH=""
+ENABLE_OPENMP="ON"
 if [ "$2" = "arm64" ]; then
     OSX_ARCHITECTURE="arm64"
     CMAKE_PREFIX_PATH=$(find /tmp/libomp-arm64/libomp -depth 1)
@@ -19,7 +20,8 @@ if [ "$2" = "arm64" ]; then
     cd build-arm64
 elif [ "$2" = "x86_64" ]; then
     OSX_ARCHITECTURE="x86_64"
-    CMAKE_PREFIX_PATH=$(find /tmp/libomp-x86_64/libomp -depth 1)
+    # Homebrew no longer publishes an x86_64 libomp bottle
+    ENABLE_OPENMP="OFF"
     mkdir build || true
     cd build
 else
@@ -36,7 +38,7 @@ cmake \
     -D CMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}" \
     -D CMAKE_OSX_ARCHITECTURES="${OSX_ARCHITECTURE}" \
     -D CMAKE_BUILD_TYPE="${BUILD_TYPE}" \
-    -D ENABLE_OPENMP="ON" \
+    -D ENABLE_OPENMP="${ENABLE_OPENMP}" \
     -D ENABLE_SANITIZERS="${ENABLE_SANITIZERS}" \
     -D ENABLE_LTO="${ENABLE_LTO}" \
     ..
