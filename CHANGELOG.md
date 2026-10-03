@@ -15,6 +15,7 @@ Solver:
 * Improved ability to solve constraints with large dimensions/values.
 
 Misc:
+* Windows releases now also ship the command-line interface, `solvespace-cli_*.exe`.
 * Initialize the color picker to the current color instead of black.
 * Fix some file dialog issues.
 * small fixes in the web version

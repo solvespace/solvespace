@@ -70,7 +70,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: windows_single_core_x86
-          path: build/bin/RelWithDebInfo/solvespace_single_core_x86.exe
+          path: |
+            build/bin/RelWithDebInfo/solvespace_single_core_x86.exe
+            build/bin/RelWithDebInfo/solvespace-cli_single_core_x86.exe
 
   build_release_windows_openmp_x86:
     needs: [test_ubuntu, test_windows, test_macos]
@@ -88,7 +90,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: windows_x86
-          path: build/bin/RelWithDebInfo/solvespace_x86.exe
+          path: |
+            build/bin/RelWithDebInfo/solvespace_x86.exe
+            build/bin/RelWithDebInfo/solvespace-cli_x86.exe
 
   build_release_windows_x64:
     needs: [test_ubuntu, test_windows, test_macos]
@@ -106,7 +110,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: windows_single_core_x64
-          path: build/bin/RelWithDebInfo/solvespace_single_core_x64.exe
+          path: |
+            build/bin/RelWithDebInfo/solvespace_single_core_x64.exe
+            build/bin/RelWithDebInfo/solvespace-cli_single_core_x64.exe
 
   build_release_windows_openmp_x64:
     needs: [test_ubuntu, test_windows, test_macos]
@@ -124,7 +130,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: windows_x64
-          path: build/bin/RelWithDebInfo/solvespace_x64.exe
+          path: |
+            build/bin/RelWithDebInfo/solvespace_x64.exe
+            build/bin/RelWithDebInfo/solvespace-cli_x64.exe
 
   build_release_macos:
     needs: [test_ubuntu, test_windows, test_macos]
@@ -224,7 +232,11 @@ jobs:
       with:
         files: |
           windows_single_core_x86/solvespace_single_core_x86.exe
+          windows_single_core_x86/solvespace-cli_single_core_x86.exe
           windows_x86/solvespace_x86.exe
+          windows_x86/solvespace-cli_x86.exe
           windows_single_core_x64/solvespace_single_core_x64.exe
+          windows_single_core_x64/solvespace-cli_single_core_x64.exe
           windows_x64/solvespace_x64.exe
+          windows_x64/solvespace-cli_x64.exe
           macos/SolveSpace.dmg
