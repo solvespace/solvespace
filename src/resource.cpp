@@ -3,7 +3,10 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
+#include "resource.h"
+#ifndef __ANDROID__
 #include <zlib.h>
+#endif
 #include <png.h>
 #include <regex>
 #include "solvespace.h"
@@ -29,6 +32,14 @@ std::string LoadString(const std::string &name) {
 }
 
 std::string LoadStringFromGzip(const std::string &name) {
+#ifdef __ANDROID__
+    // AAPT would uncompress gzip in assets when packaging, so redirect this to LoadString()
+    // TODO: define a macro LoadSringFromGzip redirecting to LoadString since all calls to
+    //       this has a ".gz"-end name
+    const size_t siz = name.size();
+    const bool endsWithGz = siz > 3 && !strncmp(".gz", name.c_str()+siz-3, 3);
+    return LoadString(endsWithGz ? name.substr(0, siz-3) : name);
+#else
     size_t deflatedSize;
     const void *data = Platform::LoadResource(name, &deflatedSize);
 
@@ -58,6 +69,7 @@ std::string LoadStringFromGzip(const std::string &name) {
     inflateEnd(&stream);
 
     return result;
+#endif
 }
 
 std::shared_ptr<Pixmap> LoadPng(const std::string &name) {

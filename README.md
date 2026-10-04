@@ -346,6 +346,70 @@ ninja
 [mingw]: http://www.mingw.org/
 [msys2]: https://www.msys2.org/
 
+## Building for Android (Experimental)
+
+> [!NOTE]
+> This port contains many critical bugs and unimplemented core functions.
+
+Before building, [check out the project and the necessary submodules](#via-source-code).
+
+> [!TIP]
+> Android port doesn't need extlib/angle, extlib/cairo, extlib/pixman, extlib/zlib submodules.
+
+### Building with Android NDK
+
+First, install Android NDK and Build-Tools via sdkmanager(CLI or Android Studio) or download from [website](https://developer.android.com/ndk/downloads/)
+
+and install Java, make/ninja and cmake:
+
+```sh
+# Ubuntu/Debian
+sudo apt install default-jre cmake make
+# macOS
+brew install openjdk@17 cmake make
+# Windows
+winget install --id EclipseAdoptium.Temurin.17.JDK -e -h
+winget install --id Kitware.CMake -e -h
+winget install --id Ninja-build.Ninja -e -h
+```
+
+Also keep an `android.jar` file from Android Platforms or elsewhere like
+[Sable/android-platforms](//github.com/Sable/android-platforms).
+
+After that, build SolveSpace as following:
+
+```sh
+cmake -Bbuild -S. -DCMAKE_TOOLCHAIN_FILE=$ANDROID_SDK_ROOT/ndk/xx.xx/build/cmake/android.toolchain.cmake
+    -DANDROID_JAR=/path/to/android.jar -DBUILD_TOOL=$ANDROID_SDK_ROOT/build-tool/xx.xx/
+    -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-21 
+    -DENABLE_LTO=ON -DENABLE_OPENMP=ON -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j8
+```
+
+This will build an app.apk in the `build/bin` directory, and then install it with
+`adb install --no-streaming build/bin/app.apk`.
+
+### Building on Termux
+
+First, install tools for building apk:
+
+```sh
+pkg i openjdk-21 d8 aapt apksigner cmake make clang ndk-multilib eigen zlib
+wget -c -k -O /path/to/android.jar https://raw.githubusercontent.com/Sable/android-platforms/master/android-36/android.jar
+```
+
+After that, build SolveSpace as following:
+
+```sh
+cmake -Bbuild -S.
+    -DANDROID_JAR=/path/to/android.jar -DBUILD_TOOL=$PREFIX/bin
+    -DANDROID_ABI=arm64-v8a -DENABLE_OPENMP=ON -DENABLE_LTO=ON -DCMAKE_BUILD_TYPE=Debug
+    -DZLIB_ROOT=/system/lib64 -DEIGEN3_INCLUDE_DIRS=$PREFIX/include/eigen3
+make -Cbuild -j8
+```
+
+To install the generated apk, run `xdg-open build/bin/app.apk`.
+
 ## Contributing
 
 See the [guide for contributors](CONTRIBUTING.md) for the best way to file issues, contribute code,

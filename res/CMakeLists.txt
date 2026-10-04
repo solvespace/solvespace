@@ -88,10 +88,13 @@ elseif(EMSCRIPTEN)
         set(source ${CMAKE_CURRENT_SOURCE_DIR}/${name})
         set(resource_list  "${resource_list};${source}" PARENT_SCOPE)
     endfunction()
-else() # Unix
-    include(GNUInstallDirs)
-
-    set(app_resource_dir ${CMAKE_BINARY_DIR}/res)
+else() # Unix & Android
+    if(ANDROID)
+        set(app_resource_dir ${CMAKE_BINARY_DIR}/assets)
+    else()
+        include(GNUInstallDirs)
+        set(app_resource_dir ${CMAKE_BINARY_DIR}/res)
+    endif()
 
     function(add_resource name)
         set(source ${CMAKE_CURRENT_SOURCE_DIR}/${name})
@@ -107,9 +110,11 @@ else() # Unix
             DEPENDS ${source}
             VERBATIM)
 
-        get_filename_component(name_dir ${name} DIRECTORY)
-        install(FILES ${source}
-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/solvespace/${name_dir})
+        if (NOT ANDROID)
+            get_filename_component(name_dir ${name} DIRECTORY)
+            install(FILES ${source}
+                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/solvespace/${name_dir})
+        endif()
     endfunction()
 endif()
 
@@ -128,7 +133,7 @@ elseif(APPLE)
     add_iconset (cocoa/AppIcon.iconset)
     add_xib     (cocoa/MainMenu.xib)
     add_xib     (cocoa/SaveFormatAccessory.xib)
-else()
+elseif(NOT ANDROID)
     add_resource(freedesktop/solvespace-48x48.png)
 
     if(FLATPAK)
@@ -323,4 +328,33 @@ add_custom_target(resources
     SOURCES ${resource_list})
 if(WIN32)
     set_property(TARGET resources PROPERTY EXTRA_SOURCES ${rc_file})
+elseif(ANDROID)
+    set(droid_res ${resource_root}/android)
+    file(GLOB_RECURSE res_list ${droid_res}/*)
+    set(MIN_SDK 21)
+    set(TAG_SDK 34)
+    math(EXPR VERCODE "${PROJECT_VERSION_MAJOR}*100000+${PROJECT_VERSION_MINOR}*1000")
+    set(VERNAME "${PROJECT_VERSION}~${solvespace_GIT_HASH}")
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(debugmode --debug-mode)
+    else()
+        set(debugmode "")
+    endif()
+    add_custom_target(aapt_pre
+        BYPRODUCTS ${CMAKE_BINARY_DIR}/bin/res.apk ${CMAKE_BINARY_DIR}/gen/com/solvespace/R.java
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/gen
+        COMMAND ${BUILD_TOOL}/aapt p -f -m
+                -F ${CMAKE_BINARY_DIR}/bin/res.apk
+                -I ${ANDROID_JAR}
+                -S ${droid_res}
+                -A ${app_resource_dir}
+                -M ${resource_root}/AndroidManifest.xml
+                ${debugmode}
+                --version-code ${VERCODE}
+                --version-name ${VERNAME}
+                --min-sdk-version ${MIN_SDK}
+                --target-sdk-version ${TAG_SDK}
+                -J ${CMAKE_BINARY_DIR}/gen
+        COMMENT "aapt pack"
+        DEPENDS ${res_list} ${resource_root}/AndroidManifest.xml)
 endif()

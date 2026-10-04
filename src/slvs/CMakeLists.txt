@@ -67,9 +67,15 @@ target_include_directories(slvs PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 set_target_properties(slvs PROPERTIES
     PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/slvs.h
-    VERSION ${PROJECT_VERSION}
-    SOVERSION 1
 )
+
+if(ANDROID)
+    target_link_libraries(slvs PUBLIC ${log-lib})
+else()
+    set_target_properties(slvs PROPERTIES
+        VERSION ${PROJECT_VERSION}
+        SOVERSION 1
+    )
 
 # if(NOT WIN32)
 install(TARGETS slvs
@@ -78,3 +84,4 @@ install(TARGETS slvs
     ARCHIVE       DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 # endif()
+endif()
