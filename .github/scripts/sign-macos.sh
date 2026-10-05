@@ -1,11 +1,10 @@
 #!/bin/bash -xe
 
-lipo \
-    -create \
-        build/bin/SolveSpace.app/Contents/Resources/libomp.dylib \
-        build-arm64/bin/SolveSpace.app/Contents/Resources/libomp.dylib \
-    -output \
-        build/bin/SolveSpace.app/Contents/Resources/libomp.dylib
+# The x86_64 slice is built without OpenMP (Homebrew no longer ships an
+# x86_64 libomp bottle), so there is nothing to lipo. Only the arm64 slice
+# links libomp, so ship the arm64-only dylib.
+cp build-arm64/bin/SolveSpace.app/Contents/Resources/libomp.dylib \
+   build/bin/SolveSpace.app/Contents/Resources/libomp.dylib
 
 lipo \
     -create \
@@ -64,23 +63,24 @@ if ! command -v xcrun >/dev/null || ! xcrun --find notarytool >/dev/null; then
 fi
 
 # Submit the package for notarization
-notarization_output=$(
+if notarization_output=$(
     xcrun notarytool submit "${dmg}" \
         --apple-id "hello@koenschmeets.nl" \
         --password "${MACOS_APPSTORE_APP_PASSWORD}" \
         --team-id "8X77K9NDG3" \
-        --wait 2>&1)
-
-if [ $? -eq 0 ]; then
-    # Extract the operation ID from the output
-    operation_id=$(echo "$notarization_output" | awk '/RequestUUID/ {print $NF}')
+        --wait 2>&1); then
+    echo "$notarization_output"
+    # Extract the submission ID (notarytool prints "id: <uuid>")
+    operation_id=$(echo "$notarization_output" | awk '/^ *id:/ {print $2; exit}')
     echo "Notarization submitted. Operation ID: $operation_id"
-    exit 0
-  else
+
+    # Fail if Apple did not accept the submission
+    echo "$notarization_output" | grep -q "status: Accepted" || {
+        echo "Notarization was not accepted"; exit 1; }
+
+    # staple
+    xcrun stapler staple "${dmg}"
+else
     echo "Notarization failed. Error: $notarization_output"
     exit 1
-  fi
 fi
-
-# staple
-xcrun stapler staple "${dmg}"
