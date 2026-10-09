@@ -5,7 +5,10 @@ add_library(slvs-interface INTERFACE)
 target_sources(slvs-interface INTERFACE lib.cpp)
 target_compile_definitions(slvs-interface INTERFACE -DLIBRARY)
 target_include_directories(slvs-interface INTERFACE ${CMAKE_SOURCE_DIR}/include)
-target_link_libraries(slvs-interface INTERFACE slvs-solver mimalloc-static)
+target_link_libraries(slvs-interface INTERFACE slvs-solver)
+if(NOT ENABLE_STD_TEMP_HEAP)
+    target_link_libraries(slvs-interface INTERFACE mimalloc-static)
+endif()
 
 if(ENABLE_PYTHON_LIB)
     add_custom_command(

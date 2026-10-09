@@ -13,7 +13,11 @@ endif()
 list(APPEND CMAKE_MODULE_PATH
     "${CMAKE_SOURCE_DIR}/cmake/")
 
-set(CMAKE_CXX_STANDARD 11)
+if(ENABLE_STD_TEMP_HEAP)
+    set(CMAKE_CXX_STANDARD 17)
+else()
+    set(CMAKE_CXX_STANDARD 11)
+endif()
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
 
 # for /MT on MSVC
@@ -56,6 +60,9 @@ else()
     set(INCLUDE_NATIVE_COMPONENTS ON)
 endif()
 
+set(ENABLE_STD_TEMP_HEAP
+                      OFF CACHE BOOL
+                      "Use C++17 monotonic buffer instead of mimalloc")
 set(ENABLE_GUI        ON CACHE BOOL
     "Whether the graphical interface is enabled")
 set(USE_QT_GUI        OFF CACHE BOOL
@@ -242,25 +249,27 @@ if(ENABLE_GUI OR ENABLE_CLI)
     add_subdirectory(extlib/libdxfrw)
 endif()
 
-message(STATUS "Using in-tree mimalloc")
-set(MI_OVERRIDE OFF CACHE BOOL "")
-set(MI_BUILD_SHARED OFF CACHE BOOL "")
-set(MI_BUILD_OBJECT OFF CACHE BOOL "")
-set(MI_BUILD_TESTS OFF CACHE BOOL "")
-if(EMSCRIPTEN)
-    # HACK: We only use mimalloc for the temporary heap, not as a general purpose
-    # allocator. However, the Emscripten port of mimalloc assumes that it is used
-    # as the system allocator, and depends on the slow emmalloc allocator.
-    # We do not want to enable emmalloc, as that would slow down allocations all
-    # over the place, so we must either use mimalloc as the system allocator as
-    # well, or override its definitions to just use the existing system allocator.
-    # The latter option is the least intrusive change from a stability standpoint,
-    # so for now that's what we do here. We can try to convert to mimalloc wholsale
-    # and remove this hack if we find the need to do so in the future.
-    set(MI_EXTRA_CPPDEFS "emmalloc_free=free;emmalloc_memalign=memalign" CACHE INTERNAL "")
+if(NOT ENABLE_STD_TEMP_HEAP)
+    message(STATUS "Using in-tree mimalloc")
+    set(MI_OVERRIDE OFF CACHE BOOL "")
+    set(MI_BUILD_SHARED OFF CACHE BOOL "")
+    set(MI_BUILD_OBJECT OFF CACHE BOOL "")
+    set(MI_BUILD_TESTS OFF CACHE BOOL "")
+    if(EMSCRIPTEN)
+        # HACK: We only use mimalloc for the temporary heap, not as a general purpose
+        # allocator. However, the Emscripten port of mimalloc assumes that it is used
+        # as the system allocator, and depends on the slow emmalloc allocator.
+        # We do not want to enable emmalloc, as that would slow down allocations all
+        # over the place, so we must either use mimalloc as the system allocator as
+        # well, or override its definitions to just use the existing system allocator.
+        # The latter option is the least intrusive change from a stability standpoint,
+        # so for now that's what we do here. We can try to convert to mimalloc wholsale
+        # and remove this hack if we find the need to do so in the future.
+        set(MI_EXTRA_CPPDEFS "emmalloc_free=free;emmalloc_memalign=memalign" CACHE INTERNAL "")
+    endif()
+    add_subdirectory(extlib/mimalloc EXCLUDE_FROM_ALL)
+    set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
 endif()
-add_subdirectory(extlib/mimalloc EXCLUDE_FROM_ALL)
-set(MIMALLOC_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/mimalloc/include)
 
 if(NOT FORCE_VENDORED_Eigen3)
     find_package(Eigen3 CONFIG)
@@ -467,6 +476,10 @@ if(WIN32)
         -D_UNICODE
         -DNOMINMAX
         -D_USE_MATH_DEFINES)
+endif()
+
+if(ENABLE_STD_TEMP_HEAP)
+    add_definitions(-DENABLE_STD_TEMP_HEAP)
 endif()
 
 if(MSVC)
