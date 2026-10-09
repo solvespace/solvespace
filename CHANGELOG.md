@@ -3,6 +3,7 @@ Changelog
 
 3.3 - release date TBD
 ---
+
 Geometric Modelling Kernel (NURBS)
 
 Thanks to Claude Fable 5
@@ -13,11 +14,16 @@ Thanks to Claude Fable 5
 
 Solver:
 * Improved ability to solve constraints with large dimensions/values.
+* Improved ability to solve some valid constraints that were failing (not converging) before.
+* Constraints that the solver could not satisfy are not deleted (regression in 3.2).
 
 Misc:
 * Initialize the color picker to the current color instead of black.
 * Fix some file dialog issues.
-* small fixes in the web version
+* Some small improvements in the web version, including making it multi threaded.
+* The web version is available on https://solvespace.com/.
+* Do not crash when exporting zigzag and stippled lines in vector formats (SVG/PDF/EPS/DXF).
+  They are sill _not_ exported.
 
 3.2
 ---
