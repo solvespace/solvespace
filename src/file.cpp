@@ -401,7 +401,13 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
         fprintf(fh, "AddCurve\n");
     }
 
-    fclose(fh);
+    bool writeFailed = ferror(fh) != 0;
+    if(fclose(fh) != 0) writeFailed = true;
+    fh = NULL;
+    if(writeFailed) {
+        Error("Couldn't write to file '%s'", filename.raw.c_str());
+        return false;
+    }
 
     return true;
 }
