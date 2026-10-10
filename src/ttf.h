@@ -30,6 +30,7 @@ public:
     Platform::Path  fontFile; // or resource path/name as res://<path>
     std::string     name;
     FT_FaceRec_    *fontFace;
+    long            faceIndex;
     double          capHeight;
 
     void SetResourceID(const std::string &resource);
