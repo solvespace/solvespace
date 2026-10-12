@@ -677,7 +677,7 @@ void SolveSpaceUI::UpdateWindowTitles() {
             if(SS.showFullFilePath) {
                 GW.window->SetTitle(saveFile.raw);
             } else {
-                GW.window->SetTitle(saveFile.raw.substr(saveFile.raw.find_last_of("/\\") + 1));
+                GW.window->SetTitle(saveFile.FileName());
             }
         }
     }

@@ -113,7 +113,7 @@ precision highp float;
     if(infoLen > 1) {
         std::string infoStr(infoLen, '\0');
         glGetShaderInfoLog(shader, infoLen, NULL, &infoStr[0]);
-        dbp(infoStr.c_str());
+        dbp("%s", infoStr.c_str());
     }
 
     GLint compiled = 0;
@@ -150,7 +150,7 @@ void Shader::Init(const std::string &vertexRes, const std::string &fragmentRes,
     if(infoLen > 1) {
         std::string infoStr(infoLen, '\0');
         glGetProgramInfoLog(program, infoLen, NULL, &infoStr[0]);
-        dbp(infoStr.c_str());
+        dbp("%s", infoStr.c_str());
     }
 
     GLint linked = 0;
