@@ -1364,10 +1364,15 @@ public:
             // https://github.com/solvespace/solvespace/pull/1680
             RECT rc;
             GetWindowRect(hWindow, &rc);
-            SetWindowPos(hWindow, HWND_TOP, rc.left, rc.top, rc.right - rc.left,
-                         rc.bottom - rc.top + 1, SWP_FRAMECHANGED);
-            SetWindowPos(hWindow, HWND_TOP, rc.left, rc.top, rc.right - rc.left,
-                         rc.bottom - rc.top,     SWP_FRAMECHANGED);
+            // Don't activate the window or change its Z order: this runs whenever the
+            // text window is redrawn, e.g. right after a new dimension's edit box was
+            // opened in the graphics window, and activating it would steal the
+            // keyboard focus from that edit box (issue #1726).
+            const UINT flags = SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE;
+            SetWindowPos(hWindow, NULL, 0, 0, rc.right - rc.left,
+                         rc.bottom - rc.top + 1, flags);
+            SetWindowPos(hWindow, NULL, 0, 0, rc.right - rc.left,
+                         rc.bottom - rc.top,     flags);
         }
     }
 
