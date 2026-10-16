@@ -1,7 +1,12 @@
 #include <cstdarg>
 #include <cstdio>
 
+#ifdef ENABLE_STD_TEMP_HEAP
+#include <memory_resource>
+#include <strings.h>
+#else
 #include <mimalloc.h>
+#endif
 
 #if defined(WIN32)
 #   include <Windows.h>
@@ -71,6 +76,9 @@ void DebugPrint(const char *fmt, ...) {
 // Temporary arena.
 //-----------------------------------------------------------------------------
 
+#ifdef ENABLE_STD_TEMP_HEAP
+static thread_local std::pmr::monotonic_buffer_resource TempHeap;
+#else
 struct MimallocHeap {
     mi_heap_t *heap = NULL;
 
@@ -81,20 +89,30 @@ struct MimallocHeap {
 };
 
 static thread_local MimallocHeap TempArena;
+#endif
 
 void *AllocTemporary(size_t size) {
+#ifdef ENABLE_STD_TEMP_HEAP
+    void *ptr = TempHeap.allocate(size);
+    bzero(ptr, size);
+#else
     if(TempArena.heap == NULL) {
         TempArena.heap = mi_heap_new();
         ssassert(TempArena.heap != NULL, "out of memory");
     }
     void *ptr = mi_heap_zalloc(TempArena.heap, size);
+#endif
     ssassert(ptr != NULL, "out of memory");
     return ptr;
 }
 
 void FreeAllTemporary() {
+#ifdef ENABLE_STD_TEMP_HEAP
+    TempHeap.release();
+#else
     MimallocHeap temp;
     std::swap(TempArena.heap, temp.heap);
+#endif
 }
 
 }

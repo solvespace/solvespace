@@ -35,8 +35,11 @@ target_link_libraries(slvs_deps INTERFACE
     dxfrw
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
-    ${FREETYPE_LIBRARY}
+    ${FREETYPE_LIBRARY})
+if(NOT ENABLE_STD_TEMP_HEAP)
+target_link_libraries(slvs_deps INTERFACE
     mimalloc-static)
+endif()
 
 if(NOT USE_QT_GUI OR ENABLE_CLI)
     target_include_directories(slvs_deps SYSTEM INTERFACE ${CAIRO_INCLUDE_DIRS})
