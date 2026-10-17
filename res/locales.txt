@@ -10,3 +10,4 @@ tr-TR,041F,Türkçe
 uk-UA,0422,Українська
 zh-CN,0804,简体中文
 ja-JP,0411,日本語
+pt-BR,0416,Português (BR)
