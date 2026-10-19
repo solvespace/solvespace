@@ -18,6 +18,7 @@ Solver:
 * Constraints that the solver could not satisfy are not deleted (regression in 3.2).
 
 Misc:
+* Windows releases now also ship the command-line interface, `solvespace-cli_*.exe`.
 * Initialize the color picker to the current color instead of black.
 * Fix some file dialog issues.
 * Some small improvements in the web version, including making it multi threaded.

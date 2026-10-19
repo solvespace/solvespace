@@ -43,13 +43,17 @@ cmake --build . --config "${BUILD_TYPE}" -t test_solvespace -- -maxcpucount
 if [ "$3" = "x64" ]; then
 	if [ "$2" != "openmp" ]; then
 		mv bin/$BUILD_TYPE/solvespace.exe bin/$BUILD_TYPE/solvespace_single_core_x64.exe
+		mv bin/$BUILD_TYPE/solvespace-cli.exe bin/$BUILD_TYPE/solvespace-cli_single_core_x64.exe
 	else
 		mv bin/$BUILD_TYPE/solvespace.exe bin/$BUILD_TYPE/solvespace_x64.exe
+		mv bin/$BUILD_TYPE/solvespace-cli.exe bin/$BUILD_TYPE/solvespace-cli_x64.exe
 	fi
 else
 	if [ "$2" != "openmp" ]; then
 		mv bin/$BUILD_TYPE/solvespace.exe bin/$BUILD_TYPE/solvespace_single_core_x86.exe
+		mv bin/$BUILD_TYPE/solvespace-cli.exe bin/$BUILD_TYPE/solvespace-cli_single_core_x86.exe
     else
         mv bin/$BUILD_TYPE/solvespace.exe bin/$BUILD_TYPE/solvespace_x86.exe
+        mv bin/$BUILD_TYPE/solvespace-cli.exe bin/$BUILD_TYPE/solvespace-cli_x86.exe
 	fi
 fi
