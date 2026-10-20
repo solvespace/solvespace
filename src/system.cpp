@@ -594,14 +594,16 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     }
     // System solved correctly, so write the new values back in to the
     // main parameter table.
+    // A param that was eliminated by substitution takes both its value and
+    // its freedom from the param that it was substituted by.
     for(auto &p : param) {
         auto it = subMap.find(p.h);
-        double val = it == subMap.end() ? p.val : it->second->val;
+        const Param &src = (it == subMap.end()) ? p : *(it->second);
 
         Param *pp = SK.GetParam(p.h);
-        pp->val = val;
+        pp->val   = src.val;
         pp->known = true;
-        pp->free  = p.free;
+        pp->free  = src.free;
     }
     return rankOk ? SolveResult::OKAY : SolveResult::REDUNDANT_OKAY;
 
