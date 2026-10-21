@@ -40,15 +40,22 @@
 #endif
 
 #define CO(v) (v).x, (v).y, (v).z
-
+#ifdef __ANDROID__
+#define LOG_TAG "SS"
+#include <android/log_macros.h>
+#define dbp ALOGD
+#else
 #define dbp SolveSpace::Platform::DebugPrint
+#endif
 
 namespace SolveSpace {
 
 namespace Platform {
 
 // Debug print function.
+#ifndef __ANDROID__
 void DebugPrint(const char *fmt, ...);
+#endif
 
 } // namespace Platform
 
