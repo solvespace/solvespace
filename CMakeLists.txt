@@ -221,9 +221,7 @@ if(ENABLE_SANITIZERS)
 
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fuse-ld=gold")
-    elseif(NOT MSVC)
+    elseif(NOT MSVC AND NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         message(FATAL_ERROR "Sanitizers are only available when using MSVC, GCC, or Clang")
     endif()
 
