@@ -1,7 +1,7 @@
 Changelog
 =========
 
-3.3 - release date TBD
+3.3
 ---
 
 Geometric Modelling Kernel (NURBS)
@@ -18,12 +18,16 @@ Solver:
 * Constraints that the solver could not satisfy are not deleted (regression in 3.2).
 
 Misc:
+* Support for multiple faces for a single font in .ttc files.
 * Initialize the color picker to the current color instead of black.
 * Fix some file dialog issues.
 * Some small improvements in the web version, including making it multi threaded.
 * The web version is available on https://solvespace.com/.
 * Do not crash when exporting zigzag and stippled lines in vector formats (SVG/PDF/EPS/DXF).
   They are sill _not_ exported.
+
+Translations:
+* Added Brazilian Portuguese (pt_BR)
 
 3.2
 ---
