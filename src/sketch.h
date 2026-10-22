@@ -293,7 +293,7 @@ public:
 
     static void AddParam(ParamList *param, hParam hp, double v);
     void Generate(EntityList *entity, ParamList *param);
-    bool IsSolvedOkay();
+    bool IsSolvedOkay() const;
     void TransformImportedBy(Vector t, Quaternion q);
     bool IsTriangleMeshAssembly() const;
     bool IsForcedToMeshBySource() const;
