@@ -311,10 +311,10 @@ public:
     int findDxfColor(const RgbaColor &src) {
         int best = 0;
         double minDist = VERY_POSITIVE;
-        Vector srcv = Vector::From(src.redF(), src.greenF(), src.blueF());
+        Vector srcv = {src.redF(), src.greenF(), src.blueF()};
         for(int i = 1; i < 256; i++) {
             RgbaColor dst = RGBi(DRW::dxfColors[i][0], DRW::dxfColors[i][1], DRW::dxfColors[i][2]);
-            Vector dstv = Vector::From(dst.redF(), dst.greenF(), dst.blueF());
+            Vector dstv = {dst.redF(), dst.greenF(), dst.blueF()};
             double dist = srcv.Minus(dstv).Magnitude();
             if(dist < minDist || best == 0) {
                 best = i;
@@ -421,7 +421,7 @@ public:
     void writeBezier(SBezier *sb) {
         hStyle hs = { (uint32_t)sb->auxA };
         Vector c;
-        Vector n = Vector::From(0.0, 0.0, 1.0);
+        Vector n = {0.0, 0.0, 1.0};
         double r;
 
         if(sb->deg == 1) {
@@ -561,7 +561,7 @@ void DxfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
     paths.push_back(path);
 }
 void DxfFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb, hStyle hs)
+                               bool filled, RgbaColor fillRgb, hStyle hs, bool closed)
 {
 }
 
@@ -674,7 +674,9 @@ static std::string MakeStipplePattern(StipplePattern pattern, double scale, char
 
         case StipplePattern::FREEHAND:
         case StipplePattern::ZIGZAG:
-            ssassert(false, "Freehand and zigzag export not implemented");
+            dbp("Freehand and zigzag export not implemented; "
+                "exporting as continuous line");
+            break;
     }
     std::replace(result.begin(), result.end(), '_', delimiter);
     return result;
@@ -732,10 +734,10 @@ void EpsFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
     fprintf(f, "newpath\r\n");
-    prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
+    prevPt = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
 }
 void EpsFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb, hStyle hs)
+                               bool filled, RgbaColor fillRgb, hStyle hs, bool closed)
 {
     StipplePattern pattern = Style::PatternType(hs);
     double stippleScale = MmToPts(Style::StippleScaleMm(hs));
@@ -789,7 +791,7 @@ void EpsFileWriter::Triangle(STriangle *tr) {
 }
 
 void EpsFileWriter::Bezier(SBezier *sb) {
-    Vector c, n = Vector::From(0, 0, 1);
+    Vector c, n = {0, 0, 1};
     double r;
     if(sb->deg == 1) {
         MaybeMoveTo(sb->ctrl[0], sb->ctrl[1]);
@@ -999,10 +1001,10 @@ void PdfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
             fillRgb.redF(), fillRgb.greenF(), fillRgb.blueF());
     }
 
-    prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
+    prevPt = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
 }
 void PdfFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb, hStyle hs)
+                               bool filled, RgbaColor fillRgb, hStyle hs, bool closed)
 {
     if(filled) {
         fprintf(f, "b\r\n");
@@ -1133,11 +1135,14 @@ void SvgFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
     fprintf(f, "<path d='");
-    prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
+    prevPt = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
 }
 void SvgFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb, hStyle hs)
+                               bool filled, RgbaColor fillRgb, hStyle hs, bool closed)
 {
+    if(closed) {
+      fprintf(f, " Z");
+    }
     std::string fill;
     if(filled) {
         fill = ssprintf("fill='#%02x%02x%02x'",
@@ -1168,7 +1173,7 @@ void SvgFileWriter::Triangle(STriangle *tr) {
 }
 
 void SvgFileWriter::Bezier(SBezier *sb) {
-    Vector c, n = Vector::From(0, 0, 1);
+    Vector c, n = {0, 0, 1};
     double r;
     if(sb->deg == 1) {
         MaybeMoveTo(sb->ctrl[0], sb->ctrl[1]);
@@ -1232,7 +1237,7 @@ void HpglFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
 {
 }
 void HpglFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                                bool filled, RgbaColor fillRgb, hStyle hs)
+                                bool filled, RgbaColor fillRgb, hStyle hs, bool closed)
 {
 }
 
@@ -1271,7 +1276,7 @@ void GCodeFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
 void GCodeFileWriter::Background(RgbaColor color) {
 }
 void GCodeFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                                 bool filled, RgbaColor fillRgb, hStyle hs)
+                               bool filled, RgbaColor fillRgb, hStyle hs, bool closed)
 {
 }
 void GCodeFileWriter::Triangle(STriangle *tr) {
@@ -1342,7 +1347,7 @@ void Step2dFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
 {
 }
 void Step2dFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                                  bool filled, RgbaColor fillRgb, hStyle hs)
+                                  bool filled, RgbaColor fillRgb, hStyle hs, bool closed)
 {
 }
 

@@ -22,11 +22,12 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 
 [tool.scikit-build]
 wheel.expand-macos-universal-tags = true
-cmake.verbose = true
+build.verbose = true
 cmake.build-type = "RelWithDebInfo"
 build.targets = ["slvs-py"]
 install.components = ["python"]

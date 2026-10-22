@@ -222,6 +222,7 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
             l->Add(&inter);
         } else {
             // Might not converge if line is almost tangent to surface...
+            dbp("AllPointsIntersectingUntrimmed failed");
         }
         return;
     }
@@ -425,6 +426,40 @@ SShell::Class SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
 // use overlapping sets of 3 to reduce memory usage.
 static const double Random[8] = {1.278, 5.0103, 9.427, -2.331, 7.13, 2.954, 5.034, -4.777};
  
+//-----------------------------------------------------------------------------
+// A face of our shell meets the surface being classified edge-on, with its
+// normal parallel to that surface's normal at p, so the face lies in that
+// surface's tangent plane at p. It might be coincident with the surface there,
+// or it might merely be tangent to it at the shell's edge and curve away from
+// it past that edge. The normals at p can't tell those apart, so probe the
+// face's actual geometry a little way in from the shell's edge, and report how
+// far it then deviates from the tangent plane (measured along nu, a unit
+// normal to the surface at p). The direction we probed in, which points into
+// the face perpendicular to the shell's edge, is returned in f.
+//-----------------------------------------------------------------------------
+static double ProbeTangentFace(SSurface *srf, Vector p, Vector inter_edge_n,
+                               Vector nu, Vector *f, bool *flat)
+{
+    // Probe at a small fraction of the face's own size, so that the deviation
+    // of a curved face is well above numerical noise no matter the model's
+    // scale.
+    Vector c00 = srf->ctrl[0][0],
+           cm0 = srf->ctrl[srf->degm][0],
+           c0n = srf->ctrl[0][srf->degn],
+           cmn = srf->ctrl[srf->degm][srf->degn];
+    double size = max(max((cm0.Minus(c00)).Magnitude(),
+                          (c0n.Minus(c00)).Magnitude()),
+                      (cmn.Minus(c00)).Magnitude());
+    // inter_edge_n points out of the face, so negate it to probe into it.
+    *f = (inter_edge_n.ScaledBy(-1)).WithMagnitude(max(size / 20, LENGTH_EPS * 100));
+
+    Point2d fuv;
+    srf->ClosestPointTo(p.Plus(*f), &fuv, /*mustConverge=*/false);
+    double dev = ((srf->PointAt(fuv)).Minus(p)).Dot(nu);
+    *flat = fabs(dev) < max(LENGTH_EPS, 1e-3 * f->Magnitude());
+    return dev;
+}
+
 bool SShell::ClassifyEdge(Class *indir, Class *outdir,
                           Vector ea, Vector eb,
                           Vector p,
@@ -435,6 +470,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
     // First, check for edge-on-edge
     int edge_inters = 0;
     Vector inter_surf_n[2], inter_edge_n[2];
+    SSurface *inter_srf[2] = {};
     for(SSurface &srf : surface) {
         if(srf.LineEntirelyOutsideBbox(ea, eb, /*asSegment=*/true)) continue;
 
@@ -456,6 +492,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
                     // out.
                     inter_edge_n[edge_inters] =
                       (inter_surf_n[edge_inters]).Cross((se->b).Minus((se->a)));
+                    inter_srf[edge_inters] = &srf;
                 }
 
                 edge_inters++;
@@ -474,30 +511,109 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
             swap(dotp[0],         dotp[1]);
             swap(inter_surf_n[0], inter_surf_n[1]);
             swap(inter_edge_n[0], inter_edge_n[1]);
+            swap(inter_srf[0],    inter_srf[1]);
         }
 
-        Class coinc = (surf_n.Dot(inter_surf_n[0])) > 0 ? Class::SURF_COINC_SAME : Class::SURF_COINC_OPP;
+        // The class of the side of our edge that face 0 extends into, when
+        // face 0 lies in our tangent plane at p and face 1 does not. That's
+        // coincident with the shell if face 0 really is coincident with our
+        // surface, but see below for when it's only tangent to it.
+        Class towards_0 =
+            (surf_n.Dot(inter_surf_n[0])) > 0 ? Class::SURF_COINC_SAME : Class::SURF_COINC_OPP;
+
+        if(fabs(dotp[0]) < DOTP_TOL && fabs(dotp[1]) >= DOTP_TOL) {
+            // Face 0 might be merely tangent to our surface at the shell's
+            // edge, curving away from it past that edge, e.g. where the
+            // spline face of a cut is tangent to the face it cuts through
+            // and the cut's other face crosses that face there (issue
+            // #1291). Then the side of our edge towards face 0 is not
+            // coincident with the shell at all; it's inside or outside it
+            // depending on which way face 0 curves away.
+            Vector f;
+            bool   flat;
+            double dev = ProbeTangentFace(inter_srf[0], p, inter_edge_n[0],
+                                          surf_n.WithMagnitude(1), &f, &flat);
+            if(!flat) {
+                // As in the both-tangent case below: our edge is on the
+                // shell's material side of face 0 iff face 0 curves away
+                // opposite its own outward normal.
+                towards_0 = (dev * surf_n.Dot(inter_surf_n[0]) > 0) ?
+                                Class::SURF_INSIDE : Class::SURF_OUTSIDE;
+            }
+        }
 
         if(fabs(dotp[0]) < DOTP_TOL && fabs(dotp[1]) < DOTP_TOL) {
-            // This is actually an edge on face case, just that the face
-            // is split into two pieces joining at our edge.
-            *indir  = coinc;
-            *outdir = coinc;
+            // Both faces meeting at the shell's edge lie in our surface's
+            // tangent plane at p. Usually the shell's surface is just
+            // split into two pieces joining at our edge, and both sides
+            // of our edge are coincident with the shell. But a face may
+            // instead be *tangent* to our surface at the shell's edge,
+            // curving away from it past that edge (e.g. a fillet cylinder
+            // meeting the flat cap it's tangent to, issue #1291); the
+            // side of our edge towards such a face is not coincident with
+            // the shell. The normals at p can't distinguish these, so
+            // probe each face's actual geometry a little way in from the
+            // shell's edge.
+            Vector f[2];    // points into face i, perpendicular to edge
+            double dev[2];  // face i's deviation from our tangent plane
+            bool   flat[2]; // does face i lie in our tangent plane?
+            Vector nu = surf_n.WithMagnitude(1);
+            for(int i = 0; i < 2; i++) {
+                dev[i] = ProbeTangentFace(inter_srf[i], p, inter_edge_n[i], nu,
+                                          &f[i], &flat[i]);
+            }
+            Class *dir[2] = { indir, outdir };
+            Vector  en[2] = { edge_n_in, edge_n_out };
+            for(int s = 0; s < 2; s++) {
+                // Of the faces extending into this side of our edge, find
+                // the one lying nearest our tangent plane.
+                int best = -1;
+                for(int i = 0; i < 2; i++) {
+                    if(f[i].Dot(en[s]) <= 0) continue;
+                    if(best < 0 || fabs(dev[i]) < fabs(dev[best])) best = i;
+                }
+                if(best >= 0 && flat[best]) {
+                    // This side of our edge lies on that face.
+                    *dir[s] = (surf_n.Dot(inter_surf_n[best]) > 0) ?
+                                Class::SURF_COINC_SAME : Class::SURF_COINC_OPP;
+                } else if(best >= 0) {
+                    // The nearest face on this side curves away from our
+                    // tangent plane, so this side of our edge is not on
+                    // the shell; it's on the shell's material side of
+                    // that face iff the face curves away opposite the
+                    // face's outward normal.
+                    *dir[s] = (dev[best] * surf_n.Dot(inter_surf_n[best]) > 0) ?
+                                Class::SURF_INSIDE : Class::SURF_OUTSIDE;
+                } else {
+                    // Both faces fold back to the other side of our edge,
+                    // meeting our surface tangentially at the shell's
+                    // edge. They enclose a zero-angle wedge, of material
+                    // if the farther face lies on the material side of
+                    // the nearer one (then this side of our edge is
+                    // beyond that material, outside the shell), and of
+                    // void cut into material otherwise.
+                    int nr = (fabs(dev[0]) < fabs(dev[1])) ? 0 : 1;
+                    bool material = (dev[1-nr] - dev[nr]) *
+                                        surf_n.Dot(inter_surf_n[nr]) < 0;
+                    *dir[s] = material ? Class::SURF_OUTSIDE
+                                       : Class::SURF_INSIDE;
+                }
+            }
         } else if(fabs(dotp[0]) < DOTP_TOL && dotp[1] > DOTP_TOL) {
             if(edge_n_out.Dot(inter_edge_n[0]) > 0) {
-                *indir  = coinc;
+                *indir  = towards_0;
                 *outdir = Class::SURF_OUTSIDE;
             } else {
                 *indir  = Class::SURF_INSIDE;
-                *outdir = coinc;
+                *outdir = towards_0;
             }
         } else if(fabs(dotp[0]) < DOTP_TOL && dotp[1] < -DOTP_TOL) {
             if(edge_n_out.Dot(inter_edge_n[0]) > 0) {
-                *indir  = coinc;
+                *indir  = towards_0;
                 *outdir = Class::SURF_INSIDE;
             } else {
                 *indir  = Class::SURF_OUTSIDE;
-                *outdir = coinc;
+                *outdir = towards_0;
             }
         } else if(dotp[0] > DOTP_TOL && dotp[1] > DOTP_TOL) {
             *indir  = Class::SURF_INSIDE;
@@ -506,9 +622,84 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
             *indir  = Class::SURF_OUTSIDE;
             *outdir = Class::SURF_INSIDE;
         } else {
-            // Edge is tangent to the shell at shell's edge, so can't be
-            // a boundary of the surface.
-            return false;
+            // Our edge is tangent to the shell at the shell's edge: the
+            // two faces meeting at the shell's edge lie on the same side
+            // of our surface, so the regions on both sides of our edge
+            // get the same class. That's outside the shell if the shell's
+            // edge is convex, and inside if it's concave (reflex).
+            // inter_edge_n[i] points away from face i's material, so the
+            // shell's edge is convex iff face 1's material direction lies
+            // behind face 0's plane.
+            Class c = (inter_edge_n[1].Dot(inter_surf_n[0]) > 0) ?
+                            Class::SURF_OUTSIDE : Class::SURF_INSIDE;
+            *indir  = c;
+            *outdir = c;
+        }
+        return true;
+    }
+
+    if(edge_inters >= 4 && edge_inters % 2 == 0) {
+        // More than two surfaces of our shell meet edge-on-edge along the
+        // given edge: regions of the shell join along a knife edge there
+        // (e.g. two prisms sharing a single edge, issue #1091). The faces
+        // along the knife edge divide the directions perpendicular to the
+        // edge at p into sectors that are alternately inside and outside
+        // the shell, so classify each side of our edge against the face
+        // that lies angularly closest to it: that face bounds the sector
+        // containing it, and its normal points out of that sector iff the
+        // sector is outside the shell.
+        Vector edge_d = (eb.Minus(ea)).WithMagnitude(1);
+        Vector en[2] = { edge_n_in, edge_n_out };
+        Vector ep[2];
+        double bestdot[2] = { VERY_NEGATIVE, VERY_NEGATIVE };
+        Vector bestn[2];
+        for(int i = 0; i < 2; i++) {
+            ep[i] = (en[i].Minus(edge_d.ScaledBy(en[i].Dot(edge_d))))
+                        .WithMagnitude(1);
+        }
+
+        for(SSurface &srf : surface) {
+            if(srf.LineEntirelyOutsideBbox(ea, eb, /*asSegment=*/true)) continue;
+
+            SEdgeList *sel = &(srf.edges);
+            SEdge *se;
+            for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+                if((ea.Equals(se->a) && eb.Equals(se->b)) ||
+                   (eb.Equals(se->a) && ea.Equals(se->b)) ||
+                    p.OnLineSegment(se->a, se->b))
+                {
+                    Point2d pm;
+                    srf.ClosestPointTo(p, &pm, /*mustConverge=*/false);
+                    Vector n = srf.NormalAt(pm);
+                    // A vector tangent to the intersecting surface at p,
+                    // pointing into that face, perpendicular to our edge.
+                    Vector f = ((se->b).Minus(se->a)).Cross(n);
+                    f = f.Minus(edge_d.ScaledBy(f.Dot(edge_d)));
+                    if(f.Magnitude() < LENGTH_EPS) continue;
+                    f = f.WithMagnitude(1);
+                    for(int i = 0; i < 2; i++) {
+                        double dot = ep[i].Dot(f);
+                        if(dot > bestdot[i]) {
+                            bestdot[i] = dot;
+                            bestn[i]   = n;
+                        }
+                    }
+                }
+            }
+        }
+
+        Class *dir[2] = { indir, outdir };
+        for(int i = 0; i < 2; i++) {
+            double dotn = en[i].DirectionCosineWith(bestn[i]);
+            if(bestdot[i] > 0 && fabs(dotn) < DOTP_TOL) {
+                // This side of our edge lies along the nearest face, so
+                // our surface is locally coincident with it there.
+                *dir[i] = (surf_n.Dot(bestn[i]) > 0) ? Class::SURF_COINC_SAME
+                                                     : Class::SURF_COINC_OPP;
+            } else {
+                *dir[i] = (dotn > 0) ? Class::SURF_OUTSIDE
+                                     : Class::SURF_INSIDE;
+            }
         }
         return true;
     }
@@ -552,7 +743,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         // Cast a ray in a random direction (two-sided so that we test if
         // the point lies on a surface, but use only one side for in/out
         // testing)
-        Vector ray = Vector::From(Random[cnt], Random[cnt+1], Random[cnt+2]);
+        Vector ray = {Random[cnt], Random[cnt+1], Random[cnt+2]};
 
         AllPointsIntersecting(
             p.Minus(ray), p.Plus(ray), &l,

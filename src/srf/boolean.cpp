@@ -41,26 +41,27 @@ static void FindVertsOnCurve(List<SInter> *l, const SCurve *curve, SShell *sh) {
     Vector amax, amin;
     curve->GetAxisAlignedBounding(&amax, &amin);
 
-    for(const auto &sc : sh->curve) {
-        if(!sc.isExact) continue;
-        
-        Vector cmax, cmin;
-        sc.GetAxisAlignedBounding(&cmax, &cmin);
+    // The vertices of the shell are the endpoints of its trims, not the
+    // endpoints of its curves: an exact intersection curve may extend past
+    // the real geometry on both sides (e.g. out to the padded bounds of a
+    // surface that got enlarged by SShell::MergeCoincidentSurfaces()), and
+    // splitting some other curve at such a phantom point--which is not a
+    // vertex of the trims adjacent across that other curve--produces
+    // T-junctions and naked edges in the triangulated shell (issue #1452).
+    for(const SSurface &ss : sh->surface) {
+        for(const STrimBy &stb : ss.trim) {
+            for(int i = 0; i < 2; i++) {
+                Vector pt = (i == 0) ? stb.start : stb.finish;
+                if(pt.OutsideAndNotOn(amax, amin)) continue;
 
-        if(Vector::BoundingBoxesDisjoint(amax, amin, cmax, cmin)) {
-            // They cannot possibly intersect, no curves to generate
-            continue;
-        }
-        
-        for(int i=0; i<2; i++) {
-            Vector pt = sc.exact.ctrl[ i==0 ? 0 : sc.exact.deg ];
-            double t;
-            curve->exact.ClosestPointTo(pt, &t, /*must converge=*/ false);
-            double d = pt.Minus(curve->exact.PointAt(t)).Magnitude();
-            if((t>LENGTH_EPS) && (t<(1.0-LENGTH_EPS)) && (d < LENGTH_EPS)) {
-                SInter inter;
-                inter.p = pt;
-                l->Add(&inter);
+                double t;
+                curve->exact.ClosestPointTo(pt, &t, /*mustConverge=*/false);
+                double d = pt.Minus(curve->exact.PointAt(t)).Magnitude();
+                if((t > LENGTH_EPS) && (t < (1.0 - LENGTH_EPS)) && (d < LENGTH_EPS)) {
+                    SInter inter = {};
+                    inter.p = pt;
+                    l->Add(&inter);
+                }
             }
         }
     }
@@ -179,7 +180,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
             });
 
             // And now uses the intersections to generate our split pwl edge(s)
-            Vector prev = Vector::From(VERY_POSITIVE, 0, 0);
+            Vector prev = {VERY_POSITIVE, 0, 0};
             for(pi = il.First(); pi; pi = il.NextAfter(pi)) {
                 // On-edge intersection will generate same split point for
                 // both surfaces, so don't create zero-length edge.
@@ -452,9 +453,15 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
 
     *surfn = NormalAt(muv.x, muv.y);
 
-    // Compute the edge's inner normal in xyz space.
+    // Compute the edge's inner normal in xyz space. Use the configured
+    // chord tolerance as the probe distance, but never more than a
+    // fraction of this edge's own length: the classification must probe
+    // the surfaces close to the edge, and a coarse tolerance on a small
+    // model would otherwise evaluate them far away, or even extrapolate
+    // them outside their domain, and misclassify.
     Vector ab    = (PointAt(auv)).Minus(PointAt(buv)),
-           enxyz = (ab.Cross(*surfn)).WithMagnitude(SS.ChordTolMm());
+           enxyz = (ab.Cross(*surfn)).WithMagnitude(
+                        min(SS.ChordTolMm(), ab.Magnitude() / 10));
     // And based on that, compute the edge's inner normal in uv space. This
     // vector is perpendicular to the edge in xyz, but not necessarily in uv.
     Vector tu, tv, tx, ty;
@@ -548,8 +555,8 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
             SBspUv::Class c = (ss->bsp) ? ss->bsp->ClassifyEdge(auv, buv, ss) : SBspUv::Class::OUTSIDE;
             if(c != SBspUv::Class::OUTSIDE) {
-                Vector ta = Vector::From(0, 0, 0);
-                Vector tb = Vector::From(0, 0, 0);
+                Vector ta = {};
+                Vector tb = {};
                 ret.ClosestPointTo(a, &(ta.x), &(ta.y));
                 ret.ClosestPointTo(b, &(tb.x), &(tb.y));
 
@@ -559,8 +566,20 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                 // We are subtracting the portion of our surface that
                 // lies in the shell, so the in-plane edge normal should
                 // point opposite to the surface normal.
+                Vector tnxd = tn.Cross(b.Minus(a));
+                double dot = tnxd.Dot(sn);
+                if(fabs(dot) < SShell::DOTP_TOL*tnxd.Magnitude()*sn.Magnitude()) {
+                    // The surfaces are tangent along this curve, so their
+                    // normals give no orientation for it. Add the edge in
+                    // both directions; the classification against the
+                    // shells keeps the correctly oriented one and
+                    // discards the other.
+                    inter.AddEdge(ta, tb, sc.h.v, 0);
+                    inter.AddEdge(tb, ta, sc.h.v, 1);
+                    continue;
+                }
                 bool bkwds = true;
-                if((tn.Cross(b.Minus(a))).Dot(sn) < 0) bkwds = !bkwds;
+                if(dot < 0) bkwds = !bkwds;
                 if((type == SSurface::CombineAs::DIFFERENCE && !opA) ||
                    (type == SSurface::CombineAs::INTERSECTION)) { // Invert all newly created edges for intersection
                     bkwds = !bkwds;
@@ -617,14 +636,21 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         ret.EdgeNormalsWithinSurface(auv, buv, &pt, &enin, &enout, &surfn,
                                         se->auxA, into, sha, shb);
 
-        SShell::Class indir_shell, outdir_shell, indir_orig, outdir_orig;
+        // Initialize to a deterministic (if arbitrary) guess, so that if the
+        // classification fails we don't use values from uninitialized stack.
+        SShell::Class indir_shell  = SShell::Class::SURF_OUTSIDE,
+                      outdir_shell = SShell::Class::SURF_OUTSIDE,
+                      indir_orig, outdir_orig;
 
         indir_orig  = SShell::Class::SURF_INSIDE;
         outdir_orig = SShell::Class::SURF_OUTSIDE;
 
-        agnst->ClassifyEdge(&indir_shell, &outdir_shell,
-                            ret.PointAt(auv), ret.PointAt(buv), pt,
-                            enin, enout, surfn);
+        if(!agnst->ClassifyEdge(&indir_shell, &outdir_shell,
+                                ret.PointAt(auv), ret.PointAt(buv), pt,
+                                enin, enout, surfn))
+        {
+            dbp("MakeCopyTrimAgainst: failed to classify orig edge (I=%d)", I+dbg_index);
+        }
 
         if(KeepEdge(type, opA, indir_shell, outdir_shell,
                                indir_orig,  outdir_orig))
@@ -650,14 +676,39 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         ret.EdgeNormalsWithinSurface(auv, buv, &pt, &enin, &enout, &surfn,
                                         se->auxA, into, sha, shb);
 
-        SShell::Class indir_shell, outdir_shell, indir_orig, outdir_orig;
+        // Initialize to a deterministic (if arbitrary) guess, so that if the
+        // classification fails we don't use values from uninitialized stack.
+        SShell::Class indir_shell  = SShell::Class::SURF_OUTSIDE,
+                      outdir_shell = SShell::Class::SURF_OUTSIDE,
+                      indir_orig, outdir_orig;
 
         SBspUv::Class c_this = (origBsp) ? origBsp->ClassifyEdge(auv, buv, &ret) : SBspUv::Class::OUTSIDE;
+
+        if(c_this == SBspUv::Class::EDGE_PARALLEL) {
+            // The intersection edge lies exactly along an edge of our
+            // original trim polygon, in the same direction. Whatever trim
+            // is required there, the original edge (which the loop above
+            // classifies identically, since for both edges the decision
+            // reduces to keeping iff the region on the in-side of the shared
+            // line is kept) already provides it, so this edge is redundant.
+            // Keeping it would at best duplicate the original edge exactly
+            // (and get culled below), but if the two copies are split at
+            // different interior points the duplicates survive the cull and
+            // the trim polygon fails to assemble, which shows as a missing
+            // face when several coplanar faces join edge-on-edge across
+            // multiple union steps (issue #1452). Discard it instead.
+            chain.Clear();
+            continue;
+        }
+
         TagByClassifiedEdge(c_this, &indir_orig, &outdir_orig);
 
-        agnst->ClassifyEdge(&indir_shell, &outdir_shell,
-                            ret.PointAt(auv), ret.PointAt(buv), pt,
-                            enin, enout, surfn);
+        if(!agnst->ClassifyEdge(&indir_shell, &outdir_shell,
+                                ret.PointAt(auv), ret.PointAt(buv), pt,
+                                enin, enout, surfn))
+        {
+            dbp("MakeCopyTrimAgainst: failed to classify inter edge (I=%d)", I+dbg_index);
+        }
 
         if(KeepEdge(type, opA, indir_shell, outdir_shell,
                                indir_orig,  outdir_orig))
@@ -754,7 +805,7 @@ void SShell::RewriteSurfaceHandlesForCurves(SShell *a, SShell *b) {
 void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
     booleanFailed = false;
 
-    Vector t = Vector::From(0, 0, 0);
+    Vector t = {};
     Quaternion q = Quaternion::IDENTITY;
     int i = 0;
     SShell *ab;

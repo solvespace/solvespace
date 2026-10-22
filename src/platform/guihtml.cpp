@@ -230,6 +230,7 @@ public:
         htmlMenu(val::global("document").call<val>("createElement", val("ul")))
     {
         htmlMenu["classList"].call<void>("add", val("menu"));
+        htmlMenu.call<void>("setAttribute", val("oncontextmenu"), val("return false"));
     }
 
     MenuItemRef AddItem(const std::string &label, std::function<void()> onTrigger,
@@ -831,6 +832,9 @@ public:
                                     void *data) {
         if(emEvent->altKey) return EM_FALSE;
         if(emEvent->repeat) return EM_FALSE;
+        // Pass Ctrl-= through to the browser (for font size increase), symmetric with
+        // Ctrl-minus which is already passed through since it doesn't match any shortcut.
+        if(emEvent->ctrlKey && strcmp(emEvent->key, "=") == 0) return EM_FALSE;
 
         WindowImplHtml *window = (WindowImplHtml *)data;
         KeyboardEvent event = {};
@@ -1061,6 +1065,7 @@ public:
         htmlEditor["style"].set("fontFamily", isMonospace ? "monospace" : "sans");
         htmlEditor.set("value", text);
         htmlEditor.call<void>("focus");
+        htmlEditor.call<void>("select");
     }
 
     void HideEditor() override {

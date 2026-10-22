@@ -211,8 +211,8 @@ void GraphicsWindow::MakeSelected(Selection *stog) {
 //-----------------------------------------------------------------------------
 void GraphicsWindow::SelectByMarquee() {
     Point2d marqueePoint = ProjectPoint(orig.marqueePoint);
-    BBox marqueeBBox = BBox::From(Vector::From(marqueePoint.x, marqueePoint.y, VERY_NEGATIVE),
-                                  Vector::From(orig.mouse.x,   orig.mouse.y,   VERY_POSITIVE));
+    BBox marqueeBBox = BBox::From({marqueePoint.x, marqueePoint.y, VERY_NEGATIVE},
+                                  {orig.mouse.x, orig.mouse.y, VERY_POSITIVE});
 
     for(Entity &e : SK.entity) {
         if(e.group != SS.GW.activeGroup) continue;
@@ -583,7 +583,7 @@ Vector GraphicsWindow::UnProjectPoint3(Vector p) {
 
 void GraphicsWindow::NormalizeProjectionVectors() {
     if(projRight.Magnitude() < LENGTH_EPS) {
-        projRight = Vector::From(1, 0, 0);
+        projRight = {1, 0, 0};
     }
 
     Vector norm = projRight.Cross(projUp);

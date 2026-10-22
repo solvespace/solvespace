@@ -6,12 +6,17 @@ on:
     tags: [ v* ]
   workflow_dispatch:
 
+# https://docs.npmjs.com/trusted-publishers
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-wasmlib:
     name: WASM library
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: git submodule update --init extlib/mimalloc extlib/eigen
       - name: Pack
         shell: bash
@@ -21,7 +26,7 @@ jobs:
           rm libmimalloc.a || true
           zip -r slvs-wasmlib.zip .
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: slvs-wasmlib
           path: build-wasmlib/bin/slvs-wasmlib.zip
@@ -32,15 +37,15 @@ jobs:
     ]
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - run: git submodule update --init extlib/mimalloc extlib/eigen
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: '14.x'
+          node-version: '24.x'
           registry-url: https://registry.npmjs.org/
       - name: prepare
         shell: bash
@@ -50,18 +55,17 @@ jobs:
           git fetch --unshallow --tags
 
           ls artifacts
-          unzip artifacts/slvs-wasmlib/slvs-wasmlib.zip -d js
+          unzip artifacts/slvs-wasmlib.zip -d js
           ls js
 
-          # bump version
+          mkdir empty-build
+          cd empty-build
+          cmake .. -DENABLE_GUI=OFF -DENABLE_CLI=OFF -DENABLE_TESTS=OFF -DENABLE_COVERAGE=OFF -DENABLE_SANITIZERS=OFF -DENABLE_OPENMP=OFF
+          source version.env
+          cd ..
           if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
-            version="${GITHUB_REF##*/}"
+            version="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
           else
-            mkdir empty-build
-            cd empty-build
-            cmake .. -DENABLE_GUI=OFF -DENABLE_CLI=OFF -DENABLE_TESTS=OFF -DENABLE_COVERAGE=OFF -DENABLE_SANITIZERS=OFF -DENABLE_OPENMP=OFF
-            source version.env
-            cd ..
             version="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-dev.${GITHUB_RUN_NUMBER}"
             is_dev="1"
           fi

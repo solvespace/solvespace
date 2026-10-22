@@ -73,7 +73,6 @@ bool SolveSpaceUI::PruneGroup(Group *g) {
     return true;
 }
 
-
 void Sketch::RegenerateGroupOrder() {
     using GroupOrderPair = std::pair<int, hGroup>;
     std::vector<GroupOrderPair> order;
@@ -81,6 +80,7 @@ void Sketch::RegenerateGroupOrder() {
     for(auto &g : group) {
         order.push_back({g.order, g.h});
     }
+
     std::sort(order.begin(), order.end(), [](const GroupOrderPair &a, GroupOrderPair &b) {
         return a.first < b.first;
     });
@@ -157,6 +157,8 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     SK.entity.ReserveMore(oldEntityCount);
 
     // Prune any requests and constraints that belong to non-existent groups
+    SK.request.ClearTags();
+    SK.constraint.ClearTags();
     for(auto &r : SK.request) {
         if(!GroupExists(r.group)) {
             r.tag = 1;
@@ -430,7 +432,7 @@ void SolveSpaceUI::ForceReferences() {
         Entity *wrkpl = SK.GetEntity(hr.entity(0));
         // The origin for our coordinate system, always zero
         Entity *origin = SK.GetEntity(wrkpl->point[0]);
-        origin->PointForceTo(Vector::From(0, 0, 0));
+        origin->PointForceTo({0, 0, 0});
         origin->construction = true;
         SK.GetParam(origin->param[0])->known = true;
         SK.GetParam(origin->param[1])->known = true;

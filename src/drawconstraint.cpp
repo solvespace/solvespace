@@ -742,8 +742,8 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
                 RgbaColor cd = Style::Color(Style::DATUM),
                           cc = Style::Color(Style::CONSTRAINT);
                 // convert from 8-bit color to a vector
-                Vector vd = Vector::From(cd.redF(), cd.greenF(), cd.blueF()),
-                       vc = Vector::From(cc.redF(), cc.greenF(), cc.blueF());
+                Vector vd = {cd.redF(), cd.greenF(), cd.blueF()},
+                       vc = {cc.redF(), cc.greenF(), cc.blueF()};
                 // and scale the constraint color to have the same magnitude as
                 // the datum color, maybe a bit dimmer
                 vc = vc.WithMagnitude(vd.Magnitude()*0.9);
@@ -886,7 +886,7 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
         }
 
         case Type::PERPENDICULAR: {
-            Vector u = Vector::From(0, 0, 0), v = Vector::From(0, 0, 0);
+            Vector u = {}, v = {};
             Vector rn, ru;
             if(workplane == Entity::FREE_IN_3D) {
                 rn = gn;
@@ -1043,7 +1043,7 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
         case Type::LENGTH_RATIO:
         case Type::LENGTH_DIFFERENCE:
         case Type::EQUAL_LENGTH_LINES: {
-            Vector a, b = Vector::From(0, 0, 0);
+            Vector a, b;
             for(int i = 0; i < 2; i++) {
                 Entity *e = SK.GetEntity(i == 0 ? entityA : entityB);
                 a = SK.GetEntity(e->point[0])->PointGetNum();
@@ -1092,11 +1092,10 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
         }
         case Type::ARC_LINE_LEN_RATIO:
         case Type::ARC_LINE_DIFFERENCE: {
-            Vector a, b = Vector::From(0, 0, 0);
-            Vector ref;
             Entity *e = SK.GetEntity(entityA);
-            a = SK.GetEntity(e->point[0])->PointGetNum();
-            b = SK.GetEntity(e->point[1])->PointGetNum();
+            Vector a  = SK.GetEntity(e->point[0])->PointGetNum(),
+                   b = SK.GetEntity(e->point[1])->PointGetNum();
+            Vector ref;
             DoEqualLenTicks(canvas, hcs, a, b, gn, &ref);
             if(refs) refs->push_back(ref);
             DoEqualRadiusTicks(canvas, hcs, entityB, &ref);

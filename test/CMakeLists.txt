@@ -19,6 +19,8 @@ set(testsuite_SOURCES
     core/expr/test.cpp
     core/locale/test.cpp
     core/path/test.cpp
+    core/prune/test.cpp
+    core/solver/test.cpp
     constraint/points_coincident/test.cpp
     constraint/pt_pt_distance/test.cpp
     constraint/pt_plane_distance/test.cpp
@@ -54,6 +56,7 @@ set(testsuite_SOURCES
     constraint/equal_radius/test.cpp
     constraint/where_dragged/test.cpp
     constraint/comment/test.cpp
+    constraint/large_dimensions/test.cpp
     request/arc_of_circle/test.cpp
     request/circle/test.cpp
     request/cubic/test.cpp
@@ -63,6 +66,12 @@ set(testsuite_SOURCES
     request/line_segment/test.cpp
     request/ttf_text/test.cpp
     request/workplane/test.cpp
+    group/boolean_coplanar_union/test.cpp
+    group/boolean_knife_edge/test.cpp
+    group/boolean_tangent_crossing/test.cpp
+    group/boolean_tangent_edge/test.cpp
+    group/boolean_tangent_fillet/test.cpp
+    group/boolean_tangent_spline/test.cpp
     group/link/test.cpp
     group/translate_asy/test.cpp
     group/translate_nd/test.cpp

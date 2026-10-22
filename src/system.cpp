@@ -291,13 +291,59 @@ bool System::SolveLeastSquares() {
         }
     }
 
-    SparseMatrix<double> AAt = mat.A.num * mat.A.num.transpose();
-    AAt.makeCompressed();
-    VectorXd z(mat.n);
+    if(mat.m == 0 || mat.n == 0) {
+        mat.X = VectorXd::Zero(mat.n);
+        return true;
+    }
 
-    if(!SolveLinearSystem(AAt, mat.B.num, &z)) return false;
+    if(mat.m <= mat.n) {
+        // We want the minimum norm solution of the underdetermined system
+        // A*x = B, which is x = A'*(A*A')^-1*B. Forming the normal equations
+        // A*A' explicitly squares the condition number of A; since our
+        // Jacobian mixes dimensionless quantities with lengths, areas and
+        // volumes, its condition number already grows with the size of the
+        // sketch, and squaring it is what makes large models fail. Eigen's
+        // rank-revealing QR then drops pivots below a threshold proportional
+        // to the largest column norm, and its rank-truncated solve silently
+        // zeroes the corresponding component of the Newton step, so the
+        // residual of one equation can never be driven to zero and we report
+        // unsolvable constraints for a perfectly solvable sketch.
+        //
+        // Factor A' instead, as A'*P = Q*R. Then A*A' = P*R'*R*P', so
+        //     z = (A*A')^-1*B = P*R^-1*R'^-1*P'*B,
+        // which is two triangular solves, and the rank decision is taken on
+        // R (whose pivots scale like A, not like A*A').
+        SparseMatrix<double> At = mat.A.num.transpose();
+        At.makeCompressed();
 
-    mat.X = mat.A.num.transpose() * z;
+        SparseQR<SparseMatrix<double>, COLAMDOrdering<int>> solver;
+        solver.compute(At);
+        if(solver.info() != Success) return false;
+
+        const int rank = (int)solver.rank();
+        VectorXd rhs = solver.colsPermutation().transpose() * mat.B.num;
+        VectorXd v   = VectorXd::Zero(mat.m);
+        if(rank > 0) {
+            SparseMatrix<double> R = solver.matrixR().topLeftCorner(rank, rank);
+            VectorXd w = R.triangularView<Upper>().transpose()
+                             .solve(rhs.topRows(rank));
+            v.topRows(rank) = R.triangularView<Upper>().solve(w);
+        }
+        VectorXd z = solver.colsPermutation() * v;
+
+        mat.X = mat.A.num.transpose() * z;
+    } else {
+        // More equations than unknowns; A' is wide, which Eigen's sparse QR
+        // does not handle, so fall back to the normal equations. A system
+        // like that is redundant anyway, and gets reported as such.
+        SparseMatrix<double> AAt = mat.A.num * mat.A.num.transpose();
+        AAt.makeCompressed();
+        VectorXd z(mat.m);
+
+        if(!SolveLinearSystem(AAt, mat.B.num, &z)) return false;
+
+        mat.X = mat.A.num.transpose() * z;
+    }
 
     for(int c = 0; c < mat.n; c++) {
         mat.X[c] *= scale[c];
@@ -316,32 +362,62 @@ bool System::NewtonSolve() {
     for(i = 0; i < mat.m; i++) {
         mat.B.num[i] = (mat.B.sym[i])->Eval();
     }
+
+    // Where we were before we took the step, so that we can take a shorter
+    // one from the same operating point if the first one is no good.
+    std::vector<double> prevVal(mat.n);
+
+    // Take the Newton step,
+    //      J(x_n) (x_{n+1} - x_n) = 0 - F(x_n)
+    // scaled by relax, and re-evaluate the functions, since the params have
+    // just changed. Returns false if that took us somewhere clearly useless.
+    auto takeStep = [&](double relax) {
+        for(int k = 0; k < mat.n; k++) {
+            Param *p = param.FindById(mat.param[k]);
+            p->val = prevVal[k] - relax*mat.X[k];
+            if(IsReasonable(p->val)) return false;
+        }
+        for(int k = 0; k < mat.m; k++) {
+            mat.B.num[k] = (mat.B.sym[k])->Eval();
+            if(IsReasonable(mat.B.num[k])) return false;
+        }
+        return true;
+    };
+
     do {
         // And evaluate the Jacobian at our initial operating point.
         EvalJacobian();
 
         if(!SolveLeastSquares()) break;
 
-        // Take the Newton step;
-        //      J(x_n) (x_{n+1} - x_n) = 0 - F(x_n)
         for(i = 0; i < mat.n; i++) {
-            Param *p = param.FindById(mat.param[i]);
-            p->val -= mat.X[i];
-            if(IsReasonable(p->val)) {
+            prevVal[i] = param.FindById(mat.param[i])->val;
+        }
+        const double err = mat.B.num.squaredNorm();
+
+        // A Newton step is only as good as the linearization of F about our
+        // operating point, so where F is strongly curved the full step can
+        // land much further from the solution than it started; and if it
+        // lands near a critical point of F, then the step after that one is
+        // enormous, and the geometry runs away to nowhere. But the step is a
+        // descent direction for |F|^2, so if the full step makes things
+        // worse, then a short enough step along the same direction makes
+        // them better. So backtrack until the residual actually decreases.
+        bool accepted = false;
+        double relax = 1.0;
+        for(int tries = 0; tries < 8 && !accepted; tries++, relax /= 2) {
+            accepted = takeStep(relax) && mat.B.num.squaredNorm() < err;
+        }
+        if(!accepted) {
+            // No step along this direction is an improvement, so just take
+            // the whole thing, like we always used to; if that was a bad
+            // idea, then the iteration limit below will catch it.
+            if(!takeStep(1.0)) {
                 // Very bad, and clearly not convergent
                 return false;
             }
         }
 
-        // Re-evalute the functions, since the params have just changed.
-        for(i = 0; i < mat.m; i++) {
-            mat.B.num[i] = (mat.B.sym[i])->Eval();
-            if(IsReasonable(mat.B.num[i])) {
-                // Very bad, and clearly not convergent
-                return false;
-            }
-        }
-        
         // Check for convergence
         converged = true;
         for(i = 0; i < mat.m; i++) {

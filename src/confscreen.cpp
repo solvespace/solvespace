@@ -98,7 +98,7 @@ void TextWindow::ScreenChangeTurntableNav(int link, uint32_t v) {
     SS.turntableNav = !SS.turntableNav;
     if(SS.turntableNav) {
         // If turntable nav is being turned on, align view so Z is vertical
-        SS.GW.AnimateOnto(Quaternion::From(Vector::From(-1, 0, 0), Vector::From(0, 0, 1)),
+        SS.GW.AnimateOnto(Quaternion::From({-1, 0, 0}, {0, 0, 1}),
                           SS.GW.offset);
     }
 }
@@ -406,7 +406,7 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         case Edit::LIGHT_DIRECTION: {
             double x, y, z;
             if(sscanf(s.c_str(), "%lf, %lf, %lf", &x, &y, &z)==3) {
-                SS.lightDir[edit.i] = Vector::From(x, y, z);
+                SS.lightDir[edit.i] = {x, y, z};
                 SS.GW.Invalidate();
             } else {
                 Error(_("Bad format: specify coordinates as x, y, z"));

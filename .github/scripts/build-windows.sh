@@ -48,6 +48,8 @@ if [ "$3" = "x64" ]; then
 	fi
 else
 	if [ "$2" != "openmp" ]; then
-		mv bin/$BUILD_TYPE/solvespace.exe bin/$BUILD_TYPE/solvespace_single_core.exe
+		mv bin/$BUILD_TYPE/solvespace.exe bin/$BUILD_TYPE/solvespace_single_core_x86.exe
+    else
+        mv bin/$BUILD_TYPE/solvespace.exe bin/$BUILD_TYPE/solvespace_x86.exe
 	fi
 fi

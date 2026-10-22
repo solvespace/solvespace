@@ -22,6 +22,6 @@ emcmake cmake .. \
   -DENABLE_CLI="OFF" \
   -DENABLE_TESTS="OFF" \
   -DENABLE_COVERAGE="OFF" \
-  -DENABLE_OPENMP="OFF" \
+  -DENABLE_OPENMP="ON" \
   -DENABLE_LTO="ON"
 cmake --build . --config "${BUILD_TYPE}" -j$(nproc) --target solvespace

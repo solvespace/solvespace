@@ -70,8 +70,8 @@ Cutting edge builds from the latest master commit are available as zip archives
 from the following links:
 
 - [macOS](https://nightly.link/solvespace/solvespace/workflows/cd/master/macos.zip)
-- [Windows with OpenMP enabled 32bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows.zip)
-- [Windows 32bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows_single_core.zip)
+- [Windows with OpenMP enabled 32bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows_x86.zip)
+- [Windows 32bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows_single_core_x86.zip)
 - [Windows with OpenMP enabled 64bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows_x64.zip)
 - [Windows 64bit](https://nightly.link/solvespace/solvespace/workflows/cd/master/windows_single_core_x64.zip)
 

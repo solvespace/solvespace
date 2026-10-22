@@ -1,6 +1,34 @@
 Changelog
 =========
 
+3.3
+---
+
+Geometric Modelling Kernel (NURBS)
+
+Thanks to Claude Fable 5
+* Numerous bug fixes relating to flat surfaces and edges.
+* Some bugs relating to curved surfaces fixed.
+* Fixes when edges intersect tangent on the edge of a surface.
+* Significant reduction in red lines, naked edges, and missing surfaces.
+
+Solver:
+* Improved ability to solve constraints with large dimensions/values.
+* Improved ability to solve some valid constraints that were failing (not converging) before.
+* Constraints that the solver could not satisfy are not deleted (regression in 3.2).
+
+Misc:
+* Support for multiple faces for a single font in .ttc files.
+* Initialize the color picker to the current color instead of black.
+* Fix some file dialog issues.
+* Some small improvements in the web version, including making it multi threaded.
+* The web version is available on https://solvespace.com/.
+* Do not crash when exporting zigzag and stippled lines in vector formats (SVG/PDF/EPS/DXF).
+  They are sill _not_ exported.
+
+Translations:
+* Added Brazilian Portuguese (pt_BR)
+
 3.2
 ---
 
@@ -59,11 +87,15 @@ Other User interface changes:
 * Add an 'only unconstrained' option on the Property Browser home screen that shows only unconstrained groups.
 * Some faces can be gragged. Linked objects can be moved by gragging their faces.
 
+Solver
+
+* Merged Python bindings for the geometric constraint solver to master.
+
 Other
 
-* STEP files export as solid model(s).
-* Merged and improved the experimental Web version (Emscripten port).
+* STEP files now export as solid model(s).
 * Merged a QT front end as an option for Linux builds.
+* Merged and improved the experimental Web version (Emscripten port).
 * Better Flatpack support.
 * Several bug fixes and usability improvements.
 * Allow 32 bit SolveSpace to access up to 4GB of RAM to allow working on larger projects.

@@ -96,7 +96,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'g',  "Group.opB.v",              'x',    &(SS.sv.g.opB.v)              },
     { 'g',  "Group.valA",               'f',    &(SS.sv.g.valA)               },
     { 'g',  "Group.valB",               'f',    &(SS.sv.g.valB)               },
-    { 'g',  "Group.valC",               'f',    &(SS.sv.g.valB)               },
+    { 'g',  "Group.valC",               'f',    &(SS.sv.g.valC)               },
     { 'g',  "Group.color",              'c',    &(SS.sv.g.color)              },
     { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
     { 'g',  "Group.skipFirst",          'b',    &(SS.sv.g.skipFirst)          },
@@ -491,8 +491,6 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
 
     char line[1024];
     while(fgets(line, (int)sizeof(line), fh)) {
-        fileIsEmpty = false;
-
         char *s = strchr(line, '\n');
         if(s) *s = '\0';
         // We should never get files with \r characters in them, but mailers
@@ -501,6 +499,8 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
         if(s) *s = '\0';
 
         if(*line == '\0') continue;
+
+        fileIsEmpty = false;
 
         char *e = strchr(line, '=');
         if(e) {
@@ -874,6 +874,14 @@ static Platform::MessageDialog::Response LocateImportedFile(const Platform::Path
     Platform::MessageDialogRef dialog = CreateMessageDialog(SS.GW.window);
 
     using Platform::MessageDialog;
+    if(!dialog) {
+        // When running the headless CLI version no dialog is possible, so
+        // decline to locate the file.
+        dbp("The linked file '%s' is not present; continuing without it.",
+            filename.raw.c_str());
+        return MessageDialog::Response::NO;
+    }
+
     dialog->SetType(MessageDialog::Type::QUESTION);
     dialog->SetTitle(C_("title", "Missing File"));
     dialog->SetMessage(ssprintf(C_("dialog", "The linked file “%s” is not present."),

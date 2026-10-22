@@ -1407,7 +1407,9 @@ public:
     }
 
     void SetCurrentName(std::string name) override {
-        gtkChooser->set_current_name(name);
+        if(gtkChooser->get_action() != Gtk::FILE_CHOOSER_ACTION_OPEN) {
+            gtkChooser->set_current_name(name);
+        }
     }
 
     Platform::Path GetFilename() override {
@@ -1419,7 +1421,9 @@ public:
     }
 
     void SuggestFilename(Platform::Path path) override {
-        gtkChooser->set_current_name(path.FileStem()+"."+GetExtension());
+        if(gtkChooser->get_action() != Gtk::FILE_CHOOSER_ACTION_OPEN) {
+            gtkChooser->set_current_name(path.FileStem()+"."+GetExtension());
+        }
     }
 
     void AddFilter(std::string name, std::vector<std::string> extensions) override {

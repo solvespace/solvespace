@@ -165,9 +165,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             double sign = SS.cameraNav ? -1.0 : 1.0;
             double s = 0.3*(PI/180)*scale*sign; // degrees per pixel
             if(SS.turntableNav) {               // lock the Z to vertical
-                projRight = orig.projRight.RotatedAbout(Vector::From(0, 0, 1), -s * dx);
+                projRight = orig.projRight.RotatedAbout({0, 0, 1}, -s * dx);
                 projUp    = orig.projUp.RotatedAbout(
-                    Vector::From(orig.projRight.x, orig.projRight.y, orig.projRight.y), s * dy);
+                    {orig.projRight.x, orig.projRight.y, orig.projRight.y}, s * dy);
             } else {
                 projRight = orig.projRight.RotatedAbout(orig.projUp, -s * dx);
                 projUp    = orig.projUp.RotatedAbout(orig.projRight, s * dy);
@@ -824,7 +824,8 @@ hRequest GraphicsWindow::AddRequest(Request::Type type, bool rememberForUndo) {
     Request r = {};
     r.group = activeGroup;
     Group *g = SK.GetGroup(activeGroup);
-    if(g->type == Group::Type::DRAWING_3D || g->type == Group::Type::DRAWING_WORKPLANE) {
+    if(g->type == Group::Type::DRAWING_3D || g->type == Group::Type::DRAWING_WORKPLANE
+       || type == Request::Type::DATUM_POINT) {
         r.construction = false;
     } else {
         r.construction = true;
@@ -1539,7 +1540,7 @@ void GraphicsWindow::SixDofEvent(Platform::SixDofEvent event) {
     Vector out = projRight.Cross(projUp);
 
     // rotation vector is axis of rotation, and its magnitude is angle
-    Vector aa = Vector::From(event.rotationX, event.rotationY, event.rotationZ);
+    Vector aa = {event.rotationX, event.rotationY, event.rotationZ};
     // but it's given with respect to screen projection frame
     aa = aa.ScaleOutOfCsys(projRight, projUp, out);
     double aam = aa.Magnitude();
