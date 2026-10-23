@@ -526,21 +526,26 @@ void SShell::MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0) {
             if(fabs(d0 - d1) < LENGTH_EPS) {
                 // This is a cylinder; so transpose it so that we'll recognize
                 // it as a surface of extrusion.
-                SSurface sn = *srf;
 
                 // Transposing u and v flips the normal, so reverse u to
-                // flip it again and put it back where we started.
-                sn.degm = 2;
-                sn.degn = 1;
-                int dm, dn;
-                for(dm = 0; dm <= 1; dm++) {
-                    for(dn = 0; dn <= 2; dn++) {
-                        sn.ctrl  [dn][dm] = srf->ctrl  [1-dm][dn];
-                        sn.weight[dn][dm] = srf->weight[1-dm][dn];
+                // flip it again and put it back where we started (work on
+                // a copy and copy back the result in order to make the loop
+                // simpler).
+                decltype(SSurface::ctrl) ctrl = {};
+                decltype(SSurface::weight) weight = {};
+
+                srf->degm = 2;
+                srf->degn = 1;
+                for(int dm = 0; dm <= 1; dm++) {
+                    for(int dn = 0; dn <= 2; dn++) {
+                        ctrl  [dn][dm] = srf->ctrl  [1-dm][dn];
+                        weight[dn][dm] = srf->weight[1-dm][dn];
                     }
                 }
 
-                *srf = sn;
+                // Copy back the transposed data
+                memcpy(srf->ctrl, ctrl, sizeof(ctrl));
+                memcpy(srf->weight, weight, sizeof(weight));
                 continue;
             }
         }
