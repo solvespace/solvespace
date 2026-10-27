@@ -879,7 +879,9 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
         case Command::STEP_DIM:
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SK.GetConstraint(gs.constraint[0]);
-                if(c->HasLabel() && !c->reference) {
+                if(c->HasExpression()) {
+                    Error(_("Can't step a dimension that is set by an expression."));
+                } else if(c->HasLabel() && !c->reference) {
                     SS.TW.stepDim.finish = c->valA;
                     SS.TW.stepDim.steps = 10;
                     SS.TW.stepDim.isDistance =

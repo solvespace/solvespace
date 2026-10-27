@@ -273,7 +273,6 @@ int Expr::Children() const {
         case Op::PARAM:
         case Op::PARAM_PTR:
         case Op::CONSTANT:
-        case Op::VARIABLE:
             return 0;
 
         case Op::PLUS:
@@ -353,7 +352,6 @@ double Expr::Eval() const {
         case Op::PARAM_PTR:     return parp->val;
 
         case Op::CONSTANT:      return v;
-        case Op::VARIABLE:      ssassert(false, "Not supported yet");
 
         case Op::PLUS:          return a->Eval() + b->Eval();
         case Op::MINUS:         return a->Eval() - b->Eval();
@@ -379,7 +377,6 @@ Expr *Expr::PartialWrt(hParam p) const {
         case Op::PARAM:     return From(p == parh ? 1 : 0);
 
         case Op::CONSTANT:  return From(0.0);
-        case Op::VARIABLE:  ssassert(false, "Not supported yet");
 
         case Op::PLUS:      return (a->PartialWrt(p))->Plus(b->PartialWrt(p));
         case Op::MINUS:     return (a->PartialWrt(p))->Minus(b->PartialWrt(p));
@@ -461,7 +458,6 @@ Expr *Expr::FoldConstants(bool allocCopy, size_t depth) {
         case Op::PARAM_PTR:
         case Op::PARAM:
         case Op::CONSTANT:
-        case Op::VARIABLE:
             break;
 
         case Op::MINUS:
@@ -592,7 +588,6 @@ std::string Expr::Print() const {
         case Op::PARAM_PTR: return ssprintf("param(p%08x)", parp->h.v);
 
         case Op::CONSTANT:  return ssprintf("%.3f", v);
-        case Op::VARIABLE:  return "(var)";
 
         case Op::PLUS:      c = '+'; goto p;
         case Op::MINUS:     c = '-'; goto p;
@@ -648,6 +643,10 @@ public:
     std::string::const_iterator it, end;
     std::vector<Token> stack;
 
+    // The named parameters that may be used, or NULL if there are none
+    const ParamNames *names;
+    int namesUsed;
+
     char ReadChar();
     char PeekChar();
 
@@ -663,7 +662,8 @@ public:
     bool Reduce(std::string *error);
     bool Parse(std::string *error, size_t reduceUntil = 0);
 
-    static Expr *Parse(const std::string &input, std::string *error);
+    static Expr *Parse(const std::string &input, std::string *error,
+                       const ParamNames *names, int *namesUsed);
 };
 
 ExprParser::Token ExprParser::Token::From(TokenType type, Expr *expr) {
@@ -741,10 +741,7 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
 
     Token t = Token::From();
     char c = PeekChar();
-    if(isupper(c)) {
-        std::string n = ReadWord();
-        t = Token::From(TokenType::OPERAND, Expr::Op::VARIABLE);
-    } else if(isalpha(c)) {
+    if(isalpha(c)) {
         std::string s = ReadWord();
         if(s == "sqrt") {
             t = Token::From(TokenType::UNARY_OP, Expr::Op::SQRT);
@@ -761,6 +758,10 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
         } else if(s == "pi") {
             t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
             t.expr->v = PI;
+        } else if(names != NULL && names->count(s) > 0) {
+            t = Token::From(TokenType::OPERAND, Expr::Op::PARAM);
+            t.expr->parh = names->at(s);
+            namesUsed++;
         } else {
             *error = "'" + s + "' is not a valid variable, function or constant";
         }
@@ -932,24 +933,36 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
     return true;
 }
 
-Expr *ExprParser::Parse(const std::string &input, std::string *error) {
+Expr *ExprParser::Parse(const std::string &input, std::string *error,
+                        const ParamNames *names, int *namesUsed) {
     ExprParser parser;
     parser.it  = input.cbegin();
     parser.end = input.cend();
+    parser.names = names;
+    parser.namesUsed = 0;
     if(!parser.Parse(error)) return NULL;
 
     Token r = parser.PopOperand(error);
     if(r.IsError()) return NULL;
+    if(namesUsed != NULL) *namesUsed = parser.namesUsed;
     return r.expr;
 }
 
-Expr *Expr::Parse(const std::string &input, std::string *error) {
-    return ExprParser::Parse(input, error);
+bool Expr::IsReservedName(const std::string &name) {
+    // The functions and constants that the parser knows by name.
+    return name == "sqrt" || name == "square" || name == "sin" || name == "cos" ||
+           name == "asin" || name == "acos" || name == "pi";
 }
 
-Expr *Expr::From(const std::string &input, bool popUpError) {
+Expr *Expr::Parse(const std::string &input, std::string *error,
+                  const ParamNames *names, int *namesUsed) {
+    return ExprParser::Parse(input, error, names, namesUsed);
+}
+
+Expr *Expr::From(const std::string &input, bool popUpError,
+                 const ParamNames *names, int *namesUsed) {
     std::string error;
-    Expr *e = ExprParser::Parse(input, &error);
+    Expr *e = ExprParser::Parse(input, &error, names, namesUsed);
     if(!e) {
         dbp("Parse/lex error: %s", error.c_str());
         if(popUpError) {
