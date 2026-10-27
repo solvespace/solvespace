@@ -74,6 +74,18 @@ bool SolveSpaceUI::PruneGroup(Group *g) {
 }
 
 
+// Remove the constraints tagged for pruning, if any were, and clear the flag.
+// Returns the number of constraints removed.
+static int RemoveTaggedConstraints(bool *tagged) {
+    if(!*tagged) {
+        return 0;
+    }
+    const int constraints = SK.constraint.n;
+    SK.constraint.RemoveTagged();
+    *tagged = false;
+    return constraints - SK.constraint.n;
+}
+
 void Sketch::RegenerateGroupOrder() {
     using GroupOrderPair = std::pair<int, hGroup>;
     std::vector<GroupOrderPair> order;
@@ -164,15 +176,6 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     // pruning must be removed before a group is solved, and the solver's marks
     // cleared afterwards, or they would be mistaken for each other.
     bool constraintsTagged = false;
-    auto removeTaggedConstraints = [&]() {
-        if(!constraintsTagged) {
-            return;
-        }
-        const int constraints = SK.constraint.n;
-        SK.constraint.RemoveTagged();
-        deleted.constraints += constraints - SK.constraint.n;
-        constraintsTagged = false;
-    };
 
     // Prune any requests and constraints that belong to non-existent groups
     for(auto &r : SK.request) {
@@ -296,7 +299,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
                 if(!SS.exportMode) {
-                    removeTaggedConstraints();
+                    deleted.constraints += RemoveTaggedConstraints(&constraintsTagged);
                     SolveGroupAndReport(hg, andFindFree);
                     SK.constraint.ClearTags();
                     g->GenerateLoops();
@@ -325,7 +328,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     deleted.requests += requests - SK.request.n;
 
     // Remove any constraints that we tagged for pruning
-    removeTaggedConstraints();
+    deleted.constraints += RemoveTaggedConstraints(&constraintsTagged);
 
     // If we're generating entities for display, first we need to find
     // the bounding box to turn relative chord tolerance to absolute.
