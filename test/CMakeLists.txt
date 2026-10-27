@@ -21,6 +21,7 @@ set(testsuite_SOURCES
     core/path/test.cpp
     core/prune/test.cpp
     core/solver/test.cpp
+    core/variables/test.cpp
     constraint/points_coincident/test.cpp
     constraint/pt_pt_distance/test.cpp
     constraint/pt_plane_distance/test.cpp
