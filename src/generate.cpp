@@ -159,6 +159,21 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     SK.request.ClearTags();
     SK.constraint.ClearTags();
 
+    // The solver uses the constraint tags too: it clears them and marks the
+    // constraints that it couldn't satisfy. So any constraints tagged for
+    // pruning must be removed before a group is solved, and the solver's marks
+    // cleared afterwards, or they would be mistaken for each other.
+    bool constraintsTagged = false;
+    auto removeTaggedConstraints = [&]() {
+        if(!constraintsTagged) {
+            return;
+        }
+        const int constraints = SK.constraint.n;
+        SK.constraint.RemoveTagged();
+        deleted.constraints += constraints - SK.constraint.n;
+        constraintsTagged = false;
+    };
+
     // Prune any requests and constraints that belong to non-existent groups
     for(auto &r : SK.request) {
         if(!GroupExists(r.group)) {
@@ -168,6 +183,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     for(auto &c : SK.constraint) {
         if(!GroupExists(c.group)) {
             c.tag = 1;
+            constraintsTagged = true;
         }
     }
 
@@ -198,6 +214,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
             for(auto &c : SK.constraint) {
                 if(c.group == hg) {
                     c.tag = 1;
+                    constraintsTagged = true;
                 }
             }
             continue;
@@ -246,6 +263,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
                 }
 
                 c.tag = 1;
+                constraintsTagged = true;
                 continue;
             }
 
@@ -278,7 +296,9 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
                 if(!SS.exportMode) {
+                    removeTaggedConstraints();
                     SolveGroupAndReport(hg, andFindFree);
+                    SK.constraint.ClearTags();
                     g->GenerateLoops();
                 }
             } else {
@@ -305,9 +325,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     deleted.requests += requests - SK.request.n;
 
     // Remove any constraints that we tagged for pruning
-    const int constraints = SK.constraint.n;
-    SK.constraint.RemoveTagged();
-    deleted.constraints += constraints - SK.constraint.n;
+    removeTaggedConstraints();
 
     // If we're generating entities for display, first we need to find
     // the bounding box to turn relative chord tolerance to absolute.
