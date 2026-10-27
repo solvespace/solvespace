@@ -376,7 +376,10 @@ public:
         // For tangent arc
         TANGENT_ARC_RADIUS    = 800,
         // For helix pitch
-        HELIX_PITCH           = 802
+        HELIX_PITCH           = 802,
+        // For named parameters
+        PARAM_NAME            = 810,
+        PARAM_VALUE           = 811
     };
     struct {
         bool        showAgain;
@@ -444,6 +447,11 @@ public:
     static void ScreenHowGroupSolved(int link, uint32_t v);
     static void ScreenShowGroupsSpecial(int link, uint32_t v);
     static void ScreenDeleteGroup(int link, uint32_t v);
+    static void ScreenAddNamedParam(int link, uint32_t v);
+    static void ScreenEditParamName(int link, uint32_t v);
+    static void ScreenEditParamValue(int link, uint32_t v);
+    static void ScreenToggleParamLock(int link, uint32_t v);
+    static void ScreenDeleteNamedParam(int link, uint32_t v);
 
     static void ScreenHoverGroupWorkplane(int link, uint32_t v);
     static void ScreenHoverRequest(int link, uint32_t v);

@@ -119,6 +119,14 @@ void Request::Generate(EntityList *entity, ParamList *param)
             break;
         }
 
+        case Type::NAMED_PARAMETER:
+        case Type::NAMED_CONST_PARAM:
+            // Just the one parameter, and no entities, so these aren't in the
+            // table above. A locked parameter is kept out of the solver's
+            // system in WriteEqSystemForGroup().
+            AddParam(param, NamedParam());
+            return;
+
         default: // most requests don't do anything else
             break;
     }
@@ -222,6 +230,8 @@ std::string Request::DescriptionString() const {
             case Type::ARC_OF_CIRCLE:   s = "arc-of-circle";  break;
             case Type::TTF_TEXT:        s = "ttf-text";       break;
             case Type::IMAGE:           s = "image";          break;
+            case Type::NAMED_PARAMETER:
+            case Type::NAMED_CONST_PARAM: s = "parameter";      break;
         }
     }
     ssassert(s != NULL, "Unexpected request type");
