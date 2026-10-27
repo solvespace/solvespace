@@ -1395,6 +1395,12 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
             break;
 
         default: {
+            if(c->HasExpression()) {
+                editValue = c->expression;
+                editPlaceholder = "10.000000";
+                break;
+            }
+
             double value = fabs(c->valA);
 
             // If displayed as radius, also edit as radius.
@@ -1443,6 +1449,36 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
     }
 }
 
+// The factor that turns the value of an expression typed for this dimension
+// into the units of valA, including the sign of a signed distance.
+static double ExpressionScale(const Constraint *c) {
+    switch(c->type) {
+        case Constraint::Type::PROJ_PT_DISTANCE:
+        case Constraint::Type::PT_LINE_DISTANCE:
+        case Constraint::Type::PT_FACE_DISTANCE:
+        case Constraint::Type::PT_PLANE_DISTANCE:
+        case Constraint::Type::LENGTH_DIFFERENCE:
+        case Constraint::Type::ARC_ARC_DIFFERENCE:
+        case Constraint::Type::ARC_LINE_DIFFERENCE:
+            // Keep the sign, the same as when a number is typed.
+            return (c->valA < 0) ? -SS.MmPerUnit() : SS.MmPerUnit();
+
+        case Constraint::Type::ANGLE:
+        case Constraint::Type::LENGTH_RATIO:
+        case Constraint::Type::ARC_ARC_LEN_RATIO:
+        case Constraint::Type::ARC_LINE_LEN_RATIO:
+            // No units conversion
+            return 1.0;
+
+        case Constraint::Type::DIAMETER:
+            // If displayed and edited as radius, convert back to diameter
+            return c->other ? 2*SS.MmPerUnit() : SS.MmPerUnit();
+
+        default:
+            return SS.MmPerUnit();
+    }
+}
+
 void GraphicsWindow::EditControlDone(const std::string &s) {
     window->HideEditor();
     window->Invalidate();
@@ -1455,8 +1491,25 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         return;
     }
 
-    if(Expr *e = Expr::From(s, true)) {
+    // Named parameters can be used in the expression; those in scope are
+    // the ones in the constraint's group.
+    const ParamNames *names = &(SK.GetGroup(c->group)->paramNames);
+    int namesUsed = 0;
+    if(Expr *e = Expr::From(s, true, names, &namesUsed)) {
         SS.UndoRemember();
+
+        if(namesUsed > 0) {
+            // Keep the expression, so the dimension follows the parameters.
+            c->expression = s;
+            c->exprScale = ExpressionScale(c);
+            c->valA = e->Eval() * c->exprScale;
+            SS.MarkGroupDirty(c->group);
+            return;
+        }
+
+        // Just a number
+        c->expression.clear();
+        c->exprScale = 0;
 
         switch(c->type) {
             case Constraint::Type::PROJ_PT_DISTANCE:

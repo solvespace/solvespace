@@ -246,6 +246,8 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         c.reference = cc->reference;
         c.disp = cc->disp;
         c.comment = cc->comment;
+        c.expression = cc->expression;
+        c.exprScale = cc->exprScale;
         bool dontAddConstraint = false;
         switch(c.type) {
             case Constraint::Type::COMMENT:
@@ -253,11 +255,13 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
                 break;
             case Constraint::Type::PT_LINE_DISTANCE:
                 c.valA *= scale;
+                c.exprScale *= scale;
                 break;
             case Constraint::Type::PT_PT_DISTANCE:
             case Constraint::Type::PROJ_PT_DISTANCE:
             case Constraint::Type::DIAMETER:
                 c.valA *= fabs(scale);
+                c.exprScale *= fabs(scale);
                 break;
             case Constraint::Type::ARC_LINE_TANGENT: {
                 if(scale < 0) {

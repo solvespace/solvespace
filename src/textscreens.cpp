@@ -357,6 +357,90 @@ void TextWindow::ScreenChangePitchOption(int link, uint32_t v) {
     }
     SS.GW.Invalidate();
 }
+// Is the name used by another named parameter in this group? Names may
+// repeat those of earlier groups, which they then replace.
+static bool ParamNameUsedInGroup(hGroup hg, const std::string &name, hRequest except) {
+    for(const Request &r : SK.request) {
+        if(r.group == hg && r.IsNamedParam() && r.h != except && r.str == name) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// A name is a letter followed by letters and digits, which is what the
+// expression parser reads as a name.
+static bool IsValidParamName(const std::string &name) {
+    if(name.empty() || !isalpha((unsigned char)name[0])) return false;
+    for(char c : name) {
+        if(!isalnum((unsigned char)c)) return false;
+    }
+    return true;
+}
+
+void TextWindow::ScreenAddNamedParam(int link, uint32_t v) {
+    hGroup hg = { v };
+    Group *g = SK.GetGroup(hg);
+
+    // Start with a name that isn't in use anywhere this group can see.
+    hRequest none = {};
+    std::string name;
+    for(int i = 1; ; i++) {
+        name = ssprintf("param%d", i);
+        if(g->paramNames.count(name) == 0 &&
+           !ParamNameUsedInGroup(hg, name, none)) {
+            break;
+        }
+    }
+
+    SS.UndoRemember();
+    Request r = {};
+    r.group = hg;
+    r.type = Request::Type::NAMED_PARAMETER;
+    r.str = name;
+    SK.request.AddAndAssignId(&r);
+    SS.MarkGroupDirty(hg);
+}
+void TextWindow::ScreenEditParamName(int link, uint32_t v) {
+    hRequest hr = { v };
+    Request *r = SK.GetRequest(hr);
+
+    SS.TW.ShowEditControl(3, r->str);
+    SS.TW.edit.meaning = Edit::PARAM_NAME;
+    SS.TW.edit.request = hr;
+}
+void TextWindow::ScreenEditParamValue(int link, uint32_t v) {
+    hRequest hr = { v };
+    Request *r = SK.GetRequest(hr);
+    Param *p = SK.param.FindByIdNoOops(r->NamedParam());
+    if(p == NULL) return;
+
+    // The value is shown after "   name = "
+    SS.TW.ShowEditControl(6 + (int)r->str.size(), ssprintf("%.10g", p->val));
+    SS.TW.edit.meaning = Edit::PARAM_VALUE;
+    SS.TW.edit.request = hr;
+}
+void TextWindow::ScreenToggleParamLock(int link, uint32_t v) {
+    hRequest hr = { v };
+    Request *r = SK.GetRequest(hr);
+
+    SS.UndoRemember();
+    if(r->type == Request::Type::NAMED_CONST_PARAM) {
+        r->type = Request::Type::NAMED_PARAMETER;
+    } else {
+        r->type = Request::Type::NAMED_CONST_PARAM;
+    }
+    SS.MarkGroupDirty(r->group);
+}
+void TextWindow::ScreenDeleteNamedParam(int link, uint32_t v) {
+    hRequest hr = { v };
+    hGroup hg = SK.GetRequest(hr)->group;
+
+    // Any dimensions that use the name are reported when the group is solved.
+    SS.UndoRemember();
+    SK.request.RemoveById(hr);
+    SS.MarkGroupDirty(hg);
+}
 void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
     SS.UndoRemember();
 
@@ -581,12 +665,34 @@ void TextWindow::ShowGroupInfo() {
 
 list_items:
     Printf(false, "");
-    Printf(false, "%Ft requests in group");
+    Printf(false, "%Ft parameters in group%E  [%Fl%Ll%D%fadd%E]",
+           g->h.v, &TextWindow::ScreenAddNamedParam);
 
     int a = 0;
     for(auto &r : SK.request) {
+        if(r.group != shown.group || !r.IsNamedParam()) continue;
 
-        if(r.group == shown.group) {
+        Param *p = SK.param.FindByIdNoOops(r.NamedParam());
+        std::string value = (p != NULL) ? ssprintf("%.10g", p->val) : "?";
+        bool locked = (r.type == Request::Type::NAMED_CONST_PARAM);
+        Printf(false, "%Bp   %Fl%Ll%D%f%s%E = %Fl%Ll%D%f%s%E  "
+                      "[%Fl%Ll%D%f%s%E] [%Fl%Ll%D%fdel%E]",
+               (a & 1) ? 'd' : 'a',
+               r.h.v, &TextWindow::ScreenEditParamName, r.str.c_str(),
+               r.h.v, &TextWindow::ScreenEditParamValue, value.c_str(),
+               r.h.v, &TextWindow::ScreenToggleParamLock, locked ? "locked" : "free",
+               r.h.v, &TextWindow::ScreenDeleteNamedParam);
+        a++;
+    }
+    if(a == 0) Printf(false, "%Ba   (none)");
+
+    Printf(false, "");
+    Printf(false, "%Ft requests in group");
+
+    a = 0;
+    for(auto &r : SK.request) {
+
+        if(r.group == shown.group && !r.IsNamedParam()) {
             std::string s = r.DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                    (a & 1) ? 'd' : 'a',
@@ -663,6 +769,11 @@ void TextWindow::ShowGroupSolveInfo() {
         case SolveResult::TOO_MANY_UNKNOWNS:
             Printf(true, "Too many unknowns in a single group!");
             return;
+
+        case SolveResult::UNKNOWN_NAME:
+            Printf(true, "%FxSOLVE FAILED!%Fd unknown names");
+            Printf(true, "these dimensions use names that aren't defined");
+            break;
 
         default: ssassert(false, "Unexpected solve result");
     }
@@ -929,6 +1040,44 @@ void TextWindow::EditControlDone(std::string s) {
                 }
             }
             break;
+
+        case Edit::PARAM_NAME: {
+            Request *r = SK.request.FindByIdNoOops(edit.request);
+            if(r == NULL) break;
+
+            if(!IsValidParamName(s)) {
+                Error(_("A parameter name must start with a letter, and contain "
+                        "only letters and digits."));
+            } else if(Expr::IsReservedName(s)) {
+                Error(_("'%s' is the name of a function or constant."), s.c_str());
+            } else if(ParamNameUsedInGroup(r->group, s, r->h)) {
+                Error(_("This group already has a parameter named '%s'."), s.c_str());
+            } else {
+                SS.UndoRemember();
+                r->str = s;
+                SS.MarkGroupDirty(r->group);
+            }
+            break;
+        }
+
+        case Edit::PARAM_VALUE: {
+            Request *r = SK.request.FindByIdNoOops(edit.request);
+            if(r == NULL) break;
+            Param *p = SK.param.FindByIdNoOops(r->NamedParam());
+            if(p == NULL) break;
+
+            // The value may use the other parameters, but it's only evaluated
+            // now; the parameter just gets the number.
+            const ParamNames *names = &(SK.GetGroup(r->group)->paramNames);
+            if(Expr *e = Expr::From(s, /*popUpError=*/true, names)) {
+                SS.UndoRemember();
+                p->val = e->Eval();
+                // A value that was typed in should stay put, so lock it.
+                r->type = Request::Type::NAMED_CONST_PARAM;
+                SS.MarkGroupDirty(r->group);
+            }
+            break;
+        }
 
         case Edit::TTF_TEXT:
             SS.UndoRemember();

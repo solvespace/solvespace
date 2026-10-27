@@ -11,8 +11,25 @@
 namespace SolveSpace {
 
 std::string Constraint::Label() const {
+    // A dimension given by an expression shows the expression, unless it's
+    // a reference dimension, which shows what it measures.
+    const Group *g = SK.group.FindByIdNoOops(group);
+    bool showExpression = HasExpression() && !reference &&
+                          !(g != NULL && g->allDimsReference);
+
     std::string result;
-    if(type == Type::ANGLE) {
+    if(showExpression) {
+        if(type == Type::ANGLE) {
+            result = expression + "°";
+        } else if(type == Type::LENGTH_RATIO || type == Type::ARC_ARC_LEN_RATIO ||
+                  type == Type::ARC_LINE_LEN_RATIO) {
+            result = expression + ":1";
+        } else if(type == Type::DIAMETER) {
+            result = (other ? "R" : "⌀") + expression;
+        } else {
+            result = expression;
+        }
+    } else if(type == Type::ANGLE) {
         result = SS.DegreeToString(valA) + "°";
     } else if(type == Type::LENGTH_RATIO || type == Type::ARC_ARC_LEN_RATIO || type == Type::ARC_LINE_LEN_RATIO) {
         result = ssprintf("%.3f:1", valA);
