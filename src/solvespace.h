@@ -48,7 +48,8 @@ enum class SolveResult : uint32_t {
     DIDNT_CONVERGE           = 10,
     REDUNDANT_OKAY           = 11,
     REDUNDANT_DIDNT_CONVERGE = 12,
-    TOO_MANY_UNKNOWNS        = 20
+    TOO_MANY_UNKNOWNS        = 20,
+    UNKNOWN_NAME             = 30
 };
 
 // Utility functions that are provided in the platform-independent code.

@@ -232,6 +232,22 @@ void ConstraintBase::ModifyToSatisfy() {
     }
 }
 
+Expr *ConstraintBase::ParseExpression() const {
+    const Group *g = SK.group.FindByIdNoOops(group);
+    if(g == NULL) return NULL;
+
+    std::string error;
+    return Expr::Parse(expression, &error, &g->paramNames);
+}
+
+void ConstraintBase::UpdateValueFromExpression() {
+    if(!HasExpression()) return;
+
+    if(Expr *e = ParseExpression()) {
+        valA = e->Eval() * exprScale;
+    }
+}
+
 void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const
 {
     Equation eq;
@@ -274,7 +290,20 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                                        bool forReference) const {
     if(reference && !forReference) return;
 
-    Expr *exA = Expr::From(valA);
+    // The value of the dimension. A reference dimension is measured into
+    // valA (by ModifyToSatisfy), so it doesn't use the expression.
+    Expr *exA;
+    if(HasExpression() && !forReference) {
+        Expr *e = ParseExpression();
+        if(e == NULL) {
+            // A name in the expression isn't defined. Generate nothing; the
+            // solve reports the constraint, rather than failing to converge.
+            return;
+        }
+        exA = e->Times(Expr::From(exprScale));
+    } else {
+        exA = Expr::From(valA);
+    }
     switch(type) {
         case Type::PT_PT_DISTANCE:
             AddEq(l, Distance(workplane, ptA, ptB)->Minus(exA), 0);
