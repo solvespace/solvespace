@@ -227,11 +227,16 @@ public:
 #define CHECK_TRUE  "\xEE\x80\x81"
 #define RADIO_FALSE "\xEE\x80\x82"
 #define RADIO_TRUE  "\xEE\x80\x83"
+#define LOCK_TRUE   "\xEE\x80\x88"
+#define LOCK_FALSE  "\xEE\x80\x89"
 
     int scrollPos;      // The scrollbar position, in half-row units
     int halfRows;       // The height of our window, in half-row units
 
     uint32_t text[MAX_ROWS][MAX_COLS];
+    // Tooltips for text, given with %T in Printf(); meta.tooltip indexes this
+    std::vector<std::string> tooltips;
+    int shownTooltip = -1;
     typedef void LinkFunction(int link, uint32_t v);
     enum { NOT_A_LINK = 0 };
     struct {
@@ -242,6 +247,7 @@ public:
         uint32_t        data;
         LinkFunction   *f;
         LinkFunction   *h;
+        int             tooltip;
     }       meta[MAX_ROWS][MAX_COLS];
     int hoveredRow, hoveredCol;
 

@@ -298,6 +298,8 @@ add_resources(
     fonts/private/5-stipple-dash-long.png
     fonts/private/6-stipple-dash.png
     fonts/private/7-stipple-zigzag.png
+    fonts/private/8-lock-closed.png
+    fonts/private/9-lock-open.png
     fonts/unicode.lff.gz
     fonts/BitstreamVeraSans-Roman-builtin.ttf
     shaders/imesh.frag
