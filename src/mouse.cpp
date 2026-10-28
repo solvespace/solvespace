@@ -1185,6 +1185,18 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     hc = Constraint::AddConstraint(&c);
                     break;
                 }
+
+                case Command::RELATION: {
+                    ClearSuper();
+                    Constraint c = {};
+                    c.group       = SS.GW.activeGroup;
+                    c.workplane   = SS.GW.ActiveWorkplane();
+                    c.type        = Constraint::Type::RELATION;
+                    c.disp.offset = v;
+                    c.comment     = _("x=5");
+                    hc = Constraint::AddConstraint(&c);
+                    break;
+                }
                 default: ssassert(false, "Unexpected pending menu id");
             }
             break;
@@ -1390,6 +1402,7 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
     std::string editPlaceholder;
     switch(c->type) {
         case Constraint::Type::COMMENT:
+        case Constraint::Type::RELATION:
             editValue = c->comment;
             editPlaceholder = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
             break;
@@ -1485,7 +1498,8 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
 
     Constraint *c = SK.GetConstraint(constraintBeingEdited);
 
-    if(c->type == Constraint::Type::COMMENT) {
+    if(c->type == Constraint::Type::COMMENT ||
+       c->type == Constraint::Type::RELATION) {
         SS.UndoRemember();
         c->comment = s;
         return;
