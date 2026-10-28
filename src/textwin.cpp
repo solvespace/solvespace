@@ -359,10 +359,12 @@ void TextWindow::ClearScreen() {
             meta[i][j].fg = 'd';
             meta[i][j].bg = 'd';
             meta[i][j].link = NOT_A_LINK;
+            meta[i][j].tooltip = -1;
         }
         top[i] = i*2;
     }
     rows = 0;
+    tooltips.clear();
 }
 
 // This message was added when someone had too many fonts for the text window
@@ -392,6 +394,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     for(c = 0; c < MAX_COLS; c++) {
         text[r][c] = ' ';
         meta[r][c].link = NOT_A_LINK;
+        meta[r][c].tooltip = -1;
     }
 
     char fg = 'd';
@@ -400,6 +403,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     int link = NOT_A_LINK;
     uint32_t data = 0;
     LinkFunction *f = NULL, *h = NULL;
+    int tooltip = -1;
 
     c = 0;
     while(*fmt) {
@@ -462,6 +466,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     data = 0;
                     f = NULL;
                     h = NULL;
+                    tooltip = -1;
                     break;
 
                 case 'F':
@@ -505,6 +510,15 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     data = (uint32_t)v;
                     break;
                 }
+                case 'T': {
+                    // Tooltip for the following text, up to %E; none if empty
+                    char *s = va_arg(vl, char *);
+                    if(strlen(s) > 0) {
+                        tooltip = (int)tooltips.size();
+                        tooltips.push_back(s);
+                    }
+                    break;
+                }
                 case '%':
                     strcpy(buf, "%");
                     break;
@@ -526,6 +540,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                 meta[r][c].data = data;
                 meta[r][c].f = f;
                 meta[r][c].h = h;
+                meta[r][c].tooltip = tooltip;
                 c++;
             }
         }
@@ -1199,6 +1214,26 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
         }
     }
 
+    // Show the tooltip of the text under the mouse, if it has one, unless
+    // an icon's tooltip is showing.
+    int tooltip = -1;
+    if(r >= 0 && c >= 0 && r < rows && c < MAX_COLS) {
+        tooltip = meta[r][c].tooltip;
+    }
+    if(tooltip != shownTooltip && hoveredButton == NULL) {
+        if(tooltip >= 0) {
+            int start = c, end = c;
+            while(start > 0 && meta[r][start - 1].tooltip == tooltip) start--;
+            while(end + 1 < MAX_COLS && meta[r][end + 1].tooltip == tooltip) end++;
+            window->SetTooltip(tooltips[tooltip],
+                               LEFT_MARGIN + start*CHAR_WIDTH_, (top[r] - scrollPos)*hh,
+                               (end - start + 1)*CHAR_WIDTH_, LINE_HEIGHT);
+        } else {
+            window->SetTooltip("", 0, 0, 0, 0);
+        }
+        shownTooltip = tooltip;
+    }
+
     if((!ps.Equals(&(SS.GW.hover))) ||
         prevHoveredRow != hoveredRow ||
         prevHoveredCol != hoveredCol)
@@ -1209,6 +1244,10 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
 }
 
 void TextWindow::MouseLeave() {
+    if(shownTooltip >= 0) {
+        window->SetTooltip("", 0, 0, 0, 0);
+        shownTooltip = -1;
+    }
     hoveredButton = NULL;
     hoveredRow = 0;
     hoveredCol = 0;

@@ -136,6 +136,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'r',  "Request.font",             'S',    &(SS.sv.r.font)               },
     { 'r',  "Request.file",             'P',    &(SS.sv.r.file)               },
     { 'r',  "Request.aspectRatio",      'f',    &(SS.sv.r.aspectRatio)        },
+    { 'r',  "Request.expression",       'S',    &(SS.sv.r.expression)         },
 
     { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },
     { 'e',  "Entity.type",              'd',    &(SS.sv.e.type)               },
