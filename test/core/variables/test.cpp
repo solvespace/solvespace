@@ -377,3 +377,39 @@ TEST_CASE(save_and_load_relation) {
     CHECK_EQ_STR(c->expression, "w*2 = 6");
     CHECK_EQ_EPS(SK.GetParam(SK.GetRequest(hw)->NamedParam())->val, 3.0);
 }
+
+TEST_CASE(find_undefined_names) {
+    ParamNames names;
+    std::vector<std::string> found =
+        Expr::FindUndefinedNames("2*w + h1 - 1e3 + sqrt(x) + w + 1_000*pi", &names);
+    CHECK_TRUE(found.size() == 3);
+    CHECK_EQ_STR(found[0], "w");
+    CHECK_EQ_STR(found[1], "h1");
+    CHECK_EQ_STR(found[2], "x");
+
+    names["w"] = hParam { 0x00100040 };
+    found = Expr::FindUndefinedNames("w*h = 400", &names);
+    CHECK_TRUE(found.size() == 1);
+    CHECK_EQ_STR(found[0], "h");
+}
+
+TEST_CASE(create_params_for_relation) {
+    CHECK_LOAD("distance.slvs");
+    std::vector<std::string> newNames = { "a", "b" };
+    Constraint::CreateNamedParams(HGROUP, newNames, 7.0);
+    AddRelation("a + b = 10");
+
+    // The new parameters are ordinary free ones in the group, and the
+    // relation constrains them.
+    int found = 0;
+    double sum = 0;
+    for(Request &r : SK.request) {
+        if(r.group != HGROUP || !r.IsNamedParam()) continue;
+        CHECK_TRUE(r.type == Request::Type::NAMED_PARAMETER);
+        sum += SK.GetParam(r.NamedParam())->val;
+        found++;
+    }
+    CHECK_TRUE(found == 2);
+    CHECK_EQ_EPS(sum, 10.0);
+    CHECK_TRUE(SK.GetGroup(HGROUP)->solved.how == SolveResult::OKAY);
+}
