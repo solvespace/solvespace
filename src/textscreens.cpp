@@ -378,6 +378,30 @@ static bool IsValidParamName(const std::string &name) {
     return true;
 }
 
+// The width of the column of parameter names in a group's page
+static const size_t PARAM_NAME_WIDTH = 10;
+
+// The column where the parameter's name starts, on the row that was clicked
+static int ParamNameColumn() {
+    const int row = SS.TW.hoveredRow;
+    for(int i = 0; i < TextWindow::MAX_COLS; i++) {
+        if(SS.TW.meta[row][i].f == &TextWindow::ScreenEditParamName) {
+            return i;
+        }
+    }
+    return 3;
+}
+
+// A parameter's value for its group's page: up to three decimals, without
+// trailing zeros, padded so that the links after it line up.
+static std::string FormatParamValue(double value) {
+    std::string s = ssprintf("%.3f", value);
+    while(s.back() == '0') s.pop_back();
+    if(s.back() == '.') s.pop_back();
+    if(s.size() < 7) s.resize(7, ' ');
+    return s;
+}
+
 void TextWindow::ScreenAddNamedParam(int link, uint32_t v) {
     hGroup hg = { v };
     Group *g = SK.GetGroup(hg);
@@ -405,7 +429,7 @@ void TextWindow::ScreenEditParamName(int link, uint32_t v) {
     hRequest hr = { v };
     Request *r = SK.GetRequest(hr);
 
-    SS.TW.ShowEditControl(3, r->str);
+    SS.TW.ShowEditControl(ParamNameColumn(), r->str);
     SS.TW.edit.meaning = Edit::PARAM_NAME;
     SS.TW.edit.request = hr;
 }
@@ -415,14 +439,21 @@ void TextWindow::ScreenEditParamValue(int link, uint32_t v) {
     Param *p = SK.param.FindByIdNoOops(r->NamedParam());
     if(p == NULL) return;
 
-    // The value is shown after "   name = "
-    SS.TW.ShowEditControl(6 + (int)r->str.size(), ssprintf("%.10g", p->val));
+    // Edit the value where it's shown, after the column of names.
+    int col = ParamNameColumn() + (int)PARAM_NAME_WIDTH + 2;
+    std::string text = r->HasExpression() ? r->expression : ssprintf("%.10g", p->val);
+    SS.TW.ShowEditControl(col, text);
     SS.TW.edit.meaning = Edit::PARAM_VALUE;
     SS.TW.edit.request = hr;
 }
 void TextWindow::ScreenToggleParamLock(int link, uint32_t v) {
     hRequest hr = { v };
     Request *r = SK.GetRequest(hr);
+    if(r->HasExpression()) {
+        Error(_("This parameter is set by an expression, so it stays locked. "
+                "Give it a number instead to unlock it."));
+        return;
+    }
 
     SS.UndoRemember();
     if(r->type == Request::Type::NAMED_CONST_PARAM) {
@@ -672,15 +703,35 @@ list_items:
     for(auto &r : SK.request) {
         if(r.group != shown.group || !r.IsNamedParam()) continue;
 
-        Param *p = SK.param.FindByIdNoOops(r.NamedParam());
-        std::string value = (p != NULL) ? ssprintf("%.10g", p->val) : "?";
+        // Names are shown in a column, so a long one is shortened, and
+        // the whole name is shown as a tooltip.
+        std::string name = r.str, tooltip;
+        if(name.size() > PARAM_NAME_WIDTH) {
+            tooltip = name;
+            name = name.substr(0, PARAM_NAME_WIDTH - 3) + "...";
+        }
+        std::string padding(PARAM_NAME_WIDTH - name.size(), ' ');
+
+        // Show the expression if there is one, flagged in the error color,
+        // with the reason as a tooltip, if it uses a name that isn't defined.
+        std::string value, error;
+        if(r.HasExpression()) {
+            value = r.expression;
+            if(value.size() < 7) value.resize(7, ' ');
+            r.ParseExpression(&error);
+        } else {
+            Param *p = SK.param.FindByIdNoOops(r.NamedParam());
+            value = FormatParamValue((p != NULL) ? p->val : Request::NAMED_PARAM_DEFAULT);
+        }
         bool locked = (r.type == Request::Type::NAMED_CONST_PARAM);
-        Printf(false, "%Bp   %Fl%Ll%D%f%s%E = %Fl%Ll%D%f%s%E  "
-                      "[%Fl%Ll%D%f%s%E] [%Fl%Ll%D%fdel%E]",
+        Printf(false, "%Bp %Fd%Ll%D%f%s%E %Fl%Ll%D%f%T%s%E%s  %Fp%T%s%E "
+                      "[%Fl%Ll%D%fchange%E] [%Fl%Ll%D%fdel%E]",
                (a & 1) ? 'd' : 'a',
-               r.h.v, &TextWindow::ScreenEditParamName, r.str.c_str(),
-               r.h.v, &TextWindow::ScreenEditParamValue, value.c_str(),
-               r.h.v, &TextWindow::ScreenToggleParamLock, locked ? "locked" : "free",
+               r.h.v, &TextWindow::ScreenToggleParamLock, locked ? LOCK_TRUE : LOCK_FALSE,
+               r.h.v, &TextWindow::ScreenEditParamName, tooltip.c_str(), name.c_str(),
+               padding.c_str(),
+               error.empty() ? 'd' : 'x', error.c_str(), value.c_str(),
+               r.h.v, &TextWindow::ScreenEditParamValue,
                r.h.v, &TextWindow::ScreenDeleteNamedParam);
         a++;
     }
@@ -772,7 +823,7 @@ void TextWindow::ShowGroupSolveInfo() {
 
         case SolveResult::UNKNOWN_NAME:
             Printf(true, "%FxSOLVE FAILED!%Fd unknown names");
-            Printf(true, "these dimensions use names that aren't defined");
+            Printf(true, "these use names that aren't defined");
             break;
 
         default: ssassert(false, "Unexpected solve result");
@@ -788,6 +839,17 @@ void TextWindow::ShowGroupSolveInfo() {
             c->h.v, (&TextWindow::ScreenSelectConstraint),
             (&TextWindow::ScreenHoverConstraint),
             c->DescriptionString().c_str());
+    }
+    if(g->solved.how == SolveResult::UNKNOWN_NAME) {
+        int i = g->solved.remove.n;
+        for(const Request &r : SK.request) {
+            if(r.group != g->h || !r.IsNamedParam() || !r.HasExpression()) continue;
+            if(r.ParseExpression() != NULL) continue;
+
+            Printf(false, "%Bp   parameter %s = %s",
+                (i & 1) ? 'd' : 'a', r.str.c_str(), r.expression.c_str());
+            i++;
+        }
     }
 
     if(g->solved.timeout) {
@@ -1066,11 +1128,17 @@ void TextWindow::EditControlDone(std::string s) {
             Param *p = SK.param.FindByIdNoOops(r->NamedParam());
             if(p == NULL) break;
 
-            // The value may use the other parameters, but it's only evaluated
-            // now; the parameter just gets the number.
-            const ParamNames *names = &(SK.GetGroup(r->group)->paramNames);
-            if(Expr *e = Expr::From(s, /*popUpError=*/true, names)) {
+            // The value may use the parameters of earlier groups. Then the
+            // expression is kept, so the parameter follows them.
+            const ParamNames *names = &(SK.GetGroup(r->group)->inheritedParamNames);
+            int namesUsed = 0;
+            if(Expr *e = Expr::From(s, /*popUpError=*/true, names, &namesUsed)) {
                 SS.UndoRemember();
+                if(namesUsed > 0) {
+                    r->expression = s;
+                } else {
+                    r->expression.clear();
+                }
                 p->val = e->Eval();
                 // A value that was typed in should stay put, so lock it.
                 r->type = Request::Type::NAMED_CONST_PARAM;

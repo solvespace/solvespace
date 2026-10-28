@@ -229,10 +229,11 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
         // Named parameters are in scope from where they are defined to the
         // end of the sketch. A name defined again replaces the earlier one.
         if(previous.v != 0) {
-            g->paramNames = SK.GetGroup(previous)->paramNames;
+            g->inheritedParamNames = SK.GetGroup(previous)->paramNames;
         } else {
-            g->paramNames.clear();
+            g->inheritedParamNames.clear();
         }
+        g->paramNames = g->inheritedParamNames;
 
         // Regenerate requests, tagging any dead ones for pruning
         int groupRequestIndex = 0;
@@ -302,6 +303,17 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
             if(prevp) {
                 newp->val = prevp->val;
                 newp->free = prevp->free;
+            }
+        }
+
+        // A named parameter given by an expression gets its value from the
+        // (already solved) parameters of earlier groups. If a name isn't
+        // defined, it keeps its last value, and the solve reports it.
+        for(auto &r : SK.request) {
+            if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
+
+            if(Expr *e = r.ParseExpression()) {
+                SK.GetParam(r.NamedParam())->val = e->Eval();
             }
         }
 
@@ -573,12 +585,18 @@ void SolveSpaceUI::MarkDraggedParams() {
 }
 
 void SolveSpaceUI::SolveGroupAndReport(hGroup hg, bool andFindFree) {
+    SolveResult before = SK.GetGroup(hg)->solved.how;
     SolveGroup(hg, andFindFree);
 
     Group *g = SK.GetGroup(hg);
+    // An unknown name stays until the user defines it again, perhaps in the
+    // text window right now; so report it when it first happens, rather than
+    // taking them away from the page they are on with every change.
+    bool stillUnknownName = (before == SolveResult::UNKNOWN_NAME &&
+                             g->solved.how == SolveResult::UNKNOWN_NAME);
     bool isOkay = g->solved.how == SolveResult::OKAY ||
                   (g->allowRedundant && g->solved.how == SolveResult::REDUNDANT_OKAY);
-    if(!isOkay || (isOkay && !g->IsSolvedOkay())) {
+    if(!stillUnknownName && (!isOkay || (isOkay && !g->IsSolvedOkay()))) {
         TextWindow::ReportHowGroupSolved(g->h);
     }
 }
@@ -633,9 +651,11 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     g->solved.how = how;
 
     // A dimension whose expression uses a name that isn't defined generated
-    // no equation. Report those dimensions instead of whatever else happened.
+    // no equation, and a parameter whose expression does kept its old value.
+    // Report those instead of whatever else happened. The dimensions are
+    // listed in solved.remove; the parameters are found again when shown.
+    bool unknownName = false;
     if(!g->allDimsReference && !g->relaxConstraints) {
-        bool unknownName = false;
         for(auto &c : SK.constraint) {
             if(c.group != hg || c.reference || !c.HasExpression()) continue;
             if(c.ParseExpression() != NULL) continue;
@@ -646,9 +666,18 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
             }
             g->solved.remove.Add(&c.h);
         }
-        if(unknownName) {
-            g->solved.how = SolveResult::UNKNOWN_NAME;
+    }
+    for(auto &r : SK.request) {
+        if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
+        if(r.ParseExpression() != NULL) continue;
+
+        if(!unknownName) {
+            g->solved.remove.Clear();
+            unknownName = true;
         }
+    }
+    if(unknownName) {
+        g->solved.how = SolveResult::UNKNOWN_NAME;
     }
     Platform::FreeAllTemporary();
 }
