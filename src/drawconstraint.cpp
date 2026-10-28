@@ -18,7 +18,9 @@ std::string Constraint::Label() const {
                           !(g != NULL && g->allDimsReference);
 
     std::string result;
-    if(showExpression) {
+    if(type == Type::RELATION) {
+        result = HasExpression() ? expression : _("NEW RELATION -- DOUBLE-CLICK TO EDIT");
+    } else if(showExpression) {
         if(type == Type::ANGLE) {
             result = expression + "°";
         } else if(type == Type::LENGTH_RATIO || type == Type::ARC_ARC_LEN_RATIO ||
@@ -33,7 +35,7 @@ std::string Constraint::Label() const {
         result = SS.DegreeToString(valA) + "°";
     } else if(type == Type::LENGTH_RATIO || type == Type::ARC_ARC_LEN_RATIO || type == Type::ARC_LINE_LEN_RATIO) {
         result = ssprintf("%.3f:1", valA);
-    } else if(type == Type::COMMENT || type == Type::RELATION) {
+    } else if(type == Type::COMMENT) {
         result = comment;
     } else if(type == Type::DIAMETER) {
         if(!other) {
@@ -490,7 +492,7 @@ bool Constraint::IsVisible() const {
         if(!(g->visible)) return false;
         // And likewise if the group is not the active group; except for comments
         // with an assigned style.
-        if(g->h != SS.GW.activeGroup && !(type == Type::COMMENT && disp.style.v)) {
+        if(g->h != SS.GW.activeGroup && !(IsStylable() && disp.style.v)) {
             return false;
         }
         if(disp.style.v) {
