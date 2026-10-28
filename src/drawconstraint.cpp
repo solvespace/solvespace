@@ -33,7 +33,7 @@ std::string Constraint::Label() const {
         result = SS.DegreeToString(valA) + "°";
     } else if(type == Type::LENGTH_RATIO || type == Type::ARC_ARC_LEN_RATIO || type == Type::ARC_LINE_LEN_RATIO) {
         result = ssprintf("%.3f:1", valA);
-    } else if(type == Type::COMMENT) {
+    } else if(type == Type::COMMENT || type == Type::RELATION) {
         result = comment;
     } else if(type == Type::DIAMETER) {
         if(!other) {
@@ -1305,6 +1305,7 @@ s:
             }
             return;
 
+        case Type::RELATION:
         case Type::COMMENT: {
             Vector u, v;
             if(workplane == Entity::FREE_IN_3D) {
@@ -1373,6 +1374,7 @@ hStyle Constraint::GetStyle() const {
 bool Constraint::HasLabel() const {
     switch(type) {
         case Type::COMMENT:
+        case Type::RELATION:
         case Type::PT_PT_DISTANCE:
         case Type::PT_PLANE_DISTANCE:
         case Type::PT_LINE_DISTANCE:

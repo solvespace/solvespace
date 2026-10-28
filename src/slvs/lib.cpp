@@ -140,6 +140,7 @@ static bool Slvs_CanInitiallySatisfy(const ConstraintBase &c) {
     case ConstraintBase::Type::SAME_ORIENTATION:
     case ConstraintBase::Type::WHERE_DRAGGED:
     case ConstraintBase::Type::COMMENT:
+    case ConstraintBase::Type::RELATION:
         // Can't initially satisfy these constraints
         return false;
     }

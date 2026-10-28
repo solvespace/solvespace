@@ -182,6 +182,7 @@ enum class Command : uint32_t {
     ORIENTED_SAME,
     WHERE_DRAGGED,
     COMMENT,
+    RELATION,
     // Analyze
     VOLUME,
     AREA,
