@@ -283,3 +283,97 @@ TEST_CASE(unknown_name_reported_once) {
     CHECK_TRUE(SK.GetGroup(HGROUP)->solved.how == SolveResult::OKAY);
     CHECK_EQ_EPS(MeasuredDistance(), 5.0);
 }
+
+// Add a relation to group 2 with the given text, and regenerate.
+static hConstraint AddRelation(const char *text) {
+    Constraint c = {};
+    c.type = Constraint::Type::RELATION;
+    c.group = HGROUP;
+    c.workplane = SK.GetConstraint(HDIST)->workplane;
+    c.expression = text;
+    SK.constraint.AddAndAssignId(&c);
+    SS.MarkGroupDirty(HGROUP);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    return c.h;
+}
+
+TEST_CASE(parse_relation) {
+    hParam hw = { 0x00100040 };
+    ParamNames names;
+    names["w"] = hw;
+
+    std::string error;
+    int used = 0;
+    CHECK_TRUE(ConstraintBase::ParseRelation("2*w = w + 3", &names, &error, &used) != NULL);
+    CHECK_TRUE(used == 2);
+
+    CHECK_TRUE(ConstraintBase::ParseRelation("w", &names, &error) == NULL);
+    CHECK_TRUE(ConstraintBase::ParseRelation("w = 1 = 2", &names, &error) == NULL);
+    CHECK_TRUE(ConstraintBase::ParseRelation(" = 3", &names, &error) == NULL);
+    CHECK_TRUE(ConstraintBase::ParseRelation("w = ", &names, &error) == NULL);
+    CHECK_TRUE(ConstraintBase::ParseRelation("w = x", &names, &error) == NULL);
+    CHECK_TRUE(ConstraintBase::ParseRelation("5 = 5", &names, &error, &used) != NULL);
+    CHECK_TRUE(used == 0);
+}
+
+TEST_CASE(relation_constrains_free_param) {
+    CHECK_LOAD("distance.slvs");
+    hRequest hw = AddParam("w", 5.0, /*locked=*/false);
+    SetExpression("w");
+    int dof = SK.GetGroup(HGROUP)->solved.dof;
+
+    AddRelation("w*2 = 6");
+    Group *g = SK.GetGroup(HGROUP);
+    CHECK_TRUE(g->solved.how == SolveResult::OKAY);
+    CHECK_TRUE(g->solved.dof == dof - 1);
+    CHECK_EQ_EPS(SK.GetParam(SK.GetRequest(hw)->NamedParam())->val, 3.0);
+    CHECK_EQ_EPS(MeasuredDistance(), 3.0);
+}
+
+TEST_CASE(empty_relation_does_nothing) {
+    CHECK_LOAD("distance.slvs");
+    AddParam("w", 5.0, /*locked=*/false);
+    SetExpression("w");
+    int dof = SK.GetGroup(HGROUP)->solved.dof;
+
+    AddRelation("");
+    Group *g = SK.GetGroup(HGROUP);
+    CHECK_TRUE(g->solved.how == SolveResult::OKAY);
+    CHECK_TRUE(g->solved.dof == dof);
+}
+
+TEST_CASE(relation_unknown_name) {
+    CHECK_LOAD("distance.slvs");
+    hConstraint hr = AddRelation("q = 2");
+    Group *g = SK.GetGroup(HGROUP);
+    CHECK_TRUE(g->solved.how == SolveResult::UNKNOWN_NAME);
+    CHECK_TRUE(g->solved.remove.n == 1);
+    CHECK_TRUE(g->solved.remove[0] == hr);
+}
+
+TEST_CASE(relation_applies_with_all_dims_reference) {
+    CHECK_LOAD("distance.slvs");
+    hRequest hw = AddParam("w", 5.0, /*locked=*/false);
+    SK.GetGroup(HGROUP)->allDimsReference = true;
+    AddRelation("w*2 = 6");
+
+    CHECK_TRUE(SK.GetGroup(HGROUP)->solved.how == SolveResult::OKAY);
+    CHECK_EQ_EPS(SK.GetParam(SK.GetRequest(hw)->NamedParam())->val, 3.0);
+}
+
+TEST_CASE(save_and_load_relation) {
+    CHECK_LOAD("distance.slvs");
+    hRequest hw = AddParam("w", 5.0, /*locked=*/false);
+    hConstraint hr = AddRelation("w*2 = 6");
+
+    Platform::Path path = helper->GetAssetPath(__FILE__, "relation.slvs", "out");
+    CHECK_TRUE(SS.SaveToFile(path));
+    CHECK_TRUE(SS.LoadFromFile(path));
+    Platform::RemoveFile(path);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+
+    Constraint *c = SK.GetConstraint(hr);
+    CHECK_TRUE(c->type == Constraint::Type::RELATION);
+    CHECK_EQ_STR(c->expression, "w*2 = 6");
+    CHECK_EQ_EPS(SK.GetParam(SK.GetRequest(hw)->NamedParam())->val, 3.0);
+}
