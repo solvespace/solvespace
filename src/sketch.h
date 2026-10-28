@@ -726,7 +726,9 @@ public:
         ARC_LINE_LEN_RATIO     = 211,
         ARC_ARC_DIFFERENCE     = 212,
         ARC_LINE_DIFFERENCE    = 213,
-        COMMENT                = 1000
+        COMMENT                = 1000,
+        //like COMMENT, but its contents are an equation (in particular, a relation).
+        RELATION               = 1001
     };
 
     Type        type;

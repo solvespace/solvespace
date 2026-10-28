@@ -50,6 +50,7 @@ std::string Constraint::DescriptionString() const {
         case Type::EQUAL_LINE_ARC_LEN:  s = C_("constr-name", "eq-line-len-arc-len"); break;
         case Type::WHERE_DRAGGED:       s = C_("constr-name", "lock-where-dragged"); break;
         case Type::COMMENT:             s = C_("constr-name", "comment"); break;
+        case Type::RELATION:            s = C_("constr-name", "relation"); break;
         default:                        s = "???"; break;
     }
 
@@ -952,6 +953,23 @@ void Constraint::MenuConstrain(Command id) {
                 SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
                 SS.GW.pending.command = Command::COMMENT;
                 SS.GW.pending.description = _("click center of comment text");
+                SS.ScheduleShowTW();
+            }
+            break;
+
+        case Command::RELATION:
+            if(gs.points == 1 && gs.n == 1) {
+                c.type = Type::RELATION;
+                c.ptA = gs.point[0];
+                c.group       = SS.GW.activeGroup;
+                c.workplane   = SS.GW.ActiveWorkplane();
+                c.comment     = _("x=5");
+                AddConstraint(&c);
+                newcons.push_back(c);
+            } else {
+                SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
+                SS.GW.pending.command = Command::RELATION;
+                SS.GW.pending.description = _("click center of relation text");
                 SS.ScheduleShowTW();
             }
             break;
