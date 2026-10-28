@@ -82,6 +82,26 @@ void Constraint::DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA,
     SS.GW.hover.Clear();
 }
 
+void Constraint::CreateNamedParams(hGroup hg, const std::vector<std::string> &names,
+                                   double value) {
+    Group *g = SK.GetGroup(hg);
+    for(const std::string &name : names) {
+        Request r = {};
+        r.group = hg;
+        r.type = Request::Type::NAMED_PARAMETER;
+        r.str = name;
+        SK.request.AddAndAssignId(&r);
+
+        // Make the parameter now, so that the constraint can use its value
+        // straight away; regenerating keeps it.
+        Param p = {};
+        p.h = r.NamedParam();
+        p.val = value;
+        SK.param.Add(&p);
+        g->paramNames[name] = p.h;
+    }
+}
+
 hConstraint Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
 

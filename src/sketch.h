@@ -858,6 +858,10 @@ public:
     bool ShouldDrawExploded() const;
 
     static hConstraint AddConstraint(Constraint *c, bool rememberForUndo = true);
+    // Create free named parameters with these names in the group, with the
+    // given value, so that a constraint can use names that aren't defined yet.
+    static void CreateNamedParams(hGroup hg, const std::vector<std::string> &names,
+                                  double value);
     static void MenuConstrain(Command id);
     static void DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA, hEntity ptA);
 

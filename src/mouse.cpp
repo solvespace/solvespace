@@ -1466,6 +1466,27 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
     }
 }
 
+// Tell the user about any named parameters that were just created for a
+// constraint, since a mistyped name would otherwise go unnoticed.
+static void ReportNewParams(hGroup hg, const std::vector<std::string> &names) {
+    if(names.empty()) return;
+
+    std::string list;
+    for(const std::string &name : names) {
+        if(!list.empty()) list += ", ";
+        list += name;
+    }
+    Message(_("New named parameters were created in group %s: %s"),
+            SK.GetGroup(hg)->DescriptionString().c_str(), list.c_str());
+}
+
+static std::string Trim(const std::string &s) {
+    size_t start = s.find_first_not_of(" ");
+    if(start == std::string::npos) return "";
+    size_t end = s.find_last_not_of(" ");
+    return s.substr(start, end - start + 1);
+}
+
 // The factor that turns the value of an expression typed for this dimension
 // into the units of valA, including the sign of a signed distance.
 static double ExpressionScale(const Constraint *c) {
@@ -1508,13 +1529,21 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         return;
     }
 
+    // Names that aren't defined yet become new parameters in the constraint's
+    // group, once the text is otherwise valid; check it as if they existed.
+    const ParamNames *names = &(SK.GetGroup(c->group)->paramNames);
+    std::vector<std::string> newNames = Expr::FindUndefinedNames(s, names);
+    ParamNames withNewNames = *names;
+    for(const std::string &name : newNames) {
+        withNewNames[name] = hParam {};
+    }
+
     if(c->type == Constraint::Type::RELATION) {
         // Empty text leaves a relation that does nothing yet.
         if(s.find_first_not_of(" ") != std::string::npos) {
-            const ParamNames *names = &(SK.GetGroup(c->group)->paramNames);
             std::string error;
             int namesUsed = 0;
-            if(Constraint::ParseRelation(s, names, &error, &namesUsed) == NULL) {
+            if(Constraint::ParseRelation(s, &withNewNames, &error, &namesUsed) == NULL) {
                 Error(_("Not a valid relation: '%s'.\n%s."), s.c_str(), error.c_str());
                 return;
             }
@@ -1524,26 +1553,39 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
             }
         }
         SS.UndoRemember();
+        Constraint::CreateNamedParams(c->group, newNames, Request::NAMED_PARAM_DEFAULT);
         c->expression = s;
         // The relation may change the degrees of freedom.
         SK.GetGroup(c->group)->dofCheckOk = false;
         SS.MarkGroupDirty(c->group);
+        ReportNewParams(c->group, newNames);
         return;
     }
 
     // Named parameters can be used in the expression; those in scope are
     // the ones in the constraint's group.
-    const ParamNames *names = &(SK.GetGroup(c->group)->paramNames);
     int namesUsed = 0;
-    if(Expr *e = Expr::From(s, true, names, &namesUsed)) {
+    if(Expr *e = Expr::From(s, true, &withNewNames, &namesUsed)) {
         SS.UndoRemember();
 
         if(namesUsed > 0) {
             // Keep the expression, so the dimension follows the parameters.
+            double scale = ExpressionScale(c);
+            if(!newNames.empty()) {
+                // A dimension that is just a new name starts with the value
+                // that it has now, so nothing moves.
+                double value = Request::NAMED_PARAM_DEFAULT;
+                if(newNames.size() == 1 && Trim(s) == newNames[0]) {
+                    value = c->valA / scale;
+                }
+                Constraint::CreateNamedParams(c->group, newNames, value);
+                e = Expr::From(s, false, names);
+            }
             c->expression = s;
-            c->exprScale = ExpressionScale(c);
+            c->exprScale = scale;
             c->valA = e->Eval() * c->exprScale;
             SS.MarkGroupDirty(c->group);
+            ReportNewParams(c->group, newNames);
             return;
         }
 

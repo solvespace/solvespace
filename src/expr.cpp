@@ -954,6 +954,35 @@ bool Expr::IsReservedName(const std::string &name) {
            name == "asin" || name == "acos" || name == "pi";
 }
 
+std::vector<std::string> Expr::FindUndefinedNames(const std::string &input,
+                                                  const ParamNames *names) {
+    std::vector<std::string> result;
+    size_t i = 0;
+    while(i < input.size()) {
+        char c = input[i];
+        if(isdigit(c) || c == '.') {
+            // A number, which may have an exponent, like LexNumber() reads it
+            while(i < input.size() &&
+                  (isdigit(input[i]) || input[i] == 'e' || input[i] == 'E' ||
+                   input[i] == '.' || input[i] == '_')) {
+                i++;
+            }
+        } else if(isalpha(c)) {
+            // A name, like ReadWord() reads it
+            size_t start = i;
+            while(i < input.size() && isalnum(input[i])) i++;
+            std::string name = input.substr(start, i - start);
+            if(!IsReservedName(name) && names->count(name) == 0 &&
+               std::find(result.begin(), result.end(), name) == result.end()) {
+                result.push_back(name);
+            }
+        } else {
+            i++;
+        }
+    }
+    return result;
+}
+
 Expr *Expr::Parse(const std::string &input, std::string *error,
                   const ParamNames *names, int *namesUsed) {
     return ExprParser::Parse(input, error, names, namesUsed);

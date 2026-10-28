@@ -12,6 +12,7 @@
 #include <map>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "dsc.h"
 #include "param.h"
@@ -117,6 +118,10 @@ public:
                       const ParamNames *names = NULL, int *namesUsed = NULL);
     // True for the names of the functions and constants known to the parser
     static bool IsReservedName(const std::string &name);
+    // The names in input, read the way the parser reads them, that are neither
+    // in names nor reserved; each once, in the order they first appear.
+    static std::vector<std::string> FindUndefinedNames(const std::string &input,
+                                                       const ParamNames *names);
 };
 
 class ExprVector {
