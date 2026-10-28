@@ -754,7 +754,8 @@ void Constraint::MenuConstrain(Command id) {
         case Command::REFERENCE:
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SK.GetConstraint(gs.constraint[0]);
-                if(c->HasLabel() && c->type != Type::COMMENT) {
+                if(c->HasLabel() && c->type != Type::COMMENT &&
+                   c->type != Type::RELATION) {
                     SS.UndoRemember();
                     (c->reference) = !(c->reference);
                     SS.MarkGroupDirty(c->group, /*onlyThis=*/true);
@@ -963,7 +964,6 @@ void Constraint::MenuConstrain(Command id) {
                 c.ptA = gs.point[0];
                 c.group       = SS.GW.activeGroup;
                 c.workplane   = SS.GW.ActiveWorkplane();
-                c.comment     = _("x=5");
                 AddConstraint(&c);
                 newcons.push_back(c);
             } else {

@@ -649,7 +649,8 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
         if(gs.constraints == 1 && gs.n == 0) {
             Constraint *c = SK.GetConstraint(gs.constraint[0]);
-            if(c->HasLabel() && c->type != Constraint::Type::COMMENT) {
+            if(c->HasLabel() && c->type != Constraint::Type::COMMENT &&
+               c->type != Constraint::Type::RELATION) {
                 menu->AddItem(_("Toggle Reference Dimension"),
                     []() { Constraint::MenuConstrain(Command::REFERENCE); });
             }
@@ -1193,7 +1194,6 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     c.workplane   = SS.GW.ActiveWorkplane();
                     c.type        = Constraint::Type::RELATION;
                     c.disp.offset = v;
-                    c.comment     = _("x=5");
                     hc = Constraint::AddConstraint(&c);
                     break;
                 }
@@ -1402,9 +1402,13 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
     std::string editPlaceholder;
     switch(c->type) {
         case Constraint::Type::COMMENT:
-        case Constraint::Type::RELATION:
             editValue = c->comment;
             editPlaceholder = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+            break;
+
+        case Constraint::Type::RELATION:
+            editValue = c->expression;
+            editPlaceholder = "aaaaaaaaaaaaaaaaaaaa";
             break;
 
         default: {
@@ -1498,10 +1502,32 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
 
     Constraint *c = SK.GetConstraint(constraintBeingEdited);
 
-    if(c->type == Constraint::Type::COMMENT ||
-       c->type == Constraint::Type::RELATION) {
+    if(c->type == Constraint::Type::COMMENT) {
         SS.UndoRemember();
         c->comment = s;
+        return;
+    }
+
+    if(c->type == Constraint::Type::RELATION) {
+        // Empty text leaves a relation that does nothing yet.
+        if(s.find_first_not_of(" ") != std::string::npos) {
+            const ParamNames *names = &(SK.GetGroup(c->group)->paramNames);
+            std::string error;
+            int namesUsed = 0;
+            if(Constraint::ParseRelation(s, names, &error, &namesUsed) == NULL) {
+                Error(_("Not a valid relation: '%s'.\n%s."), s.c_str(), error.c_str());
+                return;
+            }
+            if(namesUsed == 0) {
+                Error(_("A relation must use at least one named parameter."));
+                return;
+            }
+        }
+        SS.UndoRemember();
+        c->expression = s;
+        // The relation may change the degrees of freedom.
+        SK.GetGroup(c->group)->dofCheckOk = false;
+        SS.MarkGroupDirty(c->group);
         return;
     }
 
