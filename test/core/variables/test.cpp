@@ -60,6 +60,22 @@ TEST_CASE(parse_names) {
     CHECK_FALSE(Expr::IsReservedName("w"));
 }
 
+TEST_CASE(new_param_has_default_value) {
+    CHECK_LOAD("distance.slvs");
+    Request r = {};
+    r.group = HGROUP;
+    r.type = Request::Type::NAMED_PARAMETER;
+    r.str = "w";
+    SK.request.AddAndAssignId(&r);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    CHECK_EQ_EPS(SK.GetParam(r.NamedParam())->val, Request::NAMED_PARAM_DEFAULT);
+
+    // Once it has a value, regenerating keeps it.
+    SK.GetParam(r.NamedParam())->val = 2.0;
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    CHECK_EQ_EPS(SK.GetParam(r.NamedParam())->val, 2.0);
+}
+
 TEST_CASE(locked_param_sets_dimension) {
     CHECK_LOAD("distance.slvs");
     hRequest hr = AddParam("w", 7.0, /*locked=*/true);
@@ -157,4 +173,113 @@ TEST_CASE(save_and_load_expression) {
     CHECK_EQ_EPS(c->exprScale, 1.0);
     CHECK_EQ_EPS(c->valA, 14.0);
     CHECK_EQ_EPS(MeasuredDistance(), 14.0);
+}
+
+// Add a locked parameter to the references group, with a value.
+static hRequest AddReferenceParam(const char *name, double value) {
+    Request r = {};
+    r.group = Group::HGROUP_REFERENCES;
+    r.type = Request::Type::NAMED_CONST_PARAM;
+    r.str = name;
+    SK.request.AddAndAssignId(&r);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    SK.GetParam(r.NamedParam())->val = value;
+    return r.h;
+}
+
+// Give a parameter an expression, and regenerate.
+static void SetParamExpression(hRequest hr, const char *expression) {
+    SK.GetRequest(hr)->expression = expression;
+    SS.MarkGroupDirty(HGROUP);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+}
+
+TEST_CASE(param_expression_follows_earlier_group) {
+    CHECK_LOAD("distance.slvs");
+    hRequest ha = AddReferenceParam("a", 3.0);
+    hRequest hw = AddParam("w", 1.0, /*locked=*/true);
+    SetParamExpression(hw, "a*2");
+    SetExpression("w");
+
+    CHECK_EQ_EPS(SK.GetParam(SK.GetRequest(hw)->NamedParam())->val, 6.0);
+    CHECK_EQ_EPS(MeasuredDistance(), 6.0);
+
+    // Changing the earlier parameter changes this one, and the dimension.
+    SK.GetParam(SK.GetRequest(ha)->NamedParam())->val = 4.0;
+    SS.MarkGroupDirty(Group::HGROUP_REFERENCES);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    CHECK_EQ_EPS(SK.GetParam(SK.GetRequest(hw)->NamedParam())->val, 8.0);
+    CHECK_EQ_EPS(MeasuredDistance(), 8.0);
+}
+
+TEST_CASE(param_expression_cant_use_same_group) {
+    CHECK_LOAD("distance.slvs");
+    AddParam("b", 3.0, /*locked=*/true);
+    hRequest hw = AddParam("w", 7.0, /*locked=*/true);
+    SetParamExpression(hw, "b*2");
+
+    // b is in the same group, so it isn't defined for the expression; the
+    // group fails, and the parameter keeps its value.
+    CHECK_TRUE(SK.GetGroup(HGROUP)->solved.how == SolveResult::UNKNOWN_NAME);
+    CHECK_EQ_EPS(SK.GetParam(SK.GetRequest(hw)->NamedParam())->val, 7.0);
+}
+
+TEST_CASE(param_expression_unknown_name) {
+    CHECK_LOAD("distance.slvs");
+    hRequest ha = AddReferenceParam("a", 3.0);
+    hRequest hw = AddParam("w", 1.0, /*locked=*/true);
+    SetParamExpression(hw, "a*2");
+    CHECK_TRUE(SK.GetGroup(HGROUP)->solved.how == SolveResult::OKAY);
+
+    SK.request.RemoveById(ha);
+    SS.MarkGroupDirty(Group::HGROUP_REFERENCES);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    CHECK_TRUE(SK.GetGroup(HGROUP)->solved.how == SolveResult::UNKNOWN_NAME);
+    CHECK_EQ_EPS(SK.GetParam(SK.GetRequest(hw)->NamedParam())->val, 6.0);
+    CHECK_EQ_STR(SK.GetRequest(hw)->expression, "a*2");
+}
+
+TEST_CASE(save_and_load_param_expression) {
+    CHECK_LOAD("distance.slvs");
+    AddReferenceParam("a", 3.0);
+    hRequest hw = AddParam("w", 1.0, /*locked=*/true);
+    SetParamExpression(hw, "a*2");
+
+    Platform::Path path = helper->GetAssetPath(__FILE__, "param_expression.slvs", "out");
+    CHECK_TRUE(SS.SaveToFile(path));
+    CHECK_TRUE(SS.LoadFromFile(path));
+    Platform::RemoveFile(path);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+
+    CHECK_EQ_STR(SK.GetRequest(hw)->expression, "a*2");
+    CHECK_EQ_EPS(SK.GetParam(SK.GetRequest(hw)->NamedParam())->val, 6.0);
+}
+
+TEST_CASE(unknown_name_reported_once) {
+    CHECK_LOAD("distance.slvs");
+    hRequest ha = AddReferenceParam("width", 3.0);
+    SetExpression("width");
+
+    // Deleting the name fails the group, and shows why.
+    SK.request.RemoveById(ha);
+    SS.MarkGroupDirty(Group::HGROUP_REFERENCES);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    CHECK_TRUE(SK.GetGroup(HGROUP)->solved.how == SolveResult::UNKNOWN_NAME);
+    CHECK_TRUE(SS.TW.shown.screen == TextWindow::Screen::GROUP_SOLVE_INFO);
+
+    // Adding a parameter back, from the references group's page, leaves the
+    // user on that page, although the group still fails until it's named.
+    SS.TW.shown.screen = TextWindow::Screen::GROUP_INFO;
+    SS.TW.shown.group = Group::HGROUP_REFERENCES;
+    hRequest hb = AddReferenceParam("param1", 5.0);
+    CHECK_TRUE(SK.GetGroup(HGROUP)->solved.how == SolveResult::UNKNOWN_NAME);
+    CHECK_TRUE(SS.TW.shown.screen == TextWindow::Screen::GROUP_INFO);
+    CHECK_TRUE(SS.TW.shown.group == Group::HGROUP_REFERENCES);
+
+    // Naming it fixes the group.
+    SK.GetRequest(hb)->str = "width";
+    SS.MarkGroupDirty(Group::HGROUP_REFERENCES);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    CHECK_TRUE(SK.GetGroup(HGROUP)->solved.how == SolveResult::OKAY);
+    CHECK_EQ_EPS(MeasuredDistance(), 5.0);
 }

@@ -215,6 +215,9 @@ public:
     // previous group, plus (replacing any with the same name) this group's
     // own. Rebuilt on every regeneration, and not saved.
     ParamNames  paramNames;
+    // Just those of the previous group, which are already solved; the
+    // expressions for this group's parameters can use only these.
+    ParamNames  inheritedParamNames;
 
     struct {
         SolveResult         how;
@@ -412,6 +415,11 @@ public:
     double      aspectRatio;
     int groupRequestIndex;
 
+    // A named parameter's value can be given as an expression that uses the
+    // parameters of earlier groups. Then the parameter is locked, and its
+    // value is set from the expression on every regeneration.
+    std::string expression;
+
     static hParam AddParam(ParamList *param, hParam hp);
     void Generate(EntityList *entity, ParamList *param);
 
@@ -419,6 +427,13 @@ public:
         return type == Type::NAMED_PARAMETER || type == Type::NAMED_CONST_PARAM;
     }
     hParam NamedParam() const { return h.param(64); }
+    // The value of a new named parameter
+    static constexpr double NAMED_PARAM_DEFAULT = 5.0;
+
+    bool HasExpression() const { return !expression.empty(); }
+    // The expression with its names resolved for this request's group, or
+    // NULL (with a message in error, if given) if it doesn't parse.
+    Expr *ParseExpression(std::string *error = NULL) const;
 
     std::string DescriptionString() const;
     int IndexOfPoint(hEntity he) const;
