@@ -135,7 +135,8 @@ void GraphicsWindow::CopySelection() {
         if(!s->constraint.v) continue;
 
         Constraint *c = SK.GetConstraint(s->constraint);
-        if(c->type == Constraint::Type::COMMENT) {
+        if(c->type == Constraint::Type::COMMENT ||
+           c->type == Constraint::Type::RELATION) {
             SS.clipboard.c.Add(c);
         }
     }
@@ -147,7 +148,8 @@ void GraphicsWindow::CopySelection() {
            !SS.clipboard.ContainsEntity(c.entityB) ||
            !SS.clipboard.ContainsEntity(c.entityC) ||
            !SS.clipboard.ContainsEntity(c.entityD) ||
-           c.type == Constraint::Type::COMMENT) {
+           c.type == Constraint::Type::COMMENT ||
+           c.type == Constraint::Type::RELATION) {
             continue;
         }
         SS.clipboard.c.Add(&c);
@@ -251,6 +253,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         bool dontAddConstraint = false;
         switch(c.type) {
             case Constraint::Type::COMMENT:
+            case Constraint::Type::RELATION:
                 c.disp.offset = c.disp.offset.Plus(trans);
                 break;
             case Constraint::Type::PT_LINE_DISTANCE:
@@ -309,7 +312,8 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         }
         if (!dontAddConstraint) {
             hConstraint hc = Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
-            if(c.type == Constraint::Type::COMMENT) {
+            if(c.type == Constraint::Type::COMMENT ||
+               c.type == Constraint::Type::RELATION) {
                 MakeSelected(hc);
             }
         }

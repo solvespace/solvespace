@@ -486,6 +486,8 @@ void TextWindow::DescribeSelection() {
                 Printf(false, "    distance = %Fi%s", SS.MmToString(dv.Magnitude()).c_str());
                 Printf(false, "  d(x, y, z) = " PT_AS_STR_NO_LINK, COSTR_NO_LINK(dv));
             }
+        } else if(c->type == Constraint::Type::RELATION) {
+            Printf(false, "%FtRELATION%E  %s", desc.c_str());
         } else if(c->HasLabel()) {
             if(c->reference) {
                 Printf(false, "%FtREFERENCE%E  %s", desc.c_str());
@@ -581,7 +583,7 @@ void TextWindow::DescribeSelection() {
     }
     for(int i = 0; i < gs.constraints; i++) {
         Constraint *c = SK.GetConstraint(gs.constraint[i]);
-        if(c->type == Constraint::Type::COMMENT && c->disp.style.v != 0) {
+        if(c->IsStylable() && c->disp.style.v != 0) {
             styleAssigned = true;
         }
     }

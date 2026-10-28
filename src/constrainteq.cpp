@@ -234,16 +234,45 @@ void ConstraintBase::ModifyToSatisfy() {
     }
 }
 
+Expr *ConstraintBase::ParseRelation(const std::string &text, const ParamNames *names,
+                                    std::string *error, int *namesUsed) {
+    // The '=' isn't an operator in expressions, so split the text at it.
+    size_t eq = text.find('=');
+    if(eq == std::string::npos || eq != text.rfind('=')) {
+        *error = "A relation must have exactly one '='";
+        return NULL;
+    }
+    std::string left = text.substr(0, eq), right = text.substr(eq + 1);
+    if(left.find_first_not_of(" ") == std::string::npos ||
+       right.find_first_not_of(" ") == std::string::npos) {
+        *error = "A relation must have an expression on each side of the '='";
+        return NULL;
+    }
+
+    int usedLeft = 0, usedRight = 0;
+    Expr *l = Expr::Parse(left, error, names, &usedLeft);
+    if(l == NULL) return NULL;
+    Expr *r = Expr::Parse(right, error, names, &usedRight);
+    if(r == NULL) return NULL;
+
+    if(namesUsed != NULL) *namesUsed = usedLeft + usedRight;
+    return l->Minus(r);
+}
+
 Expr *ConstraintBase::ParseExpression() const {
     const Group *g = SK.group.FindByIdNoOops(group);
     if(g == NULL) return NULL;
 
     std::string error;
+    if(type == Type::RELATION) {
+        return ParseRelation(expression, &g->paramNames, &error);
+    }
     return Expr::Parse(expression, &error, &g->paramNames);
 }
 
 void ConstraintBase::UpdateValueFromExpression() {
-    if(!HasExpression()) return;
+    // A relation has no value
+    if(!HasExpression() || type == Type::RELATION) return;
 
     if(Expr *e = ParseExpression()) {
         valA = e->Eval() * exprScale;
@@ -291,6 +320,16 @@ void ConstraintBase::Generate(ParamList *l) {
 void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                                        bool forReference) const {
     if(reference && !forReference) return;
+
+    // A relation is one equation, left - right = 0; a new one, with no
+    // text yet, has none. If a name in it isn't defined, the solve reports it.
+    if(type == Type::RELATION) {
+        if(!HasExpression()) return;
+        if(Expr *e = ParseExpression()) {
+            AddEq(l, e, 0);
+        }
+        return;
+    }
 
     // The value of the dimension. A reference dimension is measured into
     // valA (by ModifyToSatisfy), so it doesn't use the expression.
@@ -1085,7 +1124,10 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
         }
 
         case Type::COMMENT:
+            return;
+
         case Type::RELATION:
+            // Handled above
             return;
     }
     ssassert(false, "Unexpected constraint ID");

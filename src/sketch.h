@@ -727,7 +727,8 @@ public:
         ARC_ARC_DIFFERENCE     = 212,
         ARC_LINE_DIFFERENCE    = 213,
         COMMENT                = 1000,
-        //like COMMENT, but its contents are an equation (in particular, a relation).
+        // Like COMMENT, but its text, in expression, is an equation between
+        // named parameters, such as "w*h = 400".
         RELATION               = 1001
     };
 
@@ -776,6 +777,10 @@ public:
     Expr *ParseExpression() const;
     // Set valA to the current value of the expression, if there is one.
     void UpdateValueFromExpression();
+    // Parse the text of a relation, "left = right", using the given names,
+    // into left - right. NULL, with a message in error, if it isn't valid.
+    static Expr *ParseRelation(const std::string &text, const ParamNames *names,
+                               std::string *error, int *namesUsed = NULL);
 
     bool HasLabel() const;
     bool IsProjectible() const;
