@@ -306,8 +306,8 @@ public:
     bool IsSolvedOkay() const;
     void TransformImportedBy(Vector t, Quaternion q);
     bool IsTriangleMeshAssembly() const;
-    bool IsForcedToMeshBySource() const;
-    bool IsForcedToMesh() const;
+    bool IsForcedToMeshBySource(Sketch *sketch) const;
+    bool IsForcedToMesh(Sketch *sketch) const;
     // When a request generates entities from entities, and the source
     // entities may have come from multiple requests, it's necessary to
     // remap the entity ID so that it's still unique. We do this with a
@@ -338,7 +338,7 @@ public:
                     CopyAs as);
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
-    void GenerateEquations(IdList<Equation,hEquation> *l);
+    void GenerateEquations(Sketch *sketch, IdList<Equation,hEquation> *l);
     bool IsVisible();
     size_t GetNumConstraints();
     Vector ExtrusionGetVector();
@@ -346,15 +346,17 @@ public:
 
     // Assembling the curves into loops, and into a piecewise linear polygon
     // at the same time.
-    void AssembleLoops(bool *allClosed, bool *allCoplanar, bool *allNonZeroLen);
-    void GenerateLoops();
+    void AssembleLoops(Sketch *sketch, bool *allClosed, bool *allCoplanar, bool *allNonZeroLen);
+    void GenerateLoops(Sketch *sketch);
     // And the mesh stuff
-    Group *PreviousGroup() const;
-    Group *RunningMeshGroup() const;
+    Group *PreviousGroup(Sketch *sketch) const;
+    Group *RunningMeshGroup(Sketch *sketch) const;
     bool IsMeshGroup();
 
-    void GenerateShellAndMesh();
-    template<class T> void GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat);
+    // Returns true if whether the Boolean failed has changed
+    bool GenerateShellAndMesh(Sketch *sketch);
+    template<class T> void GenerateForStepAndRepeat(Sketch *sketch, T *steps, T *outs,
+                                                    Group::CombineAs forWhat);
     template<class T> void GenerateForBoolean(T *a, T *b, T *o, Group::CombineAs how);
     void GenerateDisplayItems();
 
