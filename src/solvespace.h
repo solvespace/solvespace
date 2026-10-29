@@ -432,6 +432,20 @@ public:
     int RemoveTaggedConstraints(bool *tagged);
     // Set the parameters of the three reference workplanes
     void ForceReferences();
+
+    // What is being dragged in the GUI. The solver tries to keep the
+    // parameters of these where they were put.
+    struct Dragged {
+        std::vector<hEntity> points;
+        hEntity              circle;
+        hEntity              normal;
+    };
+    // Solving a group, using the given solver
+    void MarkDraggedParams(System *sys, const Dragged &dragged);
+    void WriteEqSystemForGroup(hGroup hg, System *sys, const Dragged &dragged);
+    void SolveGroup(hGroup hg, System *sys, const Dragged &dragged, bool andFindFree,
+                    int timeoutRedundantConstr);
+    SolveResult TestRankForGroup(hGroup hg, System *sys, int *rank = NULL);
 };
 #undef ENTITY
 #undef CONSTRAINT
@@ -693,11 +707,9 @@ public:
     };
 
     void GenerateAll(Generate type = Generate::DIRTY, bool andFindFree = false);
-    void SolveGroup(hGroup hg, bool andFindFree);
+    Sketch::Dragged DraggedEntities();
     void SolveGroupAndReport(hGroup hg, bool andFindFree);
     SolveResult TestRankForGroup(hGroup hg, int *rank = NULL);
-    void WriteEqSystemForGroup(hGroup hg);
-    void MarkDraggedParams();
     void UpdateCenterOfMass();
 
     bool ActiveGroupsOkay();
