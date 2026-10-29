@@ -969,7 +969,7 @@ void GraphicsWindow::EnsureValidActives() {
         Entity *e = SK.entity.FindByIdNoOops(ActiveWorkplane());
         if(e) {
             hGroup hgw = e->group;
-            if(hgw != activeGroup && SS.GroupsInOrder(activeGroup, hgw)) {
+            if(hgw != activeGroup && SK.GroupsInOrder(activeGroup, hgw)) {
                 // The active workplane is in a group that comes after the
                 // active group; so any request or constraint will fail.
                 SetWorkplaneFreeIn3d();
