@@ -130,7 +130,7 @@ Expr *EntityBase::CircleGetRadiusExpr() const {
     if(type == Type::CIRCLE) {
         return SK.GetEntity(distance)->DistanceGetExpr();
     } else if(type == Type::ARC_OF_CIRCLE) {
-        return Constraint::Distance(workplane, point[0], point[1]);
+        return Constraint::Distance(&SK, workplane, point[0], point[1]);
     } else ssassert(false, "Unexpected entity type");
 }
 
@@ -963,8 +963,8 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
                 break;
             }
 
-            Expr *ra = Constraint::Distance(workplane, point[0], point[1]);
-            Expr *rb = Constraint::Distance(workplane, point[0], point[2]);
+            Expr *ra = Constraint::Distance(&SK, workplane, point[0], point[1]);
+            Expr *rb = Constraint::Distance(&SK, workplane, point[0], point[2]);
             AddEq(l, ra->Minus(rb), 0);
             break;
         }

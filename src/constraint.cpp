@@ -349,7 +349,7 @@ void Constraint::MenuConstrain(Command id) {
             }
 
             c.valA = 0;
-            c.ModifyToSatisfy();
+            c.ModifyToSatisfy(&SK);
             AddConstraint(&c);
             newcons.push_back(c);
             break;
@@ -509,7 +509,7 @@ void Constraint::MenuConstrain(Command id) {
             }
 
             c.valA = 0;
-            c.ModifyToSatisfy();
+            c.ModifyToSatisfy(&SK);
             AddConstraint(&c);
             newcons.push_back(c);
             break;
@@ -544,7 +544,7 @@ void Constraint::MenuConstrain(Command id) {
             }
 
             c.valA = 0;
-            c.ModifyToSatisfy();
+            c.ModifyToSatisfy(&SK);
             AddConstraint(&c);
             newcons.push_back(c);
             break;
@@ -758,7 +758,7 @@ void Constraint::MenuConstrain(Command id) {
                 if(c->type == Type::ANGLE) {
                     SS.UndoRemember();
                     c->other = !(c->other);
-                    c->ModifyToSatisfy();
+                    c->ModifyToSatisfy(&SK);
                     break;
                 }
                 if(c->type == Type::EQUAL_ANGLE) {
@@ -842,7 +842,7 @@ void Constraint::MenuConstrain(Command id) {
                 c.reference = true;
             }
 
-            c.ModifyToSatisfy();
+            c.ModifyToSatisfy(&SK);
             AddConstraint(&c);
             newcons.push_back(c);
             break;

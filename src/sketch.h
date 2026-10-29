@@ -29,6 +29,7 @@ class hConstraint;
 
 class Expr;
 class ExprVector;
+class Sketch;
 class ExprQuaternion;
 
 enum class SolveResult : uint32_t;
@@ -774,9 +775,9 @@ public:
     bool HasExpression() const { return !expression.empty(); }
     // The expression with its names resolved for this constraint's group,
     // or NULL if it doesn't parse (for example, if a name isn't defined).
-    Expr *ParseExpression() const;
+    Expr *ParseExpression(Sketch *sketch) const;
     // Set valA to the current value of the expression, if there is one.
-    void UpdateValueFromExpression();
+    void UpdateValueFromExpression(Sketch *sketch);
     // Parse the text of a relation, "left = right", using the given names,
     // into left - right. NULL, with a message in error, if it isn't valid.
     static Expr *ParseRelation(const std::string &text, const ParamNames *names,
@@ -787,18 +788,18 @@ public:
 
     void Generate(ParamList *param);
 
-    void GenerateEquations(IdList<Equation,hEquation> *entity,
+    void GenerateEquations(Sketch *sketch, IdList<Equation,hEquation> *entity,
                            bool forReference = false) const;
     // Some helpers when generating symbolic constraint equations
-    void ModifyToSatisfy();
+    void ModifyToSatisfy(Sketch *sketch);
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const;
     void AddEq(IdList<Equation,hEquation> *l, const ExprVector &v, int baseIndex = 0) const;
-    static Expr *DirectionCosine(hEntity wrkpl, ExprVector ae, ExprVector be);
-    static Expr *Distance(hEntity workplane, hEntity pa, hEntity pb);
-    static Expr *PointLineDistance(hEntity workplane, hEntity pt, hEntity ln);
-    static Expr *PointPlaneDistance(ExprVector p, hEntity plane);
+    static Expr *DirectionCosine(Sketch *sketch, hEntity wrkpl, ExprVector ae, ExprVector be);
+    static Expr *Distance(Sketch *sketch, hEntity workplane, hEntity pa, hEntity pb);
+    static Expr *PointLineDistance(Sketch *sketch, hEntity workplane, hEntity pt, hEntity ln);
+    static Expr *PointPlaneDistance(Sketch *sketch, ExprVector p, hEntity plane);
     static ExprVector VectorsParallel3d(ExprVector a, ExprVector b, hParam p);
-    static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
+    static ExprVector PointInThreeSpace(Sketch *sketch, hEntity workplane, Expr *u, Expr *v);
 
     void Clear() {}
 };

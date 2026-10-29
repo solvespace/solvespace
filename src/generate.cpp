@@ -310,7 +310,7 @@ void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *resul
         if(!g->allDimsReference) {
             for(auto &c : constraint) {
                 if(c.group == hg && !c.tag && !c.reference) {
-                    c.UpdateValueFromExpression();
+                    c.UpdateValueFromExpression(this);
                 }
             }
         }
@@ -346,7 +346,7 @@ void Sketch::GenerateShellsAndMeshes(int first, int last) {
     // And update any reference dimensions with their new values
     for(auto &c : constraint) {
         if(c.reference) {
-            c.ModifyToSatisfy();
+            c.ModifyToSatisfy(this);
         }
     }
 }
@@ -683,7 +683,7 @@ void Sketch::SolveGroup(hGroup hg, System *sys, const Dragged &dragged, bool and
     Group *g = GetGroup(hg);
     g->solved.remove.Clear();
     g->solved.findToFixTimeout = timeoutRedundantConstr;
-    SolveResult how = sys->Solve(g, &(g->solved.dof),
+    SolveResult how = sys->Solve(this, g, &(g->solved.dof),
                                     &(g->solved.remove),
                                     /*andFindBad=*/!g->allowRedundant,
                                     /*andFindFree=*/andFindFree,
@@ -701,7 +701,7 @@ void Sketch::SolveGroup(hGroup hg, System *sys, const Dragged &dragged, bool and
     if(!g->allDimsReference && !g->relaxConstraints) {
         for(auto &c : constraint) {
             if(c.group != hg || c.reference || !c.HasExpression()) continue;
-            if(c.ParseExpression() != NULL) continue;
+            if(c.ParseExpression(this) != NULL) continue;
 
             if(!unknownName) {
                 g->solved.remove.Clear();
@@ -731,7 +731,7 @@ SolveResult Sketch::TestRankForGroup(hGroup hg, System *sys, int *rank) {
     // no point to solve rank because this result is not meaningful
     if(g->suppressDofCalculation || g->allowRedundant) return SolveResult::OKAY;
     WriteEqSystemForGroup(hg, sys, Dragged {});
-    SolveResult result = sys->SolveRank(g, rank);
+    SolveResult result = sys->SolveRank(this, g, rank);
     Platform::FreeAllTemporary();
     return result;
 }

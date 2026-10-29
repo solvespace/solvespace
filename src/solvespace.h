@@ -79,6 +79,8 @@ public:
     utf8_iterator end()   const { return utf8_iterator(&str[0] + str.length()); }
 };
 
+class Sketch;
+
 class System {
 public:
     enum { MAX_UNKNOWNS = 2048 };
@@ -132,11 +134,11 @@ public:
                                   const Eigen::VectorXd &B, Eigen::VectorXd *X);
     bool SolveLeastSquares();
 
-    bool WriteJacobian(int tag);
+    bool WriteJacobian(Sketch *sketch, int tag);
     void EvalJacobian();
 
-    void WriteEquationsExceptFor(hConstraint hc, Group *g);
-    void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad,
+    void WriteEquationsExceptFor(Sketch *sketch, hConstraint hc, Group *g);
+    void FindWhichToRemoveToFixJacobian(Sketch *sketch, Group *g, List<hConstraint> *bad,
                                         bool forceDofCheck);
     SubstitutionMap SolveBySubstitution();
 
@@ -144,13 +146,14 @@ public:
 
     bool NewtonSolve();
 
-    void MarkParamsFree(bool findFree);
+    void MarkParamsFree(Sketch *sketch, bool findFree);
 
-    SolveResult Solve(Group *g, int *dof = NULL, List<hConstraint> *bad = NULL,
+    // Solve the group's equations, in the sketch that it's in
+    SolveResult Solve(Sketch *sketch, Group *g, int *dof = NULL, List<hConstraint> *bad = NULL,
                       bool andFindBad = false, bool andFindFree = false,
                       bool forceDofCheck = false);
 
-    SolveResult SolveRank(Group *g, int *rank = NULL, int *dof = NULL,
+    SolveResult SolveRank(Sketch *sketch, Group *g, int *rank = NULL, int *dof = NULL,
                           List<hConstraint> *bad = NULL,
                           bool andFindBad = false, bool andFindFree = false);
 
