@@ -1203,7 +1203,7 @@ BBox Sketch::CalculateEntityBBox(bool includingInvisible) {
 
         // arc center point shouldn't be included in bounding box calculation
         if(e.IsPoint() && e.h.isFromRequest()) {
-            Request *r = SK.GetRequest(e.h.request());
+            Request *r = GetRequest(e.h.request());
             if(r->type == Request::Type::ARC_OF_CIRCLE && e.h == r->h.entity(1)) {
                 continue;
             }

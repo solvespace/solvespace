@@ -423,6 +423,9 @@ public:
     void Clear();
 
     BBox CalculateEntityBBox(bool includingInvisible);
+    // The chord tolerance in mm for this sketch, given the tolerance relative
+    // to its size, in percent
+    double ChordTolForSize(double relativeChordTol);
     Group *GetRunningMeshGroupFor(hGroup h);
 
     void RegenerateGroupOrder();
@@ -491,10 +494,10 @@ public:
     // Regenerate the entities and parameters of every group, pruning what
     // can't be generated, and solve the groups in the range.
     void GenerateEntities(const GenerateOptions &opts, GenerateResult *result);
-    // Then generate the shells and meshes of the groups in the range, and
-    // update the reference dimensions. Returns true if whether a group's
-    // Boolean failed has changed.
-    bool GenerateShellsAndMeshes(int first, int last);
+    // Then generate the shells and meshes of the groups in the range, with
+    // the given chord tolerance in mm, and update the reference dimensions.
+    // Returns true if whether a group's Boolean failed has changed.
+    bool GenerateShellsAndMeshes(int first, int last, double chordTolMm);
 };
 #undef ENTITY
 #undef CONSTRAINT
