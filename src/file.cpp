@@ -763,8 +763,105 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityLi
     } else if(strcmp(filename.Extension().c_str(), "STL")==0) {
         return LinkStl(filename, le, m, sh);    
     } else {
+        // Generate the linked sketch; if that can't be done, use what was
+        // saved in its file when it was last generated.
+        if(LoadLinkedSketch(filename, le, m, sh)) {
+            return true;
+        }
         return LoadEntitiesFromSlvs(filename, le, m, sh);
     }
+}
+
+bool SolveSpaceUI::LoadLinkedSketch(const Platform::Path &filename, EntityList *le,
+                                    SMesh *m, SShell *sh) {
+    // A file that links itself, directly or through others, can't be
+    // generated.
+    for(const Platform::Path &loading : linkedFilesLoading) {
+        if(loading.Equals(filename)) return false;
+    }
+
+    Sketch *sketch = new Sketch();
+    EntityList saved = {};
+    bool isEmpty;
+    bool ok = ReadSketchFile(filename, sketch, &saved, &isEmpty) &&
+              !isEmpty && !fileLoadError;
+
+    // The files that this one links must be loaded before it is generated.
+    if(ok) {
+        linkedFilesLoading.push_back(filename);
+        ok = LoadLinkedGroups(sketch);
+        linkedFilesLoading.pop_back();
+    }
+
+    if(ok) {
+        Sketch::GenerateOptions opts = {};
+        opts.first = -1;
+        opts.last = -1;
+        opts.sys = &sys;
+        opts.timeoutRedundantConstr = timeoutRedundantConstr;
+        Sketch::GenerateResult result;
+        sketch->UpgradeLegacyData(opts, &result);
+
+        // Solve every group, and generate the shells and meshes.
+        opts.first = 0;
+        opts.last = INT_MAX;
+        sketch->RegenerateGroupOrder();
+        sketch->GenerateEntities(opts, &result);
+        sketch->GenerateShellsAndMeshes(result.first, result.last,
+                                        sketch->ChordTolForSize(chordTol));
+
+        // The entities are stored, not part of a sketch. Whether each is
+        // visible is as it was in the saved file, which is how the linked
+        // sketch was last shown.
+        le->Clear();
+        for(Entity &e : sketch->entity) {
+            e.CalculateNumerical(/*forExport=*/false);
+            Entity copy = e;
+            copy.sketch = NULL;
+            copy.beziers = {};
+            copy.edges = {};
+            copy.screenBBoxValid = false;
+            Entity *se = saved.FindByIdNoOops(e.h);
+            copy.actVisible = (se != NULL) ? se->actVisible : true;
+            le->Add(&copy);
+        }
+
+        // The mesh and shell are those of the last group, as saved.
+        Group *last = sketch->GetGroup(*sketch->groupOrder.Last());
+        m->MakeFromCopyOf(&last->runningMesh);
+        sh->MakeFromCopyOf(&last->runningShell);
+
+        // Import any styles that we don't have yet.
+        for(Style &s : sketch->style) {
+            if(SK.style.FindByIdNoOops(s.h) == nullptr) {
+                SK.style.Add(&s);
+            }
+        }
+    }
+
+    saved.Clear();
+    sketch->Clear();
+    delete sketch;
+    return ok;
+}
+
+// Load the files linked by the linked groups of a sketch that is being
+// loaded as a link itself. Returns false if one can't be.
+bool SolveSpaceUI::LoadLinkedGroups(Sketch *sketch) {
+    for(Group &g : sketch->group) {
+        if(g.type != Group::Type::LINKED) continue;
+
+        g.impEntity.Clear();
+        g.impMesh.Clear();
+        g.impShell.Clear();
+        if(!LoadEntitiesFromFile(g.linkFile, &g.impEntity, &g.impMesh, &g.impShell)) {
+            return false;
+        }
+        if(g.IsTriangleMeshAssembly()) {
+            g.forceToMesh = true;
+        }
+    }
+    return true;
 }
 
 bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,

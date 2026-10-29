@@ -699,6 +699,14 @@ public:
     void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
+    // Load a linked .slvs file as a sketch of its own, generate it, and give
+    // its entities, and the mesh and shell of its last group. Returns false
+    // if it can't be, for example because it links itself.
+    bool LoadLinkedSketch(const Platform::Path &filename, EntityList *le,
+                          SMesh *m, SShell *sh);
+    bool LoadLinkedGroups(Sketch *sketch);
+    // The linked files being loaded, outermost first
+    std::vector<Platform::Path> linkedFilesLoading;
     bool LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
     bool ReloadAllLinked(const Platform::Path &filename, bool canCancel = false);

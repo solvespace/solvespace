@@ -132,3 +132,44 @@ TEST_CASE(generate_extrusions_and_booleans_alone) {
 TEST_CASE(generate_step_and_repeat_alone) {
     CHECK_TRUE(GeneratesAlone(helper, __FILE__, "repeat.slvs"));
 }
+
+// A linked .slvs file is loaded as a sketch of its own, and generated.
+// stale.slvs says that its two points are 20 apart, but was saved with them
+// 10 apart, and with the second point hidden.
+TEST_CASE(linked_file_is_generated) {
+    Platform::Path path = helper->GetAssetPath(__FILE__, "stale.slvs");
+    EntityList le = {};
+    SMesh m = {};
+    SShell sh = {};
+    CHECK_TRUE(SS.LoadEntitiesFromFile(path, &le, &m, &sh));
+
+    hEntity ha = { 0x00040000 }, hb = { 0x00050000 };
+    Entity *a = le.FindByIdNoOops(ha);
+    Entity *b = le.FindByIdNoOops(hb);
+    CHECK_TRUE(a != NULL && b != NULL);
+    CHECK_EQ_EPS(a->actPoint.Minus(b->actPoint).Magnitude(), 20.0);
+    // Whether each is visible is as saved, and they belong to no sketch.
+    CHECK_TRUE(a->actVisible);
+    CHECK_FALSE(b->actVisible);
+    CHECK_TRUE(a->sketch == NULL);
+
+    le.Clear();
+    m.Clear();
+    sh.Clear();
+}
+
+// self.slvs has a linked group that links self.slvs. Generating that would
+// never end, so the inner link uses what was saved in the file instead.
+TEST_CASE(linked_file_that_links_itself) {
+    Platform::Path path = helper->GetAssetPath(__FILE__, "self.slvs");
+    EntityList le = {};
+    SMesh m = {};
+    SShell sh = {};
+    CHECK_TRUE(SS.LoadEntitiesFromFile(path, &le, &m, &sh));
+    CHECK_TRUE(le.n > 0);
+    CHECK_TRUE(SS.linkedFilesLoading.empty());
+
+    le.Clear();
+    m.Clear();
+    sh.Clear();
+}
