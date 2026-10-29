@@ -475,18 +475,13 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
     }
 }
 
-bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) {
-    bool fileIsEmpty = true;
-    allConsistent = false;
+bool SolveSpaceUI::ReadSketchFile(const Platform::Path &filename, Sketch *sketch,
+                                  EntityList *savedEntities, bool *isEmpty) {
     fileLoadError = false;
+    *isEmpty = true;
 
     fh = OpenFile(filename, "rb");
-    if(!fh) {
-        Error("Couldn't read from file '%s'", filename.raw.c_str());
-        return false;
-    }
-
-    ClearExisting();
+    if(!fh) return false;
 
     sv = {};
     sv.g.scale = 1; // default is 1, not 0; so legacy files need this
@@ -503,7 +498,7 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
 
         if(*line == '\0') continue;
 
-        fileIsEmpty = false;
+        *isEmpty = false;
 
         char *e = strchr(line, '=');
         if(e) {
@@ -516,24 +511,28 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
             if(sv.g.type == Group::Type::LINKED)
                 sv.g.opA.v = 0;
 
-            SK.group.Add(&(sv.g));
+            sketch->group.Add(&(sv.g));
             sv.g = {};
             sv.g.scale = 1; // default is 1, not 0; so legacy files need this
         } else if(strcmp(line, "AddParam")==0) {
             // params are regenerated, but we want to preload the values
             // for initial guesses
-            SK.param.Add(&(sv.p));
+            sketch->param.Add(&(sv.p));
             sv.p = {};
         } else if(strcmp(line, "AddEntity")==0) {
-            // entities are regenerated
+            // entities are regenerated, but the saved ones may be wanted
+            if(savedEntities != NULL) {
+                savedEntities->Add(&(sv.e));
+            }
+            sv.e = {};
         } else if(strcmp(line, "AddRequest")==0) {
-            SK.request.Add(&(sv.r));
+            sketch->request.Add(&(sv.r));
             sv.r = {};
         } else if(strcmp(line, "AddConstraint")==0) {
-            SK.constraint.Add(&(sv.c));
+            sketch->constraint.Add(&(sv.c));
             sv.c = {};
         } else if(strcmp(line, "AddStyle")==0) {
-            SK.style.Add(&(sv.s));
+            sketch->style.Add(&(sv.s));
             sv.s = {};
             Style::FillDefaultStyle(&sv.s);
         } else if(strcmp(line, VERSION_STRING)==0) {
@@ -555,6 +554,24 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
     }
 
     fclose(fh);
+    return true;
+}
+
+bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) {
+    allConsistent = false;
+
+    // Don't clear the sketch for a file that can't be read.
+    FILE *f = OpenFile(filename, "rb");
+    if(!f) {
+        Error("Couldn't read from file '%s'", filename.raw.c_str());
+        return false;
+    }
+    fclose(f);
+
+    ClearExisting();
+
+    bool fileIsEmpty;
+    ReadSketchFile(filename, &SK, /*savedEntities=*/NULL, &fileIsEmpty);
 
     if(fileIsEmpty) {
         Error(_("The file is empty. It may be corrupt."));
