@@ -258,14 +258,6 @@ Quaternion Quaternion::From(double w, double vx, double vy, double vz) {
     return q;
 }
 
-Quaternion Quaternion::From(hParam w, hParam vx, hParam vy, hParam vz) {
-    Quaternion q;
-    q.w  = SK.GetParam(w )->val;
-    q.vx = SK.GetParam(vx)->val;
-    q.vy = SK.GetParam(vy)->val;
-    q.vz = SK.GetParam(vz)->val;
-    return q;
-}
 
 Quaternion Quaternion::From(Vector axis, double dtheta) {
     Quaternion q;
@@ -435,13 +427,6 @@ Quaternion Quaternion::Mirror() const {
 }
 
 
-Vector Vector::From(hParam x, hParam y, hParam z) {
-    Vector v;
-    v.x = SK.GetParam(x)->val;
-    v.y = SK.GetParam(y)->val;
-    v.z = SK.GetParam(z)->val;
-    return v;
-}
 
 bool Vector::EqualsExactly(Vector v) const {
     return EXACT(x == v.x &&
@@ -599,8 +584,13 @@ Vector Vector::WithMagnitude(double v) const {
     }
 }
 
+// The workplane is looked up in SK; code that may work on another sketch
+// passes the workplane itself.
 Vector Vector::ProjectVectorInto(hEntity wrkpl) const {
-    EntityBase *w = SK.GetEntity(wrkpl);
+    return ProjectVectorInto(SK.GetEntity(wrkpl));
+}
+
+Vector Vector::ProjectVectorInto(const EntityBase *w) const {
     Vector u = w->Normal()->NormalU();
     Vector v = w->Normal()->NormalV();
 
@@ -611,12 +601,15 @@ Vector Vector::ProjectVectorInto(hEntity wrkpl) const {
 }
 
 Vector Vector::ProjectInto(hEntity wrkpl) const {
-    EntityBase *w = SK.GetEntity(wrkpl);
+    return ProjectInto(SK.GetEntity(wrkpl));
+}
+
+Vector Vector::ProjectInto(const EntityBase *w) const {
     Vector p0 = w->WorkplaneGetOffset();
 
     Vector f = this->Minus(p0);
 
-    return p0.Plus(f.ProjectVectorInto(wrkpl));
+    return p0.Plus(f.ProjectVectorInto(w));
 }
 
 Point2d Vector::Project2d(Vector u, Vector v) const {

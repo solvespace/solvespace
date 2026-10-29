@@ -995,6 +995,7 @@ public:
     static Canvas::Stroke Stroke(int hs);
     static bool Exportable(int hs);
     static hStyle ForEntity(hEntity he);
+    static hStyle ForEntity(const Entity *e);
     static StipplePattern PatternType(hStyle hs);
     static double StippleScale(hStyle hs);
     static double StippleScaleMm(hStyle hs);

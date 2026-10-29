@@ -203,8 +203,8 @@ void ConstraintBase::ModifyToSatisfy(Sketch *sketch) {
         Vector b = sketch->GetEntity(entityB)->VectorGetNum();
         if(other) a = a.ScaledBy(-1);
         if(workplane != EntityBase::FREE_IN_3D) {
-            a = a.ProjectVectorInto(workplane);
-            b = b.ProjectVectorInto(workplane);
+            a = a.ProjectVectorInto(sketch->GetEntity(workplane));
+            b = b.ProjectVectorInto(sketch->GetEntity(workplane));
         }
         double c = (a.Dot(b))/(a.Magnitude() * b.Magnitude());
         valA = acos(c)*180/PI;

@@ -127,15 +127,15 @@ void Group::GenerateForStepAndRepeat(Sketch *sketch, T *steps, T *outs,
         int ap = a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1));
 
         if(type == Type::TRANSLATE) {
-            Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
+            Vector trans = sketch->GetVector(h.param(0), h.param(1), h.param(2));
             trans = trans.ScaledBy(ap);
             transd[a].MakeFromTransformationOf(steps,
                 trans, Quaternion::IDENTITY, 1.0);
         } else {
-            Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
+            Vector trans = sketch->GetVector(h.param(0), h.param(1), h.param(2));
             double theta = ap * sketch->GetParam(h.param(3))->val;
             double c = cos(theta), s = sin(theta);
-            Vector axis = Vector::From(h.param(4), h.param(5), h.param(6));
+            Vector axis = sketch->GetVector(h.param(4), h.param(5), h.param(6));
             Quaternion q = Quaternion::From(c, s*axis.x, s*axis.y, s*axis.z);
             // Rotation is centered at t; so A(x - t) + t = Ax + (t - At)
             transd[a].MakeFromTransformationOf(steps,
@@ -250,7 +250,7 @@ bool Group::GenerateShellAndMesh(Sketch *sketch) {
         }
     } else if(type == Type::EXTRUDE && haveSrc) {
         Group *src = sketch->GetGroup(opA);
-        Vector translate = Vector::From(h.param(0), h.param(1), h.param(2));
+        Vector translate = sketch->GetVector(h.param(0), h.param(1), h.param(2));
 
         Vector tbot, ttop;
         if(subtype == Subtype::ONE_SIDED || subtype == Subtype::ONE_SKEWED) {
