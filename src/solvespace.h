@@ -687,6 +687,11 @@ public:
     bool SaveToFile(const Platform::Path &filename);
     bool LoadAutosaveFor(const Platform::Path &filename);
     std::function<void(const Platform::Path &filename, bool is_saveAs, bool is_autosave)> OnSaveFinished;
+    // Read a .slvs file into the sketch, and its saved entities, if wanted,
+    // into savedEntities. Returns false if the file can't be read; sets
+    // fileLoadError if it has data that isn't recognized.
+    bool ReadSketchFile(const Platform::Path &filename, Sketch *sketch,
+                        EntityList *savedEntities, bool *isEmpty);
     bool LoadFromFile(const Platform::Path &filename, bool canCancel = false);
     void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
