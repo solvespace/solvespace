@@ -435,9 +435,10 @@ public:
     static constexpr double NAMED_PARAM_DEFAULT = 5.0;
 
     bool HasExpression() const { return !expression.empty(); }
-    // The expression with its names resolved for this request's group, or
-    // NULL (with a message in error, if given) if it doesn't parse.
-    Expr *ParseExpression(std::string *error = NULL) const;
+    // The expression with its names resolved for this request's group, in
+    // the sketch, or NULL (with a message in error, if given) if it doesn't
+    // parse.
+    Expr *ParseExpression(Sketch *sketch, std::string *error = NULL) const;
 
     std::string DescriptionString() const;
     int IndexOfPoint(hEntity he) const;

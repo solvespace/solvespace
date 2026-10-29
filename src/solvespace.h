@@ -438,6 +438,10 @@ public:
     int RemoveTaggedConstraints(bool *tagged);
     // Set the parameters of the three reference workplanes
     void ForceReferences();
+    // The value of an expression whose parameters are in this sketch
+    double Evaluate(const Expr *e) {
+        return e->DeepCopyWithParamsAsPointers(&param, &param)->Eval();
+    }
 
     // What is being dragged in the GUI. The solver tries to keep the
     // parameters of these where they were put.

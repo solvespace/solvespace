@@ -266,8 +266,8 @@ void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *resul
         for(auto &r : request) {
             if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
 
-            if(Expr *e = r.ParseExpression()) {
-                GetParam(r.NamedParam())->val = e->Eval();
+            if(Expr *e = r.ParseExpression(this)) {
+                GetParam(r.NamedParam())->val = Evaluate(e);
             }
         }
 
@@ -719,7 +719,7 @@ void Sketch::SolveGroup(hGroup hg, System *sys, const Dragged &dragged, bool and
     }
     for(auto &r : request) {
         if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
-        if(r.ParseExpression() != NULL) continue;
+        if(r.ParseExpression(this) != NULL) continue;
 
         if(!unknownName) {
             g->solved.remove.Clear();

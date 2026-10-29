@@ -217,7 +217,8 @@ void ConstraintBase::ModifyToSatisfy(Sketch *sketch) {
         ExprVector exa = ea->PointGetExprsInWorkplane(workplane);
         ExprVector exb = eb->PointGetExprsInWorkplane(workplane);
         ExprVector exba = exb.Minus(exa);
-        sketch->GetParam(valP)->val = exba.Dot(exp.Minus(exa))->Eval() / exba.Dot(exba)->Eval();
+        sketch->GetParam(valP)->val = sketch->Evaluate(exba.Dot(exp.Minus(exa))) /
+                                      sketch->Evaluate(exba.Dot(exba));
     } else {
         // We'll fix these ones up by looking at their symbolic equation;
         // that means no extra work.
@@ -228,7 +229,7 @@ void ConstraintBase::ModifyToSatisfy(Sketch *sketch) {
 
         // These equations are written in the form f(...) - d = 0, where
         // d is the value of the valA.
-        valA += (l[0].e)->Eval();
+        valA += sketch->Evaluate(l[0].e);
 
         l.Clear();
     }
@@ -275,7 +276,7 @@ void ConstraintBase::UpdateValueFromExpression(Sketch *sketch) {
     if(!HasExpression() || type == Type::RELATION) return;
 
     if(Expr *e = ParseExpression(sketch)) {
-        valA = e->Eval() * exprScale;
+        valA = sketch->Evaluate(e) * exprScale;
     }
 }
 
@@ -949,7 +950,7 @@ void ConstraintBase::GenerateEquations(Sketch *sketch, IdList<Equation,hEquation
             Expr *d2 = au.Dot(bu);
             // Allow either orientation for the coordinate system, depending
             // on how it was drawn.
-            if(fabs(d1->Eval()) < fabs(d2->Eval())) {
+            if(fabs(sketch->Evaluate(d1)) < fabs(sketch->Evaluate(d2))) {
                 AddEq(l, d1, 3);
             } else {
                 AddEq(l, d2, 3);
@@ -971,7 +972,7 @@ void ConstraintBase::GenerateEquations(Sketch *sketch, IdList<Equation,hEquation
                 // specified angle
                 Expr *rads = exA->Times(Expr::From(PI/180)),
                      *rc   = rads->Cos();
-                double arc = fabs(rc->Eval());
+                double arc = fabs(sketch->Evaluate(rc));
                 // avoid false detection of inconsistent systems by gaining
                 // up as the difference in dot products gets small at small
                 // angles; doubles still have plenty of precision, only
@@ -1117,8 +1118,8 @@ void ConstraintBase::GenerateEquations(Sketch *sketch, IdList<Equation,hEquation
             } else {
                 Expr *u, *v;
                 ep->PointGetExprsInWorkplane(workplane, &u, &v);
-                AddEq(l, u->Minus(Expr::From(u->Eval())), 0);
-                AddEq(l, v->Minus(Expr::From(v->Eval())), 1);
+                AddEq(l, u->Minus(Expr::From(sketch->Evaluate(u))), 0);
+                AddEq(l, v->Minus(Expr::From(sketch->Evaluate(v))), 1);
             }
             return;
         }

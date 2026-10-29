@@ -257,11 +257,11 @@ int Request::IndexOfPoint(hEntity he) const {
     return -1;
 }
 
-Expr *Request::ParseExpression(std::string *error) const {
+Expr *Request::ParseExpression(Sketch *sketch, std::string *error) const {
     std::string ignored;
     if(error == NULL) error = &ignored;
 
-    const Group *g = SK.group.FindByIdNoOops(group);
+    const Group *g = sketch->group.FindByIdNoOops(group);
     if(g == NULL) return NULL;
     return Expr::Parse(expression, error, &g->inheritedParamNames);
 }
