@@ -20,6 +20,7 @@ set(testsuite_SOURCES
     core/locale/test.cpp
     core/path/test.cpp
     core/prune/test.cpp
+    core/sketch/test.cpp
     core/solver/test.cpp
     core/variables/test.cpp
     constraint/points_coincident/test.cpp
