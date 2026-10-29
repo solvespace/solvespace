@@ -200,7 +200,7 @@ TEST_CASE(linked_file_is_cached) {
     CHECK_TRUE(WriteFile(path, data));
 
     CHECK_EQ_EPS(LinkedDistance(path), 20.0);
-    CHECK_TRUE(SS.linkedSketches.count(path) == 1);
+    CHECK_TRUE(SS.linkedSketches.count(path.raw) == 1);
     CHECK_EQ_EPS(LinkedDistance(path), 20.0);
 
     // Change the distance in the file; the sketch is generated again.
@@ -212,4 +212,92 @@ TEST_CASE(linked_file_is_cached) {
 
     RemoveFile(path);
     SS.ClearLinkedSketches();
+}
+
+// part.slvs, written by the test, is points.slvs with a parameter d in its
+// references group, which is the distance between its two points.
+// assembly.slvs links part.slvs, in group 3.
+static const hGroup HLINKED = { 3 };
+
+static bool WritePart(Test::Helper *helper, const char *file, Platform::Path *path) {
+    if(!helper->CheckLoad(file, __LINE__, "points.slvs")) return false;
+    Request r = {};
+    r.group = Group::HGROUP_REFERENCES;
+    r.type = Request::Type::NAMED_CONST_PARAM;
+    r.str = "d";
+    SK.request.AddAndAssignId(&r);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    SK.GetParam(r.NamedParam())->val = 10.0;
+    hConstraint hc = { 1 };
+    Constraint *c = SK.GetConstraint(hc);
+    c->expression = "d";
+    c->exprScale = 1.0;
+    SS.MarkGroupDirty(c->group);
+    *path = helper->GetAssetPath(file, "part.slvs");
+    return SS.SaveToFile(*path);
+}
+
+// The distance between the two points that the linked group gets.
+static double LinkedGroupDistance() {
+    Group *g = SK.GetGroup(HLINKED);
+    hEntity ha = { 0x00040000 }, hb = { 0x00050000 };
+    Entity *a = g->impEntity.FindByIdNoOops(ha);
+    Entity *b = g->impEntity.FindByIdNoOops(hb);
+    if(a == NULL || b == NULL) return -1;
+    return a->actPoint.Minus(b->actPoint).Magnitude();
+}
+
+static hRequest AddRequest(hGroup hg, Request::Type type, const char *name, double value) {
+    Request r = {};
+    r.group = hg;
+    r.type = type;
+    r.str = name;
+    SK.request.AddAndAssignId(&r);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    SK.GetParam(r.NamedParam())->val = value;
+    SS.MarkGroupDirty(hg);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    return r.h;
+}
+
+TEST_CASE(linked_parameters) {
+    Platform::Path part;
+    CHECK_TRUE(WritePart(helper, __FILE__, &part));
+    CHECK_LOAD("assembly.slvs");
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+
+    // The linked group knows the linked sketch's parameters, with its values.
+    Group *g = SK.GetGroup(HLINKED);
+    CHECK_TRUE(g->linkParams.size() == 1);
+    CHECK_EQ_STR(g->linkParams[0].name, "d");
+    CHECK_EQ_EPS(g->linkParams[0].value, 10.0);
+    CHECK_EQ_EPS(LinkedGroupDistance(), 10.0);
+
+    // Giving d a value generates the linked sketch with it.
+    hRequest hd = AddRequest(HLINKED, Request::Type::NAMED_LINK_PARAM, "d", 30.0);
+    CHECK_EQ_EPS(LinkedGroupDistance(), 30.0);
+    CHECK_TRUE(SK.GetGroup(HLINKED)->IsSolvedOkay());
+
+    // The value can be an expression, using the parameters of earlier groups.
+    hRequest hx = AddRequest(Group::HGROUP_REFERENCES, Request::Type::NAMED_CONST_PARAM,
+                             "x", 7.0);
+    SK.GetRequest(hd)->expression = "x*2";
+    SS.MarkGroupDirty(HLINKED);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    CHECK_EQ_EPS(LinkedGroupDistance(), 14.0);
+
+    // When x changes, as it would when dragged, the linked sketch is
+    // generated again; and only what is used is kept.
+    SK.GetParam(SK.GetRequest(hx)->NamedParam())->val = 9.0;
+    SS.MarkGroupDirty(Group::HGROUP_REFERENCES);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    CHECK_EQ_EPS(LinkedGroupDistance(), 18.0);
+    CHECK_TRUE(SS.linkedSketches.size() == 1);
+    CHECK_TRUE(SS.linkedSketchFiles.size() == 1);
+
+    // A value for a parameter that the linked sketch doesn't have is reported.
+    AddRequest(HLINKED, Request::Type::NAMED_LINK_PARAM, "q", 1.0);
+    CHECK_TRUE(SK.GetGroup(HLINKED)->solved.how == SolveResult::UNKNOWN_NAME);
+
+    RemoveFile(part);
 }

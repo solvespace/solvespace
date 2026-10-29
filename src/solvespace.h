@@ -449,6 +449,12 @@ public:
     int RemoveTaggedConstraints(bool *tagged);
     // Set the parameters of the three reference workplanes
     void ForceReferences();
+    // The values for the parameters of the sketch that a linked group links:
+    // those in values, or, if evaluate, those of their expressions.
+    LinkValues LinkValuesFor(Group *g, ParamList *values, bool evaluate);
+    // Whether a value for a linked sketch's parameter can be given: its
+    // expression, if it has one, is valid, and the linked sketch has it
+    bool LinkParamIsKnown(Group *g, Request *r);
     // The value of an expression whose parameters are in this sketch
     double Evaluate(const Expr *e) {
         return e->DeepCopyWithParamsAsPointers(&param, &param)->Eval();
@@ -480,6 +486,10 @@ public:
         int     timeoutRedundantConstr;
         System  *sys;
         Dragged dragged;
+        // Loads what a linked group gets from its linked sketch, with these
+        // values for the sketch's parameters, when they have changed; NULL
+        // to keep what the group has.
+        bool    (*loadLinked)(Group *g, const LinkValues &values);
     };
     // A group that was solved, and how it was solved before
     struct SolvedGroup {
@@ -699,36 +709,60 @@ public:
     void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
-    // Load a linked .slvs file as a sketch of its own, generate it, and give
-    // its entities, and the mesh and shell of its last group. Returns false
-    // if it can't be, for example because it links itself.
-    bool LoadLinkedSketch(const Platform::Path &filename, EntityList *le,
-                          SMesh *m, SShell *sh);
-    bool LoadLinkedGroups(Sketch *sketch);
+    // Load what a linked group gets from its file, giving the linked sketch's
+    // parameters these values. If checkFiles, files read before are checked
+    // for changes. Returns false if the file can't be loaded at all.
+    bool LoadLinkedGroup(Group *g, const LinkValues &values, bool checkFiles);
+    // For GenerateOptions::loadLinked
+    static bool LoadLinkedForGeneration(Group *g, const LinkValues &values);
+    // Load a linked .slvs file as a sketch of its own, generate it with these
+    // values for its parameters, and give its entities, the mesh and shell
+    // of its last group, and its parameters. Returns false if it can't be,
+    // for example because it links itself.
+    bool LoadLinkedSketch(const Platform::Path &filename, const LinkValues &values,
+                          EntityList *le, SMesh *m, SShell *sh, LinkValues *params,
+                          bool checkFiles);
+    bool LoadLinkedGroups(Sketch *sketch, bool checkFiles);
     // The linked files being loaded, outermost first
     std::vector<Platform::Path> linkedFilesLoading;
 
-    // The linked sketches that have been generated, by file, so that they
-    // aren't generated again (on undo, for example) unless something that
-    // they were made from has changed.
+    // A linked .slvs file, read and ready to be generated, so that it isn't
+    // read again unless it, or a file it links, changes.
     struct LinkedFile {
         Platform::Path  path;
         size_t          hash;   // of its contents
     };
-    struct LinkedSketch {
-        // The linked file and those it links, and the settings used
+    struct LinkedSketchFile {
+        Sketch                  *sketch;
+        // Its entities as saved, for whether each is visible
+        EntityList              saved;
+        // The parameters of its references group, with its own values
+        LinkValues              params;
+        // It and the files it links
         std::vector<LinkedFile> madeFrom;
+    };
+    std::map<Platform::Path, LinkedSketchFile, Platform::PathLess> linkedSketchFiles;
+    LinkedSketchFile *ReadLinkedSketch(const Platform::Path &filename, bool checkFiles);
+    void DropLinkedSketchFile(const Platform::Path &filename);
+
+    // What a linked sketch made, for some values of its parameters, by
+    // LinkKey(), so that it isn't generated again (on undo, or for another
+    // group that links it with the same values). Only what linked groups use
+    // is kept; see PruneLinkedSketches().
+    struct LinkedSketch {
         double                  chordTol;
         int                     maxSegments;
-        // What the linked group gets
         EntityList              entities;
         SMesh                   mesh;
         SShell                  shell;
         IdList<Style,hStyle>    styles;
     };
-    std::map<Platform::Path, LinkedSketch, Platform::PathLess> linkedSketches;
-    bool LinkedSketchIsCurrent(LinkedSketch *ls);
+    std::map<std::string, LinkedSketch> linkedSketches;
+    static std::string LinkKey(const Platform::Path &filename, const LinkValues &values);
     void UseLinkedSketch(LinkedSketch *ls, EntityList *le, SMesh *m, SShell *sh);
+    void ClearLinkedSketch(LinkedSketch *ls);
+    // Drop what no linked group uses any more
+    void PruneLinkedSketches();
     void ClearLinkedSketches();
     bool LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
