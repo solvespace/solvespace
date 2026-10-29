@@ -103,6 +103,250 @@ void Sketch::RegenerateGroupOrder() {
     }
 }
 
+void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *result) {
+    *result = {};
+    result->first = opts.first;
+    result->last  = opts.last;
+    int i;
+
+    // Don't lose our numerical guesses when we regenerate.
+    ParamList prev = {};
+    param.MoveSelfInto(&prev);
+    param.ReserveMore(prev.n);
+    const int oldEntityCount = entity.n;
+    entity.Clear();
+    entity.ReserveMore(oldEntityCount);
+
+    request.ClearTags();
+    constraint.ClearTags();
+
+    // The solver uses the constraint tags too: it clears them and marks the
+    // constraints that it couldn't satisfy. So any constraints tagged for
+    // pruning must be removed before a group is solved, and the solver's marks
+    // cleared afterwards, or they would be mistaken for each other.
+    bool constraintsTagged = false;
+
+    // Prune any requests and constraints that belong to non-existent groups
+    for(auto &r : request) {
+        if(!GroupExists(r.group)) {
+            r.tag = 1;
+        }
+    }
+    for(auto &c : constraint) {
+        if(!GroupExists(c.group)) {
+            c.tag = 1;
+            constraintsTagged = true;
+        }
+    }
+
+    // The group before the current one, whose named parameters it inherits
+    hGroup previous = {};
+
+    // Not using range-for because we're using the index inside the loop.
+    for(i = 0; i < groupOrder.n; ) {
+        const hGroup hg = groupOrder[i];
+        Group *g = GetGroup(hg);
+
+        // The group may depend on entities or other groups, to define its
+        // workplane geometry or for its operands. Those must already exist
+        // in a previous group, so check them before generating.
+        if(PruneGroup(g)) {
+            (result->groups)++;
+            // A group was just removed and the group order was regenerated,
+            // so adjust the first and last indices accordingly.
+            if(i <= result->last && result->last < INT_MAX) {
+                --(result->last);
+            }
+            if(i < result->first && result->first < INT_MAX) {
+                --(result->first);
+            }
+            // Tag this group's requests for pruning
+            for(auto &r : request) {
+                if(r.group == hg) {
+                    r.tag = 1;
+                }
+            }
+            // Tag this group's constraints for pruning
+            for(auto &c : constraint) {
+                if(c.group == hg) {
+                    c.tag = 1;
+                    constraintsTagged = true;
+                }
+            }
+            continue;
+        }
+
+        // Named parameters are in scope from where they are defined to the
+        // end of the sketch. A name defined again replaces the earlier one.
+        if(previous.v != 0) {
+            g->inheritedParamNames = GetGroup(previous)->paramNames;
+        } else {
+            g->inheritedParamNames.clear();
+        }
+        g->paramNames = g->inheritedParamNames;
+
+        // Regenerate requests, tagging any dead ones for pruning
+        int groupRequestIndex = 0;
+        for(auto &r : request) {
+            if(r.group != hg) {
+                continue;
+            }
+
+            if(r.IsNamedParam()) {
+                r.Generate(&entity, &param);
+                g->paramNames[r.str] = r.NamedParam();
+                continue;
+            }
+
+            // Prune the request if it depends on a pruned workplane
+            if(r.workplane != Entity::NO_ENTITY && r.workplane.isFromRequest()) {
+                const Request *wr = request.FindByIdNoOops(r.workplane.request());
+                if(wr == nullptr || wr->tag) {
+                    r.tag = 1;
+                    continue;
+                }
+            }
+
+            r.groupRequestIndex = groupRequestIndex++;
+            r.Generate(&entity, &param);
+        }
+
+        // Regenerate the group
+        g->Generate(&entity, &param);
+
+        // Regenerate constraints, tagging any dead ones for pruning
+        for(auto &c : constraint) {
+            if(c.group != hg) {
+                continue;
+            }
+
+            if(!EntityExists(c.workplane) ||
+               !EntityExists(c.ptA) ||
+               !EntityExists(c.ptB) ||
+               !EntityExists(c.entityA) ||
+               !EntityExists(c.entityB) ||
+               !EntityExists(c.entityC) ||
+               !EntityExists(c.entityD)) {
+                if(c.type != Constraint::Type::POINTS_COINCIDENT &&
+                   c.type != Constraint::Type::HORIZONTAL &&
+                   c.type != Constraint::Type::VERTICAL) {
+                    ++result->nonTrivialConstraints;
+                }
+
+                c.tag = 1;
+                constraintsTagged = true;
+                continue;
+            }
+
+            c.Generate(&param);
+        }
+
+        // Use the previous values for params that we've seen before, as
+        // initial guesses for the solver.
+        for(auto &p : param) {
+            Param *newp = &p;
+            if(newp->known) {
+                continue;
+            }
+
+            Param *prevp = prev.FindByIdNoOops(newp->h);
+            if(prevp) {
+                newp->val = prevp->val;
+                newp->free = prevp->free;
+            }
+        }
+
+        // A named parameter given by an expression gets its value from the
+        // (already solved) parameters of earlier groups. If a name isn't
+        // defined, it keeps its last value, and the solve reports it.
+        for(auto &r : request) {
+            if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
+
+            if(Expr *e = r.ParseExpression()) {
+                GetParam(r.NamedParam())->val = e->Eval();
+            }
+        }
+
+        if(hg == Group::HGROUP_REFERENCES) {
+            ForceReferences();
+            Group *g = GetGroup(hg);
+            g->solved.how = SolveResult::OKAY;
+            g->clean = true;
+        } else {
+            // this i is an index in groupOrder
+            if(i >= result->first && i <= result->last) {
+                // The group falls inside the range, so really solve it,
+                // and then regenerate the mesh based on the solved stuff.
+                if(!opts.noSolve) {
+                    result->constraints += RemoveTaggedConstraints(&constraintsTagged);
+                    result->solved.push_back({ hg, g->solved.how });
+                    SolveGroup(hg, opts.sys, opts.dragged, opts.andFindFree,
+                               opts.timeoutRedundantConstr);
+                    constraint.ClearTags();
+                    g->GenerateLoops();
+                }
+            } else {
+                // The group falls outside the range, so just assume that
+                // it's good wherever we left it. The mesh is unchanged,
+                // and the parameters must be marked as known.
+                for(auto &p : param) {
+                    Param *newp = &p;
+
+                    Param *prevp = prev.FindByIdNoOops(newp->h);
+                    if(prevp) {
+                        newp->known = true;
+                    }
+                }
+            }
+        }
+
+        // Keep the value of each dimension given by an expression up to date,
+        // so that anything that reads valA sees the actual dimension. When all
+        // dimensions are reference, they hold their measured values instead.
+        if(!g->allDimsReference) {
+            for(auto &c : constraint) {
+                if(c.group == hg && !c.tag && !c.reference) {
+                    c.UpdateValueFromExpression();
+                }
+            }
+        }
+
+        previous = hg;
+        ++i;
+    }
+
+    // Remove any requests that we tagged for pruning
+    const int requests = request.n;
+    request.RemoveTagged();
+    result->requests += requests - request.n;
+
+    // Remove any constraints that we tagged for pruning
+    result->constraints += RemoveTaggedConstraints(&constraintsTagged);
+
+    prev.Clear();
+}
+
+void Sketch::GenerateShellsAndMeshes(int first, int last) {
+    for(int i = 0; i < groupOrder.n; ++i) {
+        const hGroup hg = groupOrder[i];
+        if(hg == Group::HGROUP_REFERENCES) {
+            continue;
+        }
+        if(i >= first && i <= last) {
+            Group *g = GetGroup(hg);
+            g->GenerateShellAndMesh();
+            g->clean = true;
+        }
+    }
+
+    // And update any reference dimensions with their new values
+    for(auto &c : constraint) {
+        if(c.reference) {
+            c.ModifyToSatisfy();
+        }
+    }
+}
+
 void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     int first = 0, last = 0, i;
 
@@ -160,221 +404,30 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
         }
     }
 
-    // Don't lose our numerical guesses when we regenerate.
-    ParamList prev = {};
-    SK.param.MoveSelfInto(&prev);
-    SK.param.ReserveMore(prev.n);
-    const int oldEntityCount = SK.entity.n;
-    SK.entity.Clear();
-    SK.entity.ReserveMore(oldEntityCount);
+    Sketch::GenerateOptions opts = {};
+    opts.first = first;
+    opts.last = last;
+    opts.noSolve = exportMode;
+    opts.andFindFree = andFindFree;
+    opts.timeoutRedundantConstr = timeoutRedundantConstr;
+    opts.sys = &sys;
+    opts.dragged = DraggedEntities();
+    Sketch::GenerateResult result;
+    SK.GenerateEntities(opts, &result);
 
-    SK.request.ClearTags();
-    SK.constraint.ClearTags();
+    deleted.requests += result.requests;
+    deleted.groups += result.groups;
+    deleted.constraints += result.constraints;
+    deleted.nonTrivialConstraints += result.nonTrivialConstraints;
 
-    // The solver uses the constraint tags too: it clears them and marks the
-    // constraints that it couldn't satisfy. So any constraints tagged for
-    // pruning must be removed before a group is solved, and the solver's marks
-    // cleared afterwards, or they would be mistaken for each other.
-    bool constraintsTagged = false;
-
-    // Prune any requests and constraints that belong to non-existent groups
-    for(auto &r : SK.request) {
-        if(!SK.GroupExists(r.group)) {
-            r.tag = 1;
-        }
+    // Show why any group failed to solve
+    for(const Sketch::SolvedGroup &sg : result.solved) {
+        ReportHowGroupSolved(sg.h, sg.before);
     }
-    for(auto &c : SK.constraint) {
-        if(!SK.GroupExists(c.group)) {
-            c.tag = 1;
-            constraintsTagged = true;
-        }
-    }
-
-    // The group before the current one, whose named parameters it inherits
-    hGroup previous = {};
-
-    // Not using range-for because we're using the index inside the loop.
-    for(i = 0; i < SK.groupOrder.n; ) {
-        const hGroup hg = SK.groupOrder[i];
-        Group *g = SK.GetGroup(hg);
-
-        // The group may depend on entities or other groups, to define its
-        // workplane geometry or for its operands. Those must already exist
-        // in a previous group, so check them before generating.
-        if(SK.PruneGroup(g)) {
-            (deleted.groups)++;
-            // A group was just removed and the group order was regenerated,
-            // so adjust the first and last indices accordingly.
-            if(i <= last && last < INT_MAX) {
-                --last;
-            }
-            if(i < first && first < INT_MAX) {
-                --first;
-            }
-            // Tag this group's requests for pruning
-            for(auto &r : SK.request) {
-                if(r.group == hg) {
-                    r.tag = 1;
-                }
-            }
-            // Tag this group's constraints for pruning
-            for(auto &c : SK.constraint) {
-                if(c.group == hg) {
-                    c.tag = 1;
-                    constraintsTagged = true;
-                }
-            }
-            continue;
-        }
-
-        // Named parameters are in scope from where they are defined to the
-        // end of the sketch. A name defined again replaces the earlier one.
-        if(previous.v != 0) {
-            g->inheritedParamNames = SK.GetGroup(previous)->paramNames;
-        } else {
-            g->inheritedParamNames.clear();
-        }
-        g->paramNames = g->inheritedParamNames;
-
-        // Regenerate requests, tagging any dead ones for pruning
-        int groupRequestIndex = 0;
-        for(auto &r : SK.request) {
-            if(r.group != hg) {
-                continue;
-            }
-
-            if(r.IsNamedParam()) {
-                r.Generate(&SK.entity, &SK.param);
-                g->paramNames[r.str] = r.NamedParam();
-                continue;
-            }
-
-            // Prune the request if it depends on a pruned workplane
-            if(r.workplane != Entity::NO_ENTITY && r.workplane.isFromRequest()) {
-                const Request *wr = SK.request.FindByIdNoOops(r.workplane.request());
-                if(wr == nullptr || wr->tag) {
-                    r.tag = 1;
-                    continue;
-                }
-            }
-
-            r.groupRequestIndex = groupRequestIndex++;
-            r.Generate(&SK.entity, &SK.param);
-        }
-
-        // Regenerate the group
-        g->Generate(&SK.entity, &SK.param);
-
-        // Regenerate constraints, tagging any dead ones for pruning
-        for(auto &c : SK.constraint) {
-            if(c.group != hg) {
-                continue;
-            }
-
-            if(!SK.EntityExists(c.workplane) ||
-               !SK.EntityExists(c.ptA) ||
-               !SK.EntityExists(c.ptB) ||
-               !SK.EntityExists(c.entityA) ||
-               !SK.EntityExists(c.entityB) ||
-               !SK.EntityExists(c.entityC) ||
-               !SK.EntityExists(c.entityD)) {
-                if(c.type != Constraint::Type::POINTS_COINCIDENT &&
-                   c.type != Constraint::Type::HORIZONTAL &&
-                   c.type != Constraint::Type::VERTICAL) {
-                    ++deleted.nonTrivialConstraints;
-                }
-
-                c.tag = 1;
-                constraintsTagged = true;
-                continue;
-            }
-
-            c.Generate(&SK.param);
-        }
-
-        // Use the previous values for params that we've seen before, as
-        // initial guesses for the solver.
-        for(auto &p : SK.param) {
-            Param *newp = &p;
-            if(newp->known) {
-                continue;
-            }
-
-            Param *prevp = prev.FindByIdNoOops(newp->h);
-            if(prevp) {
-                newp->val = prevp->val;
-                newp->free = prevp->free;
-            }
-        }
-
-        // A named parameter given by an expression gets its value from the
-        // (already solved) parameters of earlier groups. If a name isn't
-        // defined, it keeps its last value, and the solve reports it.
-        for(auto &r : SK.request) {
-            if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
-
-            if(Expr *e = r.ParseExpression()) {
-                SK.GetParam(r.NamedParam())->val = e->Eval();
-            }
-        }
-
-        if(hg == Group::HGROUP_REFERENCES) {
-            SK.ForceReferences();
-            Group *g = SK.GetGroup(hg);
-            g->solved.how = SolveResult::OKAY;
-            g->clean = true;
-        } else {
-            // this i is an index in groupOrder
-            if(i >= first && i <= last) {
-                // The group falls inside the range, so really solve it,
-                // and then regenerate the mesh based on the solved stuff.
-                if(!SS.exportMode) {
-                    deleted.constraints += SK.RemoveTaggedConstraints(&constraintsTagged);
-                    SolveGroupAndReport(hg, andFindFree);
-                    SK.constraint.ClearTags();
-                    g->GenerateLoops();
-                }
-            } else {
-                // The group falls outside the range, so just assume that
-                // it's good wherever we left it. The mesh is unchanged,
-                // and the parameters must be marked as known.
-                for(auto &p : SK.param) {
-                    Param *newp = &p;
-
-                    Param *prevp = prev.FindByIdNoOops(newp->h);
-                    if(prevp) {
-                        newp->known = true;
-                    }
-                }
-            }
-        }
-
-        // Keep the value of each dimension given by an expression up to date,
-        // so that anything that reads valA sees the actual dimension. When all
-        // dimensions are reference, they hold their measured values instead.
-        if(!g->allDimsReference) {
-            for(auto &c : SK.constraint) {
-                if(c.group == hg && !c.tag && !c.reference) {
-                    c.UpdateValueFromExpression();
-                }
-            }
-        }
-
-        previous = hg;
-        ++i;
-    }
-
-    // Remove any requests that we tagged for pruning
-    const int requests = SK.request.n;
-    SK.request.RemoveTagged();
-    deleted.requests += requests - SK.request.n;
-
-    // Remove any constraints that we tagged for pruning
-    deleted.constraints += SK.RemoveTaggedConstraints(&constraintsTagged);
 
     // If we're generating entities for display, first we need to find
     // the bounding box to turn relative chord tolerance to absolute.
-    if(!SS.exportMode) {
+    if(!exportMode) {
         BBox box = SK.CalculateEntityBBox(/*includeInvisibles=*/true);
         Vector size = box.maxp.Minus(box.minp);
         double maxSize = std::max({ size.x, size.y, size.z });
@@ -382,25 +435,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     }
 
     // Then generate the shell and mesh
-    for(i = 0; i < SK.groupOrder.n; ++i) {
-        const hGroup hg = SK.groupOrder[i];
-        if(hg == Group::HGROUP_REFERENCES) {
-            continue;
-        }
-        if(i >= first && i <= last) {
-            Group *g = SK.GetGroup(hg);
-            g->GenerateShellAndMesh();
-            g->clean = true;
-        }
-    }
-
-    // And update any reference dimensions with their new values
-    for(auto &con : SK.constraint) {
-        Constraint *c = &con;
-        if(c->reference) {
-            c->ModifyToSatisfy();
-        }
-    }
+    SK.GenerateShellsAndMeshes(result.first, result.last);
 
     // Make sure the point that we're tracing exists.
     if(traced.point.v && !SK.entity.FindByIdNoOops(traced.point)) {
@@ -412,7 +447,6 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
         traced.path.AddPoint(pt->PointGetNum());
     }
 
-    prev.Clear();
     GW.Invalidate();
 
     // Remove nonexistent selection items, for same reason we waited till
@@ -591,10 +625,8 @@ void Sketch::MarkDraggedParams(System *sys, const Dragged &dragged) {
     }
 }
 
-void SolveSpaceUI::SolveGroupAndReport(hGroup hg, bool andFindFree) {
-    SolveResult before = SK.GetGroup(hg)->solved.how;
-    SK.SolveGroup(hg, &sys, DraggedEntities(), andFindFree, timeoutRedundantConstr);
-
+// If a group just solved has failed, show why in the text window.
+void SolveSpaceUI::ReportHowGroupSolved(hGroup hg, SolveResult before) {
     Group *g = SK.GetGroup(hg);
     // An unknown name stays until the user defines it again, perhaps in the
     // text window right now; so report it when it first happens, rather than
