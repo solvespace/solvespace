@@ -197,7 +197,7 @@ void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *resul
             }
 
             if(r.IsNamedParam()) {
-                r.Generate(&entity, &param);
+                r.Generate(this, &entity, &param);
                 g->paramNames[r.str] = r.NamedParam();
                 continue;
             }
@@ -212,11 +212,11 @@ void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *resul
             }
 
             r.groupRequestIndex = groupRequestIndex++;
-            r.Generate(&entity, &param);
+            r.Generate(this, &entity, &param);
         }
 
         // Regenerate the group
-        g->Generate(&entity, &param);
+        g->Generate(this, &entity, &param);
 
         // Regenerate constraints, tagging any dead ones for pruning
         for(auto &c : constraint) {
@@ -657,7 +657,7 @@ void Sketch::WriteEqSystemForGroup(hGroup hg, System *sys, const Dragged &dragge
         // change it; equations that use it see it as a constant.
         if(r->type == Request::Type::NAMED_CONST_PARAM) continue;
 
-        r->Generate(&(sys->entity), &(sys->param));
+        r->Generate(this, &(sys->entity), &(sys->param));
     }
     for(auto &con : constraint) {
         Constraint *c = &con;
@@ -667,7 +667,7 @@ void Sketch::WriteEqSystemForGroup(hGroup hg, System *sys, const Dragged &dragge
     }
     // And for the group itself
     Group *g = GetGroup(hg);
-    g->Generate(&(sys->entity), &(sys->param));
+    g->Generate(this, &(sys->entity), &(sys->param));
     // Set the initial guesses for all the params
     for(auto &p : sys->param) {
         p.known = false;

@@ -81,7 +81,7 @@ Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
     return req;
 }
 
-void Request::Generate(EntityList *entity, ParamList *param)
+void Request::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
 {
     int points = 0;
     Entity::Type et = (Entity::Type)0;
@@ -135,6 +135,7 @@ void Request::Generate(EntityList *entity, ParamList *param)
     }
 
     Entity e = {};
+    e.sketch = sketch;
     EntReqTable::GetRequestInfo(type, extraPoints, &et, &points, &hasNormal, &hasDistance);
 
     // Generate the entity that's specific to this request.
@@ -153,6 +154,7 @@ void Request::Generate(EntityList *entity, ParamList *param)
     // And generate entities for the points
     for(i = 0; i < points; i++) {
         Entity p = {};
+        p.sketch = sketch;
         p.workplane = workplane;
         // points start from entity 1, except for datum point case
         p.h = h.entity(i+((et != (Entity::Type)0) ? 1 : 0));
@@ -176,6 +178,7 @@ void Request::Generate(EntityList *entity, ParamList *param)
     }
     if(hasNormal) {
         Entity n = {};
+        n.sketch = sketch;
         n.workplane = workplane;
         n.h = h.entity(32);
         n.group = group;
@@ -201,6 +204,7 @@ void Request::Generate(EntityList *entity, ParamList *param)
     }
     if(hasDistance) {
         Entity d = {};
+        d.sketch = sketch;
         d.workplane = workplane;
         d.h = h.entity(64);
         d.group = group;
