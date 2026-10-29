@@ -423,6 +423,15 @@ public:
     Group *GetRunningMeshGroupFor(hGroup h);
 
     void RegenerateGroupOrder();
+
+    // Checks made when regenerating, to find what has to be pruned
+    bool GroupExists(hGroup hg);
+    bool EntityExists(hEntity he);
+    bool GroupsInOrder(hGroup hbefore, hGroup hafter);
+    bool PruneGroup(Group *g);
+    int RemoveTaggedConstraints(bool *tagged);
+    // Set the parameters of the three reference workplanes
+    void ForceReferences();
 };
 #undef ENTITY
 #undef CONSTRAINT
@@ -674,10 +683,6 @@ public:
         int     constraints;
         int     nonTrivialConstraints;
     } deleted;
-    bool GroupExists(hGroup hg);
-    bool EntityExists(hEntity he);
-    bool GroupsInOrder(hGroup hbefore, hGroup hafter);
-    bool PruneGroup(Group *g);
     static void ShowNakedEdges(bool reportOnlyWhenNotOkay);
 
     enum class Generate : uint32_t {
@@ -693,7 +698,6 @@ public:
     SolveResult TestRankForGroup(hGroup hg, int *rank = NULL);
     void WriteEqSystemForGroup(hGroup hg);
     void MarkDraggedParams();
-    void ForceReferences();
     void UpdateCenterOfMass();
 
     bool ActiveGroupsOkay();
