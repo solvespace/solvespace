@@ -164,6 +164,20 @@ struct EntityKeyEqual {
 typedef std::unordered_map<EntityKey, EntityId, EntityKeyHash, EntityKeyEqual> EntityMap;
 
 // A set of requests. Every request must have an associated group.
+// A value given to a named parameter of a linked sketch
+struct LinkValue {
+    std::string name;
+    double      value;
+
+    bool operator==(const LinkValue &other) const {
+        return name == other.name && value == other.value;
+    }
+    bool operator!=(const LinkValue &other) const { return !(*this == other); }
+    bool operator<(const LinkValue &other) const { return name < other.name; }
+};
+// The values given to a linked sketch's parameters, in order of name
+using LinkValues = std::vector<LinkValue>;
+
 class Group {
 public:
     static const hGroup     HGROUP_REFERENCES;
@@ -293,6 +307,11 @@ public:
     SMesh       impMesh;
     SShell      impShell;
     EntityList  impEntity;
+    // The values that the linked sketch's parameters were given when the
+    // above were made, and the parameters that it has (those of its
+    // references group), with its own values. Not saved.
+    LinkValues  linkValues;
+    LinkValues  linkParams;
 
     std::string     name;
 
@@ -401,7 +420,10 @@ public:
         // The name is in str. It has no entities, just one parameter.
         NAMED_PARAMETER        = 800,
         // The same, but locked: the solver treats it as a constant.
-        NAMED_CONST_PARAM      = 801
+        NAMED_CONST_PARAM      = 801,
+        // In a linked group: the value to give the named parameter, in the
+        // linked sketch's references group, that has the name in str.
+        NAMED_LINK_PARAM       = 802
     };
 
     Request::Type type;
@@ -430,6 +452,7 @@ public:
     bool IsNamedParam() const {
         return type == Type::NAMED_PARAMETER || type == Type::NAMED_CONST_PARAM;
     }
+    bool IsLinkParam() const { return type == Type::NAMED_LINK_PARAM; }
     hParam NamedParam() const { return h.param(64); }
     // The value of a new named parameter
     static constexpr double NAMED_PARAM_DEFAULT = 5.0;

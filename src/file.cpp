@@ -752,6 +752,12 @@ void SolveSpaceUI::UpgradeLegacyData() {
     deleted.nonTrivialConstraints += result.nonTrivialConstraints;
 }
 
+// Whether the file is a SolveSpace sketch, rather than a mesh or a board
+static bool IsSketchFile(const Platform::Path &filename) {
+    std::string ext = filename.Extension();
+    return !(ext == "emn" || ext == "EMN" || ext == "stl" || ext == "STL");
+}
+
 bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                                         SMesh *m, SShell *sh)
 {
@@ -766,11 +772,41 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityLi
     } else {
         // Generate the linked sketch; if that can't be done, use what was
         // saved in its file when it was last generated.
-        if(LoadLinkedSketch(filename, le, m, sh)) {
+        if(LoadLinkedSketch(filename, LinkValues(), le, m, sh, NULL, /*checkFiles=*/true)) {
             return true;
         }
         return LoadEntitiesFromSlvs(filename, le, m, sh);
     }
+}
+
+bool SolveSpaceUI::LoadLinkedGroup(Group *g, const LinkValues &values, bool checkFiles) {
+    g->impEntity.Clear();
+    g->impMesh.Clear();
+    g->impShell.Clear();
+    g->linkValues = values;
+    g->linkParams.clear();
+
+    bool ok;
+    if(IsSketchFile(g->linkFile)) {
+        // If the linked sketch can't be generated, use what was saved in its
+        // file when it was last generated, without any values.
+        ok = LoadLinkedSketch(g->linkFile, values, &g->impEntity, &g->impMesh, &g->impShell,
+                              &g->linkParams, checkFiles) ||
+             LoadEntitiesFromSlvs(g->linkFile, &g->impEntity, &g->impMesh, &g->impShell);
+    } else {
+        ok = LoadEntitiesFromFile(g->linkFile, &g->impEntity, &g->impMesh, &g->impShell);
+    }
+    if(ok && g->IsTriangleMeshAssembly()) {
+        g->forceToMesh = true;
+    }
+    return ok;
+}
+
+// Generating a sketch loads what a linked group gets, when the values given
+// to the linked sketch's parameters change; files aren't checked for changes
+// then, since that can happen on every step of a drag.
+bool SolveSpaceUI::LoadLinkedForGeneration(Group *g, const LinkValues &values) {
+    return SS.LoadLinkedGroup(g, values, /*checkFiles=*/false);
 }
 
 // The hash of a file's contents, or false if it can't be read.
@@ -781,13 +817,121 @@ static bool HashOfFile(const Platform::Path &filename, size_t *hash) {
     return true;
 }
 
-bool SolveSpaceUI::LinkedSketchIsCurrent(LinkedSketch *ls) {
-    if(ls->chordTol != chordTol || ls->maxSegments != maxSegments) return false;
-    for(const LinkedFile &lf : ls->madeFrom) {
-        size_t hash;
-        if(!HashOfFile(lf.path, &hash) || hash != lf.hash) return false;
+std::string SolveSpaceUI::LinkKey(const Platform::Path &filename, const LinkValues &values) {
+    std::string key = filename.raw;
+    for(const LinkValue &lv : values) {
+        key += ssprintf("\n%s=%.17g", lv.name.c_str(), lv.value);
     }
-    return true;
+    return key;
+}
+
+void SolveSpaceUI::DropLinkedSketchFile(const Platform::Path &filename) {
+    LinkedSketchFile *lf = &linkedSketchFiles[filename];
+    if(lf->sketch != NULL) {
+        lf->sketch->Clear();
+        delete lf->sketch;
+    }
+    lf->saved.Clear();
+    linkedSketchFiles.erase(filename);
+
+    // What it made is out of date too.
+    std::string prefix = filename.raw + "\n";
+    std::vector<std::string> keys;
+    for(auto &entry : linkedSketches) {
+        if(entry.first == filename.raw || entry.first.compare(0, prefix.size(), prefix) == 0) {
+            keys.push_back(entry.first);
+        }
+    }
+    for(const std::string &key : keys) {
+        ClearLinkedSketch(&linkedSketches[key]);
+        linkedSketches.erase(key);
+    }
+}
+
+SolveSpaceUI::LinkedSketchFile *SolveSpaceUI::ReadLinkedSketch(const Platform::Path &filename,
+                                                               bool checkFiles) {
+    if(linkedSketchFiles.count(filename) > 0) {
+        LinkedSketchFile *lf = &linkedSketchFiles[filename];
+        bool current = true;
+        if(checkFiles) {
+            for(const LinkedFile &made : lf->madeFrom) {
+                size_t hash;
+                if(!HashOfFile(made.path, &hash) || hash != made.hash) current = false;
+            }
+        }
+        if(current) return lf;
+        DropLinkedSketchFile(filename);
+    }
+
+    // A file that links itself, directly or through others, can't be
+    // generated.
+    for(const Platform::Path &loading : linkedFilesLoading) {
+        if(loading.Equals(filename)) return NULL;
+    }
+
+    LinkedSketchFile read = {};
+    LinkedFile self;
+    self.path = filename;
+    if(!HashOfFile(filename, &self.hash)) return NULL;
+    read.madeFrom.push_back(self);
+
+    read.sketch = new Sketch();
+    bool isEmpty;
+    bool ok = ReadSketchFile(filename, read.sketch, &read.saved, &isEmpty) &&
+              !isEmpty && !fileLoadError;
+
+    // The files that this one links must be loaded before it is generated.
+    if(ok) {
+        linkedFilesLoading.push_back(filename);
+        ok = LoadLinkedGroups(read.sketch, checkFiles);
+        linkedFilesLoading.pop_back();
+    }
+    if(!ok) {
+        read.sketch->Clear();
+        delete read.sketch;
+        read.saved.Clear();
+        return NULL;
+    }
+
+    Sketch::GenerateOptions opts = {};
+    opts.first = -1;
+    opts.last = -1;
+    opts.sys = &sys;
+    Sketch::GenerateResult result;
+    read.sketch->UpgradeLegacyData(opts, &result);
+    read.sketch->RegenerateGroupOrder();
+
+    // Its parameters are those of its references group.
+    for(Request &r : read.sketch->request) {
+        if(r.group != Group::HGROUP_REFERENCES || !r.IsNamedParam()) continue;
+        LinkValue lv;
+        lv.name = r.str;
+        lv.value = Request::NAMED_PARAM_DEFAULT;
+        if(Param *p = read.sketch->param.FindByIdNoOops(r.NamedParam())) {
+            lv.value = p->val;
+        }
+        read.params.push_back(lv);
+    }
+    std::sort(read.params.begin(), read.params.end());
+
+    // It was made from the files that its linked groups link, too.
+    for(Group &g : read.sketch->group) {
+        if(g.type != Group::Type::LINKED) continue;
+        if(linkedSketchFiles.count(g.linkFile) > 0) {
+            for(const LinkedFile &made : linkedSketchFiles[g.linkFile].madeFrom) {
+                read.madeFrom.push_back(made);
+            }
+        } else {
+            LinkedFile made;
+            made.path = g.linkFile;
+            if(HashOfFile(g.linkFile, &made.hash)) {
+                read.madeFrom.push_back(made);
+            }
+        }
+    }
+
+    linkedSketchFiles[filename] = read;
+    return &linkedSketchFiles[filename];
 }
 
 // Give a linked group what the linked sketch made.
@@ -810,143 +954,156 @@ void SolveSpaceUI::UseLinkedSketch(LinkedSketch *ls, EntityList *le, SMesh *m, S
     }
 }
 
-void SolveSpaceUI::ClearLinkedSketches() {
-    for(auto &entry : linkedSketches) {
-        LinkedSketch *ls = &entry.second;
-        ls->entities.Clear();
-        ls->mesh.Clear();
-        ls->shell.Clear();
-        ls->styles.Clear();
-    }
-    linkedSketches.clear();
+void SolveSpaceUI::ClearLinkedSketch(LinkedSketch *ls) {
+    ls->entities.Clear();
+    ls->mesh.Clear();
+    ls->shell.Clear();
+    ls->styles.Clear();
 }
 
-bool SolveSpaceUI::LoadLinkedSketch(const Platform::Path &filename, EntityList *le,
-                                    SMesh *m, SShell *sh) {
-    // Use what was made before, if nothing it was made from has changed.
-    if(linkedSketches.count(filename) > 0) {
-        LinkedSketch *ls = &linkedSketches[filename];
-        if(LinkedSketchIsCurrent(ls)) {
+bool SolveSpaceUI::LoadLinkedSketch(const Platform::Path &filename, const LinkValues &values,
+                                    EntityList *le, SMesh *m, SShell *sh, LinkValues *params,
+                                    bool checkFiles) {
+    LinkedSketchFile *lf = ReadLinkedSketch(filename, checkFiles);
+    if(lf == NULL) return false;
+    if(params != NULL) *params = lf->params;
+
+    // Use what was made before with these values, if the settings are the
+    // same.
+    std::string key = LinkKey(filename, values);
+    if(linkedSketches.count(key) > 0) {
+        LinkedSketch *ls = &linkedSketches[key];
+        if(ls->chordTol == chordTol && ls->maxSegments == maxSegments) {
             UseLinkedSketch(ls, le, m, sh);
             return true;
         }
-        ls->entities.Clear();
-        ls->mesh.Clear();
-        ls->shell.Clear();
-        ls->styles.Clear();
-        linkedSketches.erase(filename);
+        ClearLinkedSketch(ls);
+        linkedSketches.erase(key);
     }
 
-    // A file that links itself, directly or through others, can't be
-    // generated.
-    for(const Platform::Path &loading : linkedFilesLoading) {
-        if(loading.Equals(filename)) return false;
+    // Give each of its parameters the value given for it, or else its own.
+    Sketch *sketch = lf->sketch;
+    for(const LinkValue &own : lf->params) {
+        double value = own.value;
+        for(const LinkValue &given : values) {
+            if(given.name == own.name) value = given.value;
+        }
+        for(Request &r : sketch->request) {
+            if(r.group != Group::HGROUP_REFERENCES || !r.IsNamedParam()) continue;
+            if(r.str != own.name) continue;
+            if(Param *p = sketch->param.FindByIdNoOops(r.NamedParam())) {
+                p->val = value;
+            }
+        }
     }
+
+    // Solve every group, and generate the shells and meshes.
+    Sketch::GenerateOptions opts = {};
+    opts.first = 0;
+    opts.last = INT_MAX;
+    opts.sys = &sys;
+    opts.timeoutRedundantConstr = timeoutRedundantConstr;
+    opts.loadLinked = &LoadLinkedForGeneration;
+    Sketch::GenerateResult result;
+    linkedFilesLoading.push_back(filename);
+    sketch->GenerateEntities(opts, &result);
+    linkedFilesLoading.pop_back();
+    sketch->GenerateShellsAndMeshes(result.first, result.last,
+                                    sketch->ChordTolForSize(chordTol));
 
     LinkedSketch made = {};
     made.chordTol = chordTol;
     made.maxSegments = maxSegments;
-    LinkedFile self;
-    self.path = filename;
-    if(!HashOfFile(filename, &self.hash)) return false;
-    made.madeFrom.push_back(self);
 
-    Sketch *sketch = new Sketch();
-    EntityList saved = {};
-    bool isEmpty;
-    bool ok = ReadSketchFile(filename, sketch, &saved, &isEmpty) &&
-              !isEmpty && !fileLoadError;
-
-    // The files that this one links must be loaded before it is generated.
-    if(ok) {
-        linkedFilesLoading.push_back(filename);
-        ok = LoadLinkedGroups(sketch);
-        linkedFilesLoading.pop_back();
+    // The entities are stored, not part of a sketch. Whether each is visible
+    // is as it was in the saved file, which is how the linked sketch was last
+    // shown.
+    for(Entity &e : sketch->entity) {
+        e.CalculateNumerical(/*forExport=*/false);
+        Entity copy = e;
+        copy.sketch = NULL;
+        copy.beziers = {};
+        copy.edges = {};
+        copy.screenBBoxValid = false;
+        Entity *se = lf->saved.FindByIdNoOops(e.h);
+        copy.actVisible = (se != NULL) ? se->actVisible : true;
+        made.entities.Add(&copy);
     }
 
-    if(ok) {
-        Sketch::GenerateOptions opts = {};
-        opts.first = -1;
-        opts.last = -1;
-        opts.sys = &sys;
-        opts.timeoutRedundantConstr = timeoutRedundantConstr;
-        Sketch::GenerateResult result;
-        sketch->UpgradeLegacyData(opts, &result);
-
-        // Solve every group, and generate the shells and meshes.
-        opts.first = 0;
-        opts.last = INT_MAX;
-        sketch->RegenerateGroupOrder();
-        sketch->GenerateEntities(opts, &result);
-        sketch->GenerateShellsAndMeshes(result.first, result.last,
-                                        sketch->ChordTolForSize(chordTol));
-
-        // The entities are stored, not part of a sketch. Whether each is
-        // visible is as it was in the saved file, which is how the linked
-        // sketch was last shown.
-        for(Entity &e : sketch->entity) {
-            e.CalculateNumerical(/*forExport=*/false);
-            Entity copy = e;
-            copy.sketch = NULL;
-            copy.beziers = {};
-            copy.edges = {};
-            copy.screenBBoxValid = false;
-            Entity *se = saved.FindByIdNoOops(e.h);
-            copy.actVisible = (se != NULL) ? se->actVisible : true;
-            made.entities.Add(&copy);
-        }
-
-        // The mesh and shell are those of the last group, as saved.
-        Group *last = sketch->GetGroup(*sketch->groupOrder.Last());
-        made.mesh.MakeFromCopyOf(&last->runningMesh);
-        made.shell.MakeFromCopyOf(&last->runningShell);
-        for(Style &s : sketch->style) {
-            made.styles.Add(&s);
-        }
-
-        // It was made from the files that its linked groups link, too.
-        for(Group &g : sketch->group) {
-            if(g.type != Group::Type::LINKED) continue;
-            if(linkedSketches.count(g.linkFile) > 0) {
-                for(const LinkedFile &lf : linkedSketches[g.linkFile].madeFrom) {
-                    made.madeFrom.push_back(lf);
-                }
-            } else {
-                LinkedFile lf;
-                lf.path = g.linkFile;
-                if(HashOfFile(g.linkFile, &lf.hash)) {
-                    made.madeFrom.push_back(lf);
-                }
-            }
-        }
-
-        linkedSketches[filename] = made;
-        UseLinkedSketch(&linkedSketches[filename], le, m, sh);
+    // The mesh and shell are those of the last group, as saved.
+    Group *last = sketch->GetGroup(*sketch->groupOrder.Last());
+    made.mesh.MakeFromCopyOf(&last->runningMesh);
+    made.shell.MakeFromCopyOf(&last->runningShell);
+    for(Style &s : sketch->style) {
+        made.styles.Add(&s);
     }
 
-    saved.Clear();
-    sketch->Clear();
-    delete sketch;
-    return ok;
+    linkedSketches[key] = made;
+    UseLinkedSketch(&linkedSketches[key], le, m, sh);
+    return true;
 }
 
 // Load the files linked by the linked groups of a sketch that is being
 // loaded as a link itself. Returns false if one can't be.
-bool SolveSpaceUI::LoadLinkedGroups(Sketch *sketch) {
+bool SolveSpaceUI::LoadLinkedGroups(Sketch *sketch, bool checkFiles) {
     for(Group &g : sketch->group) {
         if(g.type != Group::Type::LINKED) continue;
 
-        g.impEntity.Clear();
-        g.impMesh.Clear();
-        g.impShell.Clear();
-        if(!LoadEntitiesFromFile(g.linkFile, &g.impEntity, &g.impMesh, &g.impShell)) {
+        LinkValues values = sketch->LinkValuesFor(&g, &sketch->param, /*evaluate=*/false);
+        if(!LoadLinkedGroup(&g, values, checkFiles)) {
             return false;
-        }
-        if(g.IsTriangleMeshAssembly()) {
-            g.forceToMesh = true;
         }
     }
     return true;
+}
+
+void SolveSpaceUI::PruneLinkedSketches() {
+    // What the linked groups of SK, and of the linked sketches, use
+    std::set<std::string> keysUsed;
+    std::set<std::string> filesUsed;
+    for(Group &g : SK.group) {
+        if(g.type != Group::Type::LINKED) continue;
+        keysUsed.insert(LinkKey(g.linkFile, g.linkValues));
+        filesUsed.insert(g.linkFile.raw);
+    }
+    for(auto &entry : linkedSketchFiles) {
+        for(Group &g : entry.second.sketch->group) {
+            if(g.type != Group::Type::LINKED) continue;
+            keysUsed.insert(LinkKey(g.linkFile, g.linkValues));
+            filesUsed.insert(g.linkFile.raw);
+        }
+    }
+
+    std::vector<std::string> keys;
+    for(auto &entry : linkedSketches) {
+        if(keysUsed.count(entry.first) == 0) keys.push_back(entry.first);
+    }
+    for(const std::string &key : keys) {
+        ClearLinkedSketch(&linkedSketches[key]);
+        linkedSketches.erase(key);
+    }
+
+    std::vector<Platform::Path> files;
+    for(auto &entry : linkedSketchFiles) {
+        if(filesUsed.count(entry.first.raw) == 0) files.push_back(entry.first);
+    }
+    for(const Platform::Path &file : files) {
+        DropLinkedSketchFile(file);
+    }
+}
+
+void SolveSpaceUI::ClearLinkedSketches() {
+    std::vector<Platform::Path> files;
+    for(auto &entry : linkedSketchFiles) {
+        files.push_back(entry.first);
+    }
+    for(const Platform::Path &file : files) {
+        DropLinkedSketchFile(file);
+    }
+    for(auto &entry : linkedSketches) {
+        ClearLinkedSketch(&entry.second);
+    }
+    linkedSketches.clear();
 }
 
 bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
@@ -1140,7 +1297,10 @@ bool SolveSpaceUI::ReloadAllLinked(const Platform::Path &saveFile, bool canCance
         }
 
 try_again:
-        if(LoadEntitiesFromFile(g.linkFile, &g.impEntity, &g.impMesh, &g.impShell)) {
+        // The values given to the linked sketch's parameters are those last
+        // saved; if they have changed, generating the sketch loads it again.
+        LinkValues values = SK.LinkValuesFor(&g, &SK.param, /*evaluate=*/false);
+        if(LoadLinkedGroup(&g, values, /*checkFiles=*/true)) {
             // We loaded the data, good. Now import its dependencies as well.
             for(Entity &e : g.impEntity) {
                 if(e.type != Entity::Type::IMAGE) continue;
@@ -1148,8 +1308,6 @@ try_again:
                     return false;
                 }
             }
-            if(g.IsTriangleMeshAssembly())
-                g.forceToMesh = true;
         } else if(linkMap.count(g.linkFile) == 0) {
             dbp("Missing file for group: %s", g.name.c_str());
             // The file was moved; prompt the user for its new location.
