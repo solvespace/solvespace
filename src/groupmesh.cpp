@@ -327,7 +327,7 @@ bool Group::GenerateShellAndMesh(Sketch *sketch) {
         SBezierLoopSetSet *sblss = &(src->bezierLoops);
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-            thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
+            thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, sketch, this);
         }
     } else if(type == Type::REVOLVE && haveSrc) {
         Group *src    = sketch->GetGroup(opA);
@@ -346,10 +346,10 @@ bool Group::GenerateShellAndMesh(Sketch *sketch) {
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
             if(fabs(anglef - angles) < 2 * PI) {
-                thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
+                thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, sketch, this,
                                                       angles, anglef, dists, distf);
             } else {
-                thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
+                thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, sketch, this);
             }
         }
     } else if(type == Type::HELIX && haveSrc) {
@@ -371,7 +371,7 @@ bool Group::GenerateShellAndMesh(Sketch *sketch) {
         SBezierLoopSetSet *sblss = &(src->bezierLoops);
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
+            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, sketch, this,
                                                   angles, anglef, dists, distf);
         }
     } else if(type == Type::LINKED) {
