@@ -173,3 +173,43 @@ TEST_CASE(linked_file_that_links_itself) {
     m.Clear();
     sh.Clear();
 }
+
+// The distance between the two points of a linked copy of stale.slvs.
+static double LinkedDistance(const Platform::Path &path) {
+    EntityList le = {};
+    SMesh m = {};
+    SShell sh = {};
+    double d = -1;
+    if(SS.LoadEntitiesFromFile(path, &le, &m, &sh)) {
+        hEntity ha = { 0x00040000 }, hb = { 0x00050000 };
+        Entity *a = le.FindByIdNoOops(ha);
+        Entity *b = le.FindByIdNoOops(hb);
+        if(a != NULL && b != NULL) d = a->actPoint.Minus(b->actPoint).Magnitude();
+    }
+    le.Clear();
+    m.Clear();
+    sh.Clear();
+    return d;
+}
+
+// A generated linked sketch is kept, and used again until its file changes.
+TEST_CASE(linked_file_is_cached) {
+    std::string data;
+    CHECK_TRUE(ReadFile(helper->GetAssetPath(__FILE__, "stale.slvs"), &data));
+    Platform::Path path = helper->GetAssetPath(__FILE__, "cached.slvs", "out");
+    CHECK_TRUE(WriteFile(path, data));
+
+    CHECK_EQ_EPS(LinkedDistance(path), 20.0);
+    CHECK_TRUE(SS.linkedSketches.count(path) == 1);
+    CHECK_EQ_EPS(LinkedDistance(path), 20.0);
+
+    // Change the distance in the file; the sketch is generated again.
+    size_t at = data.find("Constraint.valA=20.");
+    CHECK_TRUE(at != std::string::npos);
+    data.replace(at, strlen("Constraint.valA=20."), "Constraint.valA=30.");
+    CHECK_TRUE(WriteFile(path, data));
+    CHECK_EQ_EPS(LinkedDistance(path), 30.0);
+
+    RemoveFile(path);
+    SS.ClearLinkedSketches();
+}

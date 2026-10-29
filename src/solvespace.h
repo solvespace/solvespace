@@ -707,6 +707,29 @@ public:
     bool LoadLinkedGroups(Sketch *sketch);
     // The linked files being loaded, outermost first
     std::vector<Platform::Path> linkedFilesLoading;
+
+    // The linked sketches that have been generated, by file, so that they
+    // aren't generated again (on undo, for example) unless something that
+    // they were made from has changed.
+    struct LinkedFile {
+        Platform::Path  path;
+        size_t          hash;   // of its contents
+    };
+    struct LinkedSketch {
+        // The linked file and those it links, and the settings used
+        std::vector<LinkedFile> madeFrom;
+        double                  chordTol;
+        int                     maxSegments;
+        // What the linked group gets
+        EntityList              entities;
+        SMesh                   mesh;
+        SShell                  shell;
+        IdList<Style,hStyle>    styles;
+    };
+    std::map<Platform::Path, LinkedSketch, Platform::PathLess> linkedSketches;
+    bool LinkedSketchIsCurrent(LinkedSketch *ls);
+    void UseLinkedSketch(LinkedSketch *ls, EntityList *le, SMesh *m, SShell *sh);
+    void ClearLinkedSketches();
     bool LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
     bool ReloadAllLinked(const Platform::Path &filename, bool canCancel = false);
