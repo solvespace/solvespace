@@ -159,8 +159,9 @@ bool SShell::CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector
 
 // sketch must not contain the axis of revolution as a non-construction line for helix
 void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
-                                         RgbaColor color, Group *group, double angles,
-                                         double anglef, double dists, double distf) {
+                                         RgbaColor color, Sketch *sketch, Group *group,
+                                         double angles, double anglef, double dists,
+                                         double distf) {
     int i0 = surface.n; // number of pre-existing surfaces
     SBezierLoop *sbl;
     // for testing - hard code the axial distance, and number of sections.
@@ -239,7 +240,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                         hEntity he;
                         he.v          = sb->entity;
                         hEntity hface = group->Remap(he, Group::REMAP_LINE_TO_FACE);
-                        if(SK.entity.FindByIdNoOops(hface) != NULL) {
+                        if(sketch->entity.FindByIdNoOops(hface) != NULL) {
                             ss.face = hface.v;
                         }
                     }
@@ -359,7 +360,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
 }
 
 void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, RgbaColor color,
-                                  Group *group) {
+                                  Sketch *sketch, Group *group) {
     int i0 = surface.n; // number of pre-existing surfaces
     SBezierLoop *sbl;
 
@@ -391,7 +392,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                         hEntity he;
                         he.v = sb->entity;
                         hEntity hface = group->Remap(he, Group::REMAP_LINE_TO_FACE);
-                        if(SK.entity.FindByIdNoOops(hface) != NULL) {
+                        if(sketch->entity.FindByIdNoOops(hface) != NULL) {
                             ss.face = hface.v;
                         }
                     }
