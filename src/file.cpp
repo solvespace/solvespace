@@ -594,8 +594,8 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
     return true;
 }
 
-void SolveSpaceUI::UpgradeLegacyData() {
-    for(Request &r : SK.request) {
+void Sketch::UpgradeLegacyData(const GenerateOptions &opts, GenerateResult *result) {
+    for(Request &r : this->request) {
         switch(r.type) {
             // TTF text requests saved in versions prior to 3.0 only have two
             // reference points (origin and origin plus v); version 3.0 adds two
@@ -605,19 +605,19 @@ void SolveSpaceUI::UpgradeLegacyData() {
             case Request::Type::TTF_TEXT: {
                 EntityList entity = {};
                 ParamList  param = {};
-                r.Generate(&SK, &entity, &param);
+                r.Generate(this, &entity, &param);
 
                 // If we didn't load all of the entities and params that this
                 // request would generate, then add them now, so that we can
                 // force them to their appropriate positions.
                 for(Param &p : param) {
-                    if(SK.param.FindByIdNoOops(p.h) != NULL) continue;
-                    SK.param.Add(&p);
+                    if(this->param.FindByIdNoOops(p.h) != NULL) continue;
+                    this->param.Add(&p);
                 }
                 bool allPointsExist = true;
                 for(Entity &e : entity) {
-                    if(SK.entity.FindByIdNoOops(e.h) != NULL) continue;
-                    SK.entity.Add(&e);
+                    if(this->entity.FindByIdNoOops(e.h) != NULL) continue;
+                    this->entity.Add(&e);
                     allPointsExist = false;
                 }
 
@@ -627,8 +627,10 @@ void SolveSpaceUI::UpgradeLegacyData() {
                     Entity *c = entity.FindById(text->point[3]);
                     ExprVector bex, cex;
                     text->RectGetPointsExprs(&bex, &cex);
-                    b->PointForceParamTo(bex.Eval());
-                    c->PointForceParamTo(cex.Eval());
+                    b->PointForceParamTo(Vector::From(Evaluate(bex.x), Evaluate(bex.y),
+                                                      Evaluate(bex.z)));
+                    c->PointForceParamTo(Vector::From(Evaluate(cex.x), Evaluate(cex.y),
+                                                      Evaluate(cex.z)));
                 }
                 entity.Clear();
                 param.Clear();
@@ -644,8 +646,10 @@ void SolveSpaceUI::UpgradeLegacyData() {
     // version 3.0 introduced params to constraints to avoid the hairy ball problem,
     // so force them where they belong.
     ParamList oldParam = {};
-    SK.param.DeepCopyInto(&oldParam);
-    SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
+    this->param.DeepCopyInto(&oldParam);
+    // Regenerate, without solving anything
+    RegenerateGroupOrder();
+    GenerateEntities(opts, result);
 
     auto AllParamsExistFor = [&](Constraint &c) {
         ParamList param = {};
@@ -660,30 +664,30 @@ void SolveSpaceUI::UpgradeLegacyData() {
         return allParamsExist;
     };
 
-    for(Constraint &c : SK.constraint) {
+    for(Constraint &c : this->constraint) {
         switch(c.type) {
             case Constraint::Type::PT_ON_LINE: {
                 if(AllParamsExistFor(c)) continue;
 
-                EntityBase *eln = SK.GetEntity(c.entityA);
-                EntityBase *ea = SK.GetEntity(eln->point[0]);
-                EntityBase *eb = SK.GetEntity(eln->point[1]);
-                EntityBase *ep = SK.GetEntity(c.ptA);
+                EntityBase *eln = this->GetEntity(c.entityA);
+                EntityBase *ea = this->GetEntity(eln->point[0]);
+                EntityBase *eb = this->GetEntity(eln->point[1]);
+                EntityBase *ep = this->GetEntity(c.ptA);
 
                 ExprVector exp = ep->PointGetExprsInWorkplane(c.workplane);
                 ExprVector exa = ea->PointGetExprsInWorkplane(c.workplane);
                 ExprVector exb = eb->PointGetExprsInWorkplane(c.workplane);
                 ExprVector exba = exb.Minus(exa);
-                Param *p = SK.GetParam(c.h.param(0));
-                p->val = exba.Dot(exp.Minus(exa))->Eval() / exba.Dot(exba)->Eval();
+                Param *p = this->GetParam(c.h.param(0));
+                p->val = Evaluate(exba.Dot(exp.Minus(exa))) / Evaluate(exba.Dot(exba));
                 break;
             }
 
             case Constraint::Type::CUBIC_LINE_TANGENT: {
                 if(AllParamsExistFor(c)) continue;
 
-                EntityBase *cubic = SK.GetEntity(c.entityA);
-                EntityBase *line  = SK.GetEntity(c.entityB);
+                EntityBase *cubic = this->GetEntity(c.entityA);
+                EntityBase *line  = this->GetEntity(c.entityB);
 
                 ExprVector a;
                 if(c.other) {
@@ -694,35 +698,35 @@ void SolveSpaceUI::UpgradeLegacyData() {
 
                 ExprVector b = line->VectorGetExprs();
 
-                Param *param = SK.GetParam(c.h.param(0));
-                param->val = a.Dot(b)->Eval() / b.Dot(b)->Eval();
+                Param *param = this->GetParam(c.h.param(0));
+                param->val = Evaluate(a.Dot(b)) / Evaluate(b.Dot(b));
                 break;
             }
 
             case Constraint::Type::SAME_ORIENTATION: {
                 if(AllParamsExistFor(c)) continue;
 
-                EntityBase *an = SK.GetEntity(c.entityA);
-                EntityBase *bn = SK.GetEntity(c.entityB);
+                EntityBase *an = this->GetEntity(c.entityA);
+                EntityBase *bn = this->GetEntity(c.entityB);
 
                 ExprVector a = an->NormalExprsN();
                 ExprVector b = bn->NormalExprsN();
 
-                Param *param = SK.GetParam(c.h.param(0));
-                param->val = a.Dot(b)->Eval() / b.Dot(b)->Eval();
+                Param *param = this->GetParam(c.h.param(0));
+                param->val = Evaluate(a.Dot(b)) / Evaluate(b.Dot(b));
                 break;
             }
 
             case Constraint::Type::PARALLEL: {
                 if(AllParamsExistFor(c)) continue;
 
-                EntityBase *ea = SK.GetEntity(c.entityA),
-                           *eb = SK.GetEntity(c.entityB);
+                EntityBase *ea = this->GetEntity(c.entityA),
+                           *eb = this->GetEntity(c.entityB);
                 ExprVector a = ea->VectorGetExprsInWorkplane(c.workplane);
                 ExprVector b = eb->VectorGetExprsInWorkplane(c.workplane);
 
-                Param *param = SK.GetParam(c.h.param(0));
-                param->val = a.Dot(b)->Eval() / b.Dot(b)->Eval();
+                Param *param = this->GetParam(c.h.param(0));
+                param->val = Evaluate(a.Dot(b)) / Evaluate(b.Dot(b));
                 break;
             }
 
@@ -731,6 +735,20 @@ void SolveSpaceUI::UpgradeLegacyData() {
         }
     }
     oldParam.Clear();
+}
+
+void SolveSpaceUI::UpgradeLegacyData() {
+    Sketch::GenerateOptions opts = {};
+    opts.first = -1;
+    opts.last = -1;
+    opts.sys = &sys;
+    Sketch::GenerateResult result;
+    SK.UpgradeLegacyData(opts, &result);
+
+    deleted.requests += result.requests;
+    deleted.groups += result.groups;
+    deleted.constraints += result.constraints;
+    deleted.nonTrivialConstraints += result.nonTrivialConstraints;
 }
 
 bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,

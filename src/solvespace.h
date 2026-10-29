@@ -506,6 +506,9 @@ public:
     // the given chord tolerance in mm, and update the reference dimensions.
     // Returns true if whether a group's Boolean failed has changed.
     bool GenerateShellsAndMeshes(int first, int last, double chordTolMm);
+    // Bring the sketch, just read from a file saved by an older version, up
+    // to date; it is regenerated, as described by opts, along the way.
+    void UpgradeLegacyData(const GenerateOptions &opts, GenerateResult *result);
 };
 #undef ENTITY
 #undef CONSTRAINT
