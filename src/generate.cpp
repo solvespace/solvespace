@@ -15,10 +15,10 @@ void SolveSpaceUI::MarkGroupDirtyByEntity(hEntity he) {
     MarkGroupDirty(e->group);
 }
 
-void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
+void Sketch::MarkGroupDirty(hGroup hg, bool onlyThis) {
     bool go = false;
-    for(auto const &gh : SK.groupOrder) {
-        Group *g = SK.GetGroup(gh);
+    for(auto const &gh : groupOrder) {
+        Group *g = GetGroup(gh);
         if(g->h == hg) {
             go = true;
         }
@@ -27,6 +27,10 @@ void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
             if(onlyThis) break;
         }
     }
+}
+
+void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
+    SK.MarkGroupDirty(hg, onlyThis);
     unsaved = true;
     ScheduleGenerateAll();
 }
