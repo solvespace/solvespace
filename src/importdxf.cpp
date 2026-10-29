@@ -814,7 +814,7 @@ public:
         if(data->hasActualMeasurement()) {
             c->valA = data->getActualMeasurement();
         } else {
-            c->ModifyToSatisfy();
+            c->ModifyToSatisfy(&SK);
         }
         c->disp.offset = p2.Minus(p0.Plus(p1).ScaledBy(0.5));
     }
@@ -853,7 +853,7 @@ public:
         if(data->hasActualMeasurement()) {
             c->valA = data->getActualMeasurement();
         } else {
-            c->ModifyToSatisfy();
+            c->ModifyToSatisfy(&SK);
         }
         c->disp.offset = p2.Minus(p4);
     }
@@ -878,7 +878,7 @@ public:
         );
 
         Constraint *c = SK.GetConstraint(hc);
-        c->ModifyToSatisfy();
+        c->ModifyToSatisfy(&SK);
         if(data->hasActualMeasurement()) {
             double actual = data->getActualMeasurement() / PI * 180.0;
             if(fabs(180.0 - actual - c->valA) < fabs(actual - c->valA)) {
@@ -909,7 +909,7 @@ public:
         if(actual > 0.0) {
             c->valA = asRadius ? actual * 2.0 : actual;
         } else {
-            c->ModifyToSatisfy();
+            c->ModifyToSatisfy(&SK);
         }
         c->disp.offset = tp.Minus(cp);
         if(asRadius) c->other = true;
