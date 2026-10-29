@@ -11,10 +11,10 @@ namespace SolveSpace {
 
 std::string Entity::DescriptionString() const {
     if(h.isFromRequest()) {
-        Request *r = SK.GetRequest(h.request());
+        Request *r = Owner()->GetRequest(h.request());
         return r->DescriptionString();
     } else {
-        Group *g = SK.GetGroup(h.group());
+        Group *g = Owner()->GetGroup(h.group());
         return g->DescriptionString();
     }
 }
@@ -66,7 +66,7 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
         Vector proj = SS.GW.ProjectPoint3(PointGetNum());
         screenBBox = BBox::From(proj, proj);
     } else if(IsNormal()) {
-        Vector proj = SS.GW.ProjectPoint3(SK.GetEntity(point[0])->PointGetNum());
+        Vector proj = SS.GW.ProjectPoint3(Owner()->GetEntity(point[0])->PointGetNum());
         screenBBox = BBox::From(proj, proj);
     } else if(!sbl->l.IsEmpty()) {
         Vector first = SS.GW.ProjectPoint3(sbl->l[0].ctrl[0]);
@@ -105,12 +105,12 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
         case Type::CUBIC_PERIODIC:
         case Type::TTF_TEXT:
         case Type::IMAGE:
-            refs->push_back(SK.GetEntity(point[0])->PointGetDrawNum());
+            refs->push_back(Owner()->GetEntity(point[0])->PointGetDrawNum());
             break;
 
         case Type::LINE_SEGMENT: {
-            Vector a = SK.GetEntity(point[0])->PointGetDrawNum(),
-                   b = SK.GetEntity(point[1])->PointGetDrawNum();
+            Vector a = Owner()->GetEntity(point[0])->PointGetDrawNum(),
+                   b = Owner()->GetEntity(point[1])->PointGetDrawNum();
             refs->push_back(b.Plus(a.Minus(b).ScaledBy(0.5)));
             break;
         }
@@ -150,7 +150,7 @@ bool Entity::IsStylable() const {
 }
 
 bool Entity::IsVisible() const {
-    Group *g = SK.GetGroup(group);
+    Group *g = Owner()->GetGroup(group);
 
     if(g->h == Group::HGROUP_REFERENCES && IsNormal()) {
         // The reference normals are always shown
@@ -182,8 +182,8 @@ bool Entity::IsVisible() const {
     return true;
 }
 
-static bool PtCanDrag(hEntity pt) {
-    Entity* p = SK.GetEntity(pt);
+static bool PtCanDrag(Sketch *sketch, hEntity pt) {
+    Entity* p = sketch->GetEntity(pt);
     // a numeric copy can not move
     if(p->type == Entity::Type::POINT_N_COPY) return false;
     // these transforms applied zero times can not be moved
@@ -198,19 +198,19 @@ static bool PtCanDrag(hEntity pt) {
 // draggable with the mouse. We identify the undraggables here
 bool Entity::CanBeDragged() const {
     if(IsPoint()) {
-        if(!PtCanDrag(h))
+        if(!PtCanDrag(Owner(), h))
             return false;
         // are we constrained pt-on-point from a previous group?
-        for(const Constraint &cc : SK.constraint) {
+        for(const Constraint &cc : Owner()->constraint) {
             if(cc.group == group && cc.type == ConstraintBase::Type::POINTS_COINCIDENT) {
                 if(cc.ptA == h) {
-                    if((SK.GetEntity(cc.ptB)->group < group)
-                      || (!PtCanDrag(cc.ptB)))
+                    if((Owner()->GetEntity(cc.ptB)->group < group)
+                      || (!PtCanDrag(Owner(), cc.ptB)))
                       return false;
                 }
                 if(cc.ptB == h) {
-                    if((SK.GetEntity(cc.ptA)->group < group)
-                      || (!PtCanDrag(cc.ptA)))
+                    if((Owner()->GetEntity(cc.ptA)->group < group)
+                      || (!PtCanDrag(Owner(), cc.ptA)))
                       return false;
                 }
             }
@@ -218,7 +218,7 @@ bool Entity::CanBeDragged() const {
     }
     // for these types of entities the first point will indicate draggability
     if(HasEndpoints() || type == Entity::Type::CIRCLE) {
-        return PtCanDrag(point[0]);
+        return PtCanDrag(Owner(), point[0]);
     }
     // if we're not certain it can't be dragged then default to true
     return true;
@@ -268,18 +268,18 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const {
     Vector pt[MAX_N+4];
     if(periodic) {
         for(i = 0; i < ep + 3; i++) {
-            pt[i] = SK.GetEntity(point[i])->PointGetNum();
+            pt[i] = Owner()->GetEntity(point[i])->PointGetNum();
         }
-        pt[i++] = SK.GetEntity(point[0])->PointGetNum();
+        pt[i++] = Owner()->GetEntity(point[0])->PointGetNum();
     } else {
-        ctrl_s = SK.GetEntity(point[1])->PointGetNum();
-        ctrl_f = SK.GetEntity(point[ep+2])->PointGetNum();
+        ctrl_s = Owner()->GetEntity(point[1])->PointGetNum();
+        ctrl_f = Owner()->GetEntity(point[ep+2])->PointGetNum();
         j = 0;
-        pt[j++] = SK.GetEntity(point[0])->PointGetNum();
+        pt[j++] = Owner()->GetEntity(point[0])->PointGetNum();
         for(i = 2; i <= ep + 1; i++) {
-            pt[j++] = SK.GetEntity(point[i])->PointGetNum();
+            pt[j++] = Owner()->GetEntity(point[i])->PointGetNum();
         }
-        pt[j++] = SK.GetEntity(point[ep+3])->PointGetNum();
+        pt[j++] = Owner()->GetEntity(point[ep+3])->PointGetNum();
     }
 
     // The unknowns that we will be solving for, a set for each coordinate.
@@ -393,8 +393,8 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
 
     switch(type) {
         case Type::LINE_SEGMENT: {
-            Vector a = SK.GetEntity(point[0])->PointGetNum();
-            Vector b = SK.GetEntity(point[1])->PointGetNum();
+            Vector a = Owner()->GetEntity(point[0])->PointGetNum();
+            Vector b = Owner()->GetEntity(point[1])->PointGetNum();
             sb = SBezier::From(a, b);
             sb.entity = h.v;
             sbl->l.Add(&sb);
@@ -410,8 +410,8 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
 
         case Type::CIRCLE:
         case Type::ARC_OF_CIRCLE: {
-            Vector center = SK.GetEntity(point[0])->PointGetNum();
-            Quaternion q = SK.GetEntity(normal)->NormalGetNum();
+            Vector center = Owner()->GetEntity(point[0])->PointGetNum();
+            Quaternion q = Owner()->GetEntity(normal)->NormalGetNum();
             Vector u = q.RotationU(), v = q.RotationV();
             double r = CircleGetRadiusNum();
             double thetaa, thetab, dtheta;
@@ -471,8 +471,8 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
         }
 
         case Type::TTF_TEXT: {
-            Vector topLeft = SK.GetEntity(point[0])->PointGetNum();
-            Vector botLeft = SK.GetEntity(point[1])->PointGetNum();
+            Vector topLeft = Owner()->GetEntity(point[0])->PointGetNum();
+            Vector botLeft = Owner()->GetEntity(point[1])->PointGetNum();
             Vector n = Normal()->NormalN();
             Vector v = topLeft.Minus(botLeft);
             Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
@@ -494,14 +494,14 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
 }
 
 bool Entity::ShouldDrawExploded() const {
-    return SK.GetGroup(group)->ShouldDrawExploded();
+    return Owner()->GetGroup(group)->ShouldDrawExploded();
 }
 
 Vector Entity::ExplodeOffset() const {
     if(ShouldDrawExploded() && workplane.v != 0) {
-        int requestIdx = SK.GetRequest(h.request())->groupRequestIndex;
+        int requestIdx = Owner()->GetRequest(h.request())->groupRequestIndex;
         double offset = SS.explodeDistance * (requestIdx + 1);
-        return SK.GetEntity(workplane)->Normal()->NormalN().ScaledBy(offset);
+        return Owner()->GetEntity(workplane)->Normal()->NormalN().ScaledBy(offset);
     } else {
         return {};
     }
@@ -584,14 +584,14 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
             // free to move.
             bool free = false;
             if(type == Type::POINT_IN_3D) {
-                Param *px = SK.GetParam(param[0]),
-                      *py = SK.GetParam(param[1]),
-                      *pz = SK.GetParam(param[2]);
+                Param *px = Owner()->GetParam(param[0]),
+                      *py = Owner()->GetParam(param[1]),
+                      *pz = Owner()->GetParam(param[2]);
 
                 free = px->free || py->free || pz->free;
             } else if(type == Type::POINT_IN_2D) {
-                Param *pu = SK.GetParam(param[0]),
-                      *pv = SK.GetParam(param[1]);
+                Param *pu = Owner()->GetParam(param[0]),
+                      *pv = Owner()->GetParam(param[1]);
 
                 free = pu->free || pv->free;
             }
@@ -632,7 +632,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                 if(asReference) {
                     if(!h.request().IsFromReferences()) continue;
                 } else {
-                    if(!SK.GetGroup(group)->IsVisible() || !SS.GW.showNormals) continue;
+                    if(!Owner()->GetGroup(group)->IsVisible() || !SS.GW.showNormals) continue;
                 }
 
                 stroke.layer = (asReference) ? Canvas::Layer::FRONT : Canvas::Layer::NORMAL;
@@ -669,7 +669,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                     tail = camera.projRight.ScaledBy(w/s).Plus(
                            camera.projUp.   ScaledBy(h/s)).Minus(camera.offset);
                 } else {
-                    tail = SK.GetEntity(point[0])->PointGetDrawNum();
+                    tail = Owner()->GetEntity(point[0])->PointGetDrawNum();
                 }
                 tail = camera.AlignToPixelGrid(tail);
 
@@ -684,10 +684,10 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                 canvas->DrawLine(tip, tip.Minus(v.RotatedAbout(axis, -0.6)), hcs);
 
                 if(type == Type::NORMAL_IN_3D) {
-                    Param *nw = SK.GetParam(param[0]),
-                          *nx = SK.GetParam(param[1]),
-                          *ny = SK.GetParam(param[2]),
-                          *nz = SK.GetParam(param[3]);
+                    Param *nw = Owner()->GetParam(param[0]),
+                          *nx = Owner()->GetParam(param[1]),
+                          *ny = Owner()->GetParam(param[2]),
+                          *nz = Owner()->GetParam(param[3]);
 
                     if(nw->free || nx->free || ny->free || nz->free) {
                         Canvas::Stroke analyzeStroke = Style::Stroke(Style::ANALYZE);
@@ -708,7 +708,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         case Type::WORKPLANE: {
             const Camera &camera = canvas->GetCamera();
 
-            Vector p = SK.GetEntity(point[0])->PointGetNum();
+            Vector p = Owner()->GetEntity(point[0])->PointGetNum();
             p = camera.AlignToPixelGrid(p);
 
             Vector u = Normal()->NormalU();
@@ -785,9 +785,9 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                 canvas->DrawEdges(*edges, hcs);
             }
             if(type == Type::CIRCLE) {
-                Entity *dist = SK.GetEntity(distance);
+                Entity *dist = Owner()->GetEntity(distance);
                 if(dist->type == Type::DISTANCE) {
-                    Param *p = SK.GetParam(dist->param[0]);
+                    Param *p = Owner()->GetParam(dist->param[0]);
                     if(p->free) {
                         Canvas::Stroke analyzeStroke = Style::Stroke(Style::ANALYZE);
                         analyzeStroke.layer = Canvas::Layer::FRONT;
@@ -831,7 +831,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
             Canvas::hFill hf = canvas->GetFill(fill);
             Vector v[4] = {};
             for(int i = 0; i < 4; i++) {
-                v[i] = SK.GetEntity(point[i])->PointGetDrawNum();
+                v[i] = Owner()->GetEntity(point[i])->PointGetDrawNum();
             }
             Vector iu = v[3].Minus(v[0]);
             Vector iv = v[1].Minus(v[0]);

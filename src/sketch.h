@@ -494,6 +494,8 @@ public:
     // parameters it refers to; NULL for an entity that is just stored,
     // like those imported from a linked file.
     Sketch      *sketch;
+    // The sketch, which must be set for the entity's geometry to be found
+    Sketch *Owner() const;
 
     hGroup      group;
     hEntity     workplane;   // or Entity::FREE_IN_3D
