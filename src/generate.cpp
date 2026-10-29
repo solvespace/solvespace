@@ -80,6 +80,37 @@ bool Sketch::PruneGroup(Group *g) {
 
 // Remove the constraints tagged for pruning, if any were, and clear the flag.
 // Returns the number of constraints removed.
+bool Sketch::LinkParamIsKnown(Group *g, Request *r) {
+    if(r->HasExpression() && r->ParseExpression(this) == NULL) return false;
+    for(const LinkValue &lv : g->linkParams) {
+        if(lv.name == r->str) return true;
+    }
+    return false;
+}
+
+LinkValues Sketch::LinkValuesFor(Group *g, ParamList *values, bool evaluate) {
+    LinkValues result;
+    for(Request &r : request) {
+        if(r.group != g->h || !r.IsLinkParam() || r.tag) continue;
+
+        LinkValue lv;
+        lv.name = r.str;
+        lv.value = Request::NAMED_PARAM_DEFAULT;
+        Param *p = values->FindByIdNoOops(r.NamedParam());
+        if(p != NULL) {
+            lv.value = p->val;
+        }
+        if(evaluate && r.HasExpression()) {
+            if(Expr *e = r.ParseExpression(this)) {
+                lv.value = Evaluate(e);
+            }
+        }
+        result.push_back(lv);
+    }
+    std::sort(result.begin(), result.end());
+    return result;
+}
+
 int Sketch::RemoveTaggedConstraints(bool *tagged) {
     if(!*tagged) {
         return 0;
@@ -196,9 +227,12 @@ void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *resul
                 continue;
             }
 
-            if(r.IsNamedParam()) {
+            if(r.IsNamedParam() || r.IsLinkParam()) {
                 r.Generate(this, &entity, &param);
-                g->paramNames[r.str] = r.NamedParam();
+                // The names of a linked sketch's parameters aren't ours
+                if(r.IsNamedParam()) {
+                    g->paramNames[r.str] = r.NamedParam();
+                }
                 continue;
             }
 
@@ -213,6 +247,17 @@ void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *resul
 
             r.groupRequestIndex = groupRequestIndex++;
             r.Generate(this, &entity, &param);
+        }
+
+        // A linked group gets its entities from the linked sketch, generated
+        // with the values given to its parameters. Those may depend on what
+        // was just solved in earlier groups, so if they have changed, it's
+        // generated again.
+        if(g->type == Group::Type::LINKED && opts.loadLinked != NULL) {
+            LinkValues values = LinkValuesFor(g, &prev, /*evaluate=*/true);
+            if(values != g->linkValues) {
+                opts.loadLinked(g, values);
+            }
         }
 
         // Regenerate the group
@@ -264,7 +309,8 @@ void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *resul
         // (already solved) parameters of earlier groups. If a name isn't
         // defined, it keeps its last value, and the solve reports it.
         for(auto &r : request) {
-            if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
+            if(r.group != hg || !(r.IsNamedParam() || r.IsLinkParam())) continue;
+            if(!r.HasExpression()) continue;
 
             if(Expr *e = r.ParseExpression(this)) {
                 GetParam(r.NamedParam())->val = Evaluate(e);
@@ -434,6 +480,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     opts.timeoutRedundantConstr = timeoutRedundantConstr;
     opts.sys = &sys;
     opts.dragged = DraggedEntities();
+    opts.loadLinked = &LoadLinkedForGeneration;
     Sketch::GenerateResult result;
     SK.GenerateEntities(opts, &result);
 
@@ -513,6 +560,10 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
                        undo.cnt > 0 ? "\n\nChoose Edit -> Undo to undelete all elements." : "");
         }
     }
+
+    // Drop what linked sketches made that no linked group uses any more,
+    // like the steps of a drag.
+    PruneLinkedSketches();
 
     Platform::FreeAllTemporary();
     allConsistent = true;
@@ -672,8 +723,10 @@ void Sketch::WriteEqSystemForGroup(hGroup hg, System *sys, const Dragged &dragge
         Request *r = &req;
         if(r->group != hg || r->tag) continue;
         // A locked parameter stays out of the system, so the solver can't
-        // change it; equations that use it see it as a constant.
-        if(r->type == Request::Type::NAMED_CONST_PARAM) continue;
+        // change it; equations that use it see it as a constant. Nor is the
+        // value given to a linked sketch's parameter solved for.
+        if(r->type == Request::Type::NAMED_CONST_PARAM ||
+           r->type == Request::Type::NAMED_LINK_PARAM) continue;
 
         r->Generate(this, &(sys->entity), &(sys->param));
     }
@@ -731,6 +784,17 @@ void Sketch::SolveGroup(hGroup hg, System *sys, const Dragged &dragged, bool and
     for(auto &r : request) {
         if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
         if(r.ParseExpression(this) != NULL) continue;
+
+        if(!unknownName) {
+            g->solved.remove.Clear();
+            unknownName = true;
+        }
+    }
+    // Likewise a value for a linked sketch's parameter, whose expression uses
+    // a name that isn't defined, or that the linked sketch doesn't have.
+    for(auto &r : request) {
+        if(r.group != hg || !r.IsLinkParam()) continue;
+        if(LinkParamIsKnown(g, &r)) continue;
 
         if(!unknownName) {
             g->solved.remove.Clear();

@@ -122,6 +122,7 @@ void Request::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
 
         case Type::NAMED_PARAMETER:
         case Type::NAMED_CONST_PARAM:
+        case Type::NAMED_LINK_PARAM:
             // Just the one parameter, and no entities, so these aren't in the
             // table above. A locked parameter is kept out of the solver's
             // system in WriteEqSystemForGroup(). A parameter seen before
@@ -239,6 +240,7 @@ std::string Request::DescriptionString() const {
             case Type::IMAGE:           s = "image";          break;
             case Type::NAMED_PARAMETER:
             case Type::NAMED_CONST_PARAM: s = "parameter";      break;
+            case Type::NAMED_LINK_PARAM:  s = "linked-parameter"; break;
         }
     }
     ssassert(s != NULL, "Unexpected request type");
