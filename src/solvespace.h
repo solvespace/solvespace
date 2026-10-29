@@ -446,6 +446,44 @@ public:
     void SolveGroup(hGroup hg, System *sys, const Dragged &dragged, bool andFindFree,
                     int timeoutRedundantConstr);
     SolveResult TestRankForGroup(hGroup hg, System *sys, int *rank = NULL);
+
+    // How to regenerate the sketch
+    struct GenerateOptions {
+        // The groups to solve, as indices into groupOrder. The others are
+        // regenerated, but assumed to be solved already.
+        int     first;
+        int     last;
+        // Regenerate without solving anything, as for export
+        bool    noSolve;
+        bool    andFindFree;
+        int     timeoutRedundantConstr;
+        System  *sys;
+        Dragged dragged;
+    };
+    // A group that was solved, and how it was solved before
+    struct SolvedGroup {
+        hGroup      h;
+        SolveResult before;
+    };
+    // What happened when the sketch was regenerated
+    struct GenerateResult {
+        // The groups to solve, adjusted for any groups that were pruned
+        int     first;
+        int     last;
+        // How much was pruned, because what it depends on doesn't exist
+        int     requests;
+        int     groups;
+        int     constraints;
+        int     nonTrivialConstraints;
+        // The groups that were solved, in order
+        std::vector<SolvedGroup> solved;
+    };
+    // Regenerate the entities and parameters of every group, pruning what
+    // can't be generated, and solve the groups in the range.
+    void GenerateEntities(const GenerateOptions &opts, GenerateResult *result);
+    // Then generate the shells and meshes of the groups in the range, and
+    // update the reference dimensions.
+    void GenerateShellsAndMeshes(int first, int last);
 };
 #undef ENTITY
 #undef CONSTRAINT
@@ -708,7 +746,7 @@ public:
 
     void GenerateAll(Generate type = Generate::DIRTY, bool andFindFree = false);
     Sketch::Dragged DraggedEntities();
-    void SolveGroupAndReport(hGroup hg, bool andFindFree);
+    void ReportHowGroupSolved(hGroup hg, SolveResult before);
     SolveResult TestRankForGroup(hGroup hg, int *rank = NULL);
     void UpdateCenterOfMass();
 
