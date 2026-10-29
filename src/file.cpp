@@ -32,6 +32,7 @@ void SolveSpaceUI::ClearExisting() {
     SK.group.Clear();
     SK.groupOrder.Clear();
     SK.style.Clear();
+    ClearLinkedSketches();
 
     SK.entity.Clear();
     SK.param.Clear();
@@ -772,13 +773,83 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityLi
     }
 }
 
+// The hash of a file's contents, or false if it can't be read.
+static bool HashOfFile(const Platform::Path &filename, size_t *hash) {
+    std::string data;
+    if(!ReadFile(filename, &data)) return false;
+    *hash = std::hash<std::string>()(data);
+    return true;
+}
+
+bool SolveSpaceUI::LinkedSketchIsCurrent(LinkedSketch *ls) {
+    if(ls->chordTol != chordTol || ls->maxSegments != maxSegments) return false;
+    for(const LinkedFile &lf : ls->madeFrom) {
+        size_t hash;
+        if(!HashOfFile(lf.path, &hash) || hash != lf.hash) return false;
+    }
+    return true;
+}
+
+// Give a linked group what the linked sketch made.
+void SolveSpaceUI::UseLinkedSketch(LinkedSketch *ls, EntityList *le, SMesh *m, SShell *sh) {
+    le->Clear();
+    for(Entity &e : ls->entities) {
+        Entity copy = e;
+        copy.beziers = {};
+        copy.edges = {};
+        le->Add(&copy);
+    }
+    m->MakeFromCopyOf(&ls->mesh);
+    sh->MakeFromCopyOf(&ls->shell);
+
+    // Import any styles that we don't have yet.
+    for(Style &s : ls->styles) {
+        if(SK.style.FindByIdNoOops(s.h) == nullptr) {
+            SK.style.Add(&s);
+        }
+    }
+}
+
+void SolveSpaceUI::ClearLinkedSketches() {
+    for(auto &entry : linkedSketches) {
+        LinkedSketch *ls = &entry.second;
+        ls->entities.Clear();
+        ls->mesh.Clear();
+        ls->shell.Clear();
+        ls->styles.Clear();
+    }
+    linkedSketches.clear();
+}
+
 bool SolveSpaceUI::LoadLinkedSketch(const Platform::Path &filename, EntityList *le,
                                     SMesh *m, SShell *sh) {
+    // Use what was made before, if nothing it was made from has changed.
+    if(linkedSketches.count(filename) > 0) {
+        LinkedSketch *ls = &linkedSketches[filename];
+        if(LinkedSketchIsCurrent(ls)) {
+            UseLinkedSketch(ls, le, m, sh);
+            return true;
+        }
+        ls->entities.Clear();
+        ls->mesh.Clear();
+        ls->shell.Clear();
+        ls->styles.Clear();
+        linkedSketches.erase(filename);
+    }
+
     // A file that links itself, directly or through others, can't be
     // generated.
     for(const Platform::Path &loading : linkedFilesLoading) {
         if(loading.Equals(filename)) return false;
     }
+
+    LinkedSketch made = {};
+    made.chordTol = chordTol;
+    made.maxSegments = maxSegments;
+    LinkedFile self;
+    self.path = filename;
+    if(!HashOfFile(filename, &self.hash)) return false;
+    made.madeFrom.push_back(self);
 
     Sketch *sketch = new Sketch();
     EntityList saved = {};
@@ -813,7 +884,6 @@ bool SolveSpaceUI::LoadLinkedSketch(const Platform::Path &filename, EntityList *
         // The entities are stored, not part of a sketch. Whether each is
         // visible is as it was in the saved file, which is how the linked
         // sketch was last shown.
-        le->Clear();
         for(Entity &e : sketch->entity) {
             e.CalculateNumerical(/*forExport=*/false);
             Entity copy = e;
@@ -823,20 +893,35 @@ bool SolveSpaceUI::LoadLinkedSketch(const Platform::Path &filename, EntityList *
             copy.screenBBoxValid = false;
             Entity *se = saved.FindByIdNoOops(e.h);
             copy.actVisible = (se != NULL) ? se->actVisible : true;
-            le->Add(&copy);
+            made.entities.Add(&copy);
         }
 
         // The mesh and shell are those of the last group, as saved.
         Group *last = sketch->GetGroup(*sketch->groupOrder.Last());
-        m->MakeFromCopyOf(&last->runningMesh);
-        sh->MakeFromCopyOf(&last->runningShell);
-
-        // Import any styles that we don't have yet.
+        made.mesh.MakeFromCopyOf(&last->runningMesh);
+        made.shell.MakeFromCopyOf(&last->runningShell);
         for(Style &s : sketch->style) {
-            if(SK.style.FindByIdNoOops(s.h) == nullptr) {
-                SK.style.Add(&s);
+            made.styles.Add(&s);
+        }
+
+        // It was made from the files that its linked groups link, too.
+        for(Group &g : sketch->group) {
+            if(g.type != Group::Type::LINKED) continue;
+            if(linkedSketches.count(g.linkFile) > 0) {
+                for(const LinkedFile &lf : linkedSketches[g.linkFile].madeFrom) {
+                    made.madeFrom.push_back(lf);
+                }
+            } else {
+                LinkedFile lf;
+                lf.path = g.linkFile;
+                if(HashOfFile(g.linkFile, &lf.hash)) {
+                    made.madeFrom.push_back(lf);
+                }
             }
         }
+
+        linkedSketches[filename] = made;
+        UseLinkedSketch(&linkedSketches[filename], le, m, sh);
     }
 
     saved.Clear();
