@@ -488,8 +488,9 @@ public:
     // can't be generated, and solve the groups in the range.
     void GenerateEntities(const GenerateOptions &opts, GenerateResult *result);
     // Then generate the shells and meshes of the groups in the range, and
-    // update the reference dimensions.
-    void GenerateShellsAndMeshes(int first, int last);
+    // update the reference dimensions. Returns true if whether a group's
+    // Boolean failed has changed.
+    bool GenerateShellsAndMeshes(int first, int last);
 };
 #undef ENTITY
 #undef CONSTRAINT

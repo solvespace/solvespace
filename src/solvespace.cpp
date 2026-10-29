@@ -1246,7 +1246,7 @@ Group *Sketch::GetRunningMeshGroupFor(hGroup h) {
         if(g->IsMeshGroup()) {
             return g;
         }
-        g = g->PreviousGroup();
+        g = g->PreviousGroup(&SK);
     }
     return NULL;
 }
