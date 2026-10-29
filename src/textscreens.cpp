@@ -718,7 +718,7 @@ list_items:
         if(r.HasExpression()) {
             value = r.expression;
             if(value.size() < 7) value.resize(7, ' ');
-            r.ParseExpression(&error);
+            r.ParseExpression(&SK, &error);
         } else {
             Param *p = SK.param.FindByIdNoOops(r.NamedParam());
             value = FormatParamValue((p != NULL) ? p->val : Request::NAMED_PARAM_DEFAULT);
@@ -844,7 +844,7 @@ void TextWindow::ShowGroupSolveInfo() {
         int i = g->solved.remove.n;
         for(const Request &r : SK.request) {
             if(r.group != g->h || !r.IsNamedParam() || !r.HasExpression()) continue;
-            if(r.ParseExpression() != NULL) continue;
+            if(r.ParseExpression(&SK) != NULL) continue;
 
             Printf(false, "%Bp   parameter %s = %s",
                 (i & 1) ? 'd' : 'a', r.str.c_str(), r.expression.c_str());
