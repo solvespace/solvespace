@@ -330,7 +330,19 @@ void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *resul
     prev.Clear();
 }
 
-bool Sketch::GenerateShellsAndMeshes(int first, int last) {
+double Sketch::ChordTolForSize(double relativeChordTol) {
+    BBox box = CalculateEntityBBox(/*includingInvisible=*/true);
+    Vector size = box.maxp.Minus(box.minp);
+    double maxSize = std::max({ size.x, size.y, size.z });
+    return maxSize * relativeChordTol / 100.0;
+}
+
+bool Sketch::GenerateShellsAndMeshes(int first, int last, double chordTolMm) {
+    // The surface code takes the chord tolerance from SS, so set it to this
+    // sketch's while its shells and meshes are generated.
+    double savedChordTol = SS.chordTolCalculated;
+    SS.chordTolCalculated = chordTolMm;
+
     bool booleanChanged = false;
     for(int i = 0; i < groupOrder.n; ++i) {
         const hGroup hg = groupOrder[i];
@@ -352,6 +364,8 @@ bool Sketch::GenerateShellsAndMeshes(int first, int last) {
             c.ModifyToSatisfy(this);
         }
     }
+
+    SS.chordTolCalculated = savedChordTol;
     return booleanChanged;
 }
 
@@ -436,15 +450,12 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
     // If we're generating entities for display, first we need to find
     // the bounding box to turn relative chord tolerance to absolute.
     if(!exportMode) {
-        BBox box = SK.CalculateEntityBBox(/*includeInvisibles=*/true);
-        Vector size = box.maxp.Minus(box.minp);
-        double maxSize = std::max({ size.x, size.y, size.z });
-        chordTolCalculated = maxSize * chordTol / 100.0;
+        chordTolCalculated = SK.ChordTolForSize(chordTol);
     }
 
     // Then generate the shell and mesh, and show any change in whether a
     // group's Boolean failed.
-    if(SK.GenerateShellsAndMeshes(result.first, result.last)) {
+    if(SK.GenerateShellsAndMeshes(result.first, result.last, chordTolCalculated)) {
         ScheduleShowTW();
     }
 
