@@ -12,6 +12,11 @@ namespace SolveSpace {
 const hEntity  EntityBase::FREE_IN_3D = { 0 };
 const hEntity  EntityBase::NO_ENTITY = { 0 };
 
+Sketch *EntityBase::Owner() const {
+    ssassert(sketch != NULL, "Entity isn't in a sketch");
+    return sketch;
+}
+
 bool EntityBase::HasVector() const {
     switch(type) {
         case Type::LINE_SEGMENT:
@@ -33,8 +38,8 @@ ExprVector EntityBase::VectorGetExprsInWorkplane(hEntity wrkpl) const {
     }
     switch(type) {
         case Type::LINE_SEGMENT:
-            return (SK.GetEntity(point[0])->PointGetExprsInWorkplane(wrkpl)).Minus(
-                    SK.GetEntity(point[1])->PointGetExprsInWorkplane(wrkpl));
+            return (Owner()->GetEntity(point[0])->PointGetExprsInWorkplane(wrkpl)).Minus(
+                    Owner()->GetEntity(point[1])->PointGetExprsInWorkplane(wrkpl));
 
         case Type::NORMAL_IN_3D:
         case Type::NORMAL_IN_2D:
@@ -46,7 +51,7 @@ ExprVector EntityBase::VectorGetExprsInWorkplane(hEntity wrkpl) const {
                 return ev;
             }
             // Get the offset and basis vectors for this weird exotic csys.
-            EntityBase *w = SK.GetEntity(wrkpl);
+            EntityBase *w = Owner()->GetEntity(wrkpl);
             ExprVector wu = w->Normal()->NormalExprsU();
             ExprVector wv = w->Normal()->NormalExprsV();
 
@@ -72,8 +77,8 @@ Vector EntityBase::VectorGetNum() const {
     }
     switch(type) {
         case Type::LINE_SEGMENT:
-            return (SK.GetEntity(point[0])->PointGetNum()).Minus(
-                    SK.GetEntity(point[1])->PointGetNum());
+            return (Owner()->GetEntity(point[0])->PointGetNum()).Minus(
+                    Owner()->GetEntity(point[1])->PointGetNum());
 
         case Type::NORMAL_IN_3D:
         case Type::NORMAL_IN_2D:
@@ -92,15 +97,15 @@ Vector EntityBase::VectorGetRefPoint() const {
     }
     switch(type) {
         case Type::LINE_SEGMENT:
-            return ((SK.GetEntity(point[0])->PointGetNum()).Plus(
-                     SK.GetEntity(point[1])->PointGetNum())).ScaledBy(0.5);
+            return ((Owner()->GetEntity(point[0])->PointGetNum()).Plus(
+                     Owner()->GetEntity(point[1])->PointGetNum())).ScaledBy(0.5);
 
         case Type::NORMAL_IN_3D:
         case Type::NORMAL_IN_2D:
         case Type::NORMAL_N_COPY:
         case Type::NORMAL_N_ROT:
         case Type::NORMAL_N_ROT_AA:
-            return SK.GetEntity(point[0])->PointGetNum();
+            return Owner()->GetEntity(point[0])->PointGetNum();
 
         default: ssassert(false, "Unexpected entity type");
     }
@@ -109,14 +114,14 @@ Vector EntityBase::VectorGetRefPoint() const {
 Vector EntityBase::VectorGetStartPoint() const {
     switch(type) {
         case Type::LINE_SEGMENT:
-            return SK.GetEntity(point[1])->PointGetNum();
+            return Owner()->GetEntity(point[1])->PointGetNum();
 
         case Type::NORMAL_IN_3D:
         case Type::NORMAL_IN_2D:
         case Type::NORMAL_N_COPY:
         case Type::NORMAL_N_ROT:
         case Type::NORMAL_N_ROT_AA:
-            return SK.GetEntity(point[0])->PointGetNum();
+            return Owner()->GetEntity(point[0])->PointGetNum();
 
         default: ssassert(false, "Unexpected entity type");
     }
@@ -128,18 +133,18 @@ bool EntityBase::IsCircle() const {
 
 Expr *EntityBase::CircleGetRadiusExpr() const {
     if(type == Type::CIRCLE) {
-        return SK.GetEntity(distance)->DistanceGetExpr();
+        return Owner()->GetEntity(distance)->DistanceGetExpr();
     } else if(type == Type::ARC_OF_CIRCLE) {
-        return Constraint::Distance(&SK, workplane, point[0], point[1]);
+        return Constraint::Distance(Owner(), workplane, point[0], point[1]);
     } else ssassert(false, "Unexpected entity type");
 }
 
 double EntityBase::CircleGetRadiusNum() const {
     if(type == Type::CIRCLE) {
-        return SK.GetEntity(distance)->DistanceGetNum();
+        return Owner()->GetEntity(distance)->DistanceGetNum();
     } else if(type == Type::ARC_OF_CIRCLE) {
-        Vector c  = SK.GetEntity(point[0])->PointGetNum();
-        Vector pa = SK.GetEntity(point[1])->PointGetNum();
+        Vector c  = Owner()->GetEntity(point[0])->PointGetNum();
+        Vector pa = Owner()->GetEntity(point[1])->PointGetNum();
         return (pa.Minus(c)).Magnitude();
     } else ssassert(false, "Unexpected entity type");
 }
@@ -150,9 +155,9 @@ void EntityBase::ArcGetAngles(double *thetaa, double *thetab, double *dtheta) co
     Quaternion q = Normal()->NormalGetNum();
     Vector u = q.RotationU(), v = q.RotationV();
 
-    Vector c  = SK.GetEntity(point[0])->PointGetNum();
-    Vector pa = SK.GetEntity(point[1])->PointGetNum();
-    Vector pb = SK.GetEntity(point[2])->PointGetNum();
+    Vector c  = Owner()->GetEntity(point[0])->PointGetNum();
+    Vector pa = Owner()->GetEntity(point[1])->PointGetNum();
+    Vector pb = Owner()->GetEntity(point[2])->PointGetNum();
 
     Point2d c2  = c.Project2d(u, v);
     Point2d pa2 = (pa.Project2d(u, v)).Minus(c2);
@@ -168,29 +173,29 @@ void EntityBase::ArcGetAngles(double *thetaa, double *thetab, double *dtheta) co
 }
 
 Vector EntityBase::CubicGetStartNum() const {
-    return SK.GetEntity(point[0])->PointGetNum();
+    return Owner()->GetEntity(point[0])->PointGetNum();
 }
 Vector EntityBase::CubicGetFinishNum() const {
-    return SK.GetEntity(point[3+extraPoints])->PointGetNum();
+    return Owner()->GetEntity(point[3+extraPoints])->PointGetNum();
 }
 ExprVector EntityBase::CubicGetStartTangentExprs() const {
-    ExprVector pon  = SK.GetEntity(point[0])->PointGetExprs(),
-               poff = SK.GetEntity(point[1])->PointGetExprs();
+    ExprVector pon  = Owner()->GetEntity(point[0])->PointGetExprs(),
+               poff = Owner()->GetEntity(point[1])->PointGetExprs();
     return (pon.Minus(poff));
 }
 ExprVector EntityBase::CubicGetFinishTangentExprs() const {
-    ExprVector pon  = SK.GetEntity(point[3+extraPoints])->PointGetExprs(),
-               poff = SK.GetEntity(point[2+extraPoints])->PointGetExprs();
+    ExprVector pon  = Owner()->GetEntity(point[3+extraPoints])->PointGetExprs(),
+               poff = Owner()->GetEntity(point[2+extraPoints])->PointGetExprs();
     return (pon.Minus(poff));
 }
 Vector EntityBase::CubicGetStartTangentNum() const {
-    Vector pon  = SK.GetEntity(point[0])->PointGetNum(),
-           poff = SK.GetEntity(point[1])->PointGetNum();
+    Vector pon  = Owner()->GetEntity(point[0])->PointGetNum(),
+           poff = Owner()->GetEntity(point[1])->PointGetNum();
     return (pon.Minus(poff));
 }
 Vector EntityBase::CubicGetFinishTangentNum() const {
-    Vector pon  = SK.GetEntity(point[3+extraPoints])->PointGetNum(),
-           poff = SK.GetEntity(point[2+extraPoints])->PointGetNum();
+    Vector pon  = Owner()->GetEntity(point[3+extraPoints])->PointGetNum(),
+           poff = Owner()->GetEntity(point[2+extraPoints])->PointGetNum();
     return (pon.Minus(poff));
 }
 
@@ -199,18 +204,18 @@ bool EntityBase::IsWorkplane() const {
 }
 
 ExprVector EntityBase::WorkplaneGetOffsetExprs() const {
-    return SK.GetEntity(point[0])->PointGetExprs();
+    return Owner()->GetEntity(point[0])->PointGetExprs();
 }
 
 Vector EntityBase::WorkplaneGetOffset() const {
-    return SK.GetEntity(point[0])->PointGetNum();
+    return Owner()->GetEntity(point[0])->PointGetNum();
 }
 
 void EntityBase::WorkplaneGetPlaneExprs(ExprVector *n, Expr **dn) const {
     if(type == Type::WORKPLANE) {
         *n = Normal()->NormalExprsN();
 
-        ExprVector p0 = SK.GetEntity(point[0])->PointGetExprs();
+        ExprVector p0 = Owner()->GetEntity(point[0])->PointGetExprs();
         // The plane is n dot (p - p0) = 0, or
         //              n dot p - n dot p0 = 0
         // so dn = n dot p0
@@ -224,7 +229,7 @@ bool EntityBase::IsDistance() const {
 }
 double EntityBase::DistanceGetNum() const {
     if(type == Type::DISTANCE) {
-        return SK.GetParam(param[0])->val;
+        return Owner()->GetParam(param[0])->val;
     } else if(type == Type::DISTANCE_N_COPY) {
         return numDistance;
     } else ssassert(false, "Unexpected entity type");
@@ -238,14 +243,14 @@ Expr *EntityBase::DistanceGetExpr() const {
 }
 void EntityBase::DistanceForceTo(double v) {
     if(type == Type::DISTANCE) {
-        (SK.GetParam(param[0]))->val = v;
+        (Owner()->GetParam(param[0]))->val = v;
     } else if(type == Type::DISTANCE_N_COPY) {
         // do nothing, it's locked
     } else ssassert(false, "Unexpected entity type");
 }
 
 EntityBase *EntityBase::Normal() const {
-    return SK.GetEntity(normal);
+    return Owner()->GetEntity(normal);
 }
 
 bool EntityBase::IsPoint() const {
@@ -285,8 +290,8 @@ Quaternion EntityBase::NormalGetNum() const {
             break;
 
         case Type::NORMAL_IN_2D: {
-            EntityBase *wrkpl = SK.GetEntity(workplane);
-            EntityBase *norm = SK.GetEntity(wrkpl->normal);
+            EntityBase *wrkpl = Owner()->GetEntity(workplane);
+            EntityBase *norm = Owner()->GetEntity(wrkpl->normal);
             q = norm->NormalGetNum();
             break;
         }
@@ -313,10 +318,10 @@ Quaternion EntityBase::NormalGetNum() const {
 void EntityBase::NormalForceTo(Quaternion q) {
     switch(type) {
         case Type::NORMAL_IN_3D:
-            SK.GetParam(param[0])->val = q.w;
-            SK.GetParam(param[1])->val = q.vx;
-            SK.GetParam(param[2])->val = q.vy;
-            SK.GetParam(param[3])->val = q.vz;
+            Owner()->GetParam(param[0])->val = q.w;
+            Owner()->GetParam(param[1])->val = q.vx;
+            Owner()->GetParam(param[2])->val = q.vy;
+            Owner()->GetParam(param[3])->val = q.vz;
             break;
 
         case Type::NORMAL_IN_2D:
@@ -326,10 +331,10 @@ void EntityBase::NormalForceTo(Quaternion q) {
         case Type::NORMAL_N_ROT: {
             Quaternion qp = q.Times(numNormal.Inverse());
 
-            SK.GetParam(param[0])->val = qp.w;
-            SK.GetParam(param[1])->val = qp.vx;
-            SK.GetParam(param[2])->val = qp.vy;
-            SK.GetParam(param[3])->val = qp.vz;
+            Owner()->GetParam(param[0])->val = qp.w;
+            Owner()->GetParam(param[1])->val = qp.vx;
+            Owner()->GetParam(param[2])->val = qp.vy;
+            Owner()->GetParam(param[3])->val = qp.vz;
             break;
         }
 
@@ -369,8 +374,8 @@ ExprQuaternion EntityBase::NormalGetExprs() const {
             break;
 
         case Type::NORMAL_IN_2D: {
-            EntityBase *wrkpl = SK.GetEntity(workplane);
-            EntityBase *norm = SK.GetEntity(wrkpl->normal);
+            EntityBase *wrkpl = Owner()->GetEntity(workplane);
+            EntityBase *norm = Owner()->GetEntity(wrkpl->normal);
             q = norm->NormalGetExprs();
             break;
         }
@@ -401,14 +406,14 @@ ExprQuaternion EntityBase::NormalGetExprs() const {
 void EntityBase::PointForceParamTo(Vector p) {
     switch(type) {
         case Type::POINT_IN_3D:
-            SK.GetParam(param[0])->val = p.x;
-            SK.GetParam(param[1])->val = p.y;
-            SK.GetParam(param[2])->val = p.z;
+            Owner()->GetParam(param[0])->val = p.x;
+            Owner()->GetParam(param[1])->val = p.y;
+            Owner()->GetParam(param[2])->val = p.z;
             break;
 
         case Type::POINT_IN_2D:
-            SK.GetParam(param[0])->val = p.x;
-            SK.GetParam(param[1])->val = p.y;
+            Owner()->GetParam(param[0])->val = p.x;
+            Owner()->GetParam(param[1])->val = p.y;
             break;
 
         default: ssassert(false, "Unexpected entity type");
@@ -418,25 +423,25 @@ void EntityBase::PointForceParamTo(Vector p) {
 void EntityBase::PointForceTo(Vector p) {
     switch(type) {
         case Type::POINT_IN_3D:
-            SK.GetParam(param[0])->val = p.x;
-            SK.GetParam(param[1])->val = p.y;
-            SK.GetParam(param[2])->val = p.z;
+            Owner()->GetParam(param[0])->val = p.x;
+            Owner()->GetParam(param[1])->val = p.y;
+            Owner()->GetParam(param[2])->val = p.z;
             break;
 
         case Type::POINT_IN_2D: {
-            EntityBase *c = SK.GetEntity(workplane);
+            EntityBase *c = Owner()->GetEntity(workplane);
             p = p.Minus(c->WorkplaneGetOffset());
-            SK.GetParam(param[0])->val = p.Dot(c->Normal()->NormalU());
-            SK.GetParam(param[1])->val = p.Dot(c->Normal()->NormalV());
+            Owner()->GetParam(param[0])->val = p.Dot(c->Normal()->NormalU());
+            Owner()->GetParam(param[1])->val = p.Dot(c->Normal()->NormalV());
             break;
         }
 
         case Type::POINT_N_TRANS: {
             if(timesApplied == 0) break;
             Vector trans = (p.Minus(numPoint)).ScaledBy(1.0/timesApplied);
-            SK.GetParam(param[0])->val = trans.x;
-            SK.GetParam(param[1])->val = trans.y;
-            SK.GetParam(param[2])->val = trans.z;
+            Owner()->GetParam(param[0])->val = trans.x;
+            Owner()->GetParam(param[1])->val = trans.y;
+            Owner()->GetParam(param[2])->val = trans.z;
             break;
         }
 
@@ -445,9 +450,9 @@ void EntityBase::PointForceTo(Vector p) {
             // remember that we're working with respect to the rotated
             // point.
             Vector trans = p.Minus(PointGetQuaternion().Rotate(numPoint));
-            SK.GetParam(param[0])->val = trans.x;
-            SK.GetParam(param[1])->val = trans.y;
-            SK.GetParam(param[2])->val = trans.z;
+            Owner()->GetParam(param[0])->val = trans.x;
+            Owner()->GetParam(param[1])->val = trans.y;
+            Owner()->GetParam(param[2])->val = trans.z;
             break;
         }
 
@@ -460,14 +465,14 @@ void EntityBase::PointForceTo(Vector p) {
             double thetap = atan2(v.Dot(po), u.Dot(po));
             double thetan = atan2(v.Dot(numo), u.Dot(numo));
             double thetaf = (thetap - thetan);
-            double thetai = (SK.GetParam(param[3])->val)*timesApplied*2;
+            double thetai = (Owner()->GetParam(param[3])->val)*timesApplied*2;
             double dtheta = thetaf - thetai;
             // Take the smallest possible change in the actual step angle,
             // in order to avoid jumps when you cross from +pi to -pi
             while(dtheta < -PI) dtheta += 2*PI;
             while(dtheta > PI) dtheta -= 2*PI;
             // this extra *2 explains the mystery *4
-            SK.GetParam(param[3])->val = (thetai + dtheta)/(timesApplied*2);
+            Owner()->GetParam(param[3])->val = (thetai + dtheta)/(timesApplied*2);
             break;
         }
 
@@ -479,21 +484,21 @@ void EntityBase::PointForceTo(Vector p) {
             Vector check = numPoint.Minus(offset).Cross(normal);
             if (check.Dot(check) < LENGTH_EPS) { // if so, do extrusion style drag
                 Vector trans = (p.Minus(numPoint));
-                SK.GetParam(param[7])->val = trans.Dot(normal)/timesApplied;
+                Owner()->GetParam(param[7])->val = trans.Dot(normal)/timesApplied;
             } else { // otherwise do rotation style
                 Vector u = normal.Normal(0), v = normal.Normal(1);
                 Vector po = p.Minus(offset), numo = numPoint.Minus(offset);
                 double thetap = atan2(v.Dot(po), u.Dot(po));
                 double thetan = atan2(v.Dot(numo), u.Dot(numo));
                 double thetaf = (thetap - thetan);
-                double thetai = (SK.GetParam(param[3])->val)*timesApplied*2;
+                double thetai = (Owner()->GetParam(param[3])->val)*timesApplied*2;
                 double dtheta = thetaf - thetai;
                 // Take the smallest possible change in the actual step angle,
                 // in order to avoid jumps when you cross from +pi to -pi
                 while(dtheta < -PI) dtheta += 2*PI;
                 while(dtheta > PI) dtheta -= 2*PI;
                 // this extra *2 explains the mystery *4
-                SK.GetParam(param[3])->val = (thetai + dtheta)/(timesApplied*2);
+                Owner()->GetParam(param[3])->val = (thetai + dtheta)/(timesApplied*2);
             }
             break;
         }
@@ -514,11 +519,11 @@ Vector EntityBase::PointGetNum() const {
             break;
 
         case Type::POINT_IN_2D: {
-            EntityBase *c = SK.GetEntity(workplane);
+            EntityBase *c = Owner()->GetEntity(workplane);
             Vector u = c->Normal()->NormalU();
             Vector v = c->Normal()->NormalV();
-            p =        u.ScaledBy(SK.GetParam(param[0])->val);
-            p = p.Plus(v.ScaledBy(SK.GetParam(param[1])->val));
+            p =        u.ScaledBy(Owner()->GetParam(param[0])->val);
+            p = p.Plus(v.ScaledBy(Owner()->GetParam(param[1])->val));
             p = p.Plus(c->WorkplaneGetOffset());
             break;
         }
@@ -549,7 +554,7 @@ Vector EntityBase::PointGetNum() const {
         case Type::POINT_N_ROT_AXIS_TRANS: {
             Vector offset = Vector::From(param[0], param[1], param[2]);
             Vector displace = Vector::From(param[4], param[5], param[6])
-               .WithMagnitude(SK.GetParam(param[7])->val).ScaledBy(timesApplied);
+               .WithMagnitude(Owner()->GetParam(param[7])->val).ScaledBy(timesApplied);
             Quaternion q = PointGetQuaternion();
             p = numPoint.Minus(offset);
             p = q.Rotate(p);
@@ -574,7 +579,7 @@ ExprVector EntityBase::PointGetExprs() const {
             break;
 
         case Type::POINT_IN_2D: {
-            EntityBase *c = SK.GetEntity(workplane);
+            EntityBase *c = Owner()->GetEntity(workplane);
             ExprVector u = c->Normal()->NormalExprsU();
             ExprVector v = c->Normal()->NormalExprsV();
             r = c->WorkplaneGetOffsetExprs();
@@ -635,7 +640,7 @@ void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) con
         *v = Expr::From(param[1]);
     } else {
         // Get the offset and basis vectors for this weird exotic csys.
-        EntityBase *w = SK.GetEntity(wrkpl);
+        EntityBase *w = Owner()->GetEntity(wrkpl);
         ExprVector wp = w->WorkplaneGetOffsetExprs();
         ExprVector wu = w->Normal()->NormalExprsU();
         ExprVector wv = w->Normal()->NormalExprsV();
@@ -663,20 +668,20 @@ ExprVector EntityBase::PointGetExprsInWorkplane(hEntity wrkpl) const {
 void EntityBase::PointForceQuaternionTo(Quaternion q) {
     ssassert(type == Type::POINT_N_ROT_TRANS, "Unexpected entity type");
 
-    SK.GetParam(param[3])->val = q.w;
-    SK.GetParam(param[4])->val = q.vx;
-    SK.GetParam(param[5])->val = q.vy;
-    SK.GetParam(param[6])->val = q.vz;
+    Owner()->GetParam(param[3])->val = q.w;
+    Owner()->GetParam(param[4])->val = q.vx;
+    Owner()->GetParam(param[5])->val = q.vy;
+    Owner()->GetParam(param[6])->val = q.vz;
 }
 
 Quaternion EntityBase::GetAxisAngleQuaternion(int param0) const {
     Quaternion q;
-    double theta = timesApplied*SK.GetParam(param[param0+0])->val;
+    double theta = timesApplied*Owner()->GetParam(param[param0+0])->val;
     double s = sin(theta), c = cos(theta);
     q.w = c;
-    q.vx = s*SK.GetParam(param[param0+1])->val;
-    q.vy = s*SK.GetParam(param[param0+2])->val;
-    q.vz = s*SK.GetParam(param[param0+3])->val;
+    q.vx = s*Owner()->GetParam(param[param0+1])->val;
+    q.vy = s*Owner()->GetParam(param[param0+2])->val;
+    q.vz = s*Owner()->GetParam(param[param0+3])->val;
     return q;
 }
 
@@ -775,7 +780,7 @@ Vector EntityBase::FaceGetNormalNum() const {
 ExprVector EntityBase::FaceGetPointExprs() const {
     ExprVector r;
     if((type == Type::FACE_NORMAL_PT) || (type==Type::FACE_ROT_NORMAL_PT)) {
-        r = SK.GetEntity(point[0])->PointGetExprs();
+        r = Owner()->GetEntity(point[0])->PointGetExprs();
     } else if(type == Type::FACE_XPROD) {
         r = ExprVector::From(numPoint);
     } else if(type == Type::FACE_N_ROT_TRANS) {
@@ -813,7 +818,7 @@ ExprVector EntityBase::FaceGetPointExprs() const {
 Vector EntityBase::FaceGetPointNum() const {
     Vector r;
     if((type == Type::FACE_NORMAL_PT) || (type==Type::FACE_ROT_NORMAL_PT)) {
-        r = SK.GetEntity(point[0])->PointGetNum();
+        r = Owner()->GetEntity(point[0])->PointGetNum();
     } else if(type == Type::FACE_XPROD) {
         r = numPoint;
     } else if(type == Type::FACE_N_ROT_TRANS) {
@@ -825,7 +830,7 @@ Vector EntityBase::FaceGetPointNum() const {
     } else if(type == Type::FACE_N_ROT_AXIS_TRANS) {
             Vector offset = Vector::From(param[0], param[1], param[2]);
             Vector displace = Vector::From(param[4], param[5], param[6])
-               .WithMagnitude(SK.GetParam(param[7])->val).ScaledBy(timesApplied);
+               .WithMagnitude(Owner()->GetParam(param[7])->val).ScaledBy(timesApplied);
             Quaternion q = PointGetQuaternion();
             r = numPoint.Minus(offset);
             r = q.Rotate(r);
@@ -850,31 +855,31 @@ bool EntityBase::HasEndpoints() const {
 }
 Vector EntityBase::EndpointStart() const {
     if(type == Type::LINE_SEGMENT) {
-        return SK.GetEntity(point[0])->PointGetNum();
+        return Owner()->GetEntity(point[0])->PointGetNum();
     } else if(type == Type::CUBIC) {
         return CubicGetStartNum();
     } else if(type == Type::ARC_OF_CIRCLE) {
-        return SK.GetEntity(point[1])->PointGetNum();
+        return Owner()->GetEntity(point[1])->PointGetNum();
     } else ssassert(false, "Unexpected entity type");
 }
 Vector EntityBase::EndpointFinish() const {
     if(type == Type::LINE_SEGMENT) {
-        return SK.GetEntity(point[1])->PointGetNum();
+        return Owner()->GetEntity(point[1])->PointGetNum();
     } else if(type == Type::CUBIC) {
         return CubicGetFinishNum();
     } else if(type == Type::ARC_OF_CIRCLE) {
-        return SK.GetEntity(point[2])->PointGetNum();
+        return Owner()->GetEntity(point[2])->PointGetNum();
     } else ssassert(false, "Unexpected entity type");
 }
-static bool PointInPlane(hEntity h, Vector norm, double distance) {
-    Vector p = SK.GetEntity(h)->PointGetNum();
+static bool PointInPlane(Sketch *sketch, hEntity h, Vector norm, double distance) {
+    Vector p = sketch->GetEntity(h)->PointGetNum();
     return (fabs(norm.Dot(p) - distance) < LENGTH_EPS);
 }
 bool EntityBase::IsInPlane(Vector norm, double distance) const {
     switch(type) {
         case Type::LINE_SEGMENT: {
-            return PointInPlane(point[0], norm, distance)
-                && PointInPlane(point[1], norm, distance);
+            return PointInPlane(Owner(), point[0], norm, distance)
+                && PointInPlane(Owner(), point[1], norm, distance);
         }
         case Type::CUBIC:
         case Type::CUBIC_PERIODIC: {
@@ -882,7 +887,7 @@ bool EntityBase::IsInPlane(Vector norm, double distance) const {
             int n = periodic ? 3 + extraPoints : extraPoints;
             int i;
             for (i=0; i<n; i++) {
-                if (!PointInPlane(point[i], norm, distance)) return false;
+                if (!PointInPlane(Owner(), point[i], norm, distance)) return false;
             }
             return true;
         }
@@ -893,14 +898,14 @@ bool EntityBase::IsInPlane(Vector norm, double distance) const {
             // are parallel and the mid point is in the plane.
             Vector n = Normal()->NormalN();
             if (!norm.Equals(n) && !norm.Equals(n.Negated())) return false;
-            return PointInPlane(point[0], norm, distance);
+            return PointInPlane(Owner(), point[0], norm, distance);
         }
 
         case Type::TTF_TEXT: {
             Vector n = Normal()->NormalN();
             if (!norm.Equals(n) && !norm.Equals(n.Negated())) return false;
-            return PointInPlane(point[0], norm, distance)
-                && PointInPlane(point[1], norm, distance);
+            return PointInPlane(Owner(), point[0], norm, distance)
+                && PointInPlane(Owner(), point[1], norm, distance);
         }
 
         default:
@@ -912,8 +917,8 @@ void EntityBase::RectGetPointsExprs(ExprVector *eb, ExprVector *ec) const {
     ssassert(type == Type::TTF_TEXT || type == Type::IMAGE,
              "Unexpected entity type");
 
-    EntityBase *a = SK.GetEntity(point[0]);
-    EntityBase *o = SK.GetEntity(point[1]);
+    EntityBase *a = Owner()->GetEntity(point[0]);
+    EntityBase *o = Owner()->GetEntity(point[1]);
 
     // Write equations for each point in the current workplane.
     // This reduces the complexity of resulting equations.
@@ -947,33 +952,33 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             // If this is a copied entity, with its point already fixed
             // with respect to each other, then we don't want to generate
             // the distance constraint!
-            if(SK.GetEntity(point[0])->type != Type::POINT_IN_2D) break;
+            if(Owner()->GetEntity(point[0])->type != Type::POINT_IN_2D) break;
 
             // If the two endpoints of the arc are constrained coincident
             // (to make a complete circle), then our distance constraint
             // would be redundant and therefore overconstrain things.
-            auto it = std::find_if(SK.constraint.begin(), SK.constraint.end(),
+            auto it = std::find_if(Owner()->constraint.begin(), Owner()->constraint.end(),
                                    [&](ConstraintBase const &con) {
                                        return (con.group == group) &&
                                               (con.type == Constraint::Type::POINTS_COINCIDENT) &&
                                               ((con.ptA == point[1] && con.ptB == point[2]) ||
                                                (con.ptA == point[2] && con.ptB == point[1]));
                                    });
-            if(it != SK.constraint.end()) {
+            if(it != Owner()->constraint.end()) {
                 break;
             }
 
-            Expr *ra = Constraint::Distance(&SK, workplane, point[0], point[1]);
-            Expr *rb = Constraint::Distance(&SK, workplane, point[0], point[2]);
+            Expr *ra = Constraint::Distance(Owner(), workplane, point[0], point[1]);
+            Expr *rb = Constraint::Distance(Owner(), workplane, point[0], point[2]);
             AddEq(l, ra->Minus(rb), 0);
             break;
         }
 
         case Type::IMAGE:
         case Type::TTF_TEXT: {
-            if(SK.GetEntity(point[0])->type != Type::POINT_IN_2D) break;
-            EntityBase *b = SK.GetEntity(point[2]);
-            EntityBase *c = SK.GetEntity(point[3]);
+            if(Owner()->GetEntity(point[0])->type != Type::POINT_IN_2D) break;
+            EntityBase *b = Owner()->GetEntity(point[2]);
+            EntityBase *c = Owner()->GetEntity(point[3]);
             ExprVector eb = b->PointGetExprsInWorkplane(workplane);
             ExprVector ec = c->PointGetExprsInWorkplane(workplane);
 
