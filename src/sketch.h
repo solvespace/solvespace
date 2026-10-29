@@ -302,7 +302,7 @@ public:
     void Clear();
 
     static void AddParam(ParamList *param, hParam hp, double v);
-    void Generate(EntityList *entity, ParamList *param);
+    void Generate(Sketch *sketch, EntityList *entity, ParamList *param);
     bool IsSolvedOkay() const;
     void TransformImportedBy(Vector t, Quaternion q);
     bool IsTriangleMeshAssembly() const;
@@ -325,12 +325,13 @@ public:
         REMAP_LATHE_ARC_CENTER = 1010,
     };
     hEntity Remap(hEntity in, int copyNumber);
-    void MakeExtrusionLines(EntityList *el, hEntity in);
-    void MakeLatheCircles(EntityList *el, ParamList *param, hEntity in, Vector pt, Vector axis);
-    void MakeLatheSurfacesSelectable(EntityList *el, hEntity in, Vector axis);
-    void MakeRevolveEndFaces(EntityList *el, hEntity pt, int ai, int af);
-    void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
-    void CopyEntity(EntityList *el,
+    void MakeExtrusionLines(Sketch *sketch, EntityList *el, hEntity in);
+    void MakeLatheCircles(Sketch *sketch, EntityList *el, ParamList *param, hEntity in,
+                          Vector pt, Vector axis);
+    void MakeLatheSurfacesSelectable(Sketch *sketch, EntityList *el, hEntity in, Vector axis);
+    void MakeRevolveEndFaces(Sketch *sketch, EntityList *el, hEntity pt, int ai, int af);
+    void MakeExtrusionTopBottomFaces(Sketch *sketch, EntityList *el, hEntity pt);
+    void CopyEntity(Sketch *sketch, EntityList *el,
                     Entity *ep, int timesApplied, int remap,
                     hParam dx, hParam dy, hParam dz,
                     hParam qw, hParam qvx, hParam qvy, hParam qvz, hParam dist,
@@ -422,7 +423,7 @@ public:
     std::string expression;
 
     static hParam AddParam(ParamList *param, hParam hp);
-    void Generate(EntityList *entity, ParamList *param);
+    void Generate(Sketch *sketch, EntityList *entity, ParamList *param);
 
     bool IsNamedParam() const {
         return type == Type::NAMED_PARAMETER || type == Type::NAMED_CONST_PARAM;
@@ -488,6 +489,11 @@ public:
     };
 
     Type        type;
+
+    // The sketch that the entity was generated in, whose entities and
+    // parameters it refers to; NULL for an entity that is just stored,
+    // like those imported from a linked file.
+    Sketch      *sketch;
 
     hGroup      group;
     hEntity     workplane;   // or Entity::FREE_IN_3D

@@ -588,7 +588,7 @@ void SolveSpaceUI::UpgradeLegacyData() {
             case Request::Type::TTF_TEXT: {
                 EntityList entity = {};
                 ParamList  param = {};
-                r.Generate(&entity, &param);
+                r.Generate(&SK, &entity, &param);
 
                 // If we didn't load all of the entities and params that this
                 // request would generate, then add them now, so that we can
