@@ -423,6 +423,9 @@ public:
     Group *GetRunningMeshGroupFor(hGroup h);
 
     void RegenerateGroupOrder();
+    // Mark the group, and unless onlyThis, the groups after it, as needing
+    // to be solved again
+    void MarkGroupDirty(hGroup hg, bool onlyThis = false);
 
     // Checks made when regenerating, to find what has to be pruned
     bool GroupExists(hGroup hg);
