@@ -517,35 +517,41 @@ void SolveSpaceUI::UpdateCenterOfMass() {
     SS.centerOfMass.dirty = false;
 }
 
-void SolveSpaceUI::MarkDraggedParams() {
-    sys.dragged.clear();
+// What is being dragged in the graphics window, if anything
+Sketch::Dragged SolveSpaceUI::DraggedEntities() {
+    Sketch::Dragged dragged = {};
+    if(GW.pending.point.v) {
+        dragged.points.push_back(GW.pending.point);
+    }
+    for(const hEntity &hp : GW.pending.points) {
+        dragged.points.push_back(hp);
+    }
+    dragged.circle = GW.pending.circle;
+    dragged.normal = GW.pending.normal;
+    return dragged;
+}
 
-    for(int i = -1; i < SS.GW.pending.points.n; i++) {
-        hEntity hp;
-        if(i == -1) {
-            hp = SS.GW.pending.point;
-        } else {
-            hp = SS.GW.pending.points[i];
-        }
-        if(!hp.v) continue;
+void Sketch::MarkDraggedParams(System *sys, const Dragged &dragged) {
+    sys->dragged.clear();
 
+    for(const hEntity &hp : dragged.points) {
         // The pending point could be one in a group that has not yet
         // been processed, in which case the lookup will fail; but
         // that's not an error.
-        Entity *pt = SK.entity.FindByIdNoOops(hp);
+        Entity *pt = entity.FindByIdNoOops(hp);
         if(pt) {
             switch(pt->type) {
                 case Entity::Type::POINT_N_TRANS:
                 case Entity::Type::POINT_IN_3D:
                 case Entity::Type::POINT_N_ROT_AXIS_TRANS:
-                    sys.dragged.insert(pt->param[0]);
-                    sys.dragged.insert(pt->param[1]);
-                    sys.dragged.insert(pt->param[2]);
+                    sys->dragged.insert(pt->param[0]);
+                    sys->dragged.insert(pt->param[1]);
+                    sys->dragged.insert(pt->param[2]);
                     break;
 
                 case Entity::Type::POINT_IN_2D:
-                    sys.dragged.insert(pt->param[0]);
-                    sys.dragged.insert(pt->param[1]);
+                    sys->dragged.insert(pt->param[0]);
+                    sys->dragged.insert(pt->param[1]);
                     break;
 
                 default: // Only the entities above can be dragged.
@@ -553,13 +559,13 @@ void SolveSpaceUI::MarkDraggedParams() {
             }
         }
     }
-    if(SS.GW.pending.circle.v) {
-        Entity *circ = SK.entity.FindByIdNoOops(SS.GW.pending.circle);
+    if(dragged.circle.v) {
+        Entity *circ = entity.FindByIdNoOops(dragged.circle);
         if(circ) {
-            Entity *dist = SK.GetEntity(circ->distance);
+            Entity *dist = GetEntity(circ->distance);
             switch(dist->type) {
                 case Entity::Type::DISTANCE:
-                    sys.dragged.insert(dist->param[0]);
+                    sys->dragged.insert(dist->param[0]);
                     break;
 
                 default: // Only the entities above can be dragged.
@@ -567,15 +573,15 @@ void SolveSpaceUI::MarkDraggedParams() {
             }
         }
     }
-    if(SS.GW.pending.normal.v) {
-        Entity *norm = SK.entity.FindByIdNoOops(SS.GW.pending.normal);
+    if(dragged.normal.v) {
+        Entity *norm = entity.FindByIdNoOops(dragged.normal);
         if(norm) {
             switch(norm->type) {
                 case Entity::Type::NORMAL_IN_3D:
-                    sys.dragged.insert(norm->param[0]);
-                    sys.dragged.insert(norm->param[1]);
-                    sys.dragged.insert(norm->param[2]);
-                    sys.dragged.insert(norm->param[3]);
+                    sys->dragged.insert(norm->param[0]);
+                    sys->dragged.insert(norm->param[1]);
+                    sys->dragged.insert(norm->param[2]);
+                    sys->dragged.insert(norm->param[3]);
                     break;
 
                 default: // Only the entities above can be dragged.
@@ -587,7 +593,7 @@ void SolveSpaceUI::MarkDraggedParams() {
 
 void SolveSpaceUI::SolveGroupAndReport(hGroup hg, bool andFindFree) {
     SolveResult before = SK.GetGroup(hg)->solved.how;
-    SolveGroup(hg, andFindFree);
+    SK.SolveGroup(hg, &sys, DraggedEntities(), andFindFree, timeoutRedundantConstr);
 
     Group *g = SK.GetGroup(hg);
     // An unknown name stays until the user defines it again, perhaps in the
@@ -602,50 +608,50 @@ void SolveSpaceUI::SolveGroupAndReport(hGroup hg, bool andFindFree) {
     }
 }
 
-void SolveSpaceUI::WriteEqSystemForGroup(hGroup hg) {
+void Sketch::WriteEqSystemForGroup(hGroup hg, System *sys, const Dragged &dragged) {
     // Clear out the system to be solved.
-    sys.entity.Clear();
-    sys.param.Clear();
-    sys.eq.Clear();
+    sys->entity.Clear();
+    sys->param.Clear();
+    sys->eq.Clear();
     // And generate all the params for requests in this group
-    for(auto &req : SK.request) {
+    for(auto &req : request) {
         Request *r = &req;
         if(r->group != hg || r->tag) continue;
         // A locked parameter stays out of the system, so the solver can't
         // change it; equations that use it see it as a constant.
         if(r->type == Request::Type::NAMED_CONST_PARAM) continue;
 
-        r->Generate(&(sys.entity), &(sys.param));
+        r->Generate(&(sys->entity), &(sys->param));
     }
-    for(auto &con : SK.constraint) {
+    for(auto &con : constraint) {
         Constraint *c = &con;
         if(c->group != hg || c->tag) continue;
 
-        c->Generate(&(sys.param));
+        c->Generate(&(sys->param));
     }
     // And for the group itself
-    Group *g = SK.GetGroup(hg);
-    g->Generate(&(sys.entity), &(sys.param));
+    Group *g = GetGroup(hg);
+    g->Generate(&(sys->entity), &(sys->param));
     // Set the initial guesses for all the params
-    for(auto &param : sys.param) {
-        Param *p = &param;
-        p->known = false;
-        p->val = SK.GetParam(p->h)->val;
+    for(auto &p : sys->param) {
+        p.known = false;
+        p.val = GetParam(p.h)->val;
     }
 
-    MarkDraggedParams();
+    MarkDraggedParams(sys, dragged);
 }
 
-void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
-    WriteEqSystemForGroup(hg);
-    Group *g = SK.GetGroup(hg);
+void Sketch::SolveGroup(hGroup hg, System *sys, const Dragged &dragged, bool andFindFree,
+                        int timeoutRedundantConstr) {
+    WriteEqSystemForGroup(hg, sys, dragged);
+    Group *g = GetGroup(hg);
     g->solved.remove.Clear();
-    g->solved.findToFixTimeout = SS.timeoutRedundantConstr;
-    SolveResult how = sys.Solve(g, &(g->solved.dof),
-                                   &(g->solved.remove),
-                                   /*andFindBad=*/!g->allowRedundant,
-                                   /*andFindFree=*/andFindFree,
-                                   /*forceDofCheck=*/!g->dofCheckOk);
+    g->solved.findToFixTimeout = timeoutRedundantConstr;
+    SolveResult how = sys->Solve(g, &(g->solved.dof),
+                                    &(g->solved.remove),
+                                    /*andFindBad=*/!g->allowRedundant,
+                                    /*andFindFree=*/andFindFree,
+                                    /*forceDofCheck=*/!g->dofCheckOk);
     if(how == SolveResult::OKAY) {
         g->dofCheckOk = true;
     }
@@ -657,7 +663,7 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     // listed in solved.remove; the parameters are found again when shown.
     bool unknownName = false;
     if(!g->allDimsReference && !g->relaxConstraints) {
-        for(auto &c : SK.constraint) {
+        for(auto &c : constraint) {
             if(c.group != hg || c.reference || !c.HasExpression()) continue;
             if(c.ParseExpression() != NULL) continue;
 
@@ -668,7 +674,7 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
             g->solved.remove.Add(&c.h);
         }
     }
-    for(auto &r : SK.request) {
+    for(auto &r : request) {
         if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
         if(r.ParseExpression() != NULL) continue;
 
@@ -683,15 +689,19 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     Platform::FreeAllTemporary();
 }
 
-SolveResult SolveSpaceUI::TestRankForGroup(hGroup hg, int *rank) {
-    Group *g = SK.GetGroup(hg);
+SolveResult Sketch::TestRankForGroup(hGroup hg, System *sys, int *rank) {
+    Group *g = GetGroup(hg);
     // If we don't calculate dof or redundant is allowed, there is
     // no point to solve rank because this result is not meaningful
     if(g->suppressDofCalculation || g->allowRedundant) return SolveResult::OKAY;
-    WriteEqSystemForGroup(hg);
-    SolveResult result = sys.SolveRank(g, rank);
+    WriteEqSystemForGroup(hg, sys, Dragged {});
+    SolveResult result = sys->SolveRank(g, rank);
     Platform::FreeAllTemporary();
     return result;
+}
+
+SolveResult SolveSpaceUI::TestRankForGroup(hGroup hg, int *rank) {
+    return SK.TestRankForGroup(hg, &sys, rank);
 }
 
 bool SolveSpaceUI::ActiveGroupsOkay() {
