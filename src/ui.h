@@ -386,7 +386,8 @@ public:
         HELIX_PITCH           = 802,
         // For named parameters
         PARAM_NAME            = 810,
-        PARAM_VALUE           = 811
+        PARAM_VALUE           = 811,
+        LINK_PARAM_VALUE      = 812
     };
     struct {
         bool        showAgain;
@@ -459,6 +460,8 @@ public:
     static void ScreenEditParamValue(int link, uint32_t v);
     static void ScreenToggleParamLock(int link, uint32_t v);
     static void ScreenDeleteNamedParam(int link, uint32_t v);
+    static void ScreenEditLinkParam(int link, uint32_t v);
+    static void ScreenResetLinkParam(int link, uint32_t v);
 
     static void ScreenHoverGroupWorkplane(int link, uint32_t v);
     static void ScreenHoverRequest(int link, uint32_t v);

@@ -392,6 +392,28 @@ static int ParamNameColumn() {
     return 3;
 }
 
+// A name for the column of names in a group's page: shortened if it's too
+// long, with the whole name as a tooltip, and the padding that follows it.
+static void FitParamName(const std::string &name, std::string *shown, std::string *tooltip,
+                         std::string *padding) {
+    *shown = name;
+    tooltip->clear();
+    if(shown->size() > PARAM_NAME_WIDTH) {
+        *tooltip = name;
+        *shown = name.substr(0, PARAM_NAME_WIDTH - 3) + "...";
+    }
+    *padding = std::string(PARAM_NAME_WIDTH - shown->size(), ' ');
+}
+
+// The value that a linked group gives the linked sketch's parameter with
+// this name, or NULL if it gives none.
+static Request *LinkParamRequest(hGroup hg, const std::string &name) {
+    for(Request &r : SK.request) {
+        if(r.group == hg && r.IsLinkParam() && r.str == name) return &r;
+    }
+    return NULL;
+}
+
 // A parameter's value for its group's page: up to three decimals, without
 // trailing zeros, padded so that the links after it line up.
 static std::string FormatParamValue(double value) {
@@ -468,6 +490,35 @@ void TextWindow::ScreenDeleteNamedParam(int link, uint32_t v) {
     hGroup hg = SK.GetRequest(hr)->group;
 
     // Any dimensions that use the name are reported when the group is solved.
+    SS.UndoRemember();
+    SK.request.RemoveById(hr);
+    SS.MarkGroupDirty(hg);
+}
+void TextWindow::ScreenEditLinkParam(int link, uint32_t v) {
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+    if(v >= g->linkParams.size()) return;
+    const LinkValue &lv = g->linkParams[v];
+
+    std::string text = ssprintf("%.10g", lv.value);
+    if(Request *r = LinkParamRequest(g->h, lv.name)) {
+        Param *p = SK.param.FindByIdNoOops(r->NamedParam());
+        if(r->HasExpression()) {
+            text = r->expression;
+        } else if(p != NULL) {
+            text = ssprintf("%.10g", p->val);
+        }
+    }
+    // The value is shown after the column of names.
+    SS.TW.ShowEditControl(3 + (int)PARAM_NAME_WIDTH + 2, text);
+    SS.TW.edit.meaning = Edit::LINK_PARAM_VALUE;
+    SS.TW.edit.group = g->h;
+    SS.TW.edit.i = (int)v;
+}
+void TextWindow::ScreenResetLinkParam(int link, uint32_t v) {
+    hRequest hr = { v };
+    hGroup hg = SK.GetRequest(hr)->group;
+
+    // The linked sketch's own value is used again.
     SS.UndoRemember();
     SK.request.RemoveById(hr);
     SS.MarkGroupDirty(hg);
@@ -581,6 +632,58 @@ void TextWindow::ShowGroupInfo() {
         Printf(false, "%Bd   %Ftscaled by%E %# %Fl%Ll%f%D[change]%E",
             g->scale,
             &TextWindow::ScreenChangeGroupScale, g->h.v);
+
+        // The parameters of the linked sketch, with the values given to them
+        // here, or else (in gray) its own; and in red, values given here that
+        // can't be used.
+        Printf(true, " %Ftparameters of linked sketch%E");
+        int a = 0;
+        for(size_t i = 0; i < g->linkParams.size(); i++) {
+            const LinkValue &lv = g->linkParams[i];
+            std::string name, tooltip, padding;
+            FitParamName(lv.name, &name, &tooltip, &padding);
+
+            Request *r = LinkParamRequest(g->h, lv.name);
+            if(r == NULL) {
+                Printf(false, "%Bp   %T%s%E%s  %Fg%s%E [%Fl%Ll%D%fchange%E]",
+                       (a & 1) ? 'd' : 'a', tooltip.c_str(), name.c_str(), padding.c_str(),
+                       FormatParamValue(lv.value).c_str(),
+                       (uint32_t)i, &TextWindow::ScreenEditLinkParam);
+            } else {
+                std::string value, error;
+                if(r->HasExpression()) {
+                    value = r->expression;
+                    if(value.size() < 7) value.resize(7, ' ');
+                    r->ParseExpression(&SK, &error);
+                } else {
+                    Param *p = SK.param.FindByIdNoOops(r->NamedParam());
+                    value = FormatParamValue((p != NULL) ? p->val : lv.value);
+                }
+                Printf(false, "%Bp   %T%s%E%s  %Fp%T%s%E [%Fl%Ll%D%fchange%E] "
+                              "[%Fl%Ll%D%freset%E]",
+                       (a & 1) ? 'd' : 'a', tooltip.c_str(), name.c_str(), padding.c_str(),
+                       error.empty() ? 'd' : 'x', error.c_str(), value.c_str(),
+                       (uint32_t)i, &TextWindow::ScreenEditLinkParam,
+                       r->h.v, &TextWindow::ScreenResetLinkParam);
+            }
+            a++;
+        }
+        for(Request &r : SK.request) {
+            if(r.group != g->h || !r.IsLinkParam()) continue;
+            bool inSketch = false;
+            for(const LinkValue &lv : g->linkParams) {
+                if(lv.name == r.str) inSketch = true;
+            }
+            if(inSketch) continue;
+
+            std::string name, tooltip, padding;
+            FitParamName(r.str, &name, &tooltip, &padding);
+            Printf(false, "%Bp   %Fx%T%s%E%s  %Fxnot in linked sketch%E [%Fl%Ll%D%fdel%E]",
+                   (a & 1) ? 'd' : 'a', tooltip.c_str(), name.c_str(), padding.c_str(),
+                   r.h.v, &TextWindow::ScreenResetLinkParam);
+            a++;
+        }
+        if(a == 0) Printf(false, "%Ba   (none)");
     } else if(g->type == Group::Type::DRAWING_3D) {
         Printf(true, " %Ftsketch in 3d%E");
     } else if(g->type == Group::Type::DRAWING_WORKPLANE) {
@@ -703,14 +806,8 @@ list_items:
     for(auto &r : SK.request) {
         if(r.group != shown.group || !r.IsNamedParam()) continue;
 
-        // Names are shown in a column, so a long one is shortened, and
-        // the whole name is shown as a tooltip.
-        std::string name = r.str, tooltip;
-        if(name.size() > PARAM_NAME_WIDTH) {
-            tooltip = name;
-            name = name.substr(0, PARAM_NAME_WIDTH - 3) + "...";
-        }
-        std::string padding(PARAM_NAME_WIDTH - name.size(), ' ');
+        std::string name, tooltip, padding;
+        FitParamName(r.str, &name, &tooltip, &padding);
 
         // Show the expression if there is one, flagged in the error color,
         // with the reason as a tooltip, if it uses a name that isn't defined.
@@ -743,7 +840,7 @@ list_items:
     a = 0;
     for(auto &r : SK.request) {
 
-        if(r.group == shown.group && !r.IsNamedParam()) {
+        if(r.group == shown.group && !r.IsNamedParam() && !r.IsLinkParam()) {
             std::string s = r.DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                    (a & 1) ? 'd' : 'a',
@@ -848,6 +945,14 @@ void TextWindow::ShowGroupSolveInfo() {
 
             Printf(false, "%Bp   parameter %s = %s",
                 (i & 1) ? 'd' : 'a', r.str.c_str(), r.expression.c_str());
+            i++;
+        }
+        for(Request &r : SK.request) {
+            if(r.group != g->h || !r.IsLinkParam()) continue;
+            if(SK.LinkParamIsKnown(g, &r)) continue;
+
+            Printf(false, "%Bp   linked sketch's parameter %s",
+                (i & 1) ? 'd' : 'a', r.str.c_str());
             i++;
         }
     }
@@ -1143,6 +1248,44 @@ void TextWindow::EditControlDone(std::string s) {
                 // A value that was typed in should stay put, so lock it.
                 r->type = Request::Type::NAMED_CONST_PARAM;
                 SS.MarkGroupDirty(r->group);
+            }
+            break;
+        }
+
+        case Edit::LINK_PARAM_VALUE: {
+            Group *g = SK.group.FindByIdNoOops(edit.group);
+            if(g == NULL || edit.i < 0 || edit.i >= (int)g->linkParams.size()) break;
+            std::string name = g->linkParams[edit.i].name;
+
+            // The value may use the parameters of earlier groups. Then the
+            // expression is kept, so the linked sketch follows them.
+            const ParamNames *names = &(g->inheritedParamNames);
+            int namesUsed = 0;
+            if(Expr *e = Expr::From(s, /*popUpError=*/true, names, &namesUsed)) {
+                SS.UndoRemember();
+                Request *r = LinkParamRequest(g->h, name);
+                if(r == NULL) {
+                    Request nr = {};
+                    nr.group = g->h;
+                    nr.type = Request::Type::NAMED_LINK_PARAM;
+                    nr.str = name;
+                    SK.request.AddAndAssignId(&nr);
+                    r = SK.GetRequest(nr.h);
+                }
+                r->expression = (namesUsed > 0) ? s : "";
+
+                // Give the parameter its value now, so that it is used when
+                // the group is generated.
+                double value = e->Eval();
+                if(Param *p = SK.param.FindByIdNoOops(r->NamedParam())) {
+                    p->val = value;
+                } else {
+                    Param np = {};
+                    np.h = r->NamedParam();
+                    np.val = value;
+                    SK.param.Add(&np);
+                }
+                SS.MarkGroupDirty(g->h);
             }
             break;
         }
