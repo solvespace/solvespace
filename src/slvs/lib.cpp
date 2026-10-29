@@ -904,7 +904,7 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, Slvs_hConstraint **bad = nullptr
             SYS.param.Add(SK.GetParam(c->valP));
 
             if(Slvs_CanInitiallySatisfy(*c)) {
-                c->ModifyToSatisfy();
+                c->ModifyToSatisfy(&SK);
             }
         }
     }
@@ -934,7 +934,7 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, Slvs_hConstraint **bad = nullptr
     bool andFindBad = bad != nullptr;
 
     int dof = 0;
-    SolveResult status = SYS.Solve(&g, &dof, &badList, andFindBad, false, false);
+    SolveResult status = SYS.Solve(&SK, &g, &dof, &badList, andFindBad, false, false);
     Slvs_SolveResult sr = {};
     sr.dof = dof;
     sr.nbad = badList.n;
@@ -1058,7 +1058,7 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
             params.Clear();
 
             if(Slvs_CanInitiallySatisfy(c)) {
-                c.ModifyToSatisfy();
+                c.ModifyToSatisfy(&SK);
             }
         }
 
@@ -1079,7 +1079,7 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
 
     // Now we're finally ready to solve!
     bool andFindBad = ssys->calculateFaileds ? true : false;
-    SolveResult how = SYS.Solve(&g, &(ssys->dof), &bad, andFindBad, /*andFindFree=*/false);
+    SolveResult how = SYS.Solve(&SK, &g, &(ssys->dof), &bad, andFindBad, /*andFindFree=*/false);
 
     switch(how) {
         case SolveResult::OKAY:
