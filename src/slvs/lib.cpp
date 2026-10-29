@@ -18,7 +18,7 @@ void Platform::FatalError(const std::string &message) {
     abort();
 }
 
-void Group::GenerateEquations(IdList<Equation,hEquation> *) {
+void Group::GenerateEquations(Sketch *, IdList<Equation,hEquation> *) {
     // Nothing to do for now.
 }
 

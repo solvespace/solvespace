@@ -464,7 +464,7 @@ void System::WriteEquationsExceptFor(Sketch *sketch, hConstraint hc, Group *g) {
         e->GenerateEquations(&eq);
     }
     // And from the groups themselves
-    g->GenerateEquations(&eq);
+    g->GenerateEquations(sketch, &eq);
 }
 
 void System::FindWhichToRemoveToFixJacobian(Sketch *sketch, Group *g, List<hConstraint> *bad,

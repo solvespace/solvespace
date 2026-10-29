@@ -477,7 +477,7 @@ void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
 
     hGroup hg = SS.TW.shown.group;
     if(hg == SS.GW.activeGroup) {
-        SS.GW.activeGroup = SK.GetGroup(SS.GW.activeGroup)->PreviousGroup()->h;
+        SS.GW.activeGroup = SK.GetGroup(SS.GW.activeGroup)->PreviousGroup(&SK)->h;
     }
 
     // Reset the text window, since we're displaying information about
@@ -663,7 +663,7 @@ void TextWindow::ShowGroupInfo() {
         &TextWindow::ScreenChangeGroupOption,
         g->visible ? CHECK_TRUE : CHECK_FALSE);
 
-    if(!g->IsForcedToMeshBySource() && !g->IsTriangleMeshAssembly()) {
+    if(!g->IsForcedToMeshBySource(&SK) && !g->IsTriangleMeshAssembly()) {
         Printf(false, " %f%Lf%Fd%s  force NURBS surfaces to triangle mesh",
             &TextWindow::ScreenChangeGroupOption,
             g->forceToMesh ? CHECK_TRUE : CHECK_FALSE);

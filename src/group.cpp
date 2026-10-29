@@ -397,21 +397,21 @@ void Group::TransformImportedBy(Vector t, Quaternion q) {
     SK.GetParam(qz)->val = qg.vz;
 }
 
-bool Group::IsForcedToMeshBySource() const {
+bool Group::IsForcedToMeshBySource(Sketch *sketch) const {
     const Group *srcg = this;
     if(type == Type::TRANSLATE || type == Type::ROTATE) {
         // A step and repeat gets merged against the group's previous group,
         // not our own previous group.
-        srcg = SK.GetGroup(opA);
+        srcg = sketch->GetGroup(opA);
         if(srcg->forceToMesh) return true;
     }
-    Group *g = srcg->RunningMeshGroup();
+    Group *g = srcg->RunningMeshGroup(sketch);
     if(g == NULL) return false;
-    return g->forceToMesh || g->IsForcedToMeshBySource();
+    return g->forceToMesh || g->IsForcedToMeshBySource(sketch);
 }
 
-bool Group::IsForcedToMesh() const {
-    return forceToMesh || IsTriangleMeshAssembly() || IsForcedToMeshBySource();
+bool Group::IsForcedToMesh(Sketch *sketch) const {
+    return forceToMesh || IsTriangleMeshAssembly() || IsForcedToMeshBySource(sketch);
 }
 
 bool Group::IsTriangleMeshAssembly() const {
@@ -453,8 +453,8 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
         case Type::DRAWING_WORKPLANE: {
             Quaternion q;
             if(subtype == Subtype::WORKPLANE_BY_LINE_SEGMENTS) {
-                Vector u = SK.GetEntity(predef.entityB)->VectorGetNum();
-                Vector v = SK.GetEntity(predef.entityC)->VectorGetNum();
+                Vector u = sketch->GetEntity(predef.entityB)->VectorGetNum();
+                Vector v = sketch->GetEntity(predef.entityC)->VectorGetNum();
                 u = u.WithMagnitude(1);
                 Vector n = u.Cross(v);
                 v = (n.Cross(u)).WithMagnitude(1);
@@ -467,7 +467,7 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
                 // Already given, numerically.
                 q = predef.q;
             } else if(subtype == Subtype::WORKPLANE_BY_POINT_NORMAL) {
-                q = SK.GetEntity(predef.entityB)->NormalGetNum();
+                q = sketch->GetEntity(predef.entityB)->NormalGetNum();
             } else ssassert(false, "Unexpected workplane subtype");
 
             Entity normal = {};
@@ -483,7 +483,7 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
             Entity point = {};
             point.sketch = sketch;
             point.type = Entity::Type::POINT_N_COPY;
-            point.numPoint = SK.GetEntity(predef.origin)->PointGetNum();
+            point.numPoint = sketch->GetEntity(predef.origin)->PointGetNum();
             point.construction = true;
             point.group = h;
             point.h = h.entity(2);
@@ -525,11 +525,11 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
                 hEntity he = e->h; e = NULL;
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
-                CopyEntity(sketch, entity, SK.GetEntity(he), ai, REMAP_BOTTOM,
+                CopyEntity(sketch, entity, sketch->GetEntity(he), ai, REMAP_BOTTOM,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::N_TRANS);
-                CopyEntity(sketch, entity, SK.GetEntity(he), af, REMAP_TOP,
+                CopyEntity(sketch, entity, sketch->GetEntity(he), af, REMAP_TOP,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::N_TRANS);
@@ -542,8 +542,8 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
         }
 
         case Type::LATHE: {
-            Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
-            Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
+            Vector axis_pos = sketch->GetEntity(predef.origin)->PointGetNum();
+            Vector axis_dir = sketch->GetEntity(predef.entityB)->VectorGetNum();
 
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
@@ -557,7 +557,7 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
                 // adds entities, which may cause a realloc.
 
                 // this is the regular copy of all entities
-                CopyEntity(sketch, entity, SK.GetEntity(he), 0, REMAP_LATHE_START,
+                CopyEntity(sketch, entity, sketch->GetEntity(he), 0, REMAP_LATHE_START,
                     NO_PARAM, NO_PARAM, NO_PARAM,
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::NUMERIC);
@@ -565,7 +565,7 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
                 e = &(entity->Get(i)); // because we copied.
                 if (e->IsPoint()) {
                 // for points this copy is used for the circle centers
-                    CopyEntity(sketch, entity, SK.GetEntity(he), 0, REMAP_LATHE_ARC_CENTER,
+                    CopyEntity(sketch, entity, sketch->GetEntity(he), 0, REMAP_LATHE_ARC_CENTER,
                         NO_PARAM, NO_PARAM, NO_PARAM,
                         NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                         CopyAs::NUMERIC);
@@ -578,8 +578,8 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
 
         case Type::REVOLVE: {
             // this was borrowed from LATHE and ROTATE
-            Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
-            Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
+            Vector axis_pos = sketch->GetEntity(predef.origin)->PointGetNum();
+            Vector axis_dir = sketch->GetEntity(predef.entityB)->VectorGetNum();
 
             // The center of rotation
             AddParam(param, h.param(0), axis_pos.x);
@@ -631,8 +631,8 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
         }
 
         case Type::HELIX:   {
-            Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
-            Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
+            Vector axis_pos = sketch->GetEntity(predef.origin)->PointGetNum();
+            Vector axis_dir = sketch->GetEntity(predef.entityB)->VectorGetNum();
 
             // The center of rotation
             AddParam(param, h.param(0), axis_pos.x);
@@ -683,7 +683,7 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
                     Vector check = e->PointGetNum().Minus(axis_pos).Cross(axis_dir);
                     if (check.Dot(check) < LENGTH_EPS) {
                         //! @todo isn't this the same as &(ent[i])?
-                        Entity *ep = SK.GetEntity(e->h);
+                        Entity *ep = sketch->GetEntity(e->h);
                         Entity en = {};
                         en.sketch = sketch;
                         // A point gets extruded to form a line segment
@@ -704,7 +704,7 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
 
         case Type::TRANSLATE: {
             // inherit meshCombine from source group
-            Group *srcg = SK.GetGroup(opA);
+            Group *srcg = sketch->GetGroup(opA);
             meshCombine = srcg->meshCombine;
             // The translation vector
             AddParam(param, h.param(0), gp.x);
@@ -735,7 +735,7 @@ void Group::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
         }
         case Type::ROTATE: {
             // inherit meshCombine from source group
-            Group *srcg = SK.GetGroup(opA);
+            Group *srcg = sketch->GetGroup(opA);
             meshCombine = srcg->meshCombine;
             // The center of rotation
             AddParam(param, h.param(0), gc.x);
@@ -805,7 +805,7 @@ void Group::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
     l->Add(&eq);
 }
 
-void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
+void Group::GenerateEquations(Sketch *sketch, IdList<Equation,hEquation> *l) {
     if(type == Type::LINKED) {
         // Normalize the quaternion
         ExprQuaternion q = {
@@ -818,12 +818,12 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         // The axis and center of rotation are specified numerically
 #define EC(x) (Expr::From(x))
 #define EP(x) (Expr::From(h.param(x)))
-        ExprVector orig = SK.GetEntity(predef.origin)->PointGetExprs();
+        ExprVector orig = sketch->GetEntity(predef.origin)->PointGetExprs();
         AddEq(l, (orig.x)->Minus(EP(0)), 0);
         AddEq(l, (orig.y)->Minus(EP(1)), 1);
         AddEq(l, (orig.z)->Minus(EP(2)), 2);
         // param 3 is the angle, which is free
-        Vector axis = SK.GetEntity(predef.entityB)->VectorGetNum();
+        Vector axis = sketch->GetEntity(predef.entityB)->VectorGetNum();
         axis = axis.WithMagnitude(1);
         AddEq(l, (EC(axis.x))->Minus(EP(4)), 3);
         AddEq(l, (EC(axis.y))->Minus(EP(5)), 4);
@@ -841,7 +841,7 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         if(predef.entityB != Entity::FREE_IN_3D) {
             // The extrusion path is locked along a line, normal to the
             // specified workplane. Don't constrain for skewed extrusions.
-            Entity *w = SK.GetEntity(predef.entityB);
+            Entity *w = sketch->GetEntity(predef.entityB);
             ExprVector u = w->Normal()->NormalExprsU();
             ExprVector v = w->Normal()->NormalExprsV();
             ExprVector extruden = {
@@ -854,7 +854,7 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         }
     } else if(type == Type::TRANSLATE) {
         if(predef.entityB != Entity::FREE_IN_3D) {
-            Entity *w = SK.GetEntity(predef.entityB);
+            Entity *w = sketch->GetEntity(predef.entityB);
             ExprVector n = w->Normal()->NormalExprsN();
             ExprVector trans;
             trans = ExprVector::From(h.param(0), h.param(1), h.param(2));
@@ -880,7 +880,7 @@ hEntity Group::Remap(hEntity in, int copyNumber) {
 }
 
 void Group::MakeExtrusionLines(Sketch *sketch, EntityList *el, hEntity in) {
-    Entity *ep = SK.GetEntity(in);
+    Entity *ep = sketch->GetEntity(in);
 
     Entity en = {};
     en.sketch = sketch;
@@ -897,8 +897,8 @@ void Group::MakeExtrusionLines(Sketch *sketch, EntityList *el, hEntity in) {
     } else if(ep->type == Entity::Type::LINE_SEGMENT) {
         // A line gets extruded to form a plane face; an endpoint of the
         // original line is a point in the plane, and the line is in the plane.
-        Vector a = SK.GetEntity(ep->point[0])->PointGetNum();
-        Vector b = SK.GetEntity(ep->point[1])->PointGetNum();
+        Vector a = sketch->GetEntity(ep->point[0])->PointGetNum();
+        Vector b = sketch->GetEntity(ep->point[1])->PointGetNum();
         Vector ab = b.Minus(a);
 
         en.param[0] = h.param(0);
@@ -920,7 +920,7 @@ void Group::MakeExtrusionLines(Sketch *sketch, EntityList *el, hEntity in) {
 
 void Group::MakeLatheCircles(Sketch *sketch, EntityList *el, ParamList *param, hEntity in,
                              Vector pt, Vector axis) {
-    Entity *ep = SK.GetEntity(in);
+    Entity *ep = sketch->GetEntity(in);
 
     Entity en = {};
     en.sketch = sketch;
@@ -931,8 +931,8 @@ void Group::MakeLatheCircles(Sketch *sketch, EntityList *el, ParamList *param, h
         en.point[2] = en.point[1]; //Remap(ep->h, REMAP_LATHE_END);
 
         // Get arc center and point on arc.
-        Entity *pc = SK.GetEntity(en.point[0]);
-        Entity *pp = SK.GetEntity(en.point[1]);
+        Entity *pc = sketch->GetEntity(en.point[0]);
+        Entity *pp = sketch->GetEntity(en.point[1]);
 
         // Project arc point to the revolution axis and use it for arc center.
         double k = pp->numPoint.Minus(pt).Dot(axis) / axis.Dot(axis);
@@ -970,14 +970,14 @@ void Group::MakeLatheCircles(Sketch *sketch, EntityList *el, ParamList *param, h
 
 void Group::MakeLatheSurfacesSelectable(Sketch *sketch, EntityList *el, hEntity in,
                                         Vector axis) {
-    Entity *ep = SK.GetEntity(in);
+    Entity *ep = sketch->GetEntity(in);
 
     Entity en = {};
     en.sketch = sketch;
     if(ep->type == Entity::Type::LINE_SEGMENT) {
         // An axis-perpendicular line gets revolved to form a face.
-        Vector a = SK.GetEntity(ep->point[0])->PointGetNum();
-        Vector b = SK.GetEntity(ep->point[1])->PointGetNum();
+        Vector a = sketch->GetEntity(ep->point[0])->PointGetNum();
+        Vector b = sketch->GetEntity(ep->point[1])->PointGetNum();
         Vector u = b.Minus(a).WithMagnitude(1.0);
 
         // Check for perpendicularity: calculate cosine of the angle
@@ -1008,13 +1008,13 @@ void Group::MakeLatheSurfacesSelectable(Sketch *sketch, EntityList *el, hEntity 
 void Group::MakeRevolveEndFaces(Sketch *sketch, EntityList *el, hEntity pt, int ai, int af)
 {
     if(pt.v == 0) return;
-    Group *src = SK.GetGroup(opA);
+    Group *src = sketch->GetGroup(opA);
     Vector n = src->polyLoops.normal;
 
     // When there is no loop normal (e.g. if the loop is broken), use normal of workplane
     // as fallback, to avoid breaking constraints depending on the faces.
     if(n.Equals({0, 0, 0}) && src->type == Group::Type::DRAWING_WORKPLANE) {
-        n = SK.GetEntity(src->h.entity(0))->Normal()->NormalN();
+        n = sketch->GetEntity(src->h.entity(0))->Normal()->NormalN();
     }
 
     Entity en = {};
@@ -1046,13 +1046,13 @@ void Group::MakeRevolveEndFaces(Sketch *sketch, EntityList *el, hEntity pt, int 
 void Group::MakeExtrusionTopBottomFaces(Sketch *sketch, EntityList *el, hEntity pt)
 {
     if(pt.v == 0) return;
-    Group *src = SK.GetGroup(opA);
+    Group *src = sketch->GetGroup(opA);
     Vector n = src->polyLoops.normal;
 
     // When there is no loop normal (e.g. if the loop is broken), use normal of workplane
     // as fallback, to avoid breaking constraints depending on the faces.
     if(n.Equals({0, 0, 0}) && src->type == Group::Type::DRAWING_WORKPLANE) {
-        n = SK.GetEntity(src->h.entity(0))->Normal()->NormalN();
+        n = sketch->GetEntity(src->h.entity(0))->Normal()->NormalN();
     }
 
     Entity en = {};

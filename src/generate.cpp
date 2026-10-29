@@ -287,7 +287,7 @@ void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *resul
                     SolveGroup(hg, opts.sys, opts.dragged, opts.andFindFree,
                                opts.timeoutRedundantConstr);
                     constraint.ClearTags();
-                    g->GenerateLoops();
+                    g->GenerateLoops(this);
                 }
             } else {
                 // The group falls outside the range, so just assume that
@@ -330,7 +330,8 @@ void Sketch::GenerateEntities(const GenerateOptions &opts, GenerateResult *resul
     prev.Clear();
 }
 
-void Sketch::GenerateShellsAndMeshes(int first, int last) {
+bool Sketch::GenerateShellsAndMeshes(int first, int last) {
+    bool booleanChanged = false;
     for(int i = 0; i < groupOrder.n; ++i) {
         const hGroup hg = groupOrder[i];
         if(hg == Group::HGROUP_REFERENCES) {
@@ -338,7 +339,9 @@ void Sketch::GenerateShellsAndMeshes(int first, int last) {
         }
         if(i >= first && i <= last) {
             Group *g = GetGroup(hg);
-            g->GenerateShellAndMesh();
+            if(g->GenerateShellAndMesh(this)) {
+                booleanChanged = true;
+            }
             g->clean = true;
         }
     }
@@ -349,6 +352,7 @@ void Sketch::GenerateShellsAndMeshes(int first, int last) {
             c.ModifyToSatisfy(this);
         }
     }
+    return booleanChanged;
 }
 
 void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
@@ -438,8 +442,11 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
         chordTolCalculated = maxSize * chordTol / 100.0;
     }
 
-    // Then generate the shell and mesh
-    SK.GenerateShellsAndMeshes(result.first, result.last);
+    // Then generate the shell and mesh, and show any change in whether a
+    // group's Boolean failed.
+    if(SK.GenerateShellsAndMeshes(result.first, result.last)) {
+        ScheduleShowTW();
+    }
 
     // Make sure the point that we're tracing exists.
     if(traced.point.v && !SK.entity.FindByIdNoOops(traced.point)) {
