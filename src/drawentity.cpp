@@ -28,7 +28,7 @@ void Entity::GenerateEdges(SEdgeList *el) {
         List<Vector> lv = {};
         sb->MakePwlInto(&lv);
         for(int j = 1; j < lv.n; j++) {
-            el->AddEdge(lv[j-1], lv[j], Style::ForEntity(h).v, i);
+            el->AddEdge(lv[j-1], lv[j], Style::ForEntity(this).v, i);
         }
         lv.Clear();
     }
@@ -489,7 +489,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
 
     // Record our style for all of the Beziers that we just created.
     for(; i < sbl->l.n; i++) {
-        sbl->l[i].auxA = Style::ForEntity(h).v;
+        sbl->l[i].auxA = Style::ForEntity(this).v;
     }
 }
 
@@ -534,7 +534,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
     } else if(IsNormal() || type == Type::WORKPLANE) {
         hs.v = Style::NORMALS;
     } else {
-        hs = Style::ForEntity(h);
+        hs = Style::ForEntity(this);
         if (hs.v == Style::CONSTRUCTION) {
             zIndex = 4;
         }
