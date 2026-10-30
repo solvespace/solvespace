@@ -557,6 +557,16 @@ public:
     }
 
 protected:
+    // GTK destroys the GL context when the widget is unrealized, for example
+    // when it is moved to a different window.
+    void on_unrealize() override {
+        make_current();
+        if(_receiver->onContextLost) {
+            _receiver->onContextLost();
+        }
+        Gtk::GLArea::on_unrealize();
+    }
+
     bool on_render(const Glib::RefPtr<Gdk::GLContext> &context) override {
         if(_receiver->onRender) {
             _receiver->onRender();

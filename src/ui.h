@@ -254,6 +254,7 @@ public:
     void Draw(Canvas *canvas);
 
     void Paint();
+    void ContextLost();
     void MouseEvent(bool isClick, bool leftDown, double x, double y);
     void MouseLeave();
     void ScrollbarEvent(double newPos);

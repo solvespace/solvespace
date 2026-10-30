@@ -273,6 +273,7 @@ void TextWindow::Init() {
             };
             window->onKeyboardEvent = SS.GW.window->onKeyboardEvent;
             window->onRender = std::bind(&TextWindow::Paint, this);
+            window->onContextLost = std::bind(&TextWindow::ContextLost, this);
             window->onEditingDone = std::bind(&TextWindow::EditControlDone, this, _1);
             window->onScrollbarAdjusted = std::bind(&TextWindow::ScrollbarEvent, this, _1);
             window->SetMinContentSize(370, 370);
@@ -982,8 +983,16 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
     return true;
 }
 
+void TextWindow::ContextLost() {
+    canvas = NULL;
+}
+
 void TextWindow::Paint() {
-    if (!canvas) return;
+    // The renderer is dropped when the GL context is lost; make a new one.
+    if(!canvas) {
+        canvas = CreateRenderer();
+    }
+    if(!canvas) return;
 
     double width, height;
     window->GetContentSize(&width, &height);
