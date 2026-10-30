@@ -153,6 +153,18 @@ void SolveSpaceUI::Init() {
     if(TW.window && GW.window) {
         TW.window->ThawPosition(settings, "TextWindow");
         GW.window->ThawPosition(settings, "GraphicsWindow");
+        if(TW.window->CanDock()) {
+            uint32_t side = settings->ThawInt("TextWindowDock",
+                                              (uint32_t)Platform::Window::DockSide::RIGHT);
+            if(side > (uint32_t)Platform::Window::DockSide::RIGHT) {
+                side = (uint32_t)Platform::Window::DockSide::RIGHT;
+            }
+            TW.window->SetDockSide((Platform::Window::DockSide)side);
+            // The dock menu needs the text window, which did not exist yet
+            // when the main menu was first built.
+            GW.PopulateMainMenu();
+            GW.EnsureValidActives();
+        }
         TW.window->SetVisible(true);
         GW.window->SetVisible(true);
         GW.window->Focus();
@@ -210,6 +222,9 @@ void SolveSpaceUI::Exit() {
 
     GW.window->FreezePosition(settings, "GraphicsWindow");
     TW.window->FreezePosition(settings, "TextWindow");
+    if(TW.window->CanDock()) {
+        settings->FreezeInt("TextWindowDock", (uint32_t)TW.window->GetDockSide());
+    }
 
     // Recent files
     for(size_t i = 0; i < MAX_RECENT; i++) {

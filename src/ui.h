@@ -109,6 +109,10 @@ enum class Command : uint32_t {
     CENTER_VIEW,
     SHOW_TOOLBAR,
     SHOW_TEXT_WND,
+    DOCK_TEXT_WND,
+    DOCK_TEXT_WND_LEFT,
+    DOCK_TEXT_WND_RIGHT,
+    UNDOCK_TEXT_WND,
     UNITS_INCHES,
     UNITS_FEET_INCHES,
     UNITS_MM,
@@ -576,6 +580,9 @@ public:
     Platform::MenuItemRef explodeMenuItem;
     Platform::MenuItemRef showToolbarMenuItem;
     Platform::MenuItemRef showTextWndMenuItem;
+    Platform::MenuItemRef dockTextWndLeftMenuItem;
+    Platform::MenuItemRef dockTextWndRightMenuItem;
+    Platform::MenuItemRef undockTextWndMenuItem;
     Platform::MenuItemRef fullScreenMenuItem;
 
     Platform::MenuItemRef unitsMmMenuItem;
@@ -667,6 +674,7 @@ public:
     void SetWorkplaneFreeIn3d();
     hEntity ActiveWorkplane();
     void ForceTextWindowShown();
+    void SetTextWindowDock(Platform::Window::DockSide side);
 
     // Operations that must be completed by doing something with the mouse
     // are noted here.
