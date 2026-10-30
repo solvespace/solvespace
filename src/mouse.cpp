@@ -649,7 +649,8 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
         if(gs.constraints == 1 && gs.n == 0) {
             Constraint *c = SK.GetConstraint(gs.constraint[0]);
-            if(c->HasLabel() && c->type != Constraint::Type::COMMENT) {
+            if(c->HasLabel() && c->type != Constraint::Type::COMMENT &&
+               c->type != Constraint::Type::RELATION) {
                 menu->AddItem(_("Toggle Reference Dimension"),
                     []() { Constraint::MenuConstrain(Command::REFERENCE); });
             }
@@ -838,7 +839,7 @@ hRequest GraphicsWindow::AddRequest(Request::Type type, bool rememberForUndo) {
     // place this request's entities where the mouse is can do so. But
     // we mustn't try to solve until reasonable values have been supplied
     // for these new parameters, or else we'll get a numerical blowup.
-    r.Generate(&SK.entity, &SK.param);
+    r.Generate(&SK, &SK.entity, &SK.param);
     SS.MarkGroupDirty(r.group);
     return r.h;
 }
@@ -1185,6 +1186,17 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     hc = Constraint::AddConstraint(&c);
                     break;
                 }
+
+                case Command::RELATION: {
+                    ClearSuper();
+                    Constraint c = {};
+                    c.group       = SS.GW.activeGroup;
+                    c.workplane   = SS.GW.ActiveWorkplane();
+                    c.type        = Constraint::Type::RELATION;
+                    c.disp.offset = v;
+                    hc = Constraint::AddConstraint(&c);
+                    break;
+                }
                 default: ssassert(false, "Unexpected pending menu id");
             }
             break;
@@ -1394,7 +1406,18 @@ void GraphicsWindow::EditConstraint(hConstraint constraint) {
             editPlaceholder = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
             break;
 
+        case Constraint::Type::RELATION:
+            editValue = c->expression;
+            editPlaceholder = "aaaaaaaaaaaaaaaaaaaa";
+            break;
+
         default: {
+            if(c->HasExpression()) {
+                editValue = c->expression;
+                editPlaceholder = "10.000000";
+                break;
+            }
+
             double value = fabs(c->valA);
 
             // If displayed as radius, also edit as radius.
@@ -1443,6 +1466,57 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
     }
 }
 
+// Tell the user about any named parameters that were just created for a
+// constraint, since a mistyped name would otherwise go unnoticed.
+static void ReportNewParams(hGroup hg, const std::vector<std::string> &names) {
+    if(names.empty()) return;
+
+    std::string list;
+    for(const std::string &name : names) {
+        if(!list.empty()) list += ", ";
+        list += name;
+    }
+    Message(_("New named parameters were created in group %s: %s"),
+            SK.GetGroup(hg)->DescriptionString().c_str(), list.c_str());
+}
+
+static std::string Trim(const std::string &s) {
+    size_t start = s.find_first_not_of(" ");
+    if(start == std::string::npos) return "";
+    size_t end = s.find_last_not_of(" ");
+    return s.substr(start, end - start + 1);
+}
+
+// The factor that turns the value of an expression typed for this dimension
+// into the units of valA, including the sign of a signed distance.
+static double ExpressionScale(const Constraint *c) {
+    switch(c->type) {
+        case Constraint::Type::PROJ_PT_DISTANCE:
+        case Constraint::Type::PT_LINE_DISTANCE:
+        case Constraint::Type::PT_FACE_DISTANCE:
+        case Constraint::Type::PT_PLANE_DISTANCE:
+        case Constraint::Type::LENGTH_DIFFERENCE:
+        case Constraint::Type::ARC_ARC_DIFFERENCE:
+        case Constraint::Type::ARC_LINE_DIFFERENCE:
+            // Keep the sign, the same as when a number is typed.
+            return (c->valA < 0) ? -SS.MmPerUnit() : SS.MmPerUnit();
+
+        case Constraint::Type::ANGLE:
+        case Constraint::Type::LENGTH_RATIO:
+        case Constraint::Type::ARC_ARC_LEN_RATIO:
+        case Constraint::Type::ARC_LINE_LEN_RATIO:
+            // No units conversion
+            return 1.0;
+
+        case Constraint::Type::DIAMETER:
+            // If displayed and edited as radius, convert back to diameter
+            return c->other ? 2*SS.MmPerUnit() : SS.MmPerUnit();
+
+        default:
+            return SS.MmPerUnit();
+    }
+}
+
 void GraphicsWindow::EditControlDone(const std::string &s) {
     window->HideEditor();
     window->Invalidate();
@@ -1455,8 +1529,69 @@ void GraphicsWindow::EditControlDone(const std::string &s) {
         return;
     }
 
-    if(Expr *e = Expr::From(s, true)) {
+    // Names that aren't defined yet become new parameters in the constraint's
+    // group, once the text is otherwise valid; check it as if they existed.
+    const ParamNames *names = &(SK.GetGroup(c->group)->paramNames);
+    std::vector<std::string> newNames = Expr::FindUndefinedNames(s, names);
+    ParamNames withNewNames = *names;
+    for(const std::string &name : newNames) {
+        withNewNames[name] = hParam {};
+    }
+
+    if(c->type == Constraint::Type::RELATION) {
+        // Empty text leaves a relation that does nothing yet.
+        if(s.find_first_not_of(" ") != std::string::npos) {
+            std::string error;
+            int namesUsed = 0;
+            if(Constraint::ParseRelation(s, &withNewNames, &error, &namesUsed) == NULL) {
+                Error(_("Not a valid relation: '%s'.\n%s."), s.c_str(), error.c_str());
+                return;
+            }
+            if(namesUsed == 0) {
+                Error(_("A relation must use at least one named parameter."));
+                return;
+            }
+        }
         SS.UndoRemember();
+        Constraint::CreateNamedParams(c->group, newNames, Request::NAMED_PARAM_DEFAULT);
+        c->expression = s;
+        // The relation may change the degrees of freedom.
+        SK.GetGroup(c->group)->dofCheckOk = false;
+        SS.MarkGroupDirty(c->group);
+        ReportNewParams(c->group, newNames);
+        return;
+    }
+
+    // Named parameters can be used in the expression; those in scope are
+    // the ones in the constraint's group.
+    int namesUsed = 0;
+    if(Expr *e = Expr::From(s, true, &withNewNames, &namesUsed)) {
+        SS.UndoRemember();
+
+        if(namesUsed > 0) {
+            // Keep the expression, so the dimension follows the parameters.
+            double scale = ExpressionScale(c);
+            if(!newNames.empty()) {
+                // A dimension that is just a new name starts with the value
+                // that it has now, so nothing moves.
+                double value = Request::NAMED_PARAM_DEFAULT;
+                if(newNames.size() == 1 && Trim(s) == newNames[0]) {
+                    value = c->valA / scale;
+                }
+                Constraint::CreateNamedParams(c->group, newNames, value);
+                e = Expr::From(s, false, names);
+            }
+            c->expression = s;
+            c->exprScale = scale;
+            c->valA = e->Eval() * c->exprScale;
+            SS.MarkGroupDirty(c->group);
+            ReportNewParams(c->group, newNames);
+            return;
+        }
+
+        // Just a number
+        c->expression.clear();
+        c->exprScale = 0;
 
         switch(c->type) {
             case Constraint::Type::PROJ_PT_DISTANCE:

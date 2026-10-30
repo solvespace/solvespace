@@ -50,6 +50,7 @@ std::string Constraint::DescriptionString() const {
         case Type::EQUAL_LINE_ARC_LEN:  s = C_("constr-name", "eq-line-len-arc-len"); break;
         case Type::WHERE_DRAGGED:       s = C_("constr-name", "lock-where-dragged"); break;
         case Type::COMMENT:             s = C_("constr-name", "comment"); break;
+        case Type::RELATION:            s = C_("constr-name", "relation"); break;
         default:                        s = "???"; break;
     }
 
@@ -79,6 +80,26 @@ void Constraint::DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA,
     // hover, in case the just-deleted constraint was
     // hovered.
     SS.GW.hover.Clear();
+}
+
+void Constraint::CreateNamedParams(hGroup hg, const std::vector<std::string> &names,
+                                   double value) {
+    Group *g = SK.GetGroup(hg);
+    for(const std::string &name : names) {
+        Request r = {};
+        r.group = hg;
+        r.type = Request::Type::NAMED_PARAMETER;
+        r.str = name;
+        SK.request.AddAndAssignId(&r);
+
+        // Make the parameter now, so that the constraint can use its value
+        // straight away; regenerating keeps it.
+        Param p = {};
+        p.h = r.NamedParam();
+        p.val = value;
+        SK.param.Add(&p);
+        g->paramNames[name] = p.h;
+    }
 }
 
 hConstraint Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
@@ -328,7 +349,7 @@ void Constraint::MenuConstrain(Command id) {
             }
 
             c.valA = 0;
-            c.ModifyToSatisfy();
+            c.ModifyToSatisfy(&SK);
             AddConstraint(&c);
             newcons.push_back(c);
             break;
@@ -488,7 +509,7 @@ void Constraint::MenuConstrain(Command id) {
             }
 
             c.valA = 0;
-            c.ModifyToSatisfy();
+            c.ModifyToSatisfy(&SK);
             AddConstraint(&c);
             newcons.push_back(c);
             break;
@@ -523,7 +544,7 @@ void Constraint::MenuConstrain(Command id) {
             }
 
             c.valA = 0;
-            c.ModifyToSatisfy();
+            c.ModifyToSatisfy(&SK);
             AddConstraint(&c);
             newcons.push_back(c);
             break;
@@ -737,7 +758,7 @@ void Constraint::MenuConstrain(Command id) {
                 if(c->type == Type::ANGLE) {
                     SS.UndoRemember();
                     c->other = !(c->other);
-                    c->ModifyToSatisfy();
+                    c->ModifyToSatisfy(&SK);
                     break;
                 }
                 if(c->type == Type::EQUAL_ANGLE) {
@@ -753,7 +774,8 @@ void Constraint::MenuConstrain(Command id) {
         case Command::REFERENCE:
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SK.GetConstraint(gs.constraint[0]);
-                if(c->HasLabel() && c->type != Type::COMMENT) {
+                if(c->HasLabel() && c->type != Type::COMMENT &&
+                   c->type != Type::RELATION) {
                     SS.UndoRemember();
                     (c->reference) = !(c->reference);
                     SS.MarkGroupDirty(c->group, /*onlyThis=*/true);
@@ -820,7 +842,7 @@ void Constraint::MenuConstrain(Command id) {
                 c.reference = true;
             }
 
-            c.ModifyToSatisfy();
+            c.ModifyToSatisfy(&SK);
             AddConstraint(&c);
             newcons.push_back(c);
             break;
@@ -952,6 +974,22 @@ void Constraint::MenuConstrain(Command id) {
                 SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
                 SS.GW.pending.command = Command::COMMENT;
                 SS.GW.pending.description = _("click center of comment text");
+                SS.ScheduleShowTW();
+            }
+            break;
+
+        case Command::RELATION:
+            if(gs.points == 1 && gs.n == 1) {
+                c.type = Type::RELATION;
+                c.ptA = gs.point[0];
+                c.group       = SS.GW.activeGroup;
+                c.workplane   = SS.GW.ActiveWorkplane();
+                AddConstraint(&c);
+                newcons.push_back(c);
+            } else {
+                SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
+                SS.GW.pending.command = Command::RELATION;
+                SS.GW.pending.description = _("click center of relation text");
                 SS.ScheduleShowTW();
             }
             break;

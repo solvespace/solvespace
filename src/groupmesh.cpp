@@ -9,14 +9,14 @@
 
 namespace SolveSpace {
 
-void Group::AssembleLoops(bool *allClosed,
+void Group::AssembleLoops(Sketch *sketch, bool *allClosed,
                           bool *allCoplanar,
                           bool *allNonZeroLen)
 {
     SBezierList sbl = {};
 
     int i;
-    for(auto &e : SK.entity) {
+    for(auto &e : sketch->entity) {
         if(e.group != h)
             continue;
         if(e.construction)
@@ -55,7 +55,7 @@ void Group::AssembleLoops(bool *allClosed,
     sbl.Clear();
 }
 
-void Group::GenerateLoops() {
+void Group::GenerateLoops(Sketch *sketch) {
     polyLoops.Clear();
     bezierLoops.Clear();
     bezierOpens.Clear();
@@ -64,7 +64,7 @@ void Group::GenerateLoops() {
        type == Type::ROTATE || type == Type::TRANSLATE || type == Type::LINKED)
     {
         bool allClosed = false, allCoplanar = false, allNonZeroLen = false;
-        AssembleLoops(&allClosed, &allCoplanar, &allNonZeroLen);
+        AssembleLoops(sketch, &allClosed, &allCoplanar, &allNonZeroLen);
         if(!allNonZeroLen) {
             polyError.how = PolyError::ZERO_LEN_EDGE;
         } else if(!allCoplanar) {
@@ -106,7 +106,8 @@ void SMesh::RemapFaces(Group *g, int remap) {
 }
 
 template<class T>
-void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat) {
+void Group::GenerateForStepAndRepeat(Sketch *sketch, T *steps, T *outs,
+                                     Group::CombineAs forWhat) {
 
     int n = (int)valA, a0 = 0;
     if(subtype == Subtype::ONE_SIDED && skipFirst) {
@@ -126,15 +127,15 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat
         int ap = a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1));
 
         if(type == Type::TRANSLATE) {
-            Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
+            Vector trans = sketch->VectorFrom(h.param(0), h.param(1), h.param(2));
             trans = trans.ScaledBy(ap);
             transd[a].MakeFromTransformationOf(steps,
                 trans, Quaternion::IDENTITY, 1.0);
         } else {
-            Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
-            double theta = ap * SK.GetParam(h.param(3))->val;
+            Vector trans = sketch->VectorFrom(h.param(0), h.param(1), h.param(2));
+            double theta = ap * sketch->GetParam(h.param(3))->val;
             double c = cos(theta), s = sin(theta);
-            Vector axis = Vector::From(h.param(4), h.param(5), h.param(6));
+            Vector axis = sketch->VectorFrom(h.param(4), h.param(5), h.param(6));
             Quaternion q = Quaternion::From(c, s*axis.x, s*axis.y, s*axis.z);
             // Rotation is centered at t; so A(x - t) + t = Ax + (t - At)
             transd[a].MakeFromTransformationOf(steps,
@@ -209,8 +210,9 @@ void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs, Group::CombineAs how
     }
 }
 
-void Group::GenerateShellAndMesh() {
+bool Group::GenerateShellAndMesh(Sketch *sketch) {
     bool prevBooleanFailed = booleanFailed;
+    bool booleanChanged = false;
     booleanFailed = false;
 
     Group *srcg = this;
@@ -224,7 +226,7 @@ void Group::GenerateShellAndMesh() {
     // planar and not self-intersecting.
     bool haveSrc = true;
     if(type == Type::EXTRUDE || type == Type::LATHE || type == Type::REVOLVE) {
-        Group *src = SK.GetGroup(opA);
+        Group *src = sketch->GetGroup(opA);
         if(src->polyError.how != PolyError::GOOD) {
             haveSrc = false;
         }
@@ -233,21 +235,22 @@ void Group::GenerateShellAndMesh() {
     if(type == Type::TRANSLATE || type == Type::ROTATE) {
         // A step and repeat gets merged against the group's previous group,
         // not our own previous group.
-        srcg = SK.GetGroup(opA);
+        srcg = sketch->GetGroup(opA);
 
         if(!srcg->suppress) {
-            if(!IsForcedToMesh()) {
-                GenerateForStepAndRepeat<SShell>(&(srcg->thisShell), &thisShell, srcg->meshCombine);
+            if(!IsForcedToMesh(sketch)) {
+                GenerateForStepAndRepeat<SShell>(sketch, &(srcg->thisShell), &thisShell,
+                                                 srcg->meshCombine);
             } else {
                 SMesh prevm = {};
                 prevm.MakeFromCopyOf(&srcg->thisMesh);
                 srcg->thisShell.TriangulateInto(&prevm);
-                GenerateForStepAndRepeat<SMesh> (&prevm, &thisMesh, srcg->meshCombine);
+                GenerateForStepAndRepeat<SMesh> (sketch, &prevm, &thisMesh, srcg->meshCombine);
             }
         }
     } else if(type == Type::EXTRUDE && haveSrc) {
-        Group *src = SK.GetGroup(opA);
-        Vector translate = Vector::From(h.param(0), h.param(1), h.param(2));
+        Group *src = sketch->GetGroup(opA);
+        Vector translate = sketch->VectorFrom(h.param(0), h.param(1), h.param(2));
 
         Vector tbot, ttop;
         if(subtype == Subtype::ONE_SIDED || subtype == Subtype::ONE_SKEWED) {
@@ -293,12 +296,12 @@ void Group::GenerateShellAndMesh() {
                 // So these are the sides
                 if(ss->degm != 1 || ss->degn != 1) continue;
 
-                for(Entity &e : SK.entity) {
+                for(Entity &e : sketch->entity) {
                     if(e.group != opA) continue;
                     if(e.type != Entity::Type::LINE_SEGMENT) continue;
 
-                    Vector a = SK.GetEntity(e.point[0])->PointGetNum(),
-                           b = SK.GetEntity(e.point[1])->PointGetNum();
+                    Vector a = sketch->GetEntity(e.point[0])->PointGetNum(),
+                           b = sketch->GetEntity(e.point[1])->PointGetNum();
                     a = a.Plus(ttop);
                     b = b.Plus(ttop);
                     // Could get taken backwards, so check all cases.
@@ -315,74 +318,74 @@ void Group::GenerateShellAndMesh() {
             }
         }
     } else if(type == Type::LATHE && haveSrc) {
-        Group *src = SK.GetGroup(opA);
+        Group *src = sketch->GetGroup(opA);
 
-        Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
-               axis = SK.GetEntity(predef.entityB)->VectorGetNum();
+        Vector pt   = sketch->GetEntity(predef.origin)->PointGetNum(),
+               axis = sketch->GetEntity(predef.entityB)->VectorGetNum();
         axis = axis.WithMagnitude(1);
 
         SBezierLoopSetSet *sblss = &(src->bezierLoops);
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-            thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
+            thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, sketch, this);
         }
     } else if(type == Type::REVOLVE && haveSrc) {
-        Group *src    = SK.GetGroup(opA);
-        double anglef = SK.GetParam(h.param(3))->val * 4; // why the 4 is needed?
+        Group *src    = sketch->GetGroup(opA);
+        double anglef = sketch->GetParam(h.param(3))->val * 4; // why the 4 is needed?
         double dists = 0, distf = 0;
         double angles = 0.0;
         if(subtype != Subtype::ONE_SIDED) {
             anglef *= 0.5;
             angles = -anglef;
         }
-        Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
-               axis = SK.GetEntity(predef.entityB)->VectorGetNum();
+        Vector pt   = sketch->GetEntity(predef.origin)->PointGetNum(),
+               axis = sketch->GetEntity(predef.entityB)->VectorGetNum();
         axis        = axis.WithMagnitude(1);
 
         SBezierLoopSetSet *sblss = &(src->bezierLoops);
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
             if(fabs(anglef - angles) < 2 * PI) {
-                thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
+                thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, sketch, this,
                                                       angles, anglef, dists, distf);
             } else {
-                thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
+                thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, sketch, this);
             }
         }
     } else if(type == Type::HELIX && haveSrc) {
-        Group *src    = SK.GetGroup(opA);
-        double anglef = SK.GetParam(h.param(3))->val * 4; // why the 4 is needed?
+        Group *src    = sketch->GetGroup(opA);
+        double anglef = sketch->GetParam(h.param(3))->val * 4; // why the 4 is needed?
         double dists = 0, distf = 0;
         double angles = 0.0;
-        distf = SK.GetParam(h.param(7))->val * 2; // dist is applied twice
+        distf = sketch->GetParam(h.param(7))->val * 2; // dist is applied twice
         if(subtype != Subtype::ONE_SIDED) {
             anglef *= 0.5;
             angles = -anglef;
             distf *= 0.5;
             dists = -distf;
         }
-        Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
-               axis = SK.GetEntity(predef.entityB)->VectorGetNum();
+        Vector pt   = sketch->GetEntity(predef.origin)->PointGetNum(),
+               axis = sketch->GetEntity(predef.entityB)->VectorGetNum();
         axis        = axis.WithMagnitude(1);
 
         SBezierLoopSetSet *sblss = &(src->bezierLoops);
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
+            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, sketch, this,
                                                   angles, anglef, dists, distf);
         }
     } else if(type == Type::LINKED) {
         // The imported shell or mesh are copied over, with the appropriate
         // transformation applied. We also must remap the face entities.
         Vector offset = {
-            SK.GetParam(h.param(0))->val,
-            SK.GetParam(h.param(1))->val,
-            SK.GetParam(h.param(2))->val };
+            sketch->GetParam(h.param(0))->val,
+            sketch->GetParam(h.param(1))->val,
+            sketch->GetParam(h.param(2))->val };
         Quaternion q = {
-            SK.GetParam(h.param(3))->val,
-            SK.GetParam(h.param(4))->val,
-            SK.GetParam(h.param(5))->val,
-            SK.GetParam(h.param(6))->val };
+            sketch->GetParam(h.param(3))->val,
+            sketch->GetParam(h.param(4))->val,
+            sketch->GetParam(h.param(5))->val,
+            sketch->GetParam(h.param(6))->val };
 
         thisMesh.MakeFromTransformationOf(&impMesh, offset, q, scale);
         thisMesh.RemapFaces(this, 0);
@@ -399,9 +402,9 @@ void Group::GenerateShellAndMesh() {
     // the previous group's mesh or shell with the requested Boolean, and
     // we're done.
 
-    Group *prevg = srcg->RunningMeshGroup();
+    Group *prevg = srcg->RunningMeshGroup(sketch);
 
-    if(!IsForcedToMesh()) {
+    if(!IsForcedToMesh(sketch)) {
         SShell *prevs = &(prevg->runningShell);
         GenerateForBoolean<SShell>(prevs, &thisShell, &runningShell,
             srcg->meshCombine);
@@ -410,12 +413,10 @@ void Group::GenerateShellAndMesh() {
             runningShell.MergeCoincidentSurfaces();
         }
 
-        // If the Boolean failed, then we should note that in the text screen
-        // for this group.
+        // If the Boolean failed, then that should be noted in the text
+        // screen for this group, so say if that has changed.
         booleanFailed = runningShell.booleanFailed;
-        if(booleanFailed != prevBooleanFailed) {
-            SS.ScheduleShowTW();
-        }
+        booleanChanged = (booleanFailed != prevBooleanFailed);
     } else {
         SMesh prevm, thism;
         prevm = {};
@@ -450,6 +451,7 @@ void Group::GenerateShellAndMesh() {
     }
 
     displayDirty = true;
+    return booleanChanged;
 }
 
 void Group::GenerateDisplayItems() {
@@ -457,7 +459,7 @@ void Group::GenerateDisplayItems() {
     // to find the emphasized edges for a mesh), so we will run it only
     // if its inputs have changed.
     if(displayDirty) {
-        Group *pg = RunningMeshGroup();
+        Group *pg = RunningMeshGroup(&SK);
         if(pg && thisMesh.IsEmpty() && thisShell.IsEmpty()) {
             // We don't contribute any new solid model in this group, so our
             // display items are identical to the previous group's; which means
@@ -522,10 +524,10 @@ void Group::GenerateDisplayItems() {
     }
 }
 
-Group *Group::PreviousGroup() const {
+Group *Group::PreviousGroup(Sketch *sketch) const {
     Group *prev = nullptr;
-    for(auto const &gh : SK.groupOrder) {
-        Group *g = SK.GetGroup(gh);
+    for(auto const &gh : sketch->groupOrder) {
+        Group *g = sketch->GetGroup(gh);
         if(g->h == h) {
             return prev;
         }
@@ -534,11 +536,11 @@ Group *Group::PreviousGroup() const {
     return nullptr;
 }
 
-Group *Group::RunningMeshGroup() const {
+Group *Group::RunningMeshGroup(Sketch *sketch) const {
     if(type == Type::TRANSLATE || type == Type::ROTATE) {
-        return SK.GetGroup(opA)->RunningMeshGroup();
+        return sketch->GetGroup(opA)->RunningMeshGroup(sketch);
     } else {
-        return PreviousGroup();
+        return PreviousGroup(sketch);
     }
 }
 

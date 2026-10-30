@@ -64,6 +64,8 @@ static ToolIcon Toolbar[] = {
       N_("Other supplementary angle"),                        {} },
     { "ref",             Command::REFERENCE,
       N_("Toggle reference dimension"),                       {} },
+    { "relation",        Command::RELATION,
+      N_("Constrain variables with equation"),                {} },
     { "",                Command::NONE, "",                   {} },
 
     { "extrude",         Command::GROUP_EXTRUDE,
@@ -160,7 +162,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my, UiCanvas *canvas,
     // When changing these values, also change the asReference drawing code in drawentity.cpp
     // as well as the "window->SetMinContentSize(720, 636);" in graphicswin.cpp
     int fudge = 8;
-    int h = 32*18 + 3*16 + fudge;   // Toolbar height = 18 icons * 32 pixels + 3 dividers * 16 pixels + fudge
+    int h = 32*19 + 3*16 + fudge;   // Toolbar height = 19 icons * 32 pixels + 3 dividers * 16 pixels + fudge
 
     if(h < y) {
         // If there is enough vertical space leave up to 32 pixels between the menu bar and the toolbar.

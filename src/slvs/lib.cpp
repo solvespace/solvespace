@@ -18,7 +18,7 @@ void Platform::FatalError(const std::string &message) {
     abort();
 }
 
-void Group::GenerateEquations(IdList<Equation,hEquation> *) {
+void Group::GenerateEquations(Sketch *, IdList<Equation,hEquation> *) {
     // Nothing to do for now.
 }
 
@@ -140,6 +140,7 @@ static bool Slvs_CanInitiallySatisfy(const ConstraintBase &c) {
     case ConstraintBase::Type::SAME_ORIENTATION:
     case ConstraintBase::Type::WHERE_DRAGGED:
     case ConstraintBase::Type::COMMENT:
+    case ConstraintBase::Type::RELATION:
         // Can't initially satisfy these constraints
         return false;
     }
@@ -233,6 +234,7 @@ Slvs_Entity Slvs_AddPoint2D(uint32_t grouph, double u, double v, Slvs_Entity wor
     e.workplane.v = workplane.h;
     e.param[0].v  = uph;
     e.param[1].v  = vph;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -256,6 +258,7 @@ Slvs_Entity Slvs_AddPoint3D(uint32_t grouph, double x, double y, double z) {
     e.param[0].v  = xph;
     e.param[1].v  = yph;
     e.param[2].v  = zph;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -277,6 +280,7 @@ Slvs_Entity Slvs_AddNormal2D(uint32_t grouph, Slvs_Entity workplane) {
     e.type        = EntityBase::Type::NORMAL_IN_2D;
     e.group.v     = grouph;
     e.workplane.v = workplane.h;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -300,6 +304,7 @@ Slvs_Entity Slvs_AddNormal3D(uint32_t grouph, double qw, double qx, double qy, d
     e.param[1].v  = xph;
     e.param[2].v  = yph;
     e.param[3].v  = zph;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -324,6 +329,7 @@ Slvs_Entity Slvs_AddDistance(uint32_t grouph, double value, Slvs_Entity workplan
     e.group.v     = grouph;
     e.workplane.v = workplane.h;
     e.param[0].v  = valueph;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -349,6 +355,7 @@ Slvs_Entity Slvs_AddLine2D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Sl
     e.workplane.v = workplane.h;
     e.point[0].v  = ptA.h;
     e.point[1].v  = ptB.h;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -373,6 +380,7 @@ Slvs_Entity Slvs_AddLine3D(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB) {
     e.workplane.v = EntityBase::FREE_IN_3D.v;
     e.point[0].v  = ptA.h;
     e.point[1].v  = ptB.h;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -405,6 +413,7 @@ Slvs_Entity Slvs_AddCubic(uint32_t grouph, Slvs_Entity ptA, Slvs_Entity ptB, Slv
     e.point[1].v  = ptB.h;
     e.point[2].v  = ptC.h;
     e.point[3].v  = ptD.h;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -441,6 +450,7 @@ Slvs_Entity Slvs_AddArc(uint32_t grouph, Slvs_Entity normal, Slvs_Entity center,
     e.point[0].v  = center.h;
     e.point[1].v  = start.h;
     e.point[2].v  = end.h;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -473,6 +483,7 @@ Slvs_Entity Slvs_AddCircle(uint32_t grouph, Slvs_Entity normal, Slvs_Entity cent
     e.normal.v    = normal.h;
     e.point[0].v  = center.h;
     e.distance.v  = radius.h;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -493,6 +504,7 @@ Slvs_Entity Slvs_AddWorkplane(uint32_t grouph, Slvs_Entity origin, Slvs_Entity n
     e.workplane.v = SLVS_FREE_IN_3D;
     e.point[0].v  = origin.h;
     e.normal.v    = nm.h;
+    e.sketch = &SK;
     SK.entity.AddAndAssignId(&e);
 
     Slvs_Entity ce = Slvs_Entity {};
@@ -903,7 +915,7 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, Slvs_hConstraint **bad = nullptr
             SYS.param.Add(SK.GetParam(c->valP));
 
             if(Slvs_CanInitiallySatisfy(*c)) {
-                c->ModifyToSatisfy();
+                c->ModifyToSatisfy(&SK);
             }
         }
     }
@@ -933,7 +945,7 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, Slvs_hConstraint **bad = nullptr
     bool andFindBad = bad != nullptr;
 
     int dof = 0;
-    SolveResult status = SYS.Solve(&g, &dof, &badList, andFindBad, false, false);
+    SolveResult status = SYS.Solve(&SK, &g, &dof, &badList, andFindBad, false, false);
     Slvs_SolveResult sr = {};
     sr.dof = dof;
     sr.nbad = badList.n;
@@ -967,6 +979,11 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, Slvs_hConstraint **bad = nullptr
         }
         case SolveResult::TOO_MANY_UNKNOWNS: {
             sr.result = SLVS_RESULT_TOO_MANY_UNKNOWNS;
+            return sr;
+        }
+        case SolveResult::UNKNOWN_NAME: {
+            // Only dimensions typed in the GUI have expressions with names
+            sr.result = SLVS_RESULT_DIDNT_CONVERGE;
             return sr;
         }
     }
@@ -1022,6 +1039,7 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
         e.param[2].v    = se->param[2];
         e.param[3].v    = se->param[3];
 
+        e.sketch = &SK;
         SK.entity.Add(&e);
     }
     ParamList params = {};
@@ -1052,7 +1070,7 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
             params.Clear();
 
             if(Slvs_CanInitiallySatisfy(c)) {
-                c.ModifyToSatisfy();
+                c.ModifyToSatisfy(&SK);
             }
         }
 
@@ -1073,7 +1091,7 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
 
     // Now we're finally ready to solve!
     bool andFindBad = ssys->calculateFaileds ? true : false;
-    SolveResult how = SYS.Solve(&g, &(ssys->dof), &bad, andFindBad, /*andFindFree=*/false);
+    SolveResult how = SYS.Solve(&SK, &g, &(ssys->dof), &bad, andFindBad, /*andFindFree=*/false);
 
     switch(how) {
         case SolveResult::OKAY:
@@ -1094,6 +1112,11 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
 
         case SolveResult::TOO_MANY_UNKNOWNS:
             ssys->result = SLVS_RESULT_TOO_MANY_UNKNOWNS;
+            break;
+
+        case SolveResult::UNKNOWN_NAME:
+            // Only dimensions typed in the GUI have expressions with names
+            ssys->result = SLVS_RESULT_DIDNT_CONVERGE;
             break;
     }
 

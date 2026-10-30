@@ -19,7 +19,7 @@ const double System::CONVERGE_TOLERANCE = (LENGTH_EPS/(1e2));
 
 constexpr size_t LikelyPartialCountPerEq = 10;
 
-bool System::WriteJacobian(int tag) {
+bool System::WriteJacobian(Sketch *sketch, int tag) {
     // Clear all
     mat.param.clear();
     mat.eq.clear();
@@ -53,7 +53,8 @@ bool System::WriteJacobian(int tag) {
     for(size_t i = 0; i < mat.eq.size(); i++) {
         Equation *e = mat.eq[i];
         // Deep-copy and simplify (fold) the current equation.
-        Expr *f = e->e->DeepCopyWithParamsAsPointers(&param, &(SK.param), /*foldConstants=*/true);
+        Expr *f = e->e->DeepCopyWithParamsAsPointers(&param, &(sketch->param),
+                                                     /*foldConstants=*/true);
 
         ParamSet paramsUsed;
         f->ParamsUsedList(&paramsUsed);
@@ -431,19 +432,19 @@ bool System::NewtonSolve() {
     return converged;
 }
 
-void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
+void System::WriteEquationsExceptFor(Sketch *sketch, hConstraint hc, Group *g) {
     // Generate all the equations from constraints in this group
-    for(auto &con : SK.constraint) {
+    for(auto &con : sketch->constraint) {
         ConstraintBase *c = &con;
         if(c->group != g->h) continue;
         if(c->h == hc) continue;
 
         if(c->HasLabel() && c->type != Constraint::Type::COMMENT &&
-                g->allDimsReference)
+                c->type != Constraint::Type::RELATION && g->allDimsReference)
         {
             // When all dimensions are reference, we adjust them to display
             // the correct value, and then don't generate any equations.
-            c->ModifyToSatisfy();
+            c->ModifyToSatisfy(sketch);
             continue;
         }
         if(g->relaxConstraints && c->type != Constraint::Type::POINTS_COINCIDENT) {
@@ -453,26 +454,27 @@ void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
             continue;
         }
 
-        c->GenerateEquations(&eq);
+        c->GenerateEquations(sketch, &eq);
     }
     // And the equations from entities
-    for(auto &ent : SK.entity) {
+    for(auto &ent : sketch->entity) {
         EntityBase *e = &ent;
         if(e->group != g->h) continue;
 
         e->GenerateEquations(&eq);
     }
     // And from the groups themselves
-    g->GenerateEquations(&eq);
+    g->GenerateEquations(sketch, &eq);
 }
 
-void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bool forceDofCheck) {
+void System::FindWhichToRemoveToFixJacobian(Sketch *sketch, Group *g, List<hConstraint> *bad,
+                                            bool forceDofCheck) {
     auto time = GetMilliseconds();
     g->solved.timeout = false;
     int a;
 
     for(a = 0; a < 2; a++) {
-        for(auto &con : SK.constraint) {
+        for(auto &con : sketch->constraint) {
             if((GetMilliseconds() - time) > g->solved.findToFixTimeout) {
                 g->solved.timeout = true;
                 return;
@@ -491,7 +493,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bo
 
             param.ClearTags();
             eq.Clear();
-            WriteEquationsExceptFor(c->h, g);
+            WriteEquationsExceptFor(sketch, c->h, g);
             eq.ClearTags();
 
             // It's a major speedup to solve the easy ones by substitution here,
@@ -500,7 +502,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bo
                 SolveBySubstitution();
             }
 
-            WriteJacobian(0);
+            WriteJacobian(sketch, 0);
             EvalJacobian();
 
             int rank = CalculateRank();
@@ -512,10 +514,10 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bo
     }
 }
 
-SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
+SolveResult System::Solve(Sketch *sketch, Group *g, int *dof, List<hConstraint> *bad,
                           bool andFindBad, bool andFindFree, bool forceDofCheck)
 {
-    WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
+    WriteEquationsExceptFor(sketch, Constraint::NO_CONSTRAINT, g);
 
     bool rankOk;
 
@@ -559,7 +561,7 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
 
         e.tag  = alone;
         p->tag = alone;
-        WriteJacobian(alone);
+        WriteJacobian(sketch, alone);
         if(!NewtonSolve()) {
             // We don't do the rank test, so let's arbitrarily return
             // the DIDNT_CONVERGE result here.
@@ -572,7 +574,7 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
 
     // Now write the Jacobian for what's left, and do a rank test; that
     // tells us if the system is inconsistently constrained.
-    if(!WriteJacobian(0)) {
+    if(!WriteJacobian(sketch, 0)) {
         return SolveResult::TOO_MANY_UNKNOWNS;
     }
     // Clear dof value in order to have indication when dof is actually not calculated
@@ -588,9 +590,9 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     // Here we are want to calculate dof even when redundant is allowed, so just handle suppressing
     rankOk = (!g->suppressDofCalculation) ? TestRank(dof) : true;
     if(!rankOk) {
-        if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, forceDofCheck);
+        if(andFindBad) FindWhichToRemoveToFixJacobian(sketch, g, bad, forceDofCheck);
     } else {
-        MarkParamsFree(andFindFree);
+        MarkParamsFree(sketch, andFindFree);
     }
     // System solved correctly, so write the new values back in to the
     // main parameter table.
@@ -598,7 +600,7 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
         auto it = subMap.find(p.h);
         double val = it == subMap.end() ? p.val : it->second->val;
 
-        Param *pp = SK.GetParam(p.h);
+        Param *pp = sketch->GetParam(p.h);
         pp->val = val;
         pp->known = true;
         pp->free  = p.free;
@@ -606,7 +608,7 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     return rankOk ? SolveResult::OKAY : SolveResult::REDUNDANT_OKAY;
 
 didnt_converge:
-    SK.constraint.ClearTags();
+    sketch->constraint.ClearTags();
     // Not using range-for here because index is used in additional ways
     for(size_t i = 0; i < mat.eq.size(); i++) {
         if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE || IsReasonable(mat.B.num[i])) {
@@ -614,7 +616,7 @@ didnt_converge:
             if(!mat.eq[i]->h.isFromConstraint()) continue;
 
             hConstraint hc = mat.eq[i]->h.constraint();
-            ConstraintBase *c = SK.constraint.FindByIdNoOops(hc);
+            ConstraintBase *c = sketch->constraint.FindByIdNoOops(hc);
             if(!c) continue;
             // Don't double-show constraints that generated multiple
             // unsatisfied equations
@@ -628,10 +630,10 @@ didnt_converge:
     return rankOk ? SolveResult::DIDNT_CONVERGE : SolveResult::REDUNDANT_DIDNT_CONVERGE;
 }
 
-SolveResult System::SolveRank(Group *g, int *rank, int *dof, List<hConstraint> *bad,
+SolveResult System::SolveRank(Sketch *sketch, Group *g, int *rank, int *dof, List<hConstraint> *bad,
                               bool andFindBad, bool andFindFree)
 {
-    WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
+    WriteEquationsExceptFor(sketch, Constraint::NO_CONSTRAINT, g);
 
     // All params and equations are assigned to group zero.
     param.ClearTags();
@@ -639,7 +641,7 @@ SolveResult System::SolveRank(Group *g, int *rank, int *dof, List<hConstraint> *
 
     // Now write the Jacobian, and do a rank test; that
     // tells us if the system is inconsistently constrained.
-    if(!WriteJacobian(0)) {
+    if(!WriteJacobian(sketch, 0)) {
         return SolveResult::TOO_MANY_UNKNOWNS;
     }
 
@@ -648,10 +650,10 @@ SolveResult System::SolveRank(Group *g, int *rank, int *dof, List<hConstraint> *
         // When we are testing with redundant allowed, we don't want to have additional info
         // about redundants since this test is working only for single redundant constraint
         if(!g->suppressDofCalculation && !g->allowRedundant) {
-            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, true);
+            if(andFindBad) FindWhichToRemoveToFixJacobian(sketch, g, bad, true);
         }
     } else {
-        MarkParamsFree(andFindFree);
+        MarkParamsFree(sketch, andFindFree);
     }
     return rankOk ? SolveResult::OKAY : SolveResult::REDUNDANT_OKAY;
 }
@@ -665,7 +667,7 @@ void System::Clear() {
     mat.A.sym.setZero();
 }
 
-void System::MarkParamsFree(bool find) {
+void System::MarkParamsFree(Sketch *sketch, bool find) {
     // If requested, find all the free (unbound) variables. This might be
     // more than the number of degrees of freedom. Don't always do this,
     // because the display would get annoying and it's slow.
@@ -675,7 +677,7 @@ void System::MarkParamsFree(bool find) {
         if(find) {
             if(p.tag == 0) {
                 p.tag = VAR_DOF_TEST;
-                WriteJacobian(0);
+                WriteJacobian(sketch, 0);
                 EvalJacobian();
                 int rank = CalculateRank();
                 if(rank == mat.m) {

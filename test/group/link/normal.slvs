@@ -299,7 +299,7 @@ AddEntity
 
 Entity.h.v=80030002
 Entity.type=2011
-Entity.construction=0
+Entity.construction=1
 Entity.actPoint.x=10.00000000000000000000
 Entity.actPoint.y=10.00000000000000000000
 Entity.actVisible=1
@@ -315,7 +315,7 @@ AddEntity
 
 Entity.h.v=80030005
 Entity.type=2011
-Entity.construction=0
+Entity.construction=1
 Entity.actPoint.x=10.00000000000000000000
 Entity.actPoint.y=10.00000000000000000000
 Entity.actVisible=1
@@ -334,7 +334,7 @@ AddEntity
 
 Entity.h.v=80030008
 Entity.type=2011
-Entity.construction=0
+Entity.construction=1
 Entity.actPoint.x=10.00000000000000000000
 Entity.actPoint.y=10.00000000000000000000
 Entity.actVisible=1
@@ -457,7 +457,7 @@ AddEntity
 
 Entity.h.v=80030018
 Entity.type=2011
-Entity.construction=0
+Entity.construction=1
 Entity.actPoint.x=10.00000000000000000000
 Entity.actPoint.y=10.00000000000000000000
 Entity.actVisible=1

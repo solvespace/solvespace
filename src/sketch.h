@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "dsc.h"
+#include "expr.h"
 #include "param.h"
 #include "polygon.h"
 #include "platform/platform.h"
@@ -28,6 +29,7 @@ class hConstraint;
 
 class Expr;
 class ExprVector;
+class Sketch;
 class ExprQuaternion;
 
 enum class SolveResult : uint32_t;
@@ -162,6 +164,20 @@ struct EntityKeyEqual {
 typedef std::unordered_map<EntityKey, EntityId, EntityKeyHash, EntityKeyEqual> EntityMap;
 
 // A set of requests. Every request must have an associated group.
+// A value given to a named parameter of a linked sketch
+struct LinkValue {
+    std::string name;
+    double      value;
+
+    bool operator==(const LinkValue &other) const {
+        return name == other.name && value == other.value;
+    }
+    bool operator!=(const LinkValue &other) const { return !(*this == other); }
+    bool operator<(const LinkValue &other) const { return name < other.name; }
+};
+// The values given to a linked sketch's parameters, in order of name
+using LinkValues = std::vector<LinkValue>;
+
 class Group {
 public:
     static const hGroup     HGROUP_REFERENCES;
@@ -209,6 +225,14 @@ public:
     double      valB;
     double      valC;
     RgbaColor   color;
+
+    // The named parameters that can be used in this group: those of the
+    // previous group, plus (replacing any with the same name) this group's
+    // own. Rebuilt on every regeneration, and not saved.
+    ParamNames  paramNames;
+    // Just those of the previous group, which are already solved; the
+    // expressions for this group's parameters can use only these.
+    ParamNames  inheritedParamNames;
 
     struct {
         SolveResult         how;
@@ -283,6 +307,11 @@ public:
     SMesh       impMesh;
     SShell      impShell;
     EntityList  impEntity;
+    // The values that the linked sketch's parameters were given when the
+    // above were made, and the parameters that it has (those of its
+    // references group), with its own values. Not saved.
+    LinkValues  linkValues;
+    LinkValues  linkParams;
 
     std::string     name;
 
@@ -292,12 +321,12 @@ public:
     void Clear();
 
     static void AddParam(ParamList *param, hParam hp, double v);
-    void Generate(EntityList *entity, ParamList *param);
+    void Generate(Sketch *sketch, EntityList *entity, ParamList *param);
     bool IsSolvedOkay() const;
     void TransformImportedBy(Vector t, Quaternion q);
     bool IsTriangleMeshAssembly() const;
-    bool IsForcedToMeshBySource() const;
-    bool IsForcedToMesh() const;
+    bool IsForcedToMeshBySource(Sketch *sketch) const;
+    bool IsForcedToMesh(Sketch *sketch) const;
     // When a request generates entities from entities, and the source
     // entities may have come from multiple requests, it's necessary to
     // remap the entity ID so that it's still unique. We do this with a
@@ -315,19 +344,20 @@ public:
         REMAP_LATHE_ARC_CENTER = 1010,
     };
     hEntity Remap(hEntity in, int copyNumber);
-    void MakeExtrusionLines(EntityList *el, hEntity in);
-    void MakeLatheCircles(EntityList *el, ParamList *param, hEntity in, Vector pt, Vector axis);
-    void MakeLatheSurfacesSelectable(EntityList *el, hEntity in, Vector axis);
-    void MakeRevolveEndFaces(EntityList *el, hEntity pt, int ai, int af);
-    void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
-    void CopyEntity(EntityList *el,
+    void MakeExtrusionLines(Sketch *sketch, EntityList *el, hEntity in);
+    void MakeLatheCircles(Sketch *sketch, EntityList *el, ParamList *param, hEntity in,
+                          Vector pt, Vector axis);
+    void MakeLatheSurfacesSelectable(Sketch *sketch, EntityList *el, hEntity in, Vector axis);
+    void MakeRevolveEndFaces(Sketch *sketch, EntityList *el, hEntity pt, int ai, int af);
+    void MakeExtrusionTopBottomFaces(Sketch *sketch, EntityList *el, hEntity pt);
+    void CopyEntity(Sketch *sketch, EntityList *el,
                     Entity *ep, int timesApplied, int remap,
                     hParam dx, hParam dy, hParam dz,
                     hParam qw, hParam qvx, hParam qvy, hParam qvz, hParam dist,
                     CopyAs as);
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
-    void GenerateEquations(IdList<Equation,hEquation> *l);
+    void GenerateEquations(Sketch *sketch, IdList<Equation,hEquation> *l);
     bool IsVisible();
     size_t GetNumConstraints();
     Vector ExtrusionGetVector();
@@ -335,15 +365,17 @@ public:
 
     // Assembling the curves into loops, and into a piecewise linear polygon
     // at the same time.
-    void AssembleLoops(bool *allClosed, bool *allCoplanar, bool *allNonZeroLen);
-    void GenerateLoops();
+    void AssembleLoops(Sketch *sketch, bool *allClosed, bool *allCoplanar, bool *allNonZeroLen);
+    void GenerateLoops(Sketch *sketch);
     // And the mesh stuff
-    Group *PreviousGroup() const;
-    Group *RunningMeshGroup() const;
+    Group *PreviousGroup(Sketch *sketch) const;
+    Group *RunningMeshGroup(Sketch *sketch) const;
     bool IsMeshGroup();
 
-    void GenerateShellAndMesh();
-    template<class T> void GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat);
+    // Returns true if whether the Boolean failed has changed
+    bool GenerateShellAndMesh(Sketch *sketch);
+    template<class T> void GenerateForStepAndRepeat(Sketch *sketch, T *steps, T *outs,
+                                                    Group::CombineAs forWhat);
     template<class T> void GenerateForBoolean(T *a, T *b, T *o, Group::CombineAs how);
     void GenerateDisplayItems();
 
@@ -383,7 +415,15 @@ public:
         CIRCLE                 = 400,
         ARC_OF_CIRCLE          = 500,
         TTF_TEXT               = 600,
-        IMAGE                  = 700
+        IMAGE                  = 700,
+        // A named parameter (variable) that can be used in dimensions.
+        // The name is in str. It has no entities, just one parameter.
+        NAMED_PARAMETER        = 800,
+        // The same, but locked: the solver treats it as a constant.
+        NAMED_CONST_PARAM      = 801,
+        // In a linked group: the value to give the named parameter, in the
+        // linked sketch's references group, that has the name in str.
+        NAMED_LINK_PARAM       = 802
     };
 
     Request::Type type;
@@ -401,8 +441,27 @@ public:
     double      aspectRatio;
     int groupRequestIndex;
 
+    // A named parameter's value can be given as an expression that uses the
+    // parameters of earlier groups. Then the parameter is locked, and its
+    // value is set from the expression on every regeneration.
+    std::string expression;
+
     static hParam AddParam(ParamList *param, hParam hp);
-    void Generate(EntityList *entity, ParamList *param);
+    void Generate(Sketch *sketch, EntityList *entity, ParamList *param);
+
+    bool IsNamedParam() const {
+        return type == Type::NAMED_PARAMETER || type == Type::NAMED_CONST_PARAM;
+    }
+    bool IsLinkParam() const { return type == Type::NAMED_LINK_PARAM; }
+    hParam NamedParam() const { return h.param(64); }
+    // The value of a new named parameter
+    static constexpr double NAMED_PARAM_DEFAULT = 5.0;
+
+    bool HasExpression() const { return !expression.empty(); }
+    // The expression with its names resolved for this request's group, in
+    // the sketch, or NULL (with a message in error, if given) if it doesn't
+    // parse.
+    Expr *ParseExpression(Sketch *sketch, std::string *error = NULL) const;
 
     std::string DescriptionString() const;
     int IndexOfPoint(hEntity he) const;
@@ -456,6 +515,13 @@ public:
     };
 
     Type        type;
+
+    // The sketch that the entity was generated in, whose entities and
+    // parameters it refers to; NULL for an entity that is just stored,
+    // like those imported from a linked file.
+    Sketch      *sketch;
+    // The sketch, which must be set for the entity's geometry to be found
+    Sketch *Owner() const;
 
     hGroup      group;
     hEntity     workplane;   // or Entity::FREE_IN_3D
@@ -695,7 +761,10 @@ public:
         ARC_LINE_LEN_RATIO     = 211,
         ARC_ARC_DIFFERENCE     = 212,
         ARC_LINE_DIFFERENCE    = 213,
-        COMMENT                = 1000
+        COMMENT                = 1000,
+        // Like COMMENT, but its text, in expression, is an equation between
+        // named parameters, such as "w*h = 400".
+        RELATION               = 1001
     };
 
     Type        type;
@@ -718,32 +787,53 @@ public:
     bool        reference;  // a ref dimension, that generates no eqs
     std::string comment;    // since comments are represented as constraints
 
+    // A dimension can be given as an expression that uses named parameters.
+    // Then the expression is kept as typed, and exprScale converts its value
+    // to mm (the units it was typed in), and holds the sign of a signed
+    // distance. valA is kept equal to the value of the expression, so that
+    // anything that reads valA sees the actual dimension. Both are left out
+    // of the file when there is no expression.
+    std::string expression;
+    double      exprScale;
+
     bool Equals(const ConstraintBase &c) const {
         return type == c.type && group == c.group && workplane == c.workplane &&
             valA == c.valA && valP == c.valP && ptA == c.ptA && ptB == c.ptB &&
             entityA == c.entityA && entityB == c.entityB &&
             entityC == c.entityC && entityD == c.entityD &&
             other == c.other && other2 == c.other2 && reference == c.reference &&
-            comment == c.comment;
+            comment == c.comment && expression == c.expression &&
+            exprScale == c.exprScale;
     }
+
+    bool HasExpression() const { return !expression.empty(); }
+    // The expression with its names resolved for this constraint's group,
+    // or NULL if it doesn't parse (for example, if a name isn't defined).
+    Expr *ParseExpression(Sketch *sketch) const;
+    // Set valA to the current value of the expression, if there is one.
+    void UpdateValueFromExpression(Sketch *sketch);
+    // Parse the text of a relation, "left = right", using the given names,
+    // into left - right. NULL, with a message in error, if it isn't valid.
+    static Expr *ParseRelation(const std::string &text, const ParamNames *names,
+                               std::string *error, int *namesUsed = NULL);
 
     bool HasLabel() const;
     bool IsProjectible() const;
 
     void Generate(ParamList *param);
 
-    void GenerateEquations(IdList<Equation,hEquation> *entity,
+    void GenerateEquations(Sketch *sketch, IdList<Equation,hEquation> *entity,
                            bool forReference = false) const;
     // Some helpers when generating symbolic constraint equations
-    void ModifyToSatisfy();
+    void ModifyToSatisfy(Sketch *sketch);
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const;
     void AddEq(IdList<Equation,hEquation> *l, const ExprVector &v, int baseIndex = 0) const;
-    static Expr *DirectionCosine(hEntity wrkpl, ExprVector ae, ExprVector be);
-    static Expr *Distance(hEntity workplane, hEntity pa, hEntity pb);
-    static Expr *PointLineDistance(hEntity workplane, hEntity pt, hEntity ln);
-    static Expr *PointPlaneDistance(ExprVector p, hEntity plane);
+    static Expr *DirectionCosine(Sketch *sketch, hEntity wrkpl, ExprVector ae, ExprVector be);
+    static Expr *Distance(Sketch *sketch, hEntity workplane, hEntity pa, hEntity pb);
+    static Expr *PointLineDistance(Sketch *sketch, hEntity workplane, hEntity pt, hEntity ln);
+    static Expr *PointPlaneDistance(Sketch *sketch, ExprVector p, hEntity plane);
     static ExprVector VectorsParallel3d(ExprVector a, ExprVector b, hParam p);
-    static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
+    static ExprVector PointInThreeSpace(Sketch *sketch, hEntity workplane, Expr *u, Expr *v);
 
     void Clear() {}
 };
@@ -803,6 +893,10 @@ public:
     bool ShouldDrawExploded() const;
 
     static hConstraint AddConstraint(Constraint *c, bool rememberForUndo = true);
+    // Create free named parameters with these names in the group, with the
+    // given value, so that a constraint can use names that aren't defined yet.
+    static void CreateNamedParams(hGroup hg, const std::vector<std::string> &names,
+                                  double value);
     static void MenuConstrain(Command id);
     static void DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA, hEntity ptA);
 
@@ -924,6 +1018,7 @@ public:
     static Canvas::Stroke Stroke(int hs);
     static bool Exportable(int hs);
     static hStyle ForEntity(hEntity he);
+    static hStyle ForEntity(const Entity *e);
     static StipplePattern PatternType(hStyle hs);
     static double StippleScale(hStyle hs);
     static double StippleScaleMm(hStyle hs);

@@ -178,6 +178,7 @@ enum class Command : uint32_t {
     ORIENTED_SAME,
     WHERE_DRAGGED,
     COMMENT,
+    RELATION,
     // Analyze
     VOLUME,
     AREA,
@@ -227,11 +228,16 @@ public:
 #define CHECK_TRUE  "\xEE\x80\x81"
 #define RADIO_FALSE "\xEE\x80\x82"
 #define RADIO_TRUE  "\xEE\x80\x83"
+#define LOCK_TRUE   "\xEE\x80\x88"
+#define LOCK_FALSE  "\xEE\x80\x89"
 
     int scrollPos;      // The scrollbar position, in half-row units
     int halfRows;       // The height of our window, in half-row units
 
     uint32_t text[MAX_ROWS][MAX_COLS];
+    // Tooltips for text, given with %T in Printf(); meta.tooltip indexes this
+    std::vector<std::string> tooltips;
+    int shownTooltip = -1;
     typedef void LinkFunction(int link, uint32_t v);
     enum { NOT_A_LINK = 0 };
     struct {
@@ -242,6 +248,7 @@ public:
         uint32_t        data;
         LinkFunction   *f;
         LinkFunction   *h;
+        int             tooltip;
     }       meta[MAX_ROWS][MAX_COLS];
     int hoveredRow, hoveredCol;
 
@@ -371,7 +378,11 @@ public:
         // For tangent arc
         TANGENT_ARC_RADIUS    = 800,
         // For helix pitch
-        HELIX_PITCH           = 802
+        HELIX_PITCH           = 802,
+        // For named parameters
+        PARAM_NAME            = 810,
+        PARAM_VALUE           = 811,
+        LINK_PARAM_VALUE      = 812
     };
     struct {
         bool        showAgain;
@@ -439,6 +450,13 @@ public:
     static void ScreenHowGroupSolved(int link, uint32_t v);
     static void ScreenShowGroupsSpecial(int link, uint32_t v);
     static void ScreenDeleteGroup(int link, uint32_t v);
+    static void ScreenAddNamedParam(int link, uint32_t v);
+    static void ScreenEditParamName(int link, uint32_t v);
+    static void ScreenEditParamValue(int link, uint32_t v);
+    static void ScreenToggleParamLock(int link, uint32_t v);
+    static void ScreenDeleteNamedParam(int link, uint32_t v);
+    static void ScreenEditLinkParam(int link, uint32_t v);
+    static void ScreenResetLinkParam(int link, uint32_t v);
 
     static void ScreenHoverGroupWorkplane(int link, uint32_t v);
     static void ScreenHoverRequest(int link, uint32_t v);
