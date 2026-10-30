@@ -516,6 +516,8 @@ class Gtk4GLWidget : public Gtk::GLArea {
 
 public:
     Gtk4GLWidget(Platform::Window *receiver) : _receiver(receiver) {
+        // The renderer is built for desktop GL; don't let GTK pick GLES.
+        set_allowed_apis(Gdk::GLApi::GL);
         set_has_depth_buffer(true);
         set_focusable(true);
         set_can_focus(true);
