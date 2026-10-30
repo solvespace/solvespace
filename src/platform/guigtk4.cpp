@@ -29,6 +29,7 @@
 #include <gtkmm/popovermenu.h>
 #include <gtkmm/popovermenubar.h>
 #include <gtkmm/adjustment.h>
+#include <gtkmm/paned.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/settings.h>
 #include <gtkmm/tooltip.h>
@@ -937,22 +938,142 @@ protected:
 class WindowImplGtk4 final : public Window {
 public:
     Gtk4Window          gtkWindow;
+    // In a TOPLEVEL window, the content sits between two slots where a TOOL
+    // window's content can be docked: [left slot | [content | right slot]].
+    // The content itself never moves, so its GL context is kept.
+    Gtk::Paned          outerPaned;
+    Gtk::Paned          innerPaned;
     Gtk4WindowContent   content;
     MenuBarRef          menuBar;
 
-    WindowImplGtk4(Window::Kind kind) : gtkWindow(this), content(this) {
-        gtkWindow.add_content(content);
+    // In a TOOL window, the window it can dock into and where it is docked.
+    std::shared_ptr<WindowImplGtk4> dockParent;
+    DockSide            dockSide  = DockSide::NONE;
+    int                 dockWidth = 420;
 
+    WindowImplGtk4(Window::Kind kind)
+        : gtkWindow(this),
+          outerPaned(Gtk::Orientation::HORIZONTAL),
+          innerPaned(Gtk::Orientation::HORIZONTAL),
+          content(this) {
         if(kind == Kind::TOOL) {
             gtkWindow.set_decorated(true);
+            gtkWindow.add_content(content);
+        } else {
+            // The content takes up any change in window size; docked panels
+            // keep their width. Nothing is made smaller than its minimum size.
+            innerPaned.set_start_child(content);
+            innerPaned.set_resize_start_child(true);
+            innerPaned.set_shrink_start_child(false);
+            innerPaned.set_resize_end_child(false);
+            innerPaned.set_shrink_end_child(false);
+
+            outerPaned.set_end_child(innerPaned);
+            outerPaned.set_resize_start_child(false);
+            outerPaned.set_shrink_start_child(false);
+            outerPaned.set_resize_end_child(true);
+            outerPaned.set_shrink_end_child(false);
+            outerPaned.set_hexpand(true);
+            outerPaned.set_vexpand(true);
+
+            gtkWindow.add_content(outerPaned);
         }
 
         gtk_window_set_default_icon_name("solvespace");
     }
 
+    ~WindowImplGtk4() override {
+        if(dockParent) {
+            dockParent->RemoveDocked(content);
+        }
+    }
+
+    // The window and its implementation that currently show the content.
+    WindowImplGtk4 *TopLevel() {
+        if(dockSide != DockSide::NONE) {
+            return dockParent.get();
+        }
+        return this;
+    }
+
+    // Called on a TOPLEVEL window to dock a TOOL window's content into it.
+    void AddDocked(Gtk::Widget &widget, DockSide side, int width) {
+        if(side == DockSide::LEFT) {
+            outerPaned.set_start_child(widget);
+            outerPaned.set_position(width);
+        } else {
+            innerPaned.set_end_child(widget);
+            // The position is measured from the left, so it can only be
+            // worked out once the window has a size.
+            pendingRightWidth = width;
+            innerPaned.add_tick_callback(
+                sigc::mem_fun(*this, &WindowImplGtk4::OnInnerPanedTick));
+        }
+    }
+
+    void RemoveDocked(Gtk::Widget &widget) {
+        if(outerPaned.get_start_child() == &widget) {
+            outerPaned.unset_start_child();
+        }
+        if(innerPaned.get_end_child() == &widget) {
+            innerPaned.unset_end_child();
+            pendingRightWidth = 0;
+        }
+    }
+
+    // Width of the docked panel on the given side, or 0 if not known yet.
+    int GetDockedWidth(DockSide side) {
+        if(side == DockSide::LEFT) {
+            return outerPaned.get_position();
+        }
+        if(pendingRightWidth > 0) {
+            return pendingRightWidth;
+        }
+        int total = innerPaned.get_width();
+        if(total <= 0) return 0;
+        return total - innerPaned.get_position();
+    }
+
+    bool CanDock() override {
+        return dockParent != nullptr;
+    }
+
+    DockSide GetDockSide() override {
+        return dockSide;
+    }
+
+    void SetDockSide(DockSide side) override {
+        if(!dockParent || side == dockSide) return;
+
+        bool visible = IsVisible();
+        HideEditor();
+
+        // Take the content out of where it is now.
+        if(dockSide == DockSide::NONE) {
+            SetVisible(false);
+            gtkWindow.remove_content(content);
+        } else {
+            int width = dockParent->GetDockedWidth(dockSide);
+            if(width > 0) {
+                dockWidth = width;
+            }
+            dockParent->RemoveDocked(content);
+        }
+
+        dockSide = side;
+        if(side == DockSide::NONE) {
+            content.set_visible(true);
+            gtkWindow.add_content(content);
+        } else {
+            dockParent->AddDocked(content, side, dockWidth);
+        }
+        SetVisible(visible);
+    }
+
     double GetPixelDensity() override {
-        auto display = gtkWindow.get_display();
-        auto surface = gtkWindow.get_surface();
+        Gtk4Window &window = TopLevel()->gtkWindow;
+        auto display = window.get_display();
+        auto surface = window.get_surface();
         if(surface) {
             auto monitor = display->get_monitor_at_surface(surface);
             if(monitor) {
@@ -968,14 +1089,21 @@ public:
     }
 
     double GetDevicePixelRatio() override {
-        return gtkWindow.get_scale_factor();
+        return content.get_scale_factor();
     }
 
     bool IsVisible() override {
+        if(dockSide != DockSide::NONE) {
+            return content.get_visible();
+        }
         return gtkWindow.is_visible();
     }
 
     void SetVisible(bool visible) override {
+        if(dockSide != DockSide::NONE) {
+            content.set_visible(visible);
+            return;
+        }
         if(gtkAppStarted) {
             if(visible) {
                 gtkApp->add_window(gtkWindow);
@@ -987,7 +1115,7 @@ public:
     }
 
     void Focus() override {
-        gtkWindow.present();
+        TopLevel()->gtkWindow.present();
     }
 
     bool IsFullScreen() override {
@@ -1029,6 +1157,16 @@ public:
     }
 
     void FreezePosition(SettingsRef settings, const std::string &key) override {
+        if(dockParent) {
+            if(dockSide != DockSide::NONE) {
+                int width = dockParent->GetDockedWidth(dockSide);
+                if(width > 0) {
+                    dockWidth = width;
+                }
+            }
+            settings->FreezeInt(key + "_DockWidth", dockWidth);
+        }
+
         if(!gtkWindow.is_visible()) return;
 
         int width = gtkWindow.get_width();
@@ -1048,6 +1186,10 @@ public:
 
         if(settings->ThawBool(key + "_Maximized", false)) {
             gtkWindow.maximize();
+        }
+
+        if(dockParent) {
+            dockWidth = settings->ThawInt(key + "_DockWidth", dockWidth);
         }
     }
 
@@ -1073,8 +1215,10 @@ public:
 
     void ShowEditor(double x, double y, double fontHeight, double minWidth,
                     bool isMonospace, const std::string &text) override {
+        // Keep menu accelerators from firing while typing. The actions live
+        // on the top-level window, which may be the one we are docked in.
         if(!content.get_editor_overlay().is_editing()) {
-            gtkWindow.remove_action_group("ss");
+            TopLevel()->gtkWindow.remove_action_group("ss");
         }
         content.get_editor_overlay().start_editing(
             (int)x, (int)y, (int)fontHeight, (int)minWidth, isMonospace, text);
@@ -1083,8 +1227,9 @@ public:
     void HideEditor() override {
         bool wasEditing = content.get_editor_overlay().is_editing();
         content.get_editor_overlay().stop_editing();
-        if(wasEditing && menuBar) {
-            ((MenuBarImplGtk4 *)&*menuBar)->InsertActionsInto(&gtkWindow);
+        WindowImplGtk4 *topLevel = TopLevel();
+        if(wasEditing && topLevel->menuBar) {
+            ((MenuBarImplGtk4 *)&*topLevel->menuBar)->InsertActionsInto(&topLevel->gtkWindow);
         }
     }
 
@@ -1113,13 +1258,28 @@ public:
     void Invalidate() override {
         content.get_gl_widget().queue_render();
     }
+
+protected:
+    int pendingRightWidth = 0;
+
+    bool OnInnerPanedTick(const Glib::RefPtr<Gdk::FrameClock> &clock) {
+        if(pendingRightWidth <= 0) return false;
+        int total = innerPaned.get_width();
+        if(total <= 0) return true;     // not laid out yet, try next frame
+        innerPaned.set_position(max(0, total - pendingRightWidth));
+        pendingRightWidth = 0;
+        return false;
+    }
 };
 
 WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     auto window = std::make_shared<WindowImplGtk4>(kind);
     if(parentWindow) {
-        window->gtkWindow.set_transient_for(
-            std::static_pointer_cast<WindowImplGtk4>(parentWindow)->gtkWindow);
+        auto parent = std::static_pointer_cast<WindowImplGtk4>(parentWindow);
+        window->gtkWindow.set_transient_for(parent->gtkWindow);
+        if(kind == Window::Kind::TOOL) {
+            window->dockParent = parent;
+        }
     }
     return window;
 }

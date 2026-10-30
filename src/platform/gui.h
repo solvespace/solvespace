@@ -221,6 +221,13 @@ public:
         HAND
     };
 
+    // Where a TOOL window is placed relative to its parent window.
+    enum class DockSide {
+        NONE,   // a separate top-level window
+        LEFT,
+        RIGHT,
+    };
+
     std::function<void()>               onClose;
     std::function<void(bool)>           onFullScreen;
     std::function<bool(MouseEvent)>     onMouseEvent;
@@ -276,6 +283,12 @@ public:
     virtual void SetScrollbarPosition(double pos) = 0;
 
     virtual void Invalidate() = 0;
+
+    // Docking a TOOL window into its parent window. Platforms that support it
+    // override all three.
+    virtual bool CanDock() { return false; }
+    virtual DockSide GetDockSide() { return DockSide::NONE; }
+    virtual void SetDockSide(DockSide side) {}
 };
 
 typedef std::shared_ptr<Window> WindowRef;
