@@ -880,8 +880,15 @@ void GraphicsWindow::Draw(Canvas *canvas) {
 }
 
 void GraphicsWindow::Paint() {
-    ssassert(window != NULL && canvas != NULL,
-             "Cannot paint without window and canvas");
+    ssassert(window != NULL, "Cannot paint without window");
+
+    // The renderer is dropped when the GL context is lost; make a new one.
+    if(canvas == NULL) {
+        canvas = CreateRenderer();
+        if(canvas == NULL) return;
+        persistentCanvas = canvas->CreateBatch();
+        persistentDirty = true;
+    }
 
     havePainted = true;
 
