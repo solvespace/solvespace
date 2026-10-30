@@ -956,6 +956,22 @@ msgstr "Show &Toolbar"
 msgid "Show Property Bro&wser"
 msgstr "Show Property Bro&wser"
 
+#: graphicswin.cpp
+msgid "Property Browser &Position"
+msgstr "Property Browser &Position"
+
+#: graphicswin.cpp
+msgid "Docked &Left"
+msgstr "Docked &Left"
+
+#: graphicswin.cpp
+msgid "Docked &Right"
+msgstr "Docked &Right"
+
+#: graphicswin.cpp
+msgid "&Separate Window"
+msgstr "&Separate Window"
+
 #: graphicswin.cpp:107
 msgid "&Full Screen"
 msgstr "&Full Screen"

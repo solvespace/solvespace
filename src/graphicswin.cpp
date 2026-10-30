@@ -105,6 +105,7 @@ const MenuEntry Menu[] = {
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Show &Toolbar"),               Command::SHOW_TOOLBAR,     C|'\t',  KC, mView  },
 { 1, N_("Show Property Bro&wser"),      Command::SHOW_TEXT_WND,    '\t',    KC, mView  },
+{ 1, N_("Property Browser &Position"),  Command::DOCK_TEXT_WND,    0,       KN, mView  },
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("&Full Screen"),                Command::FULL_SCREEN,      C|F|11,  KC, mView  },
 
@@ -273,6 +274,10 @@ void GraphicsWindow::PopulateMainMenu() {
     Platform::MenuBarRef mainMenu = Platform::GetOrCreateMainMenu(&unique);
     if(unique) mainMenu->Clear();
 
+    dockTextWndLeftMenuItem  = NULL;
+    dockTextWndRightMenuItem = NULL;
+    undockTextWndMenuItem    = NULL;
+
     Platform::MenuRef currentSubMenu;
     std::vector<Platform::MenuRef> subMenuStack;
     for(int i = 0; Menu[i].level >= 0; i++) {
@@ -304,6 +309,20 @@ void GraphicsWindow::PopulateMainMenu() {
                     PopulateMainMenu();
                     SS.GW.EnsureValidActives();
                 });
+            }
+        } else if(Menu[i].cmd == Command::DOCK_TEXT_WND) {
+            // Only offered where the platform can dock the text window.
+            if(SS.TW.window && SS.TW.window->CanDock()) {
+                Platform::MenuRef dockMenu = currentSubMenu->AddSubMenu(label);
+                dockTextWndLeftMenuItem = dockMenu->AddItem(_("Docked &Left"),
+                    std::bind(MenuView, Command::DOCK_TEXT_WND_LEFT));
+                dockTextWndRightMenuItem = dockMenu->AddItem(_("Docked &Right"),
+                    std::bind(MenuView, Command::DOCK_TEXT_WND_RIGHT));
+                undockTextWndMenuItem = dockMenu->AddItem(_("&Separate Window"),
+                    std::bind(MenuView, Command::UNDOCK_TEXT_WND));
+                dockTextWndLeftMenuItem->SetIndicator(Platform::MenuItem::Indicator::RADIO_MARK);
+                dockTextWndRightMenuItem->SetIndicator(Platform::MenuItem::Indicator::RADIO_MARK);
+                undockTextWndMenuItem->SetIndicator(Platform::MenuItem::Indicator::RADIO_MARK);
             }
         } else if(Menu[i].fn == NULL) {
             subMenuStack.push_back(currentSubMenu);
@@ -899,6 +918,18 @@ void GraphicsWindow::MenuView(Command id) {
             SS.GW.EnsureValidActives();
             break;
 
+        case Command::DOCK_TEXT_WND_LEFT:
+            SS.GW.SetTextWindowDock(Platform::Window::DockSide::LEFT);
+            break;
+
+        case Command::DOCK_TEXT_WND_RIGHT:
+            SS.GW.SetTextWindowDock(Platform::Window::DockSide::RIGHT);
+            break;
+
+        case Command::UNDOCK_TEXT_WND:
+            SS.GW.SetTextWindowDock(Platform::Window::DockSide::NONE);
+            break;
+
         case Command::UNITS_INCHES:
             SS.viewUnits = Unit::INCHES;
             SS.ScheduleShowTW();
@@ -1006,6 +1037,12 @@ void GraphicsWindow::EnsureValidActives() {
 
     if(SS.TW.window) SS.TW.window->SetVisible(SS.GW.showTextWindow);
     showTextWndMenuItem->SetActive(SS.GW.showTextWindow);
+    if(SS.TW.window && dockTextWndLeftMenuItem) {
+        Platform::Window::DockSide side = SS.TW.window->GetDockSide();
+        dockTextWndLeftMenuItem->SetActive(side == Platform::Window::DockSide::LEFT);
+        dockTextWndRightMenuItem->SetActive(side == Platform::Window::DockSide::RIGHT);
+        undockTextWndMenuItem->SetActive(side == Platform::Window::DockSide::NONE);
+    }
 
     showGridMenuItem->SetActive(SS.GW.showSnapGrid);
     dimSolidModelMenuItem->SetActive(SS.GW.dimSolidModel);
@@ -1038,6 +1075,16 @@ void GraphicsWindow::ForceTextWindowShown() {
         showTextWndMenuItem->SetActive(true);
         SS.TW.window->SetVisible(true);
     }
+}
+
+void GraphicsWindow::SetTextWindowDock(Platform::Window::DockSide side) {
+    if(!SS.TW.window || !SS.TW.window->CanDock()) return;
+
+    SS.TW.HideEditControl();
+    SS.TW.window->SetDockSide(side);
+    // Show it, so that the user sees where it went.
+    showTextWindow = true;
+    EnsureValidActives();
 }
 
 void GraphicsWindow::DeleteTaggedRequests() {
