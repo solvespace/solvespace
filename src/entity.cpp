@@ -286,7 +286,7 @@ Quaternion EntityBase::NormalGetNum() const {
     Quaternion q;
     switch(type) {
         case Type::NORMAL_IN_3D:
-            q = Owner()->GetQuaternion(param[0], param[1], param[2], param[3]);
+            q = Owner()->QuaternionFrom(param[0], param[1], param[2], param[3]);
             break;
 
         case Type::NORMAL_IN_2D: {
@@ -300,7 +300,7 @@ Quaternion EntityBase::NormalGetNum() const {
             break;
 
         case Type::NORMAL_N_ROT:
-            q = Owner()->GetQuaternion(param[0], param[1], param[2], param[3]);
+            q = Owner()->QuaternionFrom(param[0], param[1], param[2], param[3]);
             q = q.Times(numNormal);
             break;
 
@@ -458,8 +458,8 @@ void EntityBase::PointForceTo(Vector p) {
 
         case Type::POINT_N_ROT_AA: {
             // Force only the angle; the axis and center of rotation stay
-            Vector offset = Owner()->GetVector(param[0], param[1], param[2]);
-            Vector normal = Owner()->GetVector(param[4], param[5], param[6]);
+            Vector offset = Owner()->VectorFrom(param[0], param[1], param[2]);
+            Vector normal = Owner()->VectorFrom(param[4], param[5], param[6]);
             Vector u = normal.Normal(0), v = normal.Normal(1);
             Vector po = p.Minus(offset), numo = numPoint.Minus(offset);
             double thetap = atan2(v.Dot(po), u.Dot(po));
@@ -479,8 +479,8 @@ void EntityBase::PointForceTo(Vector p) {
         case Type::POINT_N_ROT_AXIS_TRANS: {
             if(timesApplied == 0) break;
             // is the point on the rotation axis?
-            Vector offset = Owner()->GetVector(param[0], param[1], param[2]);
-            Vector normal = Owner()->GetVector(param[4], param[5], param[6]).WithMagnitude(1.0);
+            Vector offset = Owner()->VectorFrom(param[0], param[1], param[2]);
+            Vector normal = Owner()->VectorFrom(param[4], param[5], param[6]).WithMagnitude(1.0);
             Vector check = numPoint.Minus(offset).Cross(normal);
             if (check.Dot(check) < LENGTH_EPS) { // if so, do extrusion style drag
                 Vector trans = (p.Minus(numPoint));
@@ -515,7 +515,7 @@ Vector EntityBase::PointGetNum() const {
     Vector p;
     switch(type) {
         case Type::POINT_IN_3D:
-            p = Owner()->GetVector(param[0], param[1], param[2]);
+            p = Owner()->VectorFrom(param[0], param[1], param[2]);
             break;
 
         case Type::POINT_IN_2D: {
@@ -529,13 +529,13 @@ Vector EntityBase::PointGetNum() const {
         }
 
         case Type::POINT_N_TRANS: {
-            Vector trans = Owner()->GetVector(param[0], param[1], param[2]);
+            Vector trans = Owner()->VectorFrom(param[0], param[1], param[2]);
             p = numPoint.Plus(trans.ScaledBy(timesApplied));
             break;
         }
 
         case Type::POINT_N_ROT_TRANS: {
-            Vector offset = Owner()->GetVector(param[0], param[1], param[2]);
+            Vector offset = Owner()->VectorFrom(param[0], param[1], param[2]);
             Quaternion q = PointGetQuaternion();
             p = q.Rotate(numPoint);
             p = p.Plus(offset);
@@ -543,7 +543,7 @@ Vector EntityBase::PointGetNum() const {
         }
 
         case Type::POINT_N_ROT_AA: {
-            Vector offset = Owner()->GetVector(param[0], param[1], param[2]);
+            Vector offset = Owner()->VectorFrom(param[0], param[1], param[2]);
             Quaternion q = PointGetQuaternion();
             p = numPoint.Minus(offset);
             p = q.Rotate(p);
@@ -552,8 +552,8 @@ Vector EntityBase::PointGetNum() const {
         }
 
         case Type::POINT_N_ROT_AXIS_TRANS: {
-            Vector offset = Owner()->GetVector(param[0], param[1], param[2]);
-            Vector displace = Owner()->GetVector(param[4], param[5], param[6])
+            Vector offset = Owner()->VectorFrom(param[0], param[1], param[2]);
+            Vector displace = Owner()->VectorFrom(param[4], param[5], param[6])
                .WithMagnitude(Owner()->GetParam(param[7])->val).ScaledBy(timesApplied);
             Quaternion q = PointGetQuaternion();
             p = numPoint.Minus(offset);
@@ -704,7 +704,7 @@ Quaternion EntityBase::PointGetQuaternion() const {
     if(type == Type::POINT_N_ROT_AA || type == Type::POINT_N_ROT_AXIS_TRANS) {
         q = GetAxisAngleQuaternion(3);
     } else if(type == Type::POINT_N_ROT_TRANS) {
-        q = Owner()->GetQuaternion(param[3], param[4], param[5], param[6]);
+        q = Owner()->QuaternionFrom(param[3], param[4], param[5], param[6]);
     } else ssassert(false, "Unexpected entity type");
 
     return q;
@@ -759,13 +759,13 @@ Vector EntityBase::FaceGetNormalNum() const {
     if(type == Type::FACE_NORMAL_PT) {
         r = {numNormal.vx, numNormal.vy, numNormal.vz};
     } else if(type == Type::FACE_XPROD) {
-        Vector vc = Owner()->GetVector(param[0], param[1], param[2]);
+        Vector vc = Owner()->VectorFrom(param[0], param[1], param[2]);
         Vector vn = {numNormal.vx, numNormal.vy, numNormal.vz};
         r = vc.Cross(vn);
     } else if(type == Type::FACE_N_ROT_TRANS) {
         // The numerical normal vector gets the rotation
         r = {numNormal.vx, numNormal.vy, numNormal.vz};
-        Quaternion q = Owner()->GetQuaternion(param[3], param[4], param[5], param[6]);
+        Quaternion q = Owner()->QuaternionFrom(param[3], param[4], param[5], param[6]);
         r = q.Rotate(r);
     } else if(type == Type::FACE_N_TRANS) {
         r = {numNormal.vx, numNormal.vy, numNormal.vz};
@@ -823,23 +823,23 @@ Vector EntityBase::FaceGetPointNum() const {
         r = numPoint;
     } else if(type == Type::FACE_N_ROT_TRANS) {
         // The numerical point gets the rotation and translation.
-        Vector trans = Owner()->GetVector(param[0], param[1], param[2]);
-        Quaternion q = Owner()->GetQuaternion(param[3], param[4], param[5], param[6]);
+        Vector trans = Owner()->VectorFrom(param[0], param[1], param[2]);
+        Quaternion q = Owner()->QuaternionFrom(param[3], param[4], param[5], param[6]);
         r = q.Rotate(numPoint);
         r = r.Plus(trans);
     } else if(type == Type::FACE_N_ROT_AXIS_TRANS) {
-            Vector offset = Owner()->GetVector(param[0], param[1], param[2]);
-            Vector displace = Owner()->GetVector(param[4], param[5], param[6])
+            Vector offset = Owner()->VectorFrom(param[0], param[1], param[2]);
+            Vector displace = Owner()->VectorFrom(param[4], param[5], param[6])
                .WithMagnitude(Owner()->GetParam(param[7])->val).ScaledBy(timesApplied);
             Quaternion q = PointGetQuaternion();
             r = numPoint.Minus(offset);
             r = q.Rotate(r);
             r = r.Plus(offset).Plus(displace);
     } else if(type == Type::FACE_N_TRANS) {
-        Vector trans = Owner()->GetVector(param[0], param[1], param[2]);
+        Vector trans = Owner()->VectorFrom(param[0], param[1], param[2]);
         r = numPoint.Plus(trans.ScaledBy(timesApplied));
     } else if(type == Type::FACE_N_ROT_AA) {
-        Vector trans = Owner()->GetVector(param[0], param[1], param[2]);
+        Vector trans = Owner()->VectorFrom(param[0], param[1], param[2]);
         Quaternion q = GetAxisAngleQuaternion(3);
         r = numPoint.Minus(trans);
         r = q.Rotate(r);
