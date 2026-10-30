@@ -1056,6 +1056,11 @@ public:
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
         auto adjustment = gtkWindow.get_scrollbar().get_adjustment();
+        // GTK4 requires lower + page_size <= upper. Content shorter than a page
+        // violates that; the scrollbar is hidden then, so just extend upper.
+        if(max < min + pageSize) {
+            max = min + pageSize;
+        }
         adjustment->configure(adjustment->get_value(), min, max, 1, 4, pageSize);
     }
 
@@ -1450,6 +1455,11 @@ std::vector<std::string> InitGui(int argc, char **argv) {
         exit(1);
     }
     setlocale(LC_ALL, "C");
+
+    // We render with OpenGL, so use GTK's GL renderer instead of the default
+    // Vulkan one. This avoids GL->Vulkan copies and the VK_SUBOPTIMAL_KHR warning
+    // spam. Don't override a renderer chosen by the user.
+    g_setenv("GSK_RENDERER", "gl", FALSE);
 
     gtkApp = Gtk::Application::create("com.solvespace.SolveSpace",
                                       Gio::Application::Flags::NON_UNIQUE);
