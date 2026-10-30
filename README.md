@@ -142,12 +142,11 @@ sudo make install
 Optional:
  - -DENABLE_LTO=ON: Enable Link Time Optimization at the expense of longer build time.
  - -DUSE_QT_GUI=ON: Build the newer QT GUI interface.
- - -DUSE_GTK4_GUI=ON: Build the newer GTK 4 GUI interface instead of GTK 3. Cannot be combined with -DUSE_QT_GUI=ON.
+ - -DUSE_GTK4_GUI=ON: Build the newer GTK 4 GUI interface instead of GTK 3.
  - -DENABLE_GUI=OFF: Build only the command-line interface
 
 The GTK graphical interface is built as `build/bin/solvespace`, and the command-line
-interface is built as `build/bin/solvespace-cli`. The GTK 4 graphical interface is also
-built as `build/bin/solvespace`. The QT graphical interface is built as
+interface is built as `build/bin/solvespace-cli`. The QT graphical interface is built as
 `build/bin/solvespace-qt`.
 
 ### Building for Windows
