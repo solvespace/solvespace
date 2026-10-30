@@ -58,7 +58,7 @@ size_t Group::GetNumConstraints() {
 }
 
 Vector Group::ExtrusionGetVector() {
-    return SK.GetVector(h.param(0), h.param(1), h.param(2));
+    return SK.VectorFrom(h.param(0), h.param(1), h.param(2));
 }
 
 void Group::ExtrusionForceVectorTo(const Vector &v) {
@@ -381,10 +381,10 @@ void Group::TransformImportedBy(Vector t, Quaternion q) {
     qy = h.param(5);
     qz = h.param(6);
 
-    Quaternion qg = SK.GetQuaternion(qw, qx, qy, qz);
+    Quaternion qg = SK.QuaternionFrom(qw, qx, qy, qz);
     qg = q.Times(qg);
 
-    Vector tg = SK.GetVector(tx, ty, tz);
+    Vector tg = SK.VectorFrom(tx, ty, tz);
     tg = tg.Plus(t);
 
     SK.GetParam(tx)->val = tg.x;

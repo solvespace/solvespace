@@ -419,10 +419,10 @@ public:
     inline Request *GetRequest(hRequest h) { return request.FindById(h); }
     inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
     // The vector or quaternion that parameters of this sketch hold
-    Vector GetVector(hParam x, hParam y, hParam z) {
+    Vector VectorFrom(hParam x, hParam y, hParam z) {
         return Vector::From(GetParam(x)->val, GetParam(y)->val, GetParam(z)->val);
     }
-    Quaternion GetQuaternion(hParam w, hParam vx, hParam vy, hParam vz) {
+    Quaternion QuaternionFrom(hParam w, hParam vx, hParam vy, hParam vz) {
         return Quaternion::From(GetParam(w)->val, GetParam(vx)->val,
                                 GetParam(vy)->val, GetParam(vz)->val);
     }
