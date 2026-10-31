@@ -895,6 +895,44 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 }
 @end
 
+// Lays out the main window's content and a docked text window side by side.
+// When the window is resized only the content changes size, and the divider
+// can't be dragged so far that either one gets smaller than its minimum width.
+@interface SSSplitViewDelegate : NSObject<NSSplitViewDelegate>
+@property(weak) NSView *contentView;
+@property double contentMinWidth;
+@property double dockedMinWidth;
+@end
+
+@implementation SSSplitViewDelegate
+@synthesize contentView;
+@synthesize contentMinWidth;
+@synthesize dockedMinWidth;
+
+- (double)minWidthOfSubview:(NSView *)view {
+    return (view == contentView) ? contentMinWidth : dockedMinWidth;
+}
+
+- (BOOL)splitView:(NSSplitView *)splitView shouldAdjustSizeOfSubview:(NSView *)view {
+    return view == contentView;
+}
+
+- (CGFloat)splitView:(NSSplitView *)splitView constrainMinCoordinate:(CGFloat)proposedMinimum
+         ofSubviewAt:(NSInteger)dividerIndex {
+    if(splitView.subviews.count < 2) return proposedMinimum;
+    double minLeft = [self minWidthOfSubview:splitView.subviews[0]];
+    return std::max(proposedMinimum, (CGFloat)minLeft);
+}
+
+- (CGFloat)splitView:(NSSplitView *)splitView constrainMaxCoordinate:(CGFloat)proposedMaximum
+         ofSubviewAt:(NSInteger)dividerIndex {
+    if(splitView.subviews.count < 2) return proposedMaximum;
+    double minRight = [self minWidthOfSubview:splitView.subviews[1]];
+    CGFloat maxLeft = splitView.bounds.size.width - splitView.dividerThickness - minRight;
+    return std::min(proposedMaximum, maxLeft);
+}
+@end
+
 namespace SolveSpace {
 namespace Platform {
 
@@ -917,6 +955,18 @@ public:
     double minHeight = 100.0;
 
     NSString         *nsToolTip;
+
+    // For a TOPLEVEL window: a split view that holds the content and a docked
+    // TOOL window's content.
+    NSSplitView         *nsSplitView = nil;
+    SSSplitViewDelegate *ssSplitViewDelegate = nil;
+
+    // For a TOOL window: the window it can dock into, where it is docked, whether
+    // it is shown there, and its docked width.
+    std::shared_ptr<WindowImplCocoa> dockParent;
+    DockSide dockSide      = DockSide::NONE;
+    bool     dockedVisible = false;
+    double   dockWidth     = 420.0;
 
     WindowImplCocoa(Window::Kind kind, std::shared_ptr<WindowImplCocoa> parentWindow) {
         ssView = [[SSView alloc] initWithKind:kind];
@@ -977,11 +1027,126 @@ public:
         nsWindow.delegate = ssWindowDelegate;
 
         nsWindow.backgroundColor = [NSColor blackColor];
-        nsWindow.contentView = nsContainer;
+        if(kind == Window::Kind::TOPLEVEL) {
+            ssSplitViewDelegate = [[SSSplitViewDelegate alloc] init];
+            ssSplitViewDelegate.contentView = nsContainer;
+
+            nsSplitView = [[NSSplitView alloc] init];
+            nsSplitView.vertical = YES;
+            nsSplitView.dividerStyle = NSSplitViewDividerStyleThin;
+            nsSplitView.delegate = ssSplitViewDelegate;
+            [nsSplitView addSubview:nsContainer];
+            nsWindow.contentView = nsSplitView;
+        } else {
+            nsWindow.contentView = nsContainer;
+            if(parentWindow && parentWindow->nsSplitView) {
+                dockParent = parentWindow;
+            }
+        }
+    }
+
+    // The window that currently shows this one's content.
+    NSWindow *TopLevelWindow() {
+        if(ssView.window != nil) {
+            return ssView.window;
+        }
+        return nsWindow;
+    }
+
+    //-------------------------------------------------------------------------
+    // Docking. These are called on the TOPLEVEL window.
+    //-------------------------------------------------------------------------
+
+    // Puts a TOOL window's content beside ours, at its docked width.
+    void AttachDocked(WindowImplCocoa *tool) {
+        NSView *view = tool->nsContainer;
+        if(tool->dockSide == DockSide::LEFT) {
+            [nsSplitView addSubview:view positioned:NSWindowBelow relativeTo:nsContainer];
+        } else {
+            [nsSplitView addSubview:view];
+        }
+        ssSplitViewDelegate.dockedMinWidth = tool->minWidth;
+        UpdateMinContentSize(tool);
+        [nsSplitView adjustSubviews];
+
+        CGFloat total   = nsSplitView.bounds.size.width;
+        CGFloat divider = nsSplitView.dividerThickness;
+        CGFloat width   = std::min((CGFloat)tool->dockWidth, total - divider - (CGFloat)minWidth);
+        width = std::max(width, (CGFloat)tool->minWidth);
+        CGFloat position = (tool->dockSide == DockSide::LEFT) ? width : total - divider - width;
+        [nsSplitView setPosition:position ofDividerAtIndex:0];
+
+        [[tool->ssView openGLContext] update];
+        tool->ssView.needsDisplay = YES;
+    }
+
+    // Takes a TOOL window's content out of the split view, remembering its width.
+    void DetachDocked(WindowImplCocoa *tool) {
+        NSView *view = tool->nsContainer;
+        if(view.superview == nsSplitView) {
+            tool->dockWidth = view.frame.size.width;
+            [view removeFromSuperview];
+            [nsSplitView adjustSubviews];
+        }
+        UpdateMinContentSize(NULL);
+    }
+
+    // Makes room for our content and the docked window, if any, at their minimum sizes.
+    void UpdateMinContentSize(WindowImplCocoa *docked) {
+        NSSize minSize = { (CGFloat)minWidth, (CGFloat)minHeight };
+        if(docked) {
+            minSize.width  += docked->minWidth + nsSplitView.dividerThickness;
+            minSize.height  = std::max(minSize.height, (CGFloat)docked->minHeight);
+        }
+        nsWindow.contentMinSize = minSize;
+
+        if(!IsFullScreen()) {
+            NSSize size = nsWindow.contentView.frame.size;
+            if(size.width < minSize.width || size.height < minSize.height) {
+                size.width  = std::max(size.width,  minSize.width);
+                size.height = std::max(size.height, minSize.height);
+                [nsWindow setContentSize:size];
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------
+    // Docking. These are called on the TOOL window.
+    //-------------------------------------------------------------------------
+
+    bool CanDock() override {
+        return dockParent != nullptr;
+    }
+
+    DockSide GetDockSide() override {
+        return dockSide;
+    }
+
+    void SetDockSide(DockSide side) override {
+        if(!dockParent || side == dockSide) return;
+
+        bool visible = IsVisible();
+        HideEditor();
+
+        // Take the content out of where it is now.
+        if(dockSide == DockSide::NONE) {
+            [nsWindow orderOut:nil];
+            nsWindow.contentView = [[NSView alloc] init];
+        } else {
+            dockParent->DetachDocked(this);
+        }
+
+        dockSide = side;
+        dockedVisible = false;
+        if(side == DockSide::NONE) {
+            nsWindow.contentView = nsContainer;
+            [[ssView openGLContext] update];
+        }
+        SetVisible(visible);
     }
 
     double GetPixelDensity() override {
-        NSDictionary *description = nsWindow.screen.deviceDescription;
+        NSDictionary *description = TopLevelWindow().screen.deviceDescription;
         NSSize displayPixelSize = [[description objectForKey:NSDeviceSize] sizeValue];
         CGSize displayPhysicalSize = CGDisplayScreenSize(
                     [[description objectForKey:@"NSScreenNumber"] unsignedIntValue]);
@@ -995,10 +1160,23 @@ public:
     }
 
     bool IsVisible() override {
-        return ![nsWindow isVisible];
+        if(dockSide != DockSide::NONE) {
+            return dockedVisible;
+        }
+        return [nsWindow isVisible];
     }
 
     void SetVisible(bool visible) override {
+        if(dockSide != DockSide::NONE) {
+            if(visible == dockedVisible) return;
+            dockedVisible = visible;
+            if(visible) {
+                dockParent->AttachDocked(this);
+            } else {
+                dockParent->DetachDocked(this);
+            }
+            return;
+        }
         if(visible) {
             [nsWindow orderFront:nil];
         } else {
@@ -1007,7 +1185,7 @@ public:
     }
 
     void Focus() override {
-        [nsWindow makeKeyAndOrderFront:nil];
+        [TopLevelWindow() makeKeyAndOrderFront:nil];
     }
 
     bool IsFullScreen() override {
@@ -1041,6 +1219,12 @@ public:
     }
 
     void SetMinContentSize(double width, double height) override {
+        minWidth  = width;
+        minHeight = height;
+        if(ssSplitViewDelegate) {
+            ssSplitViewDelegate.contentMinWidth = width;
+        }
+
         NSSize nsMinSize;
         nsMinSize.width  = width;
         nsMinSize.height = height;
@@ -1048,12 +1232,22 @@ public:
         [nsWindow setContentSize:nsMinSize];
     }
 
-    void FreezePosition(SettingsRef _settings, const std::string &key) override {
+    void FreezePosition(SettingsRef settings, const std::string &key) override {
+        // While docked, the hidden panel keeps its floating position.
         [nsWindow saveFrameUsingName:Wrap(key)];
+        if(dockParent) {
+            if(dockSide != DockSide::NONE && nsContainer.superview == dockParent->nsSplitView) {
+                dockWidth = nsContainer.frame.size.width;
+            }
+            settings->FreezeFloat(key + "_DockWidth", dockWidth);
+        }
     }
 
-    void ThawPosition(SettingsRef _settings, const std::string &key) override {
+    void ThawPosition(SettingsRef settings, const std::string &key) override {
         [nsWindow setFrameUsingName:Wrap(key)];
+        if(dockParent) {
+            dockWidth = settings->ThawFloat(key + "_DockWidth", dockWidth);
+        }
     }
 
     void SetCursor(Cursor cursor) override {
@@ -1097,7 +1291,13 @@ public:
     }
 
     void HideEditor() override {
+        bool wasEditing = [ssView isEditing];
         [ssView stopEditing];
+        if(wasEditing && dockSide != DockSide::NONE) {
+            // A docked text window can't take the keyboard focus, so give it back
+            // to the main window's view.
+            [dockParent->nsWindow makeFirstResponder:dockParent->ssView];
+        }
     }
 
     void SetScrollbarVisible(bool visible) override {
@@ -1363,7 +1563,7 @@ public:
 
 MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
     std::shared_ptr<MessageDialogImplCocoa> dialog = std::make_shared<MessageDialogImplCocoa>();
-    dialog->nsWindow = std::static_pointer_cast<WindowImplCocoa>(parentWindow)->nsWindow;
+    dialog->nsWindow = std::static_pointer_cast<WindowImplCocoa>(parentWindow)->TopLevelWindow();
     return dialog;
 }
 
