@@ -274,6 +274,7 @@ void TextWindow::Init() {
             window->onKeyboardEvent = SS.GW.window->onKeyboardEvent;
             window->onRender = std::bind(&TextWindow::Paint, this);
             window->onContextLost = std::bind(&TextWindow::ContextLost, this);
+            window->onDockSideChanged = std::bind(&GraphicsWindow::EnsureValidActives, &SS.GW);
             window->onEditingDone = std::bind(&TextWindow::EditControlDone, this, _1);
             window->onScrollbarAdjusted = std::bind(&TextWindow::ScrollbarEvent, this, _1);
             window->SetMinContentSize(370, 370);

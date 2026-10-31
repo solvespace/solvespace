@@ -237,6 +237,8 @@ public:
     std::function<void(double)>         onScrollbarAdjusted;
     std::function<void()>               onContextLost;
     std::function<void()>               onRender;
+    // Called when the user moves a TOOL window with the toolkit's own docking controls.
+    std::function<void()>               onDockSideChanged;
 
     virtual ~Window() = default;
 
