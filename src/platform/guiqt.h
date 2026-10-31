@@ -86,7 +86,7 @@ protected:
     void updateSlvSpaceKeyEvent(QKeyEvent* event);
 
 public:
-    Platform::Window* receiver;
+    Platform::Window* receiver = nullptr;
     QLineEdit* entry;
     double pixelRatio;
     double pixelRatioI;
@@ -103,6 +103,7 @@ public:
 
 protected slots:
     void sliderSlot(int value);
+    void dockChangedSlot();
 
 protected:
     void closeEvent(QCloseEvent* ev);

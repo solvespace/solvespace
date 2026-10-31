@@ -737,6 +737,10 @@ SSTextWindow::SSTextWindow(QWidget* parent)
 
     setWidget(group);
     setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+
+    // Report moves made by dragging the dock widget, e.g. to update the menu.
+    connect(this, SIGNAL(topLevelChanged(bool)), SLOT(dockChangedSlot()));
+    connect(this, SIGNAL(dockLocationChanged(Qt::DockWidgetArea)), SLOT(dockChangedSlot()));
 }
 
 void SSTextWindow::sliderSlot(int value)
@@ -744,6 +748,13 @@ void SSTextWindow::sliderSlot(int value)
     std::function<void(double)> adjust = ssView->receiver->onScrollbarAdjusted;
     if(adjust)
        adjust(double(value));
+}
+
+void SSTextWindow::dockChangedSlot()
+{
+    if(ssView->receiver && ssView->receiver->onDockSideChanged) {
+        ssView->receiver->onDockSideChanged();
+    }
 }
 
 void SSTextWindow::closeEvent(QCloseEvent* ev)
@@ -775,6 +786,10 @@ public:
     QScrollBar* scrollBar;      // Copy of SSTextWindow::scrollBar or nullptr.
     std::shared_ptr<MenuBarImpQt> menuBar;
 
+    // For the text window: the dock widget and the main window it docks into.
+    SSTextWindow* dockWidget = nullptr;
+    QMainWindow*  dockParent = nullptr;
+
     WindowImplQt(Window::Kind kind, std::shared_ptr<WindowImplQt> parent)
     {
         if(kind == Platform::Window::Kind::TOOL) {
@@ -791,6 +806,8 @@ public:
             QMainWindow* mwin = qobject_cast<QMainWindow*>(qparent);
             if(mwin) {
                 mwin->addDockWidget(Qt::RightDockWidgetArea, twin);
+                dockWidget = twin;
+                dockParent = mwin;
             }
         } else {
             SSMainWindow* mwin = new SSMainWindow;
@@ -958,6 +975,36 @@ public:
 
     void Invalidate() override {
         view->update();
+    }
+
+    // The text window is a QDockWidget, so Qt does the docking. The user can also
+    // move it by dragging, which is reported through onDockSideChanged.
+    bool CanDock() override {
+        return dockWidget != nullptr;
+    }
+
+    DockSide GetDockSide() override {
+        if(!dockWidget || dockWidget->isFloating()) {
+            return DockSide::NONE;
+        }
+        if(dockParent->dockWidgetArea(dockWidget) == Qt::LeftDockWidgetArea) {
+            return DockSide::LEFT;
+        }
+        return DockSide::RIGHT;
+    }
+
+    void SetDockSide(DockSide side) override {
+        if(!dockWidget || side == GetDockSide()) return;
+
+        if(side == DockSide::NONE) {
+            dockWidget->setFloating(true);
+        } else {
+            dockWidget->setFloating(false);
+            // Adding a dock widget that is already docked moves it.
+            dockParent->addDockWidget(side == DockSide::LEFT ? Qt::LeftDockWidgetArea
+                                                             : Qt::RightDockWidgetArea,
+                                      dockWidget);
+        }
     }
 };
 
