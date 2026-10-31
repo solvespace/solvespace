@@ -168,6 +168,7 @@ const MenuEntry Menu[] = {
 { 1, N_("Lock Point Where &Dragged"),   Command::WHERE_DRAGGED,    ']',     KN, mCon   },
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
 { 1, N_("Comment"),                     Command::COMMENT,          ';',     KN, mCon   },
+{ 1, N_("Relation"),                    Command::RELATION,         '/',     KN, mCon   },
 
 { 0, N_("&Analyze"),                    Command::NONE,             0,       KN, mAna   },
 { 1, N_("Measure &Volume"),             Command::VOLUME,           C|S|'v', KN, mAna   },
@@ -452,7 +453,7 @@ void GraphicsWindow::Init() {
             using namespace std::placeholders;
             // Do this first, so that if it causes an onRender event we don't try to paint without
             // a canvas.
-            window->SetMinContentSize(720, /*ToolbarDrawOrHitTest 636*/ 32 * 18 + 3 * 16 + 8 + 4);
+            window->SetMinContentSize(720, /*ToolbarDrawOrHitTest 636*/ 32 * 19 + 3 * 16 + 8 + 4);
             window->onClose = std::bind(&SolveSpaceUI::MenuFile, Command::EXIT);
             window->onContextLost = [&] {
                 canvas = NULL;
@@ -986,7 +987,7 @@ void GraphicsWindow::EnsureValidActives() {
             activeGroup = SS.CreateDefaultDrawingGroup();
             // We've created the default group, but not the workplane entity;
             // do it now so that drawing mode isn't switched to "Free in 3d".
-            SK.GetGroup(activeGroup)->Generate(&SK.entity, &SK.param);
+            SK.GetGroup(activeGroup)->Generate(&SK, &SK.entity, &SK.param);
         } else {
             activeGroup = SK.groupOrder[i];
         }
@@ -999,7 +1000,7 @@ void GraphicsWindow::EnsureValidActives() {
         Entity *e = SK.entity.FindByIdNoOops(ActiveWorkplane());
         if(e) {
             hGroup hgw = e->group;
-            if(hgw != activeGroup && SS.GroupsInOrder(activeGroup, hgw)) {
+            if(hgw != activeGroup && SK.GroupsInOrder(activeGroup, hgw)) {
                 // The active workplane is in a group that comes after the
                 // active group; so any request or constraint will fail.
                 SetWorkplaneFreeIn3d();

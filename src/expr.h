@@ -9,8 +9,10 @@
 
 #include <cstdint>
 #include <limits>
+#include <map>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "dsc.h"
 #include "param.h"
@@ -18,6 +20,8 @@
 namespace SolveSpace {
 
 using SubstitutionMap = std::unordered_map<hParam, Param *, HandleHasher<hParam>>;
+// The named parameters that an expression may use, by name.
+using ParamNames = std::map<std::string, hParam>;
 
 class Expr {
 public:
@@ -31,7 +35,6 @@ public:
 
         // Operands
         CONSTANT       = 20,
-        VARIABLE       = 21,
 
         // Binary ops
         PLUS           = 100,
@@ -107,8 +110,18 @@ public:
                                        ParamList *thenTry,
                                        bool foldConstants = false) const;
 
-    static Expr *Parse(const std::string &input, std::string *error);
-    static Expr *From(const std::string &input, bool popUpError);
+    // When names is given, any name in it is parsed as that parameter, and
+    // namesUsed (if given) is set to how many times a name was used.
+    static Expr *Parse(const std::string &input, std::string *error,
+                       const ParamNames *names = NULL, int *namesUsed = NULL);
+    static Expr *From(const std::string &input, bool popUpError,
+                      const ParamNames *names = NULL, int *namesUsed = NULL);
+    // True for the names of the functions and constants known to the parser
+    static bool IsReservedName(const std::string &name);
+    // The names in input, read the way the parser reads them, that are neither
+    // in names nor reserved; each once, in the order they first appear.
+    static std::vector<std::string> FindUndefinedNames(const std::string &input,
+                                                       const ParamNames *names);
 };
 
 class ExprVector {

@@ -879,7 +879,10 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
         case Command::STEP_DIM:
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SK.GetConstraint(gs.constraint[0]);
-                if(c->HasLabel() && !c->reference) {
+                if(c->HasExpression()) {
+                    Error(_("Can't step a dimension that is set by an expression."));
+                } else if(c->HasLabel() && !c->reference &&
+                          c->type != Constraint::Type::RELATION) {
                     SS.TW.stepDim.finish = c->valA;
                     SS.TW.stepDim.steps = 10;
                     SS.TW.stepDim.isDistance =
@@ -1200,7 +1203,7 @@ BBox Sketch::CalculateEntityBBox(bool includingInvisible) {
 
         // arc center point shouldn't be included in bounding box calculation
         if(e.IsPoint() && e.h.isFromRequest()) {
-            Request *r = SK.GetRequest(e.h.request());
+            Request *r = GetRequest(e.h.request());
             if(r->type == Request::Type::ARC_OF_CIRCLE && e.h == r->h.entity(1)) {
                 continue;
             }
@@ -1243,7 +1246,7 @@ Group *Sketch::GetRunningMeshGroupFor(hGroup h) {
         if(g->IsMeshGroup()) {
             return g;
         }
-        g = g->PreviousGroup();
+        g = g->PreviousGroup(&SK);
     }
     return NULL;
 }

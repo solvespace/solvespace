@@ -349,7 +349,10 @@ bool Style::Exportable(int si) {
 // default style.
 //-----------------------------------------------------------------------------
 hStyle Style::ForEntity(hEntity he) {
-    Entity *e = SK.GetEntity(he);
+    return ForEntity(SK.GetEntity(he));
+}
+
+hStyle Style::ForEntity(const Entity *e) {
     // If the entity has a special style, use that. If that style doesn't
     // exist yet, then it will get created automatically later.
     if(e->style.v != 0) {

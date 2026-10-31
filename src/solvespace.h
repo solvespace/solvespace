@@ -48,7 +48,8 @@ enum class SolveResult : uint32_t {
     DIDNT_CONVERGE           = 10,
     REDUNDANT_OKAY           = 11,
     REDUNDANT_DIDNT_CONVERGE = 12,
-    TOO_MANY_UNKNOWNS        = 20
+    TOO_MANY_UNKNOWNS        = 20,
+    UNKNOWN_NAME             = 30
 };
 
 // Utility functions that are provided in the platform-independent code.
@@ -77,6 +78,8 @@ public:
     utf8_iterator begin() const { return utf8_iterator(&str[0]); }
     utf8_iterator end()   const { return utf8_iterator(&str[0] + str.length()); }
 };
+
+class Sketch;
 
 class System {
 public:
@@ -131,11 +134,11 @@ public:
                                   const Eigen::VectorXd &B, Eigen::VectorXd *X);
     bool SolveLeastSquares();
 
-    bool WriteJacobian(int tag);
+    bool WriteJacobian(Sketch *sketch, int tag);
     void EvalJacobian();
 
-    void WriteEquationsExceptFor(hConstraint hc, Group *g);
-    void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad,
+    void WriteEquationsExceptFor(Sketch *sketch, hConstraint hc, Group *g);
+    void FindWhichToRemoveToFixJacobian(Sketch *sketch, Group *g, List<hConstraint> *bad,
                                         bool forceDofCheck);
     SubstitutionMap SolveBySubstitution();
 
@@ -143,13 +146,14 @@ public:
 
     bool NewtonSolve();
 
-    void MarkParamsFree(bool findFree);
+    void MarkParamsFree(Sketch *sketch, bool findFree);
 
-    SolveResult Solve(Group *g, int *dof = NULL, List<hConstraint> *bad = NULL,
+    // Solve the group's equations, in the sketch that it's in
+    SolveResult Solve(Sketch *sketch, Group *g, int *dof = NULL, List<hConstraint> *bad = NULL,
                       bool andFindBad = false, bool andFindFree = false,
                       bool forceDofCheck = false);
 
-    SolveResult SolveRank(Group *g, int *rank = NULL, int *dof = NULL,
+    SolveResult SolveRank(Sketch *sketch, Group *g, int *rank = NULL, int *dof = NULL,
                           List<hConstraint> *bad = NULL,
                           bool andFindBad = false, bool andFindFree = false);
 
@@ -414,14 +418,107 @@ public:
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
     inline Request *GetRequest(hRequest h) { return request.FindById(h); }
     inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
+    // The vector or quaternion that parameters of this sketch hold
+    Vector VectorFrom(hParam x, hParam y, hParam z) {
+        return Vector::From(GetParam(x)->val, GetParam(y)->val, GetParam(z)->val);
+    }
+    Quaternion QuaternionFrom(hParam w, hParam vx, hParam vy, hParam vz) {
+        return Quaternion::From(GetParam(w)->val, GetParam(vx)->val,
+                                GetParam(vy)->val, GetParam(vz)->val);
+    }
     // Styles are handled a bit differently.
 
     void Clear();
 
     BBox CalculateEntityBBox(bool includingInvisible);
+    // The chord tolerance in mm for this sketch, given the tolerance relative
+    // to its size, in percent
+    double ChordTolForSize(double relativeChordTol);
     Group *GetRunningMeshGroupFor(hGroup h);
 
     void RegenerateGroupOrder();
+    // Mark the group, and unless onlyThis, the groups after it, as needing
+    // to be solved again
+    void MarkGroupDirty(hGroup hg, bool onlyThis = false);
+
+    // Checks made when regenerating, to find what has to be pruned
+    bool GroupExists(hGroup hg);
+    bool EntityExists(hEntity he);
+    bool GroupsInOrder(hGroup hbefore, hGroup hafter);
+    bool PruneGroup(Group *g);
+    int RemoveTaggedConstraints(bool *tagged);
+    // Set the parameters of the three reference workplanes
+    void ForceReferences();
+    // The values for the parameters of the sketch that a linked group links:
+    // those in values, or, if evaluate, those of their expressions.
+    LinkValues LinkValuesFor(Group *g, ParamList *values, bool evaluate);
+    // Whether a value for a linked sketch's parameter can be given: its
+    // expression, if it has one, is valid, and the linked sketch has it
+    bool LinkParamIsKnown(Group *g, Request *r);
+    // The value of an expression whose parameters are in this sketch
+    double Evaluate(const Expr *e) {
+        return e->DeepCopyWithParamsAsPointers(&param, &param)->Eval();
+    }
+
+    // What is being dragged in the GUI. The solver tries to keep the
+    // parameters of these where they were put.
+    struct Dragged {
+        std::vector<hEntity> points;
+        hEntity              circle;
+        hEntity              normal;
+    };
+    // Solving a group, using the given solver
+    void MarkDraggedParams(System *sys, const Dragged &dragged);
+    void WriteEqSystemForGroup(hGroup hg, System *sys, const Dragged &dragged);
+    void SolveGroup(hGroup hg, System *sys, const Dragged &dragged, bool andFindFree,
+                    int timeoutRedundantConstr);
+    SolveResult TestRankForGroup(hGroup hg, System *sys, int *rank = NULL);
+
+    // How to regenerate the sketch
+    struct GenerateOptions {
+        // The groups to solve, as indices into groupOrder. The others are
+        // regenerated, but assumed to be solved already.
+        int     first;
+        int     last;
+        // Regenerate without solving anything, as for export
+        bool    noSolve;
+        bool    andFindFree;
+        int     timeoutRedundantConstr;
+        System  *sys;
+        Dragged dragged;
+        // Loads what a linked group gets from its linked sketch, with these
+        // values for the sketch's parameters, when they have changed; NULL
+        // to keep what the group has.
+        bool    (*loadLinked)(Group *g, const LinkValues &values);
+    };
+    // A group that was solved, and how it was solved before
+    struct SolvedGroup {
+        hGroup      h;
+        SolveResult before;
+    };
+    // What happened when the sketch was regenerated
+    struct GenerateResult {
+        // The groups to solve, adjusted for any groups that were pruned
+        int     first;
+        int     last;
+        // How much was pruned, because what it depends on doesn't exist
+        int     requests;
+        int     groups;
+        int     constraints;
+        int     nonTrivialConstraints;
+        // The groups that were solved, in order
+        std::vector<SolvedGroup> solved;
+    };
+    // Regenerate the entities and parameters of every group, pruning what
+    // can't be generated, and solve the groups in the range.
+    void GenerateEntities(const GenerateOptions &opts, GenerateResult *result);
+    // Then generate the shells and meshes of the groups in the range, with
+    // the given chord tolerance in mm, and update the reference dimensions.
+    // Returns true if whether a group's Boolean failed has changed.
+    bool GenerateShellsAndMeshes(int first, int last, double chordTolMm);
+    // Bring the sketch, just read from a file saved by an older version, up
+    // to date; it is regenerated, as described by opts, along the way.
+    void UpgradeLegacyData(const GenerateOptions &opts, GenerateResult *result);
 };
 #undef ENTITY
 #undef CONSTRAINT
@@ -603,10 +700,70 @@ public:
     bool SaveToFile(const Platform::Path &filename);
     bool LoadAutosaveFor(const Platform::Path &filename);
     std::function<void(const Platform::Path &filename, bool is_saveAs, bool is_autosave)> OnSaveFinished;
+    // Read a .slvs file into the sketch, and its saved entities, if wanted,
+    // into savedEntities. Returns false if the file can't be read; sets
+    // fileLoadError if it has data that isn't recognized.
+    bool ReadSketchFile(const Platform::Path &filename, Sketch *sketch,
+                        EntityList *savedEntities, bool *isEmpty);
     bool LoadFromFile(const Platform::Path &filename, bool canCancel = false);
     void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
+    // Load what a linked group gets from its file, giving the linked sketch's
+    // parameters these values. If checkFiles, files read before are checked
+    // for changes. Returns false if the file can't be loaded at all.
+    bool LoadLinkedGroup(Group *g, const LinkValues &values, bool checkFiles);
+    // For GenerateOptions::loadLinked
+    static bool LoadLinkedForGeneration(Group *g, const LinkValues &values);
+    // Load a linked .slvs file as a sketch of its own, generate it with these
+    // values for its parameters, and give its entities, the mesh and shell
+    // of its last group, and its parameters. Returns false if it can't be,
+    // for example because it links itself.
+    bool LoadLinkedSketch(const Platform::Path &filename, const LinkValues &values,
+                          EntityList *le, SMesh *m, SShell *sh, LinkValues *params,
+                          bool checkFiles);
+    bool LoadLinkedGroups(Sketch *sketch, bool checkFiles);
+    // The linked files being loaded, outermost first
+    std::vector<Platform::Path> linkedFilesLoading;
+
+    // A linked .slvs file, read and ready to be generated, so that it isn't
+    // read again unless it, or a file it links, changes.
+    struct LinkedFile {
+        Platform::Path  path;
+        size_t          hash;   // of its contents
+    };
+    struct LinkedSketchFile {
+        Sketch                  *sketch;
+        // Its entities as saved, for whether each is visible
+        EntityList              saved;
+        // The parameters of its references group, with its own values
+        LinkValues              params;
+        // It and the files it links
+        std::vector<LinkedFile> madeFrom;
+    };
+    std::map<Platform::Path, LinkedSketchFile, Platform::PathLess> linkedSketchFiles;
+    LinkedSketchFile *ReadLinkedSketch(const Platform::Path &filename, bool checkFiles);
+    void DropLinkedSketchFile(const Platform::Path &filename);
+
+    // What a linked sketch made, for some values of its parameters, by
+    // LinkKey(), so that it isn't generated again (on undo, or for another
+    // group that links it with the same values). Only what linked groups use
+    // is kept; see PruneLinkedSketches().
+    struct LinkedSketch {
+        double                  chordTol;
+        int                     maxSegments;
+        EntityList              entities;
+        SMesh                   mesh;
+        SShell                  shell;
+        IdList<Style,hStyle>    styles;
+    };
+    std::map<std::string, LinkedSketch> linkedSketches;
+    static std::string LinkKey(const Platform::Path &filename, const LinkValues &values);
+    void UseLinkedSketch(LinkedSketch *ls, EntityList *le, SMesh *m, SShell *sh);
+    void ClearLinkedSketch(LinkedSketch *ls);
+    // Drop what no linked group uses any more
+    void PruneLinkedSketches();
+    void ClearLinkedSketches();
     bool LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
     bool ReloadAllLinked(const Platform::Path &filename, bool canCancel = false);
@@ -673,10 +830,6 @@ public:
         int     constraints;
         int     nonTrivialConstraints;
     } deleted;
-    bool GroupExists(hGroup hg);
-    bool EntityExists(hEntity he);
-    bool GroupsInOrder(hGroup hbefore, hGroup hafter);
-    bool PruneGroup(Group *g);
     static void ShowNakedEdges(bool reportOnlyWhenNotOkay);
 
     enum class Generate : uint32_t {
@@ -687,12 +840,9 @@ public:
     };
 
     void GenerateAll(Generate type = Generate::DIRTY, bool andFindFree = false);
-    void SolveGroup(hGroup hg, bool andFindFree);
-    void SolveGroupAndReport(hGroup hg, bool andFindFree);
+    Sketch::Dragged DraggedEntities();
+    void ReportHowGroupSolved(hGroup hg, SolveResult before);
     SolveResult TestRankForGroup(hGroup hg, int *rank = NULL);
-    void WriteEqSystemForGroup(hGroup hg);
-    void MarkDraggedParams();
-    void ForceReferences();
     void UpdateCenterOfMass();
 
     bool ActiveGroupsOkay();

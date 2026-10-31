@@ -23,6 +23,7 @@ class Vector4;
 class Point2d;
 class hEntity;
 class hParam;
+class EntityBase;
 
 class Quaternion {
 public:
@@ -32,7 +33,6 @@ public:
     static const Quaternion IDENTITY;
 
     static Quaternion From(double w, double vx, double vy, double vz);
-    static Quaternion From(hParam w, hParam vx, hParam vy, hParam vz);
     static Quaternion From(Vector u, Vector v);
     static Quaternion From(Vector axis, double dtheta);
 
@@ -60,7 +60,6 @@ public:
     double x, y, z;
 
     static Vector From(double x, double y, double z);
-    static Vector From(hParam x, hParam y, hParam z);
     static Vector AtIntersectionOfPlanes(Vector n1, double d1,
                                          Vector n2, double d2);
     static Vector AtIntersectionOfLines(Vector a0, Vector a1,
@@ -101,6 +100,8 @@ public:
     Vector ScaledBy(double s) const;
     Vector ProjectInto(hEntity wrkpl) const;
     Vector ProjectVectorInto(hEntity wrkpl) const;
+    Vector ProjectInto(const EntityBase *wrkpl) const;
+    Vector ProjectVectorInto(const EntityBase *wrkpl) const;
     double DivProjected(Vector delta) const;
     Vector ClosestOrtho() const;
     void MakeMaxMin(Vector *maxv, Vector *minv) const;

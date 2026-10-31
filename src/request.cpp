@@ -13,6 +13,7 @@ namespace SolveSpace {
 const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_YZ = { 2 };
 const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
+constexpr double Request::NAMED_PARAM_DEFAULT;
 
 struct EntReqMapping {
     Request::Type  reqType;
@@ -80,7 +81,7 @@ Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
     return req;
 }
 
-void Request::Generate(EntityList *entity, ParamList *param)
+void Request::Generate(Sketch *sketch, EntityList *entity, ParamList *param)
 {
     int points = 0;
     Entity::Type et = (Entity::Type)0;
@@ -119,11 +120,23 @@ void Request::Generate(EntityList *entity, ParamList *param)
             break;
         }
 
+        case Type::NAMED_PARAMETER:
+        case Type::NAMED_CONST_PARAM:
+        case Type::NAMED_LINK_PARAM:
+            // Just the one parameter, and no entities, so these aren't in the
+            // table above. A locked parameter is kept out of the solver's
+            // system in WriteEqSystemForGroup(). A parameter seen before
+            // gets its previous value back in GenerateAll().
+            AddParam(param, NamedParam());
+            param->FindById(NamedParam())->val = NAMED_PARAM_DEFAULT;
+            return;
+
         default: // most requests don't do anything else
             break;
     }
 
     Entity e = {};
+    e.sketch = sketch;
     EntReqTable::GetRequestInfo(type, extraPoints, &et, &points, &hasNormal, &hasDistance);
 
     // Generate the entity that's specific to this request.
@@ -142,6 +155,7 @@ void Request::Generate(EntityList *entity, ParamList *param)
     // And generate entities for the points
     for(i = 0; i < points; i++) {
         Entity p = {};
+        p.sketch = sketch;
         p.workplane = workplane;
         // points start from entity 1, except for datum point case
         p.h = h.entity(i+((et != (Entity::Type)0) ? 1 : 0));
@@ -165,6 +179,7 @@ void Request::Generate(EntityList *entity, ParamList *param)
     }
     if(hasNormal) {
         Entity n = {};
+        n.sketch = sketch;
         n.workplane = workplane;
         n.h = h.entity(32);
         n.group = group;
@@ -190,6 +205,7 @@ void Request::Generate(EntityList *entity, ParamList *param)
     }
     if(hasDistance) {
         Entity d = {};
+        d.sketch = sketch;
         d.workplane = workplane;
         d.h = h.entity(64);
         d.group = group;
@@ -222,6 +238,9 @@ std::string Request::DescriptionString() const {
             case Type::ARC_OF_CIRCLE:   s = "arc-of-circle";  break;
             case Type::TTF_TEXT:        s = "ttf-text";       break;
             case Type::IMAGE:           s = "image";          break;
+            case Type::NAMED_PARAMETER:
+            case Type::NAMED_CONST_PARAM: s = "parameter";      break;
+            case Type::NAMED_LINK_PARAM:  s = "linked-parameter"; break;
         }
     }
     ssassert(s != NULL, "Unexpected request type");
@@ -238,6 +257,15 @@ int Request::IndexOfPoint(hEntity he) const {
         }
     }
     return -1;
+}
+
+Expr *Request::ParseExpression(Sketch *sketch, std::string *error) const {
+    std::string ignored;
+    if(error == NULL) error = &ignored;
+
+    const Group *g = sketch->group.FindByIdNoOops(group);
+    if(g == NULL) return NULL;
+    return Expr::Parse(expression, error, &g->inheritedParamNames);
 }
 
 hParam Request::AddParam(ParamList *param, hParam hp) {
