@@ -117,6 +117,38 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
     }
 }
 
+//-----------------------------------------------------------------------------
+// Does a vertex of one of our trim edges lie on srf, within its trim region,
+// with the trim curve crossing srf there (not tangent to it)? The curve's
+// direction comes from its exact form if it has one, since a pwl chord's
+// direction can differ from the curve's by a few degrees; dir, the direction
+// of the pwl edge, is used otherwise.
+//-----------------------------------------------------------------------------
+static bool EdgeVertexOnSurface(SSurface *srf, Vector p, SCurve *sc, Vector dir) {
+    Point2d puv;
+    srf->ClosestPointTo(p, &puv, /*mustConverge=*/false);
+    if(!(srf->PointAt(puv)).Equals(p)) return false;
+
+    if(!srf->bsp) return false;
+    Point2d dummy = { 0, 0 };
+    if(srf->bsp->ClassifyPoint(puv, dummy, srf) == SBspUv::Class::OUTSIDE) {
+        return false;
+    }
+
+    if(sc->isExact) {
+        double t;
+        sc->exact.ClosestPointTo(p, &t, /*mustConverge=*/false);
+        dir = sc->exact.TangentAt(t);
+    }
+    Vector n = srf->NormalAt(puv);
+    if(fabs((n.WithMagnitude(1)).Dot(dir.WithMagnitude(1))) < 1e-3) {
+        // Tangent; like AllPointsIntersecting without inclTangent, don't
+        // count it.
+        return false;
+    }
+    return true;
+}
+
 void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                                 SShell *into)
 {
@@ -417,12 +449,27 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
                 srfB->AllPointsIntersecting(se->a, se->b, &lsi,
                     /*asSegment=*/true, /*trimmed=*/true, /*inclTangent=*/false);
-                if(lsi.IsEmpty())
-                    continue;
-
                 // Find the other surface that this curve trims.
                 hSCurve hsc = { (uint32_t)se->auxA };
                 SCurve *sc = shA->curve.FindById(hsc);
+
+                // AllPointsIntersecting skips hits at the ends of the segment,
+                // so an intersection that falls exactly on a vertex of our
+                // trim curves would be missed, e.g. where the end of an
+                // extrusion lies on a face of the other shell (issue #1755).
+                if(EdgeVertexOnSurface(srfB, se->a, sc, se->b.Minus(se->a))) {
+                    SInter si = {};
+                    si.p = se->a;
+                    lsi.Add(&si);
+                }
+                if(EdgeVertexOnSurface(srfB, se->b, sc, se->b.Minus(se->a))) {
+                    SInter si = {};
+                    si.p = se->b;
+                    lsi.Add(&si);
+                }
+                if(lsi.IsEmpty())
+                    continue;
+
                 hSSurface hother = (sc->surfA == srfA->h) ?
                                                     sc->surfB : sc->surfA;
                 SSurface *other = shA->surface.FindById(hother);
