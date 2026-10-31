@@ -123,34 +123,34 @@ public:
             }
         }
 
-        DRW_Polyline polyline;
+        std::unique_ptr<DRW_Polyline> polyline;
 
         auto startFunc = [&](PolylineBuilder::Vertex *start,
                              PolylineBuilder::Vertex *next,
                              PolylineBuilder::Edge *e) {
             hStyle hs = { e->kind };
-            polyline = {};
-            assignEntityDefaults(&polyline, hs);
+            polyline.reset(new DRW_Polyline());
+            assignEntityDefaults(polyline.get(), hs);
 
             if(!(EXACT(start->pos.z == 0.0) && EXACT(next->pos.z == 0.0))) {
-                polyline.flags |= 8 /* 3d polyline */;
+                polyline->flags |= 8 /* 3d polyline */;
             }
-            polyline.vertlist.push_back(
+            polyline->vertlist.push_back(
                 std::make_shared<DRW_Vertex>(start->pos.x, start->pos.y, start->pos.z, 0.0));
-            polyline.vertlist.push_back(
+            polyline->vertlist.push_back(
                 std::make_shared<DRW_Vertex>(next->pos.x, next->pos.y, next->pos.z, 0.0));
         };
 
         auto nextFunc = [&](PolylineBuilder::Vertex *next, PolylineBuilder::Edge *e) {
             if(!EXACT(next->pos.z == 0.0)) {
-                polyline.flags |= 8 /* 3d polyline */;
+                polyline->flags |= 8 /* 3d polyline */;
             }
-            polyline.vertlist.push_back(
+            polyline->vertlist.push_back(
                 std::make_shared<DRW_Vertex>(next->pos.x, next->pos.y, next->pos.z, 0.0));
         };
 
         auto endFunc = [&]() {
-            dxf->writePolyline(&polyline);
+            dxf->writePolyline(polyline.get());
         };
 
         auto aloneFunc = [&](PolylineBuilder::Edge *e) {
