@@ -250,6 +250,7 @@ add_resources(
     icons/graphics-window/pointonx.png
     icons/graphics-window/point.png
     icons/graphics-window/rectangle.png
+    icons/graphics-window/relation.png
     icons/graphics-window/ref.png
     icons/graphics-window/revolve.png
     icons/graphics-window/same-orientation.png
@@ -298,6 +299,8 @@ add_resources(
     fonts/private/5-stipple-dash-long.png
     fonts/private/6-stipple-dash.png
     fonts/private/7-stipple-zigzag.png
+    fonts/private/8-lock-closed.png
+    fonts/private/9-lock-open.png
     fonts/unicode.lff.gz
     fonts/BitstreamVeraSans-Roman-builtin.ttf
     shaders/imesh.frag

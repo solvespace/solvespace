@@ -11,8 +11,27 @@
 namespace SolveSpace {
 
 std::string Constraint::Label() const {
+    // A dimension given by an expression shows the expression, unless it's
+    // a reference dimension, which shows what it measures.
+    const Group *g = SK.group.FindByIdNoOops(group);
+    bool showExpression = HasExpression() && !reference &&
+                          !(g != NULL && g->allDimsReference);
+
     std::string result;
-    if(type == Type::ANGLE) {
+    if(type == Type::RELATION) {
+        result = HasExpression() ? expression : _("NEW RELATION -- DOUBLE-CLICK TO EDIT");
+    } else if(showExpression) {
+        if(type == Type::ANGLE) {
+            result = expression + "°";
+        } else if(type == Type::LENGTH_RATIO || type == Type::ARC_ARC_LEN_RATIO ||
+                  type == Type::ARC_LINE_LEN_RATIO) {
+            result = expression + ":1";
+        } else if(type == Type::DIAMETER) {
+            result = (other ? "R" : "⌀") + expression;
+        } else {
+            result = expression;
+        }
+    } else if(type == Type::ANGLE) {
         result = SS.DegreeToString(valA) + "°";
     } else if(type == Type::LENGTH_RATIO || type == Type::ARC_ARC_LEN_RATIO || type == Type::ARC_LINE_LEN_RATIO) {
         result = ssprintf("%.3f:1", valA);
@@ -62,7 +81,7 @@ void Constraint::DoLabel(Canvas *canvas, Canvas::hStroke hcs,
     // By default, the reference is from the center; but the style could
     // specify otherwise if one is present, and it could also specify a
     // rotation.
-    if(type == Type::COMMENT && disp.style.v) {
+    if(((type == Type::COMMENT) || (type == Type::RELATION)) && disp.style.v) {
         Style *st = Style::Get(disp.style);
         // rotation first
         double rads = st->textAngle*PI/180;
@@ -473,7 +492,7 @@ bool Constraint::IsVisible() const {
         if(!(g->visible)) return false;
         // And likewise if the group is not the active group; except for comments
         // with an assigned style.
-        if(g->h != SS.GW.activeGroup && !(type == Type::COMMENT && disp.style.v)) {
+        if(g->h != SS.GW.activeGroup && !(IsStylable() && disp.style.v)) {
             return false;
         }
         if(disp.style.v) {
@@ -1288,6 +1307,7 @@ s:
             }
             return;
 
+        case Type::RELATION:
         case Type::COMMENT: {
             Vector u, v;
             if(workplane == Entity::FREE_IN_3D) {
@@ -1344,7 +1364,7 @@ void Constraint::GetReferencePoints(const Camera &camera, std::vector<Vector> *r
 }
 
 bool Constraint::IsStylable() const {
-    if(type == Type::COMMENT) return true;
+    if((type == Type::COMMENT) || (type == Type::RELATION)) return true;
     return false;
 }
 
@@ -1356,6 +1376,7 @@ hStyle Constraint::GetStyle() const {
 bool Constraint::HasLabel() const {
     switch(type) {
         case Type::COMMENT:
+        case Type::RELATION:
         case Type::PT_PT_DISTANCE:
         case Type::PT_PLANE_DISTANCE:
         case Type::PT_LINE_DISTANCE:

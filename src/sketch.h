@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "dsc.h"
+#include "expr.h"
 #include "param.h"
 #include "polygon.h"
 #include "platform/platform.h"
@@ -210,6 +211,14 @@ public:
     double      valC;
     RgbaColor   color;
 
+    // The named parameters that can be used in this group: those of the
+    // previous group, plus (replacing any with the same name) this group's
+    // own. Rebuilt on every regeneration, and not saved.
+    ParamNames  paramNames;
+    // Just those of the previous group, which are already solved; the
+    // expressions for this group's parameters can use only these.
+    ParamNames  inheritedParamNames;
+
     struct {
         SolveResult         how;
         int                 dof;
@@ -383,7 +392,12 @@ public:
         CIRCLE                 = 400,
         ARC_OF_CIRCLE          = 500,
         TTF_TEXT               = 600,
-        IMAGE                  = 700
+        IMAGE                  = 700,
+        // A named parameter (variable) that can be used in dimensions.
+        // The name is in str. It has no entities, just one parameter.
+        NAMED_PARAMETER        = 800,
+        // The same, but locked: the solver treats it as a constant.
+        NAMED_CONST_PARAM      = 801
     };
 
     Request::Type type;
@@ -401,8 +415,25 @@ public:
     double      aspectRatio;
     int groupRequestIndex;
 
+    // A named parameter's value can be given as an expression that uses the
+    // parameters of earlier groups. Then the parameter is locked, and its
+    // value is set from the expression on every regeneration.
+    std::string expression;
+
     static hParam AddParam(ParamList *param, hParam hp);
     void Generate(EntityList *entity, ParamList *param);
+
+    bool IsNamedParam() const {
+        return type == Type::NAMED_PARAMETER || type == Type::NAMED_CONST_PARAM;
+    }
+    hParam NamedParam() const { return h.param(64); }
+    // The value of a new named parameter
+    static constexpr double NAMED_PARAM_DEFAULT = 5.0;
+
+    bool HasExpression() const { return !expression.empty(); }
+    // The expression with its names resolved for this request's group, or
+    // NULL (with a message in error, if given) if it doesn't parse.
+    Expr *ParseExpression(std::string *error = NULL) const;
 
     std::string DescriptionString() const;
     int IndexOfPoint(hEntity he) const;
@@ -695,7 +726,10 @@ public:
         ARC_LINE_LEN_RATIO     = 211,
         ARC_ARC_DIFFERENCE     = 212,
         ARC_LINE_DIFFERENCE    = 213,
-        COMMENT                = 1000
+        COMMENT                = 1000,
+        // Like COMMENT, but its text, in expression, is an equation between
+        // named parameters, such as "w*h = 400".
+        RELATION               = 1001
     };
 
     Type        type;
@@ -718,14 +752,35 @@ public:
     bool        reference;  // a ref dimension, that generates no eqs
     std::string comment;    // since comments are represented as constraints
 
+    // A dimension can be given as an expression that uses named parameters.
+    // Then the expression is kept as typed, and exprScale converts its value
+    // to mm (the units it was typed in), and holds the sign of a signed
+    // distance. valA is kept equal to the value of the expression, so that
+    // anything that reads valA sees the actual dimension. Both are left out
+    // of the file when there is no expression.
+    std::string expression;
+    double      exprScale;
+
     bool Equals(const ConstraintBase &c) const {
         return type == c.type && group == c.group && workplane == c.workplane &&
             valA == c.valA && valP == c.valP && ptA == c.ptA && ptB == c.ptB &&
             entityA == c.entityA && entityB == c.entityB &&
             entityC == c.entityC && entityD == c.entityD &&
             other == c.other && other2 == c.other2 && reference == c.reference &&
-            comment == c.comment;
+            comment == c.comment && expression == c.expression &&
+            exprScale == c.exprScale;
     }
+
+    bool HasExpression() const { return !expression.empty(); }
+    // The expression with its names resolved for this constraint's group,
+    // or NULL if it doesn't parse (for example, if a name isn't defined).
+    Expr *ParseExpression() const;
+    // Set valA to the current value of the expression, if there is one.
+    void UpdateValueFromExpression();
+    // Parse the text of a relation, "left = right", using the given names,
+    // into left - right. NULL, with a message in error, if it isn't valid.
+    static Expr *ParseRelation(const std::string &text, const ParamNames *names,
+                               std::string *error, int *namesUsed = NULL);
 
     bool HasLabel() const;
     bool IsProjectible() const;
@@ -803,6 +858,10 @@ public:
     bool ShouldDrawExploded() const;
 
     static hConstraint AddConstraint(Constraint *c, bool rememberForUndo = true);
+    // Create free named parameters with these names in the group, with the
+    // given value, so that a constraint can use names that aren't defined yet.
+    static void CreateNamedParams(hGroup hg, const std::vector<std::string> &names,
+                                  double value);
     static void MenuConstrain(Command id);
     static void DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA, hEntity ptA);
 

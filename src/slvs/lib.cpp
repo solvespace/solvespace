@@ -140,6 +140,7 @@ static bool Slvs_CanInitiallySatisfy(const ConstraintBase &c) {
     case ConstraintBase::Type::SAME_ORIENTATION:
     case ConstraintBase::Type::WHERE_DRAGGED:
     case ConstraintBase::Type::COMMENT:
+    case ConstraintBase::Type::RELATION:
         // Can't initially satisfy these constraints
         return false;
     }
@@ -969,6 +970,11 @@ Slvs_SolveResult Slvs_SolveSketch(uint32_t shg, Slvs_hConstraint **bad = nullptr
             sr.result = SLVS_RESULT_TOO_MANY_UNKNOWNS;
             return sr;
         }
+        case SolveResult::UNKNOWN_NAME: {
+            // Only dimensions typed in the GUI have expressions with names
+            sr.result = SLVS_RESULT_DIDNT_CONVERGE;
+            return sr;
+        }
     }
     return sr;
 }
@@ -1094,6 +1100,11 @@ void Slvs_Solve(Slvs_System *ssys, uint32_t shg)
 
         case SolveResult::TOO_MANY_UNKNOWNS:
             ssys->result = SLVS_RESULT_TOO_MANY_UNKNOWNS;
+            break;
+
+        case SolveResult::UNKNOWN_NAME:
+            // Only dimensions typed in the GUI have expressions with names
+            ssys->result = SLVS_RESULT_DIDNT_CONVERGE;
             break;
     }
 

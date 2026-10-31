@@ -135,7 +135,8 @@ void GraphicsWindow::CopySelection() {
         if(!s->constraint.v) continue;
 
         Constraint *c = SK.GetConstraint(s->constraint);
-        if(c->type == Constraint::Type::COMMENT) {
+        if(c->type == Constraint::Type::COMMENT ||
+           c->type == Constraint::Type::RELATION) {
             SS.clipboard.c.Add(c);
         }
     }
@@ -147,7 +148,8 @@ void GraphicsWindow::CopySelection() {
            !SS.clipboard.ContainsEntity(c.entityB) ||
            !SS.clipboard.ContainsEntity(c.entityC) ||
            !SS.clipboard.ContainsEntity(c.entityD) ||
-           c.type == Constraint::Type::COMMENT) {
+           c.type == Constraint::Type::COMMENT ||
+           c.type == Constraint::Type::RELATION) {
             continue;
         }
         SS.clipboard.c.Add(&c);
@@ -246,18 +248,23 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         c.reference = cc->reference;
         c.disp = cc->disp;
         c.comment = cc->comment;
+        c.expression = cc->expression;
+        c.exprScale = cc->exprScale;
         bool dontAddConstraint = false;
         switch(c.type) {
             case Constraint::Type::COMMENT:
+            case Constraint::Type::RELATION:
                 c.disp.offset = c.disp.offset.Plus(trans);
                 break;
             case Constraint::Type::PT_LINE_DISTANCE:
                 c.valA *= scale;
+                c.exprScale *= scale;
                 break;
             case Constraint::Type::PT_PT_DISTANCE:
             case Constraint::Type::PROJ_PT_DISTANCE:
             case Constraint::Type::DIAMETER:
                 c.valA *= fabs(scale);
+                c.exprScale *= fabs(scale);
                 break;
             case Constraint::Type::ARC_LINE_TANGENT: {
                 if(scale < 0) {
@@ -305,7 +312,8 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         }
         if (!dontAddConstraint) {
             hConstraint hc = Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
-            if(c.type == Constraint::Type::COMMENT) {
+            if(c.type == Constraint::Type::COMMENT ||
+               c.type == Constraint::Type::RELATION) {
                 MakeSelected(hc);
             }
         }
