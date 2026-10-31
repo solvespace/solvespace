@@ -105,7 +105,7 @@ const MenuEntry Menu[] = {
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("Show &Toolbar"),               Command::SHOW_TOOLBAR,     C|'\t',  KC, mView  },
 { 1, N_("Show Property Bro&wser"),      Command::SHOW_TEXT_WND,    '\t',    KC, mView  },
-{ 1, N_("Property Browser &Position"),  Command::DOCK_TEXT_WND,    0,       KN, mView  },
+{ 1, N_("Property &Browser Position"),  Command::DOCK_TEXT_WND,    0,       KN, mView  },
 { 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
 { 1, N_("&Full Screen"),                Command::FULL_SCREEN,      C|F|11,  KC, mView  },
 
