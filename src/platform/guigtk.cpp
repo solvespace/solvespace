@@ -850,55 +850,41 @@ protected:
     }
 };
 
-class GtkWindow : public Gtk::Window {
+// The part of a window that can be moved between top-level windows: the GL
+// widget with its editor overlay, and the scrollbar.
+class GtkWindowContent : public Gtk::Box {
     Platform::Window   *_receiver;
-    Gtk::VBox           _vbox;
-    Gtk::MenuBar       *_menu_bar = NULL;
-    Gtk::HBox           _hbox;
     GtkEditorOverlay    _editor_overlay;
     Gtk::VScrollbar     _scrollbar;
     bool                _is_under_cursor = false;
-    bool                _is_fullscreen = false;
     std::string         _tooltip_text;
     Gdk::Rectangle      _tooltip_area;
 
 public:
-    GtkWindow(Platform::Window *receiver) : _receiver(receiver), _editor_overlay(receiver) {
-        _hbox.pack_start(_editor_overlay, /*expand=*/true, /*fill=*/true);
-        _hbox.pack_end(_scrollbar, /*expand=*/false, /*fill=*/false);
-        _vbox.pack_end(_hbox, /*expand=*/true, /*fill=*/true);
-        add(_vbox);
+    GtkWindowContent(Platform::Window *receiver)
+        : Gtk::Box(Gtk::ORIENTATION_HORIZONTAL),
+          _receiver(receiver), _editor_overlay(receiver) {
+        pack_start(_editor_overlay, /*expand=*/true, /*fill=*/true);
+        pack_end(_scrollbar, /*expand=*/false, /*fill=*/false);
 
-        _vbox.show();
-        _hbox.show();
+        show();
         _editor_overlay.show();
         get_gl_widget().show();
 
         _scrollbar.get_adjustment()->signal_value_changed().
-            connect(sigc::mem_fun(this, &GtkWindow::on_scrollbar_value_changed));
+            connect(sigc::mem_fun(this, &GtkWindowContent::on_scrollbar_value_changed));
 
         get_gl_widget().set_has_tooltip(true);
         get_gl_widget().signal_query_tooltip().
-            connect(sigc::mem_fun(this, &GtkWindow::on_query_tooltip));
-    }
+            connect(sigc::mem_fun(this, &GtkWindowContent::on_query_tooltip));
 
-    bool is_full_screen() const {
-        return _is_fullscreen;
-    }
-
-    Gtk::MenuBar *get_menu_bar() const {
-        return _menu_bar;
-    }
-
-    void set_menu_bar(Gtk::MenuBar *menu_bar) {
-        if(_menu_bar) {
-            _vbox.remove(*_menu_bar);
-        }
-        _menu_bar = menu_bar;
-        if(_menu_bar) {
-            _menu_bar->show_all();
-            _vbox.pack_start(*_menu_bar, /*expand=*/false, /*fill=*/false);
-        }
+        // Track whether the pointer is over the GL widget, for tooltips. Connected before
+        // the widget's own handlers, which still run.
+        get_gl_widget().add_events(Gdk::ENTER_NOTIFY_MASK | Gdk::LEAVE_NOTIFY_MASK);
+        get_gl_widget().signal_enter_notify_event().
+            connect(sigc::mem_fun(this, &GtkWindowContent::on_gl_enter_notify), false);
+        get_gl_widget().signal_leave_notify_event().
+            connect(sigc::mem_fun(this, &GtkWindowContent::on_gl_leave_notify), false);
     }
 
     GtkEditorOverlay &get_editor_overlay() {
@@ -929,18 +915,65 @@ protected:
         return !_tooltip_text.empty() && (keyboard_tooltip || _is_under_cursor);
     }
 
-    bool on_enter_notify_event(GdkEventCrossing* gdk_event) override {
+    bool on_gl_enter_notify(GdkEventCrossing *gdk_event) {
         _is_under_cursor = true;
-
-        return true;
+        return false;
     }
 
-    bool on_leave_notify_event(GdkEventCrossing* gdk_event) override {
+    bool on_gl_leave_notify(GdkEventCrossing *gdk_event) {
         _is_under_cursor = false;
-
-        return true;
+        return false;
     }
 
+    void on_scrollbar_value_changed() {
+        if(_receiver->onScrollbarAdjusted) {
+            _receiver->onScrollbarAdjusted(_scrollbar.get_adjustment()->get_value());
+        }
+    }
+};
+
+// A top-level window: an optional menu bar above the content.
+class GtkWindow : public Gtk::Window {
+    Platform::Window   *_receiver;
+    Gtk::VBox           _vbox;
+    Gtk::MenuBar       *_menu_bar = NULL;
+    bool                _is_fullscreen = false;
+
+public:
+    GtkWindow(Platform::Window *receiver) : _receiver(receiver) {
+        add(_vbox);
+        _vbox.show();
+    }
+
+    bool is_full_screen() const {
+        return _is_fullscreen;
+    }
+
+    Gtk::MenuBar *get_menu_bar() const {
+        return _menu_bar;
+    }
+
+    void set_menu_bar(Gtk::MenuBar *menu_bar) {
+        if(_menu_bar) {
+            _vbox.remove(*_menu_bar);
+        }
+        _menu_bar = menu_bar;
+        if(_menu_bar) {
+            _menu_bar->show_all();
+            _vbox.pack_start(*_menu_bar, /*expand=*/false, /*fill=*/false);
+        }
+    }
+
+    // Puts the widget below the menu bar.
+    void add_content(Gtk::Widget &widget) {
+        _vbox.pack_end(widget, /*expand=*/true, /*fill=*/true);
+    }
+
+    void remove_content(Gtk::Widget &widget) {
+        _vbox.remove(widget);
+    }
+
+protected:
     bool on_delete_event(GdkEventAny* gdk_event) override {
         if(_receiver->onClose) {
             _receiver->onClose();
@@ -962,12 +995,6 @@ protected:
 
         return true;
     }
-
-    void on_scrollbar_value_changed() {
-        if(_receiver->onScrollbarAdjusted) {
-            _receiver->onScrollbarAdjusted(_scrollbar.get_adjustment()->get_value());
-        }
-    }
 };
 
 //-----------------------------------------------------------------------------
@@ -976,10 +1003,13 @@ protected:
 
 class WindowImplGtk final : public Window {
 public:
-    GtkWindow       gtkWindow;
-    MenuBarRef      menuBar;
+    GtkWindow           gtkWindow;
+    GtkWindowContent    content;
+    MenuBarRef          menuBar;
 
-    WindowImplGtk(Window::Kind kind) : gtkWindow(this) {
+    WindowImplGtk(Window::Kind kind) : gtkWindow(this), content(this) {
+        gtkWindow.add_content(content);
+
         switch(kind) {
             case Kind::TOPLEVEL:
                 break;
@@ -1050,12 +1080,12 @@ public:
     }
 
     void GetContentSize(double *width, double *height) override {
-        *width  = gtkWindow.get_gl_widget().get_allocated_width();
-        *height = gtkWindow.get_gl_widget().get_allocated_height();
+        *width  = content.get_gl_widget().get_allocated_width();
+        *height = content.get_gl_widget().get_allocated_height();
     }
 
     void SetMinContentSize(double width, double height) override {
-        gtkWindow.get_gl_widget().set_size_request((int)width, (int)height);
+        content.get_gl_widget().set_size_request((int)width, (int)height);
     }
 
     void FreezePosition(SettingsRef settings, const std::string &key) override {
@@ -1099,7 +1129,7 @@ public:
             default: ssassert(false, "Unexpected cursor");
         }
 
-        auto gdkWindow = gtkWindow.get_gl_widget().get_window();
+        auto gdkWindow = content.get_gl_widget().get_window();
         if(gdkWindow) {
             gdkWindow->set_cursor(Gdk::Cursor::create(gdkWindow->get_display(), cursor_name.c_str()));
 //        gdkWindow->get_display()
@@ -1108,46 +1138,46 @@ public:
 
     void SetTooltip(const std::string &text, double x, double y,
                     double width, double height) override {
-        gtkWindow.set_tooltip(text, { (int)x, (int)y, (int)width, (int)height });
+        content.set_tooltip(text, { (int)x, (int)y, (int)width, (int)height });
     }
 
     bool IsEditorVisible() override {
-        return gtkWindow.get_editor_overlay().is_editing();
+        return content.get_editor_overlay().is_editing();
     }
 
     void ShowEditor(double x, double y, double fontHeight, double minWidth,
                     bool isMonospace, const std::string &text) override {
-        gtkWindow.get_editor_overlay().start_editing(
+        content.get_editor_overlay().start_editing(
             (int)x, (int)y, (int)fontHeight, (int)minWidth, isMonospace, text);
     }
 
     void HideEditor() override {
-        gtkWindow.get_editor_overlay().stop_editing();
+        content.get_editor_overlay().stop_editing();
     }
 
     void SetScrollbarVisible(bool visible) override {
         if(visible) {
-            gtkWindow.get_scrollbar().show();
+            content.get_scrollbar().show();
         } else {
-            gtkWindow.get_scrollbar().hide();
+            content.get_scrollbar().hide();
         }
     }
 
     void ConfigureScrollbar(double min, double max, double pageSize) override {
-        auto adjustment = gtkWindow.get_scrollbar().get_adjustment();
+        auto adjustment = content.get_scrollbar().get_adjustment();
         adjustment->configure(adjustment->get_value(), min, max, 1, 4, pageSize);
     }
 
     double GetScrollbarPosition() override {
-        return gtkWindow.get_scrollbar().get_adjustment()->get_value();
+        return content.get_scrollbar().get_adjustment()->get_value();
     }
 
     void SetScrollbarPosition(double pos) override {
-        return gtkWindow.get_scrollbar().get_adjustment()->set_value(pos);
+        return content.get_scrollbar().get_adjustment()->set_value(pos);
     }
 
     void Invalidate() override {
-        gtkWindow.get_gl_widget().queue_render();
+        content.get_gl_widget().queue_render();
     }
 };
 
