@@ -76,12 +76,6 @@ TEST_CASE(functions) {
   CHECK_EQ_EPS(e->Eval(), 90);
 }
 
-TEST_CASE(variable) {
-  Expr *e;
-  CHECK_PARSE(e, "Var");
-  CHECK_TRUE(e->op == Expr::Op::VARIABLE);
-}
-
 TEST_CASE(precedence) {
   Expr *e;
   CHECK_PARSE(e, "2 + 3 * 4");
@@ -99,6 +93,8 @@ TEST_CASE(errors) {
                   "Unexpected character");
   CHECK_PARSE_ERR("notavar",
                   "'notavar' is not a valid variable, function or constant");
+  CHECK_PARSE_ERR("Var",
+                  "'Var' is not a valid variable, function or constant");
   CHECK_PARSE_ERR("1e2e3",
                   "'1e2e3' is not a valid number");
   CHECK_PARSE_ERR("_",

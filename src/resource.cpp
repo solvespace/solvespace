@@ -680,6 +680,8 @@ BitmapFont BitmapFont::Create() {
     Font.AddGlyph(0xE005, LoadPng("fonts/private/5-stipple-dash-long.png"));
     Font.AddGlyph(0xE006, LoadPng("fonts/private/6-stipple-dash.png"));
     Font.AddGlyph(0xE007, LoadPng("fonts/private/7-stipple-zigzag.png"));
+    Font.AddGlyph(0xE008, LoadPng("fonts/private/8-lock-closed.png"));
+    Font.AddGlyph(0xE009, LoadPng("fonts/private/9-lock-open.png"));
     return Font;
 }
 

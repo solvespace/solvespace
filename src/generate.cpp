@@ -190,6 +190,9 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
         }
     }
 
+    // The group before the current one, whose named parameters it inherits
+    hGroup previous = {};
+
     // Not using range-for because we're using the index inside the loop.
     for(i = 0; i < SK.groupOrder.n; ) {
         const hGroup hg = SK.groupOrder[i];
@@ -223,10 +226,25 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
             continue;
         }
 
+        // Named parameters are in scope from where they are defined to the
+        // end of the sketch. A name defined again replaces the earlier one.
+        if(previous.v != 0) {
+            g->inheritedParamNames = SK.GetGroup(previous)->paramNames;
+        } else {
+            g->inheritedParamNames.clear();
+        }
+        g->paramNames = g->inheritedParamNames;
+
         // Regenerate requests, tagging any dead ones for pruning
         int groupRequestIndex = 0;
         for(auto &r : SK.request) {
             if(r.group != hg) {
+                continue;
+            }
+
+            if(r.IsNamedParam()) {
+                r.Generate(&SK.entity, &SK.param);
+                g->paramNames[r.str] = r.NamedParam();
                 continue;
             }
 
@@ -288,6 +306,17 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
             }
         }
 
+        // A named parameter given by an expression gets its value from the
+        // (already solved) parameters of earlier groups. If a name isn't
+        // defined, it keeps its last value, and the solve reports it.
+        for(auto &r : SK.request) {
+            if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
+
+            if(Expr *e = r.ParseExpression()) {
+                SK.GetParam(r.NamedParam())->val = e->Eval();
+            }
+        }
+
         if(hg == Group::HGROUP_REFERENCES) {
             ForceReferences();
             Group *g = SK.GetGroup(hg);
@@ -319,6 +348,18 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
             }
         }
 
+        // Keep the value of each dimension given by an expression up to date,
+        // so that anything that reads valA sees the actual dimension. When all
+        // dimensions are reference, they hold their measured values instead.
+        if(!g->allDimsReference) {
+            for(auto &c : SK.constraint) {
+                if(c.group == hg && !c.tag && !c.reference) {
+                    c.UpdateValueFromExpression();
+                }
+            }
+        }
+
+        previous = hg;
         ++i;
     }
 
@@ -544,12 +585,18 @@ void SolveSpaceUI::MarkDraggedParams() {
 }
 
 void SolveSpaceUI::SolveGroupAndReport(hGroup hg, bool andFindFree) {
+    SolveResult before = SK.GetGroup(hg)->solved.how;
     SolveGroup(hg, andFindFree);
 
     Group *g = SK.GetGroup(hg);
+    // An unknown name stays until the user defines it again, perhaps in the
+    // text window right now; so report it when it first happens, rather than
+    // taking them away from the page they are on with every change.
+    bool stillUnknownName = (before == SolveResult::UNKNOWN_NAME &&
+                             g->solved.how == SolveResult::UNKNOWN_NAME);
     bool isOkay = g->solved.how == SolveResult::OKAY ||
                   (g->allowRedundant && g->solved.how == SolveResult::REDUNDANT_OKAY);
-    if(!isOkay || (isOkay && !g->IsSolvedOkay())) {
+    if(!stillUnknownName && (!isOkay || (isOkay && !g->IsSolvedOkay()))) {
         TextWindow::ReportHowGroupSolved(g->h);
     }
 }
@@ -563,6 +610,9 @@ void SolveSpaceUI::WriteEqSystemForGroup(hGroup hg) {
     for(auto &req : SK.request) {
         Request *r = &req;
         if(r->group != hg || r->tag) continue;
+        // A locked parameter stays out of the system, so the solver can't
+        // change it; equations that use it see it as a constant.
+        if(r->type == Request::Type::NAMED_CONST_PARAM) continue;
 
         r->Generate(&(sys.entity), &(sys.param));
     }
@@ -599,6 +649,36 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
         g->dofCheckOk = true;
     }
     g->solved.how = how;
+
+    // A dimension whose expression uses a name that isn't defined generated
+    // no equation, and a parameter whose expression does kept its old value.
+    // Report those instead of whatever else happened. The dimensions are
+    // listed in solved.remove; the parameters are found again when shown.
+    bool unknownName = false;
+    if(!g->allDimsReference && !g->relaxConstraints) {
+        for(auto &c : SK.constraint) {
+            if(c.group != hg || c.reference || !c.HasExpression()) continue;
+            if(c.ParseExpression() != NULL) continue;
+
+            if(!unknownName) {
+                g->solved.remove.Clear();
+                unknownName = true;
+            }
+            g->solved.remove.Add(&c.h);
+        }
+    }
+    for(auto &r : SK.request) {
+        if(r.group != hg || !r.IsNamedParam() || !r.HasExpression()) continue;
+        if(r.ParseExpression() != NULL) continue;
+
+        if(!unknownName) {
+            g->solved.remove.Clear();
+            unknownName = true;
+        }
+    }
+    if(unknownName) {
+        g->solved.how = SolveResult::UNKNOWN_NAME;
+    }
     Platform::FreeAllTemporary();
 }
 

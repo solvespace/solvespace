@@ -167,6 +167,7 @@ const MenuEntry Menu[] = {
 { 1, N_("Lock Point Where &Dragged"),   Command::WHERE_DRAGGED,    ']',     KN, mCon   },
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
 { 1, N_("Comment"),                     Command::COMMENT,          ';',     KN, mCon   },
+{ 1, N_("Relation"),                    Command::RELATION,         '/',     KN, mCon   },
 
 { 0, N_("&Analyze"),                    Command::NONE,             0,       KN, mAna   },
 { 1, N_("Measure &Volume"),             Command::VOLUME,           C|S|'v', KN, mAna   },
@@ -433,7 +434,7 @@ void GraphicsWindow::Init() {
             using namespace std::placeholders;
             // Do this first, so that if it causes an onRender event we don't try to paint without
             // a canvas.
-            window->SetMinContentSize(720, /*ToolbarDrawOrHitTest 636*/ 32 * 18 + 3 * 16 + 8 + 4);
+            window->SetMinContentSize(720, /*ToolbarDrawOrHitTest 636*/ 32 * 19 + 3 * 16 + 8 + 4);
             window->onClose = std::bind(&SolveSpaceUI::MenuFile, Command::EXIT);
             window->onContextLost = [&] {
                 canvas = NULL;

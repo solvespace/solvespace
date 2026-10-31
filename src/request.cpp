@@ -13,6 +13,7 @@ namespace SolveSpace {
 const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_YZ = { 2 };
 const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
+constexpr double Request::NAMED_PARAM_DEFAULT;
 
 struct EntReqMapping {
     Request::Type  reqType;
@@ -119,6 +120,16 @@ void Request::Generate(EntityList *entity, ParamList *param)
             break;
         }
 
+        case Type::NAMED_PARAMETER:
+        case Type::NAMED_CONST_PARAM:
+            // Just the one parameter, and no entities, so these aren't in the
+            // table above. A locked parameter is kept out of the solver's
+            // system in WriteEqSystemForGroup(). A parameter seen before
+            // gets its previous value back in GenerateAll().
+            AddParam(param, NamedParam());
+            param->FindById(NamedParam())->val = NAMED_PARAM_DEFAULT;
+            return;
+
         default: // most requests don't do anything else
             break;
     }
@@ -222,6 +233,8 @@ std::string Request::DescriptionString() const {
             case Type::ARC_OF_CIRCLE:   s = "arc-of-circle";  break;
             case Type::TTF_TEXT:        s = "ttf-text";       break;
             case Type::IMAGE:           s = "image";          break;
+            case Type::NAMED_PARAMETER:
+            case Type::NAMED_CONST_PARAM: s = "parameter";      break;
         }
     }
     ssassert(s != NULL, "Unexpected request type");
@@ -238,6 +251,15 @@ int Request::IndexOfPoint(hEntity he) const {
         }
     }
     return -1;
+}
+
+Expr *Request::ParseExpression(std::string *error) const {
+    std::string ignored;
+    if(error == NULL) error = &ignored;
+
+    const Group *g = SK.group.FindByIdNoOops(group);
+    if(g == NULL) return NULL;
+    return Expr::Parse(expression, error, &g->inheritedParamNames);
 }
 
 hParam Request::AddParam(ParamList *param, hParam hp) {

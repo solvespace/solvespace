@@ -17,6 +17,7 @@ static const char *SolveResultName(SolveResult r) {
         case SolveResult::REDUNDANT_OKAY:           return "REDUNDANT_OKAY";
         case SolveResult::REDUNDANT_DIDNT_CONVERGE: return "REDUNDANT_DIDNT_CONVERGE";
         case SolveResult::TOO_MANY_UNKNOWNS:        return "TOO_MANY_UNKNOWNS";
+        case SolveResult::UNKNOWN_NAME:             return "UNKNOWN_NAME";
     }
     return "?";
 }

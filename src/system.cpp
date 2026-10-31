@@ -439,7 +439,7 @@ void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
         if(c->h == hc) continue;
 
         if(c->HasLabel() && c->type != Constraint::Type::COMMENT &&
-                g->allDimsReference)
+                c->type != Constraint::Type::RELATION && g->allDimsReference)
         {
             // When all dimensions are reference, we adjust them to display
             // the correct value, and then don't generate any equations.
