@@ -274,6 +274,8 @@ void TextWindow::Init() {
             window->onKeyboardEvent = SS.GW.window->onKeyboardEvent;
             window->onRender = std::bind(&TextWindow::Paint, this);
             window->onContextLost = std::bind(&TextWindow::ContextLost, this);
+            // Only Qt lets the user move the docked window with the toolkit's own controls
+            // (dragging), so it is the only platform that calls this, to update the menu.
             window->onDockSideChanged = std::bind(&GraphicsWindow::EnsureValidActives, &SS.GW);
             window->onEditingDone = std::bind(&TextWindow::EditControlDone, this, _1);
             window->onScrollbarAdjusted = std::bind(&TextWindow::ScrollbarEvent, this, _1);
