@@ -69,6 +69,7 @@ set(testsuite_SOURCES
     group/boolean_coplanar_union/test.cpp
     group/boolean_knife_edge/test.cpp
     group/boolean_tangent_crossing/test.cpp
+    group/boolean_coincident_fillet/test.cpp
     group/boolean_tangent_edge/test.cpp
     group/boolean_tangent_fillet/test.cpp
     group/boolean_tangent_spline/test.cpp
