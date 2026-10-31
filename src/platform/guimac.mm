@@ -1033,7 +1033,8 @@ public:
 
             nsSplitView = [[NSSplitView alloc] init];
             nsSplitView.vertical = YES;
-            nsSplitView.dividerStyle = NSSplitViewDividerStyleThin;
+            // A thick divider is easier to see and to grab than the thin one.
+            nsSplitView.dividerStyle = NSSplitViewDividerStyleThick;
             nsSplitView.delegate = ssSplitViewDelegate;
             [nsSplitView addSubview:nsContainer];
             nsWindow.contentView = nsSplitView;
@@ -1067,6 +1068,7 @@ public:
         }
         ssSplitViewDelegate.dockedMinWidth = tool->minWidth;
         UpdateMinContentSize(tool);
+        GrowToFitDocked(tool);
         [nsSplitView adjustSubviews];
 
         CGFloat total   = nsSplitView.bounds.size.width;
@@ -1078,6 +1080,26 @@ public:
 
         [[tool->ssView openGLContext] update];
         tool->ssView.needsDisplay = YES;
+    }
+
+    // Widens the window, if needed, so that the docked window gets its saved width
+    // without making our content narrower than its minimum, as far as the screen allows.
+    void GrowToFitDocked(WindowImplCocoa *tool) {
+        if(IsFullScreen()) return;
+
+        CGFloat wanted = (CGFloat)minWidth + nsSplitView.dividerThickness +
+                         std::max((CGFloat)tool->dockWidth, (CGFloat)tool->minWidth);
+        NSScreen *screen = nsWindow.screen ? nsWindow.screen : [NSScreen mainScreen];
+        if(screen) {
+            CGFloat maxWidth = [nsWindow contentRectForFrameRect:screen.visibleFrame].size.width;
+            wanted = std::min(wanted, maxWidth);
+        }
+
+        NSSize size = nsWindow.contentView.frame.size;
+        if(size.width < wanted) {
+            size.width = wanted;
+            [nsWindow setContentSize:size];
+        }
     }
 
     // Takes a TOOL window's content out of the split view, remembering its width.
