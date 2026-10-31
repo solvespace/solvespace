@@ -957,8 +957,8 @@ msgid "Show Property Bro&wser"
 msgstr "Show Property Bro&wser"
 
 #: graphicswin.cpp
-msgid "Property Browser &Position"
-msgstr "Property Browser &Position"
+msgid "Property &Browser Position"
+msgstr "Property &Browser Position"
 
 #: graphicswin.cpp
 msgid "Docked &Left"
