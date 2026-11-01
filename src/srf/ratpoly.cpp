@@ -754,6 +754,23 @@ void SSurface::PointOnCurve(const SBezier *curve, double *up, double *vp)
         Vector tc = curve->TangentAt(tCurve);
 
         if(ps.Equals(pc, RATPOLY_EPS)) {
+            // Where the curve is tangent to the surface, the distance between
+            // them grows only with the square of the distance from the
+            // intersection, so we may have stopped well short of it (e.g. 2e-4
+            // mm off, for a curve in a plane that an arc blends into). The
+            // intersection is then usually on the edge of the surface, where
+            // it meets the face it's tangent to; the curve crosses that edge,
+            // so intersect them instead.
+            if(fabs((tc.WithMagnitude(1)).Dot(n)) < 1e-3) {
+                double ue = u, ve = v;
+                SBezier sb = *curve;
+                if(EdgeCurveIntersection(&ue, &ve, &sb) &&
+                   (PointAt(ue, ve).Minus(ps)).Magnitude() < 0.01)
+                {
+                    u = ue;
+                    v = ve;
+                }
+            }
             *up = u;
             *vp = v;
             return;
