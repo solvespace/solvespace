@@ -350,6 +350,10 @@ public:
     void TangentsAt(double u, double v, Vector *tu, Vector *tv, bool retry=true) const;
     Vector NormalAt(Point2d puv) const;
     Vector NormalAt(double u, double v) const;
+    void SecondDerivativesAt(double u, double v,
+                             Vector *suu, Vector *suv, Vector *svv) const;
+    void CurvatureFormAt(double u, double v, Vector e1, Vector e2,
+                         double *h11, double *h12, double *h22) const;
     bool LineEntirelyOutsideBbox(Vector a, Vector b, bool asSegment) const;
     void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const;
     bool CoincidentWithPlane(Vector n, double d) const;

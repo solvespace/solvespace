@@ -38,6 +38,17 @@ static inline double BernsteinDerivative(int k, int deg, double t) {
     return ((c[2]*t)+c[1])*t+c[0];
 }
 
+static inline double BernsteinSecondDerivative(int k, int deg, double t) {
+    static const double bernstein_second_derivative_coeff[4][4][2] = {
+    { { 0.0,0.0 },  { 0.0,0.0 },   { 0.0,0.0 },  { 0.0,0.0 } },
+    { { 0.0,0.0 },  { 0.0,0.0 },   { 0.0,0.0 },  { 0.0,0.0 } },
+    { { 2.0,0.0 },  { -4.0,0.0 },  { 2.0,0.0 },  { 0.0,0.0 } },
+    { { 6.0,-6.0 }, { -12.0,18.0 },{ 6.0,-18.0 },{ 0.0,6.0 } } };
+
+    const double *c = bernstein_second_derivative_coeff[deg][k];
+    return (c[1]*t)+c[0];
+}
+
 Vector SBezier::PointAt(double t) const {
     Vector pt = {};
     double d = 0;
@@ -405,6 +416,94 @@ Vector SSurface::NormalAt(double u, double v) const {
     Vector tu, tv;
     TangentsAt(u, v, &tu, &tv);
     return tu.Cross(tv);
+}
+
+//-----------------------------------------------------------------------------
+// The second partial derivatives of the surface at (u, v), exactly: the
+// numerator n and denominator d of the rational surface are polynomials, and
+// with s = n/d, n = d*s; differentiating that twice gives each one in terms of
+// the lower derivatives.
+//-----------------------------------------------------------------------------
+void SSurface::SecondDerivativesAt(double u, double v,
+                                   Vector *suu, Vector *suv, Vector *svv) const
+{
+    Vector n   = {}, n_u  = {}, n_v  = {},
+           n_uu = {}, n_uv = {}, n_vv = {};
+    double d   = 0, d_u  = 0, d_v  = 0,
+           d_uu = 0, d_uv = 0, d_vv = 0;
+
+    for(int i = 0; i <= degm; i++) {
+        for(int j = 0; j <= degn; j++) {
+            double Bi   = Bernstein(i, degm, u),
+                   Bip  = BernsteinDerivative(i, degm, u),
+                   Bipp = BernsteinSecondDerivative(i, degm, u),
+                   Bj   = Bernstein(j, degn, v),
+                   Bjp  = BernsteinDerivative(j, degn, v),
+                   Bjpp = BernsteinSecondDerivative(j, degn, v);
+            double w = weight[i][j];
+            Vector p = ctrl[i][j];
+
+            n    = n.Plus(p.ScaledBy(w*Bi*Bj));
+            n_u  = n_u.Plus(p.ScaledBy(w*Bip*Bj));
+            n_v  = n_v.Plus(p.ScaledBy(w*Bi*Bjp));
+            n_uu = n_uu.Plus(p.ScaledBy(w*Bipp*Bj));
+            n_uv = n_uv.Plus(p.ScaledBy(w*Bip*Bjp));
+            n_vv = n_vv.Plus(p.ScaledBy(w*Bi*Bjpp));
+
+            d    += w*Bi*Bj;
+            d_u  += w*Bip*Bj;
+            d_v  += w*Bi*Bjp;
+            d_uu += w*Bipp*Bj;
+            d_uv += w*Bip*Bjp;
+            d_vv += w*Bi*Bjpp;
+        }
+    }
+
+    Vector s   = n.ScaledBy(1.0/d),
+           s_u = (n_u.Minus(s.ScaledBy(d_u))).ScaledBy(1.0/d),
+           s_v = (n_v.Minus(s.ScaledBy(d_v))).ScaledBy(1.0/d);
+
+    *suu = (n_uu.Minus(s_u.ScaledBy(2*d_u)).Minus(s.ScaledBy(d_uu))).ScaledBy(1.0/d);
+    *suv = (n_uv.Minus(s_v.ScaledBy(d_u)).Minus(s_u.ScaledBy(d_v))
+                .Minus(s.ScaledBy(d_uv))).ScaledBy(1.0/d);
+    *svv = (n_vv.Minus(s_v.ScaledBy(2*d_v)).Minus(s.ScaledBy(d_vv))).ScaledBy(1.0/d);
+}
+
+//-----------------------------------------------------------------------------
+// The second fundamental form of the surface at (u, v), in the orthonormal
+// basis e1, e2 of its tangent plane. A small step x1*e1 + x2*e2 along the
+// tangent plane meets the surface at a height of
+//     (h11*x1*x1 + 2*h12*x1*x2 + h22*x2*x2)/2
+// along the unit normal, NormalAt(u, v), so that's positive where the surface
+// curves toward the normal; and the curvature in the unit direction
+// c*e1 + s*e2 is h11*c*c + 2*h12*c*s + h22*s*s.
+//-----------------------------------------------------------------------------
+void SSurface::CurvatureFormAt(double u, double v, Vector e1, Vector e2,
+                               double *h11, double *h12, double *h22) const
+{
+    Vector tu, tv, suu, suv, svv;
+    TangentsAt(u, v, &tu, &tv);
+    SecondDerivativesAt(u, v, &suu, &suv, &svv);
+    Vector n = (tu.Cross(tv)).WithMagnitude(1);
+
+    // In (u, v), the height is (L*du*du + 2*M*du*dv + N*dv*dv)/2.
+    double L = suu.Dot(n),
+           M = suv.Dot(n),
+           N = svv.Dot(n);
+
+    // A step (du, dv) moves (x1, x2) = J*(du, dv) in the tangent plane, so
+    // (du, dv) = Ji*(x1, x2), and the form in (x1, x2) is Ji^T * [L M; M N] * Ji.
+    double a = tu.Dot(e1), b = tv.Dot(e1),
+           c = tu.Dot(e2), d = tv.Dot(e2);
+    double det = a*d - b*c;
+    double ji11 =  d/det, ji12 = -b/det,
+           ji21 = -c/det, ji22 =  a/det;
+
+    double p11 = L*ji11 + M*ji21, p12 = L*ji12 + M*ji22,
+           p21 = M*ji11 + N*ji21, p22 = M*ji12 + N*ji22;
+    *h11 = ji11*p11 + ji21*p21;
+    *h12 = ji11*p12 + ji21*p22;
+    *h22 = ji12*p12 + ji22*p22;
 }
 
 void SSurface::ClosestPointTo(Vector p, Point2d *puv, bool mustConverge) {
