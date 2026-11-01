@@ -297,18 +297,22 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
 
         Point2d ip[2];
         int ip_n = 0;
-        if(fabs(fabs(ap.y) - radius) < LENGTH_EPS) {
+        // A line within LENGTH_EPS of the radius may still cross the circle
+        // at two points much farther apart than that, since the half-chord is
+        // sqrt(2*radius*(radius - distance)); e.g. 0.01 mm apart for a radius
+        // of 50 mm. So decide on the half-chord, not on the distance.
+        double xint = (fabs(ap.y) < radius) ? sqrt(radius*radius - ap.y*ap.y) : 0;
+        if(xint > LENGTH_EPS) {
+            // two intersections
+            ip[0] = Point2d::From(-xint, ap.y);
+            ip[1] = Point2d::From( xint, ap.y);
+            ip_n = 2;
+        } else if(fabs(fabs(ap.y) - radius) < LENGTH_EPS) {
             // tangent
             if(inclTangent) {
                 ip[0] = Point2d::From(0, ap.y);
                 ip_n = 1;
             }
-        } else if(fabs(ap.y) < radius) {
-            // two intersections
-            double xint = sqrt(radius*radius - ap.y*ap.y);
-            ip[0] = Point2d::From(-xint, ap.y);
-            ip[1] = Point2d::From( xint, ap.y);
-            ip_n = 2;
         }
         int i;
         for(i = 0; i < ip_n; i++) {
