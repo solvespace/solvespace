@@ -481,9 +481,14 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         SEdgeList *sel = &(srf.edges);
         SEdge *se;
         for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+            // Our edge lies along an edge of the shell. Its midpoint might
+            // also lie on an edge of the shell that just crosses it there,
+            // but that's not the same thing, so check the directions too.
+            bool along = p.OnLineSegment(se->a, se->b) &&
+                fabs(((eb.Minus(ea)).DirectionCosineWith((se->b).Minus(se->a)))) > cos(PI/4);
             if((ea.Equals(se->a) && eb.Equals(se->b)) ||
                (eb.Equals(se->a) && ea.Equals(se->b)) ||
-                p.OnLineSegment(se->a, se->b))
+                along)
             {
                 if(edge_inters < 2) {
                     // Edge-on-edge case
@@ -668,9 +673,12 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
             SEdgeList *sel = &(srf.edges);
             SEdge *se;
             for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+                // The same edges as counted above.
+                bool along = p.OnLineSegment(se->a, se->b) &&
+                    fabs(((eb.Minus(ea)).DirectionCosineWith((se->b).Minus(se->a)))) > cos(PI/4);
                 if((ea.Equals(se->a) && eb.Equals(se->b)) ||
                    (eb.Equals(se->a) && ea.Equals(se->b)) ||
-                    p.OnLineSegment(se->a, se->b))
+                    along)
                 {
                     Point2d pm;
                     srf.ClosestPointTo(p, &pm, /*mustConverge=*/false);
