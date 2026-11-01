@@ -464,10 +464,37 @@ static double ProbeTangentFace(SSurface *srf, Vector p, Vector inter_edge_n,
     return dev;
 }
 
+//-----------------------------------------------------------------------------
+// Our edge at p is on srf, to within LENGTH_EPS, and c is the class of the
+// region of edgeSrf on one side of it, a little way along edge_n, from the
+// direction of edge_n relative to srf's normal. That assumes that p is on srf
+// exactly, and that neither surface curves much. Near where the surfaces are
+// tangent, p may be inside or outside srf by nearly LENGTH_EPS, more than the
+// direction of edge_n moves it, or edgeSrf may curve away from srf, so the
+// region could be on the other side of srf, or not coincident with it; and
+// the two surfaces sharing our edge could then disagree about it. So measure
+// where the region actually is: the signed distance of edgeSrf's point there
+// from srf, along srf's outward normal. That's well resolved far below
+// LENGTH_EPS; only if it's below RATPOLY_EPS too, the tolerance to which we
+// refine points onto surfaces, do we keep c.
+//-----------------------------------------------------------------------------
+static SShell::Class MeasureRegion(SShell::Class c, SSurface *srf,
+                                   SSurface *edgeSrf, Vector p, Vector edge_n)
+{
+    Point2d quv, suv;
+    edgeSrf->ClosestPointTo(p.Plus(edge_n), &quv, /*mustConverge=*/false);
+    Vector q = edgeSrf->PointAt(quv);
+    srf->ClosestPointTo(q, &suv, /*mustConverge=*/false);
+    double d = (q.Minus(srf->PointAt(suv))).Dot(srf->NormalAt(suv).WithMagnitude(1));
+    if(fabs(d) < LENGTH_EPS/100) return c;
+    return (d > 0) ? SShell::Class::SURF_OUTSIDE : SShell::Class::SURF_INSIDE;
+}
+
 bool SShell::ClassifyEdge(Class *indir, Class *outdir,
                           Vector ea, Vector eb,
                           Vector p,
-                          Vector edge_n_in, Vector edge_n_out, Vector surf_n)
+                          Vector edge_n_in, Vector edge_n_out, Vector surf_n,
+                          SSurface *edgeSrf)
 {
     List<SInter> l = {};
 
@@ -745,6 +772,8 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
 
         *indir  = ClassifyRegion(edge_n_in,  surf_n_in,  surf_n);
         *outdir = ClassifyRegion(edge_n_out, surf_n_out, surf_n);
+        *indir  = MeasureRegion(*indir,  &srf, edgeSrf, p, edge_n_in);
+        *outdir = MeasureRegion(*outdir, &srf, edgeSrf, p, edge_n_out);
         return true;
     }
 

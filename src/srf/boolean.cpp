@@ -647,7 +647,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
         if(!agnst->ClassifyEdge(&indir_shell, &outdir_shell,
                                 ret.PointAt(auv), ret.PointAt(buv), pt,
-                                enin, enout, surfn))
+                                enin, enout, surfn, &ret))
         {
             dbp("MakeCopyTrimAgainst: failed to classify orig edge (I=%d)", I+dbg_index);
         }
@@ -705,7 +705,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
         if(!agnst->ClassifyEdge(&indir_shell, &outdir_shell,
                                 ret.PointAt(auv), ret.PointAt(buv), pt,
-                                enin, enout, surfn))
+                                enin, enout, surfn, &ret))
         {
             dbp("MakeCopyTrimAgainst: failed to classify inter edge (I=%d)", I+dbg_index);
         }
