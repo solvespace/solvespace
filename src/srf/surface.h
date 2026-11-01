@@ -434,7 +434,8 @@ public:
     bool ClassifyEdge(Class *indir, Class *outdir,
                       Vector ea, Vector eb,
                       Vector p, Vector edge_n_in,
-                      Vector edge_n_out, Vector surf_n);
+                      Vector edge_n_out, Vector surf_n,
+                      SSurface *edgeSrf);
 
     void MakeFromCopyOf(SShell *a);
     void MakeFromTransformationOf(SShell *a,
