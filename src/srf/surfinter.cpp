@@ -142,8 +142,10 @@ static bool EdgeVertexOnSurface(SSurface *srf, Vector p, SCurve *sc, Vector dir)
     }
     Vector n = srf->NormalAt(puv);
     if(fabs((n.WithMagnitude(1)).Dot(dir.WithMagnitude(1))) < 1e-3) {
-        // Tangent; like AllPointsIntersecting without inclTangent, don't
-        // count it.
+        // The trim curve is tangent to srf here. The direction in which we
+        // would march from this point comes from this edge, and means
+        // nothing for a tangent edge; if the surfaces do cross here, an edge
+        // that crosses srf will find the point.
         return false;
     }
     return true;
@@ -447,8 +449,14 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             for(se = el.l.First(); se; se = el.l.NextAfter(se)) {
                 List<SInter> lsi = {};
 
+                // Include tangent points. The intersection curve can end
+                // where the surfaces are tangent, e.g. where two fillets of
+                // the same radius meet on the face they both blend into, and
+                // the march needs that point to end on. The numerical
+                // intersection reports such points anyway; the closed-form
+                // one for cylinders drops them unless asked.
                 srfB->AllPointsIntersecting(se->a, se->b, &lsi,
-                    /*asSegment=*/true, /*trimmed=*/true, /*inclTangent=*/false);
+                    /*asSegment=*/true, /*trimmed=*/true, /*inclTangent=*/true);
                 // Find the other surface that this curve trims.
                 hSCurve hsc = { (uint32_t)se->auxA };
                 SCurve *sc = shA->curve.FindById(hsc);
