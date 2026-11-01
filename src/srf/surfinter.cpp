@@ -164,9 +164,11 @@ static bool EdgeVertexOnSurface(SSurface *srf, Vector p, SCurve *sc, Vector dir)
 //
 // Returns -1 if the surfaces aren't tangent at p or the curvatures don't
 // settle it, and otherwise the number of directions, put in rays, in which a
-// curve leaves p into the trim regions of both surfaces.
+// curve leaves p into the trim regions of both surfaces. The other points in
+// spl, where curves may end, say how close to p we must look.
 //-----------------------------------------------------------------------------
-static int TangentRays(SSurface *srfA, SSurface *srfB, Vector p, Vector *rays) {
+static int TangentRays(SSurface *srfA, SSurface *srfB, Vector p, Vector *rays,
+                       const SPointList *spl) {
     Point2d pa, pb;
     srfA->ClosestPointTo(p, &pa, /*mustConverge=*/false);
     srfB->ClosestPointTo(p, &pb, /*mustConverge=*/false);
@@ -217,9 +219,17 @@ static int TangentRays(SSurface *srfA, SSurface *srfB, Vector p, Vector *rays) {
     };
 
     // Keep the directions that go into both trimmed surfaces; test a little
-    // way along each, a distance at which the march would take its first step.
+    // way along each. Near a point of tangency the surfaces stay within
+    // LENGTH_EPS of each other for a while, so the trims there can be much
+    // closer together than the chord tolerance; e.g. a curve can leave p and
+    // end on a trim 0.01 mm away. So look closer than the nearest place a
+    // curve may end, as well as within the chord tolerance.
     int n = 0;
     double dist = SS.ChordTolMm();
+    for(const SPoint &sp : spl->l) {
+        double d = (sp.p.Minus(p)).Magnitude();
+        if(d > LENGTH_EPS) dist = min(dist, d/4);
+    }
     for(int i = 0; i < 4; i++) {
         Vector ray = (i < 2) ? lines[i] : lines[i - 2].ScaledBy(-1);
         Vector q = p.Plus(ray.ScaledBy(dist));
@@ -623,7 +633,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         List<MarchPoint> mpl = {};
         for(SPoint &sp : spl.l) {
             Vector rays[4];
-            int nr = TangentRays(this, b, sp.p, rays);
+            int nr = TangentRays(this, b, sp.p, rays, &spl);
             if(nr < 0) {
                 MarchPoint mp = { 0, sp.p, sp.auxv, /*tangent=*/false };
                 mpl.Add(&mp);
@@ -722,6 +732,11 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 for(MarchPoint &mp : mpl) {
                     if(mp.p.Equals(origin)) continue;
                     if((mp.p).OnLineSegment(start, npc, 2*SS.ChordTolMm())) {
+                        // It must be ahead of us, not off to the side; near a
+                        // point of tangency the end of another curve can be
+                        // much closer than the chord tolerance.
+                        Vector toP = (mp.p).Minus(start);
+                        if(toP.Dot(dp) < 0.5*toP.Magnitude()) continue;
                         hit = &mp;
                         break;
                     }
