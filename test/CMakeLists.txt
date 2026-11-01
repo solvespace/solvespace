@@ -68,6 +68,7 @@ set(testsuite_SOURCES
     request/ttf_text/test.cpp
     request/workplane/test.cpp
     group/boolean_coplanar_union/test.cpp
+    group/boolean_face_split_at_vertex/test.cpp
     group/boolean_knife_edge/test.cpp
     group/boolean_tangent_crossing/test.cpp
     group/boolean_coincident_fillet/test.cpp
