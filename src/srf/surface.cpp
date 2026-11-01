@@ -411,6 +411,80 @@ void SSurface::MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *
     }
 }
 
+// A point of a contour, by its index, for sorting the points by x.
+class ContourPointByX {
+public:
+    double x;
+    int    i;
+};
+
+static bool ContourPointLessX(const ContourPointByX &a, const ContourPointByX &b) {
+    return a.x < b.x;
+}
+
+//-----------------------------------------------------------------------------
+// Find two visits i < j to the same vertex in a contour, with at least three
+// edges between them and three around the rest of the contour; anything less
+// is a repeated point or an edge that doubles back, not a piece of the
+// surface. Points that are Equals() are within LENGTH_EPS in x, so sort by x
+// and compare only those; that keeps this O(n log n) for a contour of n
+// points, since almost none have a repeated vertex.
+//-----------------------------------------------------------------------------
+static bool FindRepeatedVertex(const SContour *sc, int *pi, int *pj) {
+    // The last point is the first one again, closing the contour.
+    int n = sc->l.n - 1;
+    if(n < 6) return false;
+
+    std::vector<ContourPointByX> byX(n);
+    for(int k = 0; k < n; k++) {
+        byX[k].x = sc->l[k].p.x;
+        byX[k].i = k;
+    }
+    std::sort(byX.begin(), byX.end(), ContourPointLessX);
+
+    for(int a = 0; a < n; a++) {
+        for(int b = a + 1; b < n && byX[b].x - byX[a].x <= LENGTH_EPS; b++) {
+            int i = min(byX[a].i, byX[b].i),
+                j = max(byX[a].i, byX[b].i);
+            if(!(sc->l[i].p).Equals(sc->l[j].p)) continue;
+            if(j - i < 3 || n - (j - i) < 3) continue;
+            *pi = i;
+            *pj = j;
+            return true;
+        }
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------------
+// A trimmed surface can be in pieces that touch only at a vertex, e.g. where
+// a notch cut into a face reaches its opposite edge exactly at a point. The
+// edges of both pieces meet at that vertex, and assembling them may go around
+// both pieces in one contour that passes through the vertex twice, which
+// can't be triangulated. Whichever way the assembly went at that vertex, the
+// points between the two visits are the boundary of one piece, and the rest
+// the boundary of the other; so split the contour there.
+//-----------------------------------------------------------------------------
+static void SplitContoursAtRepeatedVertices(SPolygon *poly) {
+    for(int c = 0; c < poly->l.n; c++) {
+        int i, j;
+        while(FindRepeatedVertex(&(poly->l[c]), &i, &j)) {
+            SContour *sc = &(poly->l[c]);
+            SContour loop = {};
+            for(int k = i; k <= j; k++) {
+                loop.AddPoint(sc->l[k].p);
+            }
+            sc->l.ClearTags();
+            for(int k = i + 1; k <= j; k++) {
+                sc->l[k].tag = 1;
+            }
+            sc->l.RemoveTagged();
+            // This may move the contours in memory, so sc is no good after it.
+            poly->l.Add(&loop);
+        }
+    }
+}
+
 void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     SEdgeList el = {};
 
@@ -418,6 +492,7 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
 
     SPolygon poly = {};
     if(el.AssemblePolygon(&poly, NULL, /*keepDir=*/true)) {
+        SplitContoursAtRepeatedVertices(&poly);
         int i, start = sm->l.n;
         if(degm == 1 && degn == 1) {
             // A surface with curvature along one direction only; so
