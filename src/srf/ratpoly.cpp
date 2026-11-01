@@ -754,18 +754,26 @@ void SSurface::PointOnCurve(const SBezier *curve, double *up, double *vp)
         Vector tc = curve->TangentAt(tCurve);
 
         if(ps.Equals(pc, RATPOLY_EPS)) {
-            // Where the curve is tangent to the surface, the distance between
-            // them grows only with the square of the distance from the
-            // intersection, so we may have stopped well short of it (e.g. 2e-4
-            // mm off, for a curve in a plane that an arc blends into). The
-            // intersection is then usually on the edge of the surface, where
-            // it meets the face it's tangent to; the curve crosses that edge,
-            // so intersect them instead.
-            if(fabs((tc.WithMagnitude(1)).Dot(n)) < 1e-3) {
+            // Converging means the curve is within RATPOLY_EPS of the surface
+            // here. If the curve crosses the surface at angle theta, that
+            // places us within RATPOLY_EPS/sin(theta) of the intersection
+            // along the curve, and the trims that meet there need it within
+            // LENGTH_EPS; so for sin(theta) < RATPOLY_EPS/LENGTH_EPS we may
+            // be too far off. Where the curve is tangent to the surface we can
+            // be much farther off (e.g. 2e-4 mm, for a curve in a plane that
+            // an arc blends into). The intersection is then usually on the
+            // edge of the surface, where it meets the face it's tangent to;
+            // the curve crosses that edge, so intersect them instead.
+            if(fabs((tc.WithMagnitude(1)).Dot(n)) < RATPOLY_EPS/LENGTH_EPS) {
                 double ue = u, ve = v;
                 SBezier sb = *curve;
+                // The nearest edge may not be the one the intersection is on,
+                // and then this finds some other crossing of that edge. The
+                // one we want is within the chord tolerance of where we
+                // converged, the same slop that's allowed in deciding whether
+                // a split point is on a trim curve.
                 if(EdgeCurveIntersection(&ue, &ve, &sb) &&
-                   (PointAt(ue, ve).Minus(ps)).Magnitude() < 0.01)
+                   (PointAt(ue, ve).Minus(ps)).Magnitude() < SS.ChordTolMm())
                 {
                     u = ue;
                     v = ve;
