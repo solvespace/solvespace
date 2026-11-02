@@ -151,6 +151,111 @@ static bool EdgeVertexOnSurface(SSurface *srf, Vector p, SCurve *sc, Vector dir)
     return true;
 }
 
+//-----------------------------------------------------------------------------
+// Where two surfaces are tangent, their normals are parallel, so the direction
+// of the curve where they intersect (the cross product of the normals) isn't
+// defined there; but their curvatures tell which way, if any, curves leave.
+// Writing each surface as a height above the common tangent plane, to second
+// order h = x^T*H*x/2 for its second fundamental form H, the surfaces meet
+// where x^T*(Ha - Hb)*x = 0. If Ha - Hb is indefinite, that's two lines
+// through the point, so up to four directions to march in; if it's definite,
+// the surfaces only touch there, and no curve leaves at all. Otherwise this
+// order doesn't settle it.
+//
+// Returns -1 if the surfaces aren't tangent at p or the curvatures don't
+// settle it, and otherwise the number of directions, put in rays, in which a
+// curve leaves p into the trim regions of both surfaces.
+//-----------------------------------------------------------------------------
+static int TangentRays(SSurface *srfA, SSurface *srfB, Vector p, Vector *rays) {
+    Point2d pa, pb;
+    srfA->ClosestPointTo(p, &pa, /*mustConverge=*/false);
+    srfB->ClosestPointTo(p, &pb, /*mustConverge=*/false);
+    Vector na = srfA->NormalAt(pa).WithMagnitude(1),
+           nb = srfB->NormalAt(pb).WithMagnitude(1);
+    if((na.Cross(nb)).Magnitude() >= LENGTH_EPS) return -1;
+
+    // Both forms in one basis of the common tangent plane, as heights along na.
+    Vector e1 = na.Normal(0).WithMagnitude(1),
+           e2 = na.Cross(e1);
+    double a11, a12, a22, b11, b12, b22;
+    srfA->CurvatureFormAt(pa.x, pa.y, e1, e2, &a11, &a12, &a22);
+    srfB->CurvatureFormAt(pb.x, pb.y, e1, e2, &b11, &b12, &b22);
+    if(na.Dot(nb) < 0) {
+        b11 = -b11;
+        b12 = -b12;
+        b22 = -b22;
+    }
+    double d11 = a11 - b11, d12 = a12 - b12, d22 = a22 - b22;
+
+    // The eigenvalues of [d11 d12; d12 d22], l1 >= l2.
+    double mean = (d11 + d22)/2,
+           rad  = sqrt((d11 - d22)*(d11 - d22)/4 + d12*d12);
+    double l1 = mean + rad, l2 = mean - rad;
+    double big = max(fabs(l1), fabs(l2)),
+           small = min(fabs(l1), fabs(l2));
+    // Zero, or nearly singular: this order doesn't settle it.
+    if(big < LENGTH_EPS || small < LENGTH_EPS*big) return -1;
+    // Definite: the surfaces only touch here.
+    if(l2 > 0 || l1 < 0) return 0;
+
+    // Indefinite, l1 > 0 > l2. The eigenvector for l1 is (d12, l1 - d11) or
+    // (l1 - d22, d12); take the longer, for accuracy. The other eigenvector
+    // is perpendicular to it.
+    double v1x = d12, v1y = l1 - d11;
+    if(v1x*v1x + v1y*v1y < (l1 - d22)*(l1 - d22) + d12*d12) {
+        v1x = l1 - d22;
+        v1y = d12;
+    }
+    Vector v1 = (e1.ScaledBy(v1x).Plus(e2.ScaledBy(v1y))).WithMagnitude(1),
+           v2 = na.Cross(v1);
+
+    // In that basis the form is l1*x*x + l2*y*y, zero where
+    // x : y = sqrt(-l2) : +/-sqrt(l1).
+    Vector lines[2] = {
+        v1.ScaledBy(sqrt(-l2)).Plus (v2.ScaledBy(sqrt(l1))).WithMagnitude(1),
+        v1.ScaledBy(sqrt(-l2)).Minus(v2.ScaledBy(sqrt(l1))).WithMagnitude(1),
+    };
+
+    // Keep the directions that go into both trimmed surfaces; test a little
+    // way along each, a distance at which the march would take its first step.
+    int n = 0;
+    double dist = SS.ChordTolMm();
+    for(int i = 0; i < 4; i++) {
+        Vector ray = (i < 2) ? lines[i] : lines[i - 2].ScaledBy(-1);
+        Vector q = p.Plus(ray.ScaledBy(dist));
+        bool inside = true;
+        for(int j = 0; j < 2; j++) {
+            SSurface *srf = (j == 0) ? srfA : srfB;
+            if(!srf->bsp) {
+                inside = false;
+                break;
+            }
+            Point2d puv;
+            srf->ClosestPointTo(q, &puv, /*mustConverge=*/false);
+            Point2d dummy = { 0, 0 };
+            if(srf->bsp->ClassifyPoint(puv, dummy, srf) != SBspUv::Class::INSIDE) {
+                inside = false;
+                break;
+            }
+        }
+        if(inside) rays[n++] = ray;
+    }
+    return n;
+}
+
+// A point where a march along the intersection of two surfaces may start or
+// end. Where the surfaces are tangent, there's one of these for each direction
+// in which a curve leaves the point, since more than one curve can end there.
+class MarchPoint {
+public:
+    int     tag;
+    Vector  p;
+    // The direction a curve leaves in, for a point of tangency; otherwise the
+    // inward normal to the trim edge on which we found the point.
+    Vector  dir;
+    bool    tangent;
+};
+
 void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                                 SShell *into)
 {
@@ -512,18 +617,37 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             el.Clear();
         }
 
-        while(spl.l.n >= 2) {
+        // Where the surfaces are tangent, a point turns into one place to
+        // start for each direction in which a curve leaves it; or into none,
+        // if the surfaces only touch there.
+        List<MarchPoint> mpl = {};
+        for(SPoint &sp : spl.l) {
+            Vector rays[4];
+            int nr = TangentRays(this, b, sp.p, rays);
+            if(nr < 0) {
+                MarchPoint mp = { 0, sp.p, sp.auxv, /*tangent=*/false };
+                mpl.Add(&mp);
+            }
+            for(int i = 0; i < nr; i++) {
+                MarchPoint mp = { 0, sp.p, rays[i], /*tangent=*/true };
+                mpl.Add(&mp);
+            }
+        }
+
+        while(mpl.n >= 2) {
             SCurve sc = {};
             sc.surfA = h;
             sc.surfB = b->h;
             sc.isExact = false;
             sc.source = SCurve::Source::INTERSECTION;
 
-            Vector start  = spl.l[0].p,
-                   startv = spl.l[0].auxv;
-            spl.l.ClearTags();
-            spl.l[0].tag = 1;
-            spl.l.RemoveTagged();
+            Vector start  = mpl[0].p,
+                   startv = mpl[0].dir;
+            bool fromTangent = mpl[0].tangent;
+            Vector origin = start;
+            mpl.ClearTags();
+            mpl[0].tag = 1;
+            mpl.RemoveTagged();
 
             // Our chord tolerance is whatever the user specified
             double maxtol = SS.ChordTolMm();
@@ -536,7 +660,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             sc.pts.Add(&padd);
 
             Point2d pa, pb;
-            Vector np, npc = {};
+            Vector np, npc = {}, prevDir = startv;
             bool fwd = false;
             // Better to start with a too-small step, so that we don't miss
             // features of the curve entirely.
@@ -548,18 +672,30 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 Vector na =    NormalAt(pa).WithMagnitude(1),
                        nb = b->NormalAt(pb).WithMagnitude(1);
 
-                if(a == 0) {
-                    Vector dp = nb.Cross(na);
-                    if(dp.Dot(startv) < 0) {
-                        // We want to march in the more inward direction.
-                        fwd = true;
+                Vector dp;
+                if(fromTangent) {
+                    // From a point of tangency, take the first step in the
+                    // direction the curve leaves in; after that, keep going
+                    // the same way.
+                    if(a == 0) {
+                        dp = startv;
                     } else {
-                        fwd = false;
+                        dp = nb.Cross(na).WithMagnitude(1.0);
+                        if(dp.Dot(prevDir) < 0) dp = dp.ScaledBy(-1.0);
                     }
+                } else {
+                    if(a == 0) {
+                        dp = nb.Cross(na);
+                        if(dp.Dot(startv) < 0) {
+                            // We want to march in the more inward direction.
+                            fwd = true;
+                        } else {
+                            fwd = false;
+                        }
+                    }
+                    dp = nb.Cross(na).WithMagnitude(1.0);
+                    if(!fwd) dp = dp.ScaledBy(-1.0);
                 }
-
-                Vector dp = nb.Cross(na).WithMagnitude(1.0);
-                if(!fwd) dp = dp.ScaledBy(-1.0);
                 int i;
                 for(i = 0; i < 20; i++) {
                     np = start.Plus(dp.ScaledBy(step));
@@ -579,15 +715,38 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                     }
                 }
 
-                SPoint *sp;
-                for(sp = spl.l.First(); sp; sp = spl.l.NextAfter(sp)) {
-                    if((sp->p).OnLineSegment(start, npc, 2*SS.ChordTolMm())) {
-                        sp->tag = 1;
-                        a = maxsteps;
-                        npc = sp->p;
+                // Stop at the first point we reach, other than the one we
+                // started from; from a point of tangency, the other curves
+                // that leave it start there too.
+                MarchPoint *hit = NULL;
+                for(MarchPoint &mp : mpl) {
+                    if(mp.p.Equals(origin)) continue;
+                    if((mp.p).OnLineSegment(start, npc, 2*SS.ChordTolMm())) {
+                        hit = &mp;
+                        break;
                     }
                 }
+                if(hit) {
+                    Vector end = hit->p;
+                    if(hit->tangent) {
+                        // Of the curves that leave this point, we came in
+                        // along the one whose direction points back at us.
+                        Vector back = start.Minus(end);
+                        double best = VERY_NEGATIVE;
+                        for(MarchPoint &mp : mpl) {
+                            if(!mp.tangent || !mp.p.Equals(end)) continue;
+                            if(mp.dir.Dot(back) > best) {
+                                best = mp.dir.Dot(back);
+                                hit = &mp;
+                            }
+                        }
+                    }
+                    hit->tag = 1;
+                    a = maxsteps;
+                    npc = end;
+                }
 
+                prevDir = npc.Minus(start);
                 padd.p = npc;
                 padd.vertex = (a == maxsteps);
                 sc.pts.Add(&padd);
@@ -595,7 +754,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 start = npc;
             }
 
-            spl.l.RemoveTagged();
+            mpl.RemoveTagged();
 
             // And now we split and insert the curve
             SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, b);
@@ -605,6 +764,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 into->curve.AddAndAssignId(&split);
             }
         }
+        mpl.Clear();
         spl.Clear();
     }
 }
