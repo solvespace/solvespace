@@ -245,6 +245,9 @@ void TextWindow::Init() {
             window->onMouseEvent = [this](Platform::MouseEvent event) {
                 using Platform::MouseEvent;
 
+                // See Paint().
+                if(window == NULL) return false;
+
                 if(event.type == MouseEvent::Type::PRESS ||
                    event.type == MouseEvent::Type::DBL_PRESS ||
                    event.type == MouseEvent::Type::MOTION) {
@@ -1006,6 +1009,10 @@ void TextWindow::ContextLost() {
 }
 
 void TextWindow::Paint() {
+    // When the program exits, window is released before a docked text window's
+    // widget is destroyed with the main window, which can still send it events.
+    if(window == NULL) return;
+
     // The renderer is dropped when the GL context is lost; make a new one.
     if(!canvas) {
         canvas = CreateRenderer();
@@ -1255,6 +1262,9 @@ void TextWindow::MouseLeave() {
 }
 
 void TextWindow::ScrollbarEvent(double newPos) {
+    // See Paint().
+    if(window == NULL) return;
+
     if(window->IsEditorVisible()) {
         // An edit field is active. Do not move the scrollbar.
         return;
