@@ -7,7 +7,9 @@
 //
 // Copyright 2024 Paul H Kahler.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+#include "solvespace.h"
+
+namespace SolveSpace {
 
 typedef struct {
     hSCurve     hc;   // handle of the original curve
@@ -110,3 +112,4 @@ void SShell::ModifyEdges()
 	// Delete our info structures
 }
 
+} // namespace SolveSpace
