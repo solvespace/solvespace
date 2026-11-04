@@ -282,7 +282,7 @@ GearInfo GearComputeInfo(const GearParams &gp) {
 }
 
 void GearMakeOutline(const GearParams &gp, Vector c, Vector xd, Vector yd,
-                     double scale, SBezierList *sbl) {
+                     double scale, SBezierList *sbl, Vector boreU) {
     GearInfo info;
     std::vector<std::array<Vec2, 4>> flank;
     double rootTheta, tipTheta;
@@ -340,7 +340,8 @@ void GearMakeOutline(const GearParams &gp, Vector c, Vector xd, Vector yd,
 
     double rBore = gp.bore / 2;
     if(rBore > LENGTH_EPS && rBore < R_root - LENGTH_EPS) {
-        for(int i = 0; i < 4; i++) addArc(rBore, i*PI/2, (i + 1)*PI/2);
+        double a0 = (boreU.Magnitude() > LENGTH_EPS) ? atan2(boreU.Dot(yd), boreU.Dot(xd)) : 0;
+        for(int i = 0; i < 4; i++) addArc(rBore, a0 + i*PI/2, a0 + (i + 1)*PI/2);
     }
 }
 
@@ -467,13 +468,58 @@ void GearSyncLinked(hRequest hr) {
     }
 }
 
+namespace {
+
+// Adds the group after the active one and makes it active, as the Group
+// menu does, then generates it so that its entities exist.
+Group *InsertGroup(Group g) {
+    if(g.IsMeshGroup()) {
+        Group *running = SK.GetRunningMeshGroupFor(SS.GW.activeGroup);
+        if(running != NULL) g.color = running->color;
+    }
+    bool afterActive = false;
+    for(hGroup hg : SK.groupOrder) {
+        Group *gi = SK.GetGroup(hg);
+        if(afterActive) gi->order += 1;
+        if(gi->h == SS.GW.activeGroup) {
+            g.order = gi->order + 1;
+            afterActive = true;
+        }
+    }
+    g.clean = false;
+    SK.group.AddAndAssignId(&g);
+    SS.GW.activeGroup = g.h;
+    SS.GenerateAll(SolveSpaceUI::Generate::DIRTY);
+    Group *gg = SK.GetGroup(g.h);
+    if(gg->type == Group::Type::DRAWING_WORKPLANE) {
+        gg->activeWorkplane = gg->h.entity(0);
+    }
+    return gg;
+}
+
+Group NewGroup(Group::Type type, const char *name) {
+    Group g = {};
+    g.visible = true;
+    g.color = RGBi(100, 100, 100);
+    g.scale = 1;
+    g.type = type;
+    g.name = name;
+    return g;
+}
+
+Group *AddSketch(Quaternion q, hEntity origin, const char *name) {
+    Group g = NewGroup(Group::Type::DRAWING_WORKPLANE, name);
+    g.subtype = Group::Subtype::WORKPLANE_BY_POINT_ORTHO;
+    g.predef.q = q;
+    g.predef.origin = origin;
+    return InsertGroup(g);
+}
+
+}
+
 hRequest GearAddMate(hRequest hd, int teeth) {
     Request *driver = SK.request.FindByIdNoOops(hd);
     if(driver == NULL || driver->type != Request::Type::GEAR) return {};
-    if(driver->group != SS.GW.activeGroup || driver->workplane != SS.GW.ActiveWorkplane()) {
-        Error(_("Activate the group and workplane of the gear to add a mating gear."));
-        return {};
-    }
     if(teeth < GEAR_MIN_TEETH || teeth > GEAR_MAX_TEETH) {
         Error(_("The number of teeth must be between %d and %d."),
               GEAR_MIN_TEETH, GEAR_MAX_TEETH);
@@ -483,36 +529,41 @@ hRequest GearAddMate(hRequest hd, int teeth) {
     GearParams gp = driver->gear;
     gp.teeth = teeth;
     gp.profileShift = 0;
-    hEntity wrkpl = driver->workplane;
+    Quaternion q = SK.GetEntity(driver->workplane)->Normal()->NormalGetNum();
+    Vector u = q.RotationU(), v = q.RotationV();
     Vector c1 = SK.GetEntity(hd.entity(1))->PointGetNum();
 
+    // The mate gets a sketch of its own in the plane of the driver, after
+    // all other groups, so that it can be extruded and get a hub of its own.
+    SS.GW.activeGroup = SK.groupOrder[SK.groupOrder.n - 1];
+    Group *sketch = AddSketch(q, hd.entity(1), "mating-gear");
+    hGroup hs = sketch->h;
+    hEntity wrkpl = sketch->activeWorkplane;
+
     hRequest hm = SS.GW.AddRequest(Request::Type::GEAR, /*rememberForUndo=*/false);
-    // AddRequest may have moved the request list.
     driver = SK.GetRequest(hd);
     Request *mate = SK.GetRequest(hm);
     mate->gear = gp;
     mate->gearDriver = hd;
-    mate->construction = driver->construction;
     mate->style = driver->style;
 
     double a = GearCenterDistance(driver->gear, gp);
-    Vector u = SK.GetEntity(wrkpl)->Normal()->NormalU();
     Vector c2 = c1.Plus(u.ScaledBy(a));
     SK.GetEntity(hm.entity(1))->PointForceTo(c2);
     SK.GetEntity(hm.entity(2))->PointForceTo(c2.Plus(u.ScaledBy(gp.module * teeth / 2)));
     PhaseMate(driver, mate);
 
     Constraint c = {};
-    c.group = driver->group;
+    c.group = hs;
     c.workplane = wrkpl;
     c.type = Constraint::Type::PT_PT_DISTANCE;
     c.ptA = hd.entity(1);
     c.ptB = hm.entity(1);
     c.valA = a;
-    c.disp.offset = SK.GetEntity(wrkpl)->Normal()->NormalV().ScaledBy(-gp.module * 3);
+    c.disp.offset = v.ScaledBy(-gp.module * 3);
     Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
 
-    SS.MarkGroupDirty(driver->group);
+    SS.MarkGroupDirty(hs);
     return hm;
 }
 
@@ -587,50 +638,6 @@ std::string GearHubParams::Warning() const {
 }
 
 namespace {
-
-// Adds the group after the active one and makes it active, as the Group
-// menu does, then generates it so that its entities exist.
-Group *InsertGroup(Group g) {
-    if(g.IsMeshGroup()) {
-        Group *running = SK.GetRunningMeshGroupFor(SS.GW.activeGroup);
-        if(running != NULL) g.color = running->color;
-    }
-    bool afterActive = false;
-    for(hGroup hg : SK.groupOrder) {
-        Group *gi = SK.GetGroup(hg);
-        if(afterActive) gi->order += 1;
-        if(gi->h == SS.GW.activeGroup) {
-            g.order = gi->order + 1;
-            afterActive = true;
-        }
-    }
-    SK.group.AddAndAssignId(&g);
-    SS.GW.activeGroup = g.h;
-    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
-    Group *gg = SK.GetGroup(g.h);
-    if(gg->type == Group::Type::DRAWING_WORKPLANE) {
-        gg->activeWorkplane = gg->h.entity(0);
-    }
-    return gg;
-}
-
-Group NewGroup(Group::Type type, const char *name) {
-    Group g = {};
-    g.visible = true;
-    g.color = RGBi(100, 100, 100);
-    g.scale = 1;
-    g.type = type;
-    g.name = name;
-    return g;
-}
-
-Group *AddSketch(Quaternion q, hEntity origin, const char *name) {
-    Group g = NewGroup(Group::Type::DRAWING_WORKPLANE, name);
-    g.subtype = Group::Subtype::WORKPLANE_BY_POINT_ORTHO;
-    g.predef.q = q;
-    g.predef.origin = origin;
-    return InsertGroup(g);
-}
 
 // Extrudes the sketch by depth, with a dimension between the two copies of
 // the point pt so that the depth can be changed later.
@@ -770,7 +777,7 @@ bool GearAddHub(hRequest hg, const GearHubParams &hp, std::string *error) {
     }
 
     SS.MarkGroupDirty(sketch);
-    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    SS.GenerateAll(SolveSpaceUI::Generate::DIRTY);
     return true;
 }
 

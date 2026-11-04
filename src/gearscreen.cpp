@@ -377,11 +377,27 @@ void TextWindow::ShowGearHub() {
     Printf(false, "  %Fdsuggests the hub and hole again.%E");
 
     std::string problem = hp.Problem(r->gear);
-    std::string warning = hp.Warning();
+    std::vector<std::string> warnings;
+    if(!hp.Warning().empty()) warnings.push_back(hp.Warning());
+    // The hub must stay clear of the teeth of the gears that mesh with this
+    // one, in case they are as wide as the hub is high.
+    for(Request &o : SK.request) {
+        if(o.type != Request::Type::GEAR || o.h == r->h) continue;
+        if(o.gearDriver != r->h && r->gearDriver != o.h) continue;
+        double room = GearCenterDistance(r->gear, o.gear) - GearComputeInfo(o.gear).tipRadius;
+        if(hp.hubDiameter / 2 > room) {
+            warnings.push_back(ssprintf(_("The hub reaches into the teeth of %s."),
+                                        o.DescriptionString().c_str()));
+        }
+    }
     if(!problem.empty()) {
         Printf(true, "  %Fx%s%E", problem.c_str());
     } else {
-        if(!warning.empty()) Printf(true, "  %Fx%s%E", warning.c_str());
+        bool firstWarning = true;
+        for(const std::string &w : warnings) {
+            Printf(firstWarning, "  %Fx%s%E", w.c_str());
+            firstWarning = false;
+        }
         Printf(true, "  %Fl%f%Ll[create]%E", &ScreenCreateGearHub);
     }
     Printf(true, "(or %Fl%Ll%fback to home screen%E)", &ScreenHome);

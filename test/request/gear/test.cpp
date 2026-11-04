@@ -498,3 +498,76 @@ TEST_CASE(hub_without_clamp) {
     CHECK_FALSE(GearAddHub(GEAR_REQUEST, hp, &error));
     CHECK_FALSE(error.empty());
 }
+
+// A mating gear gets a sketch of its own, so that each gear can be made a
+// solid with its own hub, before or after the other one.
+static void CheckHubsOnBoth(Test::Helper *helper, bool mateFirst) {
+    GearHubParams hp = GearHubParams::Default(GearEntity()->gear);
+    std::string error;
+    hRequest hm;
+    if(mateFirst) {
+        hm = GearAddMate(GEAR_REQUEST, 30);
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        CHECK_TRUE(GearAddHub(GEAR_REQUEST, hp, &error));
+    } else {
+        CHECK_TRUE(GearAddHub(GEAR_REQUEST, hp, &error));
+        hm = GearAddMate(GEAR_REQUEST, 30);
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    }
+    CHECK_TRUE(hm.v != 0);
+    Request *mate = SK.GetRequest(hm);
+    CHECK_TRUE(mate->group != SK.GetRequest(GEAR_REQUEST)->group);
+    CHECK_TRUE(SK.GetGroup(mate->group)->solved.how == SolveResult::OKAY);
+    CHECK_TRUE(Mesh(GearEntity(), SK.GetEntity(hm.entity(0)), 0.15));
+
+    GearHubParams mp = GearHubParams::Default(mate->gear);
+    mp.shaft = 8;
+    mp.clamp = GearHubParams::Clamp::TAPPED;
+    mp.SuggestHub();
+    CHECK_TRUE(GearAddHub(hm, mp, &error));
+    CHECK_TRUE(error.empty());
+
+    int sketches = 0;
+    for(Group &g : SK.group) {
+        if(g.type == Group::Type::DRAWING_WORKPLANE) sketches++;
+        CHECK_TRUE(g.solved.how == SolveResult::OKAY);
+    }
+    // The gear, its hub and clamp, and the same for the mate.
+    CHECK_TRUE(sketches == 6);
+
+    Group *last = SK.GetGroup(SS.GW.activeGroup);
+    CHECK_TRUE(last->name == "clamp-hole");
+    last->GenerateDisplayItems();
+    CHECK_TRUE(IsWatertight(&last->displayMesh));
+}
+
+TEST_CASE(hub_on_both_mate_first) {
+    CHECK_LOAD("normal.slvs");
+    CheckHubsOnBoth(helper, /*mateFirst=*/true);
+}
+
+TEST_CASE(hub_on_both_mate_after) {
+    CHECK_LOAD("normal.slvs");
+    CheckHubsOnBoth(helper, /*mateFirst=*/false);
+}
+
+// A turned gear gets a closed solid, too. Its bore is split where the
+// circles of the hub sketch are, whatever way its teeth point.
+TEST_CASE(hub_on_turned_gear) {
+    for(double angle : { 0.37 }) {
+        CHECK_LOAD("normal.slvs");
+        for(Constraint &c : SK.constraint) {
+            c.tag = (c.type == Constraint::Type::HORIZONTAL) ? 1 : 0;
+        }
+        SK.constraint.RemoveTagged();
+        SK.GetEntity(GEAR_REQUEST.entity(2))->PointForceTo(
+            Vector::From(15 * cos(angle), 15 * sin(angle), 0));
+        SS.MarkGroupDirty(SS.GW.activeGroup);
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        std::string error;
+        CHECK_TRUE(GearAddHub(GEAR_REQUEST, GearHubParams::Default(GearEntity()->gear), &error));
+        Group *g = GroupNamed("clamp-hole");
+        g->GenerateDisplayItems();
+        CHECK_TRUE(IsWatertight(&g->displayMesh));
+    }
+}

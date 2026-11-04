@@ -54,9 +54,11 @@ GearInfo GearComputeInfo(const GearParams &gp);
 // Appends the closed outline of the gear, and the bore if any, to sbl. The
 // gear lies in the plane spanned by the unit vectors xd and yd, with its
 // center at c and the middle of one tooth in direction xd. All lengths are
-// multiplied by scale.
+// multiplied by scale. The bore is split into quarter arcs at the
+// directions of boreU, if given, as circles in a workplane with that u axis
+// are, so that faces of solids made from both share their edges exactly.
 void GearMakeOutline(const GearParams &gp, Vector c, Vector xd, Vector yd,
-                     double scale, SBezierList *sbl);
+                     double scale, SBezierList *sbl, Vector boreU = Vector::From(0, 0, 0));
 
 // Center distance of two gears in mesh without backlash, taking the profile
 // shifts into account. Both gears must have the same module and pressure

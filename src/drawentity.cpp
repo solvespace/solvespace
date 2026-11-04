@@ -496,7 +496,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
             // The tooth marker sits on the pitch circle; in a scaled copy
             // its distance gives the scale.
             double scale = (SK.GetEntity(point[0])->type == Type::POINT_IN_2D) ? 1.0 : d / r;
-            GearMakeOutline(gear, c, xd, yd, scale, sbl);
+            GearMakeOutline(gear, c, xd, yd, scale, sbl, Normal()->NormalU());
             break;
         }
 
