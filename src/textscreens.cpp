@@ -983,6 +983,7 @@ void TextWindow::EditControlDone(std::string s) {
         case Edit::GEAR_PARAM:
         case Edit::GEAR_MATE_TEETH:
         case Edit::GEAR_MATE_RATIO:
+        case Edit::GEAR_HUB_PARAM:
             EditControlDoneForGear(s);
             break;
 

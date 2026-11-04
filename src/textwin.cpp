@@ -593,6 +593,7 @@ void TextWindow::Show() {
             case Screen::PASTE_TRANSFORMED:  ShowPasteTransformed(); break;
             case Screen::EDIT_VIEW:          ShowEditView();         break;
             case Screen::TANGENT_ARC:        ShowTangentArc();       break;
+            case Screen::GEAR_HUB:           ShowGearHub();          break;
         }
     }
     Printf(false, "");

@@ -516,4 +516,262 @@ hRequest GearAddMate(hRequest hd, int teeth) {
     return hm;
 }
 
+//-----------------------------------------------------------------------------
+// Hub with clamp screw.
+//-----------------------------------------------------------------------------
+
+GearHubParams GearHubParams::Default(const GearParams &gp) {
+    GearHubParams hp = {};
+    // Four modules make a sturdy printed gear, but not under 5 mm.
+    hp.width = std::max(5.0, floor(4 * gp.module * 2 + 0.5) / 2);
+    hp.shaft = (gp.bore > 0) ? gp.bore : 5.0;
+    hp.clamp = Clamp::INSERT;
+    hp.SuggestHub();
+    return hp;
+}
+
+void GearHubParams::SuggestHub() {
+    // Wall around the shaft that holds the clamp screw, and a hub long
+    // enough to have 2 mm of material above and below the clamp hole.
+    double wall;
+    switch(clamp) {
+        case Clamp::INSERT:
+            clampHole = 4.0;
+            wall = GEAR_INSERT_LENGTH + 1.0;
+            break;
+        case Clamp::TAPPED:
+            clampHole = 2.5;
+            wall = 5.0;
+            break;
+        default:
+            clampHole = 0;
+            wall = 3.0;
+            break;
+    }
+    // Rounded up to half millimeters.
+    hubDiameter = ceil((shaft + 2 * wall) * 2 - 1e-9) / 2;
+    hubLength = std::max(5.0, ceil((clampHole + 4.0) * 2 - 1e-9) / 2);
+}
+
+std::string GearHubParams::Problem(const GearParams &gp) const {
+    GearInfo info = GearComputeInfo(gp);
+    if(!info.valid) return _("The gear has no valid tooth shape.");
+    if(!(width > LENGTH_EPS)) return _("The gear width must be greater than zero.");
+    if(!(shaft > LENGTH_EPS)) return _("The shaft diameter must be greater than zero.");
+    if(shaft / 2 > info.rootRadius - 1.0) {
+        return _("The shaft hole leaves less than 1 mm of material below the teeth.");
+    }
+    if(!(hubLength > LENGTH_EPS)) return _("The hub length must be greater than zero.");
+    if(hubDiameter < shaft + 2.0) {
+        return _("The hub must be at least 2 mm larger than the shaft.");
+    }
+    if(clamp != Clamp::NONE) {
+        if(!(clampHole > LENGTH_EPS)) return _("The clamp hole diameter must be greater than zero.");
+        if(clampHole > hubLength - 1.0) {
+            return _("The hub must be at least 1 mm longer than the clamp hole diameter.");
+        }
+    }
+    return "";
+}
+
+std::string GearHubParams::Warning() const {
+    double wall = (hubDiameter - shaft) / 2;
+    if(clamp == Clamp::INSERT && wall < GEAR_INSERT_LENGTH + 0.5) {
+        return ssprintf(_("The hub wall of %.1f mm is too thin for a %.1f mm insert."),
+                        wall, GEAR_INSERT_LENGTH);
+    }
+    if(clamp == Clamp::TAPPED && wall < 3.0) {
+        return ssprintf(_("The hub wall of %.1f mm gives the screw little thread."), wall);
+    }
+    return "";
+}
+
+namespace {
+
+// Adds the group after the active one and makes it active, as the Group
+// menu does, then generates it so that its entities exist.
+Group *InsertGroup(Group g) {
+    if(g.IsMeshGroup()) {
+        Group *running = SK.GetRunningMeshGroupFor(SS.GW.activeGroup);
+        if(running != NULL) g.color = running->color;
+    }
+    bool afterActive = false;
+    for(hGroup hg : SK.groupOrder) {
+        Group *gi = SK.GetGroup(hg);
+        if(afterActive) gi->order += 1;
+        if(gi->h == SS.GW.activeGroup) {
+            g.order = gi->order + 1;
+            afterActive = true;
+        }
+    }
+    SK.group.AddAndAssignId(&g);
+    SS.GW.activeGroup = g.h;
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    Group *gg = SK.GetGroup(g.h);
+    if(gg->type == Group::Type::DRAWING_WORKPLANE) {
+        gg->activeWorkplane = gg->h.entity(0);
+    }
+    return gg;
+}
+
+Group NewGroup(Group::Type type, const char *name) {
+    Group g = {};
+    g.visible = true;
+    g.color = RGBi(100, 100, 100);
+    g.scale = 1;
+    g.type = type;
+    g.name = name;
+    return g;
+}
+
+Group *AddSketch(Quaternion q, hEntity origin, const char *name) {
+    Group g = NewGroup(Group::Type::DRAWING_WORKPLANE, name);
+    g.subtype = Group::Subtype::WORKPLANE_BY_POINT_ORTHO;
+    g.predef.q = q;
+    g.predef.origin = origin;
+    return InsertGroup(g);
+}
+
+// Extrudes the sketch by depth, with a dimension between the two copies of
+// the point pt so that the depth can be changed later.
+Group *AddExtrusion(hGroup sketch, hEntity pt, Vector depth, Group::CombineAs combine,
+                    const char *name) {
+    Group g = NewGroup(Group::Type::EXTRUDE, name);
+    g.opA = sketch;
+    g.predef.entityB = SK.GetGroup(sketch)->activeWorkplane;
+    g.subtype = Group::Subtype::ONE_SIDED;
+    g.meshCombine = combine;
+    // No solid until the depth is set; the default one only costs time.
+    g.suppress = true;
+    Group *gg = InsertGroup(g);
+    // A one-sided extrusion goes twice as far as its vector.
+    gg->ExtrusionForceVectorTo(depth.ScaledBy(0.5));
+    gg->suppress = false;
+
+    Constraint c = {};
+    c.group = gg->h;
+    c.workplane = Entity::FREE_IN_3D;
+    c.type = Constraint::Type::PT_PT_DISTANCE;
+    c.ptA = gg->Remap(pt, Group::REMAP_BOTTOM);
+    c.ptB = gg->Remap(pt, Group::REMAP_TOP);
+    c.valA = depth.Magnitude();
+    c.disp.offset = depth.Normal(0).WithMagnitude(depth.Magnitude());
+    Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
+    SS.MarkGroupDirty(gg->h);
+    return SK.GetGroup(c.group);
+}
+
+void AddConstraint(Constraint::Type type, hEntity ptA, hEntity ptB, hEntity entityA,
+                   double valA = 0) {
+    Constraint c = {};
+    c.group = SS.GW.activeGroup;
+    c.workplane = SS.GW.ActiveWorkplane();
+    c.type = type;
+    c.ptA = ptA;
+    c.ptB = ptB;
+    c.entityA = entityA;
+    c.valA = valA;
+    Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
+}
+
+// A circle in the active sketch, centered on the point center and fixed by a
+// diameter dimension.
+hRequest AddCircle(hEntity center, double diameter) {
+    hRequest hr = SS.GW.AddRequest(Request::Type::CIRCLE, /*rememberForUndo=*/false);
+    SK.GetEntity(hr.entity(1))->PointForceTo(SK.GetEntity(center)->PointGetNum());
+    SK.GetEntity(hr.entity(64))->DistanceForceTo(diameter / 2);
+    AddConstraint(Constraint::Type::POINTS_COINCIDENT, hr.entity(1), center,
+                  Entity::NO_ENTITY);
+    AddConstraint(Constraint::Type::DIAMETER, Entity::NO_ENTITY, Entity::NO_ENTITY,
+                  hr.entity(0), diameter);
+    return hr;
+}
+
+}
+
+bool GearAddHub(hRequest hg, const GearHubParams &hp, std::string *error) {
+    Request *r = SK.request.FindByIdNoOops(hg);
+    if(r == NULL || r->type != Request::Type::GEAR) {
+        *error = _("The gear no longer exists.");
+        return false;
+    }
+    std::string problem = hp.Problem(r->gear);
+    if(!problem.empty()) {
+        *error = problem;
+        return false;
+    }
+    hGroup sketch = r->group;
+    if(SK.GetGroup(sketch)->type != Group::Type::DRAWING_WORKPLANE) {
+        *error = _("The gear must be drawn in a sketch in a workplane.");
+        return false;
+    }
+    for(const Group &g : SK.group) {
+        if(g.opA == sketch && g.type == Group::Type::EXTRUDE) {
+            *error = _("The sketch of the gear is extruded already. Delete that "
+                       "extrusion to add the gear with a hub.");
+            return false;
+        }
+    }
+
+    hEntity wrkpl = r->workplane;
+    hEntity center = hg.entity(1);
+    Quaternion q = SK.GetEntity(wrkpl)->Normal()->NormalGetNum();
+    Vector u = q.RotationU(), v = q.RotationV(), n = q.RotationN();
+
+    r->gear.bore = hp.shaft;
+    SS.MarkGroupDirty(sketch);
+    SS.GW.activeGroup = sketch;
+
+    // The gear, as thick as the face width.
+    Group *gear = AddExtrusion(sketch, center, n.ScaledBy(hp.width), Group::CombineAs::UNION,
+                               "gear");
+    hEntity faceCenter = gear->Remap(center, Group::REMAP_TOP);
+
+    // The hub, a ring on the gear face around the shaft hole.
+    Group *hubSketch = AddSketch(q, faceCenter, "hub-sketch");
+    hEntity hubOrigin = hubSketch->h.entity(2);
+    hRequest outer = AddCircle(hubOrigin, hp.hubDiameter);
+    AddCircle(hubOrigin, hp.shaft);
+    hGroup hubSketchH = hubSketch->h;
+    Group *hub = AddExtrusion(hubSketchH, outer.entity(1), n.ScaledBy(hp.hubLength),
+                              Group::CombineAs::UNION, "hub");
+
+    if(hp.clamp != GearHubParams::Clamp::NONE) {
+        // The clamp hole lies along u, halfway along the hub. It is drawn in
+        // a plane through the axis, centered on a construction line along
+        // the axis of the hub, so that it follows the hub.
+        hEntity hubBottom = outer.entity(1);
+        hEntity hubTop = hub->Remap(hubBottom, Group::REMAP_TOP);
+        Group *clampSketch = AddSketch(Quaternion::From(v, n), hubBottom, "clamp-sketch");
+        (void)clampSketch;
+
+        hRequest axis = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
+        SK.GetRequest(axis)->construction = true;
+        SK.GetEntity(axis.entity(1))->PointForceTo(SK.GetEntity(hubBottom)->PointGetNum());
+        SK.GetEntity(axis.entity(2))->PointForceTo(SK.GetEntity(hubBottom)->PointGetNum()
+                                                       .Plus(n.ScaledBy(hp.hubLength)));
+        AddConstraint(Constraint::Type::POINTS_COINCIDENT, axis.entity(1), hubBottom,
+                      Entity::NO_ENTITY);
+        AddConstraint(Constraint::Type::POINTS_COINCIDENT, axis.entity(2), hubTop,
+                      Entity::NO_ENTITY);
+
+        hRequest hole = SS.GW.AddRequest(Request::Type::CIRCLE, /*rememberForUndo=*/false);
+        SK.GetEntity(hole.entity(1))->PointForceTo(SK.GetEntity(hubBottom)->PointGetNum()
+                                                       .Plus(n.ScaledBy(hp.hubLength / 2)));
+        SK.GetEntity(hole.entity(64))->DistanceForceTo(hp.clampHole / 2);
+        AddConstraint(Constraint::Type::AT_MIDPOINT, hole.entity(1), Entity::NO_ENTITY,
+                      axis.entity(0));
+        AddConstraint(Constraint::Type::DIAMETER, Entity::NO_ENTITY, Entity::NO_ENTITY,
+                      hole.entity(0), hp.clampHole);
+
+        // From the axis out through the wall of the hub.
+        AddExtrusion(SS.GW.activeGroup, hole.entity(1), u.ScaledBy(hp.hubDiameter / 2 + 1.0),
+                     Group::CombineAs::DIFFERENCE, "clamp-hole");
+    }
+
+    SS.MarkGroupDirty(sketch);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    return true;
+}
+
 }

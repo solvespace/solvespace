@@ -387,3 +387,114 @@ TEST_CASE(mating_gear_turned) {
         SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     }
 }
+
+static bool IsWatertight(SMesh *m) {
+    SEdgeList el = {};
+    bool inters, leaks;
+    SKdNode::From(m)->MakeCertainEdgesInto(&el, EdgeKind::NAKED_OR_SELF_INTER,
+                                           /*coplanarIsInter=*/true, &inters, &leaks);
+    bool ok = el.l.IsEmpty() && !inters && !leaks;
+    el.Clear();
+    return ok;
+}
+
+static Group *GroupNamed(const char *name) {
+    for(Group &g : SK.group) if(g.name == name) return &g;
+    return NULL;
+}
+
+// Area of the gear outline without bore, from its first loop.
+static double GearArea() {
+    SBezierList sbl = {};
+    GearEntity()->GenerateBezierCurves(&sbl);
+    std::vector<Vector> pts;
+    for(int i = 0; i < sbl.l.n - 4; i++) {
+        List<Vector> lv = {};
+        sbl.l[i].MakePwlInto(&lv, 0.0005);
+        for(int k = 0; k + 1 < lv.n; k++) pts.push_back(lv[k]);
+        lv.Clear();
+    }
+    sbl.Clear();
+    double area = 0;
+    for(size_t i = 0, j = pts.size() - 1; i < pts.size(); j = i++) {
+        area += pts[j].x * pts[i].y - pts[i].x * pts[j].y;
+    }
+    return fabs(area) / 2;
+}
+
+// The default hub for the gear of normal.slvs: 6 mm face width, 5 mm shaft,
+// a hub of 18.5 mm diameter and 8 mm length, with a 4 mm hole for a heat-set
+// insert.
+TEST_CASE(hub_defaults) {
+    GearParams gp = GearParams::Default();
+    gp.bore = 5;
+    GearHubParams hp = GearHubParams::Default(gp);
+    CHECK_EQ_EPS(hp.width, 6.0);
+    CHECK_EQ_EPS(hp.shaft, 5.0);
+    CHECK_EQ_EPS(hp.hubDiameter, 18.5);
+    CHECK_EQ_EPS(hp.hubLength, 8.0);
+    CHECK_EQ_EPS(hp.clampHole, 4.0);
+    CHECK_TRUE(hp.Problem(gp).empty());
+    CHECK_TRUE(hp.Warning().empty());
+
+    hp.shaft = 25;
+    CHECK_FALSE(hp.Problem(gp).empty());
+    hp.shaft = 5;
+    hp.hubDiameter = 12;
+    CHECK_FALSE(hp.Warning().empty());
+}
+
+TEST_CASE(hub_with_insert) {
+    CHECK_LOAD("normal.slvs");
+    double gearArea = GearArea() - PI * 2.5 * 2.5;
+    GearHubParams hp = GearHubParams::Default(GearEntity()->gear);
+    std::string error;
+    CHECK_TRUE(GearAddHub(GEAR_REQUEST, hp, &error));
+    CHECK_TRUE(error.empty());
+
+    for(const char *name : { "gear", "hub-sketch", "hub", "clamp-sketch", "clamp-hole" }) {
+        Group *g = GroupNamed(name);
+        CHECK_TRUE(g != NULL);
+        CHECK_TRUE(g->solved.how == SolveResult::OKAY);
+        CHECK_TRUE(g->solved.dof == 0);
+    }
+    Group *last = GroupNamed("clamp-hole");
+    CHECK_TRUE(SS.GW.activeGroup == last->h);
+    last->GenerateDisplayItems();
+    SMesh *m = &last->displayMesh;
+    CHECK_TRUE(IsWatertight(m));
+    double ring = PI / 4 * (18.5 * 18.5 - 5 * 5) * 8;
+    double hole = PI * 2 * 2 * (18.5 - 5) / 2;
+    CHECK_TRUE(fabs(m->CalculateVolume() / (gearArea * 6 + ring - hole) - 1) < 0.01);
+
+    // The clamp hole follows a longer hub.
+    Group *hub = GroupNamed("hub");
+    for(Constraint &c : SK.constraint) {
+        if(c.group == hub->h && c.type == Constraint::Type::PT_PT_DISTANCE) c.valA = 10;
+    }
+    SS.MarkGroupDirty(hub->h);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    Group *clamp = GroupNamed("clamp-sketch");
+    for(Request &r : SK.request) {
+        if(r.group != clamp->h || r.type != Request::Type::CIRCLE) continue;
+        CHECK_EQ_EPS(SK.GetEntity(r.h.entity(1))->PointGetNum().z, 6 + 5);
+    }
+    CHECK_TRUE(GroupNamed("clamp-sketch")->solved.dof == 0);
+}
+
+TEST_CASE(hub_without_clamp) {
+    CHECK_LOAD("normal.slvs");
+    GearHubParams hp = GearHubParams::Default(GearEntity()->gear);
+    hp.clamp = GearHubParams::Clamp::NONE;
+    hp.SuggestHub();
+    std::string error;
+    CHECK_TRUE(GearAddHub(GEAR_REQUEST, hp, &error));
+    CHECK_TRUE(GroupNamed("clamp-sketch") == NULL);
+    Group *hub = GroupNamed("hub");
+    hub->GenerateDisplayItems();
+    CHECK_TRUE(IsWatertight(&hub->displayMesh));
+
+    // A second hub on the same gear is refused.
+    CHECK_FALSE(GearAddHub(GEAR_REQUEST, hp, &error));
+    CHECK_FALSE(error.empty());
+}

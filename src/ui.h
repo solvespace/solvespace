@@ -302,7 +302,8 @@ public:
         STYLE_INFO          = 6,
         PASTE_TRANSFORMED   = 7,
         EDIT_VIEW           = 8,
-        TANGENT_ARC         = 9
+        TANGENT_ARC         = 9,
+        GEAR_HUB            = 10
     };
     typedef struct {
         Screen  screen;
@@ -311,6 +312,7 @@ public:
         hStyle      style;
 
         hConstraint constraint;
+        hRequest    gear;
 
         struct {
             int         times;
@@ -359,6 +361,7 @@ public:
         GEAR_PARAM            = 310,
         GEAR_MATE_TEETH       = 311,
         GEAR_MATE_RATIO       = 312,
+        GEAR_HUB_PARAM        = 313,
         // For the step dimension screen
         STEP_DIM_FINISH       = 400,
         STEP_DIM_STEPS        = 401,
@@ -430,6 +433,7 @@ public:
     void ShowPasteTransformed();
     void ShowEditView();
     void ShowTangentArc();
+    void ShowGearHub();
     // Special screen, based on selection
     void DescribeSelection();
 
@@ -440,6 +444,10 @@ public:
     static void ScreenEditTtfText(int link, uint32_t v);
     static void ScreenEditGear(int link, uint32_t v);
     static void ScreenAddGearMate(int link, uint32_t v);
+    static void ScreenGearHub(int link, uint32_t v);
+    static void ScreenChangeGearHub(int link, uint32_t v);
+    static void ScreenCreateGearHub(int link, uint32_t v);
+    GearHubParams gearHub;
     void DescribeGear(Entity *e);
     bool EditControlDoneForGear(const std::string &s);
     static void ScreenToggleTtfKerning(int link, uint32_t v);

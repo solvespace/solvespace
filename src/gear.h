@@ -69,6 +69,38 @@ double GearCenterDistance(const GearParams &a, const GearParams &b);
 // in the same plane.
 double GearMatePhase(int driverTeeth, int mateTeeth, double driverPhase);
 
+// A hub on one face of a gear, with a radial hole for a clamp screw.
+class GearHubParams {
+public:
+    enum class Clamp : uint32_t {
+        NONE   = 0,
+        // A hole for an M3 heat-set insert, 5.7 mm long.
+        INSERT = 1,
+        // A hole that an M3 screw cuts its own thread into.
+        TAPPED = 2
+    };
+
+    double width;         // gear face width
+    double shaft;         // diameter of the shaft hole
+    double hubDiameter;
+    double hubLength;     // beyond the gear face
+    Clamp  clamp;
+    double clampHole;     // diameter of the clamp screw hole
+
+    // Suggested values for a gear: the shaft from its bore, or 5 mm, and a
+    // hub that holds the clamp screw.
+    static GearHubParams Default(const GearParams &gp);
+    // Hub diameter, length and clamp hole that suit the shaft and clamp.
+    void SuggestHub();
+
+    // An error that keeps the hub from being made, or an empty string.
+    std::string Problem(const GearParams &gp) const;
+    // A hint about a hub that can be made but may not work well.
+    std::string Warning() const;
+};
+
+static const double GEAR_INSERT_LENGTH = 5.7;
+
 class hRequest;
 class hConstraint;
 
@@ -85,6 +117,14 @@ hRequest GearAddMate(hRequest driver, int teeth);
 
 // The distance constraint between the centers of two gears, if any.
 hConstraint GearFindCenterConstraint(hRequest a, hRequest b);
+
+// Makes the gear a solid with a hub. Gives the gear a bore for the shaft,
+// and adds after the group of the gear: an extrusion of the gear sketch, a
+// sketch of the hub ring on the gear face and its extrusion, and for a clamp
+// a sketch of the clamp hole across the hub and its extrusion as a
+// difference. These are ordinary groups that can be edited later. Returns
+// false with an error message if that is not possible.
+bool GearAddHub(hRequest gear, const GearHubParams &hp, std::string *error);
 
 }
 
