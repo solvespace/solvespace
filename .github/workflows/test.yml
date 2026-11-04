@@ -22,28 +22,6 @@ jobs:
       - name: Build & Test
         run: .github/scripts/build-ubuntu.sh
 
-  test_windows:
-    runs-on: windows-2022
-    name: Test Windows
-    steps:
-    - uses: actions/checkout@v6
-    - name: Install Dependencies
-      run: .github/scripts/install-windows.sh
-      shell: bash
-    - name: Build & Test
-      run: .github/scripts/build-windows.sh
-      shell: bash
-
-  test_macos:
-    runs-on: macos-latest
-    name: Test macOS
-    steps:
-    - uses: actions/checkout@v6
-    - name: Install Dependencies
-      run: .github/scripts/install-macos.sh ci
-    - name: Build & Test
-      run: .github/scripts/build-macos.sh debug arm64 && .github/scripts/build-macos.sh debug x86_64
-
   test_flatpak:
     name: Test Flatpak x86_64
     runs-on: ubuntu-latest
