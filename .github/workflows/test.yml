@@ -9,6 +9,7 @@ on:
       - master
     tags-ignore:
       - v*
+  workflow_dispatch:
 
 jobs:
   test_ubuntu:
