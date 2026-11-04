@@ -896,6 +896,7 @@ bool EntityBase::IsInPlane(Vector norm, double distance) const {
             return PointInPlane(point[0], norm, distance);
         }
 
+        case Type::GEAR:
         case Type::TTF_TEXT: {
             Vector n = Normal()->NormalN();
             if (!norm.Equals(n) && !norm.Equals(n.Negated())) return false;
@@ -966,6 +967,18 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             Expr *ra = Constraint::Distance(workplane, point[0], point[1]);
             Expr *rb = Constraint::Distance(workplane, point[0], point[2]);
             AddEq(l, ra->Minus(rb), 0);
+            break;
+        }
+
+        case Type::GEAR: {
+            // The second point marks the middle of a tooth and stays on the
+            // pitch circle, so that it only sets the rotation of the gear.
+            // Copies have their points fixed to each other already.
+            if(SK.GetEntity(point[0])->type != Type::POINT_IN_2D) break;
+            double r = gear.module * gear.teeth / 2;
+            if(r < LENGTH_EPS) break;
+            Expr *d = Constraint::Distance(workplane, point[0], point[1]);
+            AddEq(l, d->Minus(Expr::From(r)), 0);
             break;
         }
 

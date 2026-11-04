@@ -148,6 +148,7 @@ enum class Command : uint32_t {
     CUBIC,
     TTF_TEXT,
     IMAGE,
+    GEAR,
     SPLIT_CURVES,
     TANGENT_ARC,
     CONSTRUCTION,
@@ -354,6 +355,10 @@ public:
         ANIMATION_SPEED       = 121,
         // For TTF text
         TTF_TEXT              = 300,
+        // For gears
+        GEAR_PARAM            = 310,
+        GEAR_MATE_TEETH       = 311,
+        GEAR_MATE_RATIO       = 312,
         // For the step dimension screen
         STEP_DIM_FINISH       = 400,
         STEP_DIM_STEPS        = 401,
@@ -433,6 +438,10 @@ public:
     // All of these are callbacks from the GUI code; first from when
     // we're describing an entity
     static void ScreenEditTtfText(int link, uint32_t v);
+    static void ScreenEditGear(int link, uint32_t v);
+    static void ScreenAddGearMate(int link, uint32_t v);
+    void DescribeGear(Entity *e);
+    bool EditControlDoneForGear(const std::string &s);
     static void ScreenToggleTtfKerning(int link, uint32_t v);
     static void ScreenSetTtfFont(int link, uint32_t v);
     static void ScreenUnselectAll(int link, uint32_t v);

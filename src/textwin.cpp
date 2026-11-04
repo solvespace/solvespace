@@ -553,6 +553,12 @@ void TextWindow::Show() {
     SS.GW.GroupSelection();
     auto const &gs = SS.GW.gs;
 
+    // Edits of the selected text or gear stay open while it is shown.
+    bool editsSelection = edit.meaning == Edit::TTF_TEXT ||
+                          edit.meaning == Edit::GEAR_PARAM ||
+                          edit.meaning == Edit::GEAR_MATE_TEETH ||
+                          edit.meaning == Edit::GEAR_MATE_RATIO;
+
     // Make sure these tests agree with test used to draw indicator line on
     // main list of groups screen.
     if(SS.GW.pending.description) {
@@ -567,11 +573,11 @@ void TextWindow::Show() {
     } else if((gs.n > 0 || gs.constraints > 0) &&
                                     shown.screen != Screen::PASTE_TRANSFORMED)
     {
-        if(edit.meaning != Edit::TTF_TEXT) HideEditControl();
+        if(!editsSelection) HideEditControl();
         ShowHeader(false);
         DescribeSelection();
     } else {
-        if(edit.meaning == Edit::TTF_TEXT) HideEditControl();
+        if(editsSelection) HideEditControl();
         ShowHeader(true);
         switch(shown.screen) {
             default:

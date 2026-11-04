@@ -116,6 +116,7 @@ if(ENABLE_GUI OR ENABLE_CLI)
     add_library(solvespace-core STATIC
         polygon.h
         sketch.h
+        gear.h
         ui.h
         render/render.h
         srf/surface.h
@@ -151,6 +152,8 @@ if(ENABLE_GUI OR ENABLE_CLI)
         textwin.cpp
         toolbar.cpp
         ttf.cpp
+        gear.cpp
+        gearscreen.cpp
         undoredo.cpp
         view.cpp
         platform/platform.cpp
