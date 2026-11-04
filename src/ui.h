@@ -160,6 +160,8 @@ enum class Command : uint32_t {
     GROUP_REVOLVE,
     GROUP_ROT,
     GROUP_TRANS,
+    GROUP_FILLET,
+    GROUP_CHAMFER,
     GROUP_LINK,
     GROUP_RECENT,
     // Constrain
@@ -376,7 +378,9 @@ public:
         // For tangent arc
         TANGENT_ARC_RADIUS    = 800,
         // For helix pitch
-        HELIX_PITCH           = 802
+        HELIX_PITCH           = 802,
+        // For the radius or distance of a fillet or chamfer
+        EDGE_BLEND_SIZE       = 803
     };
     struct {
         bool        showAgain;
@@ -512,6 +516,7 @@ public:
     static void ScreenChangeGroupName(int link, uint32_t v);
     static void ScreenChangeGroupScale(int link, uint32_t v);
     static void ScreenChangeHelixPitch(int link, uint32_t v);
+    static void ScreenChangeEdgeBlendSize(int link, uint32_t v);
     static void ScreenChangePitchOption(int link, uint32_t v);
     static void ScreenChangeLightDirection(int link, uint32_t v);
     static void ScreenChangeLightIntensity(int link, uint32_t v);

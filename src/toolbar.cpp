@@ -74,6 +74,8 @@ static ToolIcon Toolbar[] = {
       N_("New group helix from active sketch"),               {} },
     { "revolve",         Command::GROUP_REVOLVE,
       N_("New group revolve active sketch"),                  {} },
+    { "fillet",          Command::GROUP_FILLET,
+      N_("New group rounding or beveling selected edges"),    {} },
     { "step-rotate",     Command::GROUP_ROT,
       N_("New group step and repeat rotating"),               {} },
     { "step-translate",  Command::GROUP_TRANS,

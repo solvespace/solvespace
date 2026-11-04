@@ -209,6 +209,493 @@ void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs, Group::CombineAs how
     }
 }
 
+//-----------------------------------------------------------------------------
+// Fillets and chamfers of straight edges between two plane faces. Each edge
+// gets a prismatic tool that runs along it, with a cross section bounded by
+// the two faces and by the rounding arc or bevel line. The tool is subtracted
+// from the solid at a convex edge and added to it at a concave edge.
+//-----------------------------------------------------------------------------
+namespace {
+
+struct EdgeFace {
+    Vector  n;          // outward normal of the plane face
+    bool    side[2];    // whether the face extends to +w or to -w
+};
+
+struct EdgeBlend {
+    hEntity h;
+    Vector  a, b, d;    // end points of the edge, and unit vector from a to b
+    Vector  n1, u1;     // outward normal of the first face, and the direction
+                        // from the edge into that face
+    Vector  n2, u2;     // the same for the second face
+    double  theta;      // angle between u1 and u2
+    double  k;          // distance from the edge to the rounding or bevel,
+                        // along each face
+    double  ext;        // how far the tool reaches beyond the faces
+    bool    convex;
+};
+
+// Points closer than this to a plane lie on it.
+const double EDGE_PLANE_TOL = 1e-4;
+
+// Is the point p on the mesh, within a triangle with outward normal n?
+bool PointOnMeshFace(SMesh *m, Vector n, Vector p) {
+    for(const STriangle &t : m->l) {
+        Vector tn = t.Normal();
+        if(tn.Magnitude() < LENGTH_EPS) continue;
+        tn = tn.WithMagnitude(1);
+        if(tn.Dot(n) < 1 - 1e-6) continue;
+        if(fabs(tn.Dot(p.Minus(t.a))) > EDGE_PLANE_TOL) continue;
+        if(t.ContainsPointProjd(tn, p)) return true;
+    }
+    return false;
+}
+
+// Is there a plane surface in the shell that lies in the plane through p
+// with normal n?
+bool ShellHasPlane(SShell *sh, Vector n, Vector p) {
+    for(SSurface &ss : sh->surface) {
+        if(ss.degm != 1 || ss.degn != 1) continue;
+        bool onPlane = true;
+        for(int i = 0; i < 2 && onPlane; i++) {
+            for(int j = 0; j < 2 && onPlane; j++) {
+                if(fabs(n.Dot(ss.ctrl[i][j].Minus(p))) > EDGE_PLANE_TOL) {
+                    onPlane = false;
+                }
+            }
+        }
+        if(onPlane) return true;
+    }
+    return false;
+}
+
+// Find the two plane faces of the solid at the edge, and the size of the
+// rounding or bevel on them.
+bool AnalyzeEdge(SMesh *body, SShell *bodyShell, hEntity he, bool chamfer,
+                 double size, EdgeBlend *eb, std::string *error)
+{
+    Entity *e = SK.entity.FindByIdNoOops(he);
+    if(e == NULL || e->type != Entity::Type::LINE_SEGMENT) {
+        *error = ssprintf(_("edge %08x does not exist"), he.v);
+        return false;
+    }
+    Vector a = SK.GetEntity(e->point[0])->PointGetNum(),
+           b = SK.GetEntity(e->point[1])->PointGetNum();
+    double len = (b.Minus(a)).Magnitude();
+    if(len < LENGTH_EPS) {
+        *error = ssprintf(_("edge %08x has zero length"), he.v);
+        return false;
+    }
+    if(size < LENGTH_EPS) {
+        *error = _("the size must be greater than zero");
+        return false;
+    }
+
+    Vector d = (b.Minus(a)).WithMagnitude(1),
+           mid = (a.Plus(b)).ScaledBy(0.5);
+    // The offset to either side of the edge, to find the faces there.
+    double eps = max(10*EDGE_PLANE_TOL, 1e-3*min(len, size));
+
+    std::vector<EdgeFace> faces;
+    for(const STriangle &t : body->l) {
+        Vector n = t.Normal();
+        if(n.Magnitude() < LENGTH_EPS) continue;
+        n = n.WithMagnitude(1);
+        if(fabs(n.Dot(d)) > 1e-6) continue;
+        if(fabs(n.Dot(a.Minus(t.a))) > EDGE_PLANE_TOL) continue;
+        if(fabs(n.Dot(b.Minus(t.a))) > EDGE_PLANE_TOL) continue;
+
+        Vector w = n.Cross(d);
+        for(int i = 0; i < 2; i++) {
+            Vector p = mid.Plus(w.ScaledBy(i == 0 ? eps : -eps));
+            if(!t.ContainsPointProjd(n, p)) continue;
+
+            EdgeFace *f = NULL;
+            for(EdgeFace &ef : faces) {
+                if(ef.n.Dot(n) > 1 - 1e-6) f = &ef;
+            }
+            if(f == NULL) {
+                faces.push_back(EdgeFace { n, { false, false } });
+                f = &faces.back();
+            }
+            f->side[i] = true;
+        }
+    }
+
+    int found = 0;
+    for(EdgeFace &f : faces) {
+        // A face on both sides continues across the line, so the line is not
+        // its boundary.
+        if(f.side[0] == f.side[1]) continue;
+        Vector u = (f.n.Cross(d)).ScaledBy(f.side[0] ? 1 : -1);
+        if(found == 0) {
+            eb->n1 = f.n; eb->u1 = u;
+        } else {
+            eb->n2 = f.n; eb->u2 = u;
+        }
+        found++;
+    }
+    if(found != 2 || (!bodyShell->IsEmpty() &&
+                      (!ShellHasPlane(bodyShell, eb->n1, a) ||
+                       !ShellHasPlane(bodyShell, eb->n2, a))))
+    {
+        *error = ssprintf(_("line %08x is not an edge between two plane "
+                            "faces of the solid"), he.v);
+        return false;
+    }
+
+    eb->h = he;
+    eb->a = a;
+    eb->b = b;
+    eb->d = d;
+    eb->theta = acos(max(-1.0, min(1.0, eb->u1.Dot(eb->u2))));
+    if(eb->theta < 1*PI/180 || eb->theta > 179*PI/180) {
+        *error = ssprintf(_("the faces at edge %08x are nearly parallel"),
+                          he.v);
+        return false;
+    }
+    // At a convex edge the second face turns away from the outside of the
+    // first face, so the wedge between u1 and u2 is filled with material.
+    eb->convex = (eb->u1.Dot(eb->n2) < 0);
+    eb->k = chamfer ? size : size / tan(eb->theta/2);
+    // The tool reaches a little beyond the faces (outside at a convex edge,
+    // into the material at a concave one), so that it is not coincident with
+    // the faces of the solid.
+    eb->ext = 0.1*eb->k * (eb->convex ? 1 : -1);
+
+    for(int i = 0; i < 2; i++) {
+        Vector n = (i == 0) ? eb->n1 : eb->n2,
+               u = (i == 0) ? eb->u1 : eb->u2;
+        if(!PointOnMeshFace(body, n, mid.Plus(u.ScaledBy(eb->k)))) {
+            *error = ssprintf(_("the size is too large for the faces at "
+                                "edge %08x"), he.v);
+            return false;
+        }
+    }
+    return true;
+}
+
+// Assemble the closed loop of curves in sbl, oriented the same way as the
+// sketch of an extrusion group.
+bool LoopFrom(SBezierList *sbl, SBezierLoopSetSet *sblss) {
+    SPolygon poly = {};
+    SEdge notClosedAt = {};
+    Vector notCoplanarAt = {};
+    bool allClosed, allCoplanar;
+    sblss->FindOuterFacesFrom(sbl, &poly, NULL, SS.ChordTolMm(),
+                              &allClosed, &notClosedAt,
+                              &allCoplanar, &notCoplanarAt, NULL);
+    poly.Clear();
+    return (allClosed && allCoplanar && sblss->l.n == 1);
+}
+
+// Make the tool for the edge. It runs along the edge from the plane through
+// pa with normal na to the plane through pb with normal nb.
+bool MakeEdgeTool(const EdgeBlend &eb, bool chamfer, Vector pa, Vector na,
+                  Vector pb, Vector nb, RgbaColor color, SShell *tool)
+{
+    // The cross section of the tool, in the plane normal to the edge at a.
+    Vector t1 = eb.a.Plus(eb.u1.ScaledBy(eb.k)),
+           t2 = eb.a.Plus(eb.u2.ScaledBy(eb.k)),
+           p1 = t1.Plus(eb.n1.ScaledBy(eb.ext)),
+           p2 = eb.a.Plus((eb.n1.Plus(eb.n2)).ScaledBy(eb.ext)),
+           p3 = t2.Plus(eb.n2.ScaledBy(eb.ext));
+
+    SBezierList sbl = {};
+    Vector pts[] = { t1, p1, p2, p3, t2 };
+    for(int i = 0; i < 4; i++) {
+        SBezier line = SBezier::From(pts[i], pts[i+1]);
+        sbl.l.Add(&line);
+    }
+    if(chamfer) {
+        SBezier bevel = SBezier::From(t2, t1);
+        sbl.l.Add(&bevel);
+    } else {
+        // A circular arc tangent to both faces, as a rational quadratic Bezier
+        // whose middle control point is the corner, where the tangents meet.
+        SBezier arc = SBezier::From(t2, eb.a, t1);
+        arc.weight[1] = sin(eb.theta/2);
+        sbl.l.Add(&arc);
+    }
+
+    SBezierLoopSetSet sblss = {};
+    bool ok = LoopFrom(&sbl, &sblss) &&
+              tool->MakeFromExtrusionBetweenPlanes(&(sblss.l[0]), eb.d,
+                                                   pa, na, pb, nb, color);
+    sblss.Clear();
+    sbl.Clear();
+    return ok;
+}
+
+// Distance from the edge beyond which the tool does not reach.
+double ToolReach(const EdgeBlend &eb) {
+    return eb.k + 2*fabs(eb.ext);
+}
+
+// Is v an end point of the edge? If so, return the direction from v along
+// the edge.
+bool EdgeEndAt(const EdgeBlend &eb, Vector v, Vector *dir) {
+    if(v.Equals(eb.a, EDGE_PLANE_TOL)) {
+        *dir = eb.d;
+        return true;
+    } else if(v.Equals(eb.b, EDGE_PLANE_TOL)) {
+        *dir = eb.d.ScaledBy(-1);
+        return true;
+    }
+    return false;
+}
+
+// Must the tools of two edges that meet at a vertex end at the plane that
+// bisects the angle between them? Where two rounded edges meet, their tools
+// would otherwise overlap there, and their cylinders would intersect in a
+// degenerate way. Two bevels may overlap, unless the edges meet at a
+// reflex corner of their common face; there the tools must reach past the
+// vertex to meet, and the bisecting plane is where they stop.
+bool NeedsMiter(const EdgeBlend &eb, const EdgeBlend &ej,
+                Vector dj, bool chamfer)
+{
+    if(!chamfer) return true;
+    Vector ni[2] = { eb.n1, eb.n2 }, ui[2] = { eb.u1, eb.u2 },
+           nj[2] = { ej.n1, ej.n2 };
+    for(int i = 0; i < 2; i++) {
+        for(int j = 0; j < 2; j++) {
+            if(ni[i].Dot(nj[j]) < 1 - 1e-6) continue;
+            // The common face lies between the two edges at the vertex if
+            // the other edge runs into the face, as seen from this edge.
+            return dj.Dot(ui[i]) < 0;
+        }
+    }
+    return true;
+}
+
+} // namespace
+
+void Group::GenerateEdgeBlends() {
+    edgeError.clear();
+
+    Group *prevg = RunningMeshGroup();
+    if(prevg == NULL) {
+        edgeError = _("there is no solid model before this group");
+        return;
+    }
+
+    bool toMesh = IsForcedToMesh();
+    if(toMesh) {
+        runningMesh.MakeFromCopyOf(&(prevg->runningMesh));
+        prevg->runningShell.TriangulateInto(&runningMesh);
+    } else {
+        runningShell.MakeFromCopyOf(&(prevg->runningShell));
+    }
+    if(suppress) return;
+
+    bool chamfer = (subtype == Subtype::EDGE_CHAMFER);
+
+    // The faces at each edge are found on the solid as it was before this
+    // group, so that the result does not depend on the order of the edges.
+    SMesh body = {};
+    body.MakeFromCopyOf(&(prevg->runningMesh));
+    prevg->runningShell.TriangulateInto(&body);
+
+    std::vector<EdgeBlend> blends;
+    for(hEntity he : GetEdges()) {
+        EdgeBlend eb = {};
+        if(AnalyzeEdge(&body, &(prevg->runningShell), he, chamfer, valA,
+                       &eb, &edgeError))
+        {
+            blends.push_back(eb);
+        }
+    }
+    body.Clear();
+
+    size_t n = blends.size();
+    std::vector<SShell> tools(n);
+    std::vector<bool> haveTool(n, false);
+    // Edges whose tools touch at a vertex are combined into one tool first,
+    // and applied together; this is their group.
+    std::vector<size_t> component(n);
+    for(size_t i = 0; i < n; i++) component[i] = i;
+    std::function<size_t(size_t)> root = [&](size_t i) {
+        while(component[i] != i) i = component[i];
+        return i;
+    };
+
+    for(size_t i = 0; i < n; i++) {
+        const EdgeBlend &eb = blends[i];
+
+        // The plane at each end of the tool, and any further planes that cut
+        // it there, given by their normals pointing into the tool.
+        Vector endPoint[2] = { eb.a, eb.b }, endNormal[2] = { eb.d, eb.d };
+        std::vector<Vector> moreMiters[2];
+        for(int end = 0; end < 2; end++) {
+            Vector v = (end == 0) ? eb.a : eb.b,
+                   di = (end == 0) ? eb.d : eb.d.ScaledBy(-1);
+            bool first = true;
+            for(size_t j = 0; j < n; j++) {
+                const EdgeBlend &ej = blends[j];
+                Vector dj;
+                if(j == i || ej.convex != eb.convex) continue;
+                if(!EdgeEndAt(ej, v, &dj)) continue;
+                component[root(i)] = root(j);
+
+                double phi = acos(max(-1.0, min(1.0, di.Dot(dj))));
+                if(phi < 10*PI/180) continue;
+                if(!NeedsMiter(eb, ej, dj, chamfer)) continue;
+
+                Vector m = (di.Minus(dj)).WithMagnitude(1);
+                if(first) {
+                    endNormal[end] = m;
+                    first = false;
+                } else {
+                    moreMiters[end].push_back(m);
+                }
+            }
+        }
+
+        // A concave edge whose end meets convex edges would stick out of
+        // their blends there. Unless it is mitered, end it a little before
+        // the blend of the convex edges begins, on the faces along it.
+        for(int end = 0; end < 2 && !eb.convex; end++) {
+            if(!endNormal[end].Equals(eb.d)) continue;
+            Vector v = (end == 0) ? eb.a : eb.b,
+                   di = (end == 0) ? eb.d : eb.d.ScaledBy(-1);
+            double s = 0;
+            for(const EdgeBlend &ej : blends) {
+                Vector dj;
+                if(!ej.convex || !EdgeEndAt(ej, v, &dj)) continue;
+                Vector nj[2] = { ej.n1, ej.n2 }, uj[2] = { ej.u1, ej.u2 };
+                for(int f = 0; f < 2; f++) {
+                    double c = di.Dot(uj[f]);
+                    if(fabs(nj[f].Dot(di)) > 1e-6 || c < 0.1) continue;
+                    s = max(s, 1.02*ej.k / c);
+                }
+            }
+            endPoint[end] = v.Plus(di.ScaledBy(s));
+        }
+
+        SShell *tool = &tools[i];
+        if(!MakeEdgeTool(eb, chamfer, endPoint[0], endNormal[0],
+                         endPoint[1], endNormal[1], color, tool)) {
+            edgeError = ssprintf(_("the edges next to edge %08x are too "
+                                   "close for this size"), eb.h.v);
+            tool->Clear();
+            continue;
+        }
+        haveTool[i] = true;
+
+        // Where three or more of the edges meet, the tool ends at more than
+        // one plane. Cut it at the others with a box larger than the tool.
+        for(int end = 0; end < 2; end++) {
+            Vector v = (end == 0) ? eb.a : eb.b;
+            for(Vector m : moreMiters[end]) {
+                double big = 4*((eb.b.Minus(eb.a)).Magnitude() + ToolReach(eb));
+                Vector u = m.Normal(0).WithMagnitude(big),
+                       w = m.Normal(1).WithMagnitude(big);
+                Vector c[4] = {
+                    v.Minus(u).Minus(w), v.Plus(u).Minus(w),
+                    v.Plus(u).Plus(w),   v.Minus(u).Plus(w),
+                };
+                SBezierList sbl = {};
+                for(int k = 0; k < 4; k++) {
+                    SBezier line = SBezier::From(c[k], c[(k + 1) % 4]);
+                    sbl.l.Add(&line);
+                }
+                SBezierLoopSetSet sblss = {};
+                SShell box = {}, cut = {};
+                if(LoopFrom(&sbl, &sblss)) {
+                    box.MakeFromExtrusionOf(&(sblss.l[0]), Vector::From(0, 0, 0),
+                                            m.ScaledBy(-big), color);
+                }
+                sblss.Clear();
+                sbl.Clear();
+                cut.MakeFromDifferenceOf(tool, &box);
+                box.Clear();
+                tool->Clear();
+                *tool = cut;
+                if(cut.booleanFailed) haveTool[i] = false;
+            }
+        }
+    }
+
+    // Add material at the concave edges first, then remove it at the convex
+    // ones, one group of touching edges at a time. If that fails for a
+    // group, leave its edges as they were.
+    std::vector<std::string> failed;
+    for(int pass = 0; pass < 2; pass++) {
+        bool convex = (pass == 1);
+        for(size_t c = 0; c < n; c++) {
+            if(root(c) != c || blends[c].convex != convex) continue;
+
+            SShell tool = {};
+            bool ok = true;
+            std::string names;
+            for(size_t i = 0; i < n; i++) {
+                if(root(i) != c) continue;
+                names += ssprintf("%s%08x", names.empty() ? "" : " ",
+                                  blends[i].h.v);
+                if(!haveTool[i]) {
+                    ok = false;
+                } else if(tool.IsEmpty()) {
+                    tool = tools[i];
+                    tools[i] = {};
+                } else {
+                    SShell merged = {};
+                    merged.MakeFromUnionOf(&tool, &tools[i]);
+                    if(merged.booleanFailed) ok = false;
+                    tool.Clear();
+                    tool = merged;
+                }
+            }
+
+            if(ok && !toMesh) {
+                SShell result = {};
+                if(convex) {
+                    result.MakeFromDifferenceOf(&runningShell, &tool);
+                } else {
+                    result.MakeFromUnionOf(&runningShell, &tool);
+                }
+                if(result.booleanFailed) {
+                    ok = false;
+                    result.Clear();
+                } else {
+                    runningShell.Clear();
+                    runningShell = result;
+                }
+            } else if(ok) {
+                SMesh toolMesh = {}, result = {};
+                tool.TriangulateInto(&toolMesh);
+                if(convex) {
+                    result.MakeFromDifferenceOf(&runningMesh, &toolMesh);
+                } else {
+                    result.MakeFromUnionOf(&runningMesh, &toolMesh);
+                }
+                toolMesh.Clear();
+                runningMesh.Clear();
+                result.RemoveDegenerateTriangles();
+                SKdNode *kd = SKdNode::From(&result);
+                kd->SnapToMesh(&result);
+                kd->MakeMeshInto(&runningMesh);
+                result.Clear();
+            }
+            tool.Clear();
+            if(!ok) failed.push_back(names);
+        }
+    }
+    for(SShell &t : tools) t.Clear();
+
+    if(!failed.empty()) {
+        std::string list;
+        for(const std::string &f : failed) {
+            list += (list.empty() ? "" : ", ") + f;
+        }
+        edgeError = ssprintf(_("could not apply the blend at edges %s"),
+                             list.c_str());
+    }
+
+    if(!toMesh) {
+        runningShell.MergeCoincidentSurfaces();
+    }
+}
+
 void Group::GenerateShellAndMesh() {
     bool prevBooleanFailed = booleanFailed;
     booleanFailed = false;
@@ -219,6 +706,16 @@ void Group::GenerateShellAndMesh() {
     thisMesh.Clear();
     runningShell.Clear();
     runningMesh.Clear();
+
+    if(type == Type::FILLET) {
+        std::string prevEdgeError = edgeError;
+        GenerateEdgeBlends();
+        if(booleanFailed != prevBooleanFailed || edgeError != prevEdgeError) {
+            SS.ScheduleShowTW();
+        }
+        displayDirty = true;
+        return;
+    }
 
     // Don't attempt a lathe or extrusion unless the source section is good:
     // planar and not self-intersecting.
@@ -458,7 +955,7 @@ void Group::GenerateDisplayItems() {
     // if its inputs have changed.
     if(displayDirty) {
         Group *pg = RunningMeshGroup();
-        if(pg && thisMesh.IsEmpty() && thisShell.IsEmpty()) {
+        if(pg && thisMesh.IsEmpty() && thisShell.IsEmpty() && type != Type::FILLET) {
             // We don't contribute any new solid model in this group, so our
             // display items are identical to the previous group's; which means
             // that we can just display those, and stop ourselves from
@@ -550,6 +1047,7 @@ bool Group::IsMeshGroup() {
         case Group::Type::HELIX:
         case Group::Type::ROTATE:
         case Group::Type::TRANSLATE:
+        case Group::Type::FILLET:
             return true;
 
         default:

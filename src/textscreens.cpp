@@ -300,6 +300,9 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
         case 'd': g->allDimsReference = !(g->allDimsReference); break;
 
         case 'f': g->forceToMesh = !(g->forceToMesh); break;
+
+        case 'o': g->subtype = Group::Subtype::EDGE_ROUND; break;
+        case 'b': g->subtype = Group::Subtype::EDGE_CHAMFER; break;
     }
 
     SS.MarkGroupDirty(g->h);
@@ -345,6 +348,12 @@ void TextWindow::ScreenChangeHelixPitch(int link, uint32_t v) {
     double pitch = g->valB/SS.MmPerUnit();
     SS.TW.ShowEditControl(3, ssprintf("%.8f", pitch));
     SS.TW.edit.meaning = Edit::HELIX_PITCH;
+    SS.TW.edit.group.v = v;
+}
+void TextWindow::ScreenChangeEdgeBlendSize(int link, uint32_t v) {
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+    SS.TW.ShowEditControl(3, SS.MmToString(g->valA, true));
+    SS.TW.edit.meaning = Edit::EDGE_BLEND_SIZE;
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenChangePitchOption(int link, uint32_t v) {
@@ -466,6 +475,33 @@ void TextWindow::ShowGroupInfo() {
         Printf(false, "%Bd   %Ftscaled by%E %# %Fl%Ll%f%D[change]%E",
             g->scale,
             &TextWindow::ScreenChangeGroupScale, g->h.v);
+    } else if(g->type == Group::Type::FILLET) {
+        bool round = (g->subtype != Group::Subtype::EDGE_CHAMFER);
+        size_t n = g->GetEdges().size();
+        Printf(true, " %Ft%s %d edge%s%E", round ? "round" : "bevel",
+            (int)n, n == 1 ? "" : "s");
+        Printf(false, "%Ba   %f%Lo%Fd%s fillet%E  "
+                             "%f%Lb%Fd%s chamfer%E",
+            &TextWindow::ScreenChangeGroupOption,
+            round ? RADIO_TRUE : RADIO_FALSE,
+            &TextWindow::ScreenChangeGroupOption,
+            !round ? RADIO_TRUE : RADIO_FALSE);
+        Printf(false, "%Bd   %Ft%s%E %s %Fl%Ll%f%D[change]%E",
+            round ? "radius" : "distance",
+            SS.MmToString(g->valA).c_str(),
+            &TextWindow::ScreenChangeEdgeBlendSize, g->h.v);
+        Printf(false,
+            "%Ba   %Ftcolor   %E%Bz  %Ba (%@, %@, %@) %f%D%Lf%Fl[change]%E",
+            &g->color,
+            g->color.redF(), g->color.greenF(), g->color.blueF(),
+            ScreenColor, top[rows-1] + 2);
+        Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
+            &TextWindow::ScreenChangeGroupOption,
+            g->suppress ? CHECK_TRUE : CHECK_FALSE);
+        if(!g->edgeError.empty()) {
+            Printf(false, "");
+            Printf(false, "%Fx skipped: %s%E", g->edgeError.c_str());
+        }
     } else if(g->type == Group::Type::DRAWING_3D) {
         Printf(true, " %Ftsketch in 3d%E");
     } else if(g->type == Group::Type::DRAWING_WORKPLANE) {
@@ -887,6 +923,20 @@ void TextWindow::EditControlDone(std::string s) {
                     g->scale = ev;
                     SS.MarkGroupDirty(g->h);
                 }
+            }
+            break;
+
+        case Edit::EDGE_BLEND_SIZE:
+            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
+                double ev = SS.ExprToMm(e);
+                if(ev < LENGTH_EPS) {
+                    Error(_("Radius cannot be zero or negative."));
+                    break;
+                }
+                SS.UndoRemember();
+                Group *g = SK.GetGroup(edit.group);
+                g->valA = ev;
+                SS.MarkGroupDirty(g->h);
             }
             break;
 

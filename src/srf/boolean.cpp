@@ -726,6 +726,15 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     // generate an intersection edge).
     final.CullExtraneousEdges(/*both=*/true);
 
+    // An intersection curve that only touches this surface in a point, as
+    // where two fillets meet tangent to a face at a corner, leaves an edge
+    // of zero length. It bounds nothing, and it keeps the trim polygon from
+    // assembling, so drop it.
+    for(SEdge &fe : final.l) {
+        fe.tag = (ret.PointAt(fe.a.x, fe.a.y)).Equals(ret.PointAt(fe.b.x, fe.b.y)) ? 1 : 0;
+    }
+    final.l.RemoveTagged();
+
     // Use our reassembled edges to trim the new surface.
     ret.TrimFromEdgeList(&final, /*asUv=*/true);
 

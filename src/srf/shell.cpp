@@ -126,6 +126,152 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
     }
 }
 
+//-----------------------------------------------------------------------------
+// Extrude a planar sketch along dir, from the plane through p0 with normal n0
+// to the plane through p1 with normal n1. The end planes need not be normal
+// to dir. Projecting along dir onto a plane is an affine map, so the curves
+// where the end planes cut the sides are the sketch curves with their control
+// points projected, and exact. Returns false if the end planes cross within
+// the extrusion.
+//-----------------------------------------------------------------------------
+bool SShell::MakeFromExtrusionBetweenPlanes(SBezierLoopSet *sbls, Vector dir,
+                                            Vector p0, Vector n0,
+                                            Vector p1, Vector n1,
+                                            RgbaColor color)
+{
+    dir = dir.WithMagnitude(1);
+    if(fabs(n0.Dot(dir)) < LENGTH_EPS || fabs(n1.Dot(dir)) < LENGTH_EPS) {
+        return false;
+    }
+    // As for an ordinary extrusion, run from the first end plane to the
+    // second against the normal of the sketch.
+    if(dir.Dot(sbls->normal) > 0) {
+        swap(p0, p1);
+        swap(n0, n1);
+        dir = dir.ScaledBy(-1);
+    }
+
+    // Distance along dir from q to each end plane.
+    auto along0 = [&](Vector q) { return n0.Dot(p0.Minus(q)) / n0.Dot(dir); };
+    auto along1 = [&](Vector q) { return n1.Dot(p1.Minus(q)) / n1.Dot(dir); };
+    auto onto0 = [&](Vector q) { return q.Plus(dir.ScaledBy(along0(q))); };
+    auto onto1 = [&](Vector q) { return q.Plus(dir.ScaledBy(along1(q))); };
+    auto curveOnto = [&](const SBezier *sb, bool to1) {
+        SBezier r = *sb;
+        for(int i = 0; i <= r.deg; i++) {
+            r.ctrl[i] = to1 ? onto1(r.ctrl[i]) : onto0(r.ctrl[i]);
+        }
+        return r;
+    };
+
+    // The span along dir that the sides must cover.
+    double smin = VERY_POSITIVE, smax = VERY_NEGATIVE;
+    for(SBezierLoop *sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+        for(SBezier *sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
+            for(int i = 0; i <= sb->deg; i++) {
+                double s0 = along0(sb->ctrl[i]), s1 = along1(sb->ctrl[i]);
+                if(s1 - s0 < LENGTH_EPS) return false;
+                smin = min(smin, s0);
+                smax = max(smax, s1);
+            }
+        }
+    }
+    Vector t0 = dir.ScaledBy(smin), t1 = dir.ScaledBy(smax);
+
+    // The end planes, with the same basis as an ordinary extrusion, but
+    // projected along dir onto them.
+    Vector n = sbls->normal.ScaledBy(-1);
+    Vector u = n.Normal(0), v = n.Normal(1);
+    Vector orig = sbls->point;
+    double umax = VERY_NEGATIVE, umin = VERY_POSITIVE;
+    sbls->GetBoundingProjd(u, orig, &umin, &umax);
+    double vmax = VERY_NEGATIVE, vmin = VERY_POSITIVE;
+    sbls->GetBoundingProjd(v, orig, &vmin, &vmax);
+    orig = orig.Plus(u.ScaledBy(umin));
+    orig = orig.Plus(v.ScaledBy(vmin));
+    u = u.ScaledBy(umax - umin);
+    v = v.ScaledBy(vmax - vmin);
+
+    Vector o0 = onto0(orig), o1 = onto1(orig.Plus(u));
+    Vector u0 = onto0(orig.Plus(u)).Minus(o0), v0 = onto0(orig.Plus(v)).Minus(o0),
+           u1 = onto1(orig).Minus(o1), v1 = onto1(orig.Plus(u).Plus(v)).Minus(o1);
+    SSurface s0, s1;
+    s0 = SSurface::FromPlane(o0, u0, v0);
+    s0.color = color;
+    s1 = SSurface::FromPlane(o1, u1, v1);
+    s1.color = color;
+    hSSurface hs0 = surface.AddAndAssignId(&s0),
+              hs1 = surface.AddAndAssignId(&s1);
+
+    SBezierLoop *sbl;
+    for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+        SBezier *sb;
+        List<TrimLine> trimLines = {};
+
+        for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
+            SSurface ss = SSurface::FromExtrusionOf(sb, t0, t1);
+            ss.color = color;
+            hSSurface hsext = surface.AddAndAssignId(&ss);
+
+            SCurve sc = {};
+            sc.isExact = true;
+            sc.exact = curveOnto(sb, /*to1=*/false);
+            (sc.exact).MakePwlInto(&(sc.pts));
+            sc.surfA = hs0;
+            sc.surfB = hsext;
+            hSCurve hc0 = curve.AddAndAssignId(&sc);
+
+            sc = {};
+            sc.isExact = true;
+            sc.exact = curveOnto(sb, /*to1=*/true);
+            (sc.exact).MakePwlInto(&(sc.pts));
+            sc.surfA = hs1;
+            sc.surfB = hsext;
+            hSCurve hc1 = curve.AddAndAssignId(&sc);
+
+            STrimBy stb0, stb1;
+            stb0 = STrimBy::EntireCurve(this, hc0, /*backwards=*/false);
+            stb1 = STrimBy::EntireCurve(this, hc1, /*backwards=*/true);
+            (surface.FindById(hs0))->trim.Add(&stb0);
+            (surface.FindById(hs1))->trim.Add(&stb1);
+
+            stb0 = STrimBy::EntireCurve(this, hc0, /*backwards=*/true);
+            stb1 = STrimBy::EntireCurve(this, hc1, /*backwards=*/false);
+            (surface.FindById(hsext))->trim.Add(&stb0);
+            (surface.FindById(hsext))->trim.Add(&stb1);
+
+            Vector pt = sb->Finish();
+            sc = {};
+            sc.isExact = true;
+            sc.exact = SBezier::From(onto0(pt), onto1(pt));
+            (sc.exact).MakePwlInto(&(sc.pts));
+            hSCurve hl = curve.AddAndAssignId(&sc);
+            TrimLine tl;
+            tl.hc = hl;
+            tl.hs = hsext;
+            trimLines.Add(&tl);
+        }
+
+        for(int i = 0; i < trimLines.n; i++) {
+            TrimLine *tl = &(trimLines[i]);
+            SSurface *ss = surface.FindById(tl->hs);
+
+            TrimLine *tlp = &(trimLines[WRAP(i-1, trimLines.n)]);
+
+            STrimBy stb;
+            stb = STrimBy::EntireCurve(this, tl->hc, /*backwards=*/true);
+            ss->trim.Add(&stb);
+            stb = STrimBy::EntireCurve(this, tlp->hc, /*backwards=*/false);
+            ss->trim.Add(&stb);
+
+            (curve.FindById(tl->hc))->surfA = ss->h;
+            (curve.FindById(tlp->hc))->surfB = ss->h;
+        }
+        trimLines.Clear();
+    }
+    return true;
+}
+
 bool SShell::CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector axis, double da, double dx)
 // Check that the direction of revolution/extrusion ends up parallel to the normal of
 // the sketch, on the side of the axis where the sketch is.

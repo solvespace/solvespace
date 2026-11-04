@@ -236,6 +236,7 @@ add_resources(
     icons/graphics-window/construction.png
     icons/graphics-window/equal.png
     icons/graphics-window/extrude.png
+    icons/graphics-window/fillet.png
     icons/graphics-window/helix.png
     icons/graphics-window/horiz.png
     icons/graphics-window/image.png

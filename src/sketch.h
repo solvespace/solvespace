@@ -186,7 +186,8 @@ public:
         HELIX                         = 5103,
         ROTATE                        = 5200,
         TRANSLATE                     = 5201,
-        LINKED                        = 5300
+        LINKED                        = 5300,
+        FILLET                        = 5400
     };
     Group::Type type;
 
@@ -229,7 +230,10 @@ public:
         ONE_SIDED                  = 7000,
         TWO_SIDED                  = 7001,
         ONE_SKEWED                 = 7004,
-        TWO_SKEWED                 = 7005
+        TWO_SKEWED                 = 7005,
+        // For fillets and chamfers of edges
+        EDGE_ROUND                 = 7100,
+        EDGE_CHAMFER               = 7101
     };
     Group::Subtype subtype;
 
@@ -285,6 +289,12 @@ public:
     EntityList  impEntity;
 
     std::string     name;
+
+    // Line segments along the edges that a fillet or chamfer group rounds or
+    // bevels, as hexadecimal entity handles separated by spaces.
+    std::string     edges;
+    // Description of the last edge that could not be rounded or beveled.
+    std::string     edgeError;
 
 
     void Activate();
@@ -345,6 +355,9 @@ public:
     void GenerateShellAndMesh();
     template<class T> void GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat);
     template<class T> void GenerateForBoolean(T *a, T *b, T *o, Group::CombineAs how);
+    std::vector<hEntity> GetEdges() const;
+    void SetEdges(const std::vector<hEntity> &list);
+    void GenerateEdgeBlends();
     void GenerateDisplayItems();
 
     enum class DrawMeshAs { DEFAULT, HOVERED, SELECTED };

@@ -71,6 +71,7 @@ set(testsuite_SOURCES
     group/boolean_tangent_crossing/test.cpp
     group/boolean_tangent_edge/test.cpp
     group/boolean_tangent_fillet/test.cpp
+    group/edge_blend/test.cpp
     group/boolean_tangent_spline/test.cpp
     group/link/test.cpp
     group/translate_asy/test.cpp

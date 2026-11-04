@@ -301,6 +301,36 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             g.name = C_("group-name", "translate");
             break;
 
+        case Command::GROUP_FILLET:
+        case Command::GROUP_CHAMFER: {
+            if(gs.lineSegments == 0 || gs.lineSegments != gs.n) {
+                Error(_("Bad selection for new fillet or chamfer group. This "
+                        "group can be created with:\n\n"
+                        "    * one or more line segments along straight edges "
+                        "of the solid model, each between two plane faces\n"));
+                return;
+            }
+            Group *running = SK.GetRunningMeshGroupFor(SS.GW.activeGroup);
+            if(running == NULL) {
+                Error(_("A fillet or chamfer needs a solid model to work on."));
+                return;
+            }
+            g.SetEdges(gs.entity);
+            g.type = Type::FILLET;
+            g.opA = SS.GW.activeGroup;
+            if(id == Command::GROUP_FILLET) {
+                g.subtype = Subtype::EDGE_ROUND;
+                g.name = C_("group-name", "fillet");
+            } else {
+                g.subtype = Subtype::EDGE_CHAMFER;
+                g.name = C_("group-name", "chamfer");
+            }
+            // A size that fits most parts drawn at the current zoom level.
+            g.valA = 20.0 / SS.GW.scale;
+            g.color = running->color;
+            break;
+        }
+
         case Command::GROUP_LINK: {
             g.type = Type::LINKED;
             g.meshCombine = CombineAs::ASSEMBLE;
@@ -367,6 +397,27 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
     gg->Activate();
     TextWindow::ScreenSelectGroup(0, gg->h.v);
     SS.GW.AnimateOntoWorkplane();
+}
+
+std::vector<hEntity> Group::GetEdges() const {
+    std::vector<hEntity> list;
+    const char *p = edges.c_str();
+    while(*p) {
+        unsigned int v;
+        int n;
+        if(sscanf(p, " %x%n", &v, &n) != 1) break;
+        list.push_back(hEntity { v });
+        p += n;
+    }
+    return list;
+}
+
+void Group::SetEdges(const std::vector<hEntity> &list) {
+    edges.clear();
+    for(hEntity he : list) {
+        if(!edges.empty()) edges += " ";
+        edges += ssprintf("%08x", he.v);
+    }
 }
 
 void Group::TransformImportedBy(Vector t, Quaternion q) {
@@ -765,6 +816,11 @@ void Group::Generate(EntityList *entity, ParamList *param)
             }
             return;
         }
+        case Type::FILLET:
+            // The edges belong to earlier groups, so there is nothing to
+            // copy; only the solid model changes.
+            return;
+
         case Type::LINKED:
             // The translation vector
             AddParam(param, h.param(0), gp.x);
