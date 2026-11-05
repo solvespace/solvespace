@@ -573,9 +573,12 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
             Vector ty = n.Cross(bu).ScaledBy(1.0/bu.MagSquared());
             Vector tx = bv.Cross(n).ScaledBy(1.0/bv.MagSquared());
 
+            // tx/|tx|^2 and ty/|ty|^2 are the dual basis of (bu, bv): each
+            // picks out its own coordinate and ignores the other, even when
+            // bu and bv aren't perpendicular (a skewed parallelogram).
             Vector dp = p.Minus(orig);
-            *u = dp.Dot(bu) / tx.MagSquared();
-            *v = dp.Dot(bv) / ty.MagSquared();
+            *u = dp.Dot(tx) / tx.MagSquared();
+            *v = dp.Dot(ty) / ty.MagSquared();
             return;
         }
     }
