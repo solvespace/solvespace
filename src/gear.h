@@ -196,8 +196,9 @@ void GearSyncLinked(hRequest hr);
 // Adds a gear with the given number of teeth that meshes with the gear
 // driver, to the right of it, in a new sketch after the active group (see
 // GEAR_MATE_AFTER_ACTIVE_GROUP), and a distance constraint between the
-// centers. Returns the new request, or a null handle with an error shown.
-hRequest GearAddMate(hRequest driver, int teeth);
+// centers. Returns the new request, or a null handle with the reason in
+// error.
+hRequest GearAddMate(hRequest driver, int teeth, std::string *error);
 
 // The distance constraint between the centers of two gears, if any.
 hConstraint GearFindCenterConstraint(hRequest a, hRequest b);
@@ -206,9 +207,9 @@ hConstraint GearFindCenterConstraint(hRequest a, hRequest b);
 // meshes with the gear driver, below it, in a new sketch after the active
 // group (see GEAR_RACK_AFTER_ACTIVE_GROUP). The pitch line of the rack is
 // also drawn as a construction line, which has a distance constraint to the
-// center of the gear. Returns the new request, or a null handle with an
-// error shown.
-hRequest GearAddRack(hRequest driver, int teeth, double base);
+// center of the gear. Returns the new request, or a null handle with the
+// reason in error.
+hRequest GearAddRack(hRequest driver, int teeth, double base, std::string *error);
 
 // The construction line on the pitch line of a rack, and the distance
 // constraint between it and the center of the gear, if any.

@@ -782,12 +782,12 @@ Group *AddSketch(Quaternion q, hEntity origin, const char *name) {
 
 }
 
-hRequest GearAddMate(hRequest hd, int teeth) {
+hRequest GearAddMate(hRequest hd, int teeth, std::string *error) {
     Request *driver = SK.request.FindByIdNoOops(hd);
     if(driver == NULL || driver->type != Request::Type::GEAR) return {};
     if(teeth < GEAR_MIN_TEETH || teeth > GEAR_MAX_TEETH) {
-        Error(_("The number of teeth must be between %d and %d."),
-              GEAR_MIN_TEETH, GEAR_MAX_TEETH);
+        *error = ssprintf(_("The number of teeth must be between %d and %d."),
+                          GEAR_MIN_TEETH, GEAR_MAX_TEETH);
         return {};
     }
 
@@ -805,8 +805,8 @@ hRequest GearAddMate(hRequest hd, int teeth) {
     if(GEAR_MATE_AFTER_ACTIVE_GROUP) {
         Group *active = SK.group.FindByIdNoOops(SS.GW.activeGroup);
         if(active == NULL || active->order < SK.GetGroup(driver->group)->order) {
-            Error(_("Activate the sketch of the gear or a later group to add a "
-                    "mating gear."));
+            *error = _("Activate the sketch of the gear or a later group to add a "
+                       "mating gear.");
             return {};
         }
     } else {
@@ -843,16 +843,16 @@ hRequest GearAddMate(hRequest hd, int teeth) {
     return hm;
 }
 
-hRequest GearAddRack(hRequest hd, int teeth, double base) {
+hRequest GearAddRack(hRequest hd, int teeth, double base, std::string *error) {
     Request *driver = SK.request.FindByIdNoOops(hd);
     if(driver == NULL || driver->type != Request::Type::GEAR) return {};
     if(teeth < GEAR_RACK_MIN_TEETH || teeth > GEAR_RACK_MAX_TEETH) {
-        Error(_("The number of teeth must be between %d and %d."),
-              GEAR_RACK_MIN_TEETH, GEAR_RACK_MAX_TEETH);
+        *error = ssprintf(_("The number of teeth must be between %d and %d."),
+                          GEAR_RACK_MIN_TEETH, GEAR_RACK_MAX_TEETH);
         return {};
     }
     if(!(base > LENGTH_EPS)) {
-        Error(_("The back of the rack must be thicker than zero."));
+        *error = _("The back of the rack must be thicker than zero.");
         return {};
     }
 
@@ -862,7 +862,7 @@ hRequest GearAddRack(hRequest hd, int teeth, double base) {
     gp.bore = 0;
     gp.rackBase = base;
     if(!GearRackComputeInfo(gp).valid) {
-        Error(_("No rack tooth shape is possible for these values."));
+        *error = _("No rack tooth shape is possible for these values.");
         return {};
     }
     Quaternion q = SK.GetEntity(driver->workplane)->Normal()->NormalGetNum();
@@ -875,7 +875,7 @@ hRequest GearAddRack(hRequest hd, int teeth, double base) {
     if(GEAR_RACK_AFTER_ACTIVE_GROUP) {
         Group *active = SK.group.FindByIdNoOops(SS.GW.activeGroup);
         if(active == NULL || active->order < SK.GetGroup(driver->group)->order) {
-            Error(_("Activate the sketch of the gear or a later group to add a rack."));
+            *error = _("Activate the sketch of the gear or a later group to add a rack.");
             return {};
         }
     } else {

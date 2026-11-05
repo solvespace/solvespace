@@ -195,8 +195,12 @@ bool TextWindow::EditControlDoneForGear(const std::string &s) {
             teeth = (int)floor(e->Eval() + 0.5);
         }
         SS.UndoRemember();
-        hRequest hm = GearAddMate(r->h, teeth);
-        if(hm.v == 0) return false;
+        std::string error;
+        hRequest hm = GearAddMate(r->h, teeth, &error);
+        if(hm.v == 0) {
+            if(!error.empty()) Error("%s", error.c_str());
+            return false;
+        }
         SS.GW.ClearSelection();
         SS.GW.MakeSelected(hm.entity(0));
         SS.ScheduleShowTW();
@@ -606,8 +610,13 @@ void TextWindow::ScreenChangeGearRack(int link, uint32_t v) {
 
 void TextWindow::ScreenCreateGearRack(int link, uint32_t v) {
     SS.UndoRemember();
-    hRequest hr = GearAddRack(SS.TW.shown.gear, SS.TW.gearRackTeeth, SS.TW.gearRackBase);
-    if(hr.v == 0) return;
+    std::string error;
+    hRequest hr = GearAddRack(SS.TW.shown.gear, SS.TW.gearRackTeeth, SS.TW.gearRackBase,
+                              &error);
+    if(hr.v == 0) {
+        if(!error.empty()) Error("%s", error.c_str());
+        return;
+    }
     SS.GW.ClearSelection();
     SS.GW.MakeSelected(hr.entity(0));
     SS.ScheduleShowTW();

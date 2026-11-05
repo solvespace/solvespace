@@ -332,7 +332,8 @@ TEST_CASE(extrude) {
 
 TEST_CASE(mating_gear) {
     CHECK_LOAD("normal.slvs");
-    hRequest hm = GearAddMate(GEAR_REQUEST, 40);
+    std::string error;
+    hRequest hm = GearAddMate(GEAR_REQUEST, 40, &error);
     CHECK_TRUE(hm.v != 0);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     Request *mate = SK.GetRequest(hm);
@@ -364,6 +365,7 @@ TEST_CASE(mating_gear) {
 // A gear turned by an odd angle still gets a meshing mate.
 TEST_CASE(mating_gear_turned) {
     CHECK_LOAD("normal.slvs");
+    std::string error;
     // Drop the horizontal constraint and turn the gear.
     for(Constraint &c : SK.constraint) {
         if(c.type == Constraint::Type::HORIZONTAL) c.tag = 1;
@@ -374,7 +376,7 @@ TEST_CASE(mating_gear_turned) {
     SS.MarkGroupDirty(SS.GW.activeGroup);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     for(int z : { 9, 13, 31 }) {
-        hRequest hm = GearAddMate(GEAR_REQUEST, z);
+        hRequest hm = GearAddMate(GEAR_REQUEST, z, &error);
         SS.GenerateAll(SolveSpaceUI::Generate::ALL);
         CHECK_TRUE(Mesh(GearEntity(), SK.GetEntity(hm.entity(0)), 0.15));
         SK.request.FindById(hm)->tag = 1;
@@ -506,12 +508,12 @@ static void CheckHubsOnBoth(Test::Helper *helper, bool mateFirst) {
     std::string error;
     hRequest hm;
     if(mateFirst) {
-        hm = GearAddMate(GEAR_REQUEST, 30);
+        hm = GearAddMate(GEAR_REQUEST, 30, &error);
         SS.GenerateAll(SolveSpaceUI::Generate::ALL);
         CHECK_TRUE(GearAddHub(GEAR_REQUEST, hp, &error));
     } else {
         CHECK_TRUE(GearAddHub(GEAR_REQUEST, hp, &error));
-        hm = GearAddMate(GEAR_REQUEST, 30);
+        hm = GearAddMate(GEAR_REQUEST, 30, &error);
         SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     }
     CHECK_TRUE(hm.v != 0);
@@ -586,7 +588,7 @@ TEST_CASE(hub_after_active_group) {
     CHECK_TRUE(SK.GetRequest(GEAR_REQUEST)->gear.bore == 5);
 
     SS.GW.activeGroup = sketch;
-    hRequest hm = GearAddMate(GEAR_REQUEST, 30);
+    hRequest hm = GearAddMate(GEAR_REQUEST, 30, &error);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     hGroup mateSketch = SK.GetRequest(hm)->group;
     CHECK_TRUE(SS.GW.activeGroup == mateSketch);
@@ -607,14 +609,15 @@ TEST_CASE(mate_after_active_group) {
     CHECK_LOAD("normal.slvs");
     hGroup sketch = SK.GetRequest(GEAR_REQUEST)->group;
     SS.GW.activeGroup = Group::HGROUP_REFERENCES;
-    CHECK_TRUE(GearAddMate(GEAR_REQUEST, 30).v == 0);
-
     std::string error;
+    CHECK_TRUE(GearAddMate(GEAR_REQUEST, 30, &error).v == 0);
+    CHECK_FALSE(error.empty());
+
     SS.GW.activeGroup = sketch;
     CHECK_TRUE(GearAddHub(GEAR_REQUEST, GearHubParams::Default(GearEntity()->gear), &error));
     // Back to the gear extrusion, and a mate after it, before the hub.
     SS.GW.activeGroup = GroupNamed("gear")->h;
-    hRequest hm = GearAddMate(GEAR_REQUEST, 30);
+    hRequest hm = GearAddMate(GEAR_REQUEST, 30, &error);
     CHECK_TRUE(hm.v != 0);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     Group *mate = SK.GetGroup(SK.GetRequest(hm)->group);
@@ -731,7 +734,8 @@ static double RackPitchLineDistance(hRequest hr) {
 
 TEST_CASE(rack) {
     CHECK_LOAD("normal.slvs");
-    hRequest hr = GearAddRack(GEAR_REQUEST, 12, 3);
+    std::string error;
+    hRequest hr = GearAddRack(GEAR_REQUEST, 12, 3, &error);
     CHECK_TRUE(hr.v != 0);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     Request *rack = SK.GetRequest(hr);
@@ -788,6 +792,7 @@ TEST_CASE(rack) {
 // rack was moved along and around the gear.
 TEST_CASE(rack_turned) {
     CHECK_LOAD("normal.slvs");
+    std::string error;
     for(Constraint &c : SK.constraint) {
         if(c.type == Constraint::Type::HORIZONTAL) c.tag = 1;
     }
@@ -798,7 +803,7 @@ TEST_CASE(rack_turned) {
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     hGroup sketch = SS.GW.activeGroup;
 
-    hRequest hr = GearAddRack(GEAR_REQUEST, 9, 2);
+    hRequest hr = GearAddRack(GEAR_REQUEST, 9, 2, &error);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     CHECK_TRUE(Mesh(GearEntity(), SK.GetEntity(hr.entity(0)), 0.15));
 
@@ -820,18 +825,25 @@ TEST_CASE(rack_turned) {
     // A group before the sketch of the gear cannot take a rack.
     if(GEAR_RACK_AFTER_ACTIVE_GROUP) {
         SS.GW.activeGroup = Group::HGROUP_REFERENCES;
-        CHECK_TRUE(GearAddRack(GEAR_REQUEST, 9, 2).v == 0);
+        error.clear();
+        CHECK_TRUE(GearAddRack(GEAR_REQUEST, 9, 2, &error).v == 0);
+        CHECK_FALSE(error.empty());
         SS.GW.activeGroup = sketch;
     }
-    CHECK_TRUE(GearAddRack(GEAR_REQUEST, 9, 0).v == 0);
-    CHECK_TRUE(GearAddRack(GEAR_REQUEST, 0, 2).v == 0);
+    error.clear();
+    CHECK_TRUE(GearAddRack(GEAR_REQUEST, 9, 0, &error).v == 0);
+    CHECK_FALSE(error.empty());
+    error.clear();
+    CHECK_TRUE(GearAddRack(GEAR_REQUEST, 0, 2, &error).v == 0);
+    CHECK_FALSE(error.empty());
 }
 
 // The extruded rack is a closed solid with the volume of its outline times
 // the depth.
 TEST_CASE(rack_extrude) {
     CHECK_LOAD("normal.slvs");
-    hRequest hr = GearAddRack(GEAR_REQUEST, 6, 3);
+    std::string error;
+    hRequest hr = GearAddRack(GEAR_REQUEST, 6, 3, &error);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     std::vector<Vector> pts;
     Polyline(SK.GetEntity(hr.entity(0)), &pts);
@@ -907,7 +919,7 @@ TEST_CASE(rack_solid_defaults) {
 
 static hRequest SolidRack(GearRackSolidParams::Mount mount, GearRackSolidParams *sp,
                           std::string *error) {
-    hRequest hr = GearAddRack(GEAR_REQUEST, 12, 3);
+    hRequest hr = GearAddRack(GEAR_REQUEST, 12, 3, error);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     *sp = GearRackSolidParams::Default(SK.GetRequest(hr)->gear, mount);
     if(!GearAddRackSolid(hr, *sp, error)) return {};
