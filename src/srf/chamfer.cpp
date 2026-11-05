@@ -159,16 +159,49 @@
 // and end k ([0] at e.Start(), [1] at e.Finish()). Recut: an unmodified
 // neighbor that gets shortened. See their definitions below.
 //
-// Test order (cube with all coordinates at +/-10)
-// -----------------------------------------------
-// 1. Chamfer one top edge: line between two planes, case 1 at both ends.
-// 2. The same edge as a fillet.
-// 3. A concave edge, e.g. an L-shaped extrusion.
-// 4. Top edge of a cylinder: arcs in a tangent chain (case 2).
-// 5. Two top edges of the cube meeting at a corner (case 3).
-// 6. Three edges at a corner (case 4): flat triangle or sphere patch.
-// Check each time: offset direction, surface normal, trim directions, and no
-// "trim was unterminated" / "trim was empty" messages.
+// STATUS (2026-11-05)
+// -------------------
+// Working, fillet and chamfer, checked for closed meshes and against exact
+// or semi-analytic volumes:
+// - Edges between planes at any angle, convex and concave; lines and arcs;
+//   plane-cylinder and cylinder-cylinder edges (the rolling ball's
+//   cross-section: SolveBallSection(), FollowEdge()).
+// - Case 1 end faces: perpendicular, flat at an angle (exact ellipse), and
+//   curved (traced end curve, kept as points). Neighbors are shortened, or
+//   extended past a reflex corner.
+// - Case 2 tangent chains (e.g. the arcs of a circle).
+// - Case 3 miters of straight edges: exact conics between flat faces, convex
+//   and reflex corners, equal and unequal angles (ExactMiterEnd()); traced
+//   with curved faces at convex corners (TraceMiterEnd()).
+// - Case 4 corners of three edges, any angles: flat triangle for chamfers,
+//   sphere patch of three bands for fillets (sphere_patch.cpp).
+// - Edges split by Booleans, worked on as pieces (GetPiece()), including
+//   coincident curve copies on the two faces.
+// - Only the last group is modified (groupmesh.cpp), for testing.
+//
+// Not handled, by decision: point-only (non-exact) curves; differing radii
+// at a vertex; convex and concave edges meeting at a vertex.
+//
+// Next steps:
+// - An arc edge in a miter, or meeting its end face at an angle: its
+//   cross-section points move on circles, not lines, so tracing needs
+//   circle-surface hits (or exact shapes where they exist).
+// - Arcs crossing in different planes (IntersectCarriers()).
+// - Miters at reflex corners with curved faces (refused now).
+// - Cubic (Bezier) edges: an approximate in-plane offset; to be discussed.
+// - Naming edges, so a user can pick them, replacing the GetEdgeModifier()
+//   test hook; and making fillet/chamfer its own group type.
+//
+// Testing
+// -------
+// Test models are in misc_CAD/fillet_test. GetEdgeModifier() recognizes
+// each by its shape and picks its edges; constants there choose variants
+// and r (negative for chamfers). Without the GUI:
+//   solvespace-cli export-mesh --chord-tol 0.005 --output %.obj <model>
+// then check the OBJ: every triangle edge shared by exactly two triangles,
+// and the volume. Curved walls need a fine tolerance (down to 0.0002) for
+// the volume to converge. Check also for "trim was unterminated" / "trim was
+// empty" and "fillet:" messages.
 //
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
