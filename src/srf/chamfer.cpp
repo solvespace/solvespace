@@ -109,10 +109,16 @@
 //    is exact, being a parallel projection of the cross-section circle. For
 //    chamfers it is a line. This curve is not a parameter line of either
 //    fillet surface, so each surface is built a bit longer and trimmed by it.
-// 4. Three modified edges (cube corner). Cases 3 on each pair; the corner
-//    patch itself comes later (see scope).
-// Anything else (end face not perpendicular, etc.) is unsupported for now:
-// skip the edge. In general that needs SSurface::IntersectAgainst().
+// 4. Three modified edges (cube corner). Not miters: in each of its two
+//    faces, e's offset crosses the neighbor's offset, and e's fillet ends at
+//    the cross-section through those two points (same parameter at a square
+//    corner). The three cross-sections bound the corner patch: a sphere
+//    octant centered where the three fillet axes meet, or a flat triangle
+//    for chamfers. The patch comes later (see scope); until then the hole is
+//    open and those curves name the fillet as both of their surfaces.
+// Anything else (end face not perpendicular, etc.) is unsupported for now,
+// and then no edge is changed. In general that needs
+// SSurface::IntersectAgainst().
 //
 // Steps in ModifyEdges()
 // ----------------------
@@ -166,6 +172,7 @@ static const double QUARTER_ARC_WEIGHT = 0.70710678118654752440;
 static const int END_FACE = 1;  // case 1: neighbors not modified, end face C
 static const int TANGENT  = 2;  // case 2: tangent chain of modified edges
 static const int MITER    = 3;  // case 3: two modified edges meet at a corner
+static const int CORNER   = 4;  // case 4: three modified edges at a corner
 
 // One edge to modify. Stored by value: no pointers into the shell's lists,
 // which can reallocate when things are added.
@@ -181,7 +188,7 @@ struct EdgeMod {
     SBezier   off[2];         // [s] offset curves eA, eB
     Vector    vtx[2];         // [k] original vertex
     hSCurve   nb[2][2];       // [s][k] neighbor curve in face[s] at vtx[k]
-    int       kind[2];        // [k] END_FACE, TANGENT or MITER
+    int       kind[2];        // [k] END_FACE, TANGENT, MITER or CORNER
     int       modSide[2];     // [k] TANGENT, MITER: side of the modified neighbor
     hSSurface sC[2];          // [k] END_FACE: end face C
     Vector    cut[2][2];      // [s][k] where off[s] ends
@@ -218,6 +225,8 @@ double SShell::GetEdgeModifier(SCurve &sc)
     // misc_CAD:
     //   test_cube, L_shape: the outer lines around the z = 10 face, which
     //                       meet at corners
+    //   test_cube:          the line at x = 10, y = 10, making three edges
+    //                       at the corner (10, 10, 10)
     //   L_shape:            the line at x = 0, y = 0 (concave)
     //   test_cylinder:      the arcs of the top circle at z = 10
     const double r = 3.0;   // negative for chamfers
@@ -227,6 +236,9 @@ double SShell::GetEdgeModifier(SCurve &sc)
        (IsTestLine(b, 0, 10) || IsTestLine(b, 0, -10) ||
         IsTestLine(b, 1, 10) || IsTestLine(b, 1, -10)))
     {
+        return r;
+    }
+    if(IsTestLine(b, 0, 10) && IsTestLine(b, 1, 10)) {
         return r;
     }
     if(IsTestLine(b, 0, 0) && IsTestLine(b, 1, 0)) {
@@ -517,6 +529,53 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
     return true;
 }
 
+// Case 4 at end k: both neighbors f (in A) and g (in B) are modified, three
+// fillets at a corner. In each face the offsets of e and its neighbor cross;
+// e's fillet ends at the cross-section through those two points, where the
+// corner patch (sphere octant or flat triangle) will attach later. For now
+// that patch is left out and the hole is left open. This needs the two
+// crossing points at the same parameter, as at a 90 degree box corner.
+static bool SetUpCornerEnd(SShell *sh, const std::vector<EdgeMod> &mods,
+                           EdgeMod *em, int k)
+{
+    if(em->e.deg != 1) {
+        dbp("fillet: corner of curved edges not supported yet");
+        return false;
+    }
+    hSSurface other[2];
+    for(int s = 0; s < 2; s++) {
+        const EdgeMod &fm = mods[FindEdgeMod(mods, em->nb[s][k])];
+        if(fm.e.deg != 1) {
+            dbp("fillet: corner of curved edges not supported yet");
+            return false;
+        }
+        if(fabs(fm.r - em->r) > LENGTH_EPS || fm.chamfer != em->chamfer) {
+            dbp("fillet: edges meeting at a corner must have the same radius");
+            return false;
+        }
+        int fs = (fm.face[0].v == em->face[s].v) ? 0 : 1;
+        if(fm.face[fs].v != em->face[s].v) return false;
+        other[s] = fm.face[1 - fs];
+        if(!IntersectCarriers(em->off[s], fm.off[fs], &em->cut[s][k])) {
+            dbp("fillet: offset curves don't meet at the corner");
+            return false;
+        }
+    }
+    if(other[0].v != other[1].v) {
+        dbp("fillet: corner neighbors don't share a face");
+        return false;
+    }
+    double t0 = ParamOn(em->off[0], em->cut[0][k]),
+           t1 = ParamOn(em->off[1], em->cut[1][k]);
+    if(fabs(t0 - t1) > 1e-6) {
+        dbp("fillet: corner not square, not supported yet");
+        return false;
+    }
+    em->tSrf[k] = t0;
+    em->kind[k] = CORNER;
+    return true;
+}
+
 // Work out end k of the edge: find the neighbors, classify the vertex, and
 // find the cut points. Reads the shell only.
 static bool SetUpEnd(SShell *sh, const std::vector<EdgeMod> &mods,
@@ -537,8 +596,7 @@ static bool SetUpEnd(SShell *sh, const std::vector<EdgeMod> &mods,
         modified[s] = (FindEdgeMod(mods, em->nb[s][k]) >= 0);
     }
     if(modified[0] && modified[1]) {
-        dbp("fillet: three modified edges at a corner, not supported yet");
-        return false;
+        return SetUpCornerEnd(sh, mods, em, k);
     }
     if(!modified[0] && !modified[1]) {
         return SetUpEndFace(sh, em, k);
@@ -625,13 +683,16 @@ static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB) {
 
 // End curve at end k, from cut[0][k] to cut[1][k]: a line for a chamfer, a
 // quarter circle (or, at a miter, its projection, an ellipse) for a fillet.
-// In every supported case the middle control point is the vertex.
+// The middle control point is the vertex, except at a corner, where the
+// cross-section is short of the vertex.
 static void MakeEndCurve(EdgeMod *em, int k) {
     if(em->chamfer) {
         em->endC[k] = SBezier::From(em->cut[0][k], em->cut[1][k]);
     } else {
+        Vector mid = (em->kind[k] == CORNER) ? em->e.PointAt(em->tSrf[k])
+                                             : em->vtx[k];
         em->endC[k] = SBezier::From(Vector4::From(1.0, em->cut[0][k]),
-                                    Vector4::From(QUARTER_ARC_WEIGHT, em->vtx[k]),
+                                    Vector4::From(QUARTER_ARC_WEIGHT, mid),
                                     Vector4::From(1.0, em->cut[1][k]));
     }
 }
@@ -757,7 +818,7 @@ void SShell::ModifyEdges()
     }
     for(size_t i = 0; i < mods.size(); i++) {
         for(int k = 0; k < 2; k++) {
-            if(mods[i].kind[k] == END_FACE) continue;
+            if(mods[i].kind[k] == END_FACE || mods[i].kind[k] == CORNER) continue;
             if(!FindPartnerEnd(mods, (int)i, k)) {
                 dbp("fillet: modified neighbors don't meet");
                 return;
@@ -772,6 +833,7 @@ void SShell::ModifyEdges()
         for(int k = 0; k < 2; k++) {
             bool ok = true;
             for(int s = 0; s < 2; s++) {
+                if(em.kind[k] == CORNER) continue;
                 if(em.kind[k] != END_FACE && em.modSide[k] == s) continue;
                 ok = ok && SetRecutEnd(&recuts, curve.FindById(em.nb[s][k]),
                                        em.vtx[k], em.cut[s][k]);
@@ -822,6 +884,11 @@ void SShell::ModifyEdges()
         for(int k = 0; k < 2; k++) {
             if(em.kind[k] == END_FACE) {
                 em.hEndC[k] = AddCurve(this, em.endC[k], em.sC[k], em.hFillet);
+            } else if(em.kind[k] == CORNER) {
+                // Edge of the open corner hole: it has only the fillet. Both
+                // handles name the fillet, so code that looks up both
+                // surfaces (Booleans of later groups) doesn't hit a null one.
+                em.hEndC[k] = AddCurve(this, em.endC[k], em.hFillet, em.hFillet);
             } else if(em.partner[k] > (int)i) {
                 EdgeMod &pm = mods[em.partner[k]];
                 em.hEndC[k] = AddCurve(this, em.endC[k], em.hFillet, pm.hFillet);
