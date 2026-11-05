@@ -271,6 +271,7 @@ double SShell::GetEdgeModifier(SCurve &sc)
     //   L_shape:            the line at x = 0, y = 0 (concave)
     //   test_cylinder:      the arcs of the top circle at z = 10
     //   arc_test:           every edge not in the bottom face (see below)
+    //   skew_test:          see below
     //   house_test:         lines between planes not at 90 degrees (eaves).
     //                       If a shell has any of these, only they are
     //                       picked; the rules above would also pick lines in
@@ -278,6 +279,34 @@ double SShell::GetEdgeModifier(SCurve &sc)
     const double r = 3.0;   // negative for chamfers
     if(!sc.isExact) return 0.0;
     const SBezier &b = sc.exact;
+    // skew_test (a skewed extrusion, about 100 in size) is the only big
+    // model. Variants:
+    //   1: the six side edges (one concave), ending on the caps at an angle
+    //   2: the three edges at the top corner (120, 0, 62.45) and the three
+    //      at the bottom corner (-120, 30, -62.45): corners with three
+    //      different face angles
+    const int skewVariant = 2;
+    bool big = false;
+    for(SSurface &ss : surface) {
+        for(int i = 0; i <= ss.degm; i++) {
+            for(int j = 0; j <= ss.degn; j++) {
+                Vector c = ss.ctrl[i][j];
+                if(fabs(c.x) > 50 || fabs(c.y) > 50 || fabs(c.z) > 50) big = true;
+            }
+        }
+    }
+    if(big) {
+        if(b.deg != 1) return 0.0;
+        Vector p0 = b.Start(), p1 = b.Finish();
+        bool side = fabs(p0.z - p1.z) > LENGTH_EPS;
+        if(skewVariant == 1) return side ? r : 0.0;
+        Vector top = Vector::From(120, 0, 62.45),
+               bot = Vector::From(-120, 30, -62.45);
+        bool atCorner = p0.Equals(top, 0.01) || p1.Equals(top, 0.01) ||
+                        p0.Equals(bot, 0.01) || p1.Equals(bot, 0.01);
+        return atCorner ? r : 0.0;
+    }
+
     // arc_test is the only model with exactly one curved surface: pick every
     // edge not in the bottom face (z = -10).
     int curved = 0;
