@@ -622,8 +622,29 @@ static bool LineMeetsCircle(Vector l0, Vector l1, Vector center, double rad,
     return true;
 }
 
+// Where two circles in one plane (normal n) meet; of the two points, the one
+// nearest to near.
+static bool CircleMeetsCircle(Vector c1, double r1, Vector c2, double r2,
+                              Vector n, Vector near, Vector *p)
+{
+    Vector dc = c2.Minus(c1);
+    double d = dc.Magnitude();
+    if(d < LENGTH_EPS) return false;
+    if(d > r1 + r2 + LENGTH_EPS || d < fabs(r1 - r2) - LENGTH_EPS) return false;
+    double a = (r1*r1 - r2*r2 + d*d) / (2*d),
+           h = sqrt(max(0.0, r1*r1 - a*a));
+    Vector u  = dc.ScaledBy(1.0 / d),
+           v  = n.Cross(u).WithMagnitude(1.0),
+           m  = c1.Plus(u.ScaledBy(a)),
+           p1 = m.Plus(v.ScaledBy(h)),
+           p2 = m.Minus(v.ScaledBy(h));
+    *p = ((p1.Minus(near)).Magnitude() < (p2.Minus(near)).Magnitude()) ? p1 : p2;
+    return true;
+}
+
 // Where two curves, extended if needed, meet; of several points, the one
-// nearest to near (the vertex). Lines, and a line with an arc, for now.
+// nearest to near (the vertex). Lines, a line with an arc, and two arcs in
+// one plane.
 static bool IntersectCarriers(const SBezier &a, const SBezier &b, Vector near,
                               Vector *p)
 {
@@ -636,11 +657,21 @@ static bool IntersectCarriers(const SBezier &a, const SBezier &b, Vector near,
                                            b.ctrl[0], b.ctrl[1], &skew);
         return !skew;
     }
+    if(a.deg != 1 && b.deg != 1) {
+        Vector ca, na, cb, nb;
+        double ra, rb;
+        if(!ArcCircle(a, &ca, &ra, &na) || !ArcCircle(b, &cb, &rb, &nb)) return false;
+        if((na.Cross(nb)).Magnitude() > 1e-6 || fabs((cb.Minus(ca)).Dot(na)) > LENGTH_EPS) {
+            dbp("fillet: arcs not in one plane, not supported yet");
+            return false;
+        }
+        return CircleMeetsCircle(ca, ra, cb, rb, na, near, p);
+    }
     const SBezier *line = (a.deg == 1) ? &a : &b,
                   *arc  = (a.deg == 1) ? &b : &a;
     Vector center, n;
     double rad;
-    if(line->deg != 1 || !ArcCircle(*arc, &center, &rad, &n)) return false;
+    if(!ArcCircle(*arc, &center, &rad, &n)) return false;
     return LineMeetsCircle(line->ctrl[0], line->ctrl[1], center, rad, n, near, p);
 }
 
@@ -710,10 +741,6 @@ static bool SolveBallSection(SShell *sh, EdgeMod *em, double t, BallSection *bs)
             return false;
         }
     }
-    if(fs[0].isCircle && fs[1].isCircle) {
-        dbp("fillet: edge between two cylinders not supported yet");
-        return false;
-    }
     // Convex edge: the ball is in the material, inside both faces. Concave:
     // it is in the air, outside both.
     bool convex = fs[0].dir.Dot(fs[1].n) < 0;
@@ -724,7 +751,14 @@ static bool SolveBallSection(SShell *sh, EdgeMod *em, double t, BallSection *bs)
     double r = em->r;
 
     // Each face offset by r toward the ball; the center is where they meet.
-    if(!fs[0].isCircle && !fs[1].isCircle) {
+    if(fs[0].isCircle && fs[1].isCircle) {
+        double or0 = ((p.Plus(fs[0].n.ScaledBy(sg*r))).Minus(fs[0].center)).Magnitude(),
+               or1 = ((p.Plus(fs[1].n.ScaledBy(sg*r))).Minus(fs[1].center)).Magnitude();
+        if(!CircleMeetsCircle(fs[0].center, or0, fs[1].center, or1, tan, p, &bs->c)) {
+            dbp("fillet: radius too big for this edge");
+            return false;
+        }
+    } else if(!fs[0].isCircle && !fs[1].isCircle) {
         Vector a0 = p.Plus(fs[0].n.ScaledBy(sg*r)),
                b0 = p.Plus(fs[1].n.ScaledBy(sg*r));
         if((fs[0].dir.Cross(fs[1].dir)).Magnitude() < 1e-6) {
