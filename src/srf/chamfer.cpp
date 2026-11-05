@@ -182,9 +182,10 @@ static const int CORNER   = 4;  // case 4: three modified edges at a corner
 // An edge piece: the range of a curve between two vertices, covered by one
 // trim on each of the curve's two faces. Booleans split curves, so one curve
 // can have several pieces (and run on past them); an unsplit curve is one
-// piece.
+// piece. Booleans can also give the two faces separate, coincident copies of
+// the curve, so each trim has its own.
 struct Piece {
-    hSCurve   hc;
+    hSCurve   hc[2];          // the curve each trim is on
     hSSurface face[2];        // the curve's surfA and surfB
     int       trim[2];        // index of the piece's trim in each
     Vector    start, finish;  // ends, in the curve's direction
@@ -197,6 +198,7 @@ struct Piece {
 // Index k is the end:  [0] at e.Start(), [1] at e.Finish().
 struct EdgeMod {
     hSCurve   orig;           // the curve the edge is (a piece of)
+    hSCurve   origCurve[2];   // [s] the curve its trim on face[s] uses
     double    r;
     bool      chamfer;
     // The rolling ball, from SetUpSections(). Every cross-section of the
@@ -308,7 +310,7 @@ double SShell::GetEdgeModifier(SCurve &sc)
     //   L_shape:            the line at x = 0, y = 0 (concave)
     //   test_cylinder:      the arcs of the top circle at z = 10
     //   arc_test:           every edge not in the bottom face (see below)
-    //   skew_test, straight_test: see below
+    //   skew_test, straight_test, test_cube_boolean: see below
     //   house_test:         lines between planes not at 90 degrees (eaves).
     //                       If a shell has any of these, only they are
     //                       picked; the rules above would also pick lines in
@@ -400,6 +402,20 @@ double SShell::GetEdgeModifier(SCurve &sc)
     for(SSurface &ss : surface) {
         if(ss.degm > 1 || ss.degn > 1) curved++;
     }
+    // test_cube_boolean (the cube with a notch cut across its y = -10
+    // face, z from -5 to 5) is the only model with 12 flat faces. The notch
+    // splits the vertical edges at x = +/-10, y = -10 into two pieces each.
+    //   0: those two split edges
+    //   1: also the top face's outer edges and the x = 10, y = 10 edge (the
+    //      cube's rules)
+    const int booleanVariant = 1;
+    if(surface.n == 12 && curved == 0) {
+        bool split = IsTestLine(b, 1, -10) &&
+                     (IsTestLine(b, 0, 10) || IsTestLine(b, 0, -10));
+        if(split) return r;
+        if(booleanVariant == 0) return 0.0;
+    }
+
     // L_shape is the only model with 8 faces. Its top face (z = 10) has a
     // reflex corner at (0, 0). Variants:
     //   0: the rules below (outer top edges and the concave edge)
@@ -471,41 +487,51 @@ double SShell::GetEdgeModifier(SCurve &sc)
 
 static bool SubCurve(const SBezier &b, Vector p0, Vector p1, SBezier *out);
 
-// The piece that trim ti of surface hs covers. False if its curve isn't
-// exact, or its other face doesn't have exactly one matching trim running
-// the other way.
+// The piece that trim ti of surface hs covers. On the curve's other face,
+// the matching trim runs between the same two points the other way, on the
+// same curve or a coincident copy of it. False if a curve isn't exact, or
+// there isn't exactly one such trim.
 static bool GetPiece(SShell *sh, hSSurface hs, int ti, Piece *pc) {
     STrimBy *stb = &sh->surface.FindById(hs)->trim[ti];
     SCurve *sc = sh->curve.FindById(stb->curve);
     if(!sc->isExact) return false;
-    pc->hc      = sc->h;
     pc->face[0] = sc->surfA;
     pc->face[1] = sc->surfB;
     pc->start   = stb->backwards ? stb->finish : stb->start;
     pc->finish  = stb->backwards ? stb->start  : stb->finish;
-    bool bk[2];
+    if(pc->start.Equals(sc->exact.Start()) && pc->finish.Equals(sc->exact.Finish())) {
+        pc->b = sc->exact;
+    } else if(!SubCurve(sc->exact, pc->start, pc->finish, &pc->b)) {
+        return false;
+    }
+    Vector mid = pc->b.PointAt(0.5);
     for(int i = 0; i < 2; i++) {
+        if(pc->face[i].v == hs.v) {
+            pc->trim[i] = ti;
+            pc->hc[i]   = sc->h;
+            continue;
+        }
         SSurface *f = sh->surface.FindByIdNoOops(pc->face[i]);
         if(f == NULL) return false;
         pc->trim[i] = -1;
         for(int j = 0; j < f->trim.n; j++) {
             STrimBy *t = &f->trim[j];
-            if(t->curve.v != sc->h.v) continue;
-            Vector a = t->backwards ? t->finish : t->start,
-                   b = t->backwards ? t->start  : t->finish;
-            if(!a.Equals(pc->start) || !b.Equals(pc->finish)) continue;
+            if(!t->start.Equals(stb->finish) || !t->finish.Equals(stb->start)) continue;
+            // The copy names this face, but its other surface may be a
+            // coincident one from the other Boolean operand.
+            SCurve *c2 = sh->curve.FindById(t->curve);
+            bool onFace = (c2->surfA.v == f->h.v || c2->surfB.v == f->h.v);
+            if(!c2->isExact || !onFace) continue;
+            double tm;
+            c2->exact.ClosestPointTo(mid, &tm, /*mustConverge=*/false);
+            if(!c2->exact.PointAt(tm).Equals(mid)) continue;
             if(pc->trim[i] >= 0) return false;
             pc->trim[i] = j;
-            bk[i] = t->backwards;
+            pc->hc[i]   = c2->h;
         }
         if(pc->trim[i] < 0) return false;
     }
-    if(bk[0] == bk[1]) return false;
-    if(pc->start.Equals(sc->exact.Start()) && pc->finish.Equals(sc->exact.Finish())) {
-        pc->b = sc->exact;
-        return true;
-    }
-    return SubCurve(sc->exact, pc->start, pc->finish, &pc->b);
+    return true;
 }
 
 static hSSurface OtherFace(const Piece &pc, hSSurface hs) {
@@ -1828,17 +1854,20 @@ void SShell::ModifyEdges()
         double m = GetEdgeModifier(*sc);
         if(fabs(m) < LENGTH_EPS) continue;
         hSCurve hc = sc->h;
-        hSSurface hsa = sc->surfA;
+        hSSurface hfaces[2] = { sc->surfA, sc->surfB };
         if(!sc->isExact) {
             dbp("fillet: edge is not exact");
             return;
         }
-        // Each trim on surfA is one piece of this curve.
-        SSurface *sa = surface.FindById(hsa);
+        // Each trim on this curve is (one side of) one piece of it. The
+        // curve may be used on only one face, the other face using a copy.
+        for(int fi = 0; fi < 2; fi++) {
+        SSurface *sa = surface.FindById(hfaces[fi]);
         for(int ti = 0; ti < sa->trim.n; ti++) {
             if(sa->trim[ti].curve.v != hc.v) continue;
+            if(FindEdgeModAt(mods, hfaces[fi], ti) >= 0) continue;
             Piece pc;
-            if(!GetPiece(this, hsa, ti, &pc)) {
+            if(!GetPiece(this, hfaces[fi], ti, &pc)) {
                 dbp("fillet: edge piece isn't trimmed on both faces");
                 return;
             }
@@ -1851,7 +1880,10 @@ void SShell::ModifyEdges()
             em.face[1] = pc.face[1];
             em.trim[0] = pc.trim[0];
             em.trim[1] = pc.trim[1];
+            em.origCurve[0] = pc.hc[0];
+            em.origCurve[1] = pc.hc[1];
             mods.push_back(em);
+        }
         }
     }
     if(mods.empty()) return;
@@ -2090,9 +2122,10 @@ void SShell::ModifyEdges()
     for(Recut &rc : recuts) {
         for(int i = 0; i < 2; i++) {
             STrimBy *stb = &surface.FindById(rc.pc.face[i])->trim[rc.pc.trim[i]];
-            stb->curve  = rc.newh;
-            stb->start  = stb->backwards ? rc.finish : rc.start;
-            stb->finish = stb->backwards ? rc.start  : rc.finish;
+            bool along = stb->start.Equals(rc.pc.start);
+            Vector a = along ? rc.start : rc.finish,
+                   b = along ? rc.finish : rc.start;
+            *stb = MakeTrim(rc.newh, a, b, rc.start);
         }
     }
 
@@ -2100,8 +2133,14 @@ void SShell::ModifyEdges()
     // uses any more. SCurve has no tag, so copy the live curves to a new
     // list, which takes over their points.
     std::vector<hSCurve> touched;
-    for(EdgeMod &em : mods) touched.push_back(em.orig);
-    for(Recut &rc : recuts) touched.push_back(rc.pc.hc);
+    for(EdgeMod &em : mods) {
+        touched.push_back(em.origCurve[0]);
+        touched.push_back(em.origCurve[1]);
+    }
+    for(Recut &rc : recuts) {
+        touched.push_back(rc.pc.hc[0]);
+        touched.push_back(rc.pc.hc[1]);
+    }
     IdList<SCurve,hSCurve> kept = {};
     for(SCurve &sc : curve) {
         bool dead = false;
