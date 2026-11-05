@@ -173,105 +173,570 @@
 
 namespace SolveSpace {
 
-typedef struct {
-    hSCurve     hc;   // handle of the original curve
-    hSSurface   hs;   // handle of the new surface
-    
-} fillet_info;
+// Weight of the middle control point of a rational quadratic quarter circle,
+// cos(45 degrees). Used for the fillet cross-section.
+static const double QUARTER_ARC_WEIGHT = 0.70710678118654752440;
 
+// One edge to modify. Stored by value: no pointers into the shell's lists,
+// which can reallocate when things are added. Arrays of 2 are per end of the
+// edge: [0] at e.Start(), [1] at e.Finish().
+struct EdgeMod {
+    hSCurve   orig;           // the original edge
+    double    r;
+    bool      chamfer;
+    hSSurface sA, sB;         // faces A and B
+    int       trimA, trimB;   // index of the edge's trim in sA and sB
+    SBezier   e;              // the original edge
+    SBezier   offA, offB;     // offset curves eA and eB
+    Vector    vtx[2];         // original vertex
+    hSCurve   nbA[2], nbB[2]; // neighbor curves f (in A) and g (in B)
+    hSSurface sC[2];          // end face C, shared by f and g
+    bool      cFromA[2];      // in C, the trim on f arrives at the vertex
+    Vector    cutA[2], cutB[2]; // where eA and eB end
+    double    tCut[2];        // parameter of the cuts on eA, eB and e
+    // Geometry built before the shell is changed
+    SBezier   newA, newB, endC[2];
+    SSurface  fillet;
+    // Handles assigned when the shell is changed
+    hSCurve   hNewA, hNewB, hEndC[2];
+    hSSurface hFillet;
+};
+
+// A neighbor curve that gets shortened at one or both ends.
+struct Recut {
+    hSCurve   orig;
+    Vector    start, finish;  // new ends, in the curve's own direction
+    SBezier   b;
+    hSCurve   newh;
+};
 
 // We return 0 for no feature, radius for a fillet, and for chamfers a negative
 // value whose absolute value is the radius of an equivalent fillet.
 double SShell::GetEdgeModifier(SCurve &sc)
 {
-  // for testing we will hard code stuff like returning a radius for only degree 2 curves.
-  // once things work we'll topo-name curves with entity handles and use that to get info.
-  if (!sc.isExact) return 0.0;
-  // chamfer any curve up high
-  if ((sc.exact.deg > 1) && (sc.exact.ctrl[0].z > 9.0)) return -5.0;
-  
-  return 0.0;
+    // Test hook until edges can be named. For the test cube (all coordinates
+    // +/-10): the top edge at y = 10, z = 10.
+    if(!sc.isExact || sc.exact.deg != 1) return 0.0;
+    Vector a = sc.exact.Start(), b = sc.exact.Finish();
+    if(fabs(a.y - 10) < LENGTH_EPS && fabs(b.y - 10) < LENGTH_EPS &&
+       fabs(a.z - 10) < LENGTH_EPS && fabs(b.z - 10) < LENGTH_EPS)
+    {
+        return 3.0;
+    }
+    return 0.0;
+}
+
+// Index of the one trim in s that uses curve hc, or -1 if there are none or
+// more than one.
+static int FindOnlyTrim(SSurface *s, hSCurve hc) {
+    int found = -1;
+    for(int i = 0; i < s->trim.n; i++) {
+        if(s->trim[i].curve.v == hc.v) {
+            if(found >= 0) return -1;
+            found = i;
+        }
+    }
+    return found;
+}
+
+static bool TrimCoversCurve(SCurve *sc, STrimBy *stb) {
+    Vector first = sc->pts[0].p,
+           last  = sc->pts[sc->pts.n - 1].p;
+    if(stb->backwards) {
+        return stb->start.Equals(last) && stb->finish.Equals(first);
+    } else {
+        return stb->start.Equals(first) && stb->finish.Equals(last);
+    }
+}
+
+// True if the curve has exactly one trim on each of its surfaces, each
+// covering the whole curve.
+static bool CurveFullyTrimmed(SShell *sh, SCurve *sc) {
+    hSSurface hs[2] = { sc->surfA, sc->surfB };
+    for(int i = 0; i < 2; i++) {
+        SSurface *s = sh->surface.FindByIdNoOops(hs[i]);
+        if(s == NULL) return false;
+        int it = FindOnlyTrim(s, sc->h);
+        if(it < 0 || !TrimCoversCurve(sc, &s->trim[it])) return false;
+    }
+    return true;
+}
+
+static hSSurface OtherSurface(SCurve *sc, hSSurface hs) {
+    return (sc->surfA.v == hs.v) ? sc->surfB : sc->surfA;
+}
+
+static bool SurfaceIsPlane(SSurface *s, Vector *n, double *d) {
+    if(s->degm != 1 || s->degn != 1) return false;
+    *n = s->NormalAt(0.5, 0.5).WithMagnitude(1.0);
+    *d = n->Dot(s->ctrl[0][0]);
+    return s->CoincidentWithPlane(*n, *d);
+}
+
+static Vector SurfaceNormalNear(SSurface *s, Vector p) {
+    Point2d uv;
+    s->ClosestPointTo(p, &uv, /*mustConverge=*/false);
+    return s->NormalAt(uv).WithMagnitude(1.0);
+}
+
+// Unit vector at e(t), within surface s and perpendicular to e, pointing into
+// the face. backwards is the flag of e's trim on s. Per
+// SSurface::EdgeNormalsWithinSurface() the interior is on the side of
+// (trim direction x surface normal).
+static Vector InwardAt(SSurface *s, const SBezier &e, bool backwards, double t) {
+    Vector tan = e.TangentAt(t);
+    if(backwards) tan = tan.ScaledBy(-1.0);
+    Vector n = SurfaceNormalNear(s, e.PointAt(t));
+    return tan.Cross(n).WithMagnitude(1.0);
+}
+
+// Offset e into surface s by distance d, away from the edge. Only the exact
+// cases for now:
+//   inward direction constant along e -> translate (line in a plane, or any
+//                                        curve on a face perpendicular to a
+//                                        plane)
+//   arc in a plane face               -> concentric arc, same weights
+static bool OffsetEdgeInto(SSurface *s, const SBezier &e, bool backwards,
+                           double d, SBezier *out)
+{
+    Vector in0 = InwardAt(s, e, backwards, 0.0),
+           in1 = InwardAt(s, e, backwards, 1.0);
+    if(in0.Equals(in1)) {
+        *out = e.TransformedBy(in0.ScaledBy(d), Quaternion::IDENTITY, 1.0);
+        return true;
+    }
+
+    Vector n, center;
+    double pd, rad;
+    if(SurfaceIsPlane(s, &n, &pd) && e.IsCircle(n, &center, &rad)) {
+        Vector inm = InwardAt(s, e, backwards, 0.5);
+        double sign = (inm.Dot(e.PointAt(0.5).Minus(center)) > 0) ? 1.0 : -1.0;
+        double newr = rad + sign*d;
+        if(newr < LENGTH_EPS) return false;
+        *out = e;
+        for(int i = 0; i <= e.deg; i++) {
+            out->ctrl[i] = center.Plus(
+                (e.ctrl[i].Minus(center)).ScaledBy(newr/rad));
+        }
+        return true;
+    }
+    return false;
+}
+
+// Parameter of point p, which lies on (or on the extension of) curve b.
+static double ParamOn(const SBezier &b, Vector p) {
+    if(b.deg == 1) {
+        Vector d = b.ctrl[1].Minus(b.ctrl[0]);
+        return (p.Minus(b.ctrl[0])).Dot(d) / d.MagSquared();
+    }
+    double t;
+    b.ClosestPointTo(p, &t, /*mustConverge=*/false);
+    return t;
+}
+
+// Where the offset curve (extended if needed) meets neighbor curve nb. Lines
+// only for now.
+static bool IntersectCarrier(const SBezier &off, const SBezier &nb, Vector *p) {
+    if(off.deg != 1 || nb.deg != 1) return false;
+    Vector da = off.ctrl[1].Minus(off.ctrl[0]),
+           db = nb.ctrl[1].Minus(nb.ctrl[0]);
+    if((da.Cross(db)).Magnitude() < LENGTH_EPS * da.Magnitude()) return false;
+    bool skew;
+    *p = Vector::AtIntersectionOfLines(off.ctrl[0], off.ctrl[1],
+                                       nb.ctrl[0], nb.ctrl[1], &skew);
+    return !skew;
+}
+
+// Index of the one trim in s, not on curve exclude, that starts or finishes
+// at v. -1 if there are none or more than one.
+static int FindTrimAtVertex(SSurface *s, hSCurve exclude, Vector v) {
+    int found = -1;
+    for(int i = 0; i < s->trim.n; i++) {
+        STrimBy *stb = &s->trim[i];
+        if(stb->curve.v == exclude.v) continue;
+        if(stb->start.Equals(v) || stb->finish.Equals(v)) {
+            if(found >= 0) return -1;
+            found = i;
+        }
+    }
+    return found;
+}
+
+static bool IsModified(const std::vector<EdgeMod> &mods, hSCurve hc) {
+    for(const EdgeMod &em : mods) {
+        if(em.orig.v == hc.v) return true;
+    }
+    return false;
+}
+
+// Work out end k of the edge: find the neighbors and end face, classify the
+// vertex, and find the cut points. Only case 1 (one modified edge, end face a
+// plane perpendicular to the edge, cuts within the neighbors) for now.
+// Reads the shell only.
+static bool SetUpEnd(SShell *sh, const std::vector<EdgeMod> &mods,
+                     EdgeMod *em, int k)
+{
+    Vector v = (k == 0) ? em->e.Start() : em->e.Finish();
+    em->vtx[k] = v;
+
+    SSurface *sa = sh->surface.FindById(em->sA),
+             *sb = sh->surface.FindById(em->sB);
+    int ia = FindTrimAtVertex(sa, em->orig, v),
+        ib = FindTrimAtVertex(sb, em->orig, v);
+    if(ia < 0 || ib < 0) {
+        dbp("fillet: no single neighbor at vertex");
+        return false;
+    }
+    hSCurve hf = sa->trim[ia].curve,
+            hg = sb->trim[ib].curve;
+    if(IsModified(mods, hf) || IsModified(mods, hg)) {
+        dbp("fillet: modified neighbors not supported yet");
+        return false;
+    }
+    SCurve *f = sh->curve.FindById(hf),
+           *g = sh->curve.FindById(hg);
+    if(!f->isExact || !g->isExact ||
+       !CurveFullyTrimmed(sh, f) || !CurveFullyTrimmed(sh, g))
+    {
+        dbp("fillet: neighbor is not a simple exact curve");
+        return false;
+    }
+    hSSurface hc = OtherSurface(f, em->sA);
+    if(hc.v != OtherSurface(g, em->sB).v) {
+        dbp("fillet: neighbors don't share an end face");
+        return false;
+    }
+    SSurface *sc = sh->surface.FindById(hc);
+    Vector nc;
+    double dc;
+    if(!SurfaceIsPlane(sc, &nc, &dc)) {
+        dbp("fillet: end face is not a plane");
+        return false;
+    }
+    Vector tan = em->e.TangentAt((k == 0) ? 0.0 : 1.0).WithMagnitude(1.0);
+    if(fabs(fabs(tan.Dot(nc)) - 1.0) > 1e-6) {
+        dbp("fillet: end face not perpendicular to edge");
+        return false;
+    }
+
+    if(!IntersectCarrier(em->offA, f->exact, &em->cutA[k]) ||
+       !IntersectCarrier(em->offB, g->exact, &em->cutB[k]))
+    {
+        dbp("fillet: offset curve doesn't meet neighbor");
+        return false;
+    }
+    // Clip only: the cuts must lie within the neighbors.
+    double tf = ParamOn(f->exact, em->cutA[k]),
+           tg = ParamOn(g->exact, em->cutB[k]);
+    if(tf < -LENGTH_EPS || tf > 1 + LENGTH_EPS ||
+       tg < -LENGTH_EPS || tg > 1 + LENGTH_EPS)
+    {
+        dbp("fillet: neighbor would need extending, not supported yet");
+        return false;
+    }
+    // The rows of the fillet surface must stay in register.
+    double ta = ParamOn(em->offA, em->cutA[k]),
+           tb = ParamOn(em->offB, em->cutB[k]);
+    if(fabs(ta - tb) > 1e-6) {
+        dbp("fillet: cuts at different parameters");
+        return false;
+    }
+    em->tCut[k] = ta;
+
+    int ic = FindOnlyTrim(sc, hf);
+    if(ic < 0) return false;
+    em->cFromA[k] = sc->trim[ic].finish.Equals(v);
+
+    em->nbA[k] = hf;
+    em->nbB[k] = hg;
+    em->sC[k]  = hc;
+    return true;
+}
+
+// The part of curve b from p0 to p1 (both on b or its extension), with the
+// ends set exactly so trims match the curve's points.
+static bool SubCurve(const SBezier &b, Vector p0, Vector p1, SBezier *out) {
+    if(!b.Reparameterized(ParamOn(b, p0), ParamOn(b, p1), out)) return false;
+    out->ctrl[0] = p0;
+    out->ctrl[out->deg] = p1;
+    return true;
+}
+
+// Fillet or chamfer surface from rows eA, (e,) eB over [tCut[0], tCut[1]],
+// facing outward: roughly along nA + nB.
+static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB) {
+    SBezier e, a, b;
+    double t0 = em->tCut[0], t1 = em->tCut[1];
+    if(!em->e.Reparameterized(t0, t1, &e) ||
+       !em->offA.Reparameterized(t0, t1, &a) ||
+       !em->offB.Reparameterized(t0, t1, &b))
+    {
+        return false;
+    }
+
+    SSurface s = {};
+    s.degm = e.deg;
+    s.degn = em->chamfer ? 1 : 2;
+    for(int i = 0; i <= s.degm; i++) {
+        s.ctrl[i][0]   = a.ctrl[i];
+        s.weight[i][0] = a.weight[i];
+        if(!em->chamfer) {
+            s.ctrl[i][1]   = e.ctrl[i];
+            s.weight[i][1] = e.weight[i] * QUARTER_ARC_WEIGHT;
+        }
+        s.ctrl[i][s.degn]   = b.ctrl[i];
+        s.weight[i][s.degn] = b.weight[i];
+    }
+    if(s.NormalAt(0.5, 0.5).Dot(nA.Plus(nB)) < 0) {
+        for(int i = 0; i <= s.degm; i++) {
+            swap(s.ctrl[i][0], s.ctrl[i][s.degn]);
+            swap(s.weight[i][0], s.weight[i][s.degn]);
+        }
+    }
+    s.color = RGBi(100, 100, 100);
+    em->fillet = s;
+    return true;
+}
+
+// End curve on face C at end k: a line for a chamfer, a quarter circle for a
+// fillet. Runs from cutA to cutB.
+static void MakeEndCurve(EdgeMod *em, int k) {
+    if(em->chamfer) {
+        em->endC[k] = SBezier::From(em->cutA[k], em->cutB[k]);
+    } else {
+        Vector mid = em->e.PointAt(em->tCut[k]);
+        em->endC[k] = SBezier::From(Vector4::From(1.0, em->cutA[k]),
+                                    Vector4::From(QUARTER_ARC_WEIGHT, mid),
+                                    Vector4::From(1.0, em->cutB[k]));
+    }
+}
+
+static int FindOrAddRecut(std::vector<Recut> *rcs, SCurve *sc) {
+    for(size_t i = 0; i < rcs->size(); i++) {
+        if((*rcs)[i].orig.v == sc->h.v) return (int)i;
+    }
+    Recut rc = {};
+    rc.orig   = sc->h;
+    rc.start  = sc->exact.Start();
+    rc.finish = sc->exact.Finish();
+    rcs->push_back(rc);
+    return (int)rcs->size() - 1;
+}
+
+// Move the end of neighbor sc that is at vertex v to the cut point.
+static bool SetRecutEnd(std::vector<Recut> *rcs, SCurve *sc, Vector v, Vector cut) {
+    Recut *rc = &(*rcs)[FindOrAddRecut(rcs, sc)];
+    if(sc->exact.Start().Equals(v) && rc->start.Equals(v)) {
+        rc->start = cut;
+    } else if(sc->exact.Finish().Equals(v) && rc->finish.Equals(v)) {
+        rc->finish = cut;
+    } else {
+        return false;
+    }
+    return true;
+}
+
+static hSCurve AddCurve(SShell *sh, const SBezier &b, hSSurface sa, hSSurface sb) {
+    SCurve sc = {};
+    sc.isExact = true;
+    sc.exact   = b;
+    b.MakePwlInto(&sc.pts);
+    sc.surfA  = sa;
+    sc.surfB  = sb;
+    sc.source = SCurve::Source::INTERSECTION;
+    return sh->curve.AddAndAssignId(&sc);
+}
+
+// A trim on curve hc from start to finish, where the curve itself runs from
+// curveStart.
+static STrimBy MakeTrim(hSCurve hc, Vector start, Vector finish, Vector curveStart) {
+    STrimBy stb = {};
+    stb.curve     = hc;
+    stb.start     = start;
+    stb.finish    = finish;
+    stb.backwards = !start.Equals(curveStart);
+    return stb;
+}
+
+// The same edge as seen from the surface on the other side.
+static STrimBy ReverseTrim(const STrimBy &t) {
+    STrimBy r = t;
+    r.start     = t.finish;
+    r.finish    = t.start;
+    r.backwards = !t.backwards;
+    return r;
+}
+
+static bool IsDeadCurve(const std::vector<EdgeMod> &mods,
+                        const std::vector<Recut> &recuts, hSCurve hc)
+{
+    if(IsModified(mods, hc)) return true;
+    for(const Recut &rc : recuts) {
+        if(rc.orig.v == hc.v) return true;
+    }
+    return false;
 }
 
 void SShell::ModifyEdges()
 {
-    dbp("checking edges");
-    // Loop over all curves and create an info struct for the ones to modify
-    // we will call GetEdgeModifier() to get a radius or 0.
-    for(int i=0; i<curve.n; i++) {
+    std::vector<EdgeMod> mods;
+
+    // 1. Collect. Loop over the original curves only.
+    int ncurves = curve.n;
+    for(int i = 0; i < ncurves; i++) {
         SCurve *sc = &curve[i];
         double m = GetEdgeModifier(*sc);
-        bool chamfer = false;
-      
-        if (abs(m) > 0.000001)
+        if(fabs(m) < LENGTH_EPS) continue;
+
+        EdgeMod em = {};
+        em.orig    = sc->h;
+        em.r       = fabs(m);
+        em.chamfer = (m < 0);
+        em.sA      = sc->surfA;
+        em.sB      = sc->surfB;
+        em.e       = sc->exact;
+        SSurface *sa = surface.FindByIdNoOops(em.sA),
+                 *sb = surface.FindByIdNoOops(em.sB);
+        if(!sc->isExact || sa == NULL || sb == NULL) {
+            dbp("fillet: edge is not exact");
+            continue;
+        }
+        em.trimA = FindOnlyTrim(sa, sc->h);
+        em.trimB = FindOnlyTrim(sb, sc->h);
+        if(em.trimA < 0 || em.trimB < 0 ||
+           !TrimCoversCurve(sc, &sa->trim[em.trimA]) ||
+           !TrimCoversCurve(sc, &sb->trim[em.trimB]))
         {
-            dbp("modify an edge");
-            if (m < 0.0) {
-                chamfer = true;
-                m = -m;
+            dbp("fillet: edge is not trimmed as a whole curve");
+            continue;
+        }
+        if(sa->trim[em.trimA].backwards == sb->trim[em.trimB].backwards) {
+            dbp("fillet: edge's trims don't run in opposite directions");
+            continue;
+        }
+        mods.push_back(em);
+    }
+    if(mods.empty()) return;
+
+    // 2-4. Offset curves, vertices and cut points. Read only.
+    std::vector<EdgeMod> good;
+    for(EdgeMod &em : mods) {
+        SSurface *sa = surface.FindById(em.sA),
+                 *sb = surface.FindById(em.sB);
+        if(!OffsetEdgeInto(sa, em.e, sa->trim[em.trimA].backwards, em.r, &em.offA) ||
+           !OffsetEdgeInto(sb, em.e, sb->trim[em.trimB].backwards, em.r, &em.offB))
+        {
+            dbp("fillet: can't offset this edge");
+            continue;
+        }
+        if(!SetUpEnd(this, mods, &em, 0) || !SetUpEnd(this, mods, &em, 1)) continue;
+        good.push_back(em);
+    }
+    if(good.empty()) return;
+
+    // 5. Build all the new geometry. If anything fails, leave the shell as
+    // it was.
+    std::vector<Recut> recuts;
+    for(EdgeMod &em : good) {
+        for(int k = 0; k < 2; k++) {
+            if(!SetRecutEnd(&recuts, curve.FindById(em.nbA[k]), em.vtx[k], em.cutA[k]) ||
+               !SetRecutEnd(&recuts, curve.FindById(em.nbB[k]), em.vtx[k], em.cutB[k]))
+            {
+                dbp("fillet: neighbor cut twice at one end");
+                return;
             }
-        
-        
-	// create a new surface C, for the fillet or chamfer
-	// - for now this surface has zero area because the trims are identical
-            SSurface srfC = {};
-            srfC.degm = sc->exact.deg;
-            if (chamfer)
-              srfC.degn = 1;
-            else
-              srfC.degn = 2;
-
-            srfC.degn = 3;  // we're doing something else for now
-
-//            srf.color = ???? what to put here;
-            hSSurface hsrfC = surface.AddAndAssignId(&srfC);
-
-
-        // create 2 new curves/trims as copies of the original. Tag the original curve.
-        // for trims we can just modify existing and add a new one.
-            Vector zeroVec = {0.0, 0.0, 0.0};
-            // create curve A joining surface A with surface C
-            SCurve curveA = {};
-            curveA.isExact = true;
-            curveA.exact = sc->exact.TransformedBy(zeroVec, Quaternion::IDENTITY, 1.0);
-            // copy would be better, but we need to redo this later anyway.
-            (curveA.exact).MakePwlInto(&(curveA.pts));
-            // one of these needs to be the new surface
-            curveA.surfA = sc->surfA;
-            curveA.surfB = hsrfC;
-            hSCurve hcurveA = curve.AddAndAssignId(&curveA);
-
-            // create curve B joining surface B with surface C
-            SCurve curveB = {};
-            curveB.isExact = true;
-            curveB.exact = sc->exact.TransformedBy(zeroVec, Quaternion::IDENTITY, 1.0);
-            // copy would be better, but we need to redo this later anyway.
-            (curveB.exact).MakePwlInto(&(curveB.pts));
-            // one of these needs to be the new surface
-            curveB.surfA = hsrfC;
-            curveB.surfB = sc->surfB;
-            hSCurve hcurveB = curve.AddAndAssignId(&curveB);
-
-  
+            MakeEndCurve(&em, k);
+        }
+        Vector mid = em.e.PointAt(0.5);
+        Vector nA = SurfaceNormalNear(surface.FindById(em.sA), mid),
+               nB = SurfaceNormalNear(surface.FindById(em.sB), mid);
+        if(!SubCurve(em.offA, em.cutA[0], em.cutA[1], &em.newA) ||
+           !SubCurve(em.offB, em.cutB[0], em.cutB[1], &em.newB) ||
+           !MakeFilletSurface(&em, nA, nB))
+        {
+            dbp("fillet: can't build curves or surface");
+            return;
         }
     }
-	// Delete the original curves (we can probably leave the curve and modify the trim(s))
+    for(Recut &rc : recuts) {
+        if(!SubCurve(curve.FindById(rc.orig)->exact, rc.start, rc.finish, &rc.b)) {
+            dbp("fillet: can't re-cut neighbor");
+            return;
+        }
+    }
 
-	// For each new curve, find the one that matches our start and end point and
-	// shares surfA or B. these are either original unmodified curves or new feature curves
-	// either works, as this is what our new curve will intersect
+    // 6. Change the shell. Add surfaces and curves first, then rewrite trims,
+    // looking things up by handle each time since the lists can reallocate.
+    for(EdgeMod &em : good) {
+        em.hFillet = surface.AddAndAssignId(&em.fillet);
+    }
+    for(Recut &rc : recuts) {
+        SCurve *old = curve.FindById(rc.orig);
+        hSSurface sa = old->surfA, sb = old->surfB;
+        rc.newh = AddCurve(this, rc.b, sa, sb);
+    }
+    for(EdgeMod &em : good) {
+        em.hNewA = AddCurve(this, em.newA, em.sA, em.hFillet);
+        em.hNewB = AddCurve(this, em.newB, em.hFillet, em.sB);
+        for(int k = 0; k < 2; k++) {
+            em.hEndC[k] = AddCurve(this, em.endC[k], em.sC[k], em.hFillet);
+        }
+    }
 
+    for(EdgeMod &em : good) {
+        // A and B: the trim on e moves to eA / eB, same direction.
+        SSurface *sa = surface.FindById(em.sA);
+        STrimBy ta = sa->trim[em.trimA];
+        Vector a0 = ta.backwards ? em.cutA[1] : em.cutA[0],
+               a1 = ta.backwards ? em.cutA[0] : em.cutA[1];
+        ta = MakeTrim(em.hNewA, a0, a1, em.cutA[0]);
+        sa->trim[em.trimA] = ta;
 
-	// Offset all the new curves within their A or B surface
+        SSurface *sb = surface.FindById(em.sB);
+        STrimBy tb = sb->trim[em.trimB];
+        Vector b0 = tb.backwards ? em.cutB[1] : em.cutB[0],
+               b1 = tb.backwards ? em.cutB[0] : em.cutB[1];
+        tb = MakeTrim(em.hNewB, b0, b1, em.cutB[0]);
+        sb->trim[em.trimB] = tb;
 
-	// Find the intersection points of all our new curves and their neighbors (start and end)
+        SSurface *sf = surface.FindById(em.hFillet);
+        STrimBy rta = ReverseTrim(ta), rtb = ReverseTrim(tb);
+        sf->trim.Add(&rta);
+        sf->trim.Add(&rtb);
 
-	// Reparameterize our curves and extend our surface if needed (or can U,V go past [0,1]?)
+        // End faces: the end curve replaces the corner.
+        for(int k = 0; k < 2; k++) {
+            Vector c0 = em.cFromA[k] ? em.cutA[k] : em.cutB[k],
+                   c1 = em.cFromA[k] ? em.cutB[k] : em.cutA[k];
+            STrimBy tc = MakeTrim(em.hEndC[k], c0, c1, em.cutA[k]);
+            STrimBy rtc = ReverseTrim(tc);
+            surface.FindById(em.sC[k])->trim.Add(&tc);
+            surface.FindById(em.hFillet)->trim.Add(&rtc);
+        }
+    }
 
-	// Create new trim curves at the ends of our new surface where it meets the others
-	// when we get to corners with 3 fillets we will need a spherical surface to join (hard).
+    // Neighbors: point their trims at the re-cut curves.
+    for(Recut &rc : recuts) {
+        for(SSurface &s : surface) {
+            for(STrimBy &stb : s.trim) {
+                if(stb.curve.v != rc.orig.v) continue;
+                stb.curve  = rc.newh;
+                stb.start  = stb.backwards ? rc.finish : rc.start;
+                stb.finish = stb.backwards ? rc.start  : rc.finish;
+            }
+        }
+    }
 
-	// Delete our info structures
+    // Remove the original edges and the old neighbors. SCurve has no tag, so
+    // copy the live curves to a new list, which takes over their points.
+    IdList<SCurve,hSCurve> kept = {};
+    for(SCurve &sc : curve) {
+        if(IsDeadCurve(good, recuts, sc.h)) continue;
+        kept.Add(&sc);
+        sc.pts = {};
+    }
+    curve.Clear();
+    kept.MoveSelfInto(&curve);
 }
 
 } // namespace SolveSpace
