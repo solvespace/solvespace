@@ -571,3 +571,31 @@ TEST_CASE(hub_on_turned_gear) {
         CHECK_TRUE(IsWatertight(&g->displayMesh));
     }
 }
+
+// The groups of a hub follow the active group. With a mating gear active,
+// the hub of the first gear comes after it, so that both gears stay in
+// view. A group before the sketch of the gear cannot take a hub.
+TEST_CASE(hub_after_active_group) {
+    if(!GEAR_HUB_AFTER_ACTIVE_GROUP) return;
+    CHECK_LOAD("normal.slvs");
+    std::string error;
+    hGroup sketch = SK.GetRequest(GEAR_REQUEST)->group;
+    SS.GW.activeGroup = Group::HGROUP_REFERENCES;
+    CHECK_FALSE(GearAddHub(GEAR_REQUEST, GearHubParams::Default(GearEntity()->gear), &error));
+    CHECK_FALSE(error.empty());
+    CHECK_TRUE(SK.GetRequest(GEAR_REQUEST)->gear.bore == 5);
+
+    SS.GW.activeGroup = sketch;
+    hRequest hm = GearAddMate(GEAR_REQUEST, 30);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    hGroup mateSketch = SK.GetRequest(hm)->group;
+    CHECK_TRUE(SS.GW.activeGroup == mateSketch);
+
+    error.clear();
+    CHECK_TRUE(GearAddHub(GEAR_REQUEST, GearHubParams::Default(GearEntity()->gear), &error));
+    Group *last = SK.GetGroup(SK.groupOrder[SK.groupOrder.n - 1]);
+    CHECK_TRUE(last->h == SS.GW.activeGroup);
+    CHECK_TRUE(last->name == "clamp-hole");
+    CHECK_TRUE(SK.GetGroup(mateSketch)->IsVisible());
+    CHECK_TRUE(SK.GetGroup(mateSketch)->order < GroupNamed("gear")->order);
+}

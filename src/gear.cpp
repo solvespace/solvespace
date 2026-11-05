@@ -720,6 +720,21 @@ bool GearAddHub(hRequest hg, const GearHubParams &hp, std::string *error) {
         }
     }
 
+    // The groups of the hub follow the active group, as with the Group
+    // menu, so that they end up where the user works, usually at the end.
+    // Set GEAR_HUB_AFTER_ACTIVE_GROUP to false to put them right after the
+    // sketch of the gear instead.
+    hGroup insertAfter = sketch;
+    if(GEAR_HUB_AFTER_ACTIVE_GROUP) {
+        Group *active = SK.group.FindByIdNoOops(SS.GW.activeGroup);
+        if(active == NULL || active->order < SK.GetGroup(sketch)->order) {
+            *error = _("Activate the sketch of the gear or a later group to add "
+                       "the gear with a hub.");
+            return false;
+        }
+        insertAfter = active->h;
+    }
+
     hEntity wrkpl = r->workplane;
     hEntity center = hg.entity(1);
     Quaternion q = SK.GetEntity(wrkpl)->Normal()->NormalGetNum();
@@ -727,7 +742,7 @@ bool GearAddHub(hRequest hg, const GearHubParams &hp, std::string *error) {
 
     r->gear.bore = hp.shaft;
     SS.MarkGroupDirty(sketch);
-    SS.GW.activeGroup = sketch;
+    SS.GW.activeGroup = insertAfter;
 
     // The gear, as thick as the face width.
     Group *gear = AddExtrusion(sketch, center, n.ScaledBy(hp.width), Group::CombineAs::UNION,

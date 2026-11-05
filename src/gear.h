@@ -103,6 +103,10 @@ public:
 
 static const double GEAR_INSERT_LENGTH = 5.7;
 
+// Where GearAddHub puts its groups: true after the active group, false
+// right after the sketch of the gear.
+static const bool GEAR_HUB_AFTER_ACTIVE_GROUP = true;
+
 class hRequest;
 class hConstraint;
 
@@ -121,7 +125,8 @@ hRequest GearAddMate(hRequest driver, int teeth);
 hConstraint GearFindCenterConstraint(hRequest a, hRequest b);
 
 // Makes the gear a solid with a hub. Gives the gear a bore for the shaft,
-// and adds after the group of the gear: an extrusion of the gear sketch, a
+// and adds after the active group (see GEAR_HUB_AFTER_ACTIVE_GROUP), which
+// must not come before the sketch of the gear: an extrusion of that sketch, a
 // sketch of the hub ring on the gear face and its extrusion, and for a clamp
 // a sketch of the clamp hole across the hub and its extrusion as a
 // difference. These are ordinary groups that can be edited later. Returns
