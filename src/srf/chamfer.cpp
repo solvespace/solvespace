@@ -115,7 +115,10 @@
 //    for chamfers. The chamfer triangle is FromPlane, trimmed by the three
 //    end curves, facing the same way as the chamfers. The sphere triangle
 //    is split at its incenter into three bands, see sphere_patch.cpp.
-// Anything else (end face not perpendicular, etc.) is unsupported for now,
+// An end face at an angle to a straight edge is exact too: the end curve is
+// the cross-section projected along the edge onto it (an ellipse arc).
+// Anything else (a curved edge or a curved end face at an angle, etc.) is
+// unsupported for now,
 // and then no edge is changed. In general that needs
 // SSurface::IntersectAgainst().
 //
@@ -196,6 +199,8 @@ struct EdgeMod {
     hSSurface sC[2];          // [k] END_FACE: end face C. CORNER: the corner
                               //     patch, or 0 if there is none yet
     Vector    cut[2][2];      // [s][k] where off[s] ends
+    Vector    endMid[2];      // [k] END_FACE: the end curve's middle control
+                              //     point, on the end face
     double    tSrf[2];        // [k] ends of the fillet surface, as params on e
     int       partner[2], partnerEnd[2]; // [k] TANGENT, MITER: the neighbor's EdgeMod
     // Geometry built before the shell is changed
@@ -298,8 +303,16 @@ double SShell::GetEdgeModifier(SCurve &sc)
                       fabs(b.Finish().z + 10) < LENGTH_EPS;
         return bottom ? 0.0 : r;
     }
+    //                       Variant 1 instead: the two roof edges at
+    //                       z = 10, which end on the walls at 45 degrees.
+    const int houseVariant = 0;
     for(SCurve &other : curve) {
         if(IsTestSlantedLine(this, &other)) {
+            if(houseVariant == 1) {
+                bool roofEnd = IsTestLine(b, 2, 10) &&
+                               max(b.Start().y, b.Finish().y) > LENGTH_EPS;
+                return roofEnd ? r : 0.0;
+            }
             return IsTestSlantedLine(this, &sc) ? r : 0.0;
         }
     }
@@ -690,8 +703,13 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
         return false;
     }
     Vector tan = em->e.TangentAt((k == 0) ? 0.0 : 1.0).WithMagnitude(1.0);
-    if(fabs(fabs(tan.Dot(nc)) - 1.0) > 1e-6) {
-        dbp("fillet: end face not perpendicular to edge");
+    bool perpendicular = fabs(fabs(tan.Dot(nc)) - 1.0) < 1e-6;
+    if(!perpendicular && em->e.deg != 1) {
+        dbp("fillet: curved edge meeting its end face at an angle, not supported yet");
+        return false;
+    }
+    if(fabs(tan.Dot(nc)) < 1e-3) {
+        dbp("fillet: edge nearly parallel to its end face");
         return false;
     }
     if(!IntersectCarriers(em->off[0], f->exact, em->vtx[k], &em->cut[0][k]) ||
@@ -706,14 +724,31 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
         dbp("fillet: neighbor is too short for this radius");
         return false;
     }
-    // The end curve is a cross-section, so both cuts are at one parameter.
     double t0 = ParamOn(em->off[0], em->cut[0][k]),
            t1 = ParamOn(em->off[1], em->cut[1][k]);
-    if(fabs(t0 - t1) > 1e-6) {
-        dbp("fillet: cuts at different parameters");
-        return false;
+    if(perpendicular) {
+        // The end curve is a cross-section, so both cuts are at one
+        // parameter.
+        if(fabs(t0 - t1) > 1e-6) {
+            dbp("fillet: cuts at different parameters");
+            return false;
+        }
+        em->tSrf[k]   = t0;
+        em->endMid[k] = em->mid.PointAt(t0);
+    } else {
+        // A straight fillet is its cross-section swept along the edge, so
+        // where it meets the end face is a cross-section projected along the
+        // edge onto that plane: an ellipse arc with the same weight. Its
+        // middle control point is where the middle row crosses the plane.
+        // The curve lies within its control points, so the surface must
+        // reach all three.
+        bool parallel;
+        em->endMid[k] = Vector::AtIntersectionOfPlaneAndLine(nc, dc,
+                            em->mid.ctrl[0], em->mid.ctrl[1], &parallel);
+        if(parallel) return false;
+        double tm = ParamOn(em->mid, em->endMid[k]);
+        em->tSrf[k] = (k == 0) ? min(tm, min(t0, t1)) : max(tm, max(t0, t1));
     }
-    em->tSrf[k] = t0;
     em->kind[k] = END_FACE;
     em->sC[k]   = hc;
     return true;
@@ -966,8 +1001,14 @@ static void MakeEndCurve(EdgeMod *em, int k) {
     if(em->chamfer) {
         em->endC[k] = SBezier::From(em->cut[0][k], em->cut[1][k]);
     } else {
-        Vector mid = (em->kind[k] == MITER) ? em->vtx[k]
-                                            : em->mid.PointAt(em->tSrf[k]);
+        Vector mid;
+        if(em->kind[k] == MITER) {
+            mid = em->vtx[k];
+        } else if(em->kind[k] == END_FACE) {
+            mid = em->endMid[k];
+        } else {
+            mid = em->mid.PointAt(em->tSrf[k]);
+        }
         em->endC[k] = SBezier::From(Vector4::From(1.0, em->cut[0][k]),
                                     Vector4::From(em->w, mid),
                                     Vector4::From(1.0, em->cut[1][k]));
