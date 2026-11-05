@@ -308,7 +308,10 @@ double SShell::GetEdgeModifier(SCurve &sc)
     //   3: two edges at the top corner (120, 0, 62.45), the side edge and
     //      the top edge to (0, 0, 62.45): a miter between faces at
     //      different angles
-    const int skewVariant = 2;
+    //   4: every edge except the concave side edge from (-20, 50, -62.45)
+    //      and the four cap edges at its ends (the reflex corners): sphere
+    //      corners, and miters of unequal angles next to the reflex corners
+    const int skewVariant = 4;
     bool big = false;
     for(SSurface &ss : surface) {
         for(int i = 0; i <= ss.degm; i++) {
@@ -323,6 +326,13 @@ double SShell::GetEdgeModifier(SCurve &sc)
         Vector p0 = b.Start(), p1 = b.Finish();
         bool side = fabs(p0.z - p1.z) > LENGTH_EPS;
         if(skewVariant == 1) return side ? r : 0.0;
+        if(skewVariant == 4) {
+            Vector cb = Vector::From(-20, 50, -62.45),
+                   ct = Vector::From(100, -50, 62.45);
+            bool atReflex = p0.Equals(cb, 0.01) || p1.Equals(cb, 0.01) ||
+                            p0.Equals(ct, 0.01) || p1.Equals(ct, 0.01);
+            return atReflex ? 0.0 : r;
+        }
         if(skewVariant == 3) {
             Vector top = Vector::From(120, 0, 62.45),
                    far = Vector::From(0, 0, 62.45),
@@ -1069,6 +1079,20 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
                  fm.mid.Start().Equals(fm.e.Start());
     bool equal = fabs(em->w - fm.w) < 1e-9;
     if(!(flat && equal)) {
+        // At a reflex corner of S the offsets cross past the vertex and the
+        // fillets run over each other; tracing toward the vertex would hit
+        // the partner's other face where that face doesn't exist. The corner
+        // is reflex when f, leaving the vertex, heads out of S as seen from e.
+        SSurface *ss = sh->surface.FindById(em->face[s]);
+        Vector in = InwardAt(ss, em->e, ss->trim[em->trim[s]].backwards,
+                             (k == 0) ? 0.0 : 1.0);
+        Vector fAway = fm.e.Start().Equals(em->vtx[k])
+                           ? fm.e.Finish().Minus(fm.e.Start())
+                           : fm.e.Start().Minus(fm.e.Finish());
+        if(fAway.Dot(in) < 0) {
+            dbp("fillet: miter of unequal angles at a reflex corner, not supported yet");
+            return false;
+        }
         em->traced[k] = true;
         return true;
     }
