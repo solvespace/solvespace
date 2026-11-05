@@ -1,9 +1,6 @@
 name: Python
 
 on:
-  push:
-    branches: [ master ]
-    tags: [ v* ]
   workflow_dispatch:
 
 jobs:
@@ -142,35 +139,3 @@ jobs:
           name: wheel-cp${{ matrix.python_version }}-${{ matrix.os_short }}-${{ matrix.architecture }}
           path: |
             ./wheelhouse/*.whl
-  publish-pypi:
-    name: publish to PyPi
-    needs: [
-      python-sdist,
-      python-wheel,
-    ]
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          path: prebuilds
-      - name: prepare
-        shell: bash
-        run: |
-          mkdir dist
-          ls prebuilds
-          mv prebuilds/*/* dist
-          ls dist
-      - name: Publish wheels to Test PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository-url: https://test.pypi.org/legacy/
-          attestations: false
-          verbose: true
-      - name: Publish wheels to PyPI
-        if: startsWith(github.ref, 'refs/tags')
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          attestations: false
-          verbose: true

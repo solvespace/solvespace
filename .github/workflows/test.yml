@@ -1,14 +1,6 @@
 name: Test
 
 on:
-  pull_request:
-    branches:
-      - master
-  push:
-    branches-ignore:
-      - master
-    tags-ignore:
-      - v*
   workflow_dispatch:
 
 jobs:
