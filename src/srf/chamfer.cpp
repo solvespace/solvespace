@@ -180,14 +180,17 @@ struct EdgeMod {
     hSCurve   orig;           // the original edge
     double    r;
     bool      chamfer;
-    double    alpha;          // angle between the faces, on the ball's side
-    double    d;              // offset distance, r / tan(alpha/2)
-    double    w;              // weight of the cross-section's middle control
-                              // point, sin(alpha/2); cos(45) when square
+    // The rolling ball, from SetUpSections(). Every cross-section of the
+    // fillet is an arc of the ball from off[0] to off[1], with its middle
+    // control point on mid and that point's weight w.
+    SBezier   spine;          // the ball's center
+    SBezier   mid;            // where the tangents at the contacts cross
+    double    w;              // cos(half the arc angle); cos(45) when square
     SBezier   e;              // the original edge
     hSSurface face[2];        // [s]
     int       trim[2];        // [s] index of the edge's trim in face[s]
-    SBezier   off[2];         // [s] offset curves eA, eB
+    SBezier   off[2];         // [s] offset curves eA, eB: where the ball
+                              //     touches face[s]
     Vector    vtx[2];         // [k] original vertex
     hSCurve   nb[2][2];       // [s][k] neighbor curve in face[s] at vtx[k]
     int       kind[2];        // [k] END_FACE, TANGENT, MITER or CORNER
@@ -352,68 +355,6 @@ static Vector InwardAt(SSurface *s, const SBezier &e, bool backwards, double t) 
     return tan.Cross(n).WithMagnitude(1.0);
 }
 
-// The angle between the two faces at the edge, on the side where the ball
-// sits: between the directions that point away from the edge into each face.
-// That is the material for a convex edge and the air for a concave one. Must
-// be the same along the edge.
-static bool FaceAngle(SShell *sh, EdgeMod *em) {
-    double a[3];
-    for(int i = 0; i < 3; i++) {
-        double t = i * 0.5;
-        Vector in[2];
-        for(int s = 0; s < 2; s++) {
-            SSurface *srf = sh->surface.FindById(em->face[s]);
-            in[s] = InwardAt(srf, em->e, srf->trim[em->trim[s]].backwards, t);
-        }
-        a[i] = acos(max(-1.0, min(1.0, in[0].Dot(in[1]))));
-    }
-    if(fabs(a[0] - a[1]) > 1e-6 || fabs(a[2] - a[1]) > 1e-6) {
-        dbp("fillet: angle between faces varies along the edge, not supported yet");
-        return false;
-    }
-    if(a[1] < 1e-3 || a[1] > PI - 1e-3) {
-        dbp("fillet: faces are nearly flat or folded back");
-        return false;
-    }
-    em->alpha = a[1];
-    em->d     = em->r / tan(em->alpha / 2);
-    em->w     = sin(em->alpha / 2);
-    return true;
-}
-
-// Offset e into surface s by distance d, away from the edge. Only the exact
-// cases for now:
-//   inward direction constant along e -> translate (line in a plane, or any
-//                                        curve on a face perpendicular to a
-//                                        plane)
-//   arc in a plane face               -> concentric arc, same weights
-static bool OffsetEdgeInto(SSurface *s, const SBezier &e, bool backwards,
-                           double d, SBezier *out)
-{
-    Vector in0 = InwardAt(s, e, backwards, 0.0),
-           in1 = InwardAt(s, e, backwards, 1.0);
-    if(in0.Equals(in1)) {
-        *out = e.TransformedBy(in0.ScaledBy(d), Quaternion::IDENTITY, 1.0);
-        return true;
-    }
-
-    Vector n, center;
-    double pd, rad;
-    if(SurfaceIsPlane(s, &n, &pd) && e.IsCircle(n, &center, &rad)) {
-        Vector inm = InwardAt(s, e, backwards, 0.5);
-        double sign = (inm.Dot(e.PointAt(0.5).Minus(center)) > 0) ? 1.0 : -1.0;
-        double newr = rad + sign*d;
-        if(newr < LENGTH_EPS) return false;
-        *out = e;
-        for(int i = 0; i <= e.deg; i++) {
-            out->ctrl[i] = center.Plus(
-                (e.ctrl[i].Minus(center)).ScaledBy(newr/rad));
-        }
-        return true;
-    }
-    return false;
-}
-
 // Parameter of point p, which lies on (or on the extension of) curve b.
 static double ParamOn(const SBezier &b, Vector p) {
     if(b.deg == 1) {
@@ -487,6 +428,181 @@ static bool IntersectCarriers(const SBezier &a, const SBezier &b, Vector near,
     double rad;
     if(line->deg != 1 || !ArcCircle(*arc, &center, &rad, &n)) return false;
     return LineMeetsCircle(line->ctrl[0], line->ctrl[1], center, rad, n, near, p);
+}
+
+// How a face looks in the cross-section plane through an edge point (the
+// plane perpendicular to the edge). Two kinds so far:
+//   line:   a straight line of the face runs away from the edge: a plane, or
+//           a cylinder cut across its axis (an arc edge on a cylinder wall)
+//   circle: a cylinder whose axis runs along the edge
+struct FaceSection {
+    bool    isCircle;
+    Vector  p;          // the edge point
+    Vector  dir;        // unit direction into the face, away from the edge
+    Vector  n;          // outward unit normal at p
+    Vector  center;     // circle: center, in the cross-section plane
+    double  rad;        // circle: radius
+};
+
+static bool GetFaceSection(SSurface *s, const SBezier &e, bool backwards,
+                           double t, FaceSection *fs)
+{
+    fs->p   = e.PointAt(t);
+    fs->dir = InwardAt(s, e, backwards, t);
+    fs->n   = SurfaceNormalNear(s, fs->p);
+    Vector tan = e.TangentAt(t).WithMagnitude(1.0);
+
+    Vector pn;
+    double pd;
+    if(SurfaceIsPlane(s, &pn, &pd)) {
+        fs->isCircle = false;
+        return true;
+    }
+    Vector axis, center, st, fi;
+    double rad;
+    if(s->IsCylinder(&axis, &center, &rad, &st, &fi)) {
+        axis = axis.WithMagnitude(1.0);
+        if(fabs(fabs(axis.Dot(tan)) - 1.0) < 1e-6) {
+            fs->isCircle = true;
+            fs->center   = center.Plus(axis.ScaledBy((fs->p.Minus(center)).Dot(axis)));
+            fs->rad      = rad;
+            return true;
+        }
+        if(fabs(fabs(axis.Dot(fs->dir)) - 1.0) < 1e-6) {
+            fs->isCircle = false;
+            return true;
+        }
+    }
+    return false;
+}
+
+// The ball in the cross-section at e(t): its center, where it touches each
+// face, where the tangents at those points cross, and the weight for the arc
+// between them.
+struct BallSection {
+    Vector  c;
+    Vector  contact[2];
+    Vector  mid;
+    double  w;
+};
+
+static bool SolveBallSection(SShell *sh, EdgeMod *em, double t, BallSection *bs) {
+    FaceSection fs[2];
+    for(int s = 0; s < 2; s++) {
+        SSurface *srf = sh->surface.FindById(em->face[s]);
+        if(!GetFaceSection(srf, em->e, srf->trim[em->trim[s]].backwards, t, &fs[s])) {
+            dbp("fillet: face type not supported yet");
+            return false;
+        }
+    }
+    if(fs[0].isCircle && fs[1].isCircle) {
+        dbp("fillet: edge between two cylinders not supported yet");
+        return false;
+    }
+    // Convex edge: the ball is in the material, inside both faces. Concave:
+    // it is in the air, outside both.
+    bool convex = fs[0].dir.Dot(fs[1].n) < 0;
+    double sg = convex ? -1.0 : 1.0;
+    Vector p = fs[0].p,
+           tan = em->e.TangentAt(t).WithMagnitude(1.0);
+    double r = em->r;
+
+    // Each face offset by r toward the ball; the center is where they meet.
+    if(!fs[0].isCircle && !fs[1].isCircle) {
+        Vector a0 = p.Plus(fs[0].n.ScaledBy(sg*r)),
+               b0 = p.Plus(fs[1].n.ScaledBy(sg*r));
+        if((fs[0].dir.Cross(fs[1].dir)).Magnitude() < 1e-6) {
+            dbp("fillet: faces are nearly flat or folded back");
+            return false;
+        }
+        bool skew;
+        bs->c = Vector::AtIntersectionOfLines(a0, a0.Plus(fs[0].dir),
+                                              b0, b0.Plus(fs[1].dir), &skew);
+        if(skew) return false;
+    } else {
+        int li = fs[0].isCircle ? 1 : 0, ci = 1 - li;
+        Vector l0 = p.Plus(fs[li].n.ScaledBy(sg*r));
+        double orad = ((p.Plus(fs[ci].n.ScaledBy(sg*r))).Minus(fs[ci].center)).Magnitude();
+        if(!LineMeetsCircle(l0, l0.Plus(fs[li].dir), fs[ci].center, orad, tan,
+                            p, &bs->c))
+        {
+            dbp("fillet: radius too big for this edge");
+            return false;
+        }
+    }
+
+    // Where the ball touches each face, and the tangents there.
+    Vector td[2];
+    for(int s = 0; s < 2; s++) {
+        if(fs[s].isCircle) {
+            Vector rc = bs->c.Minus(fs[s].center);
+            bs->contact[s] = fs[s].center.Plus(rc.WithMagnitude(fs[s].rad));
+        } else {
+            bs->contact[s] = bs->c.Minus(fs[s].n.ScaledBy(sg*r));
+        }
+        td[s] = tan.Cross(bs->c.Minus(bs->contact[s]));
+    }
+    bool skew;
+    bs->mid = Vector::AtIntersectionOfLines(bs->contact[0], bs->contact[0].Plus(td[0]),
+                                            bs->contact[1], bs->contact[1].Plus(td[1]),
+                                            &skew);
+    if(skew) return false;
+    Vector r0 = (bs->contact[0].Minus(bs->c)).WithMagnitude(1.0),
+           r1 = (bs->contact[1].Minus(bs->c)).WithMagnitude(1.0);
+    double theta = acos(max(-1.0, min(1.0, r0.Dot(r1))));
+    bs->w = cos(theta / 2);
+    return true;
+}
+
+// The curve that point q, in the cross-section at e(0), traces when carried
+// along e the way every section point is: a translate of e for a line, or a
+// concentric arc about the same axis for an arc.
+static bool FollowEdge(const SBezier &e, Vector q, SBezier *out) {
+    if(e.deg == 1) {
+        *out = e.TransformedBy(q.Minus(e.Start()), Quaternion::IDENTITY, 1.0);
+        return true;
+    }
+    Vector center, n;
+    double rad;
+    if(!ArcCircle(e, &center, &rad, &n)) return false;
+    double h = (q.Minus(center)).Dot(n);
+    Vector radial = q.Minus(center).Minus(n.ScaledBy(h));
+    double rho = radial.Magnitude();
+    if(rho < LENGTH_EPS) return false;
+    *out = e;
+    for(int i = 0; i <= e.deg; i++) {
+        out->ctrl[i] = center.Plus(n.ScaledBy(h)).Plus(
+            (e.ctrl[i].Minus(center)).ScaledBy(rho / rad));
+    }
+    return true;
+}
+
+// The rolling ball along the whole edge: the offset curves where it touches
+// each face, the spine, and the middle row. Solved at the start of the edge
+// and carried along; the section at the end must agree, or the faces aren't
+// a kind this can do.
+static bool SetUpSections(SShell *sh, EdgeMod *em) {
+    BallSection b0, b1;
+    if(!SolveBallSection(sh, em, 0.0, &b0) || !SolveBallSection(sh, em, 1.0, &b1)) {
+        return false;
+    }
+    if(!FollowEdge(em->e, b0.contact[0], &em->off[0]) ||
+       !FollowEdge(em->e, b0.contact[1], &em->off[1]) ||
+       !FollowEdge(em->e, b0.c, &em->spine) ||
+       !FollowEdge(em->e, b0.mid, &em->mid))
+    {
+        dbp("fillet: can't carry the cross-section along this edge");
+        return false;
+    }
+    if(!em->off[0].Finish().Equals(b1.contact[0]) ||
+       !em->off[1].Finish().Equals(b1.contact[1]) ||
+       !em->mid.Finish().Equals(b1.mid) || fabs(b0.w - b1.w) > 1e-6)
+    {
+        dbp("fillet: cross-section changes along the edge, not supported yet");
+        return false;
+    }
+    em->w = b0.w;
+    return true;
 }
 
 // Index of the one trim in s, not on curve exclude, that starts or finishes
@@ -603,8 +719,10 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
     const EdgeMod &fm = mods[FindEdgeMod(mods, em->nb[s][k])];
     SCurve *f = sh->curve.FindById(fm.orig),
            *g = sh->curve.FindById(em->nb[o][k]);
-    if(em->e.deg != 1 || fm.e.deg != 1) {
-        dbp("fillet: miter of curved edges not supported yet");
+    if(em->e.deg != 1 || fm.e.deg != 1 ||
+       !em->mid.Start().Equals(em->e.Start()) || !fm.mid.Start().Equals(fm.e.Start()))
+    {
+        dbp("fillet: miter only between flat faces so far");
         return false;
     }
     if(fabs(fm.r - em->r) > LENGTH_EPS || fm.chamfer != em->chamfer) {
@@ -642,23 +760,14 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
 // Case 4 at end k: both neighbors f (in A) and g (in B) are modified, three
 // fillets at a corner. In each face the offsets of e and its neighbor cross;
 // e's fillet ends at the cross-section through those two points, where the
-// corner patch (sphere octant or flat triangle) will attach later. For now
-// that patch is left out and the hole is left open. This needs the two
-// crossing points at the same parameter, as at a 90 degree box corner.
+// corner patch (sphere or flat triangle) attaches. Edges may be lines or
+// arcs, as long as the offsets cross where IntersectCarriers() can find it.
 static bool SetUpCornerEnd(SShell *sh, const std::vector<EdgeMod> &mods,
                            EdgeMod *em, int k)
 {
-    if(em->e.deg != 1) {
-        dbp("fillet: corner of curved edges not supported yet");
-        return false;
-    }
     hSSurface other[2];
     for(int s = 0; s < 2; s++) {
         const EdgeMod &fm = mods[FindEdgeMod(mods, em->nb[s][k])];
-        if(fm.e.deg != 1) {
-            dbp("fillet: corner of curved edges not supported yet");
-            return false;
-        }
         if(fabs(fm.r - em->r) > LENGTH_EPS || fm.chamfer != em->chamfer) {
             dbp("fillet: edges meeting at a corner must have the same radius");
             return false;
@@ -676,11 +785,13 @@ static bool SetUpCornerEnd(SShell *sh, const std::vector<EdgeMod> &mods,
         return false;
     }
     // For a fillet both points are where the corner ball touches e's faces,
-    // so they are on one cross-section. A chamfer is planar, so its end line
-    // can run across it, as at a miter; the surface must reach both points.
+    // so they are on one cross-section. A chamfer of a straight edge is
+    // planar, so its end line can run across it, as at a miter; the surface
+    // must reach both points.
     double t0 = ParamOn(em->off[0], em->cut[0][k]),
            t1 = ParamOn(em->off[1], em->cut[1][k]);
-    if(!em->chamfer && fabs(t0 - t1) > 1e-6) {
+    bool planar = em->chamfer && em->e.deg == 1;
+    if(!planar && fabs(t0 - t1) > 1e-6) {
         dbp("fillet: corner cuts not on one cross-section");
         return false;
     }
@@ -758,12 +869,12 @@ static bool SubCurve(const SBezier &b, Vector p0, Vector p1, SBezier *out) {
     return true;
 }
 
-// Fillet or chamfer surface from rows eA, (e,) eB over [tSrf[0], tSrf[1]],
+// Fillet or chamfer surface from rows eA, (mid,) eB over [tSrf[0], tSrf[1]],
 // facing outward: roughly along nA + nB.
 static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB) {
     SBezier e, a, b;
     double t0 = em->tSrf[0], t1 = em->tSrf[1];
-    if(!em->e.Reparameterized(t0, t1, &e) ||
+    if(!em->mid.Reparameterized(t0, t1, &e) ||
        !em->off[0].Reparameterized(t0, t1, &a) ||
        !em->off[1].Reparameterized(t0, t1, &b))
     {
@@ -795,16 +906,15 @@ static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB) {
 }
 
 // End curve at end k, from cut[0][k] to cut[1][k]: a line for a chamfer, a
-// circular arc of pi - alpha (or, at a miter, its projection, an ellipse)
-// for a fillet.
-// The middle control point is the vertex, except at a corner, where the
-// cross-section is short of the vertex.
+// circular arc of the ball (or, at a miter, its projection, an ellipse) for a
+// fillet. The middle control point is on the middle row; at a miter it is the
+// vertex, where the middle row (the edge itself, between flat faces) ends.
 static void MakeEndCurve(EdgeMod *em, int k) {
     if(em->chamfer) {
         em->endC[k] = SBezier::From(em->cut[0][k], em->cut[1][k]);
     } else {
-        Vector mid = (em->kind[k] == CORNER) ? em->e.PointAt(em->tSrf[k])
-                                             : em->vtx[k];
+        Vector mid = (em->kind[k] == MITER) ? em->vtx[k]
+                                            : em->mid.PointAt(em->tSrf[k]);
         em->endC[k] = SBezier::From(Vector4::From(1.0, em->cut[0][k]),
                                     Vector4::From(em->w, mid),
                                     Vector4::From(1.0, em->cut[1][k]));
@@ -962,16 +1072,7 @@ void SShell::ModifyEdges()
     // 2-4. Offset curves, vertices and cut points. Read only. If any edge
     // can't be done, do none: neighbors depend on each other.
     for(EdgeMod &em : mods) {
-        if(!FaceAngle(this, &em)) return;
-        for(int s = 0; s < 2; s++) {
-            SSurface *srf = surface.FindById(em.face[s]);
-            if(!OffsetEdgeInto(srf, em.e, srf->trim[em.trim[s]].backwards,
-                               em.d, &em.off[s]))
-            {
-                dbp("fillet: can't offset this edge");
-                return;
-            }
-        }
+        if(!SetUpSections(this, &em)) return;
     }
     for(EdgeMod &em : mods) {
         if(!SetUpEnd(this, mods, &em, 0) || !SetUpEnd(this, mods, &em, 1)) return;
