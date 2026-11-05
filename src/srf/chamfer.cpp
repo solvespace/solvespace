@@ -166,10 +166,6 @@
 
 namespace SolveSpace {
 
-// Weight of the middle control point of a rational quadratic quarter circle,
-// cos(45 degrees). Used for the fillet cross-section.
-static const double QUARTER_ARC_WEIGHT = 0.70710678118654752440;
-
 // Vertex cases, see the plan above.
 static const int END_FACE = 1;  // case 1: neighbors not modified, end face C
 static const int TANGENT  = 2;  // case 2: tangent chain of modified edges
@@ -184,6 +180,10 @@ struct EdgeMod {
     hSCurve   orig;           // the original edge
     double    r;
     bool      chamfer;
+    double    alpha;          // angle between the faces, on the ball's side
+    double    d;              // offset distance, r / tan(alpha/2)
+    double    w;              // weight of the cross-section's middle control
+                              // point, sin(alpha/2); cos(45) when square
     SBezier   e;              // the original edge
     hSSurface face[2];        // [s]
     int       trim[2];        // [s] index of the edge's trim in face[s]
@@ -230,6 +230,18 @@ static bool IsTestLine(const SBezier &b, int axis, double value) {
            fabs(p1.Element(axis) - value) < LENGTH_EPS;
 }
 
+// For the test hook: a line whose two faces are planes not at 90 degrees.
+static bool IsTestSlantedLine(SShell *sh, SCurve *sc) {
+    if(sc->exact.deg != 1) return false;
+    SSurface *sa = sh->surface.FindByIdNoOops(sc->surfA),
+             *sb = sh->surface.FindByIdNoOops(sc->surfB);
+    if(sa == NULL || sb == NULL) return false;
+    if(sa->degm != 1 || sa->degn != 1 || sb->degm != 1 || sb->degn != 1) return false;
+    double dot = (sa->NormalAt(0.5, 0.5).WithMagnitude(1.0)).Dot(
+                  sb->NormalAt(0.5, 0.5).WithMagnitude(1.0));
+    return fabs(dot) > 1e-6 && fabs(dot) < 1 - 1e-6;
+}
+
 // We return 0 for no feature, radius for a fillet, and for chamfers a negative
 // value whose absolute value is the radius of an equivalent fillet.
 double SShell::GetEdgeModifier(SCurve &sc)
@@ -242,9 +254,18 @@ double SShell::GetEdgeModifier(SCurve &sc)
     //                       at the corner (10, 10, 10)
     //   L_shape:            the line at x = 0, y = 0 (concave)
     //   test_cylinder:      the arcs of the top circle at z = 10
+    //   house_test:         lines between planes not at 90 degrees (eaves).
+    //                       If a shell has any of these, only they are
+    //                       picked; the rules above would also pick lines in
+    //                       the house.
     const double r = 3.0;   // negative for chamfers
     if(!sc.isExact) return 0.0;
     const SBezier &b = sc.exact;
+    for(SCurve &other : curve) {
+        if(IsTestSlantedLine(this, &other)) {
+            return IsTestSlantedLine(this, &sc) ? r : 0.0;
+        }
+    }
     if(IsTestLine(b, 2, 10) &&
        (IsTestLine(b, 0, 10) || IsTestLine(b, 0, -10) ||
         IsTestLine(b, 1, 10) || IsTestLine(b, 1, -10)))
@@ -328,6 +349,35 @@ static Vector InwardAt(SSurface *s, const SBezier &e, bool backwards, double t) 
     if(backwards) tan = tan.ScaledBy(-1.0);
     Vector n = SurfaceNormalNear(s, e.PointAt(t));
     return tan.Cross(n).WithMagnitude(1.0);
+}
+
+// The angle between the two faces at the edge, on the side where the ball
+// sits: between the directions that point away from the edge into each face.
+// That is the material for a convex edge and the air for a concave one. Must
+// be the same along the edge.
+static bool FaceAngle(SShell *sh, EdgeMod *em) {
+    double a[3];
+    for(int i = 0; i < 3; i++) {
+        double t = i * 0.5;
+        Vector in[2];
+        for(int s = 0; s < 2; s++) {
+            SSurface *srf = sh->surface.FindById(em->face[s]);
+            in[s] = InwardAt(srf, em->e, srf->trim[em->trim[s]].backwards, t);
+        }
+        a[i] = acos(max(-1.0, min(1.0, in[0].Dot(in[1]))));
+    }
+    if(fabs(a[0] - a[1]) > 1e-6 || fabs(a[2] - a[1]) > 1e-6) {
+        dbp("fillet: angle between faces varies along the edge, not supported yet");
+        return false;
+    }
+    if(a[1] < 1e-3 || a[1] > PI - 1e-3) {
+        dbp("fillet: faces are nearly flat or folded back");
+        return false;
+    }
+    em->alpha = a[1];
+    em->d     = em->r / tan(em->alpha / 2);
+    em->w     = sin(em->alpha / 2);
+    return true;
 }
 
 // Offset e into surface s by distance d, away from the edge. Only the exact
@@ -578,13 +628,16 @@ static bool SetUpCornerEnd(SShell *sh, const std::vector<EdgeMod> &mods,
         dbp("fillet: corner neighbors don't share a face");
         return false;
     }
+    // For a fillet both points are where the corner ball touches e's faces,
+    // so they are on one cross-section. A chamfer is planar, so its end line
+    // can run across it, as at a miter; the surface must reach both points.
     double t0 = ParamOn(em->off[0], em->cut[0][k]),
            t1 = ParamOn(em->off[1], em->cut[1][k]);
-    if(fabs(t0 - t1) > 1e-6) {
-        dbp("fillet: corner not square, not supported yet");
+    if(!em->chamfer && fabs(t0 - t1) > 1e-6) {
+        dbp("fillet: corner cuts not on one cross-section");
         return false;
     }
-    em->tSrf[k] = t0;
+    em->tSrf[k] = (k == 0) ? min(t0, t1) : max(t0, t1);
     em->kind[k] = CORNER;
     return true;
 }
@@ -678,7 +731,7 @@ static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB) {
         s.weight[i][0] = a.weight[i];
         if(!em->chamfer) {
             s.ctrl[i][1]   = e.ctrl[i];
-            s.weight[i][1] = e.weight[i] * QUARTER_ARC_WEIGHT;
+            s.weight[i][1] = e.weight[i] * em->w;
         }
         s.ctrl[i][s.degn]   = b.ctrl[i];
         s.weight[i][s.degn] = b.weight[i];
@@ -695,7 +748,8 @@ static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB) {
 }
 
 // End curve at end k, from cut[0][k] to cut[1][k]: a line for a chamfer, a
-// quarter circle (or, at a miter, its projection, an ellipse) for a fillet.
+// circular arc of pi - alpha (or, at a miter, its projection, an ellipse)
+// for a fillet.
 // The middle control point is the vertex, except at a corner, where the
 // cross-section is short of the vertex.
 static void MakeEndCurve(EdgeMod *em, int k) {
@@ -705,7 +759,7 @@ static void MakeEndCurve(EdgeMod *em, int k) {
         Vector mid = (em->kind[k] == CORNER) ? em->e.PointAt(em->tSrf[k])
                                              : em->vtx[k];
         em->endC[k] = SBezier::From(Vector4::From(1.0, em->cut[0][k]),
-                                    Vector4::From(QUARTER_ARC_WEIGHT, mid),
+                                    Vector4::From(em->w, mid),
                                     Vector4::From(1.0, em->cut[1][k]));
     }
 }
@@ -861,10 +915,11 @@ void SShell::ModifyEdges()
     // 2-4. Offset curves, vertices and cut points. Read only. If any edge
     // can't be done, do none: neighbors depend on each other.
     for(EdgeMod &em : mods) {
+        if(!FaceAngle(this, &em)) return;
         for(int s = 0; s < 2; s++) {
             SSurface *srf = surface.FindById(em.face[s]);
             if(!OffsetEdgeInto(srf, em.e, srf->trim[em.trim[s]].backwards,
-                               em.r, &em.off[s]))
+                               em.d, &em.off[s]))
             {
                 dbp("fillet: can't offset this edge");
                 return;
