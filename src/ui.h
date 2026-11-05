@@ -303,7 +303,9 @@ public:
         PASTE_TRANSFORMED   = 7,
         EDIT_VIEW           = 8,
         TANGENT_ARC         = 9,
-        GEAR_HUB            = 10
+        GEAR_HUB            = 10,
+        GEAR_RACK           = 11,
+        GEAR_RACK_SOLID     = 12
     };
     typedef struct {
         Screen  screen;
@@ -362,6 +364,8 @@ public:
         GEAR_MATE_TEETH       = 311,
         GEAR_MATE_RATIO       = 312,
         GEAR_HUB_PARAM        = 313,
+        GEAR_RACK_PARAM       = 314,
+        GEAR_RACK_SOLID_PARAM = 315,
         // For the step dimension screen
         STEP_DIM_FINISH       = 400,
         STEP_DIM_STEPS        = 401,
@@ -434,6 +438,8 @@ public:
     void ShowEditView();
     void ShowTangentArc();
     void ShowGearHub();
+    void ShowGearRack();
+    void ShowGearRackSolid();
     // Special screen, based on selection
     void DescribeSelection();
 
@@ -448,7 +454,18 @@ public:
     static void ScreenChangeGearHub(int link, uint32_t v);
     static void ScreenCreateGearHub(int link, uint32_t v);
     GearHubParams gearHub;
+    static void ScreenGearRack(int link, uint32_t v);
+    static void ScreenChangeGearRack(int link, uint32_t v);
+    static void ScreenCreateGearRack(int link, uint32_t v);
+    // The rack that the rack screen sets up.
+    int    gearRackTeeth;
+    double gearRackBase;
+    static void ScreenGearRackSolid(int link, uint32_t v);
+    static void ScreenChangeGearRackSolid(int link, uint32_t v);
+    static void ScreenCreateGearRackSolid(int link, uint32_t v);
+    GearRackSolidParams gearRackSolid;
     void DescribeGear(Entity *e);
+    void DescribeGearRack(Entity *e);
     bool EditControlDoneForGear(const std::string &s);
     static void ScreenToggleTtfKerning(int link, uint32_t v);
     static void ScreenSetTtfFont(int link, uint32_t v);

@@ -144,6 +144,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'r',  "Request.gear.clearance",   'f',    &(SS.sv.r.gear.clearance)     },
     { 'r',  "Request.gear.backlash",    'f',    &(SS.sv.r.gear.backlash)      },
     { 'r',  "Request.gear.bore",        'f',    &(SS.sv.r.gear.bore)          },
+    { 'r',  "Request.gear.rackBase",    'f',    &(SS.sv.r.gear.rackBase)      },
     { 'r',  "Request.gearDriver.v",     'x',    &(SS.sv.r.gearDriver.v)       },
 
     { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },
@@ -160,6 +161,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'e',  "Entity.gear.clearance",    'f',    &(SS.sv.e.gear.clearance)     },
     { 'e',  "Entity.gear.backlash",     'f',    &(SS.sv.e.gear.backlash)      },
     { 'e',  "Entity.gear.bore",         'f',    &(SS.sv.e.gear.bore)          },
+    { 'e',  "Entity.gear.rackBase",     'f',    &(SS.sv.e.gear.rackBase)      },
     { 'e',  "Entity.point[0].v",        'x',    &(SS.sv.e.point[0].v)         },
     { 'e',  "Entity.point[1].v",        'x',    &(SS.sv.e.point[1].v)         },
     { 'e',  "Entity.point[2].v",        'x',    &(SS.sv.e.point[2].v)         },

@@ -249,6 +249,10 @@ void TextWindow::DescribeSelection() {
                 DescribeGear(e);
                 break;
 
+            case Entity::Type::GEAR_RACK:
+                DescribeGearRack(e);
+                break;
+
             case Entity::Type::IMAGE: {
                 Printf(false, "%FtIMAGE%E");
                 Platform::Path relativePath = e->file.RelativeTo(SS.saveFile.Parent());

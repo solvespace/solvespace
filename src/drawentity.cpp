@@ -106,6 +106,7 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
         case Type::TTF_TEXT:
         case Type::IMAGE:
         case Type::GEAR:
+        case Type::GEAR_RACK:
             refs->push_back(SK.GetEntity(point[0])->PointGetDrawNum());
             break;
 
@@ -500,6 +501,23 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
             break;
         }
 
+        case Type::GEAR_RACK: {
+            Vector p0 = SK.GetEntity(point[0])->PointGetNum();
+            Vector p1 = SK.GetEntity(point[1])->PointGetNum();
+            Vector n  = Normal()->NormalN();
+            Vector xd = p1.Minus(p0);
+            double d = xd.Magnitude();
+            double len = PI * gear.module * gear.teeth;
+            if(d < LENGTH_EPS || len < LENGTH_EPS) break;
+            xd = xd.ScaledBy(1 / d);
+            Vector yd = n.Cross(xd).WithMagnitude(1);
+            // The ends of the pitch line are as far apart as the rack is
+            // long; in a scaled copy their distance gives the scale.
+            double scale = (SK.GetEntity(point[0])->type == Type::POINT_IN_2D) ? 1.0 : d / len;
+            GearMakeRackOutline(gear, p0, xd, yd, scale, sbl);
+            break;
+        }
+
         default:
             // Not a problem, points and normals and such don't generate curves
             break;
@@ -773,7 +791,8 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         case Type::CUBIC:
         case Type::CUBIC_PERIODIC:
         case Type::TTF_TEXT:
-        case Type::GEAR: {
+        case Type::GEAR:
+        case Type::GEAR_RACK: {
             // Generate the rational polynomial curves, then piecewise linearize
             // them, and display those.
             // Calculating the draw offset, if necessary.

@@ -57,7 +57,8 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
               e->type == Entity::Type::CIRCLE ||
               e->type == Entity::Type::TTF_TEXT ||
               e->type == Entity::Type::IMAGE ||
-              e->type == Entity::Type::GEAR)
+              e->type == Entity::Type::GEAR ||
+              e->type == Entity::Type::GEAR_RACK)
     {
         int pts;
         ssassert(EntReqTable::GetEntityInfo(e->type, e->extraPoints,

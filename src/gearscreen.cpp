@@ -33,7 +33,18 @@ void TextWindow::ScreenEditGear(int link, uint32_t v) {
     Request *r = SK.request.FindByIdNoOops(hr);
     if(r == NULL) return;
 
-    SS.TW.ShowEditControl(20, GearParamString(r->gear, link, /*editable=*/true));
+    std::string val;
+    if(r->type == Request::Type::GEAR_RACK) {
+        switch(link) {
+            case 'z': val = ssprintf("%d", r->gear.teeth); break;
+            case 'l': val = SS.MmToString(PI * r->gear.module * r->gear.teeth, true); break;
+            case 'b': val = SS.MmToString(r->gear.rackBase, true); break;
+            default: return;
+        }
+    } else {
+        val = GearParamString(r->gear, link, /*editable=*/true);
+    }
+    SS.TW.ShowEditControl(20, val);
     SS.TW.edit.meaning = Edit::GEAR_PARAM;
     SS.TW.edit.request = hr;
     SS.TW.edit.i = link;
@@ -54,12 +65,102 @@ void TextWindow::ScreenAddGearMate(int link, uint32_t v) {
     SS.TW.edit.request = hr;
 }
 
+// Number of teeth of a rack from an expression, given as a number of teeth
+// or, for link 'l', as a length that is rounded to whole teeth.
+static bool RackTeethFrom(Expr *e, int link, double module, int *teeth) {
+    int n;
+    if(link == 'l') {
+        double len = SS.ExprToMm(e);
+        if(!(len > 0)) {
+            Error(_("The length must be greater than zero."));
+            return false;
+        }
+        n = std::max(1, (int)floor(len / (PI * module) + 0.5));
+    } else {
+        n = (int)floor(e->Eval() + 0.5);
+    }
+    if(n < GEAR_RACK_MIN_TEETH || n > GEAR_RACK_MAX_TEETH) {
+        Error(_("The number of teeth must be between %d and %d."),
+              GEAR_RACK_MIN_TEETH, GEAR_RACK_MAX_TEETH);
+        return false;
+    }
+    *teeth = n;
+    return true;
+}
+
 bool TextWindow::EditControlDoneForGear(const std::string &s) {
     Request *r = SK.request.FindByIdNoOops(edit.request);
-    if(r == NULL || r->type != Request::Type::GEAR) return false;
+    if(r == NULL) return false;
+    bool rack = (r->type == Request::Type::GEAR_RACK);
+    if(r->type != Request::Type::GEAR && !rack) return false;
 
     Expr *e = Expr::From(s, /*popUpError=*/true);
     if(e == NULL) return false;
+
+    if(edit.meaning == Edit::GEAR_RACK_SOLID_PARAM) {
+        GearRackSolidParams &sp = gearRackSolid;
+        if(edit.i == 'n') {
+            int n = (int)floor(e->Eval() + 0.5);
+            if(n < 1) {
+                Error(_("There must be at least one hole."));
+                return false;
+            }
+            sp.holes = n;
+        } else {
+            double val = SS.ExprToMm(e);
+            if(!(val > 0)) {
+                Error(_("The value must be greater than zero."));
+                return false;
+            }
+            switch(edit.i) {
+                case 'w': sp.width = val;        break;
+                case 'b': sp.base = val;         break;
+                case 'd': sp.holeDiameter = val; break;
+                case 'h': sp.holeDepth = val;    break;
+            }
+        }
+        SS.ScheduleShowTW();
+        return true;
+    }
+
+    if(edit.meaning == Edit::GEAR_RACK_PARAM) {
+        if(edit.i == 'b') {
+            double val = SS.ExprToMm(e);
+            if(!(val > 0)) {
+                Error(_("The value must be greater than zero."));
+                return false;
+            }
+            gearRackBase = val;
+        } else if(!RackTeethFrom(e, edit.i, r->gear.module, &gearRackTeeth)) {
+            return false;
+        }
+        SS.ScheduleShowTW();
+        return true;
+    }
+
+    if(rack) {
+        GearParams gp = r->gear;
+        if(edit.i == 'b') {
+            double val = SS.ExprToMm(e);
+            if(!(val > 0)) {
+                Error(_("The value must be greater than zero."));
+                return false;
+            }
+            gp.rackBase = val;
+        } else if(edit.i == 'z' || edit.i == 'l') {
+            if(!RackTeethFrom(e, edit.i, gp.module, &gp.teeth)) return false;
+        } else {
+            return false;
+        }
+        if(gp.Equals(r->gear)) return true;
+        SS.UndoRemember();
+        r = SK.GetRequest(edit.request);
+        r->gear = gp;
+        GearSyncLinked(r->h);
+        SS.MarkGroupDirty(r->group);
+        SS.ScheduleShowTW();
+        return true;
+    }
 
     if(edit.meaning == Edit::GEAR_HUB_PARAM) {
         double val = SS.ExprToMm(e);
@@ -267,11 +368,20 @@ void TextWindow::DescribeGear(Entity *e) {
     for(Request &o : SK.request) {
         if(o.type == Request::Type::GEAR && o.gearDriver == r->h) showMate(&o);
     }
+    for(Request &o : SK.request) {
+        if(o.type != Request::Type::GEAR_RACK || o.gearDriver != r->h) continue;
+        Printf(firstMate, "  meshes with %Fi%s%E: %Fi%d%E teeth, pitch line at %Fi%s%E",
+               o.DescriptionString().c_str(), o.gear.teeth,
+               SS.MmToString(GearRackDistance(r->gear)).c_str());
+        firstMate = false;
+    }
 
     Printf(true, "  %Fl%Lt%f%D[add mating gear by number of teeth]%E",
            &ScreenAddGearMate, hv);
     Printf(false, "  %Fl%Lr%f%D[add mating gear by ratio]%E",
            &ScreenAddGearMate, hv);
+    Printf(false, "  %Fl%Lk%f%D[add rack]%E",
+           &ScreenGearRack, hv);
     Printf(false, "  %Fl%Lh%f%D[make solid with hub and clamp screw]%E",
            &ScreenGearHub, hv);
 }
@@ -399,6 +509,268 @@ void TextWindow::ShowGearHub() {
             firstWarning = false;
         }
         Printf(true, "  %Fl%f%Ll[create]%E", &ScreenCreateGearHub);
+    }
+    Printf(true, "(or %Fl%Ll%fback to home screen%E)", &ScreenHome);
+}
+
+
+
+//-----------------------------------------------------------------------------
+// A selected rack.
+//-----------------------------------------------------------------------------
+void TextWindow::DescribeGearRack(Entity *e) {
+    const GearParams &gp = e->gear;
+    bool editable = e->h.isFromRequest();
+    uint32_t hv = editable ? e->h.request().v : 0;
+    GearRackInfo info = GearRackComputeInfo(gp);
+
+    Printf(false, "%FtGEAR RACK%E");
+    struct Row { const char *label; char link; std::string value; };
+    const Row rows[] = {
+        { "teeth          ", 'z', ssprintf("%d", gp.teeth) },
+        { "length         ", 'l', SS.MmToString(PI * gp.module * gp.teeth) },
+        { "back thickness ", 'b', SS.MmToString(gp.rackBase) },
+    };
+    bool first = true;
+    for(const Row &row : rows) {
+        if(editable) {
+            std::string fmt = std::string("  %s = %Fi%s%E %Fl%L") + row.link + "%f%D[change]%E";
+            Printf(first, fmt.c_str(), row.label, row.value.c_str(), &ScreenEditGear, hv);
+        } else {
+            Printf(first, "  %s = %Fi%s%E", row.label, row.value.c_str());
+        }
+        first = false;
+    }
+    Printf(false, "  %FdA length is rounded to whole teeth.%E");
+
+    Printf(true,  "  module m       = %Fi%s%E", SS.MmToString(gp.module).c_str());
+    Printf(false, "  pressure angle = %Fi%.2f°%E", gp.pressureAngle);
+    Printf(false, "  clearance c*   = %Fi%.3f%E", gp.clearance);
+    Printf(false, "  backlash       = %Fi%s%E", SS.MmToString(gp.backlash).c_str());
+
+    if(info.valid) {
+        Printf(true,  "  pitch          = %Fi%s%E", SS.MmToString(info.pitch).c_str());
+        Printf(false, "  tooth height   = %Fi%s%E",
+               SS.MmToString(info.addendum + info.dedendum).c_str());
+        Printf(false, "  total height   = %Fi%s%E", SS.MmToString(info.height).c_str());
+        Printf(false, "  tip width      = %Fi%s%E", SS.MmToString(info.tipWidth).c_str());
+    } else {
+        Printf(true, "  %Fx%s%E", _("no tooth shape possible for these values"));
+    }
+
+    if(!editable) return;
+    Request *r = SK.request.FindByIdNoOops(e->h.request());
+    if(r == NULL) return;
+    if(Request *d = SK.request.FindByIdNoOops(r->gearDriver)) {
+        if(d->type == Request::Type::GEAR) {
+            Printf(true, "  meshes with %Fi%s%E, which sets module, pressure angle,",
+                   d->DescriptionString().c_str());
+            Printf(false, "  clearance and backlash");
+        }
+    }
+    Printf(true, "  %Fl%Ls%f%D[make solid with mounting holes]%E",
+           &ScreenGearRackSolid, hv);
+}
+
+//-----------------------------------------------------------------------------
+// The screen that sets up a rack for a gear.
+//-----------------------------------------------------------------------------
+void TextWindow::ScreenGearRack(int link, uint32_t v) {
+    hRequest hr = { v };
+    Request *r = SK.request.FindByIdNoOops(hr);
+    if(r == NULL) return;
+
+    SS.TW.shown.gear = hr;
+    SS.TW.gearRackTeeth = 10;
+    SS.TW.gearRackBase = 2 * r->gear.module;
+    SS.GW.ClearSelection();
+    SS.TW.GoToScreen(Screen::GEAR_RACK);
+    SS.ScheduleShowTW();
+}
+
+void TextWindow::ScreenChangeGearRack(int link, uint32_t v) {
+    Request *r = SK.request.FindByIdNoOops(SS.TW.shown.gear);
+    if(r == NULL) return;
+    std::string val;
+    switch(link) {
+        case 'z': val = ssprintf("%d", SS.TW.gearRackTeeth); break;
+        case 'l': val = SS.MmToString(PI * r->gear.module * SS.TW.gearRackTeeth, true); break;
+        case 'b': val = SS.MmToString(SS.TW.gearRackBase, true); break;
+        default: return;
+    }
+    SS.TW.ShowEditControl(20, val);
+    SS.TW.edit.meaning = Edit::GEAR_RACK_PARAM;
+    SS.TW.edit.request = SS.TW.shown.gear;
+    SS.TW.edit.i = link;
+}
+
+void TextWindow::ScreenCreateGearRack(int link, uint32_t v) {
+    SS.UndoRemember();
+    hRequest hr = GearAddRack(SS.TW.shown.gear, SS.TW.gearRackTeeth, SS.TW.gearRackBase);
+    if(hr.v == 0) return;
+    SS.GW.ClearSelection();
+    SS.GW.MakeSelected(hr.entity(0));
+    SS.ScheduleShowTW();
+    SS.GW.Invalidate();
+}
+
+void TextWindow::ShowGearRack() {
+    Request *r = SK.request.FindByIdNoOops(shown.gear);
+    if(r == NULL || r->type != Request::Type::GEAR) {
+        GoToScreen(Screen::LIST_OF_GROUPS);
+        Show();
+        return;
+    }
+    GearParams gp = r->gear;
+    gp.teeth = gearRackTeeth;
+    gp.profileShift = 0;
+    gp.rackBase = gearRackBase;
+    GearRackInfo info = GearRackComputeInfo(gp);
+
+    Printf(true, "%FtRACK%E");
+    Printf(false, "  for gear %Fi%s%E", r->DescriptionString().c_str());
+
+    struct Row { const char *label; char link; std::string value; };
+    const Row rows[] = {
+        { "teeth          ", 'z', ssprintf("%d", gearRackTeeth) },
+        { "length         ", 'l', SS.MmToString(PI * gp.module * gearRackTeeth) },
+        { "back thickness ", 'b', SS.MmToString(gearRackBase) },
+    };
+    bool first = true;
+    for(const Row &row : rows) {
+        std::string fmt = std::string("  %s = %Fi%s%E %Fl%L") + row.link + "%f[change]%E";
+        Printf(first, fmt.c_str(), row.label, row.value.c_str(), &ScreenChangeGearRack);
+        first = false;
+    }
+    Printf(false, "  %FdA length is rounded to whole teeth.%E");
+    if(info.valid) {
+        Printf(true, "  total height   = %Fi%s%E", SS.MmToString(info.height).c_str());
+    }
+
+    Printf(true, "  %FdModule, pressure angle, clearance and backlash%E");
+    Printf(false, "  %Fdfollow the gear. The rack goes below the gear in%E");
+    Printf(false, "  %Fda sketch of its own, and can be moved along and%E");
+    Printf(false, "  %Fdaround the gear.%E");
+
+    if(!info.valid) {
+        Printf(true, "  %Fx%s%E", _("no tooth shape possible for these values"));
+    } else {
+        Printf(true, "  %Fl%f%Ll[create]%E", &ScreenCreateGearRack);
+    }
+    Printf(true, "(or %Fl%Ll%fback to home screen%E)", &ScreenHome);
+}
+
+//-----------------------------------------------------------------------------
+// The screen that makes a rack a solid with mounting holes.
+//-----------------------------------------------------------------------------
+void TextWindow::ScreenGearRackSolid(int link, uint32_t v) {
+    hRequest hr = { v };
+    Request *r = SK.request.FindByIdNoOops(hr);
+    if(r == NULL) return;
+
+    SS.TW.shown.gear = hr;
+    SS.TW.gearRackSolid = GearRackSolidParams::Default(r->gear);
+    SS.GW.ClearSelection();
+    SS.TW.GoToScreen(Screen::GEAR_RACK_SOLID);
+    SS.ScheduleShowTW();
+}
+
+void TextWindow::ScreenChangeGearRackSolid(int link, uint32_t v) {
+    GearRackSolidParams &sp = SS.TW.gearRackSolid;
+    using Mount = GearRackSolidParams::Mount;
+    std::string val;
+    switch(link) {
+        case 'w': val = SS.MmToString(sp.width, true);        break;
+        case 'b': val = SS.MmToString(sp.base, true);         break;
+        case 'd': val = SS.MmToString(sp.holeDiameter, true); break;
+        case 'h': val = SS.MmToString(sp.holeDepth, true);    break;
+        case 'n': val = ssprintf("%d", sp.holes);             break;
+
+        case 'I':
+        case 'C':
+        case 'N':
+        {
+            Request *r = SK.request.FindByIdNoOops(SS.TW.shown.gear);
+            if(r == NULL) return;
+            int holes = sp.holes;
+            sp = GearRackSolidParams::Default(r->gear,
+                (link == 'I') ? Mount::INSERT : (link == 'C') ? Mount::CROSS : Mount::NONE);
+            sp.holes = holes;
+            SS.ScheduleShowTW();
+            return;
+        }
+
+        default:
+            return;
+    }
+    SS.TW.ShowEditControl(20, val);
+    SS.TW.edit.meaning = Edit::GEAR_RACK_SOLID_PARAM;
+    SS.TW.edit.request = SS.TW.shown.gear;
+    SS.TW.edit.i = link;
+}
+
+void TextWindow::ScreenCreateGearRackSolid(int link, uint32_t v) {
+    SS.UndoRemember();
+    std::string error;
+    if(!GearAddRackSolid(SS.TW.shown.gear, SS.TW.gearRackSolid, &error)) {
+        Error("%s", error.c_str());
+        return;
+    }
+    SS.GW.ClearSelection();
+    SS.TW.GoToScreen(Screen::LIST_OF_GROUPS);
+    SS.ScheduleShowTW();
+    SS.GW.Invalidate();
+}
+
+void TextWindow::ShowGearRackSolid() {
+    Request *r = SK.request.FindByIdNoOops(shown.gear);
+    if(r == NULL || r->type != Request::Type::GEAR_RACK) {
+        GoToScreen(Screen::LIST_OF_GROUPS);
+        Show();
+        return;
+    }
+    const GearRackSolidParams &sp = gearRackSolid;
+    using Mount = GearRackSolidParams::Mount;
+
+    Printf(true, "%FtRACK AS A SOLID%E");
+    Printf(false, "  for rack %Fi%s%E", r->DescriptionString().c_str());
+
+    struct Row { const char *label; char link; std::string value; bool show; };
+    const Row rows[] = {
+        { "width          ", 'w', SS.MmToString(sp.width),        true },
+        { "back thickness ", 'b', SS.MmToString(sp.base),         true },
+        { "holes          ", 'n', ssprintf("%d", sp.holes),       sp.mount != Mount::NONE },
+        { "hole diameter  ", 'd', SS.MmToString(sp.holeDiameter), sp.mount != Mount::NONE },
+        { "hole depth     ", 'h', SS.MmToString(sp.holeDepth),    sp.mount == Mount::INSERT },
+    };
+    bool first = true;
+    for(const Row &row : rows) {
+        if(!row.show) continue;
+        std::string fmt = std::string("  %s = %Fi%s%E %Fl%L") + row.link + "%f[change]%E";
+        Printf(first, fmt.c_str(), row.label, row.value.c_str(), &ScreenChangeGearRackSolid);
+        first = false;
+    }
+
+    Printf(true, "  %Ftmounting%E");
+    std::string insert = ssprintf("M3 heat-set inserts from the back, %.1f mm long",
+                                  GEAR_INSERT_LENGTH);
+    Printf(false, "  %f%LI%Fd%s  %s%E",
+           &ScreenChangeGearRackSolid, sp.mount == Mount::INSERT ? RADIO_TRUE : RADIO_FALSE,
+           insert.c_str());
+    Printf(false, "  %f%LC%Fd%s  M3 through holes across the back%E",
+           &ScreenChangeGearRackSolid, sp.mount == Mount::CROSS ? RADIO_TRUE : RADIO_FALSE);
+    Printf(false, "  %f%LN%Fd%s  none%E",
+           &ScreenChangeGearRackSolid, sp.mount == Mount::NONE ? RADIO_TRUE : RADIO_FALSE);
+
+    Printf(true, "  %FdA new mounting suggests width, back and holes%E");
+    Printf(false, "  %Fdagain. The holes are spaced evenly along the rack.%E");
+
+    std::string problem = sp.Problem(r->gear);
+    if(!problem.empty()) {
+        Printf(true, "  %Fx%s%E", problem.c_str());
+    } else {
+        if(!sp.Warning().empty()) Printf(true, "  %Fx%s%E", sp.Warning().c_str());
+        Printf(true, "  %Fl%f%Ll[create]%E", &ScreenCreateGearRackSolid);
     }
     Printf(true, "(or %Fl%Ll%fback to home screen%E)", &ScreenHome);
 }

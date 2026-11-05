@@ -897,6 +897,7 @@ bool EntityBase::IsInPlane(Vector norm, double distance) const {
         }
 
         case Type::GEAR:
+        case Type::GEAR_RACK:
         case Type::TTF_TEXT: {
             Vector n = Normal()->NormalN();
             if (!norm.Equals(n) && !norm.Equals(n.Negated())) return false;
@@ -979,6 +980,17 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             if(r < LENGTH_EPS) break;
             Expr *d = Constraint::Distance(workplane, point[0], point[1]);
             AddEq(l, d->Minus(Expr::From(r)), 0);
+            break;
+        }
+
+        case Type::GEAR_RACK: {
+            // The two points are the ends of the pitch line, as long as the
+            // rack.
+            if(SK.GetEntity(point[0])->type != Type::POINT_IN_2D) break;
+            double len = PI * gear.module * gear.teeth;
+            if(len < LENGTH_EPS) break;
+            Expr *d = Constraint::Distance(workplane, point[0], point[1]);
+            AddEq(l, d->Minus(Expr::From(len)), 0);
             break;
         }
 

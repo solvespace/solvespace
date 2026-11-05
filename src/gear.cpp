@@ -31,7 +31,8 @@ GearParams GearParams::Default() {
 bool GearParams::Equals(const GearParams &o) const {
     return module == o.module && teeth == o.teeth &&
            pressureAngle == o.pressureAngle && profileShift == o.profileShift &&
-           clearance == o.clearance && backlash == o.backlash && bore == o.bore;
+           clearance == o.clearance && backlash == o.backlash && bore == o.bore &&
+           rackBase == o.rackBase;
 }
 
 namespace {
@@ -374,6 +375,150 @@ double GearMatePhase(int driverTeeth, int mateTeeth, double driverPhase) {
 }
 
 //-----------------------------------------------------------------------------
+// Racks.
+//-----------------------------------------------------------------------------
+
+namespace {
+
+// The profile of a rack tooth in a frame with s along the pitch line and t
+// toward the tooth tips. The tooth space around s = 0 is bounded by the
+// root line t = -hf and the flank s = g + t tan(alpha), joined by a fillet
+// of radius rho centered at (sc, tc).
+struct RackProfile {
+    double p, alpha, ha, hf, g, rho, sc, tc, base;
+};
+
+bool MakeRackProfile(const GearParams &gp, RackProfile *rp, GearRackInfo *info) {
+    *info = {};
+    if(gp.teeth < GEAR_RACK_MIN_TEETH || gp.teeth > GEAR_RACK_MAX_TEETH) return false;
+    if(!(gp.module > LENGTH_EPS)) return false;
+    if(!(gp.pressureAngle >= 5 && gp.pressureAngle <= 35)) return false;
+    if(!(gp.clearance >= 0 && gp.clearance <= 1)) return false;
+    if(!(gp.backlash >= 0)) return false;
+
+    double m = gp.module;
+    double alpha = gp.pressureAngle * PI / 180;
+    double sa = sin(alpha), ca = cos(alpha), ta = tan(alpha);
+    rp->p = PI * m;
+    rp->alpha = alpha;
+    rp->ha = m;
+    rp->hf = (1 + gp.clearance) * m;
+    // Half the tooth space at the pitch line; each tooth is thinner by half
+    // the backlash.
+    double h = (rp->p/2 - gp.backlash/2) / 2;
+    rp->g = rp->p/2 - h;
+    double tipHalf = h - rp->ha * ta;
+
+    // The same root rounding as the basic rack that cuts the gears, as far
+    // as it fits into the tooth space.
+    double rho = gp.clearance * m / (1 - sa);
+    double rhoMax = (rp->g - rp->hf * ta) * ca / (1 - sa);
+    if(rhoMax < 0) return false;
+    rho = std::max(0.0, std::min(rho, rhoMax));
+    rp->rho = rho;
+    rp->tc = -rp->hf + rho;
+    rp->sc = std::max(0.0, rp->g + rp->tc * ta - rho / ca);
+    rp->base = gp.rackBase;
+
+    info->pitch        = rp->p;
+    info->length       = rp->p * gp.teeth;
+    info->addendum     = rp->ha;
+    info->dedendum     = rp->hf;
+    info->height       = rp->ha + rp->hf + rp->base;
+    info->filletRadius = rho;
+    info->tipWidth     = 2 * tipHalf;
+    if(tipHalf <= LENGTH_EPS) return false;
+    if(!(rp->base > LENGTH_EPS)) return false;
+    info->valid = true;
+    return true;
+}
+
+}
+
+GearRackInfo GearRackComputeInfo(const GearParams &gp) {
+    RackProfile rp;
+    GearRackInfo info;
+    MakeRackProfile(gp, &rp, &info);
+    return info;
+}
+
+void GearMakeRackOutline(const GearParams &gp, Vector p0, Vector xd, Vector yd,
+                         double scale, SBezierList *sbl) {
+    RackProfile rp;
+    GearRackInfo info;
+    if(!MakeRackProfile(gp, &rp, &info)) return;
+
+    auto toPlane = [&](Vec2 q) {
+        return p0.Plus(xd.ScaledBy(scale*q.x)).Plus(yd.ScaledBy(scale*q.y));
+    };
+    auto addLine = [&](Vec2 a, Vec2 b) {
+        if((b - a).Len() < LENGTH_EPS) return;
+        SBezier sb = SBezier::From(toPlane(a), toPlane(b));
+        sbl->l.Add(&sb);
+    };
+    auto addArc = [&](Vec2 a, Vec2 m, Vec2 b, double w) {
+        SBezier sb = SBezier::From(toPlane(a), toPlane(m), toPlane(b));
+        sb.weight[1] = w;
+        sbl->l.Add(&sb);
+    };
+
+    // The fillet on the left side of the tooth after the tooth space at
+    // s = 0, from the root line to the flank, as a rational quadratic.
+    double ca = cos(rp.alpha), sa = sin(rp.alpha), ta = tan(rp.alpha);
+    double span = PI/2 - rp.alpha, mid = -PI/2 + span/2;
+    Vec2 fc = { rp.sc, rp.tc };
+    Vec2 fa = { rp.sc, -rp.hf };
+    Vec2 fb = fc + Vec2{ ca, -sa } * rp.rho;
+    Vec2 fm = fc + Vec2{ cos(mid), sin(mid) } * (rp.rho / cos(span/2));
+    double fw = cos(span/2);
+    bool fillet = rp.rho > LENGTH_EPS;
+    Vec2 tip = { rp.g + rp.ha * ta, rp.ha };
+
+    int n = gp.teeth;
+    double p = rp.p, L = p * n;
+    auto at = [](Vec2 q, double ds) { return Vec2{ q.x + ds, q.y }; };
+    // Mirror about the middle of the tooth that starts at s0.
+    auto mirror = [&](Vec2 q, double s0) { return Vec2{ 2*s0 + p - q.x, q.y }; };
+
+    // The top from left to right: root, then each tooth with its fillets,
+    // with the root between two teeth as one line.
+    addLine({ 0, -rp.hf }, fa);
+    for(int k = 0; k < n; k++) {
+        double s0 = p * k;
+        if(fillet) addArc(at(fa, s0), at(fm, s0), at(fb, s0), fw);
+        addLine(at(fb, s0), at(tip, s0));
+        addLine(at(tip, s0), mirror(at(tip, s0), s0));
+        addLine(mirror(at(tip, s0), s0), mirror(at(fb, s0), s0));
+        if(fillet) {
+            addArc(mirror(at(fb, s0), s0), mirror(at(fm, s0), s0),
+                   mirror(at(fa, s0), s0), fw);
+        }
+        Vec2 next = (k + 1 < n) ? at(fa, s0 + p) : Vec2{ L, -rp.hf };
+        addLine(mirror(at(fa, s0), s0), next);
+    }
+    // Down the right end, along the back, and up the left end.
+    double back = -rp.hf - rp.base;
+    addLine({ L, -rp.hf }, { L, back });
+    addLine({ L, back }, { 0, back });
+    addLine({ 0, back }, { 0, -rp.hf });
+}
+
+double GearRackDistance(const GearParams &gear) {
+    return gear.module * (gear.teeth / 2.0 + gear.profileShift);
+}
+
+double GearRackFootPosition(const GearParams &gear, double footPos, double toothAngle) {
+    // A tooth of the gear that points at the rack faces the middle of a tooth
+    // space, which lies at a multiple of the pitch from the start. Turning
+    // the gear counterclockwise moves the rack forward by the pitch radius
+    // times the angle.
+    double r = gear.module * gear.teeth / 2;
+    double p = PI * gear.module;
+    double back = -r * toothAngle;
+    return back + p * floor((footPos - back) / p + 0.5);
+}
+
+//-----------------------------------------------------------------------------
 // Gears in the sketch.
 //-----------------------------------------------------------------------------
 
@@ -412,21 +557,137 @@ void PhaseMate(Request *driver, Request *mate) {
     SK.GetEntity(mate->h.entity(2))->PointForceTo(p2);
 }
 
+// Distance of the point c from the line through a and b, with the sign that
+// a pt-line-distance constraint in the workplane wrkpl gives it.
+double SignedLineDistance(hEntity wrkpl, Vector c, Vector a, Vector b) {
+    EntityBase *n = SK.GetEntity(wrkpl)->Normal();
+    Vector u = n->NormalU(), v = n->NormalV();
+    double du = a.Minus(b).Dot(u), dv = a.Minus(b).Dot(v);
+    double m = sqrt(du*du + dv*dv);
+    if(m < LENGTH_EPS) return 0;
+    return (dv * a.Minus(c).Dot(u) - du * a.Minus(c).Dot(v)) / m;
+}
+
+// Moves the rack to the distance from the driver at which it meshes, keeps
+// its direction, and slides it along its pitch line so that its teeth mesh
+// with those of the driver. The construction line on the pitch line and
+// the distance constraint follow.
+void PlaceRack(Request *driver, Request *rack) {
+    Vector c  = SK.GetEntity(driver->h.entity(1))->PointGetNum(),
+           pm = SK.GetEntity(driver->h.entity(2))->PointGetNum(),
+           p0 = SK.GetEntity(rack->h.entity(1))->PointGetNum(),
+           p1 = SK.GetEntity(rack->h.entity(2))->PointGetNum();
+    hEntity wrkpl = rack->workplane;
+    EntityBase *n = SK.GetEntity(wrkpl)->Normal();
+    Vector xd = p1.Minus(p0);
+    if(xd.Magnitude() < LENGTH_EPS || pm.Minus(c).Magnitude() < LENGTH_EPS) return;
+    xd = xd.WithMagnitude(1);
+    Vector yd = n->NormalN().Cross(xd).WithMagnitude(1);
+    // The teeth must face the gear; a rack moved to the other side of it
+    // is left alone.
+    if(c.Minus(p0).Dot(yd) <= 0) return;
+
+    const GearParams &gp = driver->gear;
+    double dist = GearRackDistance(gp);
+    double foot = c.Minus(p0).Dot(xd);
+    double toothAngle = AngleInWorkplane(wrkpl, pm.Minus(c)) -
+                        AngleInWorkplane(wrkpl, yd.Negated());
+    foot = GearRackFootPosition(gp, foot, toothAngle);
+    double L = PI * rack->gear.module * rack->gear.teeth;
+    Vector q0 = c.Minus(yd.ScaledBy(dist)).Minus(xd.ScaledBy(foot));
+    Vector q1 = q0.Plus(xd.ScaledBy(L));
+    SK.GetEntity(rack->h.entity(1))->PointForceTo(q0);
+    SK.GetEntity(rack->h.entity(2))->PointForceTo(q1);
+
+    // The construction line to the back, if any, and its length.
+    hRequest hb = GearFindRackBackLine(rack->h);
+    if(hb.v != 0) {
+        double depth = (1 + rack->gear.clearance) * rack->gear.module + rack->gear.rackBase;
+        SK.GetEntity(hb.entity(1))->PointForceTo(q0);
+        SK.GetEntity(hb.entity(2))->PointForceTo(q0.Minus(yd.ScaledBy(depth)));
+        for(Constraint &cn : SK.constraint) {
+            if(cn.type != Constraint::Type::PT_PT_DISTANCE) continue;
+            if(!((cn.ptA == hb.entity(1) && cn.ptB == hb.entity(2)) ||
+                 (cn.ptA == hb.entity(2) && cn.ptB == hb.entity(1)))) continue;
+            cn.valA = depth;
+            SS.MarkGroupDirty(cn.group);
+        }
+    }
+
+    hRequest hl = GearFindRackLine(rack->h);
+    if(hl.v == 0) return;
+    SK.GetEntity(hl.entity(1))->PointForceTo(q0);
+    SK.GetEntity(hl.entity(2))->PointForceTo(q1);
+    hConstraint hc = GearFindRackConstraint(driver->h, rack->h);
+    if(hc == Constraint::NO_CONSTRAINT) return;
+    Constraint *cn = SK.GetConstraint(hc);
+    double sign = (SignedLineDistance(cn->workplane, c, q0, q1) < 0) ? -1 : 1;
+    cn->valA = sign * dist;
+    SS.MarkGroupDirty(cn->group);
+}
+
+bool IsGearOrRack(const Request &r) {
+    return r.type == Request::Type::GEAR || r.type == Request::Type::GEAR_RACK;
+}
+
+}
+
+namespace {
+
+bool PointsCoincident(hEntity a, hEntity b) {
+    for(const Constraint &c : SK.constraint) {
+        if(c.type != Constraint::Type::POINTS_COINCIDENT) continue;
+        if((c.ptA == a && c.ptB == b) || (c.ptA == b && c.ptB == a)) return true;
+    }
+    return false;
+}
+
+// A construction line in the sketch of the rack that starts at the start
+// of its pitch line, and that ends at the end of the pitch line or not.
+hRequest FindRackLine(hRequest rack, bool toEnd) {
+    Request *rr = SK.request.FindByIdNoOops(rack);
+    if(rr == NULL) return {};
+    for(const Request &r : SK.request) {
+        if(r.type != Request::Type::LINE_SEGMENT || r.group != rr->group) continue;
+        if(!PointsCoincident(r.h.entity(1), rack.entity(1))) continue;
+        if(PointsCoincident(r.h.entity(2), rack.entity(2)) == toEnd) return r.h;
+    }
+    return {};
+}
+
+}
+
+hRequest GearFindRackLine(hRequest rack) {
+    return FindRackLine(rack, /*toEnd=*/true);
+}
+
+hRequest GearFindRackBackLine(hRequest rack) {
+    return FindRackLine(rack, /*toEnd=*/false);
+}
+
+hConstraint GearFindRackConstraint(hRequest gear, hRequest rack) {
+    hRequest hl = GearFindRackLine(rack);
+    if(hl.v == 0) return Constraint::NO_CONSTRAINT;
+    for(const Constraint &c : SK.constraint) {
+        if(c.type != Constraint::Type::PT_LINE_DISTANCE) continue;
+        if(c.ptA == gear.entity(1) && c.entityA == hl.entity(0)) return c.h;
+    }
+    return Constraint::NO_CONSTRAINT;
 }
 
 void GearSyncLinked(hRequest hr) {
     Request *src = SK.request.FindByIdNoOops(hr);
-    if(src == NULL || src->type != Request::Type::GEAR) return;
+    if(src == NULL || !IsGearOrRack(*src)) return;
 
-    // All gears connected to this one through gearDriver, in the order
-    // they are reached from it.
+    // All gears and racks connected to this one through gearDriver, in the
+    // order they are reached from it.
     std::vector<hRequest> todo = { hr }, seen = { hr };
     while(!todo.empty()) {
         hRequest cur = todo.back();
         todo.pop_back();
         Request *rc = SK.GetRequest(cur);
         for(Request &r : SK.request) {
-            if(r.type != Request::Type::GEAR) continue;
+            if(!IsGearOrRack(r)) continue;
             bool linked = (r.gearDriver == cur) || (rc->gearDriver == r.h);
             if(!linked) continue;
             if(std::find(seen.begin(), seen.end(), r.h) != seen.end()) continue;
@@ -449,6 +710,10 @@ void GearSyncLinked(hRequest hr) {
         Request *mate = SK.GetRequest(h);
         Request *driver = SK.request.FindByIdNoOops(mate->gearDriver);
         if(driver == NULL || driver->type != Request::Type::GEAR) continue;
+        if(mate->type == Request::Type::GEAR_RACK) {
+            PlaceRack(driver, mate);
+            continue;
+        }
         hConstraint hc = GearFindCenterConstraint(driver->h, mate->h);
         if(hc != Constraint::NO_CONSTRAINT) {
             Constraint *c = SK.GetConstraint(hc);
@@ -578,6 +843,93 @@ hRequest GearAddMate(hRequest hd, int teeth) {
     return hm;
 }
 
+hRequest GearAddRack(hRequest hd, int teeth, double base) {
+    Request *driver = SK.request.FindByIdNoOops(hd);
+    if(driver == NULL || driver->type != Request::Type::GEAR) return {};
+    if(teeth < GEAR_RACK_MIN_TEETH || teeth > GEAR_RACK_MAX_TEETH) {
+        Error(_("The number of teeth must be between %d and %d."),
+              GEAR_RACK_MIN_TEETH, GEAR_RACK_MAX_TEETH);
+        return {};
+    }
+    if(!(base > LENGTH_EPS)) {
+        Error(_("The back of the rack must be thicker than zero."));
+        return {};
+    }
+
+    GearParams gp = driver->gear;
+    gp.teeth = teeth;
+    gp.profileShift = 0;
+    gp.bore = 0;
+    gp.rackBase = base;
+    if(!GearRackComputeInfo(gp).valid) {
+        Error(_("No rack tooth shape is possible for these values."));
+        return {};
+    }
+    Quaternion q = SK.GetEntity(driver->workplane)->Normal()->NormalGetNum();
+    Vector u = q.RotationU(), v = q.RotationV();
+    Vector c = SK.GetEntity(hd.entity(1))->PointGetNum();
+
+    // The rack gets a sketch of its own in the plane of the gear, so that
+    // it can be extruded on its own, after the active group as with the
+    // Group menu, or after all other groups.
+    if(GEAR_RACK_AFTER_ACTIVE_GROUP) {
+        Group *active = SK.group.FindByIdNoOops(SS.GW.activeGroup);
+        if(active == NULL || active->order < SK.GetGroup(driver->group)->order) {
+            Error(_("Activate the sketch of the gear or a later group to add a rack."));
+            return {};
+        }
+    } else {
+        SS.GW.activeGroup = SK.groupOrder[SK.groupOrder.n - 1];
+    }
+    Group *sketch = AddSketch(q, hd.entity(1), "rack");
+    hGroup hs = sketch->h;
+    hEntity wrkpl = sketch->activeWorkplane;
+
+    hRequest hr = SS.GW.AddRequest(Request::Type::GEAR_RACK, /*rememberForUndo=*/false);
+    hRequest hl = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
+    driver = SK.GetRequest(hd);
+    Request *rack = SK.GetRequest(hr);
+    rack->gear = gp;
+    rack->gearDriver = hd;
+    rack->style = driver->style;
+    SK.GetRequest(hl)->construction = true;
+    SS.MarkGroupDirty(hs);
+    SS.GenerateAll(SolveSpaceUI::Generate::DIRTY);
+
+    // Below the gear, with the teeth up, centered on it before it is moved
+    // into mesh.
+    double L = PI * gp.module * teeth;
+    Vector p0 = c.Minus(v.ScaledBy(GearRackDistance(driver->gear))).Minus(u.ScaledBy(L/2));
+    Vector p1 = p0.Plus(u.ScaledBy(L));
+    SK.GetEntity(hr.entity(1))->PointForceTo(p0);
+    SK.GetEntity(hr.entity(2))->PointForceTo(p1);
+    SK.GetEntity(hl.entity(1))->PointForceTo(p0);
+    SK.GetEntity(hl.entity(2))->PointForceTo(p1);
+
+    for(int i = 1; i <= 2; i++) {
+        Constraint cc = {};
+        cc.group = hs;
+        cc.workplane = wrkpl;
+        cc.type = Constraint::Type::POINTS_COINCIDENT;
+        cc.ptA = hr.entity(i);
+        cc.ptB = hl.entity(i);
+        Constraint::AddConstraint(&cc, /*rememberForUndo=*/false);
+    }
+    Constraint cd = {};
+    cd.group = hs;
+    cd.workplane = wrkpl;
+    cd.type = Constraint::Type::PT_LINE_DISTANCE;
+    cd.ptA = hd.entity(1);
+    cd.entityA = hl.entity(0);
+    cd.valA = SignedLineDistance(wrkpl, c, p0, p1);
+    cd.disp.offset = u.ScaledBy(-gp.module * 4);
+    Constraint::AddConstraint(&cd, /*rememberForUndo=*/false);
+
+    PlaceRack(SK.GetRequest(hd), SK.GetRequest(hr));
+    SS.MarkGroupDirty(hs);
+    return hr;
+}
+
 //-----------------------------------------------------------------------------
 // Hub with clamp screw.
 //-----------------------------------------------------------------------------
@@ -651,9 +1003,11 @@ std::string GearHubParams::Warning() const {
 namespace {
 
 // Extrudes the sketch by depth, with a dimension between the two copies of
-// the point pt so that the depth can be changed later.
+// the point pt so that the depth can be changed later. Given a face, the
+// far copy of pt lies on that face instead, so that the extrusion ends
+// where the face is.
 Group *AddExtrusion(hGroup sketch, hEntity pt, Vector depth, Group::CombineAs combine,
-                    const char *name) {
+                    const char *name, hEntity toFace = Entity::NO_ENTITY) {
     Group g = NewGroup(Group::Type::EXTRUDE, name);
     g.opA = sketch;
     g.predef.entityB = SK.GetGroup(sketch)->activeWorkplane;
@@ -669,11 +1023,17 @@ Group *AddExtrusion(hGroup sketch, hEntity pt, Vector depth, Group::CombineAs co
     Constraint c = {};
     c.group = gg->h;
     c.workplane = Entity::FREE_IN_3D;
-    c.type = Constraint::Type::PT_PT_DISTANCE;
-    c.ptA = gg->Remap(pt, Group::REMAP_BOTTOM);
-    c.ptB = gg->Remap(pt, Group::REMAP_TOP);
-    c.valA = depth.Magnitude();
-    c.disp.offset = depth.Normal(0).WithMagnitude(depth.Magnitude());
+    if(toFace.v != 0) {
+        c.type = Constraint::Type::PT_ON_FACE;
+        c.ptA = gg->Remap(pt, Group::REMAP_TOP);
+        c.entityA = toFace;
+    } else {
+        c.type = Constraint::Type::PT_PT_DISTANCE;
+        c.ptA = gg->Remap(pt, Group::REMAP_BOTTOM);
+        c.ptB = gg->Remap(pt, Group::REMAP_TOP);
+        c.valA = depth.Magnitude();
+        c.disp.offset = depth.Normal(0).WithMagnitude(depth.Magnitude());
+    }
     Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
     SS.MarkGroupDirty(gg->h);
     return SK.GetGroup(c.group);
@@ -800,6 +1160,242 @@ bool GearAddHub(hRequest hg, const GearHubParams &hp, std::string *error) {
         // From the axis out through the wall of the hub.
         AddExtrusion(SS.GW.activeGroup, hole.entity(1), u.ScaledBy(hp.hubDiameter / 2 + 1.0),
                      Group::CombineAs::DIFFERENCE, "clamp-hole");
+    }
+
+    SS.MarkGroupDirty(sketch);
+    SS.GenerateAll(SolveSpaceUI::Generate::DIRTY);
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+// Rack made a solid, with mounting holes.
+//-----------------------------------------------------------------------------
+
+GearRackSolidParams GearRackSolidParams::Default(const GearParams &rack, Mount mount) {
+    GearRackSolidParams sp = {};
+    sp.width = std::max(5.0, floor(4 * rack.module * 2 + 0.5) / 2);
+    sp.base = rack.rackBase;
+    sp.mount = mount;
+    // One hole for short racks, else two or about one each 50 mm.
+    double len = PI * rack.module * rack.teeth;
+    sp.holes = (len < 30) ? 1 : std::max(2, (int)floor(len / 50 + 0.5));
+
+    // The back and width grow to hold the holes, rounded up to half
+    // millimeters.
+    auto up = [](double x) { return ceil(x * 2 - 1e-9) / 2; };
+    switch(mount) {
+        case Mount::INSERT:
+            sp.holeDiameter = 4.0;
+            sp.holeDepth = GEAR_INSERT_LENGTH + 0.5;
+            sp.base = std::max(sp.base, up(sp.holeDepth + 1.0));
+            sp.width = std::max(sp.width, up(sp.holeDiameter + 3.0));
+            break;
+        case Mount::CROSS:
+            sp.holeDiameter = 3.4;
+            sp.base = std::max(sp.base, up(sp.holeDiameter + 2.4));
+            break;
+        default:
+            break;
+    }
+    return sp;
+}
+
+std::string GearRackSolidParams::Problem(const GearParams &rack) const {
+    GearParams gp = rack;
+    gp.rackBase = base;
+    if(!(width > LENGTH_EPS)) return _("The rack width must be greater than zero.");
+    if(!(base > LENGTH_EPS)) return _("The back of the rack must be thicker than zero.");
+    if(!GearRackComputeInfo(gp).valid) return _("The rack has no valid tooth shape.");
+    if(mount == Mount::NONE) return "";
+
+    if(holes < 1) return _("There must be at least one hole.");
+    if(!(holeDiameter > LENGTH_EPS)) return _("The hole diameter must be greater than zero.");
+    double len = PI * gp.module * gp.teeth;
+    if(len / (2 * holes) < holeDiameter / 2 + 1.0) {
+        return _("The holes do not fit along the rack with 1 mm between them.");
+    }
+    if(mount == Mount::INSERT) {
+        if(!(holeDepth > LENGTH_EPS)) return _("The hole depth must be greater than zero.");
+        if(base < holeDepth + 1.0) {
+            return _("The back must be at least 1 mm thicker than the holes are deep.");
+        }
+        if(width < holeDiameter + 2.0) {
+            return _("The rack must be at least 2 mm wider than the holes.");
+        }
+    } else {
+        if(base < holeDiameter + 2.0) {
+            return _("The back must be at least 2 mm thicker than the holes.");
+        }
+    }
+    return "";
+}
+
+std::string GearRackSolidParams::Warning() const {
+    if(mount == Mount::INSERT && width < holeDiameter + 3.0) {
+        return ssprintf(_("The wall of %.1f mm beside the inserts is thin."),
+                        (width - holeDiameter) / 2);
+    }
+    if(mount == Mount::CROSS && base < holeDiameter + 2.4) {
+        return ssprintf(_("The wall of %.1f mm around the holes is thin."),
+                        (base - holeDiameter) / 2);
+    }
+    return "";
+}
+
+namespace {
+
+// Adds a constraint between two lines in the active sketch.
+void AddLineConstraint(Constraint::Type type, hEntity a, hEntity b) {
+    Constraint c = {};
+    c.group = SS.GW.activeGroup;
+    c.workplane = SS.GW.ActiveWorkplane();
+    c.type = type;
+    c.entityA = a;
+    c.entityB = b;
+    Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
+}
+
+// A circle of the given diameter in the active sketch, placed by its
+// distances along and from the line, from the point start of that line.
+hRequest AddPlacedCircle(hEntity line, hEntity start, Vector center, double diameter) {
+    hRequest hr = SS.GW.AddRequest(Request::Type::CIRCLE, /*rememberForUndo=*/false);
+    SK.GetEntity(hr.entity(1))->PointForceTo(center);
+    SK.GetEntity(hr.entity(64))->DistanceForceTo(diameter / 2);
+    EntityBase *ln = SK.GetEntity(line);
+    Vector a = SK.GetEntity(ln->point[0])->PointGetNum(),
+           b = SK.GetEntity(ln->point[1])->PointGetNum();
+    Vector s = SK.GetEntity(start)->PointGetNum();
+    double along = center.Minus(s).Dot(ln->VectorGetNum().WithMagnitude(1));
+    AddConstraint(Constraint::Type::PROJ_PT_DISTANCE, start, hr.entity(1), line, along);
+    AddConstraint(Constraint::Type::PT_LINE_DISTANCE, hr.entity(1), Entity::NO_ENTITY, line,
+                  SignedLineDistance(SS.GW.ActiveWorkplane(), center, a, b));
+    AddConstraint(Constraint::Type::DIAMETER, Entity::NO_ENTITY, Entity::NO_ENTITY,
+                  hr.entity(0), diameter);
+    return hr;
+}
+
+}
+
+bool GearAddRackSolid(hRequest hr, const GearRackSolidParams &sp, std::string *error) {
+    using Mount = GearRackSolidParams::Mount;
+    Request *r = SK.request.FindByIdNoOops(hr);
+    if(r == NULL || r->type != Request::Type::GEAR_RACK) {
+        *error = _("The rack no longer exists.");
+        return false;
+    }
+    std::string problem = sp.Problem(r->gear);
+    if(!problem.empty()) {
+        *error = problem;
+        return false;
+    }
+    hGroup sketch = r->group;
+    if(SK.GetGroup(sketch)->type != Group::Type::DRAWING_WORKPLANE) {
+        *error = _("The rack must be drawn in a sketch in a workplane.");
+        return false;
+    }
+    for(const Group &g : SK.group) {
+        if(g.opA == sketch && g.type == Group::Type::EXTRUDE) {
+            *error = _("The sketch of the rack is extruded already. Delete that "
+                       "extrusion to make the rack a solid.");
+            return false;
+        }
+    }
+    hRequest pitch = GearFindRackLine(hr);
+    if(pitch.v == 0) {
+        *error = _("The pitch line of the rack is missing.");
+        return false;
+    }
+    hGroup insertAfter = sketch;
+    if(GEAR_HUB_AFTER_ACTIVE_GROUP) {
+        Group *active = SK.group.FindByIdNoOops(SS.GW.activeGroup);
+        if(active == NULL || active->order < SK.GetGroup(sketch)->order) {
+            *error = _("Activate the sketch of the rack or a later group to make "
+                       "it a solid.");
+            return false;
+        }
+        insertAfter = active->h;
+    }
+
+    // The new back thickness moves the construction line to the back, if
+    // there is one.
+    r->gear.rackBase = sp.base;
+    SS.MarkGroupDirty(sketch);
+    GearSyncLinked(hr);
+    SS.GenerateAll(SolveSpaceUI::Generate::DIRTY);
+
+    r = SK.GetRequest(hr);
+    Quaternion q = SK.GetEntity(r->workplane)->Normal()->NormalGetNum();
+    Vector n = q.RotationN();
+    Vector p0 = SK.GetEntity(hr.entity(1))->PointGetNum(),
+           p1 = SK.GetEntity(hr.entity(2))->PointGetNum();
+    Vector xd = p1.Minus(p0).WithMagnitude(1);
+    Vector yd = n.Cross(xd).WithMagnitude(1);
+    double len = PI * r->gear.module * r->gear.teeth;
+    double hf = (1 + r->gear.clearance) * r->gear.module;
+
+    if(sp.mount == Mount::INSERT && GearFindRackBackLine(hr).v == 0) {
+        // A construction line from the start of the pitch line to the back,
+        // as the origin of the sketch of the holes.
+        SS.GW.activeGroup = sketch;
+        hRequest hb = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
+        SK.GetRequest(hb)->construction = true;
+        double depth = hf + sp.base;
+        SK.GetEntity(hb.entity(1))->PointForceTo(p0);
+        SK.GetEntity(hb.entity(2))->PointForceTo(p0.Minus(yd.ScaledBy(depth)));
+        AddConstraint(Constraint::Type::POINTS_COINCIDENT, hr.entity(1), hb.entity(1),
+                      Entity::NO_ENTITY);
+        AddLineConstraint(Constraint::Type::PERPENDICULAR, hb.entity(0), pitch.entity(0));
+        AddConstraint(Constraint::Type::PT_PT_DISTANCE, hb.entity(1), hb.entity(2),
+                      Entity::NO_ENTITY, depth);
+        SS.MarkGroupDirty(sketch);
+        SS.GenerateAll(SolveSpaceUI::Generate::DIRTY);
+    }
+    SS.GW.activeGroup = insertAfter;
+
+    Group *body = AddExtrusion(sketch, hr.entity(1), n.ScaledBy(sp.width),
+                               Group::CombineAs::UNION, "rack-body");
+    hEntity bodyTop = body->Remap(Entity::NO_ENTITY, Group::REMAP_TOP);
+
+    auto holeAt = [&](int i) { return len * (2*i + 1) / (2 * sp.holes); };
+    if(sp.mount == Mount::INSERT) {
+        // Drawn on the back, with u across the rack and v along it, and cut
+        // in from there by the depth of the holes.
+        hEntity back = GearFindRackBackLine(hr).entity(2);
+        Group *hs = AddSketch(Quaternion::From(n, xd), back, "rack-insert-sketch");
+        hEntity origin = hs->h.entity(2);
+        Vector o = SK.GetEntity(origin)->PointGetNum();
+
+        hRequest axis = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
+        SK.GetRequest(axis)->construction = true;
+        SK.GetEntity(axis.entity(1))->PointForceTo(o);
+        SK.GetEntity(axis.entity(2))->PointForceTo(o.Plus(xd.ScaledBy(len)));
+        AddConstraint(Constraint::Type::POINTS_COINCIDENT, axis.entity(1), origin,
+                      Entity::NO_ENTITY);
+        AddConstraint(Constraint::Type::VERTICAL, Entity::NO_ENTITY, Entity::NO_ENTITY,
+                      axis.entity(0));
+        AddConstraint(Constraint::Type::PT_PT_DISTANCE, axis.entity(1), axis.entity(2),
+                      Entity::NO_ENTITY, len);
+        hRequest first = {};
+        for(int i = 0; i < sp.holes; i++) {
+            Vector c = o.Plus(xd.ScaledBy(holeAt(i))).Plus(n.ScaledBy(sp.width / 2));
+            hRequest hole = AddPlacedCircle(axis.entity(0), axis.entity(1), c, sp.holeDiameter);
+            if(i == 0) first = hole;
+        }
+        AddExtrusion(SS.GW.activeGroup, first.entity(1), yd.ScaledBy(sp.holeDepth),
+                     Group::CombineAs::DIFFERENCE, "rack-insert-holes");
+    } else if(sp.mount == Mount::CROSS) {
+        // Drawn in the plane of the rack, on the bottom face of the body, in
+        // the middle of the back, and cut up to the top face, so that the
+        // holes go through also when the width changes.
+        AddSketch(q, hr.entity(1), "rack-holes-sketch");
+        hRequest first = {};
+        for(int i = 0; i < sp.holes; i++) {
+            Vector c = p0.Plus(xd.ScaledBy(holeAt(i))).Minus(yd.ScaledBy(hf + sp.base / 2));
+            hRequest hole = AddPlacedCircle(pitch.entity(0), hr.entity(1), c, sp.holeDiameter);
+            if(i == 0) first = hole;
+        }
+        AddExtrusion(SS.GW.activeGroup, first.entity(1), n.ScaledBy(sp.width),
+                     Group::CombineAs::DIFFERENCE, "rack-holes", bodyTop);
     }
 
     SS.MarkGroupDirty(sketch);

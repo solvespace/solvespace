@@ -34,6 +34,7 @@ static const EntReqMapping EntReqMap[] = {
 { Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       4,  false,  true,   false },
 { Request::Type::IMAGE,           Entity::Type::IMAGE,          4,  false,  true,   false },
 { Request::Type::GEAR,            Entity::Type::GEAR,           2,  false,  true,   false },
+{ Request::Type::GEAR_RACK,       Entity::Type::GEAR_RACK,      2,  false,  true,   false },
 };
 
 static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
@@ -225,6 +226,7 @@ std::string Request::DescriptionString() const {
             case Type::TTF_TEXT:        s = "ttf-text";       break;
             case Type::IMAGE:           s = "image";          break;
             case Type::GEAR:            s = "gear";           break;
+            case Type::GEAR_RACK:       s = "rack";           break;
         }
     }
     ssassert(s != NULL, "Unexpected request type");
