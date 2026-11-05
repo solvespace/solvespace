@@ -148,6 +148,7 @@ enum class Command : uint32_t {
     CUBIC,
     TTF_TEXT,
     IMAGE,
+    GEAR,
     SPLIT_CURVES,
     TANGENT_ARC,
     CONSTRUCTION,
@@ -301,7 +302,8 @@ public:
         STYLE_INFO          = 6,
         PASTE_TRANSFORMED   = 7,
         EDIT_VIEW           = 8,
-        TANGENT_ARC         = 9
+        TANGENT_ARC         = 9,
+        GEAR_HUB            = 10
     };
     typedef struct {
         Screen  screen;
@@ -310,6 +312,7 @@ public:
         hStyle      style;
 
         hConstraint constraint;
+        hRequest    gear;
 
         struct {
             int         times;
@@ -354,6 +357,11 @@ public:
         ANIMATION_SPEED       = 121,
         // For TTF text
         TTF_TEXT              = 300,
+        // For gears
+        GEAR_PARAM            = 310,
+        GEAR_MATE_TEETH       = 311,
+        GEAR_MATE_RATIO       = 312,
+        GEAR_HUB_PARAM        = 313,
         // For the step dimension screen
         STEP_DIM_FINISH       = 400,
         STEP_DIM_STEPS        = 401,
@@ -425,6 +433,7 @@ public:
     void ShowPasteTransformed();
     void ShowEditView();
     void ShowTangentArc();
+    void ShowGearHub();
     // Special screen, based on selection
     void DescribeSelection();
 
@@ -433,6 +442,14 @@ public:
     // All of these are callbacks from the GUI code; first from when
     // we're describing an entity
     static void ScreenEditTtfText(int link, uint32_t v);
+    static void ScreenEditGear(int link, uint32_t v);
+    static void ScreenAddGearMate(int link, uint32_t v);
+    static void ScreenGearHub(int link, uint32_t v);
+    static void ScreenChangeGearHub(int link, uint32_t v);
+    static void ScreenCreateGearHub(int link, uint32_t v);
+    GearHubParams gearHub;
+    void DescribeGear(Entity *e);
+    bool EditControlDoneForGear(const std::string &s);
     static void ScreenToggleTtfKerning(int link, uint32_t v);
     static void ScreenSetTtfFont(int link, uint32_t v);
     static void ScreenUnselectAll(int link, uint32_t v);

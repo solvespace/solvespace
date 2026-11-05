@@ -56,7 +56,8 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
               e->type == Entity::Type::CUBIC_PERIODIC ||
               e->type == Entity::Type::CIRCLE ||
               e->type == Entity::Type::TTF_TEXT ||
-              e->type == Entity::Type::IMAGE)
+              e->type == Entity::Type::IMAGE ||
+              e->type == Entity::Type::GEAR)
     {
         int pts;
         ssassert(EntReqTable::GetEntityInfo(e->type, e->extraPoints,
@@ -1148,6 +1149,35 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
                     pending.operation = Pending::DRAGGING_NEW_POINT;
                     pending.point = hr.entity(3);
                     pending.description = _("click to place bottom right of text");
+                    break;
+                }
+
+                case Command::GEAR: {
+                    if(!SS.GW.LockedInWorkplane()) {
+                        Error(_("Can't draw a gear in 3d; first, activate a workplane "
+                                "with Sketch -> In Workplane."));
+                        ClearSuper();
+                        break;
+                    }
+                    hr = AddRequest(Request::Type::GEAR);
+                    Request *r = SK.GetRequest(hr);
+                    r->gear = GearParams::Default();
+
+                    // Centered where we clicked, with a tooth along the
+                    // horizontal of the workplane.
+                    EntityBase *wrkpl = SK.GetEntity(ActiveWorkplane());
+                    Vector u = wrkpl->Normal()->NormalU();
+                    double rp = r->gear.module * r->gear.teeth / 2;
+                    SK.GetEntity(hr.entity(1))->PointForceTo(v);
+                    SK.GetEntity(hr.entity(2))->PointForceTo(v.Plus(u.ScaledBy(rp)));
+                    if(ConstrainPointByHovered(hr.entity(1), &mouse)) {
+                        Vector c = SK.GetEntity(hr.entity(1))->PointGetNum();
+                        SK.GetEntity(hr.entity(2))->PointForceTo(c.Plus(u.ScaledBy(rp)));
+                    }
+
+                    ClearSuper();
+                    MakeSelected(hr.entity(0));
+                    SS.ScheduleShowTW();
                     break;
                 }
 

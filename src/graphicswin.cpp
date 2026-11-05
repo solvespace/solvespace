@@ -143,6 +143,7 @@ const MenuEntry Menu[] = {
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
 { 1, N_("&Text in TrueType Font"),      Command::TTF_TEXT,         't',     KN, mReq   },
 { 1, N_("I&mage"),                      Command::IMAGE,            0,       KN, mReq   },
+{ 1, N_("In&volute Gear"),             Command::GEAR,             S|'g',   KN, mReq   },
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
 { 1, N_("To&ggle Construction"),        Command::CONSTRUCTION,     'g',     KN, mReq   },
 { 1, N_("Ta&ngent Arc at Point"),       Command::TANGENT_ARC,      S|'a',   KN, mReq   },
@@ -1412,6 +1413,7 @@ void GraphicsWindow::MenuRequest(Command id) {
         case Command::WORKPLANE: s = _("click origin of workplane"); goto c;
         case Command::RECTANGLE: s = _("click one corner of rectangle"); goto c;
         case Command::TTF_TEXT: s = _("click top left of text"); goto c;
+        case Command::GEAR: s = _("click center of gear"); goto c;
         case Command::IMAGE:
             if(!SS.ReloadLinkedImage(SS.saveFile, &SS.GW.pending.filename,
                                      /*canCancel=*/true)) {

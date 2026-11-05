@@ -65,6 +65,7 @@ set(testsuite_SOURCES
     request/image/test.cpp
     request/line_segment/test.cpp
     request/ttf_text/test.cpp
+    request/gear/test.cpp
     request/workplane/test.cpp
     group/boolean_coplanar_union/test.cpp
     group/boolean_knife_edge/test.cpp

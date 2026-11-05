@@ -21,6 +21,7 @@
 #include "platform/gui.h"
 #include "srf/surface.h"
 #include "render/render.h"
+#include "gear.h"
 
 namespace SolveSpace {
 
@@ -396,7 +397,8 @@ public:
         CIRCLE                 = 400,
         ARC_OF_CIRCLE          = 500,
         TTF_TEXT               = 600,
-        IMAGE                  = 700
+        IMAGE                  = 700,
+        GEAR                   = 800
     };
 
     Request::Type type;
@@ -413,6 +415,11 @@ public:
     Platform::Path file;
     double      aspectRatio;
     int groupRequestIndex;
+
+    GearParams  gear;
+    // A gear that was made to mesh with another one keeps its module,
+    // pressure angle and center distance in step with that one.
+    hRequest    gearDriver;
 
     static hParam AddParam(ParamList *param, hParam hp);
     void Generate(EntityList *entity, ParamList *param);
@@ -465,7 +472,8 @@ public:
         CIRCLE                 = 13000,
         ARC_OF_CIRCLE          = 14000,
         TTF_TEXT               = 15000,
-        IMAGE                  = 16000
+        IMAGE                  = 16000,
+        GEAR                   = 17000
     };
 
     Type        type;
@@ -492,6 +500,7 @@ public:
     std::string font;
     Platform::Path file;
     double      aspectRatio;
+    GearParams  gear;
 
     // For entities that are derived by a transformation, the number of
     // times to apply the transformation.
@@ -1001,6 +1010,7 @@ public:
     std::string font;
     Platform::Path file;
     bool        construction;
+    GearParams  gear;
 
     Vector      point[MAX_POINTS_IN_ENTITY];
     double      distance;

@@ -105,6 +105,7 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
         case Type::CUBIC_PERIODIC:
         case Type::TTF_TEXT:
         case Type::IMAGE:
+        case Type::GEAR:
             refs->push_back(SK.GetEntity(point[0])->PointGetDrawNum());
             break;
 
@@ -482,6 +483,23 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
             break;
         }
 
+        case Type::GEAR: {
+            Vector c  = SK.GetEntity(point[0])->PointGetNum();
+            Vector p1 = SK.GetEntity(point[1])->PointGetNum();
+            Vector n  = Normal()->NormalN();
+            Vector xd = p1.Minus(c);
+            double d = xd.Magnitude();
+            double r = gear.module * gear.teeth / 2;
+            if(d < LENGTH_EPS || r < LENGTH_EPS) break;
+            xd = xd.ScaledBy(1 / d);
+            Vector yd = n.Cross(xd).WithMagnitude(1);
+            // The tooth marker sits on the pitch circle; in a scaled copy
+            // its distance gives the scale.
+            double scale = (SK.GetEntity(point[0])->type == Type::POINT_IN_2D) ? 1.0 : d / r;
+            GearMakeOutline(gear, c, xd, yd, scale, sbl, Normal()->NormalU());
+            break;
+        }
+
         default:
             // Not a problem, points and normals and such don't generate curves
             break;
@@ -754,7 +772,8 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         case Type::ARC_OF_CIRCLE:
         case Type::CUBIC:
         case Type::CUBIC_PERIODIC:
-        case Type::TTF_TEXT: {
+        case Type::TTF_TEXT:
+        case Type::GEAR: {
             // Generate the rational polynomial curves, then piecewise linearize
             // them, and display those.
             // Calculating the draw offset, if necessary.

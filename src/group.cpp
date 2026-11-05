@@ -1131,6 +1131,7 @@ void Group::CopyEntity(EntityList *el,
     en.str = ep->str;
     en.font = ep->font;
     en.file = ep->file;
+    en.gear = ep->gear;
 
     switch(ep->type) {
         case Entity::Type::WORKPLANE:

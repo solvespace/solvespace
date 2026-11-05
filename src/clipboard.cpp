@@ -108,6 +108,7 @@ void GraphicsWindow::CopySelection() {
         cr.font         = e->font;
         cr.file         = e->file;
         cr.construction = e->construction;
+        cr.gear         = e->gear;
         {for(int i = 0; i < pts; i++) {
             Vector pt;
             if(req == Request::Type::DATUM_POINT) {
@@ -191,6 +192,10 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         r->font         = cr->font;
         r->file         = cr->file;
         r->construction = cr->construction;
+        r->gear         = cr->gear;
+        // A scaled gear keeps its number of teeth and gets a scaled module.
+        r->gear.module *= fabs(scale);
+        r->gear.bore   *= fabs(scale);
         // Need to regen to get the right number of points, if extraPoints
         // changed.
         SS.GenerateAll(SolveSpaceUI::Generate::REGEN);

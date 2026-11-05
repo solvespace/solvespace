@@ -980,6 +980,13 @@ void TextWindow::EditControlDone(std::string s) {
             }
             break;
 
+        case Edit::GEAR_PARAM:
+        case Edit::GEAR_MATE_TEETH:
+        case Edit::GEAR_MATE_RATIO:
+        case Edit::GEAR_HUB_PARAM:
+            EditControlDoneForGear(s);
+            break;
+
         case Edit::TTF_TEXT:
             SS.UndoRemember();
             if(Request *r = SK.request.FindByIdNoOops(edit.request)) {
