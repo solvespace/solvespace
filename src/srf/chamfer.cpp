@@ -21,8 +21,10 @@
 //   angles it would be r / tan(alpha/2), alpha being the angle between faces.
 // - Edges meeting at a vertex all have the same radius. Differing radii are
 //   not supported.
-// - Only accept a curve with exactly one trim on surfA and one on surfB,
-//   each covering the whole curve. Curves split by Booleans come later.
+// - Edges are pieces: a range of an exact curve with a trim on each of its
+//   two faces (Booleans split curves, and may give each face its own
+//   coincident copy). Curves that are only points (not exact) are not
+//   handled, and won't be.
 // - Corner patches (3 fillets at a vertex): a flat triangle for chamfers; for
 //   fillets a triangle on the ball's sphere, made of three bands without any
 //   collapsed edge (sphere_patch.cpp).
@@ -302,7 +304,7 @@ static bool IsTestSlantedLine(SShell *sh, SCurve *sc) {
 double SShell::GetEdgeModifier(SCurve &sc)
 {
     // Test hook until edges can be named. Picks edges in the test models in
-    // misc_CAD:
+    // misc_CAD/fillet_test:
     //   test_cube, L_shape: the outer lines around the z = 10 face, which
     //                       meet at corners
     //   test_cube:          the line at x = 10, y = 10, making three edges
