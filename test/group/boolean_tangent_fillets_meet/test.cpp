@@ -30,7 +30,7 @@ static void CheckWatertight(Test::Helper *helper, double *removed) {
     CHECK_FALSE(leaks);
     CHECK_TRUE(noEdges);
 
-    Group *prev = g->PreviousGroup();
+    Group *prev = g->PreviousGroup(&SK);
     prev->GenerateDisplayItems();
     *removed = prev->displayMesh.CalculateVolume() - m->CalculateVolume();
 }
