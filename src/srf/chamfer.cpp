@@ -291,7 +291,7 @@ double SShell::GetEdgeModifier(SCurve &sc)
     //   L_shape:            the line at x = 0, y = 0 (concave)
     //   test_cylinder:      the arcs of the top circle at z = 10
     //   arc_test:           every edge not in the bottom face (see below)
-    //   skew_test:          see below
+    //   skew_test, straight_test: see below
     //   house_test:         lines between planes not at 90 degrees (eaves).
     //                       If a shell has any of these, only they are
     //                       picked; the rules above would also pick lines in
@@ -320,6 +320,17 @@ double SShell::GetEdgeModifier(SCurve &sc)
                 if(fabs(c.x) > 50 || fabs(c.y) > 50 || fabs(c.z) > 50) big = true;
             }
         }
+    }
+    // straight_test: the same kind of profile (with a reflex vertex at
+    // (40, 0)), extruded straight from z = -100 to 100. Every edge except
+    // the concave lengthwise one.
+    bool straight = false;
+    for(SSurface &ss : surface) {
+        if(fabs(ss.ctrl[0][0].z - 100) < LENGTH_EPS) straight = true;
+    }
+    if(big && straight) {
+        bool concave = IsTestLine(b, 0, 40) && IsTestLine(b, 1, 0);
+        return concave ? 0.0 : r;
     }
     if(big) {
         if(b.deg != 1) return 0.0;
