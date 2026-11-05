@@ -23,11 +23,9 @@
 //   not supported.
 // - Only accept a curve with exactly one trim on surfA and one on surfB,
 //   each covering the whole curve. Curves split by Booleans come later.
-// - Corner patches (3 fillets at a vertex, sphere octant / flat triangle for
-//   chamfers) come later, probably in their own file. Until then the hole is
-//   left open: the fillet surfaces still get their end curves so their own
-//   trims close, those curves have only one surface, and SolveSpace reports
-//   naked edges. The fillet surfaces should still draw.
+// - Corner patches (3 fillets at a vertex): a flat triangle for chamfers; for
+//   fillets a triangle on the ball's sphere, made of three bands without any
+//   collapsed edge (sphere_patch.cpp).
 // - All new code goes in this file, except general curve tools such as
 //   SBezier reparameterization, which go in ratpoly.cpp.
 //
@@ -114,10 +112,9 @@
 //    the cross-section through those two points (same parameter at a square
 //    corner). The three cross-sections bound the corner patch: a sphere
 //    octant centered where the three fillet axes meet, or a flat triangle
-//    for chamfers. The chamfer triangle is done (FromPlane, trimmed by the
-//    three end curves, facing the same way as the chamfers). The sphere
-//    comes later (see scope); until then a fillet corner is an open hole and
-//    its curves name the fillet as both of their surfaces.
+//    for chamfers. The chamfer triangle is FromPlane, trimmed by the three
+//    end curves, facing the same way as the chamfers. The sphere triangle
+//    is split at its incenter into three bands, see sphere_patch.cpp.
 // Anything else (end face not perpendicular, etc.) is unsupported for now,
 // and then no edge is changed. In general that needs
 // SSurface::IntersectAgainst().
@@ -157,7 +154,7 @@
 // 3. A concave edge, e.g. an L-shaped extrusion.
 // 4. Top edge of a cylinder: arcs in a tangent chain (case 2).
 // 5. Two top edges of the cube meeting at a corner (case 3).
-// 6. Three edges at a corner, with the hole left open (case 4).
+// 6. Three edges at a corner (case 4): flat triangle or sphere patch.
 // Check each time: offset direction, surface normal, trim directions, and no
 // "trim was unterminated" / "trim was empty" messages.
 //
@@ -208,14 +205,22 @@ struct EdgeMod {
     hSSurface hFillet;
 };
 
-// Three chamfers meeting at a corner (case 4), closed by a flat triangle.
-// Fillet corners (sphere octant) are not done yet; their hole stays open.
+// Three fillets or chamfers meeting at a corner (case 4). Chamfers are
+// closed by a flat triangle; fillets by three bands on the ball's sphere
+// (sphere_patch.cpp), which meet along arcs from each corner to the
+// triangle's incenter.
 struct Corner {
     Vector    vtx;
     int       n;
     int       mod[3], end[3]; // the EdgeMod ends that meet here
-    SSurface  patch;
-    hSSurface h;
+    bool      sphere;
+    Vector    p[3];           // the triangle's corners
+    int       side[3];        // [member] the patch its end curve borders
+    Vector    t;              // sphere: the incenter
+    SSurface  patch[3];       // chamfer: patch[0]; sphere: band per side
+    SBezier   arc[3];         // sphere: arc[i] from p[i] to t
+    hSSurface h[3];
+    hSCurve   hArc[3];
 };
 
 // A neighbor curve that gets shortened at one or both ends.
@@ -1009,30 +1014,78 @@ static bool AddToCorner(std::vector<Corner> *corners, Vector v, int i, int k) {
     return true;
 }
 
-// The flat triangle closing three chamfers at a corner. Its corners are the
-// cut points of the chamfers; it faces the same way as the chamfers.
-static bool MakeChamferCorner(std::vector<EdgeMod> &mods, Corner *c) {
+// The corner's three points: the cut points of the three edges, each shared
+// by two of them.
+static bool CornerPoints(std::vector<EdgeMod> &mods, Corner *c) {
     if(c->n != 3) return false;
     EdgeMod *em0 = &mods[c->mod[0]],
             *em1 = &mods[c->mod[1]];
     int k0 = c->end[0], k1 = c->end[1];
-    Vector p0 = em0->cut[0][k0],
-           p1 = em0->cut[1][k0],
-           p2;
-    if(!em1->cut[0][k1].Equals(p0) && !em1->cut[0][k1].Equals(p1)) {
-        p2 = em1->cut[0][k1];
+    c->p[0] = em0->cut[0][k0];
+    c->p[1] = em0->cut[1][k0];
+    if(!em1->cut[0][k1].Equals(c->p[0]) && !em1->cut[0][k1].Equals(c->p[1])) {
+        c->p[2] = em1->cut[0][k1];
     } else {
-        p2 = em1->cut[1][k1];
+        c->p[2] = em1->cut[1][k1];
     }
+    return true;
+}
 
-    Vector mid = em0->endC[k0].PointAt(0.5);
+// The flat triangle closing three chamfers at a corner. It faces the same
+// way as the chamfers.
+static bool MakeChamferCorner(std::vector<EdgeMod> &mods, Corner *c) {
+    if(!CornerPoints(mods, c)) return false;
+    Vector p0 = c->p[0], p1 = c->p[1], p2 = c->p[2];
+    EdgeMod *em0 = &mods[c->mod[0]];
+    Vector mid = em0->endC[c->end[0]].PointAt(0.5);
     Vector nChamfer = SurfaceNormalNear(&em0->fillet, mid);
     SSurface srf = SSurface::FromPlane(p0, p1.Minus(p0), p2.Minus(p0));
     if(srf.NormalAt(0.25, 0.25).Dot(nChamfer) < 0) {
         srf = SSurface::FromPlane(p0, p2.Minus(p0), p1.Minus(p0));
     }
     srf.color = RGBi(100, 100, 100);
-    c->patch = srf;
+    c->sphere   = false;
+    c->patch[0] = srf;
+    for(int m = 0; m < 3; m++) c->side[m] = 0;
+    return true;
+}
+
+// The sphere patch closing three fillets at a corner. The ball's center is
+// on all three spines; the patch faces the same way as the fillets.
+static bool MakeSphereCorner(std::vector<EdgeMod> &mods, Corner *c) {
+    if(!CornerPoints(mods, c)) return false;
+    Vector center = mods[c->mod[0]].spine.PointAt(mods[c->mod[0]].tSrf[c->end[0]]);
+    for(int m = 1; m < 3; m++) {
+        EdgeMod *em = &mods[c->mod[m]];
+        if(!em->spine.PointAt(em->tSrf[c->end[m]]).Equals(center)) {
+            dbp("fillet: the three spines don't meet at the corner");
+            return false;
+        }
+    }
+    EdgeMod *em0 = &mods[c->mod[0]];
+    Vector q  = em0->endC[c->end[0]].PointAt(0.5),
+           nf = SurfaceNormalNear(&em0->fillet, q);
+    bool outward = nf.Dot(q.Minus(center)) > 0;
+    if(!SphereTrianglePatch(center, c->p, outward, c->patch, c->arc, &c->t)) {
+        dbp("fillet: can't build the sphere patch");
+        return false;
+    }
+    // Which band each fillet's end curve borders: side i runs p[i] to p[i+1].
+    for(int m = 0; m < 3; m++) {
+        EdgeMod *em = &mods[c->mod[m]];
+        int k = c->end[m];
+        c->side[m] = -1;
+        for(int i = 0; i < 3; i++) {
+            Vector a = c->p[i], b = c->p[(i + 1) % 3];
+            if((em->cut[0][k].Equals(a) && em->cut[1][k].Equals(b)) ||
+               (em->cut[0][k].Equals(b) && em->cut[1][k].Equals(a)))
+            {
+                c->side[m] = i;
+            }
+        }
+        if(c->side[m] < 0) return false;
+    }
+    c->sphere = true;
     return true;
 }
 
@@ -1136,7 +1189,7 @@ void SShell::ModifyEdges()
     std::vector<Corner> corners;
     for(size_t i = 0; i < mods.size(); i++) {
         for(int k = 0; k < 2; k++) {
-            if(mods[i].kind[k] != CORNER || !mods[i].chamfer) continue;
+            if(mods[i].kind[k] != CORNER) continue;
             if(!AddToCorner(&corners, mods[i].vtx[k], (int)i, k)) {
                 dbp("fillet: more than three edges at a corner");
                 return;
@@ -1144,7 +1197,9 @@ void SShell::ModifyEdges()
         }
     }
     for(Corner &c : corners) {
-        if(!MakeChamferCorner(mods, &c)) {
+        bool ok = mods[c.mod[0]].chamfer ? MakeChamferCorner(mods, &c)
+                                         : MakeSphereCorner(mods, &c);
+        if(!ok) {
             dbp("fillet: can't build corner");
             return;
         }
@@ -1156,9 +1211,11 @@ void SShell::ModifyEdges()
         em.hFillet = surface.AddAndAssignId(&em.fillet);
     }
     for(Corner &c : corners) {
-        c.h = surface.AddAndAssignId(&c.patch);
-        for(int i = 0; i < 3; i++) {
-            mods[c.mod[i]].sC[c.end[i]] = c.h;
+        for(int i = 0; i < (c.sphere ? 3 : 1); i++) {
+            c.h[i] = surface.AddAndAssignId(&c.patch[i]);
+        }
+        for(int m = 0; m < 3; m++) {
+            mods[c.mod[m]].sC[c.end[m]] = c.h[c.side[m]];
         }
     }
     for(Recut &rc : recuts) {
@@ -1176,13 +1233,8 @@ void SShell::ModifyEdges()
     for(size_t i = 0; i < mods.size(); i++) {
         EdgeMod &em = mods[i];
         for(int k = 0; k < 2; k++) {
-            if(em.kind[k] == END_FACE || (em.kind[k] == CORNER && em.sC[k].v)) {
+            if(em.kind[k] == END_FACE || em.kind[k] == CORNER) {
                 em.hEndC[k] = AddCurve(this, em.endC[k], em.sC[k], em.hFillet);
-            } else if(em.kind[k] == CORNER) {
-                // Edge of the open corner hole: it has only the fillet. Both
-                // handles name the fillet, so code that looks up both
-                // surfaces (Booleans of later groups) doesn't hit a null one.
-                em.hEndC[k] = AddCurve(this, em.endC[k], em.hFillet, em.hFillet);
             } else if(em.partner[k] > (int)i) {
                 EdgeMod &pm = mods[em.partner[k]];
                 em.hEndC[k] = AddCurve(this, em.endC[k], em.hFillet, pm.hFillet);
@@ -1218,10 +1270,37 @@ void SShell::ModifyEdges()
             SCurve *ec = curve.FindById(em.hEndC[k]);
             STrimBy tf = MakeTrim(em.hEndC[k], c0, c1, ec->exact.Start());
             surface.FindById(em.hFillet)->trim.Add(&tf);
-            if(em.kind[k] == END_FACE || (em.kind[k] == CORNER && em.sC[k].v)) {
+            if(em.kind[k] == END_FACE || em.kind[k] == CORNER) {
                 STrimBy tc = ReverseTrim(tf);
                 surface.FindById(em.sC[k])->trim.Add(&tc);
             }
+        }
+    }
+
+    // Sphere corners: each band now has its side's trim, the reverse of the
+    // fillet's. Add the arcs to the incenter, each shared by two bands, and
+    // close each band's loop in the direction its side trim runs.
+    for(Corner &c : corners) {
+        if(!c.sphere) continue;
+        for(int i = 0; i < 3; i++) {
+            c.hArc[i] = AddCurve(this, c.arc[i], c.h[(i + 2) % 3], c.h[i]);
+        }
+        for(int i = 0; i < 3; i++) {
+            int j = (i + 1) % 3;
+            SSurface *band = surface.FindById(c.h[i]);
+            bool forward = band->trim[0].start.Equals(c.p[i]);
+            STrimBy t0, t1;
+            if(forward) {
+                // p[i] -> p[j] -> t -> p[i]
+                t0 = MakeTrim(c.hArc[j], c.p[j], c.t, c.p[j]);
+                t1 = MakeTrim(c.hArc[i], c.t, c.p[i], c.p[i]);
+            } else {
+                // p[j] -> p[i] -> t -> p[j]
+                t0 = MakeTrim(c.hArc[i], c.p[i], c.t, c.p[i]);
+                t1 = MakeTrim(c.hArc[j], c.t, c.p[j], c.p[j]);
+            }
+            band->trim.Add(&t0);
+            band->trim.Add(&t1);
         }
     }
 

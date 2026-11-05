@@ -473,6 +473,10 @@ public:
     void Clear();
 };
 
+// The corner patch where three fillets meet, in sphere_patch.cpp.
+bool SphereTrianglePatch(Vector c, const Vector p[3], bool outward,
+                         SSurface band[3], SBezier arc[3], Vector *t);
+
 } // namespace SolveSpace
 
 #endif

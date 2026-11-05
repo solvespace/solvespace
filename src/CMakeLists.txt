@@ -164,6 +164,7 @@ if(ENABLE_GUI OR ENABLE_CLI)
         srf/ratpoly.cpp
         srf/raycast.cpp
         srf/shell.cpp
+        srf/sphere_patch.cpp
         srf/surface.cpp
         srf/surfinter.cpp
         srf/triangulate.cpp)
