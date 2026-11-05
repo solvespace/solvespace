@@ -107,12 +107,13 @@
 //    is exact, being a parallel projection of the cross-section circle. For
 //    chamfers it is a line. This curve is not a parameter line of either
 //    fillet surface, so each surface is built a bit longer and trimmed by it.
-//    That holds between flat faces at equal angles. Otherwise (straight
-//    edges) the miter is traced, see TraceMiterEnd(): it runs from the
-//    corner in A until it reaches one fillet's contact with its other face,
-//    at X. Past X the other fillet cuts into that face, down to g. So one
-//    fillet ends in two pieces (miter, face cut), the other in one (miter),
-//    and only the first re-cuts g.
+//    With unequal angles the miter runs from the corner in A until it
+//    reaches one fillet's contact with its other face, at X. Past X the
+//    other fillet cuts into that face, down to g. So one fillet ends in two
+//    pieces (miter, face cut), the other in one (miter), and only the first
+//    re-cuts g. With flat faces both pieces are exact conics, at convex and
+//    reflex corners alike, see ExactMiterEnd(). With curved faces they are
+//    traced, see TraceMiterEnd() (convex corners only).
 // 4. Three modified edges (cube corner). Not miters: in each of its two
 //    faces, e's offset crosses the neighbor's offset, and e's fillet ends at
 //    the cross-section through those two points (same parameter at a square
@@ -222,6 +223,9 @@ struct EdgeMod {
     Vector    xPt[2];         // [k] where the miter meets the face piece, or
                               //     g if there is none
     hSCurve   hPiece[2][2];   // [k][piece]
+    bool      pieceExact[2];  // [k] the pieces are exact (pieceCurve), not
+                              //     traced (piecePts)
+    SBezier   pieceCurve[2][2]; // [k][piece]
     bool      cutsG[2];       // [k] MITER: this fillet ends on g and re-cuts it
     double    tSrf[2];        // [k] ends of the fillet surface, as params on e
     int       partner[2], partnerEnd[2]; // [k] TANGENT, MITER: the neighbor's EdgeMod
@@ -311,7 +315,11 @@ double SShell::GetEdgeModifier(SCurve &sc)
     //   4: every edge except the concave side edge from (-20, 50, -62.45)
     //      and the four cap edges at its ends (the reflex corners): sphere
     //      corners, and miters of unequal angles next to the reflex corners
-    const int skewVariant = 4;
+    //   5: every edge except the concave side edge: also miters of unequal
+    //      angles at the reflex corners
+    //   6: only the two bottom cap edges at the reflex vertex
+    //      (-20, 50, -62.45): one miter of unequal angles at a reflex corner
+    const int skewVariant = 5;
     bool big = false;
     for(SSurface &ss : surface) {
         for(int i = 0; i <= ss.degm; i++) {
@@ -337,6 +345,18 @@ double SShell::GetEdgeModifier(SCurve &sc)
         Vector p0 = b.Start(), p1 = b.Finish();
         bool side = fabs(p0.z - p1.z) > LENGTH_EPS;
         if(skewVariant == 1) return side ? r : 0.0;
+        if(skewVariant == 6) {
+            Vector cb = Vector::From(-20, 50, -62.45);
+            bool cap = fabs(p0.z + 62.45) < 0.01 && fabs(p1.z + 62.45) < 0.01;
+            return (cap && (p0.Equals(cb, 0.01) || p1.Equals(cb, 0.01))) ? r : 0.0;
+        }
+        if(skewVariant == 5) {
+            Vector cb = Vector::From(-20, 50, -62.45),
+                   ct = Vector::From(100, -50, 62.45);
+            bool concave = (p0.Equals(cb, 0.01) && p1.Equals(ct, 0.01)) ||
+                           (p1.Equals(cb, 0.01) && p0.Equals(ct, 0.01));
+            return concave ? 0.0 : r;
+        }
         if(skewVariant == 4) {
             Vector cb = Vector::From(-20, 50, -62.45),
                    ct = Vector::From(100, -50, 62.45);
@@ -1082,43 +1102,195 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
     em->modSide[k] = s;
     em->cutsG[k]   = true;
 
-    // Between flat faces at equal angles, the miter is exact: the two
-    // fillets meet in the plane that bisects the corner, along an ellipse
-    // from the corner in S, through the vertex, to the cut on g. Otherwise
-    // TraceMiterEnd() finds it, once every edge is set up.
-    bool flat  = em->mid.Start().Equals(em->e.Start()) &&
-                 fm.mid.Start().Equals(fm.e.Start());
-    bool equal = fabs(em->w - fm.w) < 1e-9;
-    if(!(flat && equal)) {
-        // At a reflex corner of S the offsets cross past the vertex and the
-        // fillets run over each other; tracing toward the vertex would hit
-        // the partner's other face where that face doesn't exist. The corner
-        // is reflex when f, leaving the vertex, heads out of S as seen from e.
-        SSurface *ss = sh->surface.FindById(em->face[s]);
-        Vector in = InwardAt(ss, em->e, ss->trim[em->trim[s]].backwards,
-                             (k == 0) ? 0.0 : 1.0);
-        Vector fAway = fm.e.Start().Equals(em->vtx[k])
-                           ? fm.e.Finish().Minus(fm.e.Start())
-                           : fm.e.Start().Minus(fm.e.Finish());
-        if(fAway.Dot(in) < 0) {
-            dbp("fillet: miter of unequal angles at a reflex corner, not supported yet");
-            return false;
-        }
-        em->traced[k] = true;
+    // With flat faces the miter is exact, see ExactMiterEnd(). Otherwise
+    // TraceMiterEnd() finds it. Either runs once every edge is set up.
+    em->traced[k] = true;
+    SSurface *ss = sh->surface.FindById(em->face[s]);
+    Vector pn;
+    double pd;
+    int fo = 1 - fs;
+    if(SurfaceIsPlane(ss, &pn, &pd) &&
+       SurfaceIsPlane(sh->surface.FindById(em->face[o]), &pn, &pd) &&
+       SurfaceIsPlane(sh->surface.FindById(fm.face[fo]), &pn, &pd))
+    {
+        em->pieceExact[k] = true;
         return true;
     }
-    if(!IntersectCarriers(em->off[o], g->exact, em->vtx[k], &em->cut[o][k])) {
-        dbp("fillet: offset curves don't meet at the corner");
+    // At a reflex corner of S the offsets cross past the vertex and the
+    // fillets run over each other; tracing toward the vertex would hit the
+    // partner's other face where that face doesn't exist. The corner is
+    // reflex when f, leaving the vertex, heads out of S as seen from e.
+    Vector in = InwardAt(ss, em->e, ss->trim[em->trim[s]].backwards,
+                         (k == 0) ? 0.0 : 1.0);
+    Vector fAway = fm.e.Start().Equals(em->vtx[k])
+                       ? fm.e.Finish().Minus(fm.e.Start())
+                       : fm.e.Start().Minus(fm.e.Finish());
+    if(fAway.Dot(in) < 0) {
+        dbp("fillet: miter at a reflex corner with curved faces, not supported yet");
         return false;
     }
-    if(!CanMoveEnd(g->exact, em->vtx[k], em->cut[o][k])) {
-        dbp("fillet: neighbor is too short for this radius");
-        return false;
+    return true;
+}
+
+// The arc of the circle about center that starts at center + u0 (|u0| is
+// the radius) and turns toward u1, from angle th0 to th1. Less than 180
+// degrees.
+static SBezier ArcBetween(Vector center, Vector u0, Vector u1, double th0, double th1) {
+    double rad = u0.Magnitude();
+    Vector a = u0.WithMagnitude(1.0),
+           b = (u1.Minus(a.ScaledBy(u1.Dot(a)))).WithMagnitude(1.0);
+    double thm = (th0 + th1) / 2, half = (th1 - th0) / 2;
+    Vector p0 = center.Plus(a.ScaledBy(rad*cos(th0))).Plus(b.ScaledBy(rad*sin(th0))),
+           p2 = center.Plus(a.ScaledBy(rad*cos(th1))).Plus(b.ScaledBy(rad*sin(th1))),
+           pm = center.Plus(a.ScaledBy(rad*cos(thm)/cos(half)))
+                      .Plus(b.ScaledBy(rad*sin(thm)/cos(half)));
+    return SBezier::From(Vector4::From(1.0, p0),
+                         Vector4::From(cos(half), pm),
+                         Vector4::From(1.0, p2));
+}
+
+// Curve b moved along direction d onto the plane n . x = dn. A parallel
+// projection, so a conic stays a conic with the same weights.
+static bool ProjectAlong(const SBezier &b, Vector d, Vector n, double dn, SBezier *out) {
+    if(fabs(n.Dot(d)) < 1e-9 * d.Magnitude()) return false;
+    *out = b;
+    for(int i = 0; i <= b.deg; i++) {
+        double lam = (dn - n.Dot(b.ctrl[i])) / n.Dot(d);
+        out->ctrl[i] = b.ctrl[i].Plus(d.ScaledBy(lam));
     }
-    // The surface has to reach past both ends of the miter curve.
-    double ts = ParamOn(em->off[s], em->cut[s][k]),
-           to = ParamOn(em->off[o], em->cut[o][k]);
-    em->tSrf[k] = (k == 0) ? min(ts, to) : max(ts, to);
+    return true;
+}
+
+// Unit direction along straight edge e toward its end k.
+static Vector TowardEnd(const SBezier &e, int k) {
+    Vector d = e.Finish().Minus(e.Start());
+    return ((k == 1) ? d : d.ScaledBy(-1.0)).WithMagnitude(1.0);
+}
+
+// An exact miter at end k of mods[i]: straight edges, flat faces, at a
+// convex or reflex corner of the shared face S and with equal or unequal
+// angles.
+//
+// Fillets: both are circular cylinders of radius r whose axes (spines) lie
+// in S offset by r, so they cross, at c. Equal cylinders with crossing axes
+// meet in the plane through c that bisects the axes; its normal is the
+// difference of the edges' directions toward the vertex, and it contains
+// P_S, the corner of the offsets in S. Reflecting in that plane swaps the
+// fillets and keeps the angle around each axis, so along the miter both are
+// at the same angle from S. The fillet with the shorter section arc ends
+// when the miter reaches its contact with its other face, at Y; the other
+// goes on and cuts into that face, down to g. Each piece is a sub-arc of a
+// cross-section projected along its edge onto a plane: an ellipse.
+//
+// Chamfers: the two chamfer planes meet in a line from P_S, which ends where
+// it first reaches either chamfer's other edge, at Y; the other chamfer cuts
+// into that face in a line, down to g.
+static bool ExactMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) {
+    EdgeMod *em = &mods[i];
+    int s = em->modSide[k], o = 1 - s;
+    const EdgeMod &fm = mods[FindEdgeMod(mods, em->nb[s][k])];
+    int fk = fm.vtx[0].Equals(em->vtx[k]) ? 0 : 1;
+    int fs = (fm.face[0].v == em->face[s].v) ? 0 : 1, fo = 1 - fs;
+    SCurve *g = sh->curve.FindById(em->nb[o][k]);
+    em->pieceFace[k] = OtherSurface(g, em->face[o]);
+    Vector fn;
+    double fd;
+    if(!SurfaceIsPlane(sh->surface.FindById(em->pieceFace[k]), &fn, &fd)) return false;
+
+    Vector P  = em->cut[s][k],
+           de = TowardEnd(em->e, k),
+           df = TowardEnd(fm.e, fk),
+           nm = de.Minus(df);
+    if(nm.Magnitude() < 1e-6) return false;
+    nm = nm.WithMagnitude(1.0);
+    double dm = nm.Dot(P);
+
+    SBezier miter, cutIn;
+    bool shorter, equal;
+    if(em->chamfer) {
+        Vector a0 = em->off[s].Start(), a1 = em->off[o].Start(),
+               b0 = fm.off[fs].Start(), b1 = fm.off[fo].Start();
+        Vector nE = (a1.Minus(a0)).Cross(de),
+               nF = (b1.Minus(b0)).Cross(df),
+               m  = nE.Cross(nF);
+        if(m.Magnitude() < 1e-9) return false;
+        bool skew;
+        double lE, lF, dummy;
+        Vector::AtIntersectionOfLines(P, P.Plus(m), em->off[o].ctrl[0], em->off[o].ctrl[1],
+                                      &skew, &lE, &dummy);
+        Vector::AtIntersectionOfLines(P, P.Plus(m), fm.off[fo].ctrl[0], fm.off[fo].ctrl[1],
+                                      &skew, &lF, &dummy);
+        if(lE * lF <= 0) return false;
+        double l = (fabs(lE) < fabs(lF)) ? lE : lF;
+        equal   = fabs(fabs(lE) - fabs(lF)) < LENGTH_EPS / m.Magnitude();
+        shorter = !equal && fabs(lE) < fabs(lF);
+        Vector Y = P.Plus(m.ScaledBy(l));
+        miter = SBezier::From(P, Y);
+        if(!equal && !shorter) {
+            Vector Q;
+            if(!IntersectCarriers(em->off[o], g->exact, em->vtx[k], &Q)) return false;
+            cutIn = SBezier::From(Y, Q);
+        }
+    } else {
+        Vector ce = em->spine.Start(), cf = fm.spine.Start();
+        Vector u0 = em->off[s].Start().Minus(ce), u1 = em->off[o].Start().Minus(ce),
+               v0 = fm.off[fs].Start().Minus(cf), v1 = fm.off[fo].Start().Minus(cf);
+        double Ae = acos(max(-1.0, min(1.0, u0.WithMagnitude(1).Dot(u1.WithMagnitude(1))))),
+               Af = acos(max(-1.0, min(1.0, v0.WithMagnitude(1).Dot(v1.WithMagnitude(1)))));
+        double thY = min(Ae, Af);
+        equal   = fabs(Ae - Af) < 1e-9;
+        shorter = !equal && Ae < Af;
+        if(!ProjectAlong(ArcBetween(ce, u0, u1, 0, thY), de, nm, dm, &miter)) return false;
+        if(!equal && !shorter) {
+            if(!ProjectAlong(ArcBetween(ce, u0, u1, thY, Ae), de, fn, fd, &cutIn)) return false;
+        }
+    }
+    // Set the ends exactly.
+    miter.ctrl[0] = P;
+    Vector Y = miter.Finish();
+    em->xPt[k] = Y;
+    if(equal || shorter) {
+        em->cut[o][k] = Y;
+        em->nPiece[k] = 1;
+    } else {
+        cutIn.ctrl[0] = Y;
+        if(!IntersectCarriers(em->off[o], g->exact, em->vtx[k], &em->cut[o][k])) return false;
+        cutIn.ctrl[cutIn.deg] = em->cut[o][k];
+        em->nPiece[k] = 2;
+    }
+    if(equal || !shorter) {
+        if(!CanMoveEnd(g->exact, em->vtx[k], em->cut[o][k])) {
+            dbp("fillet: neighbor is too short for this radius");
+            return false;
+        }
+    }
+
+    // Pieces in order from cut[0] to cut[1]: from S, the miter then the cut
+    // into the face.
+    SBezier pc[2];
+    int np = em->nPiece[k];
+    pc[0] = miter;
+    if(np == 2) pc[1] = cutIn;
+    for(int n = 0; n < np; n++) {
+        int idx = (s == 0) ? n : (np - 1 - n);
+        SBezier c = pc[n];
+        if(s == 1) c.Reverse();
+        em->pieceCurve[k][idx]  = c;
+        em->pieceOnFace[k][idx] = (n == 1);
+    }
+
+    // The surface must reach the whole end: the curves lie within their
+    // control points.
+    double tmin = VERY_POSITIVE, tmax = VERY_NEGATIVE;
+    for(int n = 0; n < np; n++) {
+        for(int j = 0; j <= pc[n].deg; j++) {
+            double t = ParamOn(em->mid, pc[n].ctrl[j]);
+            tmin = min(tmin, t);
+            tmax = max(tmax, t);
+        }
+    }
+    em->tSrf[k]  = (k == 0) ? tmin : tmax;
+    em->cutsG[k] = !(shorter);
     return true;
 }
 
@@ -1686,8 +1858,13 @@ void SShell::ModifyEdges()
     }
     for(size_t i = 0; i < mods.size(); i++) {
         for(int k = 0; k < 2; k++) {
-            if(mods[i].kind[k] == MITER && mods[i].traced[k] &&
-               !TraceMiterEnd(this, mods, (int)i, k)) return;
+            if(mods[i].kind[k] != MITER || !mods[i].traced[k]) continue;
+            bool ok = mods[i].pieceExact[k] ? ExactMiterEnd(this, mods, (int)i, k)
+                                            : TraceMiterEnd(this, mods, (int)i, k);
+            if(!ok) {
+                dbp("fillet: can't build the miter");
+                return;
+            }
         }
     }
     for(size_t i = 0; i < mods.size(); i++) {
@@ -1789,14 +1966,15 @@ void SShell::ModifyEdges()
                              (pm.nPiece[pk] == 1 && em.partner[k] > (int)i);
                 if(!owner) continue;
                 for(int n = 0; n < em.nPiece[k]; n++) {
-                    if(em.pieceOnFace[k][n]) {
-                        em.hPiece[k][n] = AddPwlCurve(this, em.piecePts[k][n],
-                                                      em.pieceFace[k], em.hFillet);
+                    hSSurface other = em.pieceOnFace[k][n] ? em.pieceFace[k] : pm.hFillet;
+                    if(em.pieceExact[k]) {
+                        em.hPiece[k][n] = AddCurve(this, em.pieceCurve[k][n],
+                                                   em.hFillet, other);
                     } else {
                         em.hPiece[k][n] = AddPwlCurve(this, em.piecePts[k][n],
-                                                      em.hFillet, pm.hFillet);
-                        pm.hPiece[pk][0] = em.hPiece[k][n];
+                                                      em.hFillet, other);
                     }
+                    if(!em.pieceOnFace[k][n]) pm.hPiece[pk][0] = em.hPiece[k][n];
                 }
             } else if(!em.endPts[k].empty()) {
                 em.hEndC[k] = AddPwlCurve(this, em.endPts[k], em.sC[k], em.hFillet);
