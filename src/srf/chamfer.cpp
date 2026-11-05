@@ -114,8 +114,10 @@
 //    the cross-section through those two points (same parameter at a square
 //    corner). The three cross-sections bound the corner patch: a sphere
 //    octant centered where the three fillet axes meet, or a flat triangle
-//    for chamfers. The patch comes later (see scope); until then the hole is
-//    open and those curves name the fillet as both of their surfaces.
+//    for chamfers. The chamfer triangle is done (FromPlane, trimmed by the
+//    three end curves, facing the same way as the chamfers). The sphere
+//    comes later (see scope); until then a fillet corner is an open hole and
+//    its curves name the fillet as both of their surfaces.
 // Anything else (end face not perpendicular, etc.) is unsupported for now,
 // and then no edge is changed. In general that needs
 // SSurface::IntersectAgainst().
@@ -190,7 +192,8 @@ struct EdgeMod {
     hSCurve   nb[2][2];       // [s][k] neighbor curve in face[s] at vtx[k]
     int       kind[2];        // [k] END_FACE, TANGENT, MITER or CORNER
     int       modSide[2];     // [k] TANGENT, MITER: side of the modified neighbor
-    hSSurface sC[2];          // [k] END_FACE: end face C
+    hSSurface sC[2];          // [k] END_FACE: end face C. CORNER: the corner
+                              //     patch, or 0 if there is none yet
     Vector    cut[2][2];      // [s][k] where off[s] ends
     double    tSrf[2];        // [k] ends of the fillet surface, as params on e
     int       partner[2], partnerEnd[2]; // [k] TANGENT, MITER: the neighbor's EdgeMod
@@ -200,6 +203,16 @@ struct EdgeMod {
     // Handles assigned when the shell is changed
     hSCurve   hNew[2], hEndC[2];
     hSSurface hFillet;
+};
+
+// Three chamfers meeting at a corner (case 4), closed by a flat triangle.
+// Fillet corners (sphere octant) are not done yet; their hole stays open.
+struct Corner {
+    Vector    vtx;
+    int       n;
+    int       mod[3], end[3]; // the EdgeMod ends that meet here
+    SSurface  patch;
+    hSSurface h;
 };
 
 // A neighbor curve that gets shortened at one or both ends.
@@ -756,6 +769,51 @@ static STrimBy ReverseTrim(const STrimBy &t) {
     return r;
 }
 
+static bool AddToCorner(std::vector<Corner> *corners, Vector v, int i, int k) {
+    Corner *c = NULL;
+    for(Corner &cc : *corners) {
+        if(cc.vtx.Equals(v)) c = &cc;
+    }
+    if(c == NULL) {
+        Corner nc = {};
+        nc.vtx = v;
+        corners->push_back(nc);
+        c = &corners->back();
+    }
+    if(c->n >= 3) return false;
+    c->mod[c->n] = i;
+    c->end[c->n] = k;
+    c->n++;
+    return true;
+}
+
+// The flat triangle closing three chamfers at a corner. Its corners are the
+// cut points of the chamfers; it faces the same way as the chamfers.
+static bool MakeChamferCorner(std::vector<EdgeMod> &mods, Corner *c) {
+    if(c->n != 3) return false;
+    EdgeMod *em0 = &mods[c->mod[0]],
+            *em1 = &mods[c->mod[1]];
+    int k0 = c->end[0], k1 = c->end[1];
+    Vector p0 = em0->cut[0][k0],
+           p1 = em0->cut[1][k0],
+           p2;
+    if(!em1->cut[0][k1].Equals(p0) && !em1->cut[0][k1].Equals(p1)) {
+        p2 = em1->cut[0][k1];
+    } else {
+        p2 = em1->cut[1][k1];
+    }
+
+    Vector mid = em0->endC[k0].PointAt(0.5);
+    Vector nChamfer = SurfaceNormalNear(&em0->fillet, mid);
+    SSurface srf = SSurface::FromPlane(p0, p1.Minus(p0), p2.Minus(p0));
+    if(srf.NormalAt(0.25, 0.25).Dot(nChamfer) < 0) {
+        srf = SSurface::FromPlane(p0, p2.Minus(p0), p1.Minus(p0));
+    }
+    srf.color = RGBi(100, 100, 100);
+    c->patch = srf;
+    return true;
+}
+
 static bool IsDeadCurve(const std::vector<EdgeMod> &mods,
                         const std::vector<Recut> &recuts, hSCurve hc)
 {
@@ -861,11 +919,33 @@ void SShell::ModifyEdges()
             return;
         }
     }
+    std::vector<Corner> corners;
+    for(size_t i = 0; i < mods.size(); i++) {
+        for(int k = 0; k < 2; k++) {
+            if(mods[i].kind[k] != CORNER || !mods[i].chamfer) continue;
+            if(!AddToCorner(&corners, mods[i].vtx[k], (int)i, k)) {
+                dbp("fillet: more than three edges at a corner");
+                return;
+            }
+        }
+    }
+    for(Corner &c : corners) {
+        if(!MakeChamferCorner(mods, &c)) {
+            dbp("fillet: can't build corner");
+            return;
+        }
+    }
 
     // 6. Change the shell. Add surfaces and curves first, then rewrite trims,
     // looking things up by handle each time since the lists can reallocate.
     for(EdgeMod &em : mods) {
         em.hFillet = surface.AddAndAssignId(&em.fillet);
+    }
+    for(Corner &c : corners) {
+        c.h = surface.AddAndAssignId(&c.patch);
+        for(int i = 0; i < 3; i++) {
+            mods[c.mod[i]].sC[c.end[i]] = c.h;
+        }
     }
     for(Recut &rc : recuts) {
         SCurve *old = curve.FindById(rc.orig);
@@ -882,7 +962,7 @@ void SShell::ModifyEdges()
     for(size_t i = 0; i < mods.size(); i++) {
         EdgeMod &em = mods[i];
         for(int k = 0; k < 2; k++) {
-            if(em.kind[k] == END_FACE) {
+            if(em.kind[k] == END_FACE || (em.kind[k] == CORNER && em.sC[k].v)) {
                 em.hEndC[k] = AddCurve(this, em.endC[k], em.sC[k], em.hFillet);
             } else if(em.kind[k] == CORNER) {
                 // Edge of the open corner hole: it has only the fillet. Both
@@ -915,7 +995,8 @@ void SShell::ModifyEdges()
         // End curves. The fillet's trims form a loop: the reversed trim on
         // side 0 finishes at t[0].start, at one end, so the end trim there
         // runs from cut[0] to cut[1], and the other one from cut[1] to
-        // cut[0]. An end face gets the reverse; a partner makes its own.
+        // cut[0]. An end face or corner patch gets the reverse; a partner
+        // makes its own.
         for(int k = 0; k < 2; k++) {
             bool from0 = t[0].start.Equals(em.cut[0][k]);
             Vector c0 = from0 ? em.cut[0][k] : em.cut[1][k],
@@ -923,7 +1004,7 @@ void SShell::ModifyEdges()
             SCurve *ec = curve.FindById(em.hEndC[k]);
             STrimBy tf = MakeTrim(em.hEndC[k], c0, c1, ec->exact.Start());
             surface.FindById(em.hFillet)->trim.Add(&tf);
-            if(em.kind[k] == END_FACE) {
+            if(em.kind[k] == END_FACE || (em.kind[k] == CORNER && em.sC[k].v)) {
                 STrimBy tc = ReverseTrim(tf);
                 surface.FindById(em.sC[k])->trim.Add(&tc);
             }
