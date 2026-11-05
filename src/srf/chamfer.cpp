@@ -404,6 +404,25 @@ double SShell::GetEdgeModifier(SCurve &sc)
     for(SSurface &ss : surface) {
         if(ss.degm > 1 || ss.degn > 1) curved++;
     }
+    // lens_test (two arcs of radius 12 meeting at (0, +/-10), extruded) is
+    // the only model with arcs of about 56 degrees (weight 0.881). Every cap
+    // arc, and the vertical edges at the tips (between the two cylinders);
+    // not the flat seams between the halves of each cylinder.
+    bool lens = false;
+    for(SCurve &c : curve) {
+        if(c.isExact && c.exact.deg == 2 && fabs(c.exact.weight[1] - 0.881) < 0.005) {
+            lens = true;
+        }
+    }
+    //   0: those edges
+    //   1: only the tip edges
+    const int lensVariant = 0;
+    if(lens) {
+        if(b.deg == 2) return (lensVariant == 0) ? r : 0.0;
+        bool tip = IsTestLine(b, 0, 0) && fabs(fabs(b.Start().y) - 10) < LENGTH_EPS;
+        return tip ? r : 0.0;
+    }
+
     // test_cube_boolean (the cube with a notch cut across its y = -10
     // face, z from -5 to 5) is the only model with 12 flat faces. The notch
     // splits the vertical edges at x = +/-10, y = -10 into two pieces each.
