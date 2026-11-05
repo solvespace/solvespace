@@ -180,6 +180,7 @@ struct EdgeMod {
     // The rolling ball, from SetUpSections(). Every cross-section of the
     // fillet is an arc of the ball from off[0] to off[1], with its middle
     // control point on mid and that point's weight w.
+    bool      convex;         // ball in the material (rounding), not the air
     SBezier   spine;          // the ball's center
     SBezier   mid;            // where the tangents at the contacts cross
     double    w;              // cos(half the arc angle); cos(45) when square
@@ -275,6 +276,22 @@ double SShell::GetEdgeModifier(SCurve &sc)
     int curved = 0;
     for(SSurface &ss : surface) {
         if(ss.degm > 1 || ss.degn > 1) curved++;
+    }
+    // L_shape is the only model with 8 faces. Its top face (z = 10) has a
+    // reflex corner at (0, 0). Variants:
+    //   0: the rules below (outer top edges and the concave edge)
+    //   1: only the top edge at y = 0, which must extend its neighbor past
+    //      the reflex corner
+    //   2: every edge of the top face, with a miter at the reflex corner
+    const int lShapeVariant = 0;
+    if(surface.n == 8 && curved == 0 && lShapeVariant != 0) {
+        if(!IsTestLine(b, 2, 10)) return 0.0;
+        if(lShapeVariant == 1) {
+            bool reflexSide = IsTestLine(b, 1, 0) && b.Start().x > -LENGTH_EPS &&
+                                                     b.Finish().x > -LENGTH_EPS;
+            return reflexSide ? r : 0.0;
+        }
+        return r;
     }
     if(curved == 1) {
         bool bottom = fabs(b.Start().z + 10) < LENGTH_EPS &&
@@ -382,10 +399,15 @@ static double ParamOn(const SBezier &b, Vector p) {
     return t;
 }
 
-// True if p is on curve b, within its [0, 1] range.
-static bool PointWithinCurve(const SBezier &b, Vector p) {
+// True if the end of neighbor curve b at vertex v can move to p, which is on
+// b or its extension: shortening b (a convex corner of the face) or
+// lengthening it past v (a reflex corner), but not past b's other end.
+static bool CanMoveEnd(const SBezier &b, Vector v, Vector p) {
     double t = ParamOn(b, p);
-    return t > -LENGTH_EPS && t < 1 + LENGTH_EPS && b.PointAt(t).Equals(p);
+    if(!b.PointAt(t).Equals(p)) return false;
+    if(b.Start().Equals(v))  return t < 1 - LENGTH_EPS;
+    if(b.Finish().Equals(v)) return t > LENGTH_EPS;
+    return false;
 }
 
 // The circle that arc b lies on: center, radius and unit normal. False if b
@@ -496,6 +518,7 @@ static bool GetFaceSection(SSurface *s, const SBezier &e, bool backwards,
 // face, where the tangents at those points cross, and the weight for the arc
 // between them.
 struct BallSection {
+    bool    convex;
     Vector  c;
     Vector  contact[2];
     Vector  mid;
@@ -518,6 +541,7 @@ static bool SolveBallSection(SShell *sh, EdgeMod *em, double t, BallSection *bs)
     // Convex edge: the ball is in the material, inside both faces. Concave:
     // it is in the air, outside both.
     bool convex = fs[0].dir.Dot(fs[1].n) < 0;
+    bs->convex = convex;
     double sg = convex ? -1.0 : 1.0;
     Vector p = fs[0].p,
            tan = em->e.TangentAt(t).WithMagnitude(1.0);
@@ -617,7 +641,8 @@ static bool SetUpSections(SShell *sh, EdgeMod *em) {
         dbp("fillet: cross-section changes along the edge, not supported yet");
         return false;
     }
-    em->w = b0.w;
+    em->w      = b0.w;
+    em->convex = b0.convex;
     return true;
 }
 
@@ -675,10 +700,10 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
         dbp("fillet: offset curve doesn't meet neighbor");
         return false;
     }
-    if(!PointWithinCurve(f->exact, em->cut[0][k]) ||
-       !PointWithinCurve(g->exact, em->cut[1][k]))
+    if(!CanMoveEnd(f->exact, em->vtx[k], em->cut[0][k]) ||
+       !CanMoveEnd(g->exact, em->vtx[k], em->cut[1][k]))
     {
-        dbp("fillet: neighbor would need extending, not supported yet");
+        dbp("fillet: neighbor is too short for this radius");
         return false;
     }
     // The end curve is a cross-section, so both cuts are at one parameter.
@@ -714,8 +739,8 @@ static bool SetUpTangentEnd(SShell *sh, EdgeMod *em, int k, int s) {
     for(int i = 0; i < 2; i++) {
         em->cut[i][k] = (k == 0) ? em->off[i].Start() : em->off[i].Finish();
     }
-    if(!PointWithinCurve(g->exact, em->cut[o][k])) {
-        dbp("fillet: offset doesn't land within the neighbor");
+    if(!CanMoveEnd(g->exact, em->vtx[k], em->cut[o][k])) {
+        dbp("fillet: offset doesn't land on the neighbor");
         return false;
     }
     em->kind[k]    = TANGENT;
@@ -745,6 +770,10 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
         dbp("fillet: edges meeting at a corner must have the same radius");
         return false;
     }
+    if(fm.convex != em->convex) {
+        dbp("fillet: convex and concave edges at one corner, not supported");
+        return false;
+    }
     if(!IsSimpleCurve(sh, g)) {
         dbp("fillet: neighbor is not a simple exact curve");
         return false;
@@ -760,8 +789,8 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
         dbp("fillet: offset curves don't meet at the corner");
         return false;
     }
-    if(!PointWithinCurve(g->exact, em->cut[o][k])) {
-        dbp("fillet: neighbor would need extending, not supported yet");
+    if(!CanMoveEnd(g->exact, em->vtx[k], em->cut[o][k])) {
+        dbp("fillet: neighbor is too short for this radius");
         return false;
     }
     // The surface has to reach past both ends of the miter curve.
@@ -786,6 +815,10 @@ static bool SetUpCornerEnd(SShell *sh, const std::vector<EdgeMod> &mods,
         const EdgeMod &fm = mods[FindEdgeMod(mods, em->nb[s][k])];
         if(fabs(fm.r - em->r) > LENGTH_EPS || fm.chamfer != em->chamfer) {
             dbp("fillet: edges meeting at a corner must have the same radius");
+            return false;
+        }
+        if(fm.convex != em->convex) {
+            dbp("fillet: convex and concave edges at one corner, not supported");
             return false;
         }
         int fs = (fm.face[0].v == em->face[s].v) ? 0 : 1;
@@ -859,6 +892,10 @@ static bool SetUpEnd(SShell *sh, const std::vector<EdgeMod> &mods,
 static bool FindPartnerEnd(std::vector<EdgeMod> &mods, int i, int k) {
     EdgeMod *em = &mods[i];
     int j = FindEdgeMod(mods, em->nb[em->modSide[k]][k]);
+    if(mods[j].convex != em->convex) {
+        dbp("fillet: convex and concave edges meet, not supported");
+        return false;
+    }
     for(int pk = 0; pk < 2; pk++) {
         const EdgeMod &pm = mods[j];
         if(pm.kind[pk] != em->kind[k] || !pm.vtx[pk].Equals(em->vtx[k])) {
