@@ -257,7 +257,7 @@ double SShell::GetEdgeModifier(SCurve &sc)
     //                       at the corner (10, 10, 10)
     //   L_shape:            the line at x = 0, y = 0 (concave)
     //   test_cylinder:      the arcs of the top circle at z = 10
-    //   arc_test:           the arc at z = 10
+    //   arc_test:           every edge not in the bottom face (see below)
     //   house_test:         lines between planes not at 90 degrees (eaves).
     //                       If a shell has any of these, only they are
     //                       picked; the rules above would also pick lines in
@@ -265,6 +265,17 @@ double SShell::GetEdgeModifier(SCurve &sc)
     const double r = 3.0;   // negative for chamfers
     if(!sc.isExact) return 0.0;
     const SBezier &b = sc.exact;
+    // arc_test is the only model with exactly one curved surface: pick every
+    // edge not in the bottom face (z = -10).
+    int curved = 0;
+    for(SSurface &ss : surface) {
+        if(ss.degm > 1 || ss.degn > 1) curved++;
+    }
+    if(curved == 1) {
+        bool bottom = fabs(b.Start().z + 10) < LENGTH_EPS &&
+                      fabs(b.Finish().z + 10) < LENGTH_EPS;
+        return bottom ? 0.0 : r;
+    }
     for(SCurve &other : curve) {
         if(IsTestSlantedLine(this, &other)) {
             return IsTestSlantedLine(this, &sc) ? r : 0.0;
