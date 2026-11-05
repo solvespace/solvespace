@@ -201,6 +201,8 @@ struct EdgeMod {
     Vector    cut[2][2];      // [s][k] where off[s] ends
     Vector    endMid[2];      // [k] END_FACE: the end curve's middle control
                               //     point, on the end face
+    std::vector<Vector> endPts[2]; // [k] END_FACE on a curved face: the end
+                              //     curve as points (not exact)
     double    tSrf[2];        // [k] ends of the fillet surface, as params on e
     int       partner[2], partnerEnd[2]; // [k] TANGENT, MITER: the neighbor's EdgeMod
     // Geometry built before the shell is changed
@@ -297,6 +299,12 @@ double SShell::GetEdgeModifier(SCurve &sc)
             return reflexSide ? r : 0.0;
         }
         return r;
+    }
+    // Variant 1 instead: only the top radius at y = 0, which ends on the
+    // flat side x = 0 at one end and on the cylinder wall at the other.
+    const int arcVariant = 0;
+    if(curved == 1 && arcVariant == 1) {
+        return (IsTestLine(b, 2, 10) && IsTestLine(b, 1, 0)) ? r : 0.0;
     }
     if(curved == 1) {
         bool bottom = fabs(b.Start().z + 10) < LENGTH_EPS &&
@@ -684,6 +692,59 @@ static int FindEdgeMod(const std::vector<EdgeMod> &mods, hSCurve hc) {
 // Case 1 at end k: neither neighbor is modified. f (in A) and g (in B) share
 // end face C, which must be a plane perpendicular to e. The offsets are cut
 // where they meet f and g, within those curves.
+// Where the line through q along d hits surface s (untrimmed), as q + t*d;
+// of several hits, the one with t nearest tNear.
+static bool HitAlongLine(SSurface *s, Vector q, Vector d, double tNear,
+                         double *t, Vector *p)
+{
+    List<SInter> l = {};
+    s->AllPointsIntersecting(q, q.Plus(d), &l, /*asSegment=*/false,
+                             /*trimmed=*/false, /*inclTangent=*/true);
+    bool found = false;
+    for(SInter &si : l) {
+        double ts = (si.p.Minus(q)).Dot(d) / d.MagSquared();
+        if(!found || fabs(ts - tNear) < fabs(*t - tNear)) {
+            *t = ts;
+            *p = si.p;
+            found = true;
+        }
+    }
+    l.Clear();
+    return found;
+}
+
+// Add to pts the points of the end curve for section parameters in (s0, s1],
+// where p1 is already known. Splits until each chord is within the chord
+// tolerance. Tracks the range of edge parameters reached.
+static bool TraceEndCurve(SSurface *sc, const SBezier &sec, Vector d, double tNear,
+                          double s0, Vector p0, double s1, Vector p1, int depth,
+                          std::vector<Vector> *pts, double *tmin, double *tmax)
+{
+    double sm = (s0 + s1) / 2, tm;
+    Vector pm;
+    if(!HitAlongLine(sc, sec.PointAt(sm), d, tNear, &tm, &pm)) return false;
+    *tmin = min(*tmin, tm);
+    *tmax = max(*tmax, tm);
+    double dev = (pm.Minus(p0.Plus(p1).ScaledBy(0.5))).Magnitude();
+    if(depth < 2 || (depth < 10 && dev > SS.ChordTolMm())) {
+        return TraceEndCurve(sc, sec, d, tNear, s0, p0, sm, pm, depth + 1, pts, tmin, tmax) &&
+               TraceEndCurve(sc, sec, d, tNear, sm, pm, s1, p1, depth + 1, pts, tmin, tmax);
+    }
+    pts->push_back(p1);
+    return true;
+}
+
+// Case 1 at end k: neither neighbor is modified. f (in A) and g (in B) share
+// end face C. The offsets are cut where they meet f and g, which are
+// shortened, or extended past the vertex at a reflex corner. The end curve is
+// where the fillet meets C:
+//   C perpendicular to e:  a cross-section of the fillet
+//   C a plane at an angle: (straight edges) the cross-section projected
+//                          along the edge onto C, an ellipse arc
+//   C curved:              (straight edges) traced: each point of the
+//                          cross-section moves along a line parallel to the
+//                          edge, and the curve is where those lines hit C.
+//                          Kept as points, not exact.
 static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
     SCurve *f = sh->curve.FindById(em->nb[0][k]),
            *g = sh->curve.FindById(em->nb[1][k]);
@@ -696,14 +757,13 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
         dbp("fillet: neighbors don't share an end face");
         return false;
     }
+    SSurface *sc = sh->surface.FindById(hc);
     Vector nc;
     double dc;
-    if(!SurfaceIsPlane(sh->surface.FindById(hc), &nc, &dc)) {
-        dbp("fillet: end face is not a plane");
-        return false;
-    }
+    bool plane = SurfaceIsPlane(sc, &nc, &dc);
     Vector tan = em->e.TangentAt((k == 0) ? 0.0 : 1.0).WithMagnitude(1.0);
-    bool perpendicular = fabs(fabs(tan.Dot(nc)) - 1.0) < 1e-6;
+    if(!plane) nc = SurfaceNormalNear(sc, em->vtx[k]);
+    bool perpendicular = plane && fabs(fabs(tan.Dot(nc)) - 1.0) < 1e-6;
     if(!perpendicular && em->e.deg != 1) {
         dbp("fillet: curved edge meeting its end face at an angle, not supported yet");
         return false;
@@ -735,7 +795,7 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
         }
         em->tSrf[k]   = t0;
         em->endMid[k] = em->mid.PointAt(t0);
-    } else {
+    } else if(plane) {
         // A straight fillet is its cross-section swept along the edge, so
         // where it meets the end face is a cross-section projected along the
         // edge onto that plane: an ellipse arc with the same weight. Its
@@ -748,6 +808,30 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
         if(parallel) return false;
         double tm = ParamOn(em->mid, em->endMid[k]);
         em->tSrf[k] = (k == 0) ? min(tm, min(t0, t1)) : max(tm, max(t0, t1));
+    } else {
+        // The cross-section at the start of the edge; a point at section
+        // parameter s and edge parameter t is sec(s) + t*d.
+        SBezier sec;
+        if(em->chamfer) {
+            sec = SBezier::From(em->off[0].Start(), em->off[1].Start());
+        } else {
+            sec = SBezier::From(Vector4::From(1.0, em->off[0].Start()),
+                                Vector4::From(em->w, em->mid.Start()),
+                                Vector4::From(1.0, em->off[1].Start()));
+        }
+        Vector d = em->e.Finish().Minus(em->e.Start());
+        double tNear = (k == 0) ? 0.0 : 1.0,
+               tmin = min(t0, t1), tmax = max(t0, t1);
+        std::vector<Vector> pts;
+        pts.push_back(em->cut[0][k]);
+        if(!TraceEndCurve(sc, sec, d, tNear, 0.0, em->cut[0][k], 1.0, em->cut[1][k],
+                          0, &pts, &tmin, &tmax))
+        {
+            dbp("fillet: can't find where the fillet meets its end face");
+            return false;
+        }
+        em->endPts[k] = pts;
+        em->tSrf[k]   = (k == 0) ? tmin : tmax;
     }
     em->kind[k] = END_FACE;
     em->sC[k]   = hc;
@@ -1043,6 +1127,25 @@ static bool SetRecutEnd(std::vector<Recut> *rcs, SCurve *sc, Vector v, Vector cu
     return true;
 }
 
+// A curve kept as points only, not exact, as Booleans make for intersection
+// curves.
+static hSCurve AddPwlCurve(SShell *sh, const std::vector<Vector> &pts,
+                           hSSurface sa, hSSurface sb)
+{
+    SCurve sc = {};
+    sc.isExact = false;
+    for(size_t i = 0; i < pts.size(); i++) {
+        SCurvePt pt = {};
+        pt.p      = pts[i];
+        pt.vertex = (i == 0) || (i == pts.size() - 1);
+        sc.pts.Add(&pt);
+    }
+    sc.surfA  = sa;
+    sc.surfB  = sb;
+    sc.source = SCurve::Source::INTERSECTION;
+    return sh->curve.AddAndAssignId(&sc);
+}
+
 static hSCurve AddCurve(SShell *sh, const SBezier &b, hSSurface sa, hSSurface sb) {
     SCurve sc = {};
     sc.isExact = true;
@@ -1311,7 +1414,9 @@ void SShell::ModifyEdges()
     for(size_t i = 0; i < mods.size(); i++) {
         EdgeMod &em = mods[i];
         for(int k = 0; k < 2; k++) {
-            if(em.kind[k] == END_FACE || em.kind[k] == CORNER) {
+            if(!em.endPts[k].empty()) {
+                em.hEndC[k] = AddPwlCurve(this, em.endPts[k], em.sC[k], em.hFillet);
+            } else if(em.kind[k] == END_FACE || em.kind[k] == CORNER) {
                 em.hEndC[k] = AddCurve(this, em.endC[k], em.sC[k], em.hFillet);
             } else if(em.partner[k] > (int)i) {
                 EdgeMod &pm = mods[em.partner[k]];
@@ -1346,7 +1451,7 @@ void SShell::ModifyEdges()
             Vector c0 = from0 ? em.cut[0][k] : em.cut[1][k],
                    c1 = from0 ? em.cut[1][k] : em.cut[0][k];
             SCurve *ec = curve.FindById(em.hEndC[k]);
-            STrimBy tf = MakeTrim(em.hEndC[k], c0, c1, ec->exact.Start());
+            STrimBy tf = MakeTrim(em.hEndC[k], c0, c1, ec->pts[0].p);
             surface.FindById(em.hFillet)->trim.Add(&tf);
             if(em.kind[k] == END_FACE || em.kind[k] == CORNER) {
                 STrimBy tc = ReverseTrim(tf);
