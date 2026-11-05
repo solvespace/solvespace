@@ -254,6 +254,7 @@ double SShell::GetEdgeModifier(SCurve &sc)
     //                       at the corner (10, 10, 10)
     //   L_shape:            the line at x = 0, y = 0 (concave)
     //   test_cylinder:      the arcs of the top circle at z = 10
+    //   arc_test:           the arc at z = 10
     //   house_test:         lines between planes not at 90 degrees (eaves).
     //                       If a shell has any of these, only they are
     //                       picked; the rules above would also pick lines in
@@ -430,16 +431,62 @@ static bool PointWithinCurve(const SBezier &b, Vector p) {
     return t > -LENGTH_EPS && t < 1 + LENGTH_EPS && b.PointAt(t).Equals(p);
 }
 
-// Where two curves, extended if needed, meet. Lines only for now.
-static bool IntersectCarriers(const SBezier &a, const SBezier &b, Vector *p) {
-    if(a.deg != 1 || b.deg != 1) return false;
-    Vector da = a.ctrl[1].Minus(a.ctrl[0]),
-           db = b.ctrl[1].Minus(b.ctrl[0]);
-    if((da.Cross(db)).Magnitude() < LENGTH_EPS * da.Magnitude()) return false;
-    bool skew;
-    *p = Vector::AtIntersectionOfLines(a.ctrl[0], a.ctrl[1],
-                                       b.ctrl[0], b.ctrl[1], &skew);
-    return !skew;
+// The circle that arc b lies on: center, radius and unit normal. False if b
+// is not a circular arc.
+static bool ArcCircle(const SBezier &b, Vector *center, double *rad, Vector *n) {
+    if(b.deg != 2) return false;
+    *n = (b.ctrl[1].Minus(b.ctrl[0])).Cross(b.ctrl[2].Minus(b.ctrl[1]));
+    if(n->Magnitude() < LENGTH_EPS) return false;
+    *n = n->WithMagnitude(1.0);
+    return b.IsCircle(*n, center, rad);
+}
+
+// Where the line through l0 and l1 meets a circle. A line crossing the
+// circle's plane meets it at most once; a line in the plane can meet it
+// twice, and then we take the point nearest to near.
+static bool LineMeetsCircle(Vector l0, Vector l1, Vector center, double rad,
+                            Vector n, Vector near, Vector *p)
+{
+    Vector dir = l1.Minus(l0);
+    double dn = dir.Dot(n);
+    if(fabs(dn) > LENGTH_EPS * dir.Magnitude()) {
+        double t = (center.Minus(l0)).Dot(n) / dn;
+        *p = l0.Plus(dir.ScaledBy(t));
+        return fabs((p->Minus(center)).Magnitude() - rad) < LENGTH_EPS;
+    }
+    if(fabs((l0.Minus(center)).Dot(n)) > LENGTH_EPS) return false;
+
+    Vector m = l0.Minus(center);
+    double a = dir.Dot(dir), b = 2*m.Dot(dir), c = m.Dot(m) - rad*rad;
+    double disc = b*b - 4*a*c;
+    if(disc < -LENGTH_EPS) return false;
+    double sq = sqrt(max(0.0, disc));
+    Vector p1 = l0.Plus(dir.ScaledBy((-b + sq) / (2*a))),
+           p2 = l0.Plus(dir.ScaledBy((-b - sq) / (2*a)));
+    *p = ((p1.Minus(near)).Magnitude() < (p2.Minus(near)).Magnitude()) ? p1 : p2;
+    return true;
+}
+
+// Where two curves, extended if needed, meet; of several points, the one
+// nearest to near (the vertex). Lines, and a line with an arc, for now.
+static bool IntersectCarriers(const SBezier &a, const SBezier &b, Vector near,
+                              Vector *p)
+{
+    if(a.deg == 1 && b.deg == 1) {
+        Vector da = a.ctrl[1].Minus(a.ctrl[0]),
+               db = b.ctrl[1].Minus(b.ctrl[0]);
+        if((da.Cross(db)).Magnitude() < LENGTH_EPS * da.Magnitude()) return false;
+        bool skew;
+        *p = Vector::AtIntersectionOfLines(a.ctrl[0], a.ctrl[1],
+                                           b.ctrl[0], b.ctrl[1], &skew);
+        return !skew;
+    }
+    const SBezier *line = (a.deg == 1) ? &a : &b,
+                  *arc  = (a.deg == 1) ? &b : &a;
+    Vector center, n;
+    double rad;
+    if(line->deg != 1 || !ArcCircle(*arc, &center, &rad, &n)) return false;
+    return LineMeetsCircle(line->ctrl[0], line->ctrl[1], center, rad, n, near, p);
 }
 
 // Index of the one trim in s, not on curve exclude, that starts or finishes
@@ -490,8 +537,8 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
         dbp("fillet: end face not perpendicular to edge");
         return false;
     }
-    if(!IntersectCarriers(em->off[0], f->exact, &em->cut[0][k]) ||
-       !IntersectCarriers(em->off[1], g->exact, &em->cut[1][k]))
+    if(!IntersectCarriers(em->off[0], f->exact, em->vtx[k], &em->cut[0][k]) ||
+       !IntersectCarriers(em->off[1], g->exact, em->vtx[k], &em->cut[1][k]))
     {
         dbp("fillet: offset curve doesn't meet neighbor");
         return false;
@@ -573,8 +620,8 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
         return false;
     }
     int fs = (fm.face[0].v == em->face[s].v) ? 0 : 1;
-    if(!IntersectCarriers(em->off[s], fm.off[fs], &em->cut[s][k]) ||
-       !IntersectCarriers(em->off[o], g->exact, &em->cut[o][k]))
+    if(!IntersectCarriers(em->off[s], fm.off[fs], em->vtx[k], &em->cut[s][k]) ||
+       !IntersectCarriers(em->off[o], g->exact, em->vtx[k], &em->cut[o][k]))
     {
         dbp("fillet: offset curves don't meet at the corner");
         return false;
@@ -619,7 +666,7 @@ static bool SetUpCornerEnd(SShell *sh, const std::vector<EdgeMod> &mods,
         int fs = (fm.face[0].v == em->face[s].v) ? 0 : 1;
         if(fm.face[fs].v != em->face[s].v) return false;
         other[s] = fm.face[1 - fs];
-        if(!IntersectCarriers(em->off[s], fm.off[fs], &em->cut[s][k])) {
+        if(!IntersectCarriers(em->off[s], fm.off[fs], em->vtx[k], &em->cut[s][k])) {
             dbp("fillet: offset curves don't meet at the corner");
             return false;
         }
