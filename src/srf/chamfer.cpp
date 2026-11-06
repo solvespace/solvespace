@@ -964,67 +964,54 @@ static int NeighborMod(const std::vector<EdgeMod> &mods, const EdgeMod *em, int 
     return FindEdgeModAt(mods, em->face[s], em->nbTrim[s][k]);
 }
 
-// What a traced ray can stop on (a surface, by raycast). The ray is q + t*d;
-// it starts at edge parameter tFrom (inside the fillet, where nothing is in
-// the way) and goes in direction dir (+1 or -1, toward the vertex), and it
-// stops at the first hit.
-struct RayTargets {
-    SSurface      *srf;
-    double         tFrom;
-    double         dir;
-};
+static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB);
 
-static SBezier StartSection(const EdgeMod *em);
-
-// Keep hit (ts, p) if it is ahead of tFrom and before the best so far.
-static void ConsiderHit(const RayTargets &rt, double ts, Vector p, int i,
-                        bool *found, double *t, Vector *pp, int *which)
-{
-    if((ts - rt.tFrom) * rt.dir <= 0) return;
-    if(*found && (ts - *t) * rt.dir >= 0) return;
-    *t = ts;
-    *pp = p;
-    *which = i;
-    *found = true;
-}
-
-static bool FirstHit(const RayTargets &rt, Vector q, Vector d,
-                     double *t, Vector *p, int *which)
-{
-    bool found = false;
-    if(rt.srf) {
-        List<SInter> l = {};
-        rt.srf->AllPointsIntersecting(q, q.Plus(d), &l, /*asSegment=*/false,
-                                      /*trimmed=*/false, /*inclTangent=*/true);
-        for(SInter &si : l) {
-            double ts = (si.p.Minus(q)).Dot(d) / d.MagSquared();
-            ConsiderHit(rt, ts, si.p, 1, &found, t, p, which);
-        }
-        l.Clear();
+// em's fillet surface, built well past its end at vertex v: by 10 radii or a
+// quarter of a straight edge, whichever is more, or by 0.3 of an arc's
+// parameter.
+static bool LongFillet(SShell *sh, const EdgeMod &em, Vector v, SSurface *out) {
+    EdgeMod c = em;
+    int kv = c.e.Start().Equals(v) ? 0 : 1;
+    double half;
+    if(c.e.deg == 1) {
+        double len = (c.e.Finish().Minus(c.e.Start())).Magnitude();
+        half = max(0.25, 10 * c.r / len);
+    } else {
+        half = 0.3;
     }
-    return found;
-}
-
-// Add to pts the points of the end curve for section parameters in (s0, s1],
-// where p1 is already known. Splits until each chord is within the chord
-// tolerance. Tracks the range of edge parameters reached.
-static bool TraceEndCurve(const RayTargets &rt, const SBezier &sec, Vector d,
-                          double s0, Vector p0, double s1, Vector p1, int depth,
-                          std::vector<Vector> *pts, double *tmin, double *tmax)
-{
-    double sm = (s0 + s1) / 2, tm;
-    Vector pm;
-    int which;
-    if(!FirstHit(rt, sec.PointAt(sm), d, &tm, &pm, &which)) return false;
-    *tmin = min(*tmin, tm);
-    *tmax = max(*tmax, tm);
-    double dev = (pm.Minus(p0.Plus(p1).ScaledBy(0.5))).Magnitude();
-    if(depth < 2 || (depth < 10 && dev > SS.ChordTolMm())) {
-        return TraceEndCurve(rt, sec, d, s0, p0, sm, pm, depth + 1, pts, tmin, tmax) &&
-               TraceEndCurve(rt, sec, d, sm, pm, s1, p1, depth + 1, pts, tmin, tmax);
+    c.tSrf[0] = kv - half;
+    c.tSrf[1] = kv + half;
+    Vector mid = c.e.PointAt(0.5);
+    if(!MakeFilletSurface(&c, SurfaceNormalNear(sh->surface.FindById(c.face[0]), mid),
+                              SurfaceNormalNear(sh->surface.FindById(c.face[1]), mid)))
+    {
+        return false;
     }
-    pts->push_back(p1);
+    *out = c.fillet;
     return true;
+}
+
+// The curve where surfaces srf and other meet, from a to b, as points: the
+// march of the Boolean code. toward is the way the curve leaves a; tangent
+// says the surfaces are tangent at a.
+static bool MarchPiece(SSurface *srf, SSurface *other, Vector a, Vector b,
+                       Vector toward, bool tangent, std::vector<Vector> *pts)
+{
+    List<MarchPoint> ends = {};
+    MarchPoint mp = { 0, b, toward, /*tangent=*/false };
+    ends.Add(&mp);
+    // From a point of tangency the first step goes along startv. Otherwise
+    // the march takes the way along the curve with a negative dot product
+    // with startv (in Booleans, a trim edge's normal), so pass the reverse.
+    Vector startv = tangent ? toward : toward.ScaledBy(-1.0);
+    List<SCurvePt> cp = {};
+    bool ok = srf->MarchIntersection(other, a, startv, tangent, &ends, &cp);
+    if(ok) {
+        for(SCurvePt &q : cp) pts->push_back(q.p);
+    }
+    cp.Clear();
+    ends.Clear();
+    return ok;
 }
 
 // The cross-section of the fillet at the start of the edge, from off[0] to
@@ -1046,10 +1033,9 @@ static SBezier StartSection(const EdgeMod *em) {
 //   C perpendicular to e:  a cross-section of the fillet
 //   C a plane at an angle: (straight edges) the cross-section projected
 //                          along the edge onto C, an ellipse arc
-//   C curved:              (straight edges) traced: each point of the
-//                          cross-section moves along a line parallel to the
-//                          edge, and the curve is where those lines hit C.
-//                          Kept as points, not exact.
+//   C curved:              (straight edges) where the fillet and C meet,
+//                          marched from one cut to the other. Kept as
+//                          points, not exact.
 static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
     const Piece &f = em->nb[0][k], &g = em->nb[1][k];
     hSSurface hc = OtherFace(f, em->face[0]);
@@ -1109,20 +1095,20 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
         double tm = ParamOn(em->mid, em->endMid[k]);
         em->tSrf[k] = (k == 0) ? min(tm, min(t0, t1)) : max(tm, max(t0, t1));
     } else {
-        SBezier sec = StartSection(em);
-        Vector d = em->e.Finish().Minus(em->e.Start());
-        RayTargets rt = {};
-        rt.srf    = sc;
-        rt.tFrom  = 0.5;
-        rt.dir    = (k == 0) ? -1.0 : 1.0;
-        double tmin = min(t0, t1), tmax = max(t0, t1);
+        SSurface own;
         std::vector<Vector> pts;
-        pts.push_back(em->cut[0][k]);
-        if(!TraceEndCurve(rt, sec, d, 0.0, em->cut[0][k], 1.0, em->cut[1][k],
-                          0, &pts, &tmin, &tmax))
+        if(!LongFillet(sh, *em, em->vtx[k], &own) ||
+           !MarchPiece(&own, sc, em->cut[0][k], em->cut[1][k],
+                       em->cut[1][k].Minus(em->cut[0][k]), /*tangent=*/false, &pts))
         {
             dbp("fillet: can't find where the fillet meets its end face");
             return false;
+        }
+        double tmin = min(t0, t1), tmax = max(t0, t1);
+        for(Vector &q : pts) {
+            double t = ParamOn(em->e, q);
+            tmin = min(tmin, t);
+            tmax = max(tmax, t);
         }
         em->endPts[k] = pts;
         em->tSrf[k]   = (k == 0) ? tmin : tmax;
@@ -1461,72 +1447,33 @@ static bool PathAt(const EdgeMod *em, const SBezier &sec, double sp, SBezier *pa
     return FollowEdge(em->e, sec.PointAt(sp), path);
 }
 
-// Add to pts the points of a traced end curve for section parameters in
-// (s0, s1], where p1 is already known. Splits until each chord is within the
-// chord tolerance. Tracks the range of edge parameters reached.
-static bool TracePathCurve(const PathTargets &pt, const EdgeMod *em, const SBezier &sec,
-                           double tFrom, double tTo,
-                           double s0, Vector p0, double s1, Vector p1, int depth,
-                           std::vector<Vector> *pts, double *tmin, double *tmax)
-{
-    double sm = (s0 + s1) / 2, tm;
-    Vector pm;
-    int which;
-    SBezier path;
-    if(!PathAt(em, sec, sm, &path) ||
-       !FirstPathHit(pt, path, tFrom, tTo, &tm, &pm, &which))
-    {
-        return false;
-    }
-    *tmin = min(*tmin, tm);
-    *tmax = max(*tmax, tm);
-    double dev = (pm.Minus(p0.Plus(p1).ScaledBy(0.5))).Magnitude();
-    if(depth < 2 || (depth < 10 && dev > SS.ChordTolMm())) {
-        return TracePathCurve(pt, em, sec, tFrom, tTo, s0, p0, sm, pm, depth + 1, pts, tmin, tmax) &&
-               TracePathCurve(pt, em, sec, tFrom, tTo, sm, pm, s1, p1, depth + 1, pts, tmin, tmax);
-    }
-    pts->push_back(p1);
-    return true;
-}
-
-static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB);
-
 // A traced miter at end k of mods[i]: straight or arc edges, any of the
-// supported faces. Each point of e's cross-section is carried along e toward
-// the vertex (along a line, or around the arc's axis) until it first
-// crosses either the partner's fillet (built extra long here; only within
-// its cross-section) or the partner's other face, beyond g. From the shared
-// face S it hits the partner; it may switch to the face at some point X,
-// where the miter meets the partner's contact with that face. Then this
-// fillet ends in two pieces, the miter and a cut into the face; otherwise in
-// one, the miter. Reads the shell only.
+// supported faces. Carried along e toward the vertex (along a line, or
+// around the arc's axis), each point of e's cross-section first crosses
+// either the partner's fillet (only within its cross-section) or the
+// partner's other face, beyond g. From the shared face S that is the
+// partner; it may switch to the face at some point X, where the miter meets
+// the partner's contact with that face. Then this fillet ends in two
+// pieces, the miter and a cut into the face; otherwise in one, the miter.
+// The crossings only find X; the pieces themselves are marched, as Booleans
+// march intersection curves. Reads the shell only.
 static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) {
     EdgeMod *em = &mods[i];
     int s = em->modSide[k], o = 1 - s;
-    EdgeMod pm = mods[NeighborMod(mods, em, s, k)];
+    const EdgeMod &pm = mods[NeighborMod(mods, em, s, k)];
     const Piece &g = em->nb[o][k];
     em->pieceFace[k] = OtherFace(g, em->face[o]);
 
-    // The partner's fillet, reaching well past its end at this vertex.
-    int pkv = pm.vtx[0].Equals(em->vtx[k]) ? 0 : 1;
-    double half;
-    if(pm.e.deg == 1) {
-        double len = (pm.e.Finish().Minus(pm.e.Start())).Magnitude();
-        half = max(0.25, 10 * pm.r / len);
-    } else {
-        half = 0.3;
-    }
-    pm.tSrf[0] = pkv - half;
-    pm.tSrf[1] = pkv + half;
-    Vector pmid = pm.e.PointAt(0.5);
-    if(!MakeFilletSurface(&pm, SurfaceNormalNear(sh->surface.FindById(pm.face[0]), pmid),
-                               SurfaceNormalNear(sh->surface.FindById(pm.face[1]), pmid)))
+    // Both fillets, reaching well past their ends at this vertex.
+    SSurface own, partner;
+    if(!LongFillet(sh, *em, em->vtx[k], &own) ||
+       !LongFillet(sh, pm, em->vtx[k], &partner))
     {
         return false;
     }
 
     PathTargets pt = {};
-    pt.partner = &pm.fillet;
+    pt.partner = &partner;
     pt.face    = sh->surface.FindById(em->pieceFace[k]);
     double ext   = (em->e.deg == 1) ? 0.5 : 0.3,
            tFrom = 0.5,
@@ -1546,6 +1493,7 @@ static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) 
         dbp("fillet: miter doesn't start on the partner fillet");
         return false;
     }
+    Vector nearS = p;
     Vector q;
     bool faceAtO = PathAt(em, sec, sO, &path) &&
                    FirstPathHit(pt, path, tFrom, tTo, &t, &q, &which) && which == 1;
@@ -1594,41 +1542,43 @@ static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) 
         em->cut[o][k] = em->xPt[k];
     }
 
-    // Trace the pieces, in order from section parameter 0 to 1.
+    // March the pieces: the miter from the corner in S (where the two
+    // fillets are tangent to each other, both being tangent to S) toward the
+    // point found next to it, then any cut into the face from X down to g.
+    Vector mStart = em->cut[s][k],
+           mEnd   = faceAtO ? em->xPt[k] : em->cut[o][k];
+    std::vector<Vector> miter, faceCut;
+    if(!MarchPiece(&own, pt.partner, mStart, mEnd, nearS.Minus(mStart), /*tangent=*/true, &miter) ||
+       (faceAtO && !MarchPiece(&own, pt.face, em->xPt[k], em->cut[o][k],
+                               em->cut[o][k].Minus(em->xPt[k]), /*tangent=*/false, &faceCut)))
+    {
+        dbp("fillet: can't trace the miter");
+        return false;
+    }
+    // In order from cut[0] to cut[1]; S is at cut[s].
+    em->nPiece[k] = faceAtO ? 2 : 1;
+    if(s == 1) {
+        std::reverse(miter.begin(), miter.end());
+        std::reverse(faceCut.begin(), faceCut.end());
+    }
+    int mi = (s == 0) ? 0 : em->nPiece[k] - 1;
+    em->piecePts[k][mi]    = miter;
+    em->pieceOnFace[k][mi] = false;
+    if(faceAtO) {
+        em->piecePts[k][1 - mi]    = faceCut;
+        em->pieceOnFace[k][1 - mi] = true;
+    }
+
+    // The surface must reach every point of the end.
     double t0 = ParamOn(em->off[0], em->cut[0][k]),
            t1 = ParamOn(em->off[1], em->cut[1][k]);
     double tmin = min(t0, t1), tmax = max(t0, t1);
-    em->nPiece[k] = faceAtO ? 2 : 1;
     for(int n = 0; n < em->nPiece[k]; n++) {
-        double a, b;
-        Vector pa, pb;
-        bool onFace;
-        if(em->nPiece[k] == 1) {
-            a = 0.0; b = 1.0;
-            pa = em->cut[0][k]; pb = em->cut[1][k];
-            onFace = false;
-        } else {
-            a  = (n == 0) ? 0.0 : sX;
-            b  = (n == 0) ? sX  : 1.0;
-            pa = (n == 0) ? em->cut[0][k] : em->xPt[k];
-            pb = (n == 0) ? em->xPt[k]    : em->cut[1][k];
-            // The piece on S's side is the miter.
-            onFace = (s == 0) ? (n == 1) : (n == 0);
+        for(Vector &q : em->piecePts[k][n]) {
+            double t = ParamOn(em->e, q);
+            tmin = min(tmin, t);
+            tmax = max(tmax, t);
         }
-        PathTargets one = pt;
-        if(onFace) {
-            one.partner = NULL;
-        } else {
-            one.face = NULL;
-        }
-        em->pieceOnFace[k][n] = onFace;
-        std::vector<Vector> pts;
-        pts.push_back(pa);
-        if(!TracePathCurve(one, em, sec, tFrom, tTo, a, pa, b, pb, 0, &pts, &tmin, &tmax)) {
-            dbp("fillet: can't trace the miter");
-            return false;
-        }
-        em->piecePts[k][n] = pts;
     }
     em->tSrf[k]  = (k == 0) ? tmin : tmax;
     em->cutsG[k] = faceAtO;
