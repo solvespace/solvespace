@@ -361,7 +361,7 @@ double SShell::GetEdgeModifier(SCurve &sc)
     //   L_shape:            the line at x = 0, y = 0 (concave)
     //   test_cylinder:      the arcs of the top circle at z = 10
     //   arc_test:           every edge not in the bottom face (see below)
-    //   skew_test, straight_test, test_cube_boolean: see below
+    //   revolve_test, skew_test, straight_test, test_cube_boolean: see below
     //   house_test:         lines between planes not at 90 degrees (eaves).
     //                       If a shell has any of these, only they are
     //                       picked; the rules above would also pick lines in
@@ -369,6 +369,15 @@ double SShell::GetEdgeModifier(SCurve &sc)
     const double r = 3.0;   // negative for chamfers
     if(!sc.isExact) return 0.0;
     const SBezier &b = sc.exact;
+    // revolve_test (a profile revolved 80 degrees about the y axis) is the
+    // only model with arcs of 80 degrees (weight 0.766). Every arc: they
+    // lie between cones, cylinders and a plane, and end on the end caps.
+    for(SCurve &c : curve) {
+        if(c.isExact && c.exact.deg == 2 && fabs(c.exact.weight[1] - 0.766) < 0.002) {
+            return (b.deg == 2) ? r : 0.0;
+        }
+    }
+
     // skew_test (a skewed extrusion, about 100 in size) is the only big
     // model. Variants:
     //   1: the six side edges (one concave), ending on the caps at an angle
@@ -755,8 +764,10 @@ static bool IntersectCarriers(const SBezier &a, const SBezier &b, Vector near,
 
 // How a face looks in the cross-section plane through an edge point (the
 // plane perpendicular to the edge). Two kinds so far:
-//   line:   a straight line of the face runs away from the edge: a plane, or
-//           a cylinder cut across its axis (an arc edge on a cylinder wall)
+//   line:   a straight line of the face runs away from the edge, with the
+//           same normal along it: a plane, a cylinder cut across its axis
+//           (an arc edge on a cylinder wall), or a cone through its axis (an
+//           arc edge on a revolved part)
 //   circle: a cylinder whose axis runs along the edge
 struct FaceSection {
     bool    isCircle;
@@ -795,6 +806,25 @@ static bool GetFaceSection(SSurface *s, const SBezier &e, bool backwards,
             fs->isCircle = false;
             return true;
         }
+    }
+    // A face with a straight line running away from the edge, with the same
+    // normal all along it (a cone, for an arc edge on a revolved part): in
+    // the cross-section that is a line. A surface of degree 1 in u or v is
+    // straight in that direction.
+    Point2d uv;
+    s->ClosestPointTo(fs->p, &uv, /*mustConverge=*/false);
+    for(int i = 0; i < 2; i++) {
+        if((i == 0) ? (s->degm != 1) : (s->degn != 1)) continue;
+        Vector a = (i == 0) ? s->PointAt(0, uv.y) : s->PointAt(uv.x, 0),
+               b = (i == 0) ? s->PointAt(1, uv.y) : s->PointAt(uv.x, 1);
+        Vector ruling = (b.Minus(a)).WithMagnitude(1.0);
+        if(fabs(fabs(ruling.Dot(fs->dir)) - 1.0) > 1e-6) continue;
+        // Normals inside the line, since a cone's apex has none.
+        Vector na = (i == 0) ? s->NormalAt(0.25, uv.y) : s->NormalAt(uv.x, 0.25),
+               nb = (i == 0) ? s->NormalAt(0.75, uv.y) : s->NormalAt(uv.x, 0.75);
+        if(!na.WithMagnitude(1.0).Equals(nb.WithMagnitude(1.0), 1e-6)) continue;
+        fs->isCircle = false;
+        return true;
     }
     return false;
 }
