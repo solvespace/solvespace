@@ -196,8 +196,10 @@
 // -------
 // Test models are in misc_CAD/fillet_test. GetEdgeModifier() recognizes
 // each by its shape and picks its edges; constants there choose variants
-// and r (negative for chamfers). Without the GUI:
-//   solvespace-cli export-mesh --chord-tol 0.005 --output %.obj <model>
+// and r (negative for chamfers). It does nothing unless the environment
+// variable SOLVESPACE_FILLET_TEST is set. Without the GUI:
+//   SOLVESPACE_FILLET_TEST=1 solvespace-cli export-mesh --chord-tol 0.005 \
+//       --output %.obj <model>
 // then check the OBJ: every triangle edge shared by exactly two triangles,
 // and the volume. Curved walls need a fine tolerance (down to 0.0002) for
 // the volume to converge. Check also for "trim was unterminated" / "trim was
@@ -336,6 +338,12 @@ static bool IsTestSlantedLine(SShell *sh, SCurve *sc) {
 // value whose absolute value is the radius of an equivalent fillet.
 double SShell::GetEdgeModifier(SCurve &sc)
 {
+    // Off unless the environment variable SOLVESPACE_FILLET_TEST is set, so
+    // other models (and the test suite) are left alone.
+    static int enabled = -1;
+    if(enabled < 0) enabled = (getenv("SOLVESPACE_FILLET_TEST") != NULL) ? 1 : 0;
+    if(!enabled) return 0.0;
+
     // Test hook until edges can be named. Picks edges in the test models in
     // misc_CAD/fillet_test:
     //   test_cube, L_shape: the outer lines around the z = 10 face, which
