@@ -253,18 +253,139 @@ static int TangentRays(SSurface *srfA, SSurface *srfB, Vector p, Vector *rays,
     return n;
 }
 
-// A point where a march along the intersection of two surfaces may start or
-// end. Where the surfaces are tangent, there's one of these for each direction
-// in which a curve leaves the point, since more than one curve can end there.
-class MarchPoint {
-public:
-    int     tag;
-    Vector  p;
-    // The direction a curve leaves in, for a point of tangency; otherwise the
-    // inward normal to the trim edge on which we found the point.
-    Vector  dir;
-    bool    tangent;
-};
+//-----------------------------------------------------------------------------
+// March along the curve where this surface and b intersect, from start, and
+// stop at the first of ends that it reaches (other than start itself). From
+// a point of tangency (fromTangent), the first step goes in direction
+// startv, the direction the curve leaves in, and the march keeps going the
+// same way. Otherwise startv is the inward normal of the trim edge the start
+// is on, and the march goes the more inward way along the curve. The points
+// along the way, from start to the end reached, are added to pts, and the
+// end reached is tagged. Returns false if no end was reached within the
+// limit on the number of steps.
+//-----------------------------------------------------------------------------
+bool SSurface::MarchIntersection(SSurface *b, Vector start, Vector startv,
+                                 bool fromTangent, List<MarchPoint> *ends,
+                                 List<SCurvePt> *pts)
+{
+    Vector origin = start;
+    bool reached = false;
+
+    // Our chord tolerance is whatever the user specified
+    double maxtol = SS.ChordTolMm();
+    int maxsteps = max(300, SS.GetMaxSegments()*3);
+
+    // The curve starts at our starting point.
+    SCurvePt padd = {};
+    padd.vertex = true;
+    padd.p = start;
+    pts->Add(&padd);
+
+    Point2d pa, pb;
+    Vector np, npc = {}, prevDir = startv;
+    bool fwd = false;
+    // Better to start with a too-small step, so that we don't miss
+    // features of the curve entirely.
+    double tol, step = maxtol;
+    int a;
+    for(a = 0; a < maxsteps; a++) {
+        ClosestPointTo(start, &pa);
+        b->ClosestPointTo(start, &pb);
+
+        Vector na =    NormalAt(pa).WithMagnitude(1),
+               nb = b->NormalAt(pb).WithMagnitude(1);
+
+        Vector dp;
+        if(fromTangent) {
+            // From a point of tangency, take the first step in the
+            // direction the curve leaves in; after that, keep going
+            // the same way.
+            if(a == 0) {
+                dp = startv;
+            } else {
+                dp = nb.Cross(na).WithMagnitude(1.0);
+                if(dp.Dot(prevDir) < 0) dp = dp.ScaledBy(-1.0);
+            }
+        } else {
+            if(a == 0) {
+                dp = nb.Cross(na);
+                if(dp.Dot(startv) < 0) {
+                    // We want to march in the more inward direction.
+                    fwd = true;
+                } else {
+                    fwd = false;
+                }
+            }
+            dp = nb.Cross(na).WithMagnitude(1.0);
+            if(!fwd) dp = dp.ScaledBy(-1.0);
+        }
+        int i;
+        for(i = 0; i < 20; i++) {
+            np = start.Plus(dp.ScaledBy(step));
+            npc = ClosestPointOnThisAndSurface(b, np);
+            tol = (npc.Minus(np)).Magnitude();
+
+            if(tol > maxtol*0.8) {
+                step *= 0.90;
+            } else {
+                step /= 0.90;
+            }
+
+            if((tol < maxtol) && (tol > maxtol/2)) {
+                // If we meet the chord tolerance test, and we're
+                // not too fine, then we break out.
+                break;
+            }
+        }
+
+        // Stop at the first point we reach, other than the one we
+        // started from; from a point of tangency, the other curves
+        // that leave it start there too.
+        MarchPoint *hit = NULL;
+        for(MarchPoint &mp : *ends) {
+            if(mp.p.Equals(origin)) continue;
+            if((mp.p).OnLineSegment(start, npc, 2*SS.ChordTolMm())) {
+                // It must be ahead of us, not off to the side; near a
+                // point of tangency the end of another curve can be
+                // much closer than the chord tolerance.
+                Vector toP = (mp.p).Minus(start);
+                if(toP.Dot(dp) < 0.5*toP.Magnitude()) continue;
+                hit = &mp;
+                break;
+            }
+        }
+        if(hit) {
+            Vector end = hit->p;
+            if(hit->tangent) {
+                // Of the curves that leave this point, we came in
+                // along the one whose direction points back at us.
+                Vector back = start.Minus(end);
+                double best = VERY_NEGATIVE;
+                for(MarchPoint &mp : *ends) {
+                    if(!mp.tangent || !mp.p.Equals(end)) continue;
+                    if(mp.dir.Dot(back) > best) {
+                        best = mp.dir.Dot(back);
+                        hit = &mp;
+                    }
+                }
+            }
+            hit->tag = 1;
+            reached = true;
+            a = maxsteps;
+            npc = end;
+        }
+
+        prevDir = npc.Minus(start);
+        padd.p = npc;
+        padd.vertex = (a == maxsteps);
+        pts->Add(&padd);
+
+        start = npc;
+    }
+
+
+    return reached;
+}
 
 void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                                 SShell *into)
@@ -654,121 +775,11 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             Vector start  = mpl[0].p,
                    startv = mpl[0].dir;
             bool fromTangent = mpl[0].tangent;
-            Vector origin = start;
             mpl.ClearTags();
             mpl[0].tag = 1;
             mpl.RemoveTagged();
 
-            // Our chord tolerance is whatever the user specified
-            double maxtol = SS.ChordTolMm();
-            int maxsteps = max(300, SS.GetMaxSegments()*3);
-
-            // The curve starts at our starting point.
-            SCurvePt padd = {};
-            padd.vertex = true;
-            padd.p = start;
-            sc.pts.Add(&padd);
-
-            Point2d pa, pb;
-            Vector np, npc = {}, prevDir = startv;
-            bool fwd = false;
-            // Better to start with a too-small step, so that we don't miss
-            // features of the curve entirely.
-            double tol, step = maxtol;
-            for(a = 0; a < maxsteps; a++) {
-                ClosestPointTo(start, &pa);
-                b->ClosestPointTo(start, &pb);
-
-                Vector na =    NormalAt(pa).WithMagnitude(1),
-                       nb = b->NormalAt(pb).WithMagnitude(1);
-
-                Vector dp;
-                if(fromTangent) {
-                    // From a point of tangency, take the first step in the
-                    // direction the curve leaves in; after that, keep going
-                    // the same way.
-                    if(a == 0) {
-                        dp = startv;
-                    } else {
-                        dp = nb.Cross(na).WithMagnitude(1.0);
-                        if(dp.Dot(prevDir) < 0) dp = dp.ScaledBy(-1.0);
-                    }
-                } else {
-                    if(a == 0) {
-                        dp = nb.Cross(na);
-                        if(dp.Dot(startv) < 0) {
-                            // We want to march in the more inward direction.
-                            fwd = true;
-                        } else {
-                            fwd = false;
-                        }
-                    }
-                    dp = nb.Cross(na).WithMagnitude(1.0);
-                    if(!fwd) dp = dp.ScaledBy(-1.0);
-                }
-                int i;
-                for(i = 0; i < 20; i++) {
-                    np = start.Plus(dp.ScaledBy(step));
-                    npc = ClosestPointOnThisAndSurface(b, np);
-                    tol = (npc.Minus(np)).Magnitude();
-
-                    if(tol > maxtol*0.8) {
-                        step *= 0.90;
-                    } else {
-                        step /= 0.90;
-                    }
-
-                    if((tol < maxtol) && (tol > maxtol/2)) {
-                        // If we meet the chord tolerance test, and we're
-                        // not too fine, then we break out.
-                        break;
-                    }
-                }
-
-                // Stop at the first point we reach, other than the one we
-                // started from; from a point of tangency, the other curves
-                // that leave it start there too.
-                MarchPoint *hit = NULL;
-                for(MarchPoint &mp : mpl) {
-                    if(mp.p.Equals(origin)) continue;
-                    if((mp.p).OnLineSegment(start, npc, 2*SS.ChordTolMm())) {
-                        // It must be ahead of us, not off to the side; near a
-                        // point of tangency the end of another curve can be
-                        // much closer than the chord tolerance.
-                        Vector toP = (mp.p).Minus(start);
-                        if(toP.Dot(dp) < 0.5*toP.Magnitude()) continue;
-                        hit = &mp;
-                        break;
-                    }
-                }
-                if(hit) {
-                    Vector end = hit->p;
-                    if(hit->tangent) {
-                        // Of the curves that leave this point, we came in
-                        // along the one whose direction points back at us.
-                        Vector back = start.Minus(end);
-                        double best = VERY_NEGATIVE;
-                        for(MarchPoint &mp : mpl) {
-                            if(!mp.tangent || !mp.p.Equals(end)) continue;
-                            if(mp.dir.Dot(back) > best) {
-                                best = mp.dir.Dot(back);
-                                hit = &mp;
-                            }
-                        }
-                    }
-                    hit->tag = 1;
-                    a = maxsteps;
-                    npc = end;
-                }
-
-                prevDir = npc.Minus(start);
-                padd.p = npc;
-                padd.vertex = (a == maxsteps);
-                sc.pts.Add(&padd);
-
-                start = npc;
-            }
-
+            MarchIntersection(b, start, startv, fromTangent, &mpl, &sc.pts);
             mpl.RemoveTagged();
 
             // And now we split and insert the curve

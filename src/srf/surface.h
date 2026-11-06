@@ -261,6 +261,19 @@ public:
     bool        onEdge;         // pinter is on edge of trim poly
 };
 
+// A point where a march along the intersection of two surfaces may start or
+// end. Where the surfaces are tangent, there's one of these for each direction
+// in which a curve leaves the point, since more than one curve can end there.
+class MarchPoint {
+public:
+    int     tag;
+    Vector  p;
+    // The direction a curve leaves in, for a point of tangency; otherwise the
+    // inward normal to the trim edge on which we found the point.
+    Vector  dir;
+    bool    tangent;
+};
+
 // A rational polynomial surface in Bezier form.
 class SSurface {
 public:
@@ -315,6 +328,9 @@ public:
     void TrimFromEdgeList(SEdgeList *el, bool asUv);
     void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                           SShell *into);
+    bool MarchIntersection(SSurface *b, Vector start, Vector startv,
+                           bool fromTangent, List<MarchPoint> *ends,
+                           List<SCurvePt> *pts);
     void AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
                           SShell *agnstA, SShell *agnstB, SShell *into);
 
