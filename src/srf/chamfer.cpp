@@ -170,9 +170,12 @@
 //   curved (traced end curve, kept as points). Neighbors are shortened, or
 //   extended past a reflex corner.
 // - Case 2 tangent chains (e.g. the arcs of a circle).
-// - Case 3 miters of straight edges: exact conics between flat faces, convex
-//   and reflex corners, equal and unequal angles (ExactMiterEnd()); traced
-//   with curved faces at convex corners (TraceMiterEnd()).
+// - Case 3 miters: straight edges between flat faces are exact conics,
+//   convex and reflex corners, equal and unequal angles (ExactMiterEnd()).
+//   Otherwise (arc edges, curved faces) traced at convex corners
+//   (TraceMiterEnd()): each cross-section point is carried along its edge,
+//   a line or around the arc's axis, to the first crossing of the partner
+//   fillet or the partner's other face.
 // - Case 4 corners of three edges, any angles: flat triangle for chamfers,
 //   sphere patch of three bands for fillets (sphere_patch.cpp).
 // - Edges split by Booleans, worked on as pieces (GetPiece()), including
@@ -183,9 +186,14 @@
 // at a vertex; convex and concave edges meeting at a vertex.
 //
 // Next steps:
-// - An arc edge in a miter, or meeting its end face at an angle: its
-//   cross-section points move on circles, not lines, so tracing needs
-//   circle-surface hits (or exact shapes where they exist).
+// - An arc edge meeting its end face at an angle (case 1): trace along
+//   circles, as the miters now do.
+// - Meshing: a chamfer cone (arc edge) trimmed by traced miters at both
+//   ends gets some inverted sliver triangles along the miters (arc_test
+//   variant 3, chamfer: volume about 0.4 low, and open edges at chord
+//   tolerance 0.0002). The surface and trims check out (every trim point
+//   maps onto the surface; the (u, v) outline is sound), so it looks like
+//   the triangulator.
 // - Arcs crossing in different planes (IntersectCarriers()).
 // - Miters at reflex corners with curved faces (refused now).
 // - Cubic (Bezier) edges: an approximate in-plane offset; to be discussed.
@@ -496,9 +504,19 @@ double SShell::GetEdgeModifier(SCurve &sc)
     }
     // Variant 1 instead: only the top radius at y = 0, which ends on the
     // flat side x = 0 at one end and on the cylinder wall at the other.
+    // Variant 2: the top arc and the top radius at y = 0, meeting in a
+    // miter of an arc and a line at (10, 0, 10). Variant 3: the top arc and
+    // both top radii.
     const int arcVariant = 0;
     if(curved == 1 && arcVariant == 1) {
         return (IsTestLine(b, 2, 10) && IsTestLine(b, 1, 0)) ? r : 0.0;
+    }
+    if(curved == 1 && (arcVariant == 2 || arcVariant == 3)) {
+        bool topArc = b.deg == 2 && fabs(b.Start().z - 10) < LENGTH_EPS &&
+                                    fabs(b.Finish().z - 10) < LENGTH_EPS;
+        bool rad0 = IsTestLine(b, 2, 10) && IsTestLine(b, 1, 0),
+             rad1 = IsTestLine(b, 2, 10) && IsTestLine(b, 0, 0);
+        return (topArc || rad0 || (arcVariant == 3 && rad1)) ? r : 0.0;
     }
     if(curved == 1) {
         bool bottom = fabs(b.Start().z + 10) < LENGTH_EPS &&
@@ -946,16 +964,11 @@ static int NeighborMod(const std::vector<EdgeMod> &mods, const EdgeMod *em, int 
     return FindEdgeModAt(mods, em->face[s], em->nbTrim[s][k]);
 }
 
-// Case 1 at end k: neither neighbor is modified. f (in A) and g (in B) share
-// end face C, which must be a plane perpendicular to e. The offsets are cut
-// where they meet f and g, within those curves.
-// What a traced ray can stop on: a straight fillet (swept, solved exactly)
-// and/or a surface (by raycast). The ray is q + t*d; it starts at edge
-// parameter tFrom (inside the fillet, where nothing is in the way) and goes
-// in direction dir (+1 or -1, toward the vertex), and it stops at the first
-// thing it hits. which is 0 for the fillet, 1 for the surface.
+// What a traced ray can stop on (a surface, by raycast). The ray is q + t*d;
+// it starts at edge parameter tFrom (inside the fillet, where nothing is in
+// the way) and goes in direction dir (+1 or -1, toward the vertex), and it
+// stops at the first hit.
 struct RayTargets {
-    const EdgeMod *sweep;
     SSurface      *srf;
     double         tFrom;
     double         dir;
@@ -975,63 +988,10 @@ static void ConsiderHit(const RayTargets &rt, double ts, Vector p, int i,
     *found = true;
 }
 
-// Where the line q + t*d hits a straight fillet, which is its start section
-// swept along its edge. Looking along the edge, the fillet is just the
-// section curve, and the line is a 2D line; where they cross is a quadratic
-// (linear for a chamfer) in the section parameter. Only crossings within the
-// section (0 to 1) count.
-static void HitsOnSweep(const RayTargets &rt, Vector q, Vector d,
-                        bool *found, double *t, Vector *pp, int *which)
-{
-    const EdgeMod *sw = rt.sweep;
-    SBezier sec = StartSection(sw);
-    Vector ax = (sw->e.Finish().Minus(sw->e.Start())).WithMagnitude(1.0),
-           o  = sec.ctrl[0];
-    // Project along the edge onto the section plane.
-    Vector pq = q.Minus(ax.ScaledBy((q.Minus(o)).Dot(ax))),
-           pd = d.Minus(ax.ScaledBy(d.Dot(ax)));
-    if(pd.Magnitude() < LENGTH_EPS * d.Magnitude()) return;
-    Vector n = ax.Cross(pd);
-    double a[3], w[3];
-    for(int i = 0; i <= sec.deg; i++) {
-        Vector pc = sec.ctrl[i].Minus(ax.ScaledBy((sec.ctrl[i].Minus(o)).Dot(ax)));
-        a[i] = n.Dot(pc.Minus(pq));
-        w[i] = sec.weight[i];
-    }
-    double roots[2];
-    int nr = 0;
-    if(sec.deg == 1) {
-        if(fabs(a[0] - a[1]) > 1e-12) roots[nr++] = a[0] / (a[0] - a[1]);
-    } else {
-        double A = w[0]*a[0] - 2*w[1]*a[1] + w[2]*a[2],
-               B = 2*(w[1]*a[1] - w[0]*a[0]),
-               C = w[0]*a[0];
-        if(fabs(A) < 1e-12) {
-            if(fabs(B) > 1e-12) roots[nr++] = -C / B;
-        } else {
-            double disc = B*B - 4*A*C;
-            if(disc >= 0) {
-                double sq = sqrt(disc);
-                roots[nr++] = (-B + sq) / (2*A);
-                roots[nr++] = (-B - sq) / (2*A);
-            }
-        }
-    }
-    for(int i = 0; i < nr; i++) {
-        double sg = roots[i];
-        if(sg < -1e-9 || sg > 1 + 1e-9) continue;
-        Vector x  = sec.PointAt(sg),
-               px = x.Minus(ax.ScaledBy((x.Minus(o)).Dot(ax)));
-        double ts = (px.Minus(pq)).Dot(pd) / pd.MagSquared();
-        ConsiderHit(rt, ts, q.Plus(d.ScaledBy(ts)), 0, found, t, pp, which);
-    }
-}
-
 static bool FirstHit(const RayTargets &rt, Vector q, Vector d,
                      double *t, Vector *p, int *which)
 {
     bool found = false;
-    if(rt.sweep) HitsOnSweep(rt, q, d, &found, t, p, which);
     if(rt.srf) {
         List<SInter> l = {};
         rt.srf->AllPointsIntersecting(q, q.Plus(d), &l, /*asSegment=*/false,
@@ -1207,10 +1167,6 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
     int o = 1 - s;
     const EdgeMod &fm = mods[NeighborMod(mods, em, s, k)];
     const Piece &f = em->nb[s][k], &g = em->nb[o][k];
-    if(em->e.deg != 1 || fm.e.deg != 1) {
-        dbp("fillet: miter of curved edges not supported yet");
-        return false;
-    }
     if(fabs(fm.r - em->r) > LENGTH_EPS || fm.chamfer != em->chamfer) {
         dbp("fillet: edges meeting at a corner must have the same radius");
         return false;
@@ -1232,14 +1188,16 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
     em->modSide[k] = s;
     em->cutsG[k]   = true;
 
-    // With flat faces the miter is exact, see ExactMiterEnd(). Otherwise
+    // With straight edges and flat faces the miter is exact, see
+    // ExactMiterEnd(). Otherwise
     // TraceMiterEnd() finds it. Either runs once every edge is set up.
     em->traced[k] = true;
     SSurface *ss = sh->surface.FindById(em->face[s]);
     Vector pn;
     double pd;
     int fo = 1 - fs;
-    if(SurfaceIsPlane(ss, &pn, &pd) &&
+    if(em->e.deg == 1 && fm.e.deg == 1 &&
+       SurfaceIsPlane(ss, &pn, &pd) &&
        SurfaceIsPlane(sh->surface.FindById(em->face[o]), &pn, &pd) &&
        SurfaceIsPlane(sh->surface.FindById(fm.face[fo]), &pn, &pd))
     {
@@ -1253,8 +1211,8 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
     Vector in = InwardAt(ss, em->e, ss->trim[em->trim[s]].backwards,
                          (k == 0) ? 0.0 : 1.0);
     Vector fAway = fm.e.Start().Equals(em->vtx[k])
-                       ? fm.e.Finish().Minus(fm.e.Start())
-                       : fm.e.Start().Minus(fm.e.Finish());
+                       ? fm.e.TangentAt(0.0)
+                       : fm.e.TangentAt(1.0).ScaledBy(-1.0);
     if(fAway.Dot(in) < 0) {
         dbp("fillet: miter at a reflex corner with curved faces, not supported yet");
         return false;
@@ -1424,61 +1382,202 @@ static bool ExactMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) 
     return true;
 }
 
-// A traced miter at end k of mods[i] (straight edges). Each point of e's
-// cross-section slides along e toward the vertex until it first hits either
-// the partner's fillet (solved exactly, see HitsOnSweep()) or the partner's
-// other face,
-// beyond g. From the shared face S it hits the partner; it may switch to the
-// face at some point X, where the miter meets the partner's contact with
-// that face. Then this fillet ends in two pieces, the miter and a cut into
-// the face; otherwise in one, the miter. Reads the shell only.
+// Signed distance from p to surface srf, along the normal at the closest
+// point q. dist is |p - q|, and inside says whether q is within the
+// surface's (u, v) square.
+static double SignedDistTo(SSurface *srf, Vector p, double *dist, bool *inside) {
+    Point2d uv;
+    srf->ClosestPointTo(p, &uv, /*mustConverge=*/false);
+    Vector q = srf->PointAt(uv),
+           n = srf->NormalAt(uv).WithMagnitude(1.0);
+    *dist   = (p.Minus(q)).Magnitude();
+    *inside = uv.x > -1e-6 && uv.x < 1 + 1e-6 && uv.y > -1e-6 && uv.y < 1 + 1e-6;
+    return (p.Minus(q)).Dot(n);
+}
+
+// What a traced path can stop on: the partner fillet (only within its
+// cross-section) and/or a face.
+struct PathTargets {
+    SSurface *partner;
+    SSurface *face;
+};
+
+// March along path (a curve on the fillet, carried along the edge) from
+// parameter tFrom toward tTo, and find the first point where it crosses the
+// partner fillet or the face. which is 0 for the partner, 1 for the face.
+static bool FirstPathHit(const PathTargets &pt, const SBezier &path,
+                         double tFrom, double tTo, double *t, Vector *p, int *which)
+{
+    const int N = 200;
+    SSurface *srf[2] = { pt.partner, pt.face };
+    double prevG[2] = { 0, 0 }, dist;
+    bool inside;
+    for(int i = 0; i < 2; i++) {
+        if(srf[i]) prevG[i] = SignedDistTo(srf[i], path.PointAt(tFrom), &dist, &inside);
+    }
+    double prevT = tFrom;
+    for(int step = 1; step <= N; step++) {
+        double tt = tFrom + (tTo - tFrom) * step / N;
+        Vector pp = path.PointAt(tt);
+        bool found = false;
+        for(int i = 0; i < 2; i++) {
+            if(!srf[i]) continue;
+            double gi = SignedDistTo(srf[i], pp, &dist, &inside);
+            if((gi > 0) != (prevG[i] > 0)) {
+                double lo = prevT, hi = tt, glo = prevG[i];
+                for(int it = 0; it < 60; it++) {
+                    double m  = (lo + hi) / 2,
+                           gm = SignedDistTo(srf[i], path.PointAt(m), &dist, &inside);
+                    if((gm > 0) == (glo > 0)) {
+                        lo  = m;
+                        glo = gm;
+                    } else {
+                        hi = m;
+                    }
+                }
+                double tr = (lo + hi) / 2;
+                Vector pr = path.PointAt(tr);
+                SignedDistTo(srf[i], pr, &dist, &inside);
+                // A real crossing, not a jump of the closest point; on the
+                // partner, within its cross-section.
+                bool real = dist < LENGTH_EPS && (i == 1 || inside);
+                if(real && (!found || (tr - *t) * (tTo - tFrom) < 0)) {
+                    *t     = tr;
+                    *p     = pr;
+                    *which = i;
+                    found  = true;
+                }
+            }
+            prevG[i] = gi;
+        }
+        if(found) return true;
+        prevT = tt;
+    }
+    return false;
+}
+
+// The path of section point sec(sp) along the edge.
+static bool PathAt(const EdgeMod *em, const SBezier &sec, double sp, SBezier *path) {
+    return FollowEdge(em->e, sec.PointAt(sp), path);
+}
+
+// Add to pts the points of a traced end curve for section parameters in
+// (s0, s1], where p1 is already known. Splits until each chord is within the
+// chord tolerance. Tracks the range of edge parameters reached.
+static bool TracePathCurve(const PathTargets &pt, const EdgeMod *em, const SBezier &sec,
+                           double tFrom, double tTo,
+                           double s0, Vector p0, double s1, Vector p1, int depth,
+                           std::vector<Vector> *pts, double *tmin, double *tmax)
+{
+    double sm = (s0 + s1) / 2, tm;
+    Vector pm;
+    int which;
+    SBezier path;
+    if(!PathAt(em, sec, sm, &path) ||
+       !FirstPathHit(pt, path, tFrom, tTo, &tm, &pm, &which))
+    {
+        return false;
+    }
+    *tmin = min(*tmin, tm);
+    *tmax = max(*tmax, tm);
+    double dev = (pm.Minus(p0.Plus(p1).ScaledBy(0.5))).Magnitude();
+    if(depth < 2 || (depth < 10 && dev > SS.ChordTolMm())) {
+        return TracePathCurve(pt, em, sec, tFrom, tTo, s0, p0, sm, pm, depth + 1, pts, tmin, tmax) &&
+               TracePathCurve(pt, em, sec, tFrom, tTo, sm, pm, s1, p1, depth + 1, pts, tmin, tmax);
+    }
+    pts->push_back(p1);
+    return true;
+}
+
+static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB);
+
+// A traced miter at end k of mods[i]: straight or arc edges, any of the
+// supported faces. Each point of e's cross-section is carried along e toward
+// the vertex (along a line, or around the arc's axis) until it first
+// crosses either the partner's fillet (built extra long here; only within
+// its cross-section) or the partner's other face, beyond g. From the shared
+// face S it hits the partner; it may switch to the face at some point X,
+// where the miter meets the partner's contact with that face. Then this
+// fillet ends in two pieces, the miter and a cut into the face; otherwise in
+// one, the miter. Reads the shell only.
 static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) {
     EdgeMod *em = &mods[i];
     int s = em->modSide[k], o = 1 - s;
-    const EdgeMod &pm = mods[NeighborMod(mods, em, s, k)];
+    EdgeMod pm = mods[NeighborMod(mods, em, s, k)];
     const Piece &g = em->nb[o][k];
     em->pieceFace[k] = OtherFace(g, em->face[o]);
 
-    RayTargets rt = {};
-    rt.sweep  = &pm;
-    rt.srf    = sh->surface.FindById(em->pieceFace[k]);
-    rt.tFrom  = 0.5;
-    rt.dir    = (k == 0) ? -1.0 : 1.0;
+    // The partner's fillet, reaching well past its end at this vertex.
+    int pkv = pm.vtx[0].Equals(em->vtx[k]) ? 0 : 1;
+    double half;
+    if(pm.e.deg == 1) {
+        double len = (pm.e.Finish().Minus(pm.e.Start())).Magnitude();
+        half = max(0.25, 10 * pm.r / len);
+    } else {
+        half = 0.3;
+    }
+    pm.tSrf[0] = pkv - half;
+    pm.tSrf[1] = pkv + half;
+    Vector pmid = pm.e.PointAt(0.5);
+    if(!MakeFilletSurface(&pm, SurfaceNormalNear(sh->surface.FindById(pm.face[0]), pmid),
+                               SurfaceNormalNear(sh->surface.FindById(pm.face[1]), pmid)))
+    {
+        return false;
+    }
+
+    PathTargets pt = {};
+    pt.partner = &pm.fillet;
+    pt.face    = sh->surface.FindById(em->pieceFace[k]);
+    double ext   = (em->e.deg == 1) ? 0.5 : 0.3,
+           tFrom = 0.5,
+           tTo   = (k == 0) ? -ext : 1 + ext;
     SBezier sec = StartSection(em);
-    Vector d = em->e.Finish().Minus(em->e.Start());
 
     // Section parameters at S (where the miter starts) and at the other face.
     double sS = (s == 0) ? 0.0 : 1.0, sO = 1.0 - sS;
     double t;
     Vector p;
     int which;
+    SBezier path;
     double sInS = sS + (sO - sS) * 1e-3;
-    if(!FirstHit(rt, sec.PointAt(sInS), d, &t, &p, &which) || which != 0) {
+    if(!PathAt(em, sec, sInS, &path) ||
+       !FirstPathHit(pt, path, tFrom, tTo, &t, &p, &which) || which != 0)
+    {
         dbp("fillet: miter doesn't start on the partner fillet");
         return false;
     }
     Vector q;
-    bool faceAtO = FirstHit(rt, sec.PointAt(sO), d, &t, &q, &which) && which == 1;
+    bool faceAtO = PathAt(em, sec, sO, &path) &&
+                   FirstPathHit(pt, path, tFrom, tTo, &t, &q, &which) && which == 1;
     double sX = sO;
     if(faceAtO) {
-        // Bisect for where the ray stops hitting the partner.
+        // Bisect for where the path stops hitting the partner.
         double lo = sInS, hi = sO;
         for(int it = 0; it < 50; it++) {
             double m = (lo + hi) / 2;
-            if(!FirstHit(rt, sec.PointAt(m), d, &t, &p, &which)) return false;
+            if(!PathAt(em, sec, m, &path) ||
+               !FirstPathHit(pt, path, tFrom, tTo, &t, &p, &which))
+            {
+                return false;
+            }
             if(which == 0) lo = m; else hi = m;
         }
         sX = (lo + hi) / 2;
         if(fabs(sX - sO) < 1e-6) faceAtO = false;
     }
-    // With a face piece, X is where the rays switch from the partner to the
-    // face, on the partner's contact line with that face. Without one, it is
-    // where our own contact line with the other face hits the partner.
+    // With a face piece, X is where the paths switch from the partner to the
+    // face, on the partner's contact with that face. Without one, it is
+    // where our own contact with the other face hits the partner.
     int ps = (pm.face[0].v == em->face[s].v) ? 0 : 1, po = 1 - ps;
-    if(!FirstHit(rt, sec.PointAt(sX), d, &t, &p, &which)) return false;
+    if(!PathAt(em, sec, sX, &path) ||
+       !FirstPathHit(pt, path, tFrom, tTo, &t, &p, &which))
+    {
+        return false;
+    }
     if(faceAtO) {
-        em->xPt[k] = p.ClosestPointOnLine(pm.off[po].ctrl[0],
-                         pm.off[po].ctrl[1].Minus(pm.off[po].ctrl[0]));
+        double tc;
+        pm.off[po].ClosestPointTo(p, &tc, /*mustConverge=*/false);
+        em->xPt[k] = pm.off[po].PointAt(tc);
     } else {
         em->xPt[k] = p;
     }
@@ -1496,11 +1595,9 @@ static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) 
     }
 
     // Trace the pieces, in order from section parameter 0 to 1.
-    double tmin = VERY_POSITIVE, tmax = VERY_NEGATIVE;
     double t0 = ParamOn(em->off[0], em->cut[0][k]),
            t1 = ParamOn(em->off[1], em->cut[1][k]);
-    tmin = min(t0, t1);
-    tmax = max(t0, t1);
+    double tmin = min(t0, t1), tmax = max(t0, t1);
     em->nPiece[k] = faceAtO ? 2 : 1;
     for(int n = 0; n < em->nPiece[k]; n++) {
         double a, b;
@@ -1518,16 +1615,16 @@ static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) 
             // The piece on S's side is the miter.
             onFace = (s == 0) ? (n == 1) : (n == 0);
         }
-        RayTargets one = rt;
+        PathTargets one = pt;
         if(onFace) {
-            one.sweep = NULL;
+            one.partner = NULL;
         } else {
-            one.srf = NULL;
+            one.face = NULL;
         }
         em->pieceOnFace[k][n] = onFace;
         std::vector<Vector> pts;
         pts.push_back(pa);
-        if(!TraceEndCurve(one, sec, d, a, pa, b, pb, 0, &pts, &tmin, &tmax)) {
+        if(!TracePathCurve(one, em, sec, tFrom, tTo, a, pa, b, pb, 0, &pts, &tmin, &tmax)) {
             dbp("fillet: can't trace the miter");
             return false;
         }
