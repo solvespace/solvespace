@@ -164,8 +164,13 @@
 // Working, fillet and chamfer, checked for closed meshes and against exact
 // or semi-analytic volumes:
 // - Edges between planes at any angle, convex and concave; lines and arcs;
-//   plane-cylinder and cylinder-cylinder edges (the rolling ball's
-//   cross-section: SolveBallSection(), FollowEdge()).
+//   plane-cylinder and cylinder-cylinder edges; arcs on cones (revolved
+//   parts) (the rolling ball's cross-section: SolveBallSection(),
+//   FollowEdge()).
+// - Flat quadratic and cubic edges (TrueType text, Bezier profiles) on
+//   straight extrusions: rows offset in the edge's plane by the Tiller and
+//   Hanson construction (OffsetInPlane()), exact at the curve's ends.
+//   Near-tangent joins (rounded font coordinates) are snapped together.
 // - Case 1 end faces: perpendicular, flat at an angle (exact ellipse), and
 //   curved (traced end curve, kept as points). Neighbors are shortened, or
 //   extended past a reflex corner.
@@ -195,6 +200,12 @@
 //   maps onto the surface; the (u, v) outline is sound), so it looks like
 //   the triangulator.
 // - Arcs crossing in different planes (IntersectCarriers()).
+// - An edge between a flat face and the side wall of an extruded Bezier
+//   (bezier_test variant 2): in the cross-section the wall is the Bezier,
+//   neither a line nor a circle.
+// - Approximated fillet surfaces (pipes around curved spines): straight
+//   edges along cones on the end caps of revolved parts, edges on skewed
+//   extrusions of curves.
 // - Miters at reflex corners with curved faces (refused now).
 // - Cubic (Bezier) edges: an approximate in-plane offset; to be discussed.
 // - Naming edges, so a user can pick them, replacing the GetEdgeModifier()
@@ -361,7 +372,8 @@ double SShell::GetEdgeModifier(SCurve &sc)
     //   L_shape:            the line at x = 0, y = 0 (concave)
     //   test_cylinder:      the arcs of the top circle at z = 10
     //   arc_test:           every edge not in the bottom face (see below)
-    //   revolve_test, skew_test, straight_test, test_cube_boolean: see below
+    //   text_test, bezier_test, revolve_test, skew_test, straight_test,
+    //   test_cube_boolean: see below
     //   house_test:         lines between planes not at 90 degrees (eaves).
     //                       If a shell has any of these, only they are
     //                       picked; the rules above would also pick lines in
@@ -369,6 +381,37 @@ double SShell::GetEdgeModifier(SCurve &sc)
     const double r = 3.0;   // negative for chamfers
     if(!sc.isExact) return 0.0;
     const SBezier &b = sc.exact;
+    // text_test (the text "OD", about 20 high, extruded from z = 0 to 5) is
+    // the only model with plain (not rational) quadratics, as TrueType
+    // fonts give. Every edge of the top face, with a radius of 0.5, since
+    // the strokes are only about 3 wide.
+    for(SCurve &c : curve) {
+        if(!(c.isExact && c.exact.deg == 2)) continue;
+        if(fabs(c.exact.weight[1] - c.exact.weight[0]) > 1e-9) continue;
+        bool top = true;
+        for(int i = 0; i <= b.deg; i++) {
+            if(fabs(b.ctrl[i].z - 5) > LENGTH_EPS) top = false;
+        }
+        return top ? ((r < 0) ? -0.5 : 0.5) : 0.0;
+    }
+
+    // bezier_test (a profile with a cubic edge from (20, 0) to (-20, 0),
+    // extruded from z = -10 to 10) is the only model with a cubic. Variants:
+    //   0: the top cubic (its ends meet the side walls at an angle)
+    //   1: the whole top loop (miters of the cubic and lines)
+    //   2: also the vertical edges at the cubic's ends (corners)
+    const int bezierVariant = 0;
+    for(SCurve &c : curve) {
+        if(!(c.isExact && c.exact.deg == 3)) continue;
+        bool top    = fabs(b.Start().z - 10) < LENGTH_EPS && fabs(b.Finish().z - 10) < LENGTH_EPS,
+             cubic  = b.deg == 3 && top,
+             vert   = b.deg == 1 && IsTestLine(b, 1, 0) &&
+                      (IsTestLine(b, 0, 20) || IsTestLine(b, 0, -20));
+        if(bezierVariant == 0) return cubic ? r : 0.0;
+        if(bezierVariant == 1) return top ? r : 0.0;
+        return (top || vert) ? r : 0.0;
+    }
+
     // revolve_test (a profile revolved 80 degrees about the y axis) is the
     // only model with arcs of 80 degrees (weight 0.766). Every arc: they
     // lie between cones, cylinders and a plane, and end on the end caps.
@@ -680,7 +723,70 @@ static bool ArcCircle(const SBezier &b, Vector *center, double *rad, Vector *n) 
     *n = (b.ctrl[1].Minus(b.ctrl[0])).Cross(b.ctrl[2].Minus(b.ctrl[1]));
     if(n->Magnitude() < LENGTH_EPS) return false;
     *n = n->WithMagnitude(1.0);
+    // IsCircle() looks only at the control points. A circular arc's middle
+    // weight (relative to its equal end weights) is the cosine of the angle
+    // between the first leg and the chord.
+    if(fabs(b.weight[0] - b.weight[2]) > 1e-9) return false;
+    Vector leg   = (b.ctrl[1].Minus(b.ctrl[0])).WithMagnitude(1.0),
+           chord = (b.ctrl[2].Minus(b.ctrl[0])).WithMagnitude(1.0);
+    if(fabs(b.weight[1] / b.weight[0] - leg.Dot(chord)) > 1e-6) return false;
     return b.IsCircle(*n, center, rad);
+}
+
+// True if b is a polynomial (not rational) quadratic or cubic, flat, with
+// the unit normal of its plane in n.
+static bool FlatPolyCurve(const SBezier &b, Vector *n) {
+    if(b.deg < 2) return false;
+    for(int i = 1; i <= b.deg; i++) {
+        if(fabs(b.weight[i] - b.weight[0]) > 1e-9) return false;
+    }
+    Vector best = Vector::From(0, 0, 0);
+    for(int i = 1; i <= b.deg; i++) {
+        for(int j = i + 1; j <= b.deg; j++) {
+            Vector c = (b.ctrl[i].Minus(b.ctrl[0])).Cross(b.ctrl[j].Minus(b.ctrl[0]));
+            if(c.Magnitude() > best.Magnitude()) best = c;
+        }
+    }
+    if(best.Magnitude() < LENGTH_EPS) return false;
+    *n = best.WithMagnitude(1.0);
+    for(int i = 1; i <= b.deg; i++) {
+        if(fabs((b.ctrl[i].Minus(b.ctrl[0])).Dot(*n)) > LENGTH_EPS) return false;
+    }
+    return true;
+}
+
+// Flat polynomial curve b offset in its plane (normal n) by distance a,
+// toward n x tangent: each leg of the control polygon moves by a, square to
+// itself; the end points move with their legs, and the inner control points
+// go where neighboring moved legs cross (Tiller and Hanson). Exact at both
+// ends, in position and direction; approximate between. False if a leg is
+// degenerate or the offset folds back (a larger than the curvature allows).
+static bool OffsetInPlane(const SBezier &b, Vector n, double a, SBezier *out) {
+    *out = b;
+    if(fabs(a) < LENGTH_EPS) return true;
+    Vector ln[3], dir[3];
+    for(int i = 0; i < b.deg; i++) {
+        dir[i] = b.ctrl[i + 1].Minus(b.ctrl[i]);
+        if(dir[i].Magnitude() < LENGTH_EPS) return false;
+        ln[i] = n.Cross(dir[i]).WithMagnitude(1.0);
+    }
+    out->ctrl[0]     = b.ctrl[0].Plus(ln[0].ScaledBy(a));
+    out->ctrl[b.deg] = b.ctrl[b.deg].Plus(ln[b.deg - 1].ScaledBy(a));
+    for(int j = 1; j < b.deg; j++) {
+        Vector p0 = b.ctrl[j - 1].Plus(ln[j - 1].ScaledBy(a)),
+               p1 = b.ctrl[j].Plus(ln[j].ScaledBy(a));
+        if((dir[j - 1].Cross(dir[j])).Magnitude() < 1e-9 * dir[j].MagSquared()) {
+            out->ctrl[j] = p1;
+        } else {
+            out->ctrl[j] = Vector::AtIntersectionOfLines(p0, p0.Plus(dir[j - 1]),
+                                                         p1, p1.Plus(dir[j]),
+                                                         NULL, NULL, NULL);
+        }
+    }
+    for(int i = 0; i < b.deg; i++) {
+        if((out->ctrl[i + 1].Minus(out->ctrl[i])).Dot(dir[i]) <= 0) return false;
+    }
+    return true;
 }
 
 // Where the line through l0 and l1 meets a circle. A line crossing the
@@ -729,6 +835,50 @@ static bool CircleMeetsCircle(Vector c1, double r1, Vector c2, double r2,
     return true;
 }
 
+// Where the line through l0 and l1 meets flat curve c (plane normal n),
+// extended a little past its ends if needed. A line crossing the plane meets
+// it at one point; a line in the plane is solved along the curve, and of
+// several points the one nearest to near is taken.
+static bool LineMeetsFlatCurve(Vector l0, Vector l1, const SBezier &c, Vector n,
+                               Vector near, Vector *p)
+{
+    Vector dir = l1.Minus(l0);
+    double dn = dir.Dot(n);
+    if(fabs(dn) > LENGTH_EPS * dir.Magnitude()) {
+        double t = (c.Start().Minus(l0)).Dot(n) / dn;
+        *p = l0.Plus(dir.ScaledBy(t));
+        double tc;
+        c.ClosestPointTo(*p, &tc, /*mustConverge=*/false);
+        return (c.PointAt(tc).Minus(*p)).Magnitude() < LENGTH_EPS;
+    }
+    if(fabs((c.Start().Minus(l0)).Dot(n)) > LENGTH_EPS) return false;
+    // In the plane: where the curve crosses the line.
+    Vector ln = n.Cross(dir).WithMagnitude(1.0);
+    const int N = 200;
+    double t0 = -0.25, t1 = 1.25, prevT = t0;
+    double prevG = (c.PointAt(t0).Minus(l0)).Dot(ln);
+    bool found = false;
+    for(int i = 1; i <= N; i++) {
+        double t = t0 + (t1 - t0) * i / N,
+               g = (c.PointAt(t).Minus(l0)).Dot(ln);
+        if((g > 0) != (prevG > 0)) {
+            double lo = prevT, hi = t, glo = prevG;
+            for(int it = 0; it < 60; it++) {
+                double m = (lo + hi) / 2, gm = (c.PointAt(m).Minus(l0)).Dot(ln);
+                if((gm > 0) == (glo > 0)) { lo = m; glo = gm; } else { hi = m; }
+            }
+            Vector q = c.PointAt((lo + hi) / 2);
+            if(!found || (q.Minus(near)).Magnitude() < (p->Minus(near)).Magnitude()) {
+                *p = q;
+                found = true;
+            }
+        }
+        prevT = t;
+        prevG = g;
+    }
+    return found;
+}
+
 // Where two curves, extended if needed, meet; of several points, the one
 // nearest to near (the vertex). Lines, a line with an arc, and two arcs in
 // one plane.
@@ -758,6 +908,9 @@ static bool IntersectCarriers(const SBezier &a, const SBezier &b, Vector near,
                   *arc  = (a.deg == 1) ? &b : &a;
     Vector center, n;
     double rad;
+    if(line->deg == 1 && FlatPolyCurve(*arc, &n)) {
+        return LineMeetsFlatCurve(line->ctrl[0], line->ctrl[1], *arc, n, near, p);
+    }
     if(!ArcCircle(*arc, &center, &rad, &n)) return false;
     return LineMeetsCircle(line->ctrl[0], line->ctrl[1], center, rad, n, near, p);
 }
@@ -913,8 +1066,10 @@ static bool SolveBallSection(SShell *sh, EdgeMod *em, double t, BallSection *bs)
 }
 
 // The curve that point q, in the cross-section at e(0), traces when carried
-// along e the way every section point is: a translate of e for a line, or a
-// concentric arc about the same axis for an arc.
+// along e the way every section point is: a translate of e for a line, a
+// concentric arc about the same axis for an arc, or for a flat polynomial
+// curve the same offset in its plane (approximated, OffsetInPlane()) and
+// along its plane's normal.
 static bool FollowEdge(const SBezier &e, Vector q, SBezier *out) {
     if(e.deg == 1) {
         *out = e.TransformedBy(q.Minus(e.Start()), Quaternion::IDENTITY, 1.0);
@@ -922,6 +1077,13 @@ static bool FollowEdge(const SBezier &e, Vector q, SBezier *out) {
     }
     Vector center, n;
     double rad;
+    if(FlatPolyCurve(e, &n)) {
+        Vector in = n.Cross(e.TangentAt(0.0)).WithMagnitude(1.0),
+               dq = q.Minus(e.Start());
+        if(!OffsetInPlane(e, n, dq.Dot(in), out)) return false;
+        *out = out->TransformedBy(n.ScaledBy(dq.Dot(n)), Quaternion::IDENTITY, 1.0);
+        return true;
+    }
     if(!ArcCircle(e, &center, &rad, &n)) return false;
     double h = (q.Minus(center)).Dot(n);
     Vector radial = q.Minus(center).Minus(n.ScaledBy(h));
@@ -1063,9 +1225,8 @@ static SBezier StartSection(const EdgeMod *em) {
 //   C perpendicular to e:  a cross-section of the fillet
 //   C a plane at an angle: (straight edges) the cross-section projected
 //                          along the edge onto C, an ellipse arc
-//   C curved:              (straight edges) where the fillet and C meet,
-//                          marched from one cut to the other. Kept as
-//                          points, not exact.
+//   otherwise:             where the fillet and C meet, marched from one
+//                          cut to the other. Kept as points, not exact.
 static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
     const Piece &f = em->nb[0][k], &g = em->nb[1][k];
     hSSurface hc = OtherFace(f, em->face[0]);
@@ -1080,10 +1241,6 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
     Vector tan = em->e.TangentAt((k == 0) ? 0.0 : 1.0).WithMagnitude(1.0);
     if(!plane) nc = SurfaceNormalNear(sc, em->vtx[k]);
     bool perpendicular = plane && fabs(fabs(tan.Dot(nc)) - 1.0) < 1e-6;
-    if(!perpendicular && em->e.deg != 1) {
-        dbp("fillet: curved edge meeting its end face at an angle, not supported yet");
-        return false;
-    }
     if(fabs(tan.Dot(nc)) < 1e-3) {
         dbp("fillet: edge nearly parallel to its end face");
         return false;
@@ -1111,7 +1268,7 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
         }
         em->tSrf[k]   = t0;
         em->endMid[k] = em->mid.PointAt(t0);
-    } else if(plane) {
+    } else if(plane && em->e.deg == 1) {
         // A straight fillet is its cross-section swept along the edge, so
         // where it meets the end face is a cross-section projected along the
         // edge onto that plane: an ellipse arc with the same weight. Its
@@ -1745,7 +1902,7 @@ static bool FindPartnerEnd(std::vector<EdgeMod> &mods, int i, int k) {
         return false;
     }
     for(int pk = 0; pk < 2; pk++) {
-        const EdgeMod &pm = mods[j];
+        EdgeMod &pm = mods[j];
         if(pm.kind[pk] != em->kind[k] || !pm.vtx[pk].Equals(em->vtx[k])) {
             continue;
         }
@@ -1755,11 +1912,26 @@ static bool FindPartnerEnd(std::vector<EdgeMod> &mods, int i, int k) {
                    b = pm.cut[pm.modSide[pk]][pk];
             if(!a.Equals(b) || em->traced[k] != pm.traced[pk]) return false;
         } else {
-            bool same    = pm.cut[0][pk].Equals(em->cut[0][k]) &&
-                           pm.cut[1][pk].Equals(em->cut[1][k]),
-                 swapped = pm.cut[0][pk].Equals(em->cut[1][k]) &&
-                           pm.cut[1][pk].Equals(em->cut[0][k]);
+            // A join that is tangent only to within the tangency test (font
+            // outlines, with their rounded coordinates) leaves the two
+            // offsets ending a little apart; snap the partner's onto ours.
+            double tol = (em->kind[k] == TANGENT) ? 1e-3 : LENGTH_EPS;
+            bool same    = pm.cut[0][pk].Equals(em->cut[0][k], tol) &&
+                           pm.cut[1][pk].Equals(em->cut[1][k], tol),
+                 swapped = pm.cut[0][pk].Equals(em->cut[1][k], tol) &&
+                           pm.cut[1][pk].Equals(em->cut[0][k], tol);
             if(!same && !swapped) return false;
+            pm.cut[0][pk] = same ? em->cut[0][k] : em->cut[1][k];
+            pm.cut[1][pk] = same ? em->cut[1][k] : em->cut[0][k];
+            // Move the ends of the partner's rows too, so its surface goes
+            // through the shared points and end curve exactly.
+            int ei = (k == 0) ? 0 : em->e.deg, pi = (pk == 0) ? 0 : pm.e.deg;
+            for(int s2 = 0; s2 < 2; s2++) {
+                int es = same ? s2 : 1 - s2;
+                pm.off[s2].ctrl[pi] = em->off[es].ctrl[ei];
+            }
+            pm.mid.ctrl[pi]   = em->mid.ctrl[ei];
+            pm.spine.ctrl[pi] = em->spine.ctrl[ei];
         }
         em->partner[k]    = j;
         em->partnerEnd[k] = pk;
