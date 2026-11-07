@@ -374,6 +374,9 @@ public:
     bool LineEntirelyOutsideBbox(Vector a, Vector b, bool asSegment) const;
     void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const;
     bool CoincidentWithPlane(Vector n, double d) const;
+    // Degree (1,1) alone does not imply a plane or an affine UV map.
+    bool IsPlanar() const;
+    bool IsAffine() const;
     bool CoincidentWith(SSurface *ss, bool sameNormal) const;
     bool ContainsPlaneCurve(SCurve *sc) const;
     bool IsExtrusion(SBezier *of, Vector *along) const;

@@ -521,21 +521,22 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
     if(p.Equals(ctrl[0]   [degn])) { *u = 0; *v = 1; return; }
 
     // And planes are trivial, so don't waste time iterating over those.
-    if(degm == 1 && degn == 1) {
+    if(IsAffine()) {
         Vector orig =  ctrl[0][0],
                bu   = (ctrl[1][0]).Minus(orig),
                bv   = (ctrl[0][1]).Minus(orig);
-        if((ctrl[1][1]).Equals(orig.Plus(bu).Plus(bv))) {
+        // A bilinear patch need not be affine, even if it is planar. In
+        // particular, neither a small mixed term nor unequal rational weights
+        // may be ignored when inverting its parameterization.
+        Vector n = bu.Cross(bv);
+        Vector ty = n.Cross(bu).ScaledBy(1.0/bu.MagSquared());
+        Vector tx = bv.Cross(n).ScaledBy(1.0/bv.MagSquared());
 
-            Vector n = bu.Cross(bv);
-            Vector ty = n.Cross(bu).ScaledBy(1.0/bu.MagSquared());
-            Vector tx = bv.Cross(n).ScaledBy(1.0/bv.MagSquared());
-
-            Vector dp = p.Minus(orig);
-            *u = dp.Dot(bu) / tx.MagSquared();
-            *v = dp.Dot(bv) / ty.MagSquared();
-            return;
-        }
+        Vector dp = p.Minus(orig);
+        // The dual directions, not bu/bv, also work for skew axes.
+        *u = dp.Dot(tx) / tx.MagSquared();
+        *v = dp.Dot(ty) / ty.MagSquared();
+        return;
     }
 
     // Try whatever the previous guess was. This is likely to do something

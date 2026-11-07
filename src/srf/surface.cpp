@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+#include <limits>
+
 namespace SolveSpace {
 
 SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
@@ -126,6 +128,40 @@ SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
     ret.ctrl[1][1] = pt.Plus(v).Plus(u);
 
     return ret;
+}
+
+bool SSurface::IsAffine() const {
+    return degm == 1 && degn == 1 &&
+           weight[0][0] == weight[1][0] && weight[0][0] == weight[0][1] &&
+           weight[0][0] == weight[1][1] &&
+           ctrl[1][1].EqualsExactly(ctrl[0][0].Plus(ctrl[1][0].Minus(ctrl[0][0]))
+                                                   .Plus(ctrl[0][1].Minus(ctrl[0][0])));
+}
+
+bool SSurface::IsPlanar() const {
+    Vector origin = ctrl[0][0], far = origin, off = origin;
+    double farDistance = 0, offDistance = 0, largest = 1;
+    for(int i = 0; i <= degm; ++i) for(int j = 0; j <= degn; ++j) {
+        Vector p = ctrl[i][j];
+        largest = std::max({largest, fabs(p.x), fabs(p.y), fabs(p.z)});
+        double distance = p.Minus(origin).MagSquared();
+        if(distance > farDistance) { far = p; farDistance = distance; }
+    }
+    if(farDistance == 0) return false;
+    Vector along = far.Minus(origin);
+    for(int i = 0; i <= degm; ++i) for(int j = 0; j <= degn; ++j) {
+        double distance = ctrl[i][j].Minus(origin).Cross(along).MagSquared();
+        if(distance > offDistance) { off = ctrl[i][j]; offDistance = distance; }
+    }
+    if(offDistance == 0) return false;
+    Vector normal = along.Cross(off.Minus(origin)).WithMagnitude(1);
+    // Recognize at roundoff, not by flattening a slightly warped bilinear net
+    // at model tolerance. This changes no controls, weights or parameters.
+    double eps = std::min(LENGTH_EPS * 0.01, 64 * std::numeric_limits<double>::epsilon() * largest);
+    for(int i = 0; i <= degm; ++i) for(int j = 0; j <= degn; ++j) {
+        if(fabs(ctrl[i][j].Minus(origin).Dot(normal)) > eps) return false;
+    }
+    return true;
 }
 
 SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q, double scale,
@@ -494,15 +530,9 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     if(el.AssemblePolygon(&poly, NULL, /*keepDir=*/true)) {
         SplitContoursAtRepeatedVertices(&poly);
         int i, start = sm->l.n;
-        if(degm == 1 && degn == 1) {
-            // A surface with curvature along one direction only; so
-            // choose the triangulation with chords that lie as much
-            // as possible within the surface. And since the trim curves
-            // have been pwl'd to within the desired chord tol, that will
-            // produce a surface good to within roughly that tol.
-            //
-            // If this is just a plane (degree (1, 1)) then the triangulation
-            // code will notice that, and not bother checking chord tols.
+        if(IsPlanar()) {
+            // A plane may have rational or non-affine parameters, or degree
+            // greater than one. Its trim PWL suffices for triangulation.
             poly.UvTriangulateInto(sm, this);
         } else {
             // A surface with compound curvature. So we must overlay a

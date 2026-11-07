@@ -392,7 +392,8 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
     l.RemoveTagged();
 
     // Handle simple triangle fans all at once. This pass is optional.
-    if(srf->degm == 1 && srf->degn == 1) {
+    bool planar = srf->IsPlanar();
+    if(planar) {
         l.ClearTags();
         int j=0;
         int pstart = 0;
@@ -470,7 +471,7 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
                 (l[ear]).ear = IsEar(ear, scaledEps) ? EarType::EAR : EarType::NOT_EAR;
             }
             if(l[ear].ear == EarType::EAR) {
-                if(srf->degm == 1 && srf->degn == 1) {
+                if(planar) {
                     // This is a plane; any ear is a good ear.
                     bestEar = ear;
                     break;

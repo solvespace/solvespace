@@ -261,7 +261,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
     // cases that we can quickly solve in closed form, or general numerical.
     Vector center, axis, start, finish;
     double radius;
-    if(degm == 1 && degn == 1) {
+    if(IsPlanar()) {
         // Against a plane, easy.
         Vector n = NormalAt(0, 0).WithMagnitude(1);
         double d = n.Dot(PointAt(0, 0));
