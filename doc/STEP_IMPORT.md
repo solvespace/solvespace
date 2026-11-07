@@ -7,9 +7,14 @@ straight-edge and planar-face constraint references. Existing linked-group
 translation, quaternion rotation and uniform scale provide placement. No feature
 history is recovered and STEP data is not edited.
 
-The geometry envelope remains deliberately narrow: direct convex planar solids,
-including the exact linear/affine B-spline equivalents below. **No OCCT/Open
-Cascade library, wrapper or automatic mesh fallback is used.** Partial conversion
+The native converter accepts direct B-reps on planes and generic rational or
+non-rational B-spline curves/surfaces of degree 1–3, including exact multi-span
+decomposition, curved trims, concave faces and inner loops. Support is based on
+the native `SBezier`/`SSurface` representation, not cylinder or extrusion
+recognition. **No OCCT/Open Cascade library, wrapper or automatic mesh fallback
+is used.** Unsupported encodings or unsafe trimming produce entity-specific
+diagnostics; this is not blanket support for every STEP encoding of an otherwise
+representable shape. Partial conversion
 may omit **whole unsupported solids**, never individual faces or cavity shells.
 Omissions are reported; a new link with no usable solid is refused. Parse errors
 still reject the entire document. Assemblies/mapped occurrences inside STEP
@@ -288,7 +293,7 @@ installation-size deltas. The validated dependency-only Debug probe imports
 only `SHLWAPI.dll` and `KERNEL32.dll`; STEPcode and the MSVC runtime are linked
 statically.
 
-## Native planar conversion: first layer-2 slice
+## Native exact B-rep conversion
 
 `src/step/stepgeometry.h/.cpp` consumes only the private `Document` API and
 creates native geometry. STEPcode headers/types/macros do not enter this layer.
@@ -306,7 +311,7 @@ With `ENABLE_CLI=ON` and `ENABLE_TESTS=ON`, run:
 
 ```sh
 cmake --build build-step --target solvespace-step-geometry-probe test_step_geometry
-build-step/bin/solvespace-step-geometry-probe path/to/cube.step
+build-step/bin/solvespace-step-geometry-probe path/to/model.step
 ```
 
 The native probe is separate from the dependency-only `solvespace-step-probe`.
@@ -318,64 +323,100 @@ when some complete solids were omitted. This diagnostic triangulation is not
 mesh conversion or a fallback. Geometry tests can be filtered by the substring
 environment variable `SLVS_STEP_GEOMETRY_TEST_FILTER`.
 
-### Accepted envelope
+### Accepted envelope and exact construction
 
 - Direct `SOLID_MODEL` items in 3D `SHAPE_REPRESENTATION` records, with one
-  unambiguous representation per solid. The supported solid is a convex,
-  genus-zero `MANIFOLD_SOLID_BREP` with a direct `CLOSED_SHELL`.
-- `ADVANCED_FACE` on `PLANE`, with a single convex, simple `EDGE_LOOP` outer
-  bound; `ORIENTED_EDGE` uses of `EDGE_CURVE` on `LINE`; `VERTEX_POINT` vertices.
-- Exact linear/affine B-spline equivalents: non-rational
-  `B_SPLINE_CURVE_WITH_KNOTS` of degree 1 with two controls, and
-  `B_SPLINE_SURFACE_WITH_KNOTS` of degree (1,1) with a 2x2 affine control net.
-  Each parameter direction must have two strictly increasing finite knots and
-  endpoint multiplicities (2,2); closed/self-intersecting flags must be `.F.`.
-  Knot intervals are normalized, not assumed to be (0,1). Edge endpoints and
-  face boundaries must lie inside their original **finite** spline domains;
-  an infinite supporting line/plane is not substituted to permit extrapolation.
+  unambiguous representation per solid: `MANIFOLD_SOLID_BREP` with a direct,
+  connected, orientable `CLOSED_SHELL`. Concave solids and through-holes are
+  supported; separate cavity shells are not.
+- `ADVANCED_FACE` with one simple outer `EDGE_LOOP` and optional disjoint inner
+  loops; `ORIENTED_EDGE` uses of `EDGE_CURVE`; `VERTEX_POINT` vertices. The same
+  source edge cannot be used twice on one face in the current trimming path.
+- `LINE` and `PLANE`, plus rational/non-rational `B_SPLINE_CURVE_WITH_KNOTS`
+  and tensor-product `B_SPLINE_SURFACE_WITH_KNOTS`. Degrees 1–3 are supported in
+  each parameter direction, including nonuniform, non-clamped finite domains
+  and multiple spans. Standard `BEZIER_*`, `UNIFORM_*` and `QUASI_UNIFORM_*`
+  entities supply their defined implicit knots. A bare spline with no implemented
+  knot definition is not guessed. Complex rational entities retain their weights.
+- Explicit finite, strictly increasing distinct knots and valid multiplicities,
+  consistent control counts, rectangular surface nets and finite positive
+  rational weights. Closed flags are checked against finite boundary geometry;
+  unknown logical flags do not bypass geometry validation. A declared
+  self-intersection is rejected. Ambiguous parameter branches are not guessed.
 - Explicit context length units: SI metre with prefixes, or positive typed
-  conversion-based length measures resolving recursively to SI. All positions
-  and sizes are converted to mm. Cycles, ambiguous/missing length units and
-  inconsistent serialized dimensions are rejected. Plane/line conversion does
-  not need angle units; angle-unit resolution remains for curved geometry.
+  conversion-based length measures resolving recursively to SI. Positions and
+  sizes are converted to mm. Cycles, ambiguous/missing length units and
+  inconsistent serialized dimensions are rejected. The implemented analytic
+  line/plane and Cartesian spline paths do not need angle units.
 - Actual plane positions/directions and EXPRESS optional-axis defaults, plus
   `EDGE_CURVE.same_sense`, `ORIENTED_EDGE.orientation`, face-bound orientation
   and `ADVANCED_FACE.same_sense`. Coordinates may describe rotated/translated
   geometry directly; this is **not** assembly-transform support.
 
-The converter checks loop closure by source vertex IDs, planarity, line/vertex
-consistency, winding, face/solid convexity, two opposing face uses per edge,
-connectedness, Euler characteristic, single-cycle vertex links, distinct
-vertices, and positive non-degenerate enclosed volume. It does not weld,
-project/heal, relax tolerance from STEP uncertainty, repair winding, or infer
-units. Tests verify the native UV classification as well as triangulation,
-because native triangulation alone can normalize and hide reversed trims.
+`src/step/stepnurbs.h/.cpp` performs homogeneous knot insertion and exact
+decomposition into rational Bézier spans/patches. An unchanged clamped single
+span retains its serialized controls and weights directly, without normalizing
+their common weight scale. Edge restriction, orientation reversal and shared
+boundary splits are exact rational-polynomial operations, not fitting. Surface
+parameter axes are transposed when face orientation requires it. Source
+boundaries are split at native patch seams and shared by both incident patches.
+Internal knot seams are implementation details, not new source edges/vertices.
 
-All validation precedes constructing a solid's native shell. Native line
-curves use degree-1 exact `SBezier`s with shared endpoints, incident surfaces
-and two-point trim PWLs; planar patches use bounded degree-(1,1) `SSurface`s.
-Rectangular single-span spline patches retain their four source controls
-directly, with parameter axes transposed when face orientation requires it.
-Skew affine patches are exactly reparameterized onto orthogonal planar support
-because the current native planar closest-point fast path assumes orthogonal
-axes. Their source-domain checks still use the original control net; their
-trimmed geometric regions and boundaries do not change. No native geometry
-kernel code was changed for this accommodation. Tests check native UV-to-XYZ
-round trips at edge midpoints and face interiors, not just corner positions.
-Affine recognition allows only floating-point-roundoff-sized mixed terms,
-capped at 1e-8 mm, rather than fitting at `LENGTH_EPS`. Non-affine bilinear
-patches, including coplanar trapezoidal and slightly warped nets, remain
-unsupported. Higher degrees, multiple spans and rational splines are also
-unsupported; no controls, knots or weights are silently discarded.
-The native trim direction is explicitly reversed from the effective STEP outer
-bound. Successful solids own their geometry independently of `Document`;
-destruction also clears the native raw-list storage.
+Edge vertices and sampled face boundaries must lie on their original **finite**
+spline domains; an infinite supporting line/plane is not substituted to permit
+extrapolation. Projection is used to find/check parameters, never to move source
+geometry onto a surface. There is no welding, healing, flattening, degree fitting,
+polygonal replacement, uncertainty-based tolerance relaxation or inferred unit.
 
-The initial safety envelope is fixed `LENGTH_EPS` (1e-6 mm), coordinates within
-`+/-1e8 mm`, and at most 512 faces, 2048 edges and 1024 vertices per solid.
-Convexity/validation checks are intentionally bounded and not optimized for
-large models. This is a conservative geometry proof, not comprehensive STEP
-geometric validation or parser hardening.
+The native kernel now distinguishes geometric planarity (`IsPlanar`) from an
+affine, constant-weight UV map (`IsAffine`). Skew affine inversion uses dual
+directions; weighted or non-affine maps use the native numerical inverse.
+Raycasting, intersections, coincident-plane handling and triangulation no longer
+assume that degree (1,1) implies a plane. A warped bilinear patch remains curved;
+a rational or higher-degree plane remains planar. Recognition is limited to
+floating-point roundoff rather than flattening at model tolerance. Imported nets
+and weights stay intact. Boolean classification refines its probe point onto
+every exact trim, including a straight XYZ line with a nonlinear UV image.
+Ordinary Boolean output may reparameterize a genuinely
+planar result, as the native coincident-plane merger already does.
+
+### Validation, settings and bounded numerical envelope
+
+Validation covers source-ID loop closure, boundary/surface consistency, regularity
+samples, effective UV winding, self-crossing/touching loops, hole containment,
+two distinct opposing incident faces per source edge, connectedness, genus-aware
+Euler characteristic, single-cycle half-edge vertex links and distinct source
+vertices. Native construction is followed by directed trim assembly, complete
+trimmed-UV area coverage, oriented nondegenerate triangles, positive enclosed
+volume and bounded triangle-intersection checks. Tests also verify native UV BSP
+classification: triangulation alone can normalize and hide reversed trims.
+
+Native curve PWLs support trimming, display and Booleans; validation tessellation
+is only a check of the already-created native shell. **Neither is returned as
+replacement geometry.** Every accepted converter curve remains an exact
+`SBezier`. Rejected solids are destroyed completely, including partially
+allocated native lists, and accepted solids outlive their reader `Document`.
+These bounded numerical checks are not an exhaustive mathematical proof of
+embeddedness or comprehensive STEP geometric validation.
+
+`GeometryOptions` makes conversion independent of the current sketch's display
+or export tessellation. By default, trim/validation chord tolerance is 0.1% of
+the boundary-control bounding-box diagonal, bounded to `[32*LENGTH_EPS, 0.01]`
+mm, with `maxSegments=128`. Explicit diagnostic options can request finer
+measurement. The converter temporarily sets and restores the native global
+tessellation settings on success **and rejection**. Conversion remains
+synchronous, not a thread-safe native import service.
+
+The envelope uses fixed `LENGTH_EPS` (1e-6 mm), coordinates within `+/-1e8 mm`,
+and at most 512 source faces, 2048 edges and 1024 vertices per solid. There are
+limits of 4096 controls per curve/control net, 4096 patches and 32768 native
+curve spans per solid, 16384 trim-validation/PWL points per loop/curve, and
+32768 validation triangles. Subdivision/intersection work is bounded separately.
+Positive weights must be in `[1e-100,1e100]` with ratio at most `1e12`; knots
+that collapse under native parameter normalization are explicitly refused.
+Exceeding an envelope/work limit reports unsupported conversion, not silent
+simplification. Production tolerances, large-model optimization and parser
+resource hardening remain work.
 
 ### Omissions and source identities
 
@@ -384,9 +425,15 @@ solid and offending entity IDs. The result is `Okay`, `Partial`, or `Rejected`;
 with no usable solid it is always `Rejected`. An unreferenced solid is omitted
 with a diagnostic rather than guessed into an arbitrary unit context.
 
-Holes, **all of `BREP_WITH_VOIDS`**, curved geometry, non-convex shapes and other
-unsupported solids are rejected in their entirety. No faces or cavity shells
-are retained from a rejected solid. Representation relationships (even
+**All of `BREP_WITH_VOIDS`**, degrees above three, singular/unresolvable patches,
+ambiguous periodic/pcurve trims and unimplemented entity encodings are rejected
+in their entirety. Analytic `CIRCLE`, `ELLIPSE`, `CYLINDRICAL_SURFACE` and other
+analytic curved-surface entities, and curve/surface wrappers without a conversion
+path, remain unsupported even when an equivalent rational B-spline encoding
+could be represented. The cylinder acceptance fixture below already uses generic
+rational B-splines and needs no analytic whitelist or angle-unit workaround.
+No faces or cavity shells are retained from a rejected solid.
+Representation relationships (even
 untransformed ones), mappings, assembly usage, duplicate occurrences and
 unsupported non-solid shape items currently reject the entire conversion:
 until selection and transforms exist, loading components at their definition
@@ -395,11 +442,14 @@ reasons to change schemas or discard unknown STEP records in the reader.
 
 Each `NativeSolid` records its representation/context/solid/outer-shell IDs,
 length factor, source vertex and Cartesian-point IDs with mm positions,
-source edge and curve-geometry IDs mapped to `hSCurve` with endpoints, and
-source face and surface-geometry IDs mapped to `hSSurface` with outward plane
-normals. Native curve/surface handles
-use positive source instance IDs local to that solid, sorted independently of
-source record order. They are not globally unique across files/occurrences or
+source edge and curve-geometry IDs with endpoints and source-face adjacency,
+and source face/surface-geometry IDs with effective source boundary loops.
+An edge/face can map to multiple native curve/surface handles; planar faces
+additionally record an outward supporting-plane normal. The first retained
+span/patch uses its positive source instance ID; extra native spans/patches use
+deterministic local handles after the source range. They are independent of
+source record order, but are not source identities or new constraint references.
+They are not globally unique across files/occurrences or
 stable semantic names across arbitrary re-exports. The converter leaves
 `SSurface.face` / `SBezier.entity` unset. The application link layer, described
 below, allocates actual sketch entity identities and binds them to this geometry;
@@ -407,19 +457,24 @@ source IDs are never passed to picking as fake sketch handles.
 
 ### Native validation
 
-Before linking integration, on the same MSVC 2019 x86 toolchain with Ninja, the
-standalone native suite passed **213 cases, 24321 checks** across all three
-bindings in Debug and **71 cases, 8105 checks** with AP203 only in Release. Its
-independent synthetic fixtures cover a 10 mm cube (6 surfaces, 12 exact curves, 8 source vertices,
-1000 mm^3, 600 mm^2), a tetrahedron, SI metre and nested inch/foot conversions,
-rotations/translations, orientation flags, multiple and partially convertible
-solids, rejection boundaries, source-record reordering, and reader-independent
-geometry lifetime. Converted overlapping cubes also pass native shell Boolean
-union with the expected 1500 mm^3 volume. Repeated successful and failed native
-conversion, including linear/affine spline geometry, has no growth in
-outstanding normal CRT blocks/bytes after warm-up.
-The tests' triangle mesh is only a verification of native output; no mesh is
-returned by the converter.
+Independent synthetic fixtures cover cubes, tetrahedra, SI metre and nested
+inch/foot conversions, transformations/orientation flags, multiple/partially
+convertible solids, source-record reordering and reader-independent geometry
+lifetime. Generic additions cover rational compound-cubic patches that are not
+extrusions, rational quadratic/cubic non-extruded lofts, nonuniform multi-span
+nets, curved trims crossing a patch grid, nonplanar bilinear patches, concave
+faces/solids, through-holes and native Boolean unions. Independent Cox–de Boor
+evaluation checks curve and tensor-product knot decomposition, including
+non-clamped domains. Monotone collinear cubic references are recognized from
+the actual rational curve, not control-point order; controls/weights are retained.
+
+Malformed net/weight/knot cases, numerical/degree limits, conversion independence
+and restoration under empty/extreme scene settings, and repeated successful and
+failed conversion are tested. MSVC Debug checks outstanding normal CRT
+blocks/bytes after warm-up; this is not sanitizer coverage. New baseline kernel
+regressions exercise skew/rational/non-affine inversion, planarity, raycasting,
+straight-trim Boolean probe points and bilinear triangulation independently of
+STEP. Current measured results are recorded with the integration checks below.
 
 ### Independent OCCT cube exports
 
@@ -460,8 +515,8 @@ An optional source comparison is available:
 build/bin/solvespace-step-geometry-testsuite --cube-1mm build/bin/OpenCascade_1mmCube33_AP2142DIS.step --source-slvs build/bin/1mmCube.slvs
 ```
 
-Before application integration, the `external/` filter passed **1 case, 351
-checks**. That converter/source comparison regenerates
+The current `external/` filter passes **2 cases, 595 checks** with application
+linking enabled. The converter/source comparison regenerates
 the source sketch in memory through the existing headless test path and
 compares its native shell, not serialized cached geometry: 8 vertices,
 12 edge segments, 6 outward supporting planes, bounds, volume and area all
@@ -492,7 +547,7 @@ The original nominal 1 mm cube was also probed without modification:
 It remains **unsupported**, not classified as an invalid cube: it declares
 `AUTOMOTIVE_DESIGN_CC2 { 1 2 10303 214 -1 1 5 4 }`, not the selected AP214 E3
 schema. Its degree-1 `B_SPLINE_CURVE_WITH_KNOTS` edges and degree-(1,1)
-`B_SPLINE_SURFACE_WITH_KNOTS` faces now fit the converter's narrow envelope,
+`B_SPLINE_SURFACE_WITH_KNOTS` faces now fit the converter's native envelope,
 but are never reached for that unsupported schema declaration.
 That original file is rejected at schema selection, before native conversion;
 no successful native conversion of that original file is claimed. It has not
@@ -502,6 +557,42 @@ reader regression tests. None of the supplied fixtures was edited, relabelled
 or vendored. These are support limits, not claims that the cubes are invalid.
 Using an OCCT-produced exchange file as a fixture does not introduce an OCCT
 library dependency.
+
+### Independent rational 5 mm cylinder acceptance
+
+The unchanged user-provided `build/bin/OpenCascade_5mmCylinder.step`, from
+**Open CASCADE STEP processor 7.6**, declares
+`AUTOMOTIVE_DESIGN { 1 0 10303 214 1 1 1 1 }`. Its walls and edges are generic
+rational B-splines, not analytic `CYLINDRICAL_SURFACE`/`CIRCLE` entities.
+The same conversion path as the free-form fixtures produces **6 native
+surfaces, 12 exact curves and 8 source vertices**, retaining the serialized
+quadratic weight **0.7071067812** and the original control positions.
+SHA256: `9233fb1d2dbc7957c7677a909c824fd4b98ae3bfc825d672024708f3742f4151`.
+
+The supplied original `build/bin/5mmCylinder.slvs` is independently regenerated
+in memory for comparison, not read as cached exchange output or re-exported.
+Its SHA256 is `cb6e56e9c9381713a6669cbeb31e4559b6ef415d467579832873e3756ec5e3ae`.
+Neither file is saved, upgraded, modified or vendored by the tests.
+
+```sh
+build/bin/solvespace-step-geometry-testsuite --cylinder-5mm build/bin/OpenCascade_5mmCylinder.step --source-slvs build/bin/5mmCylinder.slvs
+```
+
+With `SLVS_STEP_GEOMETRY_TEST_FILTER=external/`, the converter/source and real
+linked-group cases pass **2 cases, 10917 checks**. Checks include source vertices,
+sampled edge/surface agreement and outward normals, native topology and UV
+classification, bounds `(-2.5,-2.5,0)`–`(2.5,2.5,5)` mm, and area/volume near
+`37.5*pi` mm² / `31.25*pi` mm³. Measurement uses explicit `1e-4` mm chord
+tolerance and 2048 segments; the mesh is only a measurement of native geometry.
+Native union with an overlapping translated copy is checked against the
+independent disk-union area/perimeter formulas.
+
+The actual link menu, placement, point/line/plane constraints, save/reopen and
+explicit reload are exercised. This file supplies **14 truthful constraint
+references: 8 points, 4 straight edges and 2 planes**. Curved wall surfaces remain
+native surfaces, not selectable constraint planes. Rational curved edges remain
+exact curves, not invented circle/radius references. Artificial seams, where
+another file needs native patch splitting, likewise add no source references.
 
 ## Linked groups and reference identities
 
@@ -521,6 +612,13 @@ the face handles for ordinary face picking; the triangles are display output,
 not a replacement for the shell. Face normals remain unit length under uniform
 scale (including orientation reversal for a negative scale).
 
+Only geometrically eligible source edges/faces receive line/plane references.
+An arbitrary rational curve is not a sketch cubic or circle, and a curved wall
+is not a plane. Such geometry remains in the native shell with zero reference
+handles instead of a chord, tangent plane or seam masquerading as source
+geometry. All native spans of one genuine straight source edge share its one
+line reference; all planar patches of one source face share its plane reference.
+
 Edge remapping only uses mappings already created by entity generation; native
 extrusions may retain their generating sketch curve IDs, which must not allocate
 unrelated entries in a step-and-repeat group's persistent remap table.
@@ -537,6 +635,10 @@ regeneration prunes dependent sketch elements. The 65535-entry group/remap limit
 including retired identities, is checked before generation; exceeding it refuses
 the link rather than asserting. This is **not** semantic naming across arbitrary
 STEP re-exports/renumbering; such exports may break references conservatively.
+Native split counts and artificial seams are excluded from provenance. A source
+face becoming curved, or a source straight edge becoming curved, retires the
+inapplicable plane/line reference without retargeting its constraints. Other
+unchanged source identities, including its real vertices, remain stable.
 
 The separate `linkedStepFiles` cache contains exact source bytes, owned native
 geometry, stored entities, provenance and diagnostics, including failed reads.
@@ -566,51 +668,69 @@ synthetic files, not edits of user-supplied STEP fixtures. They cover the real
 mixed-case `.stp` dispatch; transformed/scaled numerical and expression references;
 actual point/edge/face picking; point coincidence, point-on-line, point-on-face
 and face-parallel solving; constraining another linked instance's placement;
-complete multiple solids; a native Boolean union; whole-solid omission/rejection;
+complete multiple solids; native Boolean unions; whole-solid omission/rejection;
 cache reuse; missing/changed reference identity; bounded handles; nested `.slvs`
 invalidation; and save/reopen/undo/redo smoke coverage for constrained references.
+Curved tests additionally verify truthful zero handles, scaled/rotated native
+placement, unchanged identities across knot/patch splitting, and constraint
+retirement when planes or straight edges become curved.
 The two existing menu paths used by these tests tolerate missing headless menu
 items/windows; interactive behavior is unchanged. A Unicode group-name character
 classification bug exposed by these path tests is also fixed.
 
-Current integration validation on the same Windows/MSVC 2019 x86 toolchain:
+Current integration validation on Windows/MSVC 2019 x86 (Ninja, including
+Ninja Multi-Config):
 
 | Configuration | Result |
 | --- | --- |
-| All-binding Debug, import enabled | GUI, CLI, debugtool and probes build. Full native/link suite with unchanged cube33 STEP and original `.slvs`: **253 cases, 33241 checks, 0 failures**. |
-| All-binding Debug, linked-group target | `test_step_link`: **38 cases, 8325 checks, 0 failures**. |
-| All-binding Debug, reader plus optional NIST corpus | **100 cases, 5184 checks, 0 failures**, including **99 cases, 5165 checks** in the normal reader suite. |
-| All-binding Debug, existing SolveSpace suite | **302 cases, 1257 checks, 0 skipped**; original test fixtures are unchanged. |
+| All-binding Debug, import enabled | GUI, CLI, debugtool, probes and standalone solver build. Full native/link suite with the unchanged cylinder STEP and original source `.slvs`: **328 cases, 81311 checks, 0 failures**. |
+| All-binding Debug, linked-group subset | The `link/` subset used by `test_step_link`: **53 cases, 11007 checks, 0 failures**. |
+| All-binding Debug, reader plus optional NIST corpus | **100 cases, 5184 checks, 0 failures**, including **99 cases, 5165 checks** in the normal dependency-only reader suite. The optional pinned NIST corpus passed in an isolated run after compilation. |
+| All-binding Debug, existing SolveSpace suite plus kernel regressions | **308 cases, 1696 checks, 0 skipped**; original test fixtures are unchanged. Focused native raycast/inverse/trim regressions: **8 cases, 445 checks**. |
+| All-binding Debug, cube33 and original source sketch | External converter/source and real linked-group checks: **2 cases, 595 checks, 0 failures**. |
 | All-binding Debug, other working AP214 cube | External converter and real linked-group checks: **2 cases, 543 checks, 0 failures**. |
-| AP203-only Release, import enabled and proof option off | Native/link suite: **85 cases, 10888 checks, 0 failures**. Reader suite: **37 cases, 1735 checks, 0 failures**; disabled bindings are rejected. |
-| AP203-only Ninja Multi-Config, proof on and import off | Debug reader/native suites: **37 cases, 1737 checks** / **71 cases, 8107 checks**. Release: **37 cases, 1735 checks** / **71 cases, 8105 checks**. All pass; CLI/probes build in both configurations, and the CLI command graphs contain no reader/converter inputs. |
-| Application options off, import enabled | Reader probe and standalone solver build; no native-conversion targets. Solver command graph has no STEP inputs. |
+| AP203-only Release, import enabled and proof option off | CLI, native probe/tests, reader tests and standalone solver build. Native/link suite: **114 cases, 25902 checks, 0 failures**. Reader suite: **37 cases, 1735 checks, 0 failures**; disabled bindings are rejected. |
+| AP203-only Ninja Multi-Config, proof on and import off | Debug reader/native suites: **37 cases, 1737 checks** / **95 cases, 22229 checks**. Release: **37 cases, 1735 checks** / **95 cases, 22225 checks**. All pass; CLI, probes and standalone solver build in both configurations. Both CLI command graphs contain no reader/converter/vendor inputs. |
+| Application options off, import/proof enabled | Reader probe and standalone solver build; no native-conversion targets. Solver command graph has no STEP inputs. |
 | Both STEP options left off | Standalone solver builds with no STEP inputs. |
 
 The integrated application's standalone solver command graph is also free of
-STEP inputs. User fixture hashes listed above were rechecked unchanged, as was
-the pinned STEPcode checkout. These are headless/build checks, not completion of
-the broader interactive lifecycle trial.
+STEP inputs, in both Debug and AP203 Release. All eight checked solver/CLI
+command graphs are isolated from the reader, converter and STEPcode as required.
+GCC 14.1 C++11 syntax checks pass for the changed production sources, probe and
+tests with later-standard extensions treated as errors; this is **not** a full
+portable build or sanitizer run. User fixture hashes listed above were rechecked
+unchanged, as was the pinned STEPcode checkout. These are headless/build checks,
+not completion of the broader interactive lifecycle trial.
 
 The 60-second NIST test should be run after heavy compilation; a concurrent
-attempt exceeded that limit, while the subsequent isolated run passed.
+attempt previously exceeded that limit. The final isolated run passed using the
+existing hash-verified archive, with no download needed for this validation.
 
 For the interactive trial, run `build/bin/solvespace.exe`, create a new sketch,
 choose **New Group → Link / Assemble…**, select **STEP file (native solids)** and
-open `OpenCascade_1mmCube33_AP2142DIS.step` (or the other working AP214 cube).
+open `OpenCascade_5mmCylinder.step` (or `OpenCascade_1mmCube33_AP2142DIS.step`).
+For the cylinder, expect the 14 references above; no radius constraint on an
+invented circle or plane constraint on the curved wall is offered.
 Use the normal vertex/edge/face selection and constraint commands. Save a **new**
-containing `.slvs`, reopen it, reload linked files, and try undo/redo and missing
-source handling on copies. Headless smoke coverage does not replace this GUI
-lifecycle trial. Do not use the deferred AP203/AP242/header-incompatible variants
+containing `.slvs`, reopen it, and try undo/redo and missing/changed source handling
+on copies. Reload sources with **Edit → Regenerate All (Space)**, with the final
+group active for downstream updates; ordinary dragging does not watch files.
+Do not automatically resave the existing `build/bin/StepLinkTest.slvs` trial.
+The earlier cube GUI trial was user-confirmed; the refreshed curved support
+still needs an interactive trial. Headless smoke coverage does not replace it.
+Do not use the deferred AP203/AP242/header-incompatible variants
 as successful-conversion expectations; their explicit limitations remain above.
 
 ## Remaining native conversion and production work
 
 Keep geometry conversion separate from reader and linking work. Remaining gates
-include broader independent real-exporter geometry coverage, portable builds
-and parser hardening; representation/assembly selection and transforms; angle
-units and broader length-unit layouts; concave/holed faces and valid cavity conversion;
-exact analytic and rational B-spline curve/surface conversion and trimming;
+include more independent real-exporter coverage, portable full builds and
+parser/sanitizer hardening; representation/assembly selection and transforms;
+analytic curve/surface and wrapper conversion, angle units and broader unit
+layouts; explicit periodic/pcurve branch handling and valid cavity conversion;
 production tolerances and geometric validation; broader interactive lifecycle
-validation and performance/resource-limit work.
+validation and performance/resource-limit work. Degrees above native cubic must
+remain explicit refusals unless an exact native decomposition is available;
+fitting or a silent mesh fallback is not an alternative.
 The export/schema mismatch recorded above remains deferred and untouched.

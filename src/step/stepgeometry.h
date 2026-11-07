@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "srf/surface.h"
@@ -34,18 +35,26 @@ struct VertexReference {
 
 struct EdgeReference {
     int edge;
-    int geometry; // LINE or supported B_SPLINE_CURVE_WITH_KNOTS
-    hSCurve curve;
+    int geometry;
+    hSCurve curve; // first native span (source ID for an unchanged single span)
     int startVertex;
     int finishVertex;
+    bool linear; // a truthful LINE_SEGMENT constraint reference is possible
+    int adjacentFaces[2]; // SOURCE faces, not artificial patch boundaries
+    std::vector<hSCurve> curves; // exact decomposition/splits of this source edge
 };
 
 struct FaceReference {
     int face;
-    int geometry; // PLANE or supported B_SPLINE_SURFACE_WITH_KNOTS
-    hSSurface surface;
+    int geometry;
+    hSSurface surface; // first retained native patch
     Vector origin;
-    Vector normal; // unit outward normal, including face.same_sense
+    Vector normal; // outward supporting-plane normal, only meaningful if planar
+    bool planar; // curved walls must not masquerade as constraint planes
+    std::vector<hSSurface> surfaces;
+    // Effective SOURCE boundary directions, independent of native span/patch
+    // splitting. Each loop is sorted by source edge ID for provenance.
+    std::vector<std::vector<std::pair<int, bool>>> boundaries;
 };
 
 class NativeSolid {
@@ -75,14 +84,24 @@ struct GeometryResult {
     std::vector<GeometryDiagnostic> diagnostics;
 };
 
-// First vertical slice only: direct 3D representations of convex polyhedra,
-// with explicit length units, planar faces and linear edges. Also accepts the
-// non-rational, clamped single-span B-spline equivalents (affine 2x2 surfaces,
-// two-control-point curves). One EDGE_LOOP per face; no healing, meshing
-// fallback, cavity stripping or assembly flattening.
+struct GeometryOptions {
+    // Native trim/validation PWLs only; never a curve/surface fitting tolerance.
+    // Zero chooses 0.1% of this solid's size, bounded to [32*LENGTH_EPS, 0.01] mm.
+    // In particular, an empty/current sketch's display tolerance is irrelevant.
+    double chordTolerance = 0;
+    int maxSegments = 128;
+};
+
+// Direct, explicitly unit-qualified 3D B-reps. Curves and tensor-product
+// surfaces are converted to exact rational Bezier spans of native degree <= 3;
+// source boundaries are retained, not fitted or replaced by polygons. Native
+// trim PWLs and validation tessellation are not geometry-conversion fallbacks.
+// Unsupported geometry/trimming omits the entire solid, with an entity-specific
+// diagnostic. No healing, cavity stripping or assembly flattening.
 // Uses SolveSpace's fixed LENGTH_EPS in mm, not a relaxed STEP uncertainty.
 // Called synchronously by the GUI. Does not retain Document or vendor objects.
-GeometryResult ConvertGeometry(const Document &document);
+GeometryResult ConvertGeometry(const Document &document,
+                               const GeometryOptions &options = GeometryOptions());
 
 } // namespace Step
 } // namespace SolveSpace

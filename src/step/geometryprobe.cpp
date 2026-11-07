@@ -11,7 +11,7 @@ using namespace SolveSpace;
 int main(int argc, char **argv) {
     auto args = Platform::InitCli(argc, argv);
     if(args.size() < 2) {
-        std::cout << "Experimental native STEP planar-solid probe (no file linking).\n"
+        std::cout << "Experimental native STEP B-rep probe (no file linking).\n"
                      "Usage: solvespace-step-geometry-probe file.step [file2.stp ...]\n"
                      "Exit codes: 0 = complete, 1 = rejected, 2 = some whole solids omitted.\n";
         return 0;
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
                       << ": " << solid->shell.surface.n << " surfaces, " << solid->shell.curve.n
                       << " exact curves, " << solid->vertices.size() << " source vertices\n"
                       << "    length factor: " << solid->lengthToMm << " mm per source unit\n"
-                      << "    bounds size: " << size.x << ", " << size.y << ", " << size.z << " mm\n";
+                      << "    source-vertex bounds size: " << size.x << ", " << size.y << ", " << size.z << " mm\n";
             // Triangulation is a diagnostic on the already-created SShell,
             // never a conversion path or a fallback for unsupported geometry.
             SMesh mesh = {};
