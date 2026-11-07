@@ -75,7 +75,7 @@ set(ENABLE_OPENMP     OFF CACHE BOOL
 set(ENABLE_LTO        OFF CACHE BOOL
     "Whether interprocedural (global) optimizations are enabled")
 option(ENABLE_STEP_IMPORT_PROOF
-    "Build the experimental, dependency-only STEP reader and probe (no geometry import)" OFF)
+    "Build experimental STEP reader and native conversion proofs (no file linking)" OFF)
 option(FORCE_VENDORED_Eigen3
     "Whether we should use our bundled Eigen even in the presence of a system copy"
     OFF)
