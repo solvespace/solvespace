@@ -1849,7 +1849,6 @@ static hSCurve AddPwlCurve(SShell *sh, const std::vector<Vector> &pts,
     }
     sc.surfA  = sa;
     sc.surfB  = sb;
-    sc.source = SCurve::Source::INTERSECTION;
     return sh->curve.AddAndAssignId(&sc);
 }
 
@@ -1860,7 +1859,6 @@ static hSCurve AddCurve(SShell *sh, const SBezier &b, hSSurface sa, hSSurface sb
     b.MakePwlInto(&sc.pts);
     sc.surfA  = sa;
     sc.surfB  = sb;
-    sc.source = SCurve::Source::INTERSECTION;
     return sh->curve.AddAndAssignId(&sc);
 }
 
