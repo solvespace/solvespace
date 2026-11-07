@@ -261,7 +261,6 @@ struct Piece {
 // Index s is the side: [0] is face A (the curve's surfA), [1] is face B.
 // Index k is the end:  [0] at e.Start(), [1] at e.Finish().
 struct EdgeMod {
-    hSCurve   orig;           // the curve the edge is (a piece of)
     hSCurve   origCurve[2];   // [s] the curve its trim on face[s] uses
     double    r;
     bool      chamfer;
@@ -289,12 +288,11 @@ struct EdgeMod {
                               //     point, on the end face
     std::vector<Vector> endPts[2]; // [k] END_FACE on a curved face: the end
                               //     curve as points (not exact)
-    // MITER between edges whose faces meet at different angles, or curved
-    // faces: traced, not the exact ellipse. The end is one or two pieces, in
-    // order from cut[0][k] to cut[1][k]: the miter shared with the partner
-    // fillet, and maybe a piece where this fillet cuts into the partner's
-    // other face. Points only, not exact.
-    bool      traced[2];      // [k]
+    // MITER: the end is one or two pieces, in order from cut[0][k] to
+    // cut[1][k]: the miter shared with the partner fillet, and maybe a piece
+    // where this fillet cuts into the partner's other face. Exact conics
+    // (pieceCurve) for straight edges between flat faces, otherwise traced
+    // as points (piecePts).
     int       nPiece[2];      // [k]
     std::vector<Vector> piecePts[2][2]; // [k][piece]
     bool      pieceOnFace[2][2]; // [k][piece] on the face, not the partner
@@ -1428,9 +1426,8 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
     em->cutsG[k]   = true;
 
     // With straight edges and flat faces the miter is exact, see
-    // ExactMiterEnd(). Otherwise
-    // TraceMiterEnd() finds it. Either runs once every edge is set up.
-    em->traced[k] = true;
+    // ExactMiterEnd(). Otherwise TraceMiterEnd() finds it. Either runs once
+    // every edge is set up.
     SSurface *ss = sh->surface.FindById(em->face[s]);
     Vector pn;
     double pd;
@@ -1697,11 +1694,6 @@ static bool FirstPathHit(const PathTargets &pt, const SBezier &path,
     return false;
 }
 
-// The path of section point sec(sp) along the edge.
-static bool PathAt(const EdgeMod *em, const SBezier &sec, double sp, SBezier *path) {
-    return FollowEdge(em->e, sec.PointAt(sp), path);
-}
-
 // A traced miter at end k of mods[i]: straight or arc edges, any of the
 // supported faces. Carried along e toward the vertex (along a line, or
 // around the arc's axis), each point of e's cross-section first crosses
@@ -1778,7 +1770,7 @@ static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) 
     int which;
     SBezier path;
     double sInS = sS + (sO - sS) * 1e-3;
-    if(!PathAt(em, sec, sInS, &path) ||
+    if(!FollowEdge(em->e, sec.PointAt(sInS), &path) ||
        !FirstPathHit(pt, path, tFrom, tTo, &t, &p, &which) || which != 0)
     {
         dbp("fillet: miter doesn't start on the partner fillet");
@@ -1786,7 +1778,7 @@ static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) 
     }
     Vector nearS = p;
     Vector q;
-    bool faceAtO = PathAt(em, sec, sO, &path) &&
+    bool faceAtO = FollowEdge(em->e, sec.PointAt(sO), &path) &&
                    FirstPathHit(pt, path, tFrom, tTo, &t, &q, &which) && which == 1;
     double sX = sO;
     if(faceAtO) {
@@ -1794,7 +1786,7 @@ static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) 
         double lo = sInS, hi = sO;
         for(int it = 0; it < 50; it++) {
             double m = (lo + hi) / 2;
-            if(!PathAt(em, sec, m, &path) ||
+            if(!FollowEdge(em->e, sec.PointAt(m), &path) ||
                !FirstPathHit(pt, path, tFrom, tTo, &t, &p, &which))
             {
                 return false;
@@ -1808,7 +1800,7 @@ static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) 
     // face, on the partner's contact with that face. Without one, it is
     // where our own contact with the other face hits the partner.
     int ps = (pm.face[0].v == em->face[s].v) ? 0 : 1, po = 1 - ps;
-    if(!PathAt(em, sec, sX, &path) ||
+    if(!FollowEdge(em->e, sec.PointAt(sX), &path) ||
        !FirstPathHit(pt, path, tFrom, tTo, &t, &p, &which))
     {
         return false;
@@ -2010,11 +2002,11 @@ static bool FindPartnerEnd(std::vector<EdgeMod> &mods, int i, int k) {
         if(pm.kind[pk] != em->kind[k] || !pm.vtx[pk].Equals(em->vtx[k])) {
             continue;
         }
-        if(em->traced[k] || pm.traced[pk]) {
+        if(em->kind[k] == MITER) {
             // Only the corner in the shared face is known yet.
             Vector a = em->cut[em->modSide[k]][k],
                    b = pm.cut[pm.modSide[pk]][pk];
-            if(!a.Equals(b) || em->traced[k] != pm.traced[pk]) return false;
+            if(!a.Equals(b)) return false;
         } else {
             // A join that is tangent only to within the tangency test (font
             // outlines, with their rounded coordinates) leaves the two
@@ -2078,29 +2070,22 @@ static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB) {
         s.ctrl[i][s.degn]   = b.ctrl[i];
         s.weight[i][s.degn] = b.weight[i];
     }
-    if(s.NormalAt(0.5, 0.5).Dot(nA.Plus(nB)) < 0) {
-        for(int i = 0; i <= s.degm; i++) {
-            swap(s.ctrl[i][0], s.ctrl[i][s.degn]);
-            swap(s.weight[i][0], s.weight[i][s.degn]);
-        }
-    }
+    if(s.NormalAt(0.5, 0.5).Dot(nA.Plus(nB)) < 0) s.Reverse();
     s.color = RGBi(100, 100, 100);
     em->fillet = s;
     return true;
 }
 
 // End curve at end k, from cut[0][k] to cut[1][k]: a line for a chamfer, a
-// circular arc of the ball (or, at a miter, its projection, an ellipse) for a
-// fillet. The middle control point is on the middle row; at a miter it is the
-// vertex, where the middle row (the edge itself, between flat faces) ends.
+// circular arc of the ball (or, on an end face at an angle, its projection,
+// an ellipse) for a fillet. The middle control point is on the middle row.
+// Not used at miters, whose ends are pieces.
 static void MakeEndCurve(EdgeMod *em, int k) {
     if(em->chamfer) {
         em->endC[k] = SBezier::From(em->cut[0][k], em->cut[1][k]);
     } else {
         Vector mid;
-        if(em->kind[k] == MITER) {
-            mid = em->vtx[k];
-        } else if(em->kind[k] == END_FACE) {
+        if(em->kind[k] == END_FACE) {
             mid = em->endMid[k];
         } else {
             mid = em->mid.PointAt(em->tSrf[k]);
@@ -2321,7 +2306,6 @@ void SShell::ModifyEdges()
                 return;
             }
             EdgeMod em = {};
-            em.orig    = hc;
             em.r       = fabs(m);
             em.chamfer = (m < 0);
             em.e       = pc.b;
@@ -2356,7 +2340,7 @@ void SShell::ModifyEdges()
     }
     for(size_t i = 0; i < mods.size(); i++) {
         for(int k = 0; k < 2; k++) {
-            if(mods[i].kind[k] != MITER || !mods[i].traced[k]) continue;
+            if(mods[i].kind[k] != MITER) continue;
             bool ok = mods[i].pieceExact[k] ? ExactMiterEnd(this, mods, (int)i, k)
                                             : TraceMiterEnd(this, mods, (int)i, k);
             if(!ok) {
@@ -2367,7 +2351,7 @@ void SShell::ModifyEdges()
     }
     for(size_t i = 0; i < mods.size(); i++) {
         for(int k = 0; k < 2; k++) {
-            if(mods[i].kind[k] == MITER && mods[i].traced[k] &&
+            if(mods[i].kind[k] == MITER &&
                mods[i].partner[k] > (int)i && !PairTracedMiter(mods, (int)i, k)) return;
         }
     }
@@ -2388,7 +2372,7 @@ void SShell::ModifyEdges()
                 dbp("fillet: neighbor cut twice at one end");
                 return;
             }
-            if(!em.traced[k]) MakeEndCurve(&em, k);
+            if(em.kind[k] != MITER) MakeEndCurve(&em, k);
         }
         Vector mid = em.e.PointAt(0.5);
         Vector n0 = SurfaceNormalNear(surface.FindById(em.face[0]), mid),
@@ -2452,7 +2436,7 @@ void SShell::ModifyEdges()
     for(size_t i = 0; i < mods.size(); i++) {
         EdgeMod &em = mods[i];
         for(int k = 0; k < 2; k++) {
-            if(em.traced[k]) {
+            if(em.kind[k] == MITER) {
                 // The fillet with the face piece (or the first, if neither
                 // has one) makes the shared miter, and its face piece.
                 EdgeMod &pm = mods[em.partner[k]];
@@ -2505,7 +2489,7 @@ void SShell::ModifyEdges()
         // makes its own.
         for(int k = 0; k < 2; k++) {
             bool from0 = t[0].start.Equals(em.cut[0][k]);
-            if(em.traced[k]) {
+            if(em.kind[k] == MITER) {
                 // The pieces run from cut[0] to cut[1]; walk them in the
                 // loop's direction.
                 Vector ends[3];

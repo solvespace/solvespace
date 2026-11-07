@@ -104,12 +104,7 @@ bool SphereTrianglePatch(Vector c, const Vector p[3], bool outward,
         SSurface *s = &band[i];
         Vector n = s->NormalAt(0.5, 0.5),
                q = s->PointAt(0.5, 0.5);
-        if((n.Dot(q.Minus(c)) > 0) != outward) {
-            for(int j = 0; j <= s->degm; j++) {
-                swap(s->ctrl[j][0], s->ctrl[j][s->degn]);
-                swap(s->weight[j][0], s->weight[j][s->degn]);
-            }
-        }
+        if((n.Dot(q.Minus(c)) > 0) != outward) s->Reverse();
         s->color = RGBi(100, 100, 100);
     }
     return true;
