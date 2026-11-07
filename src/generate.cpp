@@ -567,6 +567,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree) {
 
     Platform::FreeAllTemporary();
     allConsistent = true;
+    ReportStepLinkDiagnostics();
     SS.GW.persistentDirty = true;
     SS.centerOfMass.dirty = true;
 

@@ -8,6 +8,7 @@
 #include <cmath>
 #include <iostream>
 #include <locale>
+#include <mutex>
 #include <set>
 #include <sstream>
 #include <stdexcept>
@@ -20,6 +21,7 @@
 #include "clstepcore/ExpDict.h"
 #include "cleditor/STEPfile.h"
 #include "cleditor/SdaiHeaderSchema.h"
+#include "slvs_stepcode_diagnostics.h"
 
 #ifdef SLVS_STEP_AP203
 extern void SlvsStepAP203SchemaInit(Registry &);
@@ -205,27 +207,46 @@ private:
     }
 };
 
-// Temporary containment for upstream's direct cout/cerr output. This is only
-// appropriate for this explicitly single-threaded, standalone proof, not a GUI
-// logging solution. Restore the caller's numeric locale on every exit path.
+// All calls into the pinned runtime, including queries and destruction, are
+// serialized. In particular, its header descriptors and token helpers aren't
+// thread-safe. No vendor objects are retained by the linked geometry cache.
+std::recursive_mutex &RuntimeMutex() {
+    static std::recursive_mutex mutex;
+    return mutex;
+}
+using RuntimeLock = std::lock_guard<std::recursive_mutex>;
+
+class LogBuffer : public std::streambuf {
+public:
+    std::string text;
+private:
+    int_type overflow(int_type c) override {
+        if(!traits_type::eq_int_type(c, traits_type::eof()) && text.size() < 65536) {
+            text.push_back(traits_type::to_char_type(c));
+        }
+        return traits_type::not_eof(c);
+    }
+};
+
+// The build-tree runtime overlay uses only this thread's diagnostic sink.
+// Restore the caller's stream locale on every exit path; never use locale::global.
 class ReadScope {
 public:
-    explicit ReadScope(std::istream &input) : input(input), locale(input.getloc()) {
+    explicit ReadScope(std::istream &input)
+        : log(&buffer), input(input), locale(input.getloc()) {
         input.imbue(std::locale::classic());
-        cout = std::cout.rdbuf(log.rdbuf());
-        cerr = std::cerr.rdbuf(log.rdbuf());
+        previous = SlvsStepCode::SetLog(&log);
     }
     ~ReadScope() {
-        std::cerr.rdbuf(cerr);
-        std::cout.rdbuf(cout);
+        SlvsStepCode::SetLog(previous);
         input.imbue(locale);
     }
-    std::ostringstream log;
+    LogBuffer buffer;
+    std::ostream log;
 private:
     std::istream &input;
     std::locale locale;
-    std::streambuf *cout;
-    std::streambuf *cerr;
+    std::ostream *previous;
 };
 
 bool DecodeAggregate(STEPaggregate *, const TypeDescriptor *, InstMgr &, Value *, unsigned);
@@ -388,14 +409,24 @@ std::vector<BindingInfo> SupportedBindings() {
 }
 
 Document::Document() : impl(new Impl) {}
-Document::~Document() = default;
+Document::~Document() {
+    RuntimeLock lock(RuntimeMutex());
+    impl.reset();
+}
 
 const std::string &Document::Protocol() const { return impl->protocol; }
 const std::string &Document::DeclaredSchema() const { return impl->declaredSchema; }
-size_t Document::EntityCount() const { return impl->instances.InstanceCount(); }
-size_t Document::EntityTypeCount() const { return impl->registry.GetEntityCnt(); }
+size_t Document::EntityCount() const {
+    RuntimeLock lock(RuntimeMutex());
+    return impl->instances.InstanceCount();
+}
+size_t Document::EntityTypeCount() const {
+    RuntimeLock lock(RuntimeMutex());
+    return impl->registry.GetEntityCnt();
+}
 
 std::vector<int> Document::EntitiesOfType(const std::string &type) const {
+    RuntimeLock lock(RuntimeMutex());
     std::vector<int> result;
     auto descriptor = impl->registry.FindEntity(type.c_str());
     if(!descriptor) return result;
@@ -407,6 +438,7 @@ std::vector<int> Document::EntitiesOfType(const std::string &type) const {
 }
 
 std::vector<std::string> Document::EntityTypes(int id) const {
+    RuntimeLock lock(RuntimeMutex());
     std::vector<std::string> result;
     for(auto part = impl->Entity(id); part; part = NextPart(part)) {
         result.push_back(Upper(part->EntityName()));
@@ -415,6 +447,7 @@ std::vector<std::string> Document::EntityTypes(int id) const {
 }
 
 bool Document::IsA(int id, const std::string &type) const {
+    RuntimeLock lock(RuntimeMutex());
     auto entity = impl->Entity(id);
     auto descriptor = impl->registry.FindEntity(type.c_str());
     return entity && descriptor && entity->IsA(descriptor);
@@ -422,6 +455,7 @@ bool Document::IsA(int id, const std::string &type) const {
 
 bool Document::Attribute(int id, const std::string &name, Value *value,
                          const std::string &component) const {
+    RuntimeLock lock(RuntimeMutex());
     if(!value) return false;
     STEPattribute *found = nullptr;
     for(auto part = impl->Entity(id); part; part = NextPart(part)) {
@@ -448,6 +482,7 @@ bool Document::Attribute(int id, const std::string &name, Value *value,
 }
 
 ReadResult Read(std::istream &input) {
+    RuntimeLock lock(RuntimeMutex());
     ReadResult result;
     ReadScope scope(input);
     try {
@@ -484,7 +519,7 @@ ReadResult Read(std::istream &input) {
     } catch(const std::exception &error) {
         result.error = std::string("STEP reader failed: ") + error.what();
     }
-    result.readerLog = scope.log.str();
+    result.readerLog = scope.buffer.text;
     return result;
 }
 

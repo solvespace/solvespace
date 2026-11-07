@@ -25,7 +25,7 @@ struct GeometryDiagnostic {
 
 // These are provenance, not sketch entities or persistent cross-export names.
 // Handles are local to one solid and deterministic for unchanged Part 21 IDs.
-// A future link layer must namespace/remap them and create actual hEntities.
+// The application link layer namespaces/remaps them and creates actual hEntities.
 struct VertexReference {
     int vertex;
     int point;
@@ -81,7 +81,7 @@ struct GeometryResult {
 // two-control-point curves). One EDGE_LOOP per face; no healing, meshing
 // fallback, cavity stripping or assembly flattening.
 // Uses SolveSpace's fixed LENGTH_EPS in mm, not a relaxed STEP uncertainty.
-// Single-threaded, like the current Document adapter. Does not retain Document.
+// Called synchronously by the GUI. Does not retain Document or vendor objects.
 GeometryResult ConvertGeometry(const Document &document);
 
 } // namespace Step

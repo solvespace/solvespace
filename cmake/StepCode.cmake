@@ -3,7 +3,7 @@
 include(ExternalProject)
 
 set(STEP_IMPORT_SCHEMAS "AP203;AP214;AP242" CACHE STRING
-    "STEP proof bindings to generate (AP203, AP214, AP242; pinned editions)")
+    "STEP import bindings to generate (AP203, AP214, AP242; pinned editions)")
 
 function(slvs_add_stepcode)
     if(CMAKE_CONFIGURATION_TYPES AND CMAKE_VERSION VERSION_LESS 3.20)
@@ -12,7 +12,8 @@ function(slvs_add_stepcode)
     if(CMAKE_CROSSCOMPILING)
         message(FATAL_ERROR
             "The STEP dependency proof currently requires a native build. "
-            "Disable ENABLE_STEP_IMPORT_PROOF for cross builds; see doc/STEP_IMPORT.md.")
+            "Disable ENABLE_STEP_IMPORT and ENABLE_STEP_IMPORT_PROOF for cross builds; "
+            "see doc/STEP_IMPORT.md.")
     endif()
     if(NOT STEP_IMPORT_SCHEMAS)
         message(FATAL_ERROR "STEP_IMPORT_SCHEMAS must contain at least one binding")
@@ -114,9 +115,10 @@ function(slvs_add_stepcode)
 
     # Only consumers that explicitly link this target see vendor headers/macros.
     file(MAKE_DIRECTORY "${binary}/include")
+    file(MAKE_DIRECTORY "${binary}/slvs-include")
     add_library(slvs-stepcode-runtime INTERFACE)
     target_include_directories(slvs-stepcode-runtime SYSTEM INTERFACE
-        "${source}/include" "${binary}/include")
+        "${binary}/slvs-include" "${source}/include" "${binary}/include")
     target_compile_definitions(slvs-stepcode-runtime INTERFACE SC_STATIC)
     target_link_libraries(slvs-stepcode-runtime INTERFACE slvs-stepcode-stepeditor)
 

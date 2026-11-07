@@ -632,6 +632,20 @@ void TextWindow::ShowGroupInfo() {
         Printf(false, "%Bd   %Ftscaled by%E %# %Fl%Ll%f%D[change]%E",
             g->scale,
             &TextWindow::ScreenChangeGroupScale, g->h.v);
+        if(SS.IsStepFile(g->linkFile)) {
+            auto file = SS.linkedStepFiles.find(g->linkFile);
+            Printf(true, " %FtSTEP source is read-only%E");
+            if(file != SS.linkedStepFiles.end()) {
+                auto &step = file->second;
+                if(step.status == SolveSpaceUI::LinkedStepFile::Status::Okay ||
+                   step.status == SolveSpaceUI::LinkedStepFile::Status::Partial) {
+                    Printf(false, "%Ba   %d solid(s), %d whole solid(s) omitted",
+                           (int)step.solids, (int)step.omitted);
+                } else {
+                    Printf(false, "%Ba   %Fxno STEP geometry loaded%E");
+                }
+            }
+        }
 
         // The parameters of the linked sketch, with the values given to them
         // here, or else (in gray) its own; and in red, values given here that
