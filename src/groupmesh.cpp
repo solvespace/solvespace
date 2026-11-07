@@ -413,6 +413,13 @@ bool Group::GenerateShellAndMesh(Sketch *sketch) {
             runningShell.MergeCoincidentSurfaces();
         }
 
+        // Apply any edge modifiers - chamfer / fillet. For testing, only in
+        // the last group, so earlier groups (and Booleans on them) are left
+        // as they are.
+        if(!SK.groupOrder.IsEmpty() && SK.groupOrder.Last()->v == h.v) {
+            runningShell.ModifyEdges();
+        }
+
         // If the Boolean failed, then that should be noted in the text
         // screen for this group, so say if that has changed.
         booleanFailed = runningShell.booleanFailed;

@@ -97,6 +97,7 @@ public:
     Vector TangentAt(double t) const;
     void ClosestPointTo(Vector p, double *t, bool mustConverge=true) const;
     void SplitAt(double t, SBezier *bef, SBezier *aft) const;
+    bool Reparameterized(double t0, double t1, SBezier *out) const;
     bool PointOnNonparallelCurve(const SBezier *curve, Vector *p) const;
     bool PointOnThisAndCurve(const SBezier *sbb, Vector *p) const;
 
@@ -436,7 +437,9 @@ public:
                                  SEdgeList *el, SShell *useCurvesFrom);
     void RewriteSurfaceHandlesForCurves(SShell *a, SShell *b);
     void CleanupAfterBoolean();
-
+    double GetEdgeModifier(SCurve &sc);
+    void ModifyEdges();
+    
     // Definitions when classifying regions of a surface; it is either inside,
     // outside, or coincident (with parallel or antiparallel normal) with a
     // shell.
@@ -469,6 +472,10 @@ public:
     void RemapFaces(Group *g, int remap);
     void Clear();
 };
+
+// The corner patch where three fillets meet, in sphere_patch.cpp.
+bool SphereTrianglePatch(Vector c, const Vector p[3], bool outward,
+                         SSurface band[3], SBezier arc[3], Vector *t);
 
 } // namespace SolveSpace
 
