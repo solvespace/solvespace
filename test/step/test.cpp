@@ -373,6 +373,9 @@ int main(int argc, char **argv) {
     }
     Run("unknown_and_disabled_schemas", [&]() {
         Rejected(Exchange("NOT_A_SCHEMA", ""), Status::UnsupportedSchema);
+        // OCCT 7.6's user-supplied cube declares this older schema. It is not
+        // an alias for the pinned AP214 E3 binding, even for a simple shape.
+        Rejected(Exchange("AUTOMOTIVE_DESIGN_CC2", ""), Status::UnsupportedSchema);
         Rejected(Exchange("AP203_CONFIGURATION_CONTROLLED_3D_DESIGN_OF_MECHANICAL_PARTS_AND_ASSEMBLIES_MIM_LF", ""),
                  Status::UnsupportedSchema);
         for(const std::string protocol : {"AP203", "AP214", "AP242"}) {
@@ -382,6 +385,15 @@ int main(int argc, char **argv) {
                  "AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF");
             Rejected(Exchange(schema, ""), Status::UnsupportedSchema);
         }
+    });
+    Run("OCCT_schema_header_limits", [&]() {
+        // Preserve the single-schema contract and exact schema base matching.
+        // These are compatibility rejections, not claims that the cubes are bad.
+        Rejected(Replace(Exchange("CONFIG_CONTROL_DESIGN", ""),
+            "FILE_SCHEMA(('CONFIG_CONTROL_DESIGN'));",
+            "FILE_SCHEMA(('CONFIG_CONTROL_DESIGN','SHAPE_APPEARANCE_LAYER_MIM'));"));
+        Rejected(Exchange("AP242_MANAGED_MODEL_BASED_3D_ENGINEERING_MIM_LF. "
+                          "{1 0 10303 442 1 1 4 }", ""), Status::UnsupportedSchema);
     });
     Run("not_part21", [&]() {
         Rejected("");

@@ -24,3 +24,18 @@ if("AP242" IN_LIST STEP_IMPORT_SCHEMAS)
         COMMENT "Testing real NIST AP242 files (optional corpus download)"
         VERBATIM)
 endif()
+
+# Native layer tests use the existing headless geometry/runtime support, but
+# the original SolveSpace suite and dependency-only reader suite stay separate.
+if(TARGET solvespace-step-geometry AND TARGET solvespace-headless)
+    add_executable(solvespace-step-geometry-testsuite geometry.cpp
+        $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+    target_link_libraries(solvespace-step-geometry-testsuite PRIVATE
+        solvespace-step-geometry solvespace-step-reader solvespace-headless)
+    add_dependencies(solvespace-step-geometry-testsuite resources)
+    add_custom_target(test_step_geometry
+        COMMAND $<TARGET_FILE:solvespace-step-geometry-testsuite>
+        DEPENDS solvespace-step-geometry-testsuite
+        COMMENT "Testing native STEP planar-solid conversion"
+        VERBATIM)
+endif()

@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Experimental STEP dependency proof, not yet a geometry importer.
+// Experimental STEP reader layer. Does not perform geometry conversion.
 // No STEPcode headers, types or generated bindings cross this boundary.
 //-----------------------------------------------------------------------------
 #ifndef SOLVESPACE_STEP_READER_H
