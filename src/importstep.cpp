@@ -34,21 +34,20 @@ StepEntityKey Key(Step::NativeSolid &solid, int kind, int entity) {
     } else if(kind == StepEntityKey::EDGE) {
         for(const auto &edge : solid.edges) if(edge.edge == entity) {
             addEdge(edge);
-            auto curve = solid.shell.curve.FindById(edge.curve);
-            key.topology.push_back(std::min(curve->surfA.v, curve->surfB.v));
-            key.topology.push_back(std::max(curve->surfA.v, curve->surfB.v));
+            key.topology.push_back(edge.adjacentFaces[0]);
+            key.topology.push_back(edge.adjacentFaces[1]);
         }
     } else {
         for(const auto &face : solid.faces) if(face.face == entity) {
             key.topology.push_back(face.geometry);
-            auto surface = solid.shell.surface.FindById(face.surface);
-            std::map<hSCurve, bool> boundary;
-            for(const auto &trim : surface->trim) boundary.emplace(trim.curve, trim.backwards);
-            for(const auto &edge : solid.edges) {
-                auto found = boundary.find(edge.curve);
-                if(found == boundary.end()) continue;
-                addEdge(edge);
-                key.topology.push_back(found->second ? 1 : 0);
+            // Source connectivity, never implementation-created knot seams or
+            // split counts. Keep the original single-loop planar keys intact.
+            for(size_t loop = 0; loop < face.boundaries.size(); ++loop) {
+                if(loop != 0) key.topology.push_back(-(int)loop);
+                for(const auto &use : face.boundaries[loop]) {
+                    for(const auto &edge : solid.edges) if(edge.edge == use.first) addEdge(edge);
+                    key.topology.push_back(use.second ? 1 : 0);
+                }
             }
         }
     }
@@ -63,9 +62,11 @@ void MakeLinkedGeometry(Step::GeometryResult &geometry, SolveSpaceUI::LinkedStep
             file->references.emplace(Key(*solid, StepEntityKey::VERTEX, v.vertex), hEntity{});
         }
         for(const auto &e : solid->edges) {
+            if(!e.linear) continue;
             file->references.emplace(Key(*solid, StepEntityKey::EDGE, e.edge), hEntity{});
         }
         for(const auto &f : solid->faces) {
+            if(!f.planar) continue;
             file->references.emplace(Key(*solid, StepEntityKey::FACE, f.face), hEntity{});
         }
     }
@@ -94,6 +95,10 @@ void MakeLinkedGeometry(Step::GeometryResult &geometry, SolveSpaceUI::LinkedStep
         }
         std::map<hSCurve, hEntity> edges;
         for(const auto &edge : solid.edges) {
+            // Arbitrary rational curves are not circles or cubic sketch
+            // splines. Keep their exact native geometry without fabricating a
+            // LINE_SEGMENT constraint reference for their chord.
+            if(!edge.linear) continue;
             Entity e = {};
             e.h = entity(StepEntityKey::EDGE, edge.edge);
             e.type = Entity::Type::LINE_SEGMENT;
@@ -101,16 +106,16 @@ void MakeLinkedGeometry(Step::GeometryResult &geometry, SolveSpaceUI::LinkedStep
             e.point[1] = entity(StepEntityKey::VERTEX, edge.finishVertex);
             e.actVisible = true;
             file->entities.Add(&e);
-            edges.emplace(edge.curve, e.h);
+            for(auto curve : edge.curves) edges.emplace(curve, e.h);
         }
         std::map<hSSurface, hEntity> faces;
         for(const auto &face : solid.faces) {
+            if(!face.planar) continue;
             // Associate a real boundary vertex with the plane, not an extra
             // unconstrained helper point or an arbitrary plane origin.
             int anchor = 0;
             for(const auto &edge : solid.edges) {
-                auto curve = solid.shell.curve.FindById(edge.curve);
-                if(curve->surfA != face.surface && curve->surfB != face.surface) continue;
+                if(edge.adjacentFaces[0] != face.face && edge.adjacentFaces[1] != face.face) continue;
                 for(int vertex : {edge.startVertex, edge.finishVertex}) {
                     if(anchor == 0 || vertex < anchor) anchor = vertex;
                 }
@@ -124,7 +129,7 @@ void MakeLinkedGeometry(Step::GeometryResult &geometry, SolveSpaceUI::LinkedStep
             e.numNormal = e.actNormal = Quaternion::From(0, CO(face.normal));
             e.actVisible = true;
             file->entities.Add(&e);
-            faces.emplace(face.surface, e.h);
+            for(auto surface : face.surfaces) faces.emplace(surface, e.h);
         }
 
         // Assemble complete shells without a Boolean or mesh fallback. Native
@@ -139,14 +144,16 @@ void MakeLinkedGeometry(Step::GeometryResult &geometry, SolveSpaceUI::LinkedStep
             copy.h = curveIds.at(c.h);
             copy.surfA = surfaceIds.at(c.surfA);
             copy.surfB = surfaceIds.at(c.surfB);
-            copy.exact.entity = edges.at(c.h).v;
+            auto reference = edges.find(c.h);
+            copy.exact.entity = reference == edges.end() ? 0 : reference->second.v;
             file->shell.curve.Add(&copy);
         }
         for(auto &s : solid.shell.surface) {
             SSurface copy = SSurface::FromTransformationOf(&s, {}, Quaternion::IDENTITY, 1,
                                                           /*includingTrims=*/true);
             copy.h = surfaceIds.at(s.h);
-            copy.face = faces.at(s.h).v;
+            auto reference = faces.find(s.h);
+            copy.face = reference == faces.end() ? 0 : reference->second.v;
             for(auto &trim : copy.trim) trim.curve = curveIds.at(trim.curve);
             file->shell.surface.Add(&copy);
         }
@@ -281,8 +288,8 @@ bool SolveSpaceUI::LoadLinkedStep(const Platform::Path &filename, EntityList *le
         le->Add(&copy);
     }
     sh->MakeFromCopyOf(&file->shell);
-    for(auto &surface : sh->surface) surface.face = tokens.at(surface.face);
-    for(auto &curve : sh->curve) curve.exact.entity = tokens.at(curve.exact.entity);
+    for(auto &surface : sh->surface) if(surface.face != 0) surface.face = tokens.at(surface.face);
+    for(auto &curve : sh->curve) if(curve.exact.entity != 0) curve.exact.entity = tokens.at(curve.exact.entity);
     if(group) {
         size_t missing = 0;
         for(const auto &entry : group->stepRefs) {

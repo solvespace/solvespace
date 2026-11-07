@@ -17,7 +17,7 @@ target_link_libraries(solvespace-step-probe PRIVATE solvespace-step-reader)
 # application core, without a core <-> geometry static-library dependency cycle.
 # STEPcode remains private to the reader, never slvs_deps or the solver.
 if(TARGET solvespace-core)
-    add_library(solvespace-step-geometry OBJECT stepgeometry.cpp)
+    add_library(solvespace-step-geometry OBJECT stepgeometry.cpp stepnurbs.cpp)
     target_include_directories(solvespace-step-geometry PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
     target_include_directories(solvespace-step-geometry PRIVATE
         "${PROJECT_SOURCE_DIR}/src" "${PROJECT_BINARY_DIR}/src")

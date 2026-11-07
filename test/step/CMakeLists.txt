@@ -44,7 +44,7 @@ if(TARGET solvespace-step-geometry AND TARGET solvespace-headless)
     add_custom_target(test_step_geometry
         COMMAND $<TARGET_FILE:solvespace-step-geometry-testsuite>
         DEPENDS solvespace-step-geometry-testsuite
-        COMMENT "Testing native STEP planar-solid conversion"
+        COMMENT "Testing exact native STEP B-rep conversion"
         VERBATIM)
     if(ENABLE_STEP_IMPORT)
         target_compile_definitions(solvespace-step-geometry-testsuite PRIVATE HAVE_STEP_IMPORT)

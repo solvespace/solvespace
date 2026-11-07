@@ -3,6 +3,7 @@
 #include "solvespace.h"
 #include "stepreader.h"
 #include "stepgeometry.h"
+#include "stepnurbs.h"
 
 #include <cmath>
 #include <chrono>
@@ -11,6 +12,7 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <set>
 #include <sstream>
@@ -55,6 +57,9 @@ void Run(const std::string &name, const std::function<void()> &test) {
     } catch(const std::exception &error) {
         ++failures;
         std::cout << "FAIL: " << error.what() << "\n";
+    } catch(const Step::Nurbs::Error &error) {
+        ++failures;
+        std::cout << "FAIL: entity #" << error.entity << ": " << error.message << "\n";
     }
     Platform::FreeAllTemporary();
 }
@@ -245,6 +250,18 @@ struct ShellOwner {
     ~ShellOwner() { shell.Clear(); }
 };
 
+struct TessellationSettings {
+    double chord = SS.chordTolCalculated, exportChord = SS.exportChordTol;
+    double exportScale = SS.exportScale;
+    int segments = SS.maxSegments, exportSegments = SS.exportMaxSegments;
+    bool exporting = SS.exportMode;
+    ~TessellationSettings() {
+        SS.chordTolCalculated = chord; SS.maxSegments = segments; SS.exportMode = exporting;
+        SS.exportChordTol = exportChord; SS.exportScale = exportScale;
+        SS.exportMaxSegments = exportSegments;
+    }
+};
+
 using PointKey = std::tuple<long long, long long, long long>;
 PointKey Key(Vector point) {
     return std::make_tuple(std::llround(point.x / LENGTH_EPS),
@@ -372,6 +389,653 @@ std::string InchUnits(std::string data, const std::string &protocol) {
     return ReplaceRecord(data, 2810, ContextWithUnits({2832, 2801, 2802}));
 }
 
+std::string Numbers(const std::vector<double> &values) {
+    std::string text = "(";
+    for(double value : values) { if(text.size() > 1) text += ","; text += Real(value); }
+    return text + ")";
+}
+
+std::string Integers(const std::vector<int> &values) {
+    std::string text = "(";
+    for(int value : values) { if(text.size() > 1) text += ","; text += std::to_string(value); }
+    return text + ")";
+}
+
+std::string SplineCurve(std::string data, int geometry, int base, int degree,
+                         const std::vector<Vector> &controls, const std::vector<double> &weights,
+                         const std::vector<int> &multiplicities, const std::vector<double> &knots) {
+    std::vector<int> ids;
+    for(size_t i = 0; i < controls.size(); ++i) {
+        ids.push_back(base + (int)i);
+        data += Record(ids.back(), "CARTESIAN_POINT(''," + Triple(controls[i]) + ")");
+    }
+    std::string spline = std::to_string(degree) + "," + Refs(ids) + ",.UNSPECIFIED.,.F.,.F.";
+    std::string intervals = Integers(multiplicities) + "," + Numbers(knots) + ",.UNSPECIFIED.";
+    std::string body = weights.empty() ? "B_SPLINE_CURVE_WITH_KNOTS(''," + spline + "," + intervals + ")" :
+        "(BOUNDED_CURVE()B_SPLINE_CURVE(" + spline + ")B_SPLINE_CURVE_WITH_KNOTS(" + intervals +
+        ")CURVE()GEOMETRIC_REPRESENTATION_ITEM()RATIONAL_B_SPLINE_CURVE(" + Numbers(weights) + ")REPRESENTATION_ITEM(''))";
+    return ReplaceRecord(data, geometry, body);
+}
+
+std::string SplineSurface(std::string data, int geometry, int base, int udegree, int vdegree,
+                           const std::vector<std::vector<Vector>> &controls,
+                           const std::vector<std::vector<double>> &weights,
+                           const std::vector<int> &umult, const std::vector<int> &vmult,
+                           const std::vector<double> &uknots, const std::vector<double> &vknots) {
+    std::string net = "(", wnet = "(";
+    for(size_t i = 0; i < controls.size(); ++i) {
+        std::vector<int> ids;
+        for(Vector point : controls[i]) {
+            ids.push_back(base++);
+            data += Record(ids.back(), "CARTESIAN_POINT(''," + Triple(point) + ")");
+        }
+        if(i != 0) { net += ","; wnet += ","; }
+        net += Refs(ids);
+        if(!weights.empty()) wnet += Numbers(weights[i]);
+    }
+    net += ")"; wnet += ")";
+    std::string spline = std::to_string(udegree) + "," + std::to_string(vdegree) + "," + net +
+                         ",.UNSPECIFIED.,.F.,.F.,.F.";
+    std::string intervals = Integers(umult) + "," + Integers(vmult) + "," + Numbers(uknots) +
+                            "," + Numbers(vknots) + ",.UNSPECIFIED.";
+    std::string body = weights.empty() ? "B_SPLINE_SURFACE_WITH_KNOTS(''," + spline + "," + intervals + ")" :
+        "(BOUNDED_SURFACE()B_SPLINE_SURFACE(" + spline + ")B_SPLINE_SURFACE_WITH_KNOTS(" + intervals +
+        ")GEOMETRIC_REPRESENTATION_ITEM()RATIONAL_B_SPLINE_SURFACE(" + wnet + ")REPRESENTATION_ITEM('')SURFACE())";
+    return ReplaceRecord(data, geometry, body);
+}
+
+// Compound-curved top, with unchanged straight boundary and five plane faces.
+// Neither rational net is a cylinder or a surface of extrusion.
+std::string FreeformBox(bool rational = false, bool multispan = false, double bump = 0.4) {
+    std::vector<double> xs = multispan ? std::vector<double>{0, 1.0 / 6, 0.5, 5.0 / 6, 1} :
+                                       std::vector<double>{0, 1.0 / 3, 2.0 / 3, 1};
+    std::vector<std::vector<Vector>> controls;
+    std::vector<std::vector<double>> weights;
+    for(size_t i = 0; i < xs.size(); ++i) {
+        std::vector<Vector> row;
+        std::vector<double> wrow;
+        for(int j = 0; j < 4; ++j) {
+            bool interior = i != 0 && i + 1 != xs.size() && j != 0 && j != 3;
+            row.push_back({xs[i], j / 3.0, 1 + (interior ? bump : 0)});
+            wrow.push_back(interior ? 0.8 + 0.1 * ((i + j) % 5) : 1);
+        }
+        controls.push_back(row); weights.push_back(wrow);
+    }
+    return SplineSurface(Cube(1), 2501, 5000, 3, 3, controls, rational ? weights :
+        std::vector<std::vector<double>>{}, multispan ? std::vector<int>{4, 1, 4} : std::vector<int>{4, 4},
+        {4, 4}, multispan ? std::vector<double>{-2, 3, 8} : std::vector<double>{-2, 8}, {2, 7});
+}
+
+std::string SplitPlaneBox() {
+    std::vector<std::vector<Vector>> controls;
+    for(double x : {-1.0, 0.5, 2.0}) {
+        std::vector<Vector> row;
+        for(double y : {-1.0, 0.5, 2.0}) row.push_back({x, y, 1});
+        controls.push_back(row);
+    }
+    return SplineSurface(Cube(1), 2501, 5000, 1, 1, controls, {}, {2, 1, 2}, {2, 1, 2}, {0, 0.5, 1}, {0, 0.5, 1});
+}
+
+std::string BilinearBox() {
+    std::vector<Vector> points = {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
+                                 {0, 0, 1}, {1, 0, 1}, {1, 1, 1.4}, {0, 1, 1}};
+    auto data = Polyhedron(points, {{0, 3, 2, 1}, {4, 5, 6, 7}, {0, 1, 5, 4},
+                                    {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 0, 4, 7}});
+    return SplineSurface(data, 2501, 5000, 1, 1,
+                         {{{0, 0, 1}, {0, 1, 1}}, {{1, 0, 1}, {1, 1, 1.4}}}, {},
+                         {2, 2}, {2, 2}, {0, 1}, {0, 1});
+}
+
+std::vector<SBezier> FreeformOutline() {
+    std::vector<SBezier> curves = {
+        SBezier::From(Vector{1, 0, 0}, Vector{1, 1, 0}, Vector{0, 1, 0}),
+        SBezier::From(Vector{0, 1, 0}, Vector{-0.3, 1.4, 0}, Vector{-1.3, 0.3, 0}, Vector{-1, 0, 0}),
+        SBezier::From(Vector{-1, 0, 0}, Vector{-1, -1, 0}, Vector{0, -1, 0}),
+        SBezier::From(Vector{0, -1, 0}, Vector{0.2, -1.2, 0}, Vector{1.3, -0.2, 0}, Vector{1, 0, 0})
+    };
+    curves[0].weight[1] = curves[2].weight[1] = 0.6; // deliberately not circles
+    curves[1].weight[1] = 0.9; curves[1].weight[2] = 1.2;
+    curves[3].weight[1] = 1.4; curves[3].weight[2] = 0.8;
+    return curves;
+}
+
+double OutlineArea(const std::vector<SBezier> &outline) {
+    double integral = 0;
+    for(const auto &curve : outline) for(int i = 0; i <= 1000; ++i) {
+        double t = i / 1000.0;
+        Vector p = curve.PointAt(t), d = curve.TangentAt(t);
+        integral += (i == 0 || i == 1000 ? 1 : (i % 2 ? 4 : 2)) * (p.x * d.y - p.y * d.x) / 6000;
+    }
+    return integral;
+}
+
+std::string BezierLoft(const std::vector<SBezier> &outline, double height = 2,
+                        double topScale = 0.8, bool splitCap = false) {
+    std::vector<Vector> points;
+    for(const auto &curve : outline) points.push_back(curve.Start());
+    Vector offset = {0.2, -0.1, height};
+    for(const auto &curve : outline) points.push_back(curve.Start().ScaledBy(topScale).Plus(offset));
+    auto data = Polyhedron(points, {{0, 3, 2, 1}, {4, 5, 6, 7}, {0, 1, 5, 4},
+                                    {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 0, 4, 7}});
+    const int bottom[] = {0, 3, 5, 1}, top[] = {8, 10, 11, 9};
+    for(int k = 0; k < 4; ++k) {
+        const auto &curve = outline[k];
+        for(bool upper : {false, true}) {
+            SBezier edge = upper ? curve.TransformedBy(offset, Quaternion::IDENTITY, topScale) : curve;
+            if(k == 3) edge.Reverse(); // canonical source edge order in Polyhedron
+            std::vector<Vector> controls;
+            std::vector<double> weights;
+            for(int i = 0; i <= edge.deg; ++i) { controls.push_back(edge.ctrl[i]); weights.push_back(edge.weight[i]); }
+            data = SplineCurve(data, 300 + (upper ? top[k] : bottom[k]), 8000 + 40 * k + (upper ? 10 : 0),
+                               edge.deg, controls, weights, {edge.deg + 1, edge.deg + 1}, {-3, 7});
+        }
+        std::vector<std::vector<Vector>> controls;
+        std::vector<std::vector<double>> weights;
+        for(int i = 0; i <= curve.deg; ++i) {
+            controls.push_back({curve.ctrl[i], curve.ctrl[i].ScaledBy(topScale).Plus(offset)});
+            weights.push_back({curve.weight[i], curve.weight[i]});
+        }
+        data = SplineSurface(data, 2502 + k, 5000 + 40 * k, curve.deg, 1, controls, weights,
+                              {curve.deg + 1, curve.deg + 1}, {2, 2}, {-2, 8}, {3, 9});
+    }
+    if(splitCap) {
+        std::vector<std::vector<Vector>> controls;
+        for(double y : {-1.5, 0.2, 1.5}) {
+            std::vector<Vector> row;
+            for(double x : {-1.5, 0.3, 1.5}) row.push_back({x, y, 0});
+            controls.push_back(row);
+        }
+        data = SplineSurface(data, 2500, 9000, 1, 1, controls, {}, {2, 1, 2}, {2, 1, 2},
+                              {0, 0.5, 1}, {0, 0.5, 1});
+    }
+    return data;
+}
+
+std::string ThroughHole() {
+    auto data = Cube(4) + Polyhedron({{1, 1, 0}, {3, 1, 0}, {3, 3, 0}, {1, 3, 0},
+                                     {1, 1, 4}, {3, 1, 4}, {3, 3, 4}, {1, 3, 4}},
+        {{0, 3, 2, 1}, {4, 5, 6, 7}, {0, 1, 5, 4}, {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 0, 4, 7}}, 10000);
+    for(int f = 0; f < 6; ++f) {
+        data = ReplaceRecord(data, 12100 + f, std::string(f < 2 ? "FACE_BOUND" : "FACE_OUTER_BOUND") +
+                               "(''," + Ref(12000 + f) + ",.F.)");
+        if(f < 2) data = ReplaceRecord(data, 2600 + f, "ADVANCED_FACE('',(" + Ref(2100 + f) + "," +
+                                      Ref(12100 + f) + ")," + Ref(2500 + f) + ",.T.)");
+        else data = ReplaceRecord(data, 12600 + f, "ADVANCED_FACE('',(" + Ref(12100 + f) + ")," + Ref(12500 + f) + ",.F.)");
+    }
+    data = ReplaceRecord(data, 12701, "SHAPE_REPRESENTATION('',(#12400),#12810)");
+    data = ReplaceRecord(data, 12820, "SHAPE_REPRESENTATION('',(#12400),#12810)");
+    return ReplaceRecord(data, 2700, "CLOSED_SHELL('',(#2600,#2601,#2602,#2603,#2604,#2605,#12602,#12603,#12604,#12605))");
+}
+
+double TriangulatedVolume(SShell &shell, double *area = nullptr) {
+    MeshOwner mesh;
+    shell.TriangulateInto(&mesh.mesh);
+    REQUIRE(!mesh.mesh.IsEmpty());
+    double volume = 0, sumArea = 0;
+    for(const auto &triangle : mesh.mesh.l) {
+        volume += triangle.SignedVolume(); sumArea += triangle.Area();
+        REQUIRE(!triangle.IsDegenerate());
+    }
+    if(area) *area = sumArea;
+    return volume;
+}
+
+void CheckGeneralNative(Step::NativeSolid &solid, int sourceFaces, int sourceEdges, int sourceVertices,
+                         double volume, double tolerance = 0.01) {
+    REQUIRE(solid.faces.size() == (size_t)sourceFaces);
+    REQUIRE(solid.edges.size() == (size_t)sourceEdges);
+    REQUIRE(solid.vertices.size() == (size_t)sourceVertices);
+    std::set<hSSurface> surfaces;
+    std::set<hSCurve> sourceCurves;
+    std::map<hSCurve, std::vector<bool>> uses;
+    for(const auto &face : solid.faces) {
+        REQUIRE(!face.surfaces.empty() && face.surface == face.surfaces.front());
+        REQUIRE(face.surface.v == (uint32_t)face.face);
+        for(auto handle : face.surfaces) {
+            REQUIRE(surfaces.insert(handle).second);
+            auto s = solid.shell.surface.FindById(handle);
+            REQUIRE(s->face == 0 && s->degm >= 1 && s->degm <= 3 && s->degn >= 1 && s->degn <= 3);
+            for(int i = 0; i <= s->degm; ++i) for(int j = 0; j <= s->degn; ++j) REQUIRE(s->weight[i][j] > 0);
+            if(face.planar) REQUIRE(s->NormalAt(0.5, 0.5).WithMagnitude(1).Equals(face.normal));
+            SEdgeList uv = {};
+            s->MakeEdgesInto(&solid.shell, &uv, SSurface::MakeAs::UV);
+            auto bsp = SBspUv::From(&uv, s);
+            REQUIRE(bsp != nullptr);
+            SPolygon polygon = {};
+            REQUIRE(uv.AssemblePolygon(&polygon, nullptr, true));
+            MeshOwner uvMesh;
+            polygon.UvTriangulateInto(&uvMesh.mesh, s, /*planar=*/face.planar);
+            REQUIRE(!uvMesh.mesh.IsEmpty());
+            const auto &triangle = uvMesh.mesh.l[0];
+            Vector center = triangle.a.Plus(triangle.b).Plus(triangle.c).ScaledBy(1.0 / 3);
+            REQUIRE(bsp->ClassifyPoint({center.x, center.y}, {0.123, 0.456}, s) == SBspUv::Class::INSIDE);
+            polygon.Clear();
+            REQUIRE(bsp->ClassifyPoint({-2, -2}, {0.123, 0.456}, s) == SBspUv::Class::OUTSIDE);
+            uv.Clear();
+            for(const auto &trim : s->trim) {
+                auto c = solid.shell.curve.FindById(trim.curve);
+                uses[c->h].push_back(trim.backwards);
+                REQUIRE(c->surfA == s->h || c->surfB == s->h);
+                REQUIRE(trim.start.Equals(trim.backwards ? c->exact.Finish() : c->exact.Start()));
+            }
+        }
+    }
+    REQUIRE(surfaces.size() == (size_t)solid.shell.surface.n);
+    for(const auto &edge : solid.edges) {
+        REQUIRE(!edge.curves.empty() && edge.curve == edge.curves.front());
+        REQUIRE(edge.curve.v == (uint32_t)edge.edge);
+        for(auto curve : edge.curves) REQUIRE(sourceCurves.insert(curve).second);
+    }
+    for(const auto &curve : solid.shell.curve) {
+        REQUIRE(curve.isExact && curve.exact.deg >= 1 && curve.exact.deg <= 3 && curve.exact.entity == 0);
+        REQUIRE(curve.pts.n >= 2 && curve.pts[0].p.Equals(curve.exact.Start()));
+        REQUIRE(curve.pts.Last()->p.Equals(curve.exact.Finish()));
+        REQUIRE(uses[curve.h].size() == 2 && uses[curve.h][0] != uses[curve.h][1]);
+    }
+    REQUIRE(!solid.shell.booleanFailed && !solid.shell.IsEmpty());
+    REQUIRE(std::abs(TriangulatedVolume(solid.shell) - volume) < tolerance);
+}
+
+// Independent Cox-de Boor basis evaluation verifies exact knot insertion,
+// including rational weights, nonuniform knots and non-clamped finite domains.
+double Basis(const std::vector<double> &knots, int i, int degree, double t) {
+    if(degree == 0) return t >= knots[i] && t < knots[i + 1] ? 1 : 0;
+    double result = 0;
+    if(knots[i + degree] != knots[i]) result += (t - knots[i]) / (knots[i + degree] - knots[i]) * Basis(knots, i, degree - 1, t);
+    if(knots[i + degree + 1] != knots[i + 1]) result += (knots[i + degree + 1] - t) /
+        (knots[i + degree + 1] - knots[i + 1]) * Basis(knots, i + 1, degree - 1, t);
+    return result;
+}
+
+std::string NativeSignature(Step::NativeSolid &solid) {
+    // Exact output controls/weights and trim data, excluding mutable native
+    // projection caches. This inspection must not itself use scene settings.
+    std::ostringstream out;
+    out.imbue(std::locale::classic());
+    for(const auto &surface : solid.shell.surface) {
+        out << surface.h.v << ':' << surface.degm << ',' << surface.degn << ';';
+        for(int i = 0; i <= surface.degm; ++i) for(int j = 0; j <= surface.degn; ++j) {
+            out << Triple(surface.ctrl[i][j]) << Real(surface.weight[i][j]);
+        }
+        for(const auto &trim : surface.trim) {
+            out << trim.curve.v << ',' << trim.backwards << Triple(trim.start) << Triple(trim.finish);
+        }
+    }
+    for(const auto &curve : solid.shell.curve) {
+        out << curve.h.v << ':' << curve.surfA.v << ',' << curve.surfB.v << ',' << curve.exact.deg << ';';
+        for(int i = 0; i <= curve.exact.deg; ++i) {
+            out << Triple(curve.exact.ctrl[i]) << Real(curve.exact.weight[i]);
+        }
+        for(const auto &point : curve.pts) out << point.vertex << Triple(point.p);
+    }
+    return out.str();
+}
+
+void NurbsMathTests() {
+    Run("nurbs/exact_rational_nonuniform_and_unclamped_curve_decomposition", [&]() {
+        for(bool clamped : {true, false}) for(int degree = 1; degree <= 3; ++degree) {
+            std::vector<Vector> controls;
+            std::vector<double> weights;
+            for(int i = 0; i < 6; ++i) { controls.push_back({i * 0.7, std::sin(i * 0.8), i * i * 0.1}); weights.push_back(0.5 + i * 0.2); }
+            std::vector<int> mult;
+            std::vector<double> values;
+            int count = clamped ? 7 - degree : 7 + degree;
+            for(int i = 0; i < count; ++i) { mult.push_back(clamped && (i == 0 || i + 1 == count) ? degree + 1 : 1); values.push_back(i * i + 2.0 * i - 4); }
+            Step::Nurbs::Knots knots(1, degree, controls.size(), mult, values);
+            auto spans = Step::Nurbs::Curve(knots, controls, weights);
+            REQUIRE(!spans.empty());
+            for(const auto &span : spans) for(int sample = 1; sample < 20; ++sample) {
+                double t = sample / 20.0, u = span.first + t * (span.last - span.first);
+                Vector point = {};
+                double weight = 0;
+                for(size_t i = 0; i < controls.size(); ++i) {
+                    double b = weights[i] * Basis(knots.full, (int)i, degree, u);
+                    point = point.Plus(controls[i].ScaledBy(b)); weight += b;
+                }
+                REQUIRE(span.bezier.PointAt(t).Equals(point.ScaledBy(1 / weight), 1e-11));
+            }
+        }
+    });
+    Run("nurbs/exact_rational_tensor_product_decomposition", [&]() {
+        auto knots = [](int entity, int degree, int controls, bool clamped) {
+            std::vector<int> mult;
+            std::vector<double> values;
+            int count = clamped ? controls - degree + 1 : controls + degree + 1;
+            for(int i = 0; i < count; ++i) {
+                mult.push_back(clamped && (i == 0 || i + 1 == count) ? degree + 1 : 1);
+                values.push_back(i * i + 2.0 * i - 4);
+            }
+            return Step::Nurbs::Knots(entity, degree, controls, mult, values);
+        };
+        std::vector<std::vector<Vector>> controls;
+        std::vector<std::vector<double>> weights;
+        for(int i = 0; i < 5; ++i) {
+            std::vector<Vector> row;
+            std::vector<double> wrow;
+            for(int j = 0; j < 4; ++j) {
+                row.push_back({i * 0.7, j * 0.3, std::sin(i * 0.8 + j * 0.4)});
+                wrow.push_back(0.5 + i * 0.17 + j * 0.11);
+            }
+            controls.push_back(row); weights.push_back(wrow);
+        }
+        for(bool clampedU : {false, true}) for(bool clampedV : {false, true}) {
+            for(int du = 1; du <= 3; ++du) for(int dv = 1; dv <= 3; ++dv) {
+                auto u = knots(1, du, 5, clampedU), v = knots(1, dv, 4, clampedV);
+                auto patches = Step::Nurbs::Surface(u, v, controls, weights);
+                REQUIRE(!patches.empty());
+                for(const auto &patch : patches) {
+                    for(double s : {0.07, 0.23, 0.5, 0.79, 0.93}) for(double t : {0.07, 0.23, 0.5, 0.79, 0.93}) {
+                        double a = patch.u0 + s * (patch.u1 - patch.u0);
+                        double b = patch.v0 + t * (patch.v1 - patch.v0);
+                        Vector point = {};
+                        double weight = 0;
+                        for(int i = 0; i < 5; ++i) for(int j = 0; j < 4; ++j) {
+                            double basis = weights[i][j] * Basis(u.full, i, du, a) * Basis(v.full, j, dv, b);
+                            point = point.Plus(controls[i][j].ScaledBy(basis)); weight += basis;
+                        }
+                        REQUIRE(patch.surface.PointAt(s, t).Equals(point.ScaledBy(1 / weight), 1e-11));
+                    }
+                }
+            }
+        }
+    });
+    Run("nurbs/collinear_cubic_recognition_checks_curve_not_control_order", [&]() {
+        SBezier curve = SBezier::From(Vector{0, 0, 0}, Vector{0.8, 0, 0}, Vector{0.2, 0, 0}, Vector{1, 0, 0});
+        for(bool rational : {false, true}) {
+            if(rational) { curve.weight[1] = 0.8; curve.weight[2] = 1.2; }
+            REQUIRE(Step::Nurbs::IsMonotoneLine(curve, curve.Start(), curve.Finish(), 1e-14));
+            SBezier reversed = curve;
+            reversed.Reverse();
+            REQUIRE(!Step::Nurbs::IsMonotoneLine(reversed, curve.Start(), curve.Finish(), 1e-14));
+        }
+        curve.ctrl[1].x = 2; curve.ctrl[2].x = -1;
+        REQUIRE(!Step::Nurbs::IsMonotoneLine(curve, curve.Start(), curve.Finish(), 1e-14));
+        curve.ctrl[1] = {0.8, 1e-8, 0}; curve.ctrl[2] = {0.2, 0, 0};
+        REQUIRE(!Step::Nurbs::IsMonotoneLine(curve, curve.Start(), curve.Finish(), 1e-14));
+    });
+    Run("nurbs/unrepresentable_knot_normalization_is_not_silently_collapsed", [&]() {
+        bool rejected = false;
+        try {
+            Step::Nurbs::Knots knots(123, 1, 4, {1, 1, 1, 1, 1, 1}, {-1e16, -1, 0, 1e-20, 1, 1e16});
+        } catch(const Step::Nurbs::Error &error) {
+            REQUIRE(error.entity == 123 && error.unsupported);
+            REQUIRE(error.message.find("collapse") != std::string::npos);
+            rejected = true;
+        }
+        REQUIRE(rejected);
+    });
+    Run("nurbs/finite_parameters_and_exact_rational_splits", [&]() {
+        SBezier curve = SBezier::From(Vector{1, 0, 0}, Vector{1, 1, 0}, Vector{0, 1, 0});
+        curve.weight[0] = 2; curve.weight[1] = 1.4142135624; curve.weight[2] = 2;
+        for(int i = 0; i <= 100; ++i) {
+            double t = i / 100.0;
+            auto matches = Step::Nurbs::Parameters(curve, curve.PointAt(t), 1e-10);
+            REQUIRE(matches.size() == 1 && std::abs(matches.front() - t) < 1e-9);
+        }
+        REQUIRE(Step::Nurbs::Parameters(curve, curve.PointAt(-0.2)).empty());
+        auto span = Step::Nurbs::Restrict(curve, 0.17, 0.83);
+        for(int i = 0; i <= 20; ++i) REQUIRE(span.PointAt(i / 20.0).Equals(curve.PointAt(0.17 + 0.66 * i / 20.0), 1e-12));
+        REQUIRE(curve.weight[1] == 1.4142135624);
+        auto hits = Step::Nurbs::Intersections(1, curve, SBezier::From(Vector{0.5, 0, 0}, Vector{0.5, 1.5, 0}));
+        REQUIRE(hits.size() == 1);
+        REQUIRE(std::abs(curve.PointAt(hits.front().first).x - 0.5) < 1e-10);
+    });
+    Run("nurbs/native_skew_rational_and_nonaffine_uv_inversion", [&]() {
+        SSurface surface = SSurface::FromPlane({2, -3, 4}, {0.3, 1, 0.2}, {1, 0.2, 0.5});
+        for(int variant = 0; variant < 4; ++variant) {
+            if(variant == 1) surface.weight[1][1] = 2;
+            if(variant == 2) surface.ctrl[1][1] = surface.ctrl[1][1].Plus({0.25, 0.5, 0.175});
+            if(variant == 3) surface.ctrl[1][1] = surface.ctrl[1][1].Plus({0, 0, 0.3});
+            for(double u : {0.13, 0.37, 0.81}) for(double v : {0.17, 0.43, 0.89}) {
+                Vector point = surface.PointAt(u, v);
+                Point2d uv;
+                surface.ClosestPointTo(point, &uv);
+                REQUIRE(surface.PointAt(uv).Equals(point, 1e-8));
+                REQUIRE(uv.Equals({u, v}, 1e-8));
+            }
+        }
+        REQUIRE(!surface.IsPlanar());
+    });
+}
+
+void GenericSplineTests(const Step::BindingInfo &binding) {
+    const auto &schema = binding.schema;
+    const auto name = binding.protocol + "/nurbs_";
+    Run(name + "compound_cubic_patch_not_an_extrusion", [&]() {
+        auto result = Accepted(schema, FreeformBox());
+        CheckGeneralNative(*result.solids[0], 6, 12, 8, 1.1);
+        auto top = result.solids[0]->shell.surface.FindById(hSSurface{2601});
+        REQUIRE(top->degm == 3 && top->degn == 3);
+        REQUIRE(!top->IsPlanar() && !top->IsExtrusion(nullptr, nullptr));
+        REQUIRE(std::abs(top->PointAt(0.5, 0.5).z - 1.225) < 1e-12);
+        REQUIRE(!result.solids[0]->faces[1].planar);
+    });
+    Run(name + "rational_compound_cubic_controls_and_weights", [&]() {
+        auto result = Accepted(schema, FreeformBox(true));
+        auto top = result.solids[0]->shell.surface.FindById(hSSurface{2601});
+        REQUIRE(top->degm == 3 && top->degn == 3);
+        REQUIRE(top->ctrl[1][1].Equals({1.0 / 3, 1.0 / 3, 1.4}, 1e-14));
+        REQUIRE(top->weight[1][1] == 1 && top->weight[1][2] == 0.8 + 0.1 * 3 && top->weight[2][2] == 0.8 + 0.1 * 4);
+        REQUIRE(!top->IsExtrusion(nullptr, nullptr));
+        CheckGeneralNative(*result.solids[0], 6, 12, 8, 1.11, 0.03);
+    });
+    Run(name + "exact_cubic_multispan_surface_and_shared_seam", [&]() {
+        auto result = Accepted(schema, FreeformBox(false, true));
+        auto &solid = *result.solids[0];
+        REQUIRE(solid.faces[1].surfaces.size() == 2);
+        REQUIRE(solid.shell.surface.n == 7 && solid.shell.curve.n == 15);
+        CheckGeneralNative(solid, 6, 12, 8, 1.15);
+    });
+    Run(name + "rational_multispan_surface", [&]() {
+        auto result = Accepted(schema, FreeformBox(true, true));
+        REQUIRE(result.solids[0]->shell.surface.n == 7 && result.solids[0]->shell.curve.n == 15);
+        CheckGeneralNative(*result.solids[0], 6, 12, 8, 1.15, 0.03);
+    });
+    Run(name + "trimmed_multispan_plane_grid", [&]() {
+        auto result = Accepted(schema, SplitPlaneBox());
+        auto &solid = *result.solids[0];
+        REQUIRE(solid.shell.surface.n == 9 && solid.shell.curve.n == 20);
+        REQUIRE(solid.faces[1].planar && solid.faces[1].surfaces.size() == 4);
+        CheckGeneralNative(solid, 6, 12, 8, 1, 1e-8);
+    });
+    Run(name + "nonplanar_bilinear_patch_is_not_flattened", [&]() {
+        auto result = Accepted(schema, BilinearBox());
+        auto top = result.solids[0]->shell.surface.FindById(hSSurface{2601});
+        REQUIRE(top->degm == 1 && top->degn == 1 && !top->IsPlanar());
+        REQUIRE(top->ctrl[1][1].Equals({1, 1, 1.4}, 1e-14));
+        REQUIRE(top->PointAt(0.5, 0.5).Equals({0.5, 0.5, 1.1}, 1e-14));
+        CheckGeneralNative(*result.solids[0], 6, 12, 8, 1.1);
+    });
+    Run(name + "rational_quadratic_and_cubic_nonextruded_loft", [&]() {
+        auto outline = FreeformOutline();
+        auto result = Accepted(schema, BezierLoft(outline));
+        CheckGeneralNative(*result.solids[0], 6, 12, 8, OutlineArea(outline) * 2 * (1 + 0.8 + 0.64) / 3, 0.05);
+        int lines = 0, planes = 0;
+        for(const auto &edge : result.solids[0]->edges) lines += edge.linear ? 1 : 0;
+        for(const auto &face : result.solids[0]->faces) planes += face.planar ? 1 : 0;
+        REQUIRE(lines == 4 && planes == 2);
+        for(int i = 2; i < 6; ++i) {
+            auto surface = result.solids[0]->shell.surface.FindById(result.solids[0]->faces[i].surface);
+            REQUIRE(!surface->IsExtrusion(nullptr, nullptr));
+        }
+    });
+    Run(name + "curved_trims_cross_multispan_cap_grid", [&]() {
+        auto outline = FreeformOutline();
+        auto result = Accepted(schema, BezierLoft(outline, 2, 0.8, true));
+        REQUIRE(result.solids[0]->faces[0].surfaces.size() == 4);
+        REQUIRE(result.solids[0]->shell.surface.n == 9 && result.solids[0]->shell.curve.n == 20);
+        CheckGeneralNative(*result.solids[0], 6, 12, 8, OutlineArea(outline) * 2 * (1 + 0.8 + 0.64) / 3, 0.05);
+    });
+    Run(name + "inner_trim_loops_and_genus_one_shell", [&]() {
+        auto result = Accepted(schema, ThroughHole());
+        CheckGeneralNative(*result.solids[0], 10, 24, 16, 48, 1e-8);
+        double area;
+        REQUIRE(std::abs(TriangulatedVolume(result.solids[0]->shell, &area) - 48) < 1e-8);
+        REQUIRE(std::abs(area - 120) < 1e-8);
+        auto surface = result.solids[0]->shell.surface.FindById(hSSurface{2601});
+        SEdgeList uv = {};
+        surface->MakeEdgesInto(&result.solids[0]->shell, &uv, SSurface::MakeAs::UV);
+        auto bsp = SBspUv::From(&uv, surface);
+        Point2d hole;
+        surface->ClosestPointTo({2, 2, 4}, &hole);
+        REQUIRE(bsp->ClassifyPoint(hole, {0.123, 0.456}, surface) == SBspUv::Class::OUTSIDE);
+        uv.Clear();
+    });
+    Run(name + "compound_patch_native_boolean_union", [&]() {
+        auto first = Accepted(schema, FreeformBox());
+        auto second = Accepted(schema, Polyhedron({{0.5, 0, 0}, {1.5, 0, 0}, {1.5, 1, 0}, {0.5, 1, 0},
+            {0.5, 0, 2}, {1.5, 0, 2}, {1.5, 1, 2}, {0.5, 1, 2}},
+            {{0, 3, 2, 1}, {4, 5, 6, 7}, {0, 1, 5, 4}, {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 0, 4, 7}}));
+        ShellOwner combined;
+        combined.shell.MakeFromUnionOf(&first.solids[0]->shell, &second.solids[0]->shell);
+        REQUIRE(!combined.shell.booleanFailed && !combined.shell.IsEmpty());
+        REQUIRE(std::abs(TriangulatedVolume(combined.shell) - 2.55) < 0.01);
+    });
+    Run(name + "nonaffine_and_rational_planes_native_boolean_union", [&]() {
+        for(bool cubic : {false, true}) {
+            auto data = cubic ? FreeformBox(true, false, 0) : SplineSurface(Cube(1), 2501, 5000, 1, 1,
+                {{{0, 0, 1}, {0, 1, 1}}, {{1, 0, 1}, {1, 1.25, 1}}}, {{1, 1}, {1, 2}},
+                {2, 2}, {2, 2}, {0, 1}, {0, 1});
+            auto first = Accepted(schema, data);
+            auto second = Accepted(schema, Cube(1, {0.5, 0, 0}));
+            auto top = first.solids[0]->shell.surface.FindById(hSSurface{2601});
+            SSurface original = *top;
+            REQUIRE(top->IsPlanar() && !top->IsAffine());
+            ShellOwner combined;
+            combined.shell.MakeFromUnionOf(&first.solids[0]->shell, &second.solids[0]->shell);
+            REQUIRE(!combined.shell.booleanFailed && !combined.shell.IsEmpty());
+            double area;
+            REQUIRE(std::abs(TriangulatedVolume(combined.shell, &area) - 1.5) < 1e-8);
+            REQUIRE(std::abs(area - 8) < 1e-8);
+            for(int i = 0; i <= top->degm; ++i) for(int j = 0; j <= top->degn; ++j) {
+                REQUIRE(top->ctrl[i][j].EqualsExactly(original.ctrl[i][j]));
+                REQUIRE(top->weight[i][j] == original.weight[i][j]);
+            }
+        }
+    });
+    Run(name + "degree_four_reports_unsupported_without_fitting", [&]() {
+        auto data = SplineCurve(Cube(1), 300, 5000, 4, {{0, 0, 0}, {0.25, 0, 0}, {0.5, 0, 0},
+                                {0.75, 0, 0}, {1, 0, 0}}, {}, {5, 5}, {0, 1});
+        auto result = Convert(schema, data);
+        REQUIRE(result.status == Status::Rejected && result.solids.empty());
+        REQUIRE(result.diagnostics.size() == 1 && result.diagnostics[0].entity == 300);
+        REQUIRE(result.diagnostics[0].code == Step::GeometryDiagnostic::Code::Unsupported);
+        REQUIRE(result.diagnostics[0].message.find("1..3") != std::string::npos);
+    });
+    Run(name + "invalid_rational_weights_reported", [&]() {
+        for(double weight : {0.0, -1.0}) {
+            auto data = SplineCurve(Cube(1), 300, 5000, 1, {{0, 0, 0}, {1, 0, 0}}, {1, weight}, {2, 2}, {0, 1});
+            auto result = Convert(schema, data);
+            REQUIRE(result.status == Status::Rejected && result.solids.empty());
+            REQUIRE(result.diagnostics[0].entity == 300 && result.diagnostics[0].code == Step::GeometryDiagnostic::Code::InvalidGeometry);
+        }
+    });
+    Run(name + "surface_weights_and_knots_are_validated_without_repair", [&]() {
+        const std::vector<std::vector<Vector>> net = {{{0, 0, 1}, {0, 1, 1}}, {{1, 0, 1}, {1, 1, 1}}};
+        auto check = [&](const std::string &data, Step::GeometryDiagnostic::Code code) {
+            auto result = Convert(schema, data);
+            REQUIRE(result.status == Status::Rejected && result.solids.empty());
+            REQUIRE(result.diagnostics.size() == 1 && result.diagnostics[0].entity == 2501);
+            REQUIRE(result.diagnostics[0].code == code);
+        };
+        for(double weight : {0.0, -1.0}) {
+            check(SplineSurface(Cube(1), 2501, 5000, 1, 1, net, {{1, 1}, {1, weight}},
+                               {2, 2}, {2, 2}, {0, 1}, {0, 1}), Step::GeometryDiagnostic::Code::InvalidGeometry);
+        }
+        check(SplineSurface(Cube(1), 2501, 5000, 1, 1, net, {{1, 1}, {1}},
+                           {2, 2}, {2, 2}, {0, 1}, {0, 1}), Step::GeometryDiagnostic::Code::InvalidGeometry);
+        for(double weight : {1e-101, 1e101, 1e-13}) {
+            check(SplineSurface(Cube(1), 2501, 5000, 1, 1, net, {{1, 1}, {1, weight}},
+                               {2, 2}, {2, 2}, {0, 1}, {0, 1}), Step::GeometryDiagnostic::Code::Unsupported);
+        }
+        check(SplineSurface(Cube(1), 2501, 5000, 1, 1, net, {},
+                           {2, 1}, {2, 2}, {0, 1}, {0, 1}), Step::GeometryDiagnostic::Code::InvalidGeometry);
+        check(SplineSurface(Cube(1), 2501, 5000, 1, 1, net, {},
+                           {2, 2}, {2, 2}, {1, 0}, {0, 1}), Step::GeometryDiagnostic::Code::InvalidGeometry);
+        check(SplineSurface(Cube(1), 2501, 5000, 1, 1, net, {},
+                           {2, 2}, {2, 2}, {0, 0}, {0, 1}), Step::GeometryDiagnostic::Code::InvalidGeometry);
+        check(SplineSurface(Cube(1), 2501, 5000, 1, 1,
+                           {{{0, 0, 1}, {0, 1, 1}}, {{1, 0, 1}}}, {},
+                           {2, 2}, {2, 2}, {0, 1}, {0, 1}), Step::GeometryDiagnostic::Code::InvalidGeometry);
+        check(SplineSurface(Cube(1), 2501, 5000, 4, 1,
+                           {{{0, 0, 1}, {0, 1, 1}}, {{0.25, 0, 1}, {0.25, 1, 1}},
+                            {{0.5, 0, 1}, {0.5, 1, 1}}, {{0.75, 0, 1}, {0.75, 1, 1}}, {{1, 0, 1}, {1, 1, 1}}}, {},
+                           {5, 5}, {2, 2}, {0, 1}, {0, 1}), Step::GeometryDiagnostic::Code::Unsupported);
+    });
+    Run(name + "monotone_collinear_rational_cubic_remains_an_exact_line_reference", [&]() {
+        auto result = Accepted(schema, SplineCurve(Cube(1), 300, 5000, 3,
+            {{0, 0, 0}, {0.8, 0, 0}, {0.2, 0, 0}, {1, 0, 0}}, {1, 0.8, 1.2, 1}, {4, 4}, {0, 1}));
+        REQUIRE(result.solids[0]->edges[0].linear);
+        auto &curve = result.solids[0]->shell.curve.FindById(hSCurve{400})->exact;
+        REQUIRE(curve.deg == 3 && curve.ctrl[1].x == 0.8 && curve.ctrl[2].x == 0.2);
+        REQUIRE(curve.weight[1] == 0.8 && curve.weight[2] == 1.2);
+        CheckGeneralNative(*result.solids[0], 6, 12, 8, 1, 1e-8);
+    });
+    Run(name + "conversion_is_independent_of_scene_and_restores_settings", [&]() {
+        TessellationSettings saved;
+        auto document = Read(Exchange(schema, BezierLoft(FreeformOutline(), 2, 0.8, true)));
+        auto baseline = Step::ConvertGeometry(*document);
+        REQUIRE(baseline.status == Status::Okay && baseline.solids.size() == 1);
+        auto signature = NativeSignature(*baseline.solids[0]);
+        const double chords[] = {0, 1e30, 1e-30};
+        const int counts[] = {0, -7, std::numeric_limits<int>::max()};
+        for(int i = 0; i < 3; ++i) {
+            SS.chordTolCalculated = chords[i]; SS.maxSegments = counts[i];
+            SS.exportMode = i != 0; SS.exportChordTol = 0; SS.exportScale = 0; SS.exportMaxSegments = -1;
+            auto result = Step::ConvertGeometry(*document);
+            if(result.status != Status::Okay) PrintDiagnostics(result);
+            REQUIRE(result.status == Status::Okay && result.solids.size() == 1);
+            REQUIRE(NativeSignature(*result.solids[0]) == signature);
+            REQUIRE(SS.chordTolCalculated == chords[i] && SS.maxSegments == counts[i] && SS.exportMode == (i != 0));
+            REQUIRE(SS.exportChordTol == 0 && SS.exportScale == 0 && SS.exportMaxSegments == -1);
+            auto invalid = ReplaceRecord(FreeformBox(), 2101, "FACE_OUTER_BOUND('',#2001,.F.)");
+            Rejected(schema, invalid); // Fails after the scoped native settings were installed.
+            auto partial = Convert(schema, invalid + Cube(1, {}, 10000));
+            REQUIRE(partial.status == Status::Partial && partial.solids.size() == 1 && partial.diagnostics.size() == 1);
+            REQUIRE(SS.chordTolCalculated == chords[i] && SS.maxSegments == counts[i] && SS.exportMode == (i != 0));
+        }
+        for(int variant = 0; variant < 4; ++variant) {
+            Step::GeometryOptions options;
+            if(variant == 0) options.chordTolerance = std::numeric_limits<double>::quiet_NaN();
+            if(variant == 1) options.chordTolerance = -1;
+            if(variant == 2) options.maxSegments = 0;
+            if(variant == 3) options.maxSegments = 4097;
+            auto result = Step::ConvertGeometry(*document, options);
+            REQUIRE(result.status == Status::Rejected && result.solids.empty());
+            REQUIRE(result.diagnostics.size() == 1 && result.diagnostics[0].code == Step::GeometryDiagnostic::Code::Unsupported);
+            REQUIRE(SS.chordTolCalculated == chords[2] && SS.maxSegments == counts[2] && SS.exportMode);
+        }
+    });
+    Run(name + "standard_implicit_spline_knots", [&]() {
+        for(const auto &family : {"BEZIER", "UNIFORM", "QUASI_UNIFORM"}) {
+            auto data = ReplaceRecord(Cube(1, {}, 0, true), 300, std::string(family) +
+                "_CURVE('',1,(#10,#11),.UNSPECIFIED.,.F.,.F.)");
+            data = ReplaceRecord(data, 2500, std::string(family) +
+                "_SURFACE('',1,1,((#3000,#3001),(#3002,#3003)),.UNSPECIFIED.,.F.,.F.,.F.)");
+            auto result = Accepted(schema, data);
+            CheckUnitCube(*result.solids[0]);
+        }
+    });
+    Run(name + "repeated_freeform_success_and_failure_cleanup", [&]() {
+        auto exercise = [&]() {
+            auto a = Accepted(schema, FreeformBox(true, true));
+            auto b = Accepted(schema, BezierLoft(FreeformOutline(), 2, 0.8, true));
+            Rejected(schema, ReplaceRecord(FreeformBox(), 5005, "CARTESIAN_POINT('',(100.,100.,100.))"));
+        };
+        exercise();
+#if defined(_MSC_VER) && defined(_DEBUG)
+        _CrtMemState before, after;
+        _CrtMemCheckpoint(&before);
+#endif
+        for(int i = 0; i < 5; ++i) exercise();
+#if defined(_MSC_VER) && defined(_DEBUG)
+        _CrtMemCheckpoint(&after);
+        REQUIRE(before.lCounts[_NORMAL_BLOCK] == after.lCounts[_NORMAL_BLOCK]);
+        REQUIRE(before.lSizes[_NORMAL_BLOCK] == after.lSizes[_NORMAL_BLOCK]);
+#endif
+    });
+}
+
 void SplineTests(const Step::BindingInfo &binding) {
     const std::string &schema = binding.schema;
     const std::string cube = Cube(1, {}, 0, true);
@@ -480,13 +1144,23 @@ void SplineTests(const Step::BindingInfo &binding) {
             // roundoff: even that must not be fitted away as a plane.
             auto data = ReplaceRecord(cube, 3003, "CARTESIAN_POINT('',(1.,1.," + std::string(z) + "))");
             auto result = Convert(schema, data);
-            REQUIRE(result.status == Status::Rejected && result.solids.empty());
-            REQUIRE(result.diagnostics.size() == 1 && result.diagnostics[0].entity == 2500);
-            REQUIRE(result.diagnostics[0].code == Step::GeometryDiagnostic::Code::Unsupported);
+            if(std::string(z) == "0.01") {
+                REQUIRE(result.status == Status::Rejected && result.solids.empty());
+                REQUIRE(result.diagnostics.size() == 1 && result.diagnostics[0].entity == 2500);
+                REQUIRE(result.diagnostics[0].code == Step::GeometryDiagnostic::Code::InvalidGeometry);
+            } else {
+                REQUIRE(result.status == Status::Okay && result.solids.size() == 1);
+                REQUIRE(!result.solids[0]->faces[0].planar);
+                auto surface = result.solids[0]->shell.surface.FindById(hSSurface{2600});
+                REQUIRE(surface->ctrl[1][1].z == 1e-8);
+                REQUIRE(!surface->IsPlanar());
+            }
         }
     });
     Run(binding.protocol + "/spline_non_affine_planar_patch", [&]() {
-        Rejected(schema, ReplaceRecord(cube, 3003, "CARTESIAN_POINT('',(1.,1.25,0.))"));
+        auto result = Accepted(schema, ReplaceRecord(cube, 3003, "CARTESIAN_POINT('',(1.,1.25,0.))"));
+        CheckGeneralNative(*result.solids[0], 6, 12, 8, 1, 1e-8);
+        REQUIRE(result.solids[0]->shell.surface[0].ctrl[1][1].Equals({1, 1.25, 0}, 1e-14));
     });
     Run(binding.protocol + "/spline_degenerate_patch", [&]() {
         auto data = ReplaceRecord(cube, 3002, "CARTESIAN_POINT('',(0.,0.,0.))");
@@ -501,15 +1175,17 @@ void SplineTests(const Step::BindingInfo &binding) {
             "B_SPLINE_CURVE_WITH_KNOTS('',2,(#10,#11,#12),.UNSPECIFIED.,.F.,.F.,"
             "(3,3),(0.,1.),.UNSPECIFIED.)"));
     });
-    Run(binding.protocol + "/spline_multispan_curve", [&]() {
-        Rejected(schema, ReplaceRecord(cube, 300,
+    Run(binding.protocol + "/spline_trimmed_multispan_curve", [&]() {
+        auto result = Accepted(schema, ReplaceRecord(cube, 300,
             "B_SPLINE_CURVE_WITH_KNOTS('',1,(#10,#11,#12),.UNSPECIFIED.,.F.,.F.,"
             "(2,1,2),(0.,0.5,1.),.UNSPECIFIED.)"));
+        CheckUnitCube(*result.solids[0]);
     });
     Run(binding.protocol + "/spline_higher_order_surface", [&]() {
-        Rejected(schema, ReplaceRecord(cube, 2500,
+        auto result = Accepted(schema, ReplaceRecord(cube, 2500,
             "B_SPLINE_SURFACE_WITH_KNOTS('',2,1,((#3000,#3001),(#3000,#3001),(#3002,#3003)),"
             ".UNSPECIFIED.,.F.,.F.,.F.,(3,3),(2,2),(0.,1.),(0.,1.),.UNSPECIFIED.)"));
+        CheckGeneralNative(*result.solids[0], 6, 12, 8, 1, 1e-8);
     });
     Run(binding.protocol + "/spline_multispan_surface", [&]() {
         Rejected(schema, ReplaceRecord(cube, 2500,
@@ -517,17 +1193,21 @@ void SplineTests(const Step::BindingInfo &binding) {
             ".UNSPECIFIED.,.F.,.F.,.F.,(2,1,2),(2,2),(0.,0.5,1.),(0.,1.),.UNSPECIFIED.)"));
     });
     Run(binding.protocol + "/spline_no_rational_curve_weight_dropping", [&]() {
-        Rejected(schema, ReplaceRecord(cube, 300,
+        auto result = Accepted(schema, ReplaceRecord(cube, 300,
             "(BOUNDED_CURVE()B_SPLINE_CURVE(1,(#10,#11),.UNSPECIFIED.,.F.,.F.)"
             "B_SPLINE_CURVE_WITH_KNOTS((2,2),(0.,1.),.UNSPECIFIED.)CURVE()"
             "GEOMETRIC_REPRESENTATION_ITEM()RATIONAL_B_SPLINE_CURVE((1.,2.))REPRESENTATION_ITEM(''))"));
+        CheckUnitCube(*result.solids[0]);
+        REQUIRE(result.solids[0]->shell.curve.FindById(hSCurve{400})->exact.weight[1] == 2);
     });
     Run(binding.protocol + "/spline_no_rational_surface_weight_dropping", [&]() {
-        Rejected(schema, ReplaceRecord(cube, 2500,
+        auto result = Accepted(schema, ReplaceRecord(cube, 2500,
             "(BOUNDED_SURFACE()B_SPLINE_SURFACE(1,1,((#3000,#3001),(#3002,#3003)),"
             ".UNSPECIFIED.,.F.,.F.,.F.)B_SPLINE_SURFACE_WITH_KNOTS((2,2),(2,2),(0.,1.),(0.,1.),"
             ".UNSPECIFIED.)GEOMETRIC_REPRESENTATION_ITEM()RATIONAL_B_SPLINE_SURFACE(((1.,2.),(1.,1.)))"
             "REPRESENTATION_ITEM('')SURFACE())"));
+        CheckUnitCube(*result.solids[0]);
+        REQUIRE(result.solids[0]->shell.surface[0].weight[0][1] == 2);
     });
     Run(binding.protocol + "/spline_invalid_curve_knots", [&]() {
         for(const auto &knots : {"(0.,0.)", "(1.,0.)"}) {
@@ -550,16 +1230,22 @@ void SplineTests(const Step::BindingInfo &binding) {
     });
     Run(binding.protocol + "/spline_closed_or_uncertain_curve", [&]() {
         for(const auto &flags : {".T.,.F.", ".U.,.F.", ".F.,.T.", ".F.,.U."}) {
-            Rejected(schema, ReplaceRecord(cube, 300,
+            auto data = ReplaceRecord(cube, 300,
                 "B_SPLINE_CURVE_WITH_KNOTS('',1,(#10,#11),.UNSPECIFIED.," + std::string(flags) +
-                ",(2,2),(0.,1.),.UNSPECIFIED.)"));
+                ",(2,2),(0.,1.),.UNSPECIFIED.)");
+            if(std::string(flags).find(".U.") != std::string::npos) {
+                auto result = Accepted(schema, data); CheckUnitCube(*result.solids[0]);
+            } else Rejected(schema, data);
         }
     });
     Run(binding.protocol + "/spline_closed_or_uncertain_surface", [&]() {
         for(const auto &flags : {".T.,.F.,.F.", ".F.,.T.,.F.", ".F.,.F.,.T.", ".U.,.F.,.F."}) {
-            Rejected(schema, ReplaceRecord(cube, 2500,
+            auto data = ReplaceRecord(cube, 2500,
                 "B_SPLINE_SURFACE_WITH_KNOTS('',1,1,((#3000,#3001),(#3002,#3003)),.UNSPECIFIED.," +
-                std::string(flags) + ",(2,2),(2,2),(0.,1.),(0.,1.),.UNSPECIFIED.)"));
+                std::string(flags) + ",(2,2),(2,2),(0.,1.),(0.,1.),.UNSPECIFIED.)");
+            if(std::string(flags).find(".U.") != std::string::npos) {
+                auto result = Accepted(schema, data); CheckUnitCube(*result.solids[0]);
+            } else Rejected(schema, data);
         }
     });
     Run(binding.protocol + "/spline_bad_orientation", [&]() {
@@ -704,14 +1390,13 @@ void ProtocolTests(const Step::BindingInfo &binding) {
             "CLOSED_SHELL('',(#2600,#2601,#2602,#2603,#2604,#2605,"
                             "#12600,#12601,#12602,#12603,#12604,#12605))"));
     });
-    Run(binding.protocol + "/non_convex_face_rejected", [&]() {
-        Rejected(schema, ConcavePrism());
+    Run(binding.protocol + "/non_convex_simple_face", [&]() {
+        auto result = Accepted(schema, ConcavePrism());
+        CheckGeneralNative(*result.solids[0], 8, 18, 12, 640, 1e-8);
     });
-    Run(binding.protocol + "/non_convex_solid_rejected", [&]() {
-        auto result = Convert(schema, ConcaveSolidWithConvexFaces());
-        REQUIRE(result.status == Status::Rejected && result.solids.empty());
-        REQUIRE(result.diagnostics.size() == 1);
-        REQUIRE(result.diagnostics[0].code == Step::GeometryDiagnostic::Code::Unsupported);
+    Run(binding.protocol + "/non_convex_solid_with_simple_faces", [&]() {
+        auto result = Accepted(schema, ConcaveSolidWithConvexFaces());
+        CheckGeneralNative(*result.solids[0], 9, 16, 9, 1000.0 - 500.0 / 3, 1e-8);
     });
     Run(binding.protocol + "/bad_face_sense", [&]() {
         Rejected(schema, ReplaceRecord(cube, 2600, "ADVANCED_FACE('',(#2100),#2500,.F.)"));
@@ -1415,6 +2100,311 @@ void ExternalUnitCube(const std::string &path, const std::string &source) {
     if(!source.empty()) CompareSourceCube(source, *result.solids[0]);
 }
 
+struct FineTessellation {
+    double chord = SS.chordTolCalculated;
+    int segments = SS.maxSegments;
+    bool exporting = SS.exportMode;
+    FineTessellation() { SS.chordTolCalculated = 1e-4; SS.maxSegments = 2048; SS.exportMode = false; }
+    ~FineTessellation() { SS.chordTolCalculated = chord; SS.maxSegments = segments; SS.exportMode = exporting; }
+};
+
+void CompareSourceCylinder(const std::string &path, Step::NativeSolid &solid) {
+    struct SketchOwner {
+        SketchOwner() { SS.Init(); SS.showToolbar = false; SS.checkClosedContour = false; }
+        ~SketchOwner() { SK.Clear(); SS.Clear(); }
+    } sketch;
+    REQUIRE(SS.LoadFromFile(Platform::Path::From(path).Expand(true)));
+    SS.AfterNewFile();
+    REQUIRE(!SS.fileLoadError && !SK.groupOrder.IsEmpty());
+    for(const auto &group : SK.group) REQUIRE(group.IsSolvedOkay());
+    auto group = SK.GetRunningMeshGroupFor(*SK.groupOrder.Last());
+    REQUIRE(group && group->runningMesh.IsEmpty());
+    auto &source = group->runningShell;
+    REQUIRE(!source.booleanFailed && source.surface.n == 6 && source.curve.n == 12);
+    std::set<PointKey> vertices;
+    for(const auto &curve : source.curve) {
+        REQUIRE(curve.isExact);
+        vertices.insert(Key(curve.exact.Start())); vertices.insert(Key(curve.exact.Finish()));
+        int matches = 0;
+        for(const auto &imported : solid.shell.curve) {
+            Vector a = curve.exact.Start(), b = curve.exact.Finish();
+            Vector x = imported.exact.Start(), y = imported.exact.Finish();
+            if(!((a.Equals(x) && b.Equals(y)) || (a.Equals(y) && b.Equals(x)))) continue;
+            for(int i = 0; i <= 16; ++i) REQUIRE(!Step::Nurbs::Parameters(imported.exact,
+                curve.exact.PointAt(i / 16.0), LENGTH_EPS * 0.1).empty());
+            ++matches;
+        }
+        REQUIRE(matches == 1);
+    }
+    REQUIRE(vertices.size() == solid.vertices.size());
+    for(const auto &vertex : solid.vertices) REQUIRE(vertices.count(Key(vertex.position)) == 1);
+    for(const auto &surface : source.surface) {
+        int matches = 0;
+        for(auto &imported : solid.shell.surface) {
+            bool matchesAll = true;
+            for(double u : {0.125, 0.375, 0.625, 0.875}) for(double v : {0.125, 0.375, 0.625, 0.875}) {
+                Vector point = surface.PointAt(u, v);
+                Point2d uv;
+                imported.ClosestPointTo(point, &uv);
+                if(!imported.PointAt(uv).Equals(point, LENGTH_EPS * 0.1) ||
+                   imported.NormalAt(uv).WithMagnitude(1).Dot(surface.NormalAt(u, v).WithMagnitude(1)) < 1 - 1e-10) {
+                    matchesAll = false;
+                }
+            }
+            if(matchesAll) ++matches;
+        }
+        REQUIRE(matches == 1);
+    }
+    // Regenerated source, then a disposable native copy with finer trim PWLs
+    // for measurement. Never save, re-export, or alter the supplied sketch.
+    FineTessellation fine;
+    ShellOwner measured;
+    measured.shell.MakeFromCopyOf(&source);
+    for(auto &curve : measured.shell.curve) {
+        curve.pts.Clear(); curve.exact.MakePwlInto(&curve.pts, 1e-4, 0.03125);
+    }
+    double area;
+    REQUIRE(std::abs(TriangulatedVolume(measured.shell, &area) - 31.25 * PI) < 0.01);
+    REQUIRE(std::abs(area - 37.5 * PI) < 0.01);
+}
+
+void ExternalCylinder(const std::string &path, const std::string &source) {
+    FineTessellation fine;
+    std::string text;
+    REQUIRE(Platform::ReadFile(Platform::Path::From(path), &text));
+    auto document = Read(text);
+    Step::GeometryOptions options;
+    options.chordTolerance = 1e-4; options.maxSegments = 2048;
+    auto result = Step::ConvertGeometry(*document, options);
+    document.reset();
+    if(result.status != Status::Okay) PrintDiagnostics(result);
+    REQUIRE(result.status == Status::Okay && result.solids.size() == 1 && result.diagnostics.empty());
+    auto &solid = *result.solids[0];
+    REQUIRE(solid.shell.surface.n == 6 && solid.shell.curve.n == 12);
+    REQUIRE(solid.lengthToMm == 1);
+    CheckGeneralNative(solid, 6, 12, 8, 31.25 * PI, 0.01);
+    Vector min = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE}, max = min.Negated();
+    for(const auto &vertex : solid.vertices) vertex.position.MakeMaxMin(&max, &min);
+    REQUIRE(min.Equals({-2.5, -2.5, 0}) && max.Equals({2.5, 2.5, 5}));
+    int lines = 0, planes = 0, arcs = 0;
+    for(const auto &edge : solid.edges) lines += edge.linear ? 1 : 0;
+    for(const auto &face : solid.faces) planes += face.planar ? 1 : 0;
+    for(const auto &curve : solid.shell.curve) if(curve.exact.deg == 2) {
+        REQUIRE(curve.exact.weight[0] == 1 && curve.exact.weight[1] == 0.7071067812 && curve.exact.weight[2] == 1);
+        ++arcs;
+    }
+    REQUIRE(lines == 4 && planes == 2 && arcs == 8);
+    auto arc = solid.shell.curve.FindById(hSCurve{21});
+    REQUIRE(arc->exact.ctrl[1].Equals({-2.5, -2.5, 0}, 1e-14));
+    double area;
+    REQUIRE(std::abs(TriangulatedVolume(solid.shell, &area) - 31.25 * PI) < 0.01);
+    REQUIRE(std::abs(area - 37.5 * PI) < 0.01);
+    ShellOwner shifted, combined;
+    shifted.shell.MakeFromTransformationOf(&solid.shell, {2.5, 0, 0}, Quaternion::IDENTITY, 1);
+    combined.shell.MakeFromUnionOf(&solid.shell, &shifted.shell);
+    REQUIRE(!combined.shell.booleanFailed && !combined.shell.IsEmpty());
+    double diskUnion = 2 * PI * 2.5 * 2.5 - (2 * 2.5 * 2.5 * std::acos(0.5) - 1.25 * std::sqrt(18.75));
+    REQUIRE(std::abs(TriangulatedVolume(combined.shell, &area) - 5 * diskUnion) < 0.03);
+    REQUIRE(std::abs(area - (2 * diskUnion + 5 * (4 * 2.5 * (PI - std::acos(0.5))))) < 0.03);
+    if(!source.empty()) CompareSourceCylinder(source, solid);
+}
+
+#ifdef HAVE_STEP_IMPORT
+void CheckCurvedLink(hGroup hg, int references, double volume, double tolerance) {
+    auto group = SK.GetGroup(hg);
+    REQUIRE(group->IsSolvedOkay() && group->impEntity.n == references);
+    REQUIRE(group->linkParams.empty() && !group->forceToMesh);
+    REQUIRE(group->impMesh.IsEmpty() && group->thisMesh.IsEmpty() && group->runningMesh.IsEmpty());
+    REQUIRE(!group->thisShell.booleanFailed && !group->thisShell.IsEmpty());
+    for(auto &surface : group->thisShell.surface) {
+        if(surface.face != 0) {
+            auto face = SK.entity.FindByIdNoOops(hEntity{surface.face});
+            REQUIRE(face && face->IsFace() && face->group == hg && surface.IsPlanar());
+            REQUIRE(surface.NormalAt(0.5, 0.5).WithMagnitude(1).Equals(face->FaceGetNormalNum()));
+        } else REQUIRE(!surface.IsPlanar());
+    }
+    for(auto &curve : group->thisShell.curve) {
+        REQUIRE(curve.isExact);
+        if(curve.exact.entity != 0) {
+            auto edge = SK.entity.FindByIdNoOops(hEntity{curve.exact.entity});
+            REQUIRE(edge && edge->type == Entity::Type::LINE_SEGMENT && edge->group == hg);
+            Vector a = SK.GetEntity(edge->point[0])->PointGetNum(), b = SK.GetEntity(edge->point[1])->PointGetNum();
+            for(int i = 0; i <= curve.exact.deg; ++i) REQUIRE(curve.exact.ctrl[i].DistanceToLine(a, b.Minus(a)) < LENGTH_EPS);
+        }
+    }
+    REQUIRE(std::abs(TriangulatedVolume(group->thisShell) - volume) < tolerance);
+}
+
+void CurvedLinkTests(const Step::BindingInfo &binding) {
+    const auto name = "link/" + binding.protocol + "/nurbs_";
+    const auto &schema = binding.schema;
+    Run(name + "truthful_references_placement_constraints_and_roundtrip", [&]() {
+        LinkApp app;
+        LinkTestFile file, saved("slvs");
+        auto outline = FreeformOutline();
+        double volume = OutlineArea(outline) * 2 * (1 + 0.8 + 0.64) / 3;
+        file.Write(Exchange(schema, BezierLoft(outline)));
+        auto hg = MenuLink(file.path); PlaceLink(hg);
+        CheckCurvedLink(hg, 14, volume, 0.05);
+        REQUIRE(SK.GetGroup(hg)->stepRefs.size() == 14);
+        auto identities = SK.GetGroup(hg)->stepRefs;
+        auto vertex = LinkedReference(hg, StepEntityKey::VERTEX);
+        auto edge = LinkedReference(hg, StepEntityKey::EDGE);
+        auto face = LinkedReference(hg, StepEntityKey::FACE);
+        Group::MenuGroup(Command::GROUP_3D);
+        auto drawing = SS.GW.activeGroup;
+        auto point = LinkDatum(drawing, {1, 2, 3});
+        ConstrainLinked(point, vertex);
+        auto onEdge = LinkDatum(drawing, {1, 2, 3}); ConstrainLinked(onEdge, edge);
+        auto onFace = LinkDatum(drawing, {1, 2, 3}); ConstrainLinked(onFace, face);
+        REQUIRE(SS.SaveToFile(saved.path));
+        REQUIRE(SS.LoadFromFile(saved.path)); SS.AfterNewFile();
+        REQUIRE(!SS.fileLoadError && SK.GetGroup(hg)->stepRefs == identities && SK.constraint.n == 3);
+        REQUIRE(SK.GetGroup(drawing)->IsSolvedOkay());
+        SS.UndoRemember();
+        PlaceLink(hg, {3, -2, 7}, Quaternion::From(Vector{1, 2, 3}.WithMagnitude(1), 0.4), 2);
+        CheckCurvedLink(hg, 14, volume * 8, 0.4);
+        REQUIRE(SK.GetEntity(point)->PointGetNum().Equals(SK.GetEntity(vertex)->PointGetNum()));
+        SS.UndoUndo();
+        CheckCurvedLink(hg, 14, volume, 0.05);
+        SS.UndoRedo();
+        REQUIRE(SK.GetGroup(hg)->stepRefs == identities);
+    });
+    Run(name + "artificial_patch_seams_do_not_change_source_identities", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        file.Write(Exchange(schema, Cube(1)));
+        auto hg = MenuLink(file.path); PlaceLink(hg);
+        auto identities = SK.GetGroup(hg)->stepRefs;
+        auto edge = LinkedReference(hg, StepEntityKey::EDGE, 408);
+        auto face = LinkedReference(hg, StepEntityKey::FACE, 2601);
+        file.Write(Exchange(schema, SplitPlaneBox()));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile)); SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(SK.GetGroup(hg)->stepRefs == identities);
+        REQUIRE(LinkedReference(hg, StepEntityKey::EDGE, 408) == edge);
+        REQUIRE(LinkedReference(hg, StepEntityKey::FACE, 2601) == face);
+        REQUIRE(SK.GetGroup(hg)->thisShell.surface.n == 9 && SK.GetGroup(hg)->thisShell.curve.n == 20);
+        REQUIRE(SK.GetGroup(hg)->impEntity.n == 26);
+        for(const auto &surface : SK.GetGroup(hg)->thisShell.surface) REQUIRE(surface.face != 0);
+        int artificial = 0;
+        for(const auto &curve : SK.GetGroup(hg)->thisShell.curve) artificial += curve.exact.entity == 0 ? 1 : 0;
+        REQUIRE(artificial == 4);
+    });
+    Run(name + "plane_becoming_curved_does_not_retarget_plane_constraint", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        file.Write(Exchange(schema, Cube(1)));
+        auto hg = MenuLink(file.path); PlaceLink(hg);
+        auto oldFace = LinkedReference(hg, StepEntityKey::FACE, 2601);
+        auto edge = LinkedReference(hg, StepEntityKey::EDGE, 408);
+        Group::MenuGroup(Command::GROUP_3D);
+        auto point = LinkDatum(SS.GW.activeGroup, {0.5, 0.5, 1});
+        auto constraint = ConstrainLinked(point, oldFace);
+        file.Write(Exchange(schema, FreeformBox()));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile)); SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(!SK.entity.FindByIdNoOops(oldFace) && !SK.constraint.FindByIdNoOops(constraint));
+        REQUIRE(SK.GetGroup(hg)->impEntity.n == 25 && SK.GetGroup(hg)->stepRefs.size() == 26);
+        REQUIRE(LinkedReference(hg, StepEntityKey::EDGE, 408) == edge);
+        auto identities = SK.GetGroup(hg)->stepRefs;
+        file.Write(Exchange(schema, FreeformBox(false, true)));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile)); SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(SK.GetGroup(hg)->stepRefs == identities && LinkedReference(hg, StepEntityKey::EDGE, 408) == edge);
+        REQUIRE(SK.GetGroup(hg)->thisShell.surface.n == 7);
+    });
+    Run(name + "line_becoming_curved_retires_line_reference_not_its_vertices", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        std::vector<SBezier> outline = {
+            SBezier::From(Vector{1, 0, 0}, Vector{0, 1, 0}),
+            SBezier::From(Vector{0, 1, 0}, Vector{-1, 0, 0}),
+            SBezier::From(Vector{-1, 0, 0}, Vector{0, -1, 0}),
+            SBezier::From(Vector{0, -1, 0}, Vector{1, 0, 0})
+        };
+        file.Write(Exchange(schema, BezierLoft(outline)));
+        auto hg = MenuLink(file.path); PlaceLink(hg);
+        REQUIRE(SK.GetGroup(hg)->impEntity.n == 26);
+        auto vertex = LinkedReference(hg, StepEntityKey::VERTEX, 30);
+        auto oldEdge = LinkedReference(hg, StepEntityKey::EDGE, 400);
+        auto otherEdge = LinkedReference(hg, StepEntityKey::EDGE, 401);
+        auto identities = SK.GetGroup(hg)->stepRefs;
+        Group::MenuGroup(Command::GROUP_3D);
+        auto point = LinkDatum(SS.GW.activeGroup, {0.5, 0.5, 0});
+        auto constraint = ConstrainLinked(point, oldEdge);
+        outline[0] = FreeformOutline()[0]; // Same source vertices, curve/edge IDs and connectivity.
+        file.Write(Exchange(schema, BezierLoft(outline)));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile)); SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(!SK.entity.FindByIdNoOops(oldEdge) && !SK.constraint.FindByIdNoOops(constraint));
+        REQUIRE(LinkedReference(hg, StepEntityKey::VERTEX, 30) == vertex);
+        REQUIRE(LinkedReference(hg, StepEntityKey::EDGE, 401) == otherEdge);
+        REQUIRE(SK.GetGroup(hg)->stepRefs == identities && SK.GetGroup(hg)->impEntity.n == 23);
+        int curved = 0;
+        for(const auto &curve : SK.GetGroup(hg)->thisShell.curve) if(curve.exact.deg == 2) {
+            REQUIRE(curve.exact.entity == 0 && curve.exact.weight[1] == 0.6);
+            ++curved;
+        }
+        REQUIRE(curved == 2 && SK.GetGroup(hg)->runningMesh.IsEmpty());
+    });
+    Run(name + "collinear_cubic_retains_existing_line_identity", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        file.Write(Exchange(schema, Cube(1)));
+        auto hg = MenuLink(file.path); PlaceLink(hg);
+        auto edge = LinkedReference(hg, StepEntityKey::EDGE, 400);
+        auto identities = SK.GetGroup(hg)->stepRefs;
+        file.Write(Exchange(schema, SplineCurve(Cube(1), 300, 5000, 3,
+            {{0, 0, 0}, {0.8, 0, 0}, {0.2, 0, 0}, {1, 0, 0}}, {1, 0.8, 1.2, 1}, {4, 4}, {0, 1})));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile)); SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(SK.GetGroup(hg)->stepRefs == identities && LinkedReference(hg, StepEntityKey::EDGE, 400) == edge);
+        REQUIRE(SK.GetEntity(edge)->type == Entity::Type::LINE_SEGMENT && SK.GetGroup(hg)->impEntity.n == 26);
+        bool retained = false;
+        for(const auto &curve : SK.GetGroup(hg)->thisShell.curve) if(curve.exact.deg == 3) {
+            REQUIRE(curve.exact.entity == edge.v && curve.exact.weight[1] == 0.8 && curve.exact.weight[2] == 1.2);
+            retained = true;
+        }
+        REQUIRE(retained && SK.GetGroup(hg)->runningMesh.IsEmpty());
+    });
+}
+
+void ExternalLinkedCylinder(const std::string &path) {
+    LinkApp app;
+    LinkTestFile saved("slvs");
+    auto hg = MenuLink(Platform::Path::From(path).Expand(true));
+    PlaceLink(hg);
+    CheckCurvedLink(hg, 14, 31.25 * PI, 0.25);
+    auto identities = SK.GetGroup(hg)->stepRefs;
+    REQUIRE(identities.size() == 14);
+    int points = 0, lines = 0, faces = 0;
+    for(const auto &entity : SK.entity) if(entity.group == hg) {
+        if(entity.IsPoint()) ++points;
+        else if(entity.type == Entity::Type::LINE_SEGMENT) ++lines;
+        else if(entity.IsFace()) ++faces;
+        else REQUIRE(false);
+    }
+    REQUIRE(points == 8 && lines == 4 && faces == 2);
+    Group::MenuGroup(Command::GROUP_3D);
+    auto drawing = SS.GW.activeGroup;
+    auto vertex = LinkedReference(hg, StepEntityKey::VERTEX);
+    auto edge = LinkedReference(hg, StepEntityKey::EDGE);
+    auto face = LinkedReference(hg, StepEntityKey::FACE);
+    auto point = LinkDatum(drawing, {1, 2, 3});
+    ConstrainLinked(point, vertex);
+    auto onLine = LinkDatum(drawing, {1, 2, 3});
+    REQUIRE(SK.GetConstraint(ConstrainLinked(onLine, edge))->type == Constraint::Type::PT_ON_LINE);
+    auto onPlane = LinkDatum(drawing, {1, 2, 3});
+    REQUIRE(SK.GetConstraint(ConstrainLinked(onPlane, face))->type == Constraint::Type::PT_ON_FACE);
+    REQUIRE(SS.SaveToFile(saved.path));
+    REQUIRE(SS.LoadFromFile(saved.path)); SS.AfterNewFile();
+    REQUIRE(!SS.fileLoadError && SK.GetGroup(hg)->stepRefs == identities);
+    REQUIRE(SK.GetGroup(drawing)->IsSolvedOkay() && SK.constraint.n == 3);
+    Quaternion rotation = Quaternion::From(Vector{1, 2, 3}.WithMagnitude(1), 0.4);
+    PlaceLink(hg, {7, -3, 11}, rotation, 2);
+    CheckCurvedLink(hg, 14, 250 * PI, 2);
+    REQUIRE(SK.GetEntity(point)->PointGetNum().Equals(SK.GetEntity(vertex)->PointGetNum()));
+    REQUIRE(SS.ReloadAllLinked(SS.saveFile)); SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    REQUIRE(SK.GetGroup(hg)->stepRefs == identities);
+}
+#endif
+
 } // namespace
 
 int main(int argc, char **argv) {
@@ -1426,11 +2416,12 @@ int main(int argc, char **argv) {
     SS.chordTolCalculated = 0.01;
     SS.maxSegments = 64;
     auto args = Platform::InitCli(argc, argv);
-    bool external = (args.size() == 3 || args.size() == 5) && args[1] == "--cube-1mm";
+    bool external = (args.size() == 3 || args.size() == 5) &&
+                    (args[1] == "--cube-1mm" || args[1] == "--cylinder-5mm");
     bool source = args.size() == 5 && args[3] == "--source-slvs";
     if((args.size() != 1 && !external) || (args.size() == 5 && !source)) {
         std::cerr << "Usage: solvespace-step-geometry-testsuite "
-                     "[--cube-1mm file.step [--source-slvs original.slvs]]\n";
+                     "[--cube-1mm|--cylinder-5mm file.step [--source-slvs original.slvs]]\n";
         return 2;
     }
 #ifdef HAVE_STEP_IMPORT
@@ -1467,18 +2458,28 @@ int main(int argc, char **argv) {
         REQUIRE(step && stp);
     });
 #endif
+    NurbsMathTests();
     for(const auto &binding : Step::SupportedBindings()) {
         ProtocolTests(binding);
         SplineTests(binding);
+        GenericSplineTests(binding);
 #ifdef HAVE_STEP_IMPORT
         LinkTests(binding);
+        CurvedLinkTests(binding);
 #endif
     }
     if(external) {
-        Run("external/cube_1mm", [&]() { ExternalUnitCube(args[2], source ? args[4] : ""); });
+        if(args[1] == "--cylinder-5mm") {
+            Run("external/cylinder_5mm", [&]() { ExternalCylinder(args[2], source ? args[4] : ""); });
 #ifdef HAVE_STEP_IMPORT
-        Run("external/link_cube_1mm", [&]() { ExternalLinkedUnitCube(args[2]); });
+            Run("external/link_cylinder_5mm", [&]() { ExternalLinkedCylinder(args[2]); });
 #endif
+        } else {
+            Run("external/cube_1mm", [&]() { ExternalUnitCube(args[2], source ? args[4] : ""); });
+#ifdef HAVE_STEP_IMPORT
+            Run("external/link_cube_1mm", [&]() { ExternalLinkedUnitCube(args[2]); });
+#endif
+        }
     }
     std::cout << cases << " cases, " << checks << " checks, " << failures << " failures\n";
     return !cases ? 2 : (failures ? 1 : 0);
