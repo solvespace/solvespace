@@ -114,6 +114,7 @@ public:
     void AllIntersectionsWith(const SBezier *sbb, SPointList *spl) const;
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax) const;
     void Reverse();
+    void ConvertQuadraticToCubic();
 
     bool IsInPlane(Vector n, double d) const;
     bool IsCircle(Vector axis, Vector *center, double *r) const;

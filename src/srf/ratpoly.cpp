@@ -209,6 +209,28 @@ void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) const {
     }
 }
 
+//-----------------------------------------------------------------------------
+// Turn this quadratic into a cubic: the same curve, one degree higher. The
+// ends stay put and the middle point splits into two, each a third of the
+// way in from an end. Done in homogeneous coordinates so arcs stay exact.
+//-----------------------------------------------------------------------------
+void SBezier::ConvertQuadraticToCubic() {
+    ssassert(deg == 2, "Expected a quadratic");
+    Vector4 p0 = Vector4::From(weight[0], ctrl[0]),
+            p1 = Vector4::From(weight[1], ctrl[1]),
+            p2 = Vector4::From(weight[2], ctrl[2]);
+    Vector4 q1 = Vector4::Blend(p0, p1, 2.0/3),
+            q2 = Vector4::Blend(p2, p1, 2.0/3);
+
+    deg       = 3;
+    ctrl[3]   = ctrl[2];
+    weight[3] = weight[2];
+    ctrl[1]   = q1.PerspectiveProject();
+    weight[1] = q1.w;
+    ctrl[2]   = q2.PerspectiveProject();
+    weight[2] = q2.w;
+}
+
 void SBezier::MakePwlInto(SEdgeList *sel, double chordTol, double max_dt) const {
     List<Vector> lv = {};
     MakePwlInto(&lv, chordTol, max_dt);

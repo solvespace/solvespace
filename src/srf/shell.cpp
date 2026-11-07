@@ -329,10 +329,15 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                 if((j < sections) && revs[j].v && revsp[j].v) {
                     SSurface *ss = surface.FindById(revs[j]);
 
+                    // The surface's first row: quadratic, or cubic for a
+                    // helix (see SSurface::FromRevolutionOf()).
                     sc         = {};
                     sc.isExact = true;
-                    sc.exact   = SBezier::From(ss->ctrl[0][0], ss->ctrl[0][1], ss->ctrl[0][2]);
-                    sc.exact.weight[1] = ss->weight[0][1];
+                    sc.exact.deg = ss->degn;
+                    for(int k = 0; k <= ss->degn; k++) {
+                        sc.exact.ctrl[k]   = ss->ctrl[0][k];
+                        sc.exact.weight[k] = ss->weight[0][k];
+                    }
                     double max_dt = 0.5;
                     if (sc.exact.deg > 1) max_dt = 0.125;
                     (sc.exact).MakePwlInto(&(sc.pts), 0.0, max_dt);
