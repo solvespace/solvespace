@@ -23,7 +23,7 @@ void SShell::MergeCoincidentSurfaces() {
             continue;
         // And for now we handle only coincident planes, so no sense wasting
         // time on other surfaces.
-        if(si->degm != 1 || si->degn != 1) continue;
+        if(!si->IsPlanar()) continue;
 
         SEdgeList sel = {};
         si->MakeEdgesInto(this, &sel, SSurface::MakeAs::XYZ);
@@ -112,6 +112,10 @@ void SShell::MergeCoincidentSurfaces() {
             // +u direction as u goes from 0 to 1. So our normal ends up
             // pointed the same direction.
             double nt = (si->ctrl[0][0]).Dot(n);
+            // Exact planar reparameterization of Boolean output, including a
+            // rational/higher-degree input plane. Inputs themselves are intact.
+            si->degm = si->degn = 1;
+            si->weight[0][0] = si->weight[0][1] = si->weight[1][0] = si->weight[1][1] = 1;
             si->ctrl[0][0] =
                 Vector::From(umin, vmin, nt).ScaleOutOfCsys(u, v, n);
             si->ctrl[0][1] =

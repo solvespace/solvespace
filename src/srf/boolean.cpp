@@ -434,13 +434,12 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
 
     *pt    = PointAt(muv);
 
-    // If this edge just approximates a curve, then refine our midpoint so
-    // so that it actually lies on that curve too. Otherwise stuff like
-    // point-on-face tests will fail, since the point won't actually lie
-    // on the other face.
+    // A UV chord need not map onto the trim, even when that trim is an exact
+    // straight line in XYZ (e.g. on a rational or non-affine plane). Refine
+    // the midpoint onto the curve before doing point-on-face classification.
     hSCurve hc = { auxA };
     SCurve *sc = shell->curve.FindById(hc);
-    if(sc->isExact && sc->exact.deg != 1) {
+    if(sc->isExact) {
         double t;
         sc->exact.ClosestPointTo(*pt, &t, /*mustConverge=*/false);
         *pt = sc->exact.PointAt(t);
