@@ -17,8 +17,6 @@
 //   for no change, r for a fillet of radius r, or -r for a chamfer whose
 //   edges sit where the fillet of radius r would meet the faces. Naming
 //   edges properly (topological naming) comes later.
-// - Faces A and B meet at 90 degrees, so the offset distance is r. For other
-//   angles it would be r / tan(alpha/2), alpha being the angle between faces.
 // - Edges meeting at a vertex all have the same radius. Differing radii are
 //   not supported.
 // - Edges are pieces: a range of an exact curve with a trim on each of its
@@ -28,8 +26,8 @@
 // - Corner patches (3 fillets at a vertex): a flat triangle for chamfers; for
 //   fillets a triangle on the ball's sphere, made of three bands without any
 //   collapsed edge (sphere_patch.cpp).
-// - All new code goes in this file, except general curve tools such as
-//   SBezier reparameterization, which go in ratpoly.cpp.
+// - All new code goes in this file and sphere_patch.cpp, except general
+//   curve tools such as SBezier reparameterization, which go in ratpoly.cpp.
 //
 // Facts about the shell that drive the design
 // -------------------------------------------
@@ -44,39 +42,39 @@
 //   flag.
 // - Face interior: per SSurface::EdgeNormalsWithinSurface(), for a trim
 //   running from start to finish with tangent t, the interior of the face is
-//   on the side of (t x surface normal). Confirm on the test cube.
+//   on the side of (t x surface normal).
 // - A surface or curve can be evaluated outside [0,1], but ClosestPointTo,
 //   the uv BSP and triangulation assume [0,1]. Never rely on parameters
 //   outside that range in the finished shell.
 //
 // Geometry for one edge e between faces A and B
 // ---------------------------------------------
-// - Offset direction: in each face, away from the other face, i.e. into the
-//   face interior (see above). This one rule covers both cases:
-//     convex edge  -> rounding, removes material
-//     concave edge -> fillet, adds material
-//   The edge is convex if the offset direction in A points along -nB.
-// - Offset curves eA (in A) and eB (in B), distance r:
-//     line in a plane          -> parallel line, exact
-//     arc in its own plane     -> concentric arc, same weights, exact
-//     curve on a surface perpendicular to a plane -> translate along the
-//                                 plane normal, exact
-//     cubic in a plane         -> approximate offset (to be discussed)
+// - The rolling ball. In the cross-section plane at a point of e, each face
+//   is a line or a circle (GetFaceSection()). Both offset by r toward the
+//   ball meet at its center; the contacts are where it touches each face
+//   (SolveBallSection()). Convex edge: the ball is in the material, and the
+//   fillet removes material. Concave: it is in the air, and the fillet adds
+//   material.
+// - The section is solved at the start of e and carried along it
+//   (FollowEdge()): moved along a line, turned about an arc's axis, or offset
+//   in the plane of a flat polynomial curve (Tiller and Hanson, exact at the
+//   ends and approximate between). The section solved at the end of e must
+//   agree. Carried this way: off[0] and off[1] (eA and eB, the contacts),
+//   mid (where the tangents at the contacts cross) and spine (the center).
 // - Fillet surface: 3 rows of control points, degn = 2
-//     row 0 = eA, row 1 = e (weights times cos(45)), row 2 = eB
-//   The tangents at the ends of a quarter circle meet at the original edge,
-//   so the original edge is the middle row. Exact for line and arc edges.
-//   Chamfer surface: rows eA and eB only, degn = 1.
-//   degm = degree of e. Color is the default gray, face = 0.
+//     row 0 = eA, row 1 = mid (weights times w), row 2 = eB
+//   w is the cosine of half the section's arc angle, cos(45) at a square
+//   edge. Exact for line and arc edges. Chamfer surface: rows eA and eB
+//   only, degn = 1. degm = degree of e. Color is the default gray, face = 0.
 // - Orientation: at the middle of the surface, its normal must point along
-//   roughly (nA + nB), for convex and concave edges alike. If not, swap
-//   rows 0 and 2.
-// - Matching parameters: e, eA and eB must share the same parameterization,
-//   so that rows line up point for point. When the ends move, extend or
-//   shrink all three with the same new range [t0, t1] using
+//   roughly (nA + nB), for convex and concave edges alike. If not,
+//   SSurface::Reverse().
+// - Matching parameters: the rows share e's parameterization, so they line
+//   up point for point. When the ends move, all of them are extended or
+//   shrunk to the same new range [t0, t1] using
 //       SBezier::Reparameterized(t0, t1)   (new, in ratpoly.cpp)
 //   which works for lines, arcs and cubics, in homogeneous form for
-//   rational curves. It must refuse to extend an arc to 180 degrees or more.
+//   rational curves. It refuses to extend an arc to 180 degrees or more.
 //   The surface uses the combined range covering both ends' cut points.
 //   Each new trim curve is built separately over its own range, ending
 //   exactly at its cut points. Trims work in xyz, so trim curves don't need
@@ -84,52 +82,47 @@
 //
 // Vertices
 // --------
-// Each end of a modified edge gets a vertex record: the position, the curves
-// meeting there (handle, which end, modified or not), the faces around it,
-// and for each face whether its corner there is convex or reflex (over 180
-// degrees inside the face). Convex face corners mean offsets meet within the
-// existing curves, so neighbors get clipped. Reflex corners mean offsets (and
-// possibly unmodified neighbors) need to be extended to meet.
+// At each end of an edge, its neighbor in each face is found (a Piece), and
+// the vertex is classified by which neighbors are also modified. Offsets
+// meet within the neighbors at a convex corner of a face, so the neighbors
+// get shortened; at a reflex corner (over 180 degrees inside the face) they
+// meet past the vertex, so the neighbors get extended.
 //
 // Vertex cases:
-// 1. One modified edge, end face C perpendicular to e (cube edge).
-//    eA meets neighbor f (between A and C), eB meets neighbor g (between B
-//    and C). Re-cut f and g at those points. The fillet's end curve on C is
-//    the fillet surface's end row: control points (cutA, V, cutB), weight
-//    cos(45). Face C gets that curve in place of the corner. The same works
-//    for convex and concave edges.
-// 2. Tangent chain: the neighbor is tangent to e and also modified (rounded
+// 1. END_FACE: neither neighbor is modified. f (between A and end face C)
+//    and g (between B and C) are re-cut where eA and eB meet them. The end
+//    curve, where the fillet meets C, is:
+//      C perpendicular to e:  a cross-section of the fillet
+//      C a plane at an angle: (straight edges) the cross-section projected
+//                             along the edge onto C, an ellipse arc
+//      otherwise:             marched from one cut to the other. Kept as
+//                             points, not exact.
+// 2. TANGENT: the neighbor is tangent to e and also modified (rounded
 //    rectangle, or a circle split into arcs). Test for tangency first;
 //    intersecting tangent curves is unreliable. The offset curves already
-//    share an end point (V moved along the shared direction), so there is
-//    nothing to clip and no end curve.
-// 3. Two modified edges e and f sharing face A, meeting at a corner (two top
-//    edges of the cube). eA and fA meet in A. The two fillets meet along a
-//    curve with control points (eA x fA, V, point on g), weight cos(45). It
-//    is exact, being a parallel projection of the cross-section circle. For
-//    chamfers it is a line. This curve is not a parameter line of either
-//    fillet surface, so each surface is built a bit longer and trimmed by it.
-//    With unequal angles the miter runs from the corner in A until it
-//    reaches one fillet's contact with its other face, at X. Past X the
-//    other fillet cuts into that face, down to g. So one fillet ends in two
-//    pieces (miter, face cut), the other in one (miter), and only the first
-//    re-cuts g. With flat faces both pieces are exact conics, at convex and
-//    reflex corners alike, see ExactMiterEnd(). With curved faces they are
-//    traced, see TraceMiterEnd() (convex corners only).
-// 4. Three modified edges (cube corner). Not miters: in each of its two
-//    faces, e's offset crosses the neighbor's offset, and e's fillet ends at
-//    the cross-section through those two points (same parameter at a square
-//    corner). The three cross-sections bound the corner patch: a sphere
-//    octant centered where the three fillet axes meet, or a flat triangle
-//    for chamfers. The chamfer triangle is FromPlane, trimmed by the three
-//    end curves, facing the same way as the chamfers. The sphere triangle
-//    is split at its incenter into three bands, see sphere_patch.cpp.
-// An end face at an angle to a straight edge is exact too: the end curve is
-// the cross-section projected along the edge onto it (an ellipse arc).
-// Anything else (a curved edge or a curved end face at an angle, etc.) is
-// unsupported for now,
-// and then no edge is changed. In general that needs
-// SSurface::IntersectAgainst().
+//    share an end point, so there is nothing to clip. Joins that are tangent
+//    only to within the test (font outlines) are snapped together.
+// 3. MITER: two modified edges e and f sharing face S meet at a corner (two
+//    top edges of the cube). Their offsets in S meet at the miter's start;
+//    the third edge g, between their other faces, is where it ends. The miter
+//    is not a parameter line of either fillet surface, so each surface is
+//    built a bit longer and trimmed by it. With unequal angles the miter
+//    runs from the corner in S until it reaches one fillet's contact with
+//    its other face, at X. Past X the other fillet cuts into that face, down
+//    to g. So one fillet ends in two pieces (miter, face cut), the other in
+//    one (miter), and only the first re-cuts g. With straight edges and flat
+//    faces both pieces are exact conics, at convex and reflex corners alike,
+//    see ExactMiterEnd(). Otherwise they are marched, see TraceMiterEnd():
+//    at convex corners, and at reflex corners when both cross-sections are
+//    equal.
+// 4. CORNER: three modified edges (cube corner). Not miters: in each of its
+//    two faces, e's offset crosses the neighbor's offset, and e's fillet ends
+//    at the cross-section through those two points. The three cross-sections
+//    bound the corner patch: a sphere triangle centered where the three
+//    spines meet, or a flat triangle for chamfers. The chamfer triangle is
+//    FromPlane, trimmed by the three end curves, facing the same way as the
+//    chamfers. The sphere triangle is split at its incenter into three
+//    bands, see sphere_patch.cpp.
 //
 // Steps in ModifyEdges()
 // ----------------------
@@ -137,27 +130,28 @@
 // failure leaves the shell untouched. Never hold pointers into curve or
 // surface across an AddAndAssignId(): the lists can reallocate.
 // 1. Collect: loop over the original curve.n only. Store an EdgeMod by value
-//    for each curve GetEdgeModifier() picks.
-// 2. Vertices: build a vertex record for each end of each EdgeMod and
-//    classify it. If any end is unsupported, drop that edge.
-// 3. Offset: build eA and eB.
-// 4. Cut: find the cut points at each vertex, per its case. Use
-//    SBezier::AllIntersectionsWith() and take the point nearest V.
-// 5. Build: reparameterize e, eA and eB to their common range; build the
-//    fillet/chamfer surfaces, the clipped eA/eB trim curves, the re-cut
-//    neighbor curves, and the end and miter curves.
-// 6. Commit: add the new curves and surfaces. Rewrite trims:
+//    for each piece of each curve GetEdgeModifier() picks.
+// 2. Sections: the rolling ball along each edge, SetUpSections().
+// 3. Ends: SetUpEnd() finds the neighbors at each end, classifies the
+//    vertex and finds the cut points. FindPartnerEnd() pairs TANGENT and
+//    MITER ends with the neighbor's matching end. ExactMiterEnd() or
+//    TraceMiterEnd() builds the miter pieces, and PairTracedMiter() makes
+//    the two sides of each miter agree.
+// 4. Build: re-cut neighbors (Recut), end curves, the clipped offset curves,
+//    the fillet surfaces and the corner patches (Corner).
+// 5. Commit: add the new surfaces and curves. Rewrite trims:
 //      A: trim on e -> trim on eA; neighbors -> their re-cut copies
 //      B: same with eB
 //      C (end faces): add the end curve, use re-cut neighbors
-//      fillet surface: eA, end curve, eB, end curve (or miter curves)
-//    Tag the dead curves (e and the old neighbors) and remove them.
+//      fillet surface: eA, eB, and at each end its end curve or miter pieces
+//    Remove the curves no trim uses any more.
 //
 // Data structures (plain structs)
 // -------------------------------
-// EdgeMod: one edge to modify, indexed by side s ([0] face A, [1] face B)
-// and end k ([0] at e.Start(), [1] at e.Finish()). Recut: an unmodified
-// neighbor that gets shortened. See their definitions below.
+// Piece: an edge piece. EdgeMod: one edge to modify, indexed by side s ([0]
+// face A, [1] face B) and end k ([0] at e.Start(), [1] at e.Finish()).
+// Corner: three edges meeting at a corner. Recut: an unmodified neighbor
+// that gets shortened or extended. See their definitions below.
 //
 // STATUS (2026-11-05)
 // -------------------
@@ -225,8 +219,9 @@
 // each by its shape and picks its edges; constants there choose variants
 // and r (negative for chamfers). It does nothing unless the environment
 // variable SOLVESPACE_FILLET_TEST is set. Without the GUI:
-//   SOLVESPACE_FILLET_TEST=1 solvespace-cli export-mesh --chord-tol 0.005 \
-//       --output %.obj <model>
+//   SOLVESPACE_FILLET_TEST=1 solvespace-cli export-mesh
+//       --chord-tol 0.005 --output %.obj <model>
+// (all on one line)
 // then check the OBJ: every triangle edge shared by exactly two triangles,
 // and the volume. Curved walls need a fine tolerance (down to 0.0002) for
 // the volume to converge. Check also for "trim was unterminated" / "trim was
@@ -1394,7 +1389,7 @@ static bool SetUpTangentEnd(SShell *sh, EdgeMod *em, int k, int s) {
 }
 
 // Case 3 at end k: the neighbor f in face s (the shared face S) is modified
-// and meets e at a corner. Straight edges only for now. In S the offsets of
+// and meets e at a corner. In S the offsets of
 // e and f meet each other. On the other side, the offset meets g, the edge
 // between e's other face and f's other face. The two fillets meet along the
 // miter curve, from the corner in S, through the vertex, to the cut on g.
