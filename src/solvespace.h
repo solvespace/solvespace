@@ -658,6 +658,28 @@ public:
     // parameters these values. If checkFiles, files read before are checked
     // for changes. Returns false if the file can't be loaded at all.
     bool LoadLinkedGroup(Group *g, const LinkValues &values, bool checkFiles);
+    static bool IsStepFile(const Platform::Path &filename);
+    // Separate from linkedSketchFiles: STEP has no editable Sketch or parameters.
+    struct LinkedStepFile {
+        enum class Status { Okay, Partial, Rejected, Missing };
+        Status          status = Status::Missing;
+        std::string     source; // exact bytes; only explicit reload checks the file
+        EntityList      entities = {};
+        SShell          shell = {};
+        StepEntityMap   references;
+        size_t          solids = 0;
+        size_t          omitted = 0;
+        std::string     diagnostics;
+        bool            pendingDiagnostic = false;
+    };
+    std::map<Platform::Path, LinkedStepFile, Platform::PathLess> linkedStepFiles;
+    std::vector<std::string> pendingStepLinkErrors;
+    std::vector<std::string> pendingStepLinkWarnings;
+    LinkedStepFile *ReadLinkedStep(const Platform::Path &filename, bool checkFiles);
+    bool LoadLinkedStep(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh,
+                        bool checkFiles, Group *group = nullptr);
+    void DropLinkedStep(const Platform::Path &filename);
+    void ReportStepLinkDiagnostics();
     // For GenerateOptions::loadLinked
     static bool LoadLinkedForGeneration(Group *g, const LinkValues &values);
     // Load a linked .slvs file as a sketch of its own, generate it with these

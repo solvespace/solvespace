@@ -5,6 +5,7 @@
 #include "stepgeometry.h"
 
 #include <cmath>
+#include <chrono>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
@@ -826,6 +827,505 @@ void ProtocolTests(const Step::BindingInfo &binding) {
     });
 }
 
+#ifdef HAVE_STEP_IMPORT
+struct LinkApp {
+    LinkApp() {
+        SS.Init();
+        SS.showToolbar = false;
+        SS.checkClosedContour = false;
+        SS.GW.showPoints = SS.GW.showFaces = SS.GW.showShaded = true;
+        SS.GW.showNormals = SS.GW.showWorkplanes = false;
+    }
+    ~LinkApp() {
+        SS.GW.hoverList.Clear();
+        SS.GW.ClearSelection();
+        SK.Clear();
+        SS.Clear();
+        SS.saveFile.Clear();
+    }
+};
+
+struct LinkTestFile {
+    Platform::Path path;
+    explicit LinkTestFile(const char *extension = "StP") {
+        static unsigned serial = 0;
+        auto now = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+        // Include spaces, Unicode and a mixed-case extension in the real path.
+        path = Platform::Path::FromPortable(STEP_LINK_TEST_DIR).Join(
+            ssprintf("step link c\xc3\xbc" "be %lld-%u.%s", (long long)now, ++serial, extension));
+        path = path.Expand(/*fromCurrentDirectory=*/true);
+        REQUIRE(!Platform::FileExists(path));
+    }
+    void Write(const std::string &text) { REQUIRE(Platform::WriteFile(path, text)); }
+    ~LinkTestFile() { Platform::RemoveFile(path); }
+};
+
+hGroup MenuLink(const Platform::Path &path) {
+    int before = SK.group.n;
+    Group::MenuGroup(Command::GROUP_LINK, path);
+    REQUIRE(SK.group.n == before + 1);
+    auto hg = SS.GW.activeGroup;
+    REQUIRE(SK.GetGroup(hg)->type == Group::Type::LINKED);
+    REQUIRE(SK.GetGroup(hg)->linkFile.Equals(path));
+    REQUIRE(SK.GetGroup(hg)->meshCombine == Group::CombineAs::ASSEMBLE);
+    return hg;
+}
+
+void PlaceLink(hGroup hg, Vector translation = {}, Quaternion rotation = Quaternion::IDENTITY,
+               double scale = 1) {
+    double t[] = {translation.x, translation.y, translation.z};
+    for(int i = 0; i < 3; ++i) SK.GetParam(hg.param(i))->val = t[i];
+    double q[] = {rotation.w, rotation.vx, rotation.vy, rotation.vz};
+    for(int i = 0; i < 4; ++i) SK.GetParam(hg.param(3 + i))->val = q[i];
+    SK.GetGroup(hg)->scale = scale;
+    SS.MarkGroupDirty(hg);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+}
+
+hEntity LinkedReference(hGroup hg, int kind, int source = 0) {
+    auto g = SK.GetGroup(hg);
+    for(const auto &entry : g->stepRefs) {
+        if(entry.first.kind != kind || (source != 0 && entry.first.entity != source)) continue;
+        auto mapped = g->remap.find({entry.second, 0});
+        if(mapped == g->remap.end()) continue;
+        auto h = hg.entity(mapped->second.v);
+        if(SK.entity.FindByIdNoOops(h)) return h;
+    }
+    REQUIRE(false);
+    return {};
+}
+
+void CheckLinkedNative(hGroup hg, int solids, double volume) {
+    auto g = SK.GetGroup(hg);
+    REQUIRE(g->IsSolvedOkay());
+    REQUIRE(g->linkParams.empty() && !g->forceToMesh);
+    REQUIRE(g->impMesh.IsEmpty() && g->thisMesh.IsEmpty() && g->runningMesh.IsEmpty());
+    REQUIRE(!g->thisShell.booleanFailed && !g->runningShell.booleanFailed);
+    REQUIRE(g->thisShell.surface.n == 6 * solids && g->thisShell.curve.n == 12 * solids);
+    REQUIRE(g->impEntity.n == 26 * solids);
+    int points = 0, lines = 0, faces = 0;
+    for(auto &e : SK.entity) {
+        if(e.group != hg) continue;
+        REQUIRE(e.Owner() == &SK && !e.forceHidden);
+        if(e.IsPoint()) {
+            ++points;
+            REQUIRE(e.type == Entity::Type::POINT_N_ROT_TRANS);
+            REQUIRE(e.PointGetExprs().Eval().Equals(e.PointGetNum()));
+        } else if(e.type == Entity::Type::LINE_SEGMENT) {
+            ++lines;
+            REQUIRE(SK.GetEntity(e.point[0])->group == hg);
+            REQUIRE(SK.GetEntity(e.point[1])->group == hg);
+        } else if(e.IsFace()) {
+            ++faces;
+            REQUIRE(e.type == Entity::Type::FACE_N_ROT_TRANS);
+            REQUIRE(SK.GetEntity(e.point[0])->group == hg);
+            REQUIRE(e.FaceGetPointExprs().Eval().Equals(e.FaceGetPointNum()));
+            REQUIRE(e.FaceGetNormalExprs().Eval().Equals(e.FaceGetNormalNum()));
+            REQUIRE(e.FaceGetPointNum().Equals(SK.GetEntity(e.point[0])->PointGetNum()));
+        } else REQUIRE(false);
+    }
+    REQUIRE(points == 8 * solids && lines == 12 * solids && faces == 6 * solids);
+    for(auto &s : g->thisShell.surface) {
+        auto face = SK.entity.FindByIdNoOops(hEntity{s.face});
+        REQUIRE(face && face->group == hg && face->IsFace());
+        REQUIRE(s.NormalAt(0.5, 0.5).WithMagnitude(1).Equals(face->FaceGetNormalNum()));
+        REQUIRE(std::abs(s.PointAt(0.5, 0.5).Minus(face->FaceGetPointNum()).Dot(
+                            face->FaceGetNormalNum())) < LENGTH_EPS);
+        for(const auto &trim : s.trim) REQUIRE(g->thisShell.curve.FindByIdNoOops(trim.curve));
+    }
+    for(auto &c : g->thisShell.curve) {
+        REQUIRE(c.isExact && c.exact.deg == 1);
+        auto line = SK.entity.FindByIdNoOops(hEntity{c.exact.entity});
+        REQUIRE(line && line->group == hg && line->type == Entity::Type::LINE_SEGMENT);
+        REQUIRE(c.exact.Start().Equals(SK.GetEntity(line->point[0])->PointGetNum()));
+        REQUIRE(c.exact.Finish().Equals(SK.GetEntity(line->point[1])->PointGetNum()));
+        REQUIRE(g->thisShell.surface.FindByIdNoOops(c.surfA));
+        REQUIRE(g->thisShell.surface.FindByIdNoOops(c.surfB));
+    }
+    MeshOwner mesh;
+    g->thisShell.TriangulateInto(&mesh.mesh);
+    REQUIRE(std::abs(mesh.mesh.CalculateVolume() - volume) < 1e-6);
+    for(const auto &t : mesh.mesh.l) {
+        auto face = SK.entity.FindByIdNoOops(hEntity{t.meta.face});
+        REQUIRE(face && face->IsFace() && face->group == hg);
+    }
+}
+
+hEntity LinkDatum(hGroup hg, Vector point) {
+    Request r = {};
+    r.type = Request::Type::DATUM_POINT;
+    r.workplane = Entity::FREE_IN_3D;
+    r.group = hg;
+    SK.request.AddAndAssignId(&r);
+    SS.MarkGroupDirty(hg);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    SK.GetEntity(r.h.entity(0))->PointForceTo(point);
+    return r.h.entity(0);
+}
+
+hConstraint ConstrainLinked(hEntity a, hEntity b, Command command = Command::ON_ENTITY) {
+    SS.GW.ClearSelection();
+    SS.GW.MakeSelected(a);
+    SS.GW.MakeSelected(b);
+    int before = SK.constraint.n;
+    Constraint::MenuConstrain(command);
+    REQUIRE(SK.constraint.n == before + 1);
+    auto hc = SK.constraint[SK.constraint.n - 1].h;
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+    REQUIRE(SK.GetGroup(SS.GW.activeGroup)->IsSolvedOkay());
+    return hc;
+}
+
+void LinkPicking(hGroup hg, double size) {
+    SS.GW.scale = 100 / size;
+    SS.GW.projRight = {1, 0, 0};
+    SS.GW.projUp = {0, 1, 0};
+    SS.GW.offset = {};
+    SK.GetGroup(hg)->GenerateDisplayItems();
+    const Vector locations[] = {{size, size, size}, {size / 2, 0, size},
+                                {size / 2, size / 2, size}};
+    for(int i = 0; i < 3; ++i) {
+        SS.GW.hoverList.Clear();
+        SS.GW.HitTestMakeSelection(SS.GW.ProjectPoint(locations[i]));
+        REQUIRE(SS.GW.hover.entity.v != 0);
+        auto e = SK.GetEntity(SS.GW.hover.entity);
+        REQUIRE(e->group == hg);
+        REQUIRE(i == 0 ? e->IsPoint() : (i == 1 ? e->type == Entity::Type::LINE_SEGMENT : e->IsFace()));
+    }
+    SS.GW.hoverList.Clear();
+    SS.GW.MakeSelected(LinkedReference(hg, StepEntityKey::VERTEX));
+    SS.GW.MakeSelected(LinkedReference(hg, StepEntityKey::EDGE));
+    SS.GW.MakeSelected(LinkedReference(hg, StepEntityKey::FACE));
+    SS.GW.GroupSelection();
+    REQUIRE(SS.GW.gs.points == 1 && SS.GW.gs.lineSegments == 1 && SS.GW.gs.faces == 1);
+    SS.GW.ClearSelection();
+}
+
+void LinkTests(const Step::BindingInfo &binding) {
+    const std::string name = "link/" + binding.protocol + "/", schema = binding.schema;
+    Run(name + "menu_dispatch_picking_and_transformed_references", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        file.Write(Exchange(schema, Cube()));
+        auto hg = MenuLink(file.path);
+        PlaceLink(hg);
+        CheckLinkedNative(hg, 1, 1000);
+        REQUIRE(SS.linkedStepFiles.size() == 1 && SS.linkedSketchFiles.empty());
+        REQUIRE(SK.GetGroup(hg)->stepRefs.size() == 26 && SK.GetGroup(hg)->remap.size() == 26);
+        LinkPicking(hg, 10);
+        auto point = LinkedReference(hg, StepEntityKey::VERTEX);
+        auto face = LinkedReference(hg, StepEntityKey::FACE);
+        Vector originalPoint = SK.GetEntity(point)->PointGetNum();
+        Vector originalNormal = SK.GetEntity(face)->FaceGetNormalNum();
+        Quaternion q = Quaternion::From(Vector{1, 2, 3}.WithMagnitude(1), 0.7);
+        Vector t = {23, -17, 5};
+        PlaceLink(hg, t, q, 2);
+        REQUIRE(SK.GetEntity(point)->PointGetNum().Equals(q.Rotate(originalPoint.ScaledBy(2)).Plus(t)));
+        REQUIRE(SK.GetEntity(face)->FaceGetNormalNum().Equals(q.Rotate(originalNormal)));
+        CheckLinkedNative(hg, 1, 8000);
+        PlaceLink(hg, t, q, -1);
+        CheckLinkedNative(hg, 1, 1000);
+    });
+    Run(name + "two_instances_and_native_boolean", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        file.Write(Exchange(schema, Cube(1)));
+        auto a = MenuLink(file.path);
+        PlaceLink(a);
+        auto point = LinkedReference(a, StepEntityKey::VERTEX);
+        Vector unchanged = SK.GetEntity(point)->PointGetNum();
+        auto b = MenuLink(file.path);
+        PlaceLink(b, {0.5, 0, 0});
+        CheckLinkedNative(a, 1, 1);
+        CheckLinkedNative(b, 1, 1);
+        REQUIRE(LinkedReference(b, StepEntityKey::VERTEX) != point);
+        REQUIRE(SK.GetEntity(point)->PointGetNum().Equals(unchanged));
+        REQUIRE(SS.linkedStepFiles.size() == 1);
+        REQUIRE(SK.GetGroup(a)->impShell.surface[0].trim.First() !=
+                SK.GetGroup(b)->impShell.surface[0].trim.First());
+        SK.GetGroup(b)->meshCombine = Group::CombineAs::UNION;
+        SS.MarkGroupDirty(b);
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        auto result = SK.GetGroup(b);
+        REQUIRE(result->runningMesh.IsEmpty() && !result->runningShell.booleanFailed);
+        MeshOwner mesh;
+        result->runningShell.TriangulateInto(&mesh.mesh);
+        REQUIRE(std::abs(mesh.mesh.CalculateVolume() - 1.5) < 1e-8);
+    });
+    Run(name + "point_edge_face_constraints_and_reference_roundtrip", [&]() {
+        LinkApp app;
+        LinkTestFile file, saved("slvs");
+        file.Write(Exchange(schema, Cube()));
+        auto linked = MenuLink(file.path);
+        PlaceLink(linked);
+        Group::MenuGroup(Command::GROUP_3D);
+        auto drawing = SS.GW.activeGroup;
+        auto vertex = LinkedReference(linked, StepEntityKey::VERTEX);
+        auto edge = LinkedReference(linked, StepEntityKey::EDGE);
+        auto face = LinkedReference(linked, StepEntityKey::FACE);
+        auto p = LinkDatum(drawing, {2, 3, 4});
+        auto pc = ConstrainLinked(p, vertex);
+        REQUIRE(SK.GetConstraint(pc)->type == Constraint::Type::POINTS_COINCIDENT);
+        REQUIRE(SK.GetEntity(p)->PointGetNum().Equals(SK.GetEntity(vertex)->PointGetNum()));
+        auto q = LinkDatum(drawing, {4, 4, 4});
+        auto lc = ConstrainLinked(q, edge);
+        REQUIRE(SK.GetConstraint(lc)->type == Constraint::Type::PT_ON_LINE);
+        Vector line = SK.GetEntity(edge)->VectorGetNum().WithMagnitude(1);
+        REQUIRE(SK.GetEntity(q)->PointGetNum().Minus(SK.GetEntity(
+            SK.GetEntity(edge)->point[0])->PointGetNum()).Cross(line).Magnitude() < LENGTH_EPS);
+        auto r = LinkDatum(drawing, {5, 5, 5});
+        auto fc = ConstrainLinked(r, face);
+        REQUIRE(SK.GetConstraint(fc)->type == Constraint::Type::PT_ON_FACE);
+        REQUIRE(std::abs(SK.GetEntity(r)->PointGetNum().Minus(SK.GetEntity(face)->FaceGetPointNum())
+                         .Dot(SK.GetEntity(face)->FaceGetNormalNum())) < LENGTH_EPS);
+        REQUIRE(SK.GetGroup(drawing)->solved.dof == 3);
+        auto identities = SK.GetGroup(linked)->stepRefs;
+        REQUIRE(SS.SaveToFile(saved.path));
+        REQUIRE(SS.LoadFromFile(saved.path));
+        SS.AfterNewFile();
+        REQUIRE(!SS.fileLoadError);
+        REQUIRE(SK.GetGroup(linked)->stepRefs == identities);
+        REQUIRE(SK.constraint.n == 3 && SK.GetGroup(drawing)->IsSolvedOkay());
+        REQUIRE(SK.GetConstraint(lc)->entityA == edge && SK.GetConstraint(fc)->entityA == face);
+        REQUIRE(SK.GetEntity(p)->PointGetNum().Equals(SK.GetEntity(vertex)->PointGetNum()));
+        SS.UndoRemember();
+        PlaceLink(linked, {17, 11, -3});
+        SS.UndoUndo();
+        REQUIRE(SK.GetGroup(linked)->stepRefs == identities);
+        REQUIRE(SK.GetEntity(p)->PointGetNum().Equals(SK.GetEntity(vertex)->PointGetNum()));
+        SS.UndoRedo();
+        REQUIRE(SK.GetGroup(linked)->stepRefs == identities);
+        REQUIRE(SK.GetEntity(p)->PointGetNum().Equals(SK.GetEntity(vertex)->PointGetNum()));
+    });
+    Run(name + "constrain_link_placement_to_another_instance", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        file.Write(Exchange(schema, Cube()));
+        auto a = MenuLink(file.path);
+        PlaceLink(a);
+        auto av = LinkedReference(a, StepEntityKey::VERTEX);
+        auto af = LinkedReference(a, StepEntityKey::FACE);
+        Vector fixed = SK.GetEntity(av)->PointGetNum();
+        auto b = MenuLink(file.path);
+        PlaceLink(b, {7, 9, -3}, Quaternion::From(Vector{1, 2, 3}.WithMagnitude(1), 0.3));
+        auto bv = LinkedReference(b, StepEntityKey::VERTEX);
+        auto bf = LinkedReference(b, StepEntityKey::FACE);
+        ConstrainLinked(bv, av);
+        ConstrainLinked(bf, af, Command::PARALLEL);
+        REQUIRE(SK.GetGroup(b)->solved.dof == 1);
+        REQUIRE(SK.GetEntity(bv)->PointGetNum().Equals(fixed));
+        REQUIRE(std::abs(SK.GetEntity(bf)->FaceGetNormalNum().Dot(
+                             SK.GetEntity(af)->FaceGetNormalNum())) > 1 - 1e-8);
+        REQUIRE(SK.GetEntity(av)->PointGetNum().Equals(fixed));
+        CheckLinkedNative(b, 1, 1000);
+    });
+    Run(name + "multiple_complete_solids_in_one_group", [&]() {
+        LinkApp app;
+        LinkTestFile file("step");
+        file.Write(Exchange(schema, Cube() + Cube(10, {20, 0, 0}, 10000)));
+        auto hg = MenuLink(file.path);
+        PlaceLink(hg);
+        CheckLinkedNative(hg, 2, 2000);
+        REQUIRE(SK.group.n == 3 && SS.linkedStepFiles[file.path].solids == 2);
+    });
+    Run(name + "whole_solid_omissions_not_face_stripping", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        auto bad = ReplaceRecord(Cube(10, {20, 0, 0}, 10000), 12503,
+                                 "CYLINDRICAL_SURFACE('',#12403,10.)");
+        file.Write(Exchange(schema, Cube() + bad));
+        auto hg = MenuLink(file.path);
+        PlaceLink(hg);
+        CheckLinkedNative(hg, 1, 1000);
+        auto &cache = SS.linkedStepFiles[file.path];
+        REQUIRE(cache.status == SolveSpaceUI::LinkedStepFile::Status::Partial);
+        REQUIRE(cache.solids == 1 && cache.omitted == 1);
+        REQUIRE(cache.diagnostics.find("12701") != std::string::npos);
+        REQUIRE(!cache.pendingDiagnostic);
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(!SS.linkedStepFiles[file.path].pendingDiagnostic);
+    });
+    Run(name + "invalid_unsupported_empty_and_missing_are_distinct", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        int groups = SK.group.n, undo = SS.undo.cnt;
+        const auto rejected = SolveSpaceUI::LinkedStepFile::Status::Rejected;
+        for(const auto &text : {Exchange(schema, ""), Exchange("UNKNOWN_SCHEMA", Cube()),
+             Exchange(schema, "#1=NOT_AN_ENTITY();"), Exchange(schema,
+                 ReplaceRecord(Cube(), 2503, "CYLINDRICAL_SURFACE('',#2403,10.)"))}) {
+            file.Write(text);
+            Group::MenuGroup(Command::GROUP_LINK, file.path);
+            REQUIRE(SK.group.n == groups && SS.undo.cnt == undo);
+            REQUIRE(SS.linkedStepFiles[file.path].status == rejected);
+            REQUIRE(SS.linkedStepFiles[file.path].entities.IsEmpty());
+            REQUIRE(SS.linkedStepFiles[file.path].shell.IsEmpty());
+            REQUIRE(!SS.linkedStepFiles[file.path].diagnostics.empty());
+            REQUIRE(SS.linkedSketchFiles.empty());
+        }
+        Platform::RemoveFile(file.path);
+        Group::MenuGroup(Command::GROUP_LINK, file.path);
+        REQUIRE(SK.group.n == groups && SS.undo.cnt == undo);
+        REQUIRE(SS.linkedStepFiles[file.path].status == SolveSpaceUI::LinkedStepFile::Status::Missing);
+    });
+    Run(name + "cache_reload_provenance_and_no_reference_recycling", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        auto original = Exchange(schema, Cube(10, {}, 10000));
+        file.Write(original);
+        auto hg = MenuLink(file.path);
+        PlaceLink(hg);
+        auto old = LinkedReference(hg, StepEntityKey::VERTEX, 10030);
+        auto identities = SK.GetGroup(hg)->stepRefs;
+        std::istringstream records(Cube(10, {}, 10000));
+        std::vector<std::string> lines;
+        for(std::string line; std::getline(records, line);) lines.push_back(line);
+        std::reverse(lines.begin(), lines.end());
+        std::string reordered;
+        for(const auto &line : lines) reordered += line + "\n";
+        file.Write(Exchange(schema, reordered));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile));
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(SK.GetGroup(hg)->stepRefs == identities);
+        REQUIRE(LinkedReference(hg, StepEntityKey::VERTEX, 10030) == old);
+        Platform::RemoveFile(file.path);
+        REQUIRE(SS.LoadLinkedGroup(SK.GetGroup(hg), {}, /*checkFiles=*/false));
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(SK.entity.FindByIdNoOops(old)); // generation never rereads the file
+        file.Write(Exchange(schema, Cube() + Cube(10, {}, 10000)));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile));
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(LinkedReference(hg, StepEntityKey::VERTEX, 10030) == old);
+        for(const auto &entry : identities) {
+            REQUIRE(SK.GetGroup(hg)->stepRefs.at(entry.first) == entry.second);
+        }
+        REQUIRE(SK.GetGroup(hg)->impEntity.n == 52);
+        Group::MenuGroup(Command::GROUP_3D);
+        auto p = LinkDatum(SS.GW.activeGroup, {0, 0, 0});
+        auto c = ConstrainLinked(p, old);
+        file.Write(Exchange(schema, Cube())); // older solid/topology disappeared
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile));
+        REQUIRE(!SS.pendingStepLinkWarnings.empty());
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(!SK.entity.FindByIdNoOops(old));
+        REQUIRE(!SK.constraint.FindByIdNoOops(c));
+        REQUIRE(LinkedReference(hg, StepEntityKey::VERTEX) != old);
+        REQUIRE(SK.GetGroup(hg)->stepRefs.size() == 52); // tombstones, never recycled
+    });
+    Run(name + "reference_limit_rejected_before_generate", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        file.Write(Exchange(schema, Cube()));
+        auto hg = MenuLink(file.path);
+        auto g = SK.GetGroup(hg);
+        g->stepRefs.emplace(StepEntityKey{999999, 999999, StepEntityKey::VERTEX, 999999},
+                            hEntity{65535});
+        auto before = g->stepRefs.size();
+        file.Write(Exchange(schema, Cube() + Cube(10, {20, 0, 0}, 10000)));
+        REQUIRE(!SS.LoadLinkedGroup(g, {}, /*checkFiles=*/true));
+        REQUIRE(g->stepRefs.size() == before && g->impEntity.IsEmpty() && g->impShell.IsEmpty());
+        REQUIRE(!SS.pendingStepLinkErrors.empty());
+        // The limit belongs to the old group's persistent namespace, not the file.
+        Group fresh = {};
+        fresh.linkFile = file.path;
+        REQUIRE(SS.LoadLinkedGroup(&fresh, {}, /*checkFiles=*/false));
+        REQUIRE(fresh.impEntity.n == 52);
+        fresh.Clear();
+        g->stepRefs.erase(StepEntityKey{999999, 999999, StepEntityKey::VERTEX, 999999, {}});
+        g->remap.reserve(65535);
+        while(g->remap.size() < 65535) {
+            auto index = (uint32_t)g->remap.size() + 1;
+            g->remap.emplace(EntityKey{hEntity{index}, 1}, EntityId{index});
+        }
+        // Also bound the ordinary remap, independently of source-token limits.
+        REQUIRE(!SS.LoadLinkedGroup(g, {}, /*checkFiles=*/false));
+        REQUIRE(g->impShell.IsEmpty() && g->impEntity.IsEmpty());
+    });
+    Run(name + "existing_rejected_source_is_not_a_missing_file_or_slvs", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        auto good = Exchange(schema, Cube());
+        file.Write(good);
+        auto hg = MenuLink(file.path);
+        PlaceLink(hg);
+        auto point = LinkedReference(hg, StepEntityKey::VERTEX);
+        file.Write(Exchange(schema, "#1=NOT_AN_ENTITY();"));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile));
+        REQUIRE(SK.GetGroup(hg)->linkFile.Equals(file.path));
+        REQUIRE(SK.GetGroup(hg)->impShell.IsEmpty() && SK.GetGroup(hg)->impEntity.IsEmpty());
+        REQUIRE(SS.linkedStepFiles[file.path].status == SolveSpaceUI::LinkedStepFile::Status::Rejected);
+        REQUIRE(SS.linkedStepFiles[file.path].pendingDiagnostic);
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(SK.group.FindByIdNoOops(hg) && !SK.entity.FindByIdNoOops(point));
+        file.Write(good);
+        REQUIRE(!SS.LoadLinkedGroup(SK.GetGroup(hg), {}, /*checkFiles=*/false));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile));
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(LinkedReference(hg, StepEntityKey::VERTEX) == point);
+        CheckLinkedNative(hg, 1, 1000);
+    });
+    Run(name + "repurposed_source_edge_id_does_not_retarget_constraint", [&]() {
+        LinkApp app;
+        LinkTestFile file;
+        file.Write(Exchange(schema, Cube()));
+        auto hg = MenuLink(file.path);
+        PlaceLink(hg);
+        auto old = LinkedReference(hg, StepEntityKey::EDGE, 400);
+        Group::MenuGroup(Command::GROUP_3D);
+        auto p = LinkDatum(SS.GW.activeGroup, {5, 2, 1});
+        auto c = ConstrainLinked(p, old);
+        // Same cube, SAME edge IDs, but a replaced topological endpoint. New
+        // connectivity must not inherit an existing edge's constraint identity.
+        auto changed = Cube() + Record(50030, "VERTEX_POINT('',#10)");
+        changed = ReplaceRecord(changed, 400, "EDGE_CURVE('',#50030,#31,#300,.T.)");
+        changed = ReplaceRecord(changed, 401, "EDGE_CURVE('',#50030,#33,#301,.T.)");
+        changed = ReplaceRecord(changed, 402, "EDGE_CURVE('',#50030,#34,#302,.T.)");
+        file.Write(Exchange(schema, changed));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile));
+        REQUIRE(!SS.pendingStepLinkWarnings.empty());
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        REQUIRE(!SK.entity.FindByIdNoOops(old));
+        REQUIRE(!SK.constraint.FindByIdNoOops(c));
+        REQUIRE(LinkedReference(hg, StepEntityKey::EDGE, 400) != old);
+        CheckLinkedNative(hg, 1, 1000);
+    });
+    Run(name + "nested_slvs_dependency_invalidation", [&]() {
+        LinkApp app;
+        LinkTestFile file, saved("slvs");
+        file.Write(Exchange(schema, Cube(1)));
+        auto inner = MenuLink(file.path);
+        PlaceLink(inner);
+        REQUIRE(SS.SaveToFile(saved.path));
+        SS.NewFile();
+        SS.AfterNewFile();
+        auto outer = MenuLink(saved.path);
+        PlaceLink(outer);
+        REQUIRE(SS.linkedStepFiles.count(file.path) == 1);
+        auto loaded = SS.linkedSketchFiles.find(saved.path);
+        REQUIRE(loaded != SS.linkedSketchFiles.end() && loaded->second.sketch);
+        bool dependency = false;
+        for(const auto &made : loaded->second.madeFrom) dependency |= made.path.Equals(file.path);
+        REQUIRE(dependency);
+        file.Write(Exchange(schema, Cube(2)));
+        REQUIRE(SS.ReloadAllLinked(SS.saveFile));
+        SS.GenerateAll(SolveSpaceUI::Generate::ALL);
+        auto g = SK.GetGroup(outer);
+        REQUIRE(g->runningMesh.IsEmpty() && g->runningShell.surface.n == 6);
+        MeshOwner mesh;
+        g->runningShell.TriangulateInto(&mesh.mesh);
+        REQUIRE(std::abs(mesh.mesh.CalculateVolume() - 8) < 1e-8);
+    });
+}
+
+void ExternalLinkedUnitCube(const std::string &path) {
+    LinkApp app;
+    auto file = Platform::Path::From(path).Expand(/*fromCurrentDirectory=*/true);
+    auto hg = MenuLink(file);
+    PlaceLink(hg);
+    CheckLinkedNative(hg, 1, 1);
+    LinkPicking(hg, 1);
+}
+#endif
+
 void CompareSourceCube(const std::string &path, Step::NativeSolid &solid) {
     // Validation only: regenerate a supplied source sketch in memory. Do not
     // re-export STEP, save/upgrade the fixture, or depend on its cached shell.
@@ -933,12 +1433,52 @@ int main(int argc, char **argv) {
                      "[--cube-1mm file.step [--source-slvs original.slvs]]\n";
         return 2;
     }
+#ifdef HAVE_STEP_IMPORT
+    Run("link/remap_only_existing_edge_references", [&]() {
+        Group g = {};
+        g.h = {1000};
+        hEntity source = {123}, other = {0x12340000};
+        auto placed = g.Remap(source, 0);
+        ShellOwner shell;
+        for(auto entity : {source, other}) {
+            SCurve curve = {};
+            curve.isExact = true;
+            curve.exact.entity = entity.v;
+            shell.shell.curve.AddAndAssignId(&curve);
+        }
+        shell.shell.RemapFaces(&g, 0);
+        REQUIRE(g.remap.size() == 1);
+        REQUIRE(shell.shell.curve[0].exact.entity == placed.v);
+        REQUIRE(shell.shell.curve[1].exact.entity == other.v);
+    });
+    Run("link/file_dispatch_and_dialog_filters", [&]() {
+        for(const auto &extension : {"step", "stp", "STEP", "STP", "StEp", "sTp"}) {
+            REQUIRE(SS.IsStepFile(Platform::Path::From(std::string("cube.") + extension)));
+        }
+        REQUIRE(!SS.IsStepFile(Platform::Path::From("cube.slvs")));
+        REQUIRE(!SS.IsStepFile(Platform::Path::From("cube.step.bak")));
+        bool step = false, stp = false;
+        for(const auto &filter : Platform::SolveSpaceLinkFileFilters) {
+            for(const auto &extension : filter.extensions) {
+                step |= extension == "step";
+                stp |= extension == "stp";
+            }
+        }
+        REQUIRE(step && stp);
+    });
+#endif
     for(const auto &binding : Step::SupportedBindings()) {
         ProtocolTests(binding);
         SplineTests(binding);
+#ifdef HAVE_STEP_IMPORT
+        LinkTests(binding);
+#endif
     }
     if(external) {
         Run("external/cube_1mm", [&]() { ExternalUnitCube(args[2], source ? args[4] : ""); });
+#ifdef HAVE_STEP_IMPORT
+        Run("external/link_cube_1mm", [&]() { ExternalLinkedUnitCube(args[2]); });
+#endif
     }
     std::cout << cases << " cases, " << checks << " checks, " << failures << " failures\n";
     return !cases ? 2 : (failures ? 1 : 0);

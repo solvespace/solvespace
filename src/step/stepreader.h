@@ -38,9 +38,9 @@ struct Value {
 
 struct ReadResult;
 
-// This proof-only adapter is single-threaded, including queries/destruction.
-// STEPcode still has global descriptor state and console diagnostics. Do not
-// wire this API into the GUI or concurrent background imports as it stands.
+// The adapter serializes runtime entry, queries and destruction. Diagnostics
+// use a private thread-local sink, not the application's standard streams.
+// The GUI calls it synchronously and retains only converted native geometry.
 class Document {
 public:
     ~Document();
@@ -71,6 +71,7 @@ struct ReadResult {
     Status status = Status::InvalidFile;
     std::unique_ptr<Document> document;
     std::string error;
+    // Bounded to 64 KiB; never installed as std::cout/std::cerr's streambuf.
     std::string readerLog;
 };
 

@@ -29,6 +29,33 @@ foreach(copied IN ITEMS "fn->authorization_( \"\" );" "fs->schema_identifiers_( 
 endforeach()
 file(CONFIGURE OUTPUT "${SC_BINARY_DIR}/STEPfile.compat.cc" CONTENT "${reader}" @ONLY)
 
+# Route the runtime's C++ console diagnostics through a private, thread-local
+# sink. Mirroring the header tree also contains inline/default-argument output;
+# local sibling includes must not bypass the adjusted headers. No std streambuf
+# or process locale is changed, and the upstream checkout stays unmodified.
+function(slvs_stepcode_log_copy input output)
+    file(READ "${input}" text)
+    string(REGEX REPLACE "using std::(cout|cerr|clog);" "" text "${text}")
+    string(REGEX REPLACE "std::(cout|cerr|clog)" "::SlvsStepCode::Log()" text "${text}")
+    string(REGEX REPLACE "(^|[^A-Za-z0-9_:])(cout|cerr|clog)([^A-Za-z0-9_]|$)"
+        "\\1::SlvsStepCode::Log()\\3" text "${text}")
+    file(CONFIGURE OUTPUT "${output}"
+        CONTENT "#include \"slvs_stepcode_diagnostics.h\"\n${text}" @ONLY)
+    set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${input}")
+endfunction()
+
+configure_file("${CMAKE_CURRENT_LIST_DIR}/diagnostics.h"
+    "${SC_BINARY_DIR}/include/slvs_stepcode_diagnostics.h" COPYONLY)
+file(GLOB_RECURSE log_headers RELATIVE "${SC_SOURCE_DIR}/include"
+    "${SC_SOURCE_DIR}/include/clutils/*.h" "${SC_SOURCE_DIR}/include/cldai/*.h"
+    "${SC_SOURCE_DIR}/include/clstepcore/*.h" "${SC_SOURCE_DIR}/include/cleditor/*.h")
+foreach(header IN LISTS log_headers)
+    slvs_stepcode_log_copy("${SC_SOURCE_DIR}/include/${header}"
+        "${SC_BINARY_DIR}/slvs-include/${header}")
+endforeach()
+include_directories(BEFORE "${SC_BINARY_DIR}/slvs-include" "${SC_BINARY_DIR}/include")
+set(slvs_stepcode_diagnostics_source "${CMAKE_CURRENT_LIST_DIR}/diagnostics.cpp")
+
 # SC_ADDLIB already links every dependency with PUBLIC, then repeats the last
 # dependency using the incompatible unscoped signature. Remove that call.
 set(original "${SC_SOURCE_DIR}/cmake/SC_Targets.cmake")
@@ -51,6 +78,21 @@ set(select_reader [=[    if("${_addlib_target}" STREQUAL "stepeditor-static")
       endif()
       list(REMOVE_ITEM ${_arg_prefix}_SOURCES STEPfile.cc)
       list(APPEND ${_arg_prefix}_SOURCES "${SC_BINARY_DIR}/STEPfile.compat.cc")
+    endif()
+    if("${_addlib_target}" MATCHES "^(stepeditor|stepcore|stepdai|steputils)-static$")
+      set(log_sources)
+      foreach(log_source IN LISTS ${_arg_prefix}_SOURCES)
+        get_filename_component(log_absolute "${log_source}" ABSOLUTE
+            BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+        get_filename_component(log_name "${log_source}" NAME)
+        set(log_copy "${SC_BINARY_DIR}/slvs-sources/${_addlib_target}/${log_name}")
+        slvs_stepcode_log_copy("${log_absolute}" "${log_copy}")
+        list(APPEND log_sources "${log_copy}")
+      endforeach()
+      set(${_arg_prefix}_SOURCES ${log_sources})
+      if("${_addlib_target}" STREQUAL "steputils-static")
+        list(APPEND ${_arg_prefix}_SOURCES "${slvs_stepcode_diagnostics_source}")
+      endif()
     endif()
 ]=])
 string(REPLACE "${add_library}" "${select_reader}${add_library}" contents "${contents}")

@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <functional>
+#include <future>
 #include <iostream>
 #include <iterator>
 #include <locale>
@@ -292,6 +293,28 @@ class CommaPunctuation : public std::numpunct<char> {
     char do_decimal_point() const override { return ','; }
 };
 
+class ObservedInput : public std::stringbuf {
+public:
+    explicit ObservedInput(const std::string &text) : std::stringbuf(text) {}
+    bool untouched = true;
+private:
+    std::streambuf *out = std::cout.rdbuf(), *err = std::cerr.rdbuf();
+    void Observe() { untouched &= out == std::cout.rdbuf() && err == std::cerr.rdbuf(); }
+    pos_type seekoff(off_type off, std::ios_base::seekdir way,
+                     std::ios_base::openmode mode) override {
+        Observe();
+        return std::stringbuf::seekoff(off, way, mode);
+    }
+    pos_type seekpos(pos_type pos, std::ios_base::openmode mode) override {
+        Observe();
+        return std::stringbuf::seekpos(pos, mode);
+    }
+    int_type underflow() override {
+        Observe();
+        return std::stringbuf::underflow();
+    }
+};
+
 void NistCorpus(const std::string &directory) {
     REQUIRE(HasBinding("AP242"));
     struct Sample { const char *file; size_t instances; size_t faces; };
@@ -324,6 +347,38 @@ int main(int argc, char **argv) {
 #endif
     auto bindings = Step::SupportedBindings();
     Run("compiled_bindings", [&]() { REQUIRE(!bindings.empty()); });
+    Run("private_diagnostics_leave_standard_streams_untouched", [&]() {
+        ObservedInput buffer(Exchange(bindings.front().schema, "#1=NOT_AN_ENTITY();"));
+        std::istream input(&buffer);
+        auto result = Step::Read(input);
+        REQUIRE(!result.document && result.status == Status::InvalidFile);
+        REQUIRE(result.readerLog.find("NOT_AN_ENTITY") != std::string::npos);
+        REQUIRE(buffer.untouched);
+        REQUIRE(result.readerLog.size() <= 65536);
+    });
+    Run("serialized_concurrent_reads_queries_and_destruction", [&]() {
+        std::vector<std::future<bool>> jobs;
+        for(int worker = 0; worker < 4; ++worker) {
+            jobs.push_back(std::async(std::launch::async, [&, worker]() {
+                const auto &binding = bindings[worker % bindings.size()];
+                for(int cycle = 0; cycle < 8; ++cycle) {
+                    auto good = ReadText(Exchange(binding.schema,
+                        "#1=CARTESIAN_POINT('',(1.5,2.,3.));"));
+                    if(!good.document || good.document->Protocol() != binding.protocol ||
+                       !good.document->IsA(1, "CARTESIAN_POINT")) return false;
+                    auto bad = ReadText(Exchange(binding.schema, "#1=NOT_AN_ENTITY();"));
+                    if(bad.document || bad.readerLog.find("NOT_AN_ENTITY") == std::string::npos) {
+                        return false;
+                    }
+                    Step::Value value;
+                    if(!good.document->Attribute(1, "coordinates", &value) ||
+                       value.elements.size() != 3 || value.elements[0].real != 1.5) return false;
+                }
+                return true;
+            }));
+        }
+        for(auto &job : jobs) REQUIRE(job.get());
+    });
     for(const auto &binding : bindings) {
         Run(binding.protocol + "/topology", [&]() { CommonTopology(binding); });
         Run(binding.protocol + "/units_and_complexes", [&]() { UnitsAndComplexes(binding); });
