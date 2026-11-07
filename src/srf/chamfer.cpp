@@ -180,7 +180,9 @@
 //   Otherwise (arc edges, curved faces) traced at convex corners
 //   (TraceMiterEnd()): each cross-section point is carried along its edge,
 //   a line or around the arc's axis, to the first crossing of the partner
-//   fillet or the partner's other face.
+//   fillet or the partner's other face. At reflex corners only when both
+//   cross-sections are equal (straight extrusions such as text): the miter
+//   then runs straight from the corner to the third edge.
 // - Case 4 corners of three edges, any angles: flat triangle for chamfers,
 //   sphere patch of three bands for fillets (sphere_patch.cpp).
 // - Edges split by Booleans, worked on as pieces (GetPiece()), including
@@ -206,8 +208,14 @@
 // - Approximated fillet surfaces (pipes around curved spines): straight
 //   edges along cones on the end caps of revolved parts, edges on skewed
 //   extrusions of curves.
-// - Miters at reflex corners with curved faces (refused now).
-// - Cubic (Bezier) edges: an approximate in-plane offset; to be discussed.
+// - Miters at reflex corners with curved faces and unequal cross-sections
+//   (refused now).
+// - Text: very sharp corners (in "B8%") where the offset curves never meet,
+//   even extended; the fillet would need a straight extension past the
+//   edge's end. "Sag" (chamfer) and "SolveSpace" leave 4 open mesh edges.
+// - Accuracy of polynomial edges: the Tiller and Hanson offset is off by up
+//   to 0.4 on bezier_test (r = 3, curvature radius 7), so the fillet takes
+//   8-9% too much volume. Split the edge before offsetting.
 // - Naming edges, so a user can pick them, replacing the GetEdgeModifier()
 //   test hook; and making fillet/chamfer its own group type.
 //
@@ -381,13 +389,19 @@ double SShell::GetEdgeModifier(SCurve &sc)
     const double r = 3.0;   // negative for chamfers
     if(!sc.isExact) return 0.0;
     const SBezier &b = sc.exact;
-    // text_test (the text "OD", about 20 high, extruded from z = 0 to 5) is
-    // the only model with plain (not rational) quadratics, as TrueType
-    // fonts give. Every edge of the top face, with a radius of 0.5, since
-    // the strokes are only about 3 wide.
-    for(SCurve &c : curve) {
-        if(!(c.isExact && c.exact.deg == 2)) continue;
-        if(fabs(c.exact.weight[1] - c.exact.weight[0]) > 1e-9) continue;
+    // text_test (text extruded from z = 0 to 5) is the only model whose
+    // shell spans exactly that in z, whatever the letters. Every edge of the
+    // top face, with a radius of 0.5, since text strokes are thin.
+    double zlo = VERY_POSITIVE, zhi = VERY_NEGATIVE;
+    for(SSurface &ss : surface) {
+        for(int i = 0; i <= ss.degm; i++) {
+            for(int j = 0; j <= ss.degn; j++) {
+                zlo = min(zlo, ss.ctrl[i][j].z);
+                zhi = max(zhi, ss.ctrl[i][j].z);
+            }
+        }
+    }
+    if(fabs(zlo) < LENGTH_EPS && fabs(zhi - 5) < LENGTH_EPS) {
         bool top = true;
         for(int i = 0; i <= b.deg; i++) {
             if(fabs(b.ctrl[i].z - 5) > LENGTH_EPS) top = false;
@@ -836,7 +850,7 @@ static bool CircleMeetsCircle(Vector c1, double r1, Vector c2, double r2,
 }
 
 // Where the line through l0 and l1 meets flat curve c (plane normal n),
-// extended a little past its ends if needed. A line crossing the plane meets
+// extended past its ends if needed. A line crossing the plane meets
 // it at one point; a line in the plane is solved along the curve, and of
 // several points the one nearest to near is taken.
 static bool LineMeetsFlatCurve(Vector l0, Vector l1, const SBezier &c, Vector n,
@@ -854,8 +868,8 @@ static bool LineMeetsFlatCurve(Vector l0, Vector l1, const SBezier &c, Vector n,
     if(fabs((c.Start().Minus(l0)).Dot(n)) > LENGTH_EPS) return false;
     // In the plane: where the curve crosses the line.
     Vector ln = n.Cross(dir).WithMagnitude(1.0);
-    const int N = 200;
-    double t0 = -0.25, t1 = 1.25, prevT = t0;
+    const int N = 800;
+    double t0 = -1.5, t1 = 2.5, prevT = t0;
     double prevG = (c.PointAt(t0).Minus(l0)).Dot(ln);
     bool found = false;
     for(int i = 1; i <= N; i++) {
@@ -870,6 +884,52 @@ static bool LineMeetsFlatCurve(Vector l0, Vector l1, const SBezier &c, Vector n,
             Vector q = c.PointAt((lo + hi) / 2);
             if(!found || (q.Minus(near)).Magnitude() < (p->Minus(near)).Magnitude()) {
                 *p = q;
+                found = true;
+            }
+        }
+        prevT = t;
+        prevG = g;
+    }
+    return found;
+}
+
+// Where two curves in one plane (normal n) meet, extended past their ends
+// if needed: along a, the side of b it is on changes. Of several
+// points, the one nearest to near.
+static bool FlatCurvesMeet(const SBezier &a, const SBezier &b, Vector n,
+                           Vector near, Vector *p)
+{
+    // Far past the ends too: at a sharp reflex corner the offsets cross well
+    // behind the vertex.
+    const int N = 1800;
+    double t0 = -4.0, t1 = 5.0;
+    // Which side of b the point a(t) is on, and how far from b it is.
+    double prevT = t0, prevG = 0, dist;
+    bool found = false;
+    for(int i = 0; i <= N; i++) {
+        double t = t0 + (t1 - t0) * i / N, tb;
+        Vector pa = a.PointAt(t);
+        b.ClosestPointTo(pa, &tb, /*mustConverge=*/false);
+        Vector q = b.PointAt(tb);
+        double g = (pa.Minus(q)).Dot(n.Cross(b.TangentAt(tb)));
+        if(i > 0 && (g > 0) != (prevG > 0)) {
+            double lo = prevT, hi = t, glo = prevG;
+            for(int it = 0; it < 60; it++) {
+                double m = (lo + hi) / 2, tm;
+                Vector pm = a.PointAt(m);
+                b.ClosestPointTo(pm, &tm, /*mustConverge=*/false);
+                double gm = (pm.Minus(b.PointAt(tm))).Dot(n.Cross(b.TangentAt(tm)));
+                if((gm > 0) == (glo > 0)) { lo = m; glo = gm; } else { hi = m; }
+            }
+            Vector pr = a.PointAt((lo + hi) / 2);
+            double tr;
+            b.ClosestPointTo(pr, &tr, /*mustConverge=*/false);
+            dist = (b.PointAt(tr).Minus(pr)).Magnitude();
+            // A real crossing, not a jump of the closest point.
+            if(dist < LENGTH_EPS &&
+               (!found || (pr.Minus(near)).Magnitude() < (p->Minus(near)).Magnitude()))
+            {
+                *p = pr;
                 found = true;
             }
         }
@@ -897,12 +957,18 @@ static bool IntersectCarriers(const SBezier &a, const SBezier &b, Vector near,
     if(a.deg != 1 && b.deg != 1) {
         Vector ca, na, cb, nb;
         double ra, rb;
-        if(!ArcCircle(a, &ca, &ra, &na) || !ArcCircle(b, &cb, &rb, &nb)) return false;
-        if((na.Cross(nb)).Magnitude() > 1e-6 || fabs((cb.Minus(ca)).Dot(na)) > LENGTH_EPS) {
-            dbp("fillet: arcs not in one plane, not supported yet");
+        bool arcA = ArcCircle(a, &ca, &ra, &na),
+             arcB = ArcCircle(b, &cb, &rb, &nb);
+        if(!arcA && !FlatPolyCurve(a, &na)) return false;
+        if(!arcB && !FlatPolyCurve(b, &nb)) return false;
+        if((na.Cross(nb)).Magnitude() > 1e-6 ||
+           fabs((b.Start().Minus(a.Start())).Dot(na)) > LENGTH_EPS)
+        {
+            dbp("fillet: curves not in one plane, not supported yet");
             return false;
         }
-        return CircleMeetsCircle(ca, ra, cb, rb, na, near, p);
+        if(arcA && arcB) return CircleMeetsCircle(ca, ra, cb, rb, na, near, p);
+        return FlatCurvesMeet(a, b, na, near, p);
     }
     const SBezier *line = (a.deg == 1) ? &a : &b,
                   *arc  = (a.deg == 1) ? &b : &a;
@@ -1380,13 +1446,15 @@ static bool SetUpMiterEnd(SShell *sh, const std::vector<EdgeMod> &mods,
     // At a reflex corner of S the offsets cross past the vertex and the
     // fillets run over each other; tracing toward the vertex would hit the
     // partner's other face where that face doesn't exist. The corner is
-    // reflex when f, leaving the vertex, heads out of S as seen from e.
+    // reflex when f, leaving the vertex, heads out of S as seen from e. With
+    // equal cross-sections there is nothing to trace for (no face cut), so
+    // that case is fine.
     Vector in = InwardAt(ss, em->e, ss->trim[em->trim[s]].backwards,
                          (k == 0) ? 0.0 : 1.0);
     Vector fAway = fm.e.Start().Equals(em->vtx[k])
                        ? fm.e.TangentAt(0.0)
                        : fm.e.TangentAt(1.0).ScaledBy(-1.0);
-    if(fAway.Dot(in) < 0) {
+    if(fAway.Dot(in) < 0 && fabs(em->w - fm.w) > 1e-9) {
         dbp("fillet: miter at a reflex corner with curved faces, not supported yet");
         return false;
     }
@@ -1657,6 +1725,42 @@ static bool TraceMiterEnd(SShell *sh, std::vector<EdgeMod> &mods, int i, int k) 
        !LongFillet(sh, pm, em->vtx[k], &partner))
     {
         return false;
+    }
+
+    // Equal cross-sections (the same angles, as on a straight extrusion):
+    // the two fillets are mirror images about the miter, so it runs from the
+    // corner in S straight to g, with no cut into a face.
+    if(fabs(em->w - pm.w) < 1e-9) {
+        if(!IntersectCarriers(em->off[o], g.b, em->vtx[k], &em->cut[o][k]) ||
+           !CanMoveEnd(g.b, em->vtx[k], em->cut[o][k]))
+        {
+            dbp("fillet: miter can't reach the third edge");
+            return false;
+        }
+        em->xPt[k] = em->cut[o][k];
+        std::vector<Vector> miter;
+        Vector mStart = em->cut[s][k];
+        if(!MarchPiece(&own, &partner, mStart, em->cut[o][k],
+                       em->cut[o][k].Minus(mStart), /*tangent=*/true, &miter))
+        {
+            dbp("fillet: can't trace the miter");
+            return false;
+        }
+        if(s == 1) std::reverse(miter.begin(), miter.end());
+        em->nPiece[k]          = 1;
+        em->piecePts[k][0]     = miter;
+        em->pieceOnFace[k][0]  = false;
+        double t0 = ParamOn(em->off[0], em->cut[0][k]),
+               t1 = ParamOn(em->off[1], em->cut[1][k]);
+        double tmin = min(t0, t1), tmax = max(t0, t1);
+        for(Vector &q : miter) {
+            double t = ParamOn(em->e, q);
+            tmin = min(tmin, t);
+            tmax = max(tmax, t);
+        }
+        em->tSrf[k]  = (k == 0) ? tmin : tmax;
+        em->cutsG[k] = true;
+        return true;
     }
 
     PathTargets pt = {};
