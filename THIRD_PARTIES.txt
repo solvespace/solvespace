@@ -48,3 +48,90 @@ authorization from the GNOME Foundation or Bitstream Inc., respectively. For
 further information, contact: fonts at gnome dot org.
 
                                   -----------
+
+        STEPcode, ./extlib/stepcode/ and generated STEP schema bindings
+                                       ~
+Used only by the optional ENABLE_STEP_IMPORT_PROOF targets. STEPcode is provided
+as a collective work under the 3-clause BSD license. Generated code containing
+substantial copyrightable parts of STEPcode is covered by that license too.
+See extlib/stepcode/COPYING, AUTHORS and INTENT.md for the upstream notices,
+contributors, and the status of original U.S. Government contributions.
+SolveSpace's build-tree compatibility adjustments are described in
+doc/STEP_IMPORT.md; they are not changes distributed by NIST or STEPcode.
+
+Copyright (c) 2009-2019 STEPcode AUTHORS
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+1. Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in the
+documentation and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Additional copyright notices retained in STEPcode's directory/array utilities:
+Copyright (c) 1987, 1988, 1989 Stanford University
+Copyright (c) 1990 Stanford University
+
+The cached EXPRESS scanner used by the build-time generator contains the
+following additional notice (extlib/stepcode/src/express/generated/expscan.h):
+
+Copyright (c) 1990-2011 United States Government as represented by
+the U.S. Army Research Laboratory.
+Copyright (c) 1990 The Regents of the University of California.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+1. Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following
+disclaimer in the documentation and/or other materials provided
+with the distribution.
+
+3. The name of the author may not be used to endorse or promote
+products derived from this software without specific prior written
+permission.
+
+THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Parts of this file are based on sources from the flex project.
+This code is derived from software contributed to Berkeley by Vern Paxson.
+The United States Government has rights in this work pursuant to contract no.
+DE-AC03-76SF00098 between the United States Department of Energy and the
+University of California.
+
+                                  -----------

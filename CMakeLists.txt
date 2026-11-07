@@ -74,6 +74,8 @@ set(ENABLE_OPENMP     OFF CACHE BOOL
     "Whether geometric operations will be parallelized using OpenMP")
 set(ENABLE_LTO        OFF CACHE BOOL
     "Whether interprocedural (global) optimizations are enabled")
+option(ENABLE_STEP_IMPORT_PROOF
+    "Build the experimental, dependency-only STEP reader and probe (no geometry import)" OFF)
 option(FORCE_VENDORED_Eigen3
     "Whether we should use our bundled Eigen even in the presence of a system copy"
     OFF)
@@ -542,6 +544,9 @@ if(ENABLE_GUI OR ENABLE_CLI)
     add_subdirectory(exposed)
 endif()
 add_subdirectory(src)
+if(ENABLE_STEP_IMPORT_PROOF)
+    add_subdirectory(src/step)
+endif()
 if(ENABLE_TESTS)
     add_subdirectory(test)
 endif()
