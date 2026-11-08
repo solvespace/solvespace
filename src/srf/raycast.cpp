@@ -259,12 +259,18 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
 
     // All the intersections between the line and the surface; either special
     // cases that we can quickly solve in closed form, or general numerical.
-    Vector center, axis, start, finish;
+    Vector center, axis, start, finish, n;
     double radius;
-    if(IsPlanar()) {
+    // The common planar case needs only four controls. For higher degrees,
+    // try the native cylinder shortcut before scanning for an arbitrary plane.
+    // This avoids taxing every cylinder ray with a full planarity check, while
+    // retaining direct intersection of higher-degree planes.
+    bool planar = degm == 1 && degn == 1 && IsPlanar(&n);
+    bool cylinder = !planar && IsCylinder(&axis, &center, &radius, &start, &finish);
+    if(!planar && !cylinder && (degm != 1 || degn != 1)) planar = IsPlanar(&n);
+    if(planar) {
         // Against a plane, easy.
-        Vector n = NormalAt(0, 0).WithMagnitude(1);
-        double d = n.Dot(PointAt(0, 0));
+        double d = n.Dot(ctrl[0][0]);
         // Trim to line segment now if requested, don't generate points that
         // would just get discarded later.
         if(!asSegment ||
@@ -276,7 +282,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
             ClosestPointTo(p, &(inter.p.x), &(inter.p.y));
             inters.Add(&inter);
         }
-    } else if(IsCylinder(&axis, &center, &radius, &start, &finish)) {
+    } else if(cylinder) {
         // This one can be solved in closed form too.
         Vector ab = b.Minus(a);
         if(axis.Cross(ab).Magnitude() < LENGTH_EPS) {
