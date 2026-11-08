@@ -226,8 +226,8 @@ timeout. The corpus is not vendored or installed.
 
 Other deliberately recorded compatibility limits:
 
-- SolveSpace's current **surface** exporter declares `CONFIG_CONTROL_DESIGN`
-  but emits presentation entities absent from this AP203 binding. The proof
+- Pre-fix SolveSpace **surface** exports declare `CONFIG_CONTROL_DESIGN`
+  but emit presentation entities absent from this AP203 binding. The proof
   rejects those exports rather than discarding records or switching APs.
 - A SolveSpace wireframe export of
   `test/group/boolean_coplanar_union/normal.slvs` also failed strict reading,
@@ -329,6 +329,13 @@ environment variable `SLVS_STEP_GEOMETRY_TEST_FILTER`.
   unambiguous representation per solid: `MANIFOLD_SOLID_BREP` with a direct,
   connected, orientable `CLOSED_SHELL`. Concave solids and through-holes are
   supported; separate cavity shells are not.
+- Plain, non-transforming `SHAPE_REPRESENTATION_RELATIONSHIP` links between
+  shape representations sharing the same context. Each connected component must
+  be acyclic and contain at most one geometry-bearing representation; the other
+  representations may contain only `AXIS2_PLACEMENT_3D` items. The actual geometry
+  representation/context/source IDs are retained, and each solid is converted
+  once. This supports an axis-only product representation related to its B-rep,
+  as emitted by SolveSpace, without interpreting axis items as transforms.
 - `ADVANCED_FACE` with one simple outer `EDGE_LOOP` and optional disjoint inner
   loops; `ORIENTED_EDGE` uses of `EDGE_CURVE`; `VERTEX_POINT` vertices. The same
   source edge cannot be used twice on one face in the current trimming path.
@@ -433,9 +440,10 @@ path, remain unsupported even when an equivalent rational B-spline encoding
 could be represented. The cylinder acceptance fixture below already uses generic
 rational B-splines and needs no analytic whitelist or angle-unit workaround.
 No faces or cavity shells are retained from a rejected solid.
-Representation relationships (even
-untransformed ones), mappings, assembly usage, duplicate occurrences and
-unsupported non-solid shape items currently reject the entire conversion:
+Representation relationships outside the shared-context, plain shape-relationship
+subset above, including transformations, different contexts, cycles and alternative
+geometry representations, reject the entire conversion. Mappings, assembly usage,
+duplicate occurrences and unsupported non-solid shape items also remain rejected:
 until selection and transforms exist, loading components at their definition
 origins would be unsafe. These conservative restrictions are intentional, not
 reasons to change schemas or discard unknown STEP records in the reader.
@@ -733,4 +741,6 @@ production tolerances and geometric validation; broader interactive lifecycle
 validation and performance/resource-limit work. Degrees above native cubic must
 remain explicit refusals unless an exact native decomposition is available;
 fitting or a silent mesh fallback is not an alternative.
-The export/schema mismatch recorded above remains deferred and untouched.
+The separate exporter repair uses AP214 and corrects bound orientation. Older
+files containing presentation entities absent from their declared AP203 schema
+remain rejected; the reader does not relabel schemas or discard those records.

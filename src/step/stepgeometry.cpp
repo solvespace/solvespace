@@ -1318,23 +1318,69 @@ GeometryResult ConvertGeometry(const Document &document, const GeometryOptions &
     try {
         // Occurrence paths/transforms remain a separate, explicit limitation.
         // Components must never be imported at guessed definition origins.
-        for(const char *type : {"MAPPED_ITEM", "REPRESENTATION_RELATIONSHIP",
-                               "CONTEXT_DEPENDENT_SHAPE_REPRESENTATION", "ASSEMBLY_COMPONENT_USAGE"}) {
+        for(const char *type : {"MAPPED_ITEM", "CONTEXT_DEPENDENT_SHAPE_REPRESENTATION",
+                               "ASSEMBLY_COMPONENT_USAGE"}) {
             auto entities = document.EntitiesOfType(type);
             Require(entities.empty(), Code::Representation, entities.empty() ? 0 : entities.front(),
-                    "Representation relationships, mappings and assemblies are not implemented; no flattening is performed.");
+                    "Mappings and assemblies are not implemented; no flattening is performed.");
         }
+        std::map<int, int> parents;
+        std::set<int> geometryRoots;
         auto representations = document.EntitiesOfType("SHAPE_REPRESENTATION");
         std::sort(representations.begin(), representations.end());
         for(int representation : representations) {
             currentRepresentation = representation;
+            parents.emplace(representation, representation);
             for(int item : attributes.Refs(representation, "items")) {
                 if(document.IsA(item, "AXIS2_PLACEMENT_3D")) continue;
                 Require(document.IsA(item, "SOLID_MODEL"), Code::Representation, item,
                         "Unsupported non-solid shape item; representation selection is not implemented.");
                 Require(candidates.emplace(item, representation).second, Code::Representation, item,
                         "Solid occurs more than once; occurrence/context selection is ambiguous.");
+                geometryRoots.insert(representation);
             }
+        }
+
+        // A plain shape relationship within one context needs no placement or
+        // unit conversion between representations. Accept axis-only intermediates
+        // connected to one geometry-bearing representation, retaining the latter's
+        // source ID. Do not choose between alternative geometry representations.
+        auto FindRoot = [&](int representation) -> int {
+            while(parents.at(representation) != representation) {
+                parents.at(representation) = parents.at(parents.at(representation));
+                representation = parents.at(representation);
+            }
+            return representation;
+        };
+        auto relationships = document.EntitiesOfType("REPRESENTATION_RELATIONSHIP");
+        std::sort(relationships.begin(), relationships.end());
+        for(int relationship : relationships) {
+            currentRepresentation = 0;
+            bool supported = document.IsA(relationship, "SHAPE_REPRESENTATION_RELATIONSHIP");
+            // Inspect every complex component: a shape relationship may also
+            // carry a transformation or other unsupported relationship semantics.
+            for(const auto &type : document.EntityTypes(relationship)) {
+                if(type != "SHAPE_REPRESENTATION_RELATIONSHIP" &&
+                   type != "REPRESENTATION_RELATIONSHIP") supported = false;
+            }
+            Require(supported, Code::Representation, relationship,
+                    "Only plain, non-transforming shape representation relationships are implemented; no flattening is performed.");
+            int first = attributes.Ref(relationship, "rep_1");
+            int second = attributes.Ref(relationship, "rep_2");
+            currentRepresentation = first;
+            Require(parents.count(first) && parents.count(second), Code::Representation, relationship,
+                    "Both related representations must be shape representations.");
+            Require(attributes.Ref(first, "context_of_items") ==
+                    attributes.Ref(second, "context_of_items"), Code::Representation, relationship,
+                    "Related shape representations must share one context; no placement or unit context is inferred.");
+            int a = FindRoot(first), b = FindRoot(second);
+            Require(a != b, Code::Representation, relationship,
+                    "Self-referencing, cyclic or duplicate shape representation relationships are not supported.");
+            Require(!geometryRoots.count(a) || !geometryRoots.count(b), Code::Representation, relationship,
+                    "Related representations contain alternative geometry; representation selection is not implemented.");
+            if(a > b) std::swap(a, b);
+            parents.at(b) = a;
+            if(geometryRoots.erase(b)) geometryRoots.insert(a);
         }
     } catch(const Failure &failure) {
         result.diagnostics.push_back(Diagnostic(failure, currentRepresentation, 0));
