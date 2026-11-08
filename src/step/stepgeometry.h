@@ -96,6 +96,8 @@ struct GeometryOptions {
 // surfaces are converted to exact rational Bezier spans of native degree <= 3;
 // source boundaries are retained, not fitted or replaced by polygons. Native
 // trim PWLs and validation tessellation are not geometry-conversion fallbacks.
+// Plain shape representation relationships may connect axis-only intermediates
+// to one geometry representation within a shared context; no transforms are inferred.
 // Unsupported geometry/trimming omits the entire solid, with an entity-specific
 // diagnostic. No healing, cavity stripping or assembly flattening.
 // Uses SolveSpace's fixed LENGTH_EPS in mm, not a relaxed STEP uncertainty.
