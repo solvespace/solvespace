@@ -434,12 +434,18 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
 
     *pt    = PointAt(muv);
 
-    // A UV chord need not map onto the trim, even when that trim is an exact
-    // straight line in XYZ (e.g. on a rational or non-affine plane). Refine
-    // the midpoint onto the curve before doing point-on-face classification.
+    // If this UV edge approximates a curve, refine its midpoint onto that
+    // curve too. Otherwise point-on-face tests can fail because the point
+    // does not actually lie on the other face.
     hSCurve hc = { auxA };
     SCurve *sc = shell->curve.FindById(hc);
-    if(sc->isExact) {
+    if(sc->isExact && sc->exact.deg == 1) {
+        // A straight XYZ trim may still have a curved UV image. Project onto
+        // the line directly; the generic Bezier refinement samples and iterates
+        // even for degree one, and rational line weights do not affect its locus.
+        *pt = pt->ClosestPointOnLine(sc->exact.ctrl[0],
+                                    sc->exact.ctrl[1].Minus(sc->exact.ctrl[0]));
+    } else if(sc->isExact) {
         double t;
         sc->exact.ClosestPointTo(*pt, &t, /*mustConverge=*/false);
         *pt = sc->exact.PointAt(t);
@@ -763,15 +769,23 @@ void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSu
 }
 
 void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
+    if(surface.IsEmpty() || agnst->surface.IsEmpty()) return;
+    // Classify each patch once, not once per overlapping surface pair. This
+    // local snapshot is read-only in the parallel loop and cannot become stale.
+    std::vector<SSurface::Plane> planes;
+    planes.reserve(agnst->surface.n);
+    for(const SSurface &s : agnst->surface) planes.push_back(s.GetPlane());
 #pragma omp parallel for
     for(int i = 0; i< surface.n; i++) {
         SSurface *sa = &surface[i];
+        SSurface::Plane planeA = sa->GetPlane();
 
-        for(SSurface &sb : agnst->surface){
+        for(int j = 0; j < agnst->surface.n; j++) {
+            SSurface *sb = &agnst->surface[j];
             // Intersect every surface from our shell against every surface
             // from agnst; this will add zero or more curves to the curve
             // list for into.
-            sa->IntersectAgainst(&sb, this, agnst, into);
+            sa->IntersectAgainst(sb, this, agnst, into, &planeA, &planes[j]);
         }
     }
 }

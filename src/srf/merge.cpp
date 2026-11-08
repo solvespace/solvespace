@@ -11,6 +11,13 @@ namespace SolveSpace {
 void SShell::MergeCoincidentSurfaces() {
     surface.ClearTags();
 
+    // Each survivor is reparameterized only after its pair search, and is never
+    // a later candidate. No snapshot is used after its controls are rewritten.
+    std::vector<SSurface::Plane> planes(surface.n);
+    for(int i = 0; i < surface.n; i++) {
+        if(!surface[i].trim.IsEmpty()) planes[i] = surface[i].GetPlane();
+    }
+
     int i, j;
     SSurface *si, *sj;
 
@@ -23,7 +30,7 @@ void SShell::MergeCoincidentSurfaces() {
             continue;
         // And for now we handle only coincident planes, so no sense wasting
         // time on other surfaces.
-        if(!si->IsPlanar()) continue;
+        if(!planes[i].isPlanar) continue;
 
         SEdgeList sel = {};
         si->MakeEdgesInto(this, &sel, SSurface::MakeAs::XYZ);
@@ -35,8 +42,8 @@ void SShell::MergeCoincidentSurfaces() {
             for(j = i + 1; j < surface.n; j++) {
                 sj = &(surface[j]);
                 if(sj->tag) continue;
-                if(!sj->CoincidentWith(si, /*sameNormal=*/true)) continue;
                 if(!sj->color.Equals(si->color)) continue;
+                if(!sj->CoincidentWith(si, /*sameNormal=*/true, &planes[j], &planes[i])) continue;
                 // But we do merge surfaces with different face entities, since
                 // otherwise we'd hardly ever merge anything.
 
