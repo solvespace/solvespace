@@ -60,8 +60,9 @@
 // - The section is solved at the start of e and carried along it
 //   (FollowEdge()): moved along a line, turned about an arc's axis, or offset
 //   in the plane of a flat polynomial curve (Tiller and Hanson, exact at the
-//   ends and approximate between). The section solved at the end of e must
-//   agree. Carried this way: off[0] and off[1] (eA and eB, the contacts),
+//   ends and approximate between; such an edge is first split into
+//   POLY_PIECES pieces, each offset on its own). The section solved at the
+//   end of e must agree. Carried this way: off[0] and off[1] (eA and eB, the contacts),
 //   mid (where the tangents at the contacts cross) and spine (the center).
 // - Fillet surface: 3 rows of control points, degn = 2
 //     row 0 = eA, row 1 = mid (weights times w), row 2 = eB
@@ -125,6 +126,8 @@
 //    FromPlane, trimmed by the three end curves, facing the same way as the
 //    chamfers. The sphere triangle is split at its incenter into three
 //    bands, see sphere_patch.cpp.
+// Also JOIN, where a split polynomial edge's pieces meet: handled like a
+// tangent end, with the cross-section there as the shared end curve.
 //
 // Steps in ModifyEdges()
 // ----------------------
@@ -155,7 +158,7 @@
 // Corner: three edges meeting at a corner. Recut: an unmodified neighbor
 // that gets shortened or extended. See their definitions below.
 //
-// STATUS (2026-11-05)
+// STATUS (2026-11-08)
 // -------------------
 // Working, fillet and chamfer, checked for closed meshes and against exact
 // or semi-analytic volumes:
@@ -165,8 +168,11 @@
 //   FollowEdge()).
 // - Flat quadratic and cubic edges (TrueType text, Bezier profiles) on
 //   straight extrusions: rows offset in the edge's plane by the Tiller and
-//   Hanson construction (OffsetInPlane()), exact at the curve's ends.
-//   Near-tangent joins (rounded font coordinates) are snapped together.
+//   Hanson construction (OffsetInPlane()), exact at the curve's ends. Each
+//   edge is split in 2 and the pieces offset on their own, which brings
+//   bezier_test (r = 3, curvature radius 7) to within about 0.4% of the
+//   exact fillet volume, from 8-9% too much. Near-tangent joins (rounded
+//   font coordinates) are snapped together.
 // - Case 1 end faces: perpendicular, flat at an angle (exact ellipse), and
 //   curved (traced end curve, kept as points). Neighbors are shortened, or
 //   extended past a reflex corner.
@@ -209,9 +215,6 @@
 // - Text: very sharp corners (in "B8%") where the offset curves never meet,
 //   even extended; the fillet would need a straight extension past the
 //   edge's end. "Sag" (chamfer) and "SolveSpace" leave 4 open mesh edges.
-// - Accuracy of polynomial edges: the Tiller and Hanson offset is off by up
-//   to 0.4 on bezier_test (r = 3, curvature radius 7), so the fillet takes
-//   8-9% too much volume. Split the edge before offsetting.
 // - Naming edges, so a user can pick them, replacing the GetEdgeModifier()
 //   test hook; and making fillet/chamfer its own group type.
 //
@@ -240,6 +243,11 @@ static const int END_FACE = 1;  // case 1: neighbors not modified, end face C
 static const int TANGENT  = 2;  // case 2: tangent chain of modified edges
 static const int MITER    = 3;  // case 3: two modified edges meet at a corner
 static const int CORNER   = 4;  // case 4: three modified edges at a corner
+static const int JOIN     = 5;  // a split inside one curved edge
+
+// Flat quadratic and cubic edges are split into this many pieces, each
+// offset on its own: the offset is exact only at a piece's ends.
+static const int POLY_PIECES = 2;
 
 // An edge piece: the range of a curve between two vertices, covered by one
 // trim on each of the curve's two faces. Booleans split curves, so one curve
@@ -303,7 +311,10 @@ struct EdgeMod {
     SBezier   pieceCurve[2][2]; // [k][piece]
     bool      cutsG[2];       // [k] MITER: this fillet ends on g and re-cuts it
     double    tSrf[2];        // [k] ends of the fillet surface, as params on e
-    int       partner[2], partnerEnd[2]; // [k] TANGENT, MITER: the neighbor's EdgeMod
+    int       partner[2], partnerEnd[2]; // [k] TANGENT, MITER, JOIN: the neighbor's
+                              //     EdgeMod
+    int       join[2];        // [k] the EdgeMod of the next piece of the same
+                              //     edge (POLY_PIECES), or -1
     // Geometry built before the shell is changed
     SBezier   newOff[2], endC[2];
     SSurface  fillet;
@@ -924,9 +935,19 @@ static int FindEdgeModAt(const std::vector<EdgeMod> &mods, hSSurface hs, int ti)
     return -1;
 }
 
-// The EdgeMod of the neighbor in face s at end k of em, or -1.
+// The EdgeMod of the neighbor in face s at end k of em, or -1. The pieces of
+// a split edge share its trim; take the one that ends at this vertex.
 static int NeighborMod(const std::vector<EdgeMod> &mods, const EdgeMod *em, int s, int k) {
-    return FindEdgeModAt(mods, em->face[s], em->nbTrim[s][k]);
+    for(size_t i = 0; i < mods.size(); i++) {
+        const EdgeMod &m = mods[i];
+        for(int fs = 0; fs < 2; fs++) {
+            if(m.face[fs].v != em->face[s].v || m.trim[fs] != em->nbTrim[s][k]) continue;
+            if(m.e.Start().Equals(em->vtx[k]) || m.e.Finish().Equals(em->vtx[k])) {
+                return (int)i;
+            }
+        }
+    }
+    return -1;
 }
 
 static bool MakeFilletSurface(EdgeMod *em, Vector nA, Vector nB);
@@ -1655,6 +1676,41 @@ static bool SetUpCornerEnd(SShell *sh, const std::vector<EdgeMod> &mods,
     return true;
 }
 
+// At a split inside one curved edge (POLY_PIECES) the next piece's fillet
+// carries on from this one. Each piece's rows are offset on their own, exact
+// at the piece's ends, so they meet; the later piece's are snapped onto the
+// earlier one's so the shared points are identical. As at a tangent end, the
+// end curve is the cross-section there, shared by both fillets.
+static bool SetUpJoinEnd(const std::vector<EdgeMod> &mods, EdgeMod *em, int k) {
+    em->kind[k]       = JOIN;
+    em->tSrf[k]       = (k == 0) ? 0.0 : 1.0;
+    em->partner[k]    = em->join[k];
+    em->partnerEnd[k] = 1 - k;
+    for(int s = 0; s < 2; s++) {
+        em->cut[s][k] = (k == 0) ? em->off[s].Start() : em->off[s].Finish();
+    }
+    if(k == 1) return true;
+
+    // The earlier piece comes first in mods, so its end 1 is set up.
+    const EdgeMod &pm = mods[em->join[0]];
+    int pd = pm.e.deg;
+    if(fabs(pm.w - em->w) > 1e-6) {
+        dbp("fillet: cross-section changes at a split, not supported");
+        return false;
+    }
+    for(int s = 0; s < 2; s++) {
+        if(!pm.off[s].Finish().Equals(em->off[s].Start())) {
+            dbp("fillet: pieces of a split edge don't meet");
+            return false;
+        }
+        em->off[s].ctrl[0] = pm.off[s].ctrl[pd];
+        em->cut[s][0]      = pm.cut[s][1];
+    }
+    em->mid.ctrl[0]   = pm.mid.ctrl[pd];
+    em->spine.ctrl[0] = pm.spine.ctrl[pd];
+    return true;
+}
+
 // Work out end k of the edge: find the neighbors, classify the vertex, and
 // find the cut points. Reads the shell only.
 static bool SetUpEnd(SShell *sh, const std::vector<EdgeMod> &mods,
@@ -1662,6 +1718,7 @@ static bool SetUpEnd(SShell *sh, const std::vector<EdgeMod> &mods,
 {
     Vector v = (k == 0) ? em->e.Start() : em->e.Finish();
     em->vtx[k] = v;
+    if(em->join[k] >= 0) return SetUpJoinEnd(mods, em, k);
 
     bool modified[2];
     for(int s = 0; s < 2; s++) {
@@ -2022,7 +2079,30 @@ void SShell::ModifyEdges()
             em.trim[1] = pc.trim[1];
             em.origCurve[0] = pc.hc[0];
             em.origCurve[1] = pc.hc[1];
-            mods.push_back(em);
+            em.join[0] = em.join[1] = -1;
+            // A flat quadratic or cubic is offset only approximately, so
+            // split it into pieces, each offset on its own. The ends stay
+            // exactly at the original vertices.
+            Vector pn;
+            int np = FlatPolyCurve(pc.b, &pn) ? POLY_PIECES : 1;
+            SBezier rest = pc.b;
+            for(int p = 0; p < np; p++) {
+                SBezier part = rest;
+                if(p < np - 1) {
+                    SBezier after;
+                    rest.SplitAt(1.0 / (np - p), &part, &after);
+                    rest = after;
+                }
+                if(p == 0)      part.ctrl[0]        = pc.b.ctrl[0];
+                if(p == np - 1) part.ctrl[part.deg] = pc.b.ctrl[pc.b.deg];
+                EdgeMod pe = em;
+                pe.e = part;
+                if(p > 0) {
+                    pe.join[0] = (int)mods.size() - 1;
+                    mods.back().join[1] = (int)mods.size();
+                }
+                mods.push_back(pe);
+            }
         }
         }
     }
@@ -2038,7 +2118,8 @@ void SShell::ModifyEdges()
     }
     for(size_t i = 0; i < mods.size(); i++) {
         for(int k = 0; k < 2; k++) {
-            if(mods[i].kind[k] == END_FACE || mods[i].kind[k] == CORNER) continue;
+            if(mods[i].kind[k] == END_FACE || mods[i].kind[k] == CORNER ||
+               mods[i].kind[k] == JOIN) continue;
             if(!FindPartnerEnd(mods, (int)i, k)) {
                 dbp("fillet: modified neighbors don't meet");
                 return;
@@ -2070,7 +2151,7 @@ void SShell::ModifyEdges()
         for(int k = 0; k < 2; k++) {
             bool ok = true;
             for(int s = 0; s < 2; s++) {
-                if(em.kind[k] == CORNER) continue;
+                if(em.kind[k] == CORNER || em.kind[k] == JOIN) continue;
                 if(em.kind[k] != END_FACE && em.modSide[k] == s) continue;
                 if(em.kind[k] == MITER && !em.cutsG[k]) continue;
                 ok = ok && SetRecutEnd(&recuts, em.nb[s][k], em.vtx[k], em.cut[s][k]);
@@ -2184,7 +2265,13 @@ void SShell::ModifyEdges()
             Vector p0 = bk ? em.cut[s][1] : em.cut[s][0],
                    p1 = bk ? em.cut[s][0] : em.cut[s][1];
             t[s] = MakeTrim(em.hNew[s], p0, p1, em.cut[s][0]);
-            srf->trim[em.trim[s]] = t[s];
+            // The pieces of a split edge share its trim: the first takes it
+            // over and the others add theirs, in the same direction.
+            if(em.join[0] >= 0) {
+                srf->trim.Add(&t[s]);
+            } else {
+                srf->trim[em.trim[s]] = t[s];
+            }
             STrimBy rt = ReverseTrim(t[s]);
             surface.FindById(em.hFillet)->trim.Add(&rt);
         }
