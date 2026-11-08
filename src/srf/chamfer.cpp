@@ -132,8 +132,11 @@
 // Steps in ModifyEdges()
 // ----------------------
 // Compute everything first and change the shell only at the end, so a
-// failure leaves the shell untouched. Never hold pointers into curve or
-// surface across an AddAndAssignId(): the lists can reallocate.
+// failure leaves the shell untouched. An edge that can't be done is left
+// out, and the others are set up again without it (its neighbors may then
+// end on faces instead), so one bad corner doesn't stop the rest. Never hold
+// pointers into curve or surface across an AddAndAssignId(): the lists can
+// reallocate.
 // 1. Collect: loop over the original curve.n only. Store an EdgeMod by value
 //    for each piece of each curve GetEdgeModifier() picks.
 // 2. Sections: the rolling ball along each edge, SetUpSections().
@@ -189,6 +192,8 @@
 //   sphere patch of three bands for fillets (sphere_patch.cpp).
 // - Edges split by Booleans, worked on as pieces (GetPiece()), including
 //   coincident curve copies on the two faces.
+// - Edges that fail are left out and the rest are filleted (text with sharp
+//   notches, such as "B8%", fillets everything else).
 // - Only the last group is modified (groupmesh.cpp), for testing.
 //
 // Not handled, by decision: point-only (non-exact) curves; differing radii
@@ -347,6 +352,7 @@ struct Recut {
     Vector    start, finish;  // new ends, in the curve's direction
     SBezier   b;
     hSCurve   newh;
+    int       mod;            // an EdgeMod that cuts it, to blame on failure
 };
 
 static bool SubCurve(const SBezier &b, Vector p0, Vector p1, SBezier *out);
@@ -445,6 +451,14 @@ static bool CanMoveEnd(const SBezier &b, Vector v, Vector p) {
     if(!b.PointAt(t).Equals(p)) return false;
     if(b.Start().Equals(v))  return t < 1 - LENGTH_EPS;
     if(b.Finish().Equals(v)) return t > LENGTH_EPS;
+    return false;
+}
+
+// True if p, on curve b or its extension, lies past b's end at vertex v.
+static bool ExtendsPast(const SBezier &b, Vector v, Vector p) {
+    double t = ParamOn(b, p);
+    if(b.Start().Equals(v))  return t < -LENGTH_EPS;
+    if(b.Finish().Equals(v)) return t > 1 + LENGTH_EPS;
     return false;
 }
 
@@ -1049,6 +1063,15 @@ static bool SetUpEndFace(SShell *sh, EdgeMod *em, int k) {
        !CanMoveEnd(g.b, em->vtx[k], em->cut[1][k]))
     {
         dbp("fillet: neighbor is too short for this radius");
+        return false;
+    }
+    // At a reflex corner the neighbors are extended past the vertex, along
+    // C. A curved C stops at the vertex (its surface covers only the face),
+    // so it can't take them.
+    if(!plane && (ExtendsPast(f.b, em->vtx[k], em->cut[0][k]) ||
+                  ExtendsPast(g.b, em->vtx[k], em->cut[1][k])))
+    {
+        dbp("fillet: reflex corner on a curved end face, not supported");
         return false;
     }
     double t0 = ParamOn(em->off[0], em->cut[0][k]),
@@ -1876,8 +1899,10 @@ static int FindOrAddRecut(std::vector<Recut> *rcs, const Piece &pc) {
 }
 
 // Move the end of neighbor piece pc that is at vertex v to the cut point.
-static bool SetRecutEnd(std::vector<Recut> *rcs, const Piece &pc, Vector v, Vector cut) {
+static bool SetRecutEnd(std::vector<Recut> *rcs, const Piece &pc, Vector v, Vector cut,
+                        int mod) {
     Recut *rc = &(*rcs)[FindOrAddRecut(rcs, pc)];
+    rc->mod = mod;
     // At a tangent joint or a miter both fillets cut g at the same point.
     if(pc.start.Equals(v)) {
         if(!rc->start.Equals(v) && !rc->start.Equals(cut)) return false;
@@ -2041,34 +2066,46 @@ static bool CurveInUse(SShell *sh, hSCurve hc) {
     return false;
 }
 
-void SShell::ModifyEdges()
-{
-    std::vector<EdgeMod> mods;
+// An edge left out after it failed: the piece's trim on its first face.
+struct DroppedEdge {
+    hSSurface face;
+    int       trim;
+};
 
-    // 1. Collect. Loop over the original curves only.
-    int ncurves = curve.n;
+// Step 1: an EdgeMod for each piece of each curve GetEdgeModifier() picks,
+// except those dropped. A flat quadratic or cubic gives several.
+static void CollectEdges(SShell *sh, const std::vector<DroppedEdge> &dropped,
+                         std::vector<EdgeMod> *mods)
+{
+    // Loop over the original curves only.
+    int ncurves = sh->curve.n;
     for(int i = 0; i < ncurves; i++) {
-        SCurve *sc = &curve[i];
-        double m = GetEdgeModifier(*sc);
+        SCurve *sc = &sh->curve[i];
+        double m = sh->GetEdgeModifier(*sc);
         if(fabs(m) < LENGTH_EPS) continue;
         hSCurve hc = sc->h;
         hSSurface hfaces[2] = { sc->surfA, sc->surfB };
         if(!sc->isExact) {
             dbp("fillet: edge is not exact");
-            return;
+            continue;
         }
         // Each trim on this curve is (one side of) one piece of it. The
         // curve may be used on only one face, the other face using a copy.
         for(int fi = 0; fi < 2; fi++) {
-        SSurface *sa = surface.FindById(hfaces[fi]);
+        SSurface *sa = sh->surface.FindById(hfaces[fi]);
         for(int ti = 0; ti < sa->trim.n; ti++) {
             if(sa->trim[ti].curve.v != hc.v) continue;
-            if(FindEdgeModAt(mods, hfaces[fi], ti) >= 0) continue;
+            if(FindEdgeModAt(*mods, hfaces[fi], ti) >= 0) continue;
             Piece pc;
-            if(!GetPiece(this, hfaces[fi], ti, &pc)) {
+            if(!GetPiece(sh, hfaces[fi], ti, &pc)) {
                 dbp("fillet: edge piece isn't trimmed on both faces");
-                return;
+                continue;
             }
+            bool skip = false;
+            for(const DroppedEdge &d : dropped) {
+                if(d.face.v == pc.face[0].v && d.trim == pc.trim[0]) skip = true;
+            }
+            if(skip) continue;
             EdgeMod em = {};
             em.r       = fabs(m);
             em.chamfer = (m < 0);
@@ -2098,103 +2135,168 @@ void SShell::ModifyEdges()
                 EdgeMod pe = em;
                 pe.e = part;
                 if(p > 0) {
-                    pe.join[0] = (int)mods.size() - 1;
-                    mods.back().join[1] = (int)mods.size();
+                    pe.join[0] = (int)mods->size() - 1;
+                    mods->back().join[1] = (int)mods->size();
                 }
-                mods.push_back(pe);
+                mods->push_back(pe);
             }
         }
         }
     }
-    if(mods.empty()) return;
+}
 
-    // 2-4. Offset curves, vertices and cut points. Read only. If any edge
-    // can't be done, do none: neighbors depend on each other.
-    for(EdgeMod &em : mods) {
-        if(!SetUpSections(this, &em)) return;
+// SetUpEdges() and BuildEdges() run each step for every edge and add the
+// index of each EdgeMod that fails to bad. They stop after a step where any
+// failed, since the later steps depend on it.
+
+// Steps 2-4: offset curves, vertices and cut points. Read only.
+static void SetUpEdges(SShell *sh, std::vector<EdgeMod> &mods, std::vector<int> *bad) {
+    for(size_t i = 0; i < mods.size(); i++) {
+        if(!SetUpSections(sh, &mods[i])) bad->push_back((int)i);
     }
-    for(EdgeMod &em : mods) {
-        if(!SetUpEnd(this, mods, &em, 0) || !SetUpEnd(this, mods, &em, 1)) return;
+    if(!bad->empty()) return;
+    for(size_t i = 0; i < mods.size(); i++) {
+        bool ok0 = SetUpEnd(sh, mods, &mods[i], 0),
+             ok1 = SetUpEnd(sh, mods, &mods[i], 1);
+        if(!ok0 || !ok1) bad->push_back((int)i);
     }
+    if(!bad->empty()) return;
     for(size_t i = 0; i < mods.size(); i++) {
         for(int k = 0; k < 2; k++) {
             if(mods[i].kind[k] == END_FACE || mods[i].kind[k] == CORNER ||
                mods[i].kind[k] == JOIN) continue;
             if(!FindPartnerEnd(mods, (int)i, k)) {
                 dbp("fillet: modified neighbors don't meet");
-                return;
+                bad->push_back((int)i);
             }
         }
     }
+    if(!bad->empty()) return;
     for(size_t i = 0; i < mods.size(); i++) {
         for(int k = 0; k < 2; k++) {
             if(mods[i].kind[k] != MITER) continue;
-            bool ok = mods[i].pieceExact[k] ? ExactMiterEnd(this, mods, (int)i, k)
-                                            : TraceMiterEnd(this, mods, (int)i, k);
+            bool ok = mods[i].pieceExact[k] ? ExactMiterEnd(sh, mods, (int)i, k)
+                                            : TraceMiterEnd(sh, mods, (int)i, k);
             if(!ok) {
                 dbp("fillet: can't build the miter");
-                return;
+                bad->push_back((int)i);
             }
         }
     }
+    if(!bad->empty()) return;
     for(size_t i = 0; i < mods.size(); i++) {
         for(int k = 0; k < 2; k++) {
             if(mods[i].kind[k] == MITER &&
-               mods[i].partner[k] > (int)i && !PairTracedMiter(mods, (int)i, k)) return;
+               mods[i].partner[k] > (int)i && !PairTracedMiter(mods, (int)i, k)) {
+                bad->push_back((int)i);
+            }
         }
     }
+}
 
-    // 5. Build all the new geometry. If anything fails, leave the shell as
-    // it was. Unmodified neighbors are re-cut where the offsets meet them.
-    std::vector<Recut> recuts;
-    for(EdgeMod &em : mods) {
+// Step 5: build all the new geometry. Still read only. Unmodified neighbors
+// are re-cut where the offsets meet them.
+static void BuildEdges(SShell *sh, std::vector<EdgeMod> &mods,
+                       std::vector<Recut> *recuts, std::vector<Corner> *corners,
+                       std::vector<int> *bad)
+{
+    for(size_t i = 0; i < mods.size(); i++) {
+        EdgeMod &em = mods[i];
+        bool ok = true;
         for(int k = 0; k < 2; k++) {
-            bool ok = true;
             for(int s = 0; s < 2; s++) {
                 if(em.kind[k] == CORNER || em.kind[k] == JOIN) continue;
                 if(em.kind[k] != END_FACE && em.modSide[k] == s) continue;
                 if(em.kind[k] == MITER && !em.cutsG[k]) continue;
-                ok = ok && SetRecutEnd(&recuts, em.nb[s][k], em.vtx[k], em.cut[s][k]);
-            }
-            if(!ok) {
-                dbp("fillet: neighbor cut twice at one end");
-                return;
+                if(!SetRecutEnd(recuts, em.nb[s][k], em.vtx[k], em.cut[s][k], (int)i)) {
+                    dbp("fillet: neighbor cut twice at one end");
+                    ok = false;
+                }
             }
             if(em.kind[k] != MITER) MakeEndCurve(&em, k);
         }
         Vector mid = em.e.PointAt(0.5);
-        Vector n0 = SurfaceNormalNear(surface.FindById(em.face[0]), mid),
-               n1 = SurfaceNormalNear(surface.FindById(em.face[1]), mid);
-        if(!SubCurve(em.off[0], em.cut[0][0], em.cut[0][1], &em.newOff[0]) ||
-           !SubCurve(em.off[1], em.cut[1][0], em.cut[1][1], &em.newOff[1]) ||
-           !MakeFilletSurface(&em, n0, n1))
+        Vector n0 = SurfaceNormalNear(sh->surface.FindById(em.face[0]), mid),
+               n1 = SurfaceNormalNear(sh->surface.FindById(em.face[1]), mid);
+        if(ok && (!SubCurve(em.off[0], em.cut[0][0], em.cut[0][1], &em.newOff[0]) ||
+                  !SubCurve(em.off[1], em.cut[1][0], em.cut[1][1], &em.newOff[1]) ||
+                  !MakeFilletSurface(&em, n0, n1)))
         {
             dbp("fillet: can't build curves or surface");
-            return;
+            ok = false;
         }
+        if(!ok) bad->push_back((int)i);
     }
-    for(Recut &rc : recuts) {
+    if(!bad->empty()) return;
+    for(Recut &rc : *recuts) {
         if(!SubCurve(rc.pc.b, rc.start, rc.finish, &rc.b)) {
             dbp("fillet: can't re-cut neighbor");
-            return;
+            bad->push_back(rc.mod);
         }
     }
-    std::vector<Corner> corners;
+    if(!bad->empty()) return;
     for(size_t i = 0; i < mods.size(); i++) {
         for(int k = 0; k < 2; k++) {
             if(mods[i].kind[k] != CORNER) continue;
-            if(!AddToCorner(&corners, mods[i].vtx[k], (int)i, k)) {
+            if(!AddToCorner(corners, mods[i].vtx[k], (int)i, k)) {
                 dbp("fillet: more than three edges at a corner");
-                return;
+                bad->push_back((int)i);
             }
         }
     }
-    for(Corner &c : corners) {
+    if(!bad->empty()) return;
+    for(Corner &c : *corners) {
         bool ok = mods[c.mod[0]].chamfer ? MakeChamferCorner(mods, &c)
                                          : MakeSphereCorner(mods, &c);
         if(!ok) {
             dbp("fillet: can't build corner");
-            return;
+            bad->push_back(c.mod[0]);
+        }
+    }
+}
+
+void SShell::ModifyEdges()
+{
+    // Everything up to step 6 is read only, so the edges that can't be done
+    // are left out (with all their pieces) and the rest are set up again
+    // from the start: their neighbors were set up expecting them to be
+    // modified.
+    std::vector<EdgeMod> mods;
+    std::vector<Recut> recuts;
+    std::vector<Corner> corners;
+    std::vector<DroppedEdge> dropped;
+    for(;;) {
+        mods.clear();
+        recuts.clear();
+        corners.clear();
+        CollectEdges(this, dropped, &mods);
+        if(mods.empty()) return;
+        std::vector<int> bad;
+        SetUpEdges(this, mods, &bad);
+        if(bad.empty()) BuildEdges(this, mods, &recuts, &corners, &bad);
+        if(bad.empty()) break;
+        // At a corner that fails, both edges usually fail; once one is left
+        // out the other may work, ending on a face instead. So leave out
+        // only one edge at each vertex per pass.
+        std::vector<Vector> ends;
+        for(int i : bad) {
+            const EdgeMod &em = mods[i];
+            bool already = false;
+            for(const DroppedEdge &d : dropped) {
+                if(d.face.v == em.face[0].v && d.trim == em.trim[0]) already = true;
+            }
+            if(already) continue;
+            Vector a = em.e.Start(), b = em.e.Finish();
+            bool near = false;
+            for(Vector &v : ends) {
+                if(v.Equals(a) || v.Equals(b)) near = true;
+            }
+            if(near) continue;
+            ends.push_back(a);
+            ends.push_back(b);
+            dbp("fillet: leaving out the edge piece from (%.3f, %.3f, %.3f) to "
+                "(%.3f, %.3f, %.3f)", a.x, a.y, a.z, b.x, b.y, b.z);
+            dropped.push_back({ em.face[0], em.trim[0] });
         }
     }
 
