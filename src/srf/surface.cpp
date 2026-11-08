@@ -130,15 +130,43 @@ SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
     return ret;
 }
 
-bool SSurface::IsAffine() const {
-    return degm == 1 && degn == 1 &&
-           weight[0][0] == weight[1][0] && weight[0][0] == weight[0][1] &&
-           weight[0][0] == weight[1][1] &&
-           ctrl[1][1].EqualsExactly(ctrl[0][0].Plus(ctrl[1][0].Minus(ctrl[0][0]))
-                                                   .Plus(ctrl[0][1].Minus(ctrl[0][0])));
+static double PlanarityTolerance(double largest) {
+    // Roundoff, not model tolerance: a small bilinear warp is still curvature.
+    return std::min(LENGTH_EPS * 0.01, 64 * std::numeric_limits<double>::epsilon() * largest);
 }
 
-bool SSurface::IsPlanar() const {
+bool SSurface::IsPlanar(Vector *planeNormal) const {
+    if(degm == 1 && degn == 1) {
+        // The common case needs only the fourth corner's distance to the plane
+        // of the other three. Do not search the whole net for a plane basis.
+        Vector u = ctrl[1][0].Minus(ctrl[0][0]),
+               v = ctrl[0][1].Minus(ctrl[0][0]),
+               n = u.Cross(v);
+        double n2 = n.MagSquared();
+        // This angular guard chooses a stable basis; it is not a geometric
+        // tolerance for treating a warped patch as planar.
+        if(n2 > 1e-12 * u.MagSquared() * v.MagSquared()) {
+            double distance = ctrl[1][1].Minus(ctrl[0][0]).Dot(n);
+            if(distance != 0) {
+                double largest = 1;
+                for(int i = 0; i <= 1; ++i) for(int j = 0; j <= 1; ++j) {
+                    Vector p = ctrl[i][j];
+                    largest = std::max({largest, fabs(p.x), fabs(p.y), fabs(p.z)});
+                }
+                double eps = PlanarityTolerance(largest);
+                if(distance * distance > eps * eps * n2) return false;
+            }
+            if(planeNormal) {
+                // At a regular corner, the rational tangents are scalar
+                // multiples of the two control edges.
+                if(weight[1][0] * weight[0][1] < 0) n = n.Negated();
+                *planeNormal = n.ScaledBy(1 / sqrt(n2));
+            }
+            return true;
+        }
+        // Collapsed or nearly collinear corner edges need a better plane
+        // basis. Use the robust control-net search below in that rare case.
+    }
     Vector origin = ctrl[0][0], far = origin, off = origin;
     double farDistance = 0, offDistance = 0, largest = 1;
     for(int i = 0; i <= degm; ++i) for(int j = 0; j <= degn; ++j) {
@@ -157,11 +185,22 @@ bool SSurface::IsPlanar() const {
     Vector normal = along.Cross(off.Minus(origin)).WithMagnitude(1);
     // Recognize at roundoff, not by flattening a slightly warped bilinear net
     // at model tolerance. This changes no controls, weights or parameters.
-    double eps = std::min(LENGTH_EPS * 0.01, 64 * std::numeric_limits<double>::epsilon() * largest);
+    double eps = PlanarityTolerance(largest);
     for(int i = 0; i <= degm; ++i) for(int j = 0; j <= degn; ++j) {
         if(fabs(ctrl[i][j].Minus(origin).Dot(normal)) > eps) return false;
     }
+    if(planeNormal) {
+        if(normal.Dot(NormalAt(0, 0)) < 0) normal = normal.Negated();
+        *planeNormal = normal;
+    }
     return true;
+}
+
+SSurface::Plane SSurface::GetPlane() const {
+    Plane plane = {};
+    plane.isPlanar = IsPlanar(&plane.normal);
+    if(plane.isPlanar) plane.d = plane.normal.Dot(ctrl[0][0]);
+    return plane;
 }
 
 SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q, double scale,
@@ -533,7 +572,7 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
         if(IsPlanar()) {
             // A plane may have rational or non-affine parameters, or degree
             // greater than one. Its trim PWL suffices for triangulation.
-            poly.UvTriangulateInto(sm, this);
+            poly.UvTriangulateInto(sm, this, /*planar=*/true);
         } else {
             // A surface with compound curvature. So we must overlay a
             // two-dimensional grid, and triangulate around that.

@@ -10,7 +10,7 @@
 
 namespace SolveSpace {
 
-void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
+void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf, bool planar) {
     if(l.n <= 0) return;
 
     //int64_t in = GetMilliseconds();
@@ -90,7 +90,7 @@ void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
         }
 //        dbp("finished merging holes: %d ms", (int)(GetMilliseconds() - in));
 
-        merged.UvTriangulateInto(m, srf);
+        merged.UvTriangulateInto(m, srf, planar);
 //        dbp("finished ear clippping: %d ms", (int)(GetMilliseconds() - in));
         merged.l.Clear();
         el.Clear();
@@ -366,7 +366,7 @@ void SContour::ClipEarInto(SMesh *m, int bp, double scaledEps) {
     l.RemoveTagged();
 }
 
-void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
+void SContour::UvTriangulateInto(SMesh *m, SSurface *srf, bool planar) {
     Vector tu, tv;
     srf->TangentsAt(0.5, 0.5, &tu, &tv);
     double s = sqrt(tu.MagSquared() + tv.MagSquared());
@@ -392,7 +392,7 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
     l.RemoveTagged();
 
     // Handle simple triangle fans all at once. This pass is optional.
-    bool planar = srf->IsPlanar();
+    // The caller classified the surface once, before splitting its contours.
     if(planar) {
         l.ClearTags();
         int j=0;
@@ -708,7 +708,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
     holes.Clear();
     li.Clear();
     lj.Clear();
-    UvTriangulateInto(mesh, srf);
+    UvTriangulateInto(mesh, srf, /*planar=*/false);
 }
 
 void SPolygon::TriangulateInto(SMesh *m) const {
@@ -726,7 +726,7 @@ void SPolygon::TriangulateInto(SMesh *m) const {
                                        {1.0, 0.0, 0.0},
                                        {0.0, 1.0, 0.0});
     SMesh pm = {};
-    p.UvTriangulateInto(&pm, &srf);
+    p.UvTriangulateInto(&pm, &srf, /*planar=*/true);
     for(STriangle st : pm.l) {
         st = st.Transform(u, v, n);
         m->AddTriangle(&st);
