@@ -261,6 +261,7 @@ int StepFileWriter::InsertOrientedEdge(int number) {
 // Functions for STEP export: print to file.
 //-----------------------------------------------------------------------------
 void StepFileWriter::WriteHeader() {
+    // AP214 includes the face colour and transparency entities emitted below.
     fprintf(f,
 "ISO-10303-21;\n"
 "HEADER;\n"
@@ -277,7 +278,7 @@ void StepFileWriter::WriteHeader() {
 "    ''\n"
 ");\n"
 "\n"
-"FILE_SCHEMA (('CONFIG_CONTROL_DESIGN'));\n"
+"FILE_SCHEMA (('AUTOMOTIVE_DESIGN'));\n"
 "ENDSEC;\n"
 "\n"
 "DATA;\n"
@@ -326,9 +327,9 @@ void StepFileWriter::WriteProductHeader() {
 		"#175 = SHAPE_DEFINITION_REPRESENTATION(#176, #169);\n"
 		"#176 = PRODUCT_DEFINITION_SHAPE('Version', 'Test Part', #177);\n"
 		"#177 = PRODUCT_DEFINITION('Version', 'Test Part', #182, #178);\n"
-		"#178 = DESIGN_CONTEXT('3D Mechanical Parts', #181, 'design');\n"
+		"#178 = PRODUCT_DEFINITION_CONTEXT('3D Mechanical Parts', #181, 'design');\n"
 		"#179 = PRODUCT('1', 'Product', 'Test Part', (#180));\n"
-		"#180 = MECHANICAL_CONTEXT('3D Mechanical Parts', #181, 'mechanical');\n"
+		"#180 = PRODUCT_CONTEXT('3D Mechanical Parts', #181, 'mechanical');\n"
 		"#181 = APPLICATION_CONTEXT(\n"
 		"'configuration controlled 3d designs of mechanical parts and assemblies');\n"
 		"#182 = PRODUCT_DEFINITION_FORMATION_WITH_SPECIFIED_SOURCE('Version',\n"
@@ -458,8 +459,10 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
     fprintf(f, "));\n");
 
     int fb = id + 1;
-        fprintf(f, "#%d=%s('',#%d,.T.);\n",
-            fb, inner ? "FACE_BOUND" : "FACE_OUTER_BOUND", id);
+    // Native UV loops keep material on the right. STEP needs the opposite
+    // boundary sense, for both outer and inner loops.
+    fprintf(f, "#%d=%s('',#%d,.F.);\n",
+        fb, inner ? "FACE_BOUND" : "FACE_OUTER_BOUND", id);
 
     id += 2;
     listOfTrims.Clear();
@@ -688,7 +691,7 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
     fprintf(f, "#%d=MANIFOLD_SOLID_BREP('brep',#%d);\n", id+1, id);
     fprintf(f, "#%d=ADVANCED_BREP_SHAPE_REPRESENTATION('',(#%d,#170),#168);\n",
         id+2, id+1);
-    fprintf(f, "#%d=SHAPE_REPRESENTATION_RELATIONSHIP($,$,#169,#%d);\n",
+    fprintf(f, "#%d=SHAPE_REPRESENTATION_RELATIONSHIP('','',#169,#%d);\n",
         id+3, id+2);
 
     WriteFooter();
@@ -711,7 +714,7 @@ void StepFileWriter::WriteWireframe() {
     fprintf(f, "));\n");
     fprintf(f, "#%d=GEOMETRICALLY_BOUNDED_WIREFRAME_SHAPE_REPRESENTATION"
                     "('',(#%d,#170),#168);\n", id+1, id);
-    fprintf(f, "#%d=SHAPE_REPRESENTATION_RELATIONSHIP($,$,#169,#%d);\n",
+    fprintf(f, "#%d=SHAPE_REPRESENTATION_RELATIONSHIP('','',#169,#%d);\n",
         id+2, id+1);
 
     id += 3;
