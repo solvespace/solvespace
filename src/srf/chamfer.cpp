@@ -176,9 +176,11 @@
 //   bezier_test (r = 3, curvature radius 7) to within about 0.4% of the
 //   exact fillet volume, from 8-9% too much. Near-tangent joins (rounded
 //   font coordinates) are snapped together.
-// - Case 1 end faces: perpendicular, flat at an angle (exact ellipse), and
-//   curved (traced end curve, kept as points). Neighbors are shortened, or
-//   extended past a reflex corner.
+// - Case 1 end faces: perpendicular, flat at an angle (exact ellipse for
+//   straight edges), and otherwise marched (kept as points), such as an arc
+//   edge ending on a flat face at an angle (arc_end_test, within 0.03% of the
+//   exact volume) or any edge ending on a curved face. Neighbors are
+//   shortened, or extended past a reflex corner when the end face is flat.
 // - Case 2 tangent chains (e.g. the arcs of a circle).
 // - Case 3 miters: straight edges between flat faces are exact conics,
 //   convex and reflex corners, equal and unequal angles (ExactMiterEnd()).
@@ -200,8 +202,6 @@
 // at a vertex; convex and concave edges meeting at a vertex.
 //
 // Next steps:
-// - An arc edge meeting its end face at an angle (case 1): trace along
-//   circles, as the miters now do.
 // - Meshing: a chamfer cone (arc edge) trimmed by traced miters at both
 //   ends gets some inverted sliver triangles along the miters (arc_test
 //   variant 3, chamfer: volume about 0.4 low, and open edges at chord
@@ -217,9 +217,10 @@
 //   extrusions of curves.
 // - Miters at reflex corners with curved faces and unequal cross-sections
 //   (refused now).
-// - Text: very sharp corners (in "B8%") where the offset curves never meet,
-//   even extended; the fillet would need a straight extension past the
-//   edge's end. "Sag" (chamfer) and "SolveSpace" leave 4 open mesh edges.
+// - Text: very sharp notches (in "B8%") where the offset curves never meet,
+//   even extended, are left out by decision (a straight extension of the
+//   fillet past the edge's end would be needed), with the edges that depend
+//   on them. "B8%SagSolveSpace" exports closed, fillet and chamfer.
 // - Naming edges, so a user can pick them, replacing the GetEdgeModifier()
 //   test hook; and making fillet/chamfer its own group type.
 //
@@ -2057,15 +2058,6 @@ static bool MakeSphereCorner(std::vector<EdgeMod> &mods, Corner *c) {
     return true;
 }
 
-static bool CurveInUse(SShell *sh, hSCurve hc) {
-    for(SSurface &s : sh->surface) {
-        for(STrimBy &stb : s.trim) {
-            if(stb.curve.v == hc.v) return true;
-        }
-    }
-    return false;
-}
-
 // An edge left out after it failed: the piece's trim on its first face.
 struct DroppedEdge {
     hSSurface face;
@@ -2459,24 +2451,26 @@ void SShell::ModifyEdges()
     }
 
     // Remove the curves of modified edges and re-cut neighbors that no trim
-    // uses any more. SCurve has no tag, so copy the live curves to a new
-    // list, which takes over their points.
-    std::vector<hSCurve> touched;
+    // uses any more. Flags are indexed by curve handle, which are small
+    // numbers given out in order. SCurve has no tag, so copy the live curves
+    // to a new list, which takes over their points.
+    uint32_t maxh = 0;
+    for(SCurve &sc : curve) maxh = max(maxh, sc.h.v);
+    std::vector<char> touched(maxh + 1, 0), used(maxh + 1, 0);
     for(EdgeMod &em : mods) {
-        touched.push_back(em.origCurve[0]);
-        touched.push_back(em.origCurve[1]);
+        touched[em.origCurve[0].v] = 1;
+        touched[em.origCurve[1].v] = 1;
     }
     for(Recut &rc : recuts) {
-        touched.push_back(rc.pc.hc[0]);
-        touched.push_back(rc.pc.hc[1]);
+        touched[rc.pc.hc[0].v] = 1;
+        touched[rc.pc.hc[1].v] = 1;
+    }
+    for(SSurface &srf : surface) {
+        for(STrimBy &stb : srf.trim) used[stb.curve.v] = 1;
     }
     IdList<SCurve,hSCurve> kept = {};
     for(SCurve &sc : curve) {
-        bool dead = false;
-        for(hSCurve h : touched) {
-            if(h.v == sc.h.v) dead = !CurveInUse(this, sc.h);
-        }
-        if(dead) continue;
+        if(touched[sc.h.v] && !used[sc.h.v]) continue;
         kept.Add(&sc);
         sc.pts = {};
     }

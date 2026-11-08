@@ -76,6 +76,22 @@ double SShell::GetEdgeModifier(SCurve &sc)
         return top ? ((r < 0) ? -0.5 : 0.5) : 0.0;
     }
 
+    // arc_end_test (a 120 degree circular segment of radius 20, closed by a
+    // chord at y = 10, extruded from z = 0 to 7) is the only model that spans
+    // exactly that in z. The chord meets the arc 60 degrees from its tangent.
+    // Variants:
+    //   0: the top arc, whose fillet ends on the chord's wall at an angle
+    //   1: also the top chord (miters of an arc and a line)
+    const int arcEndVariant = 0;
+    if(fabs(zlo) < LENGTH_EPS && fabs(zhi - 7) < LENGTH_EPS) {
+        bool top = true;
+        for(int i = 0; i <= b.deg; i++) {
+            if(fabs(b.ctrl[i].z - 7) > LENGTH_EPS) top = false;
+        }
+        if(!top) return 0.0;
+        return (b.deg == 2 || arcEndVariant == 1) ? r : 0.0;
+    }
+
     // bezier_test (a profile with a cubic edge from (20, 0) to (-20, 0),
     // extruded from z = -10 to 10) is the only model with a cubic. Variants:
     //   0: the top cubic (its ends meet the side walls at an angle)
