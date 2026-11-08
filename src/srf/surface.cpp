@@ -72,10 +72,15 @@ SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis, double 
                                     double distf) { // s is start, f is finish
     SSurface ret = {};
     ret.degm = sb->deg;
-    ret.degn = 2;
+    ret.degn = (dists == distf) ? 2 : 3;
 
     double dtheta = fabs(WRAP_SYMMETRIC(thetaf - thetas, 2*PI));
     double w      = cos(dtheta / 2);
+    double wc     = (1 + 2*w) / 3;
+    // Match the axial/angular derivative at both ends of the rational arc.
+    // sin(a)/a tends to one, including the straight-extrusion case.
+    double halfAngle = dtheta / 2;
+    double axial = (halfAngle == 0 ? 1 : sin(halfAngle)/halfAngle) / (1 + 2*w);
 
     // Revolve the curve about the z axis
     int i;
@@ -91,21 +96,33 @@ SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis, double 
         Vector c   = ps.ClosestPointOnLine(pt, axis);
         Vector ct  = mid.Minus(c).ScaledBy(1 / (w * w)).Plus(c);
 
-        // not sure this is needed
-        if(ps.Equals(pf)) {
+        // Keep the existing handling of degenerate ordinary revolutions.
+        // A small helical sweep can have nearby ends without lying on the axis.
+        if(ret.degn == 2 && ps.Equals(pf)) {
             ps = c;
             ct = c;
             pf = c;
         }
-        // moving along the axis can create hilical surfaces (or straight extrusion if
+        // moving along the axis can create helical surfaces (or straight extrusion if
         // thetas==thetaf)
         ret.ctrl[i][0] = ps.Plus(axis.ScaledBy(dists));
-        ret.ctrl[i][1] = ct.Plus(axis.ScaledBy((dists + distf) / 2));
-        ret.ctrl[i][2] = pf.Plus(axis.ScaledBy(distf));
-
         ret.weight[i][0] = sb->weight[i];
-        ret.weight[i][1] = sb->weight[i] * w;
-        ret.weight[i][2] = sb->weight[i];
+        if(ret.degn == 2) {
+            ret.ctrl[i][1] = ct.Plus(axis.ScaledBy((dists + distf) / 2));
+            ret.ctrl[i][2] = pf.Plus(axis.ScaledBy(distf));
+            ret.weight[i][1] = sb->weight[i] * w;
+            ret.weight[i][2] = sb->weight[i];
+        } else {
+            // Elevate the circular arc in homogeneous coordinates, preserving
+            // its exact radial geometry, then set the two axial coordinates.
+            Vector c1 = ps.Plus(ct.ScaledBy(2*w)).ScaledBy(1 / (1 + 2*w));
+            Vector c2 = pf.Plus(ct.ScaledBy(2*w)).ScaledBy(1 / (1 + 2*w));
+            ret.ctrl[i][1] = c1.Plus(axis.ScaledBy(dists + axial*(distf - dists)));
+            ret.ctrl[i][2] = c2.Plus(axis.ScaledBy(distf - axial*(distf - dists)));
+            ret.ctrl[i][3] = pf.Plus(axis.ScaledBy(distf));
+            ret.weight[i][1] = ret.weight[i][2] = sb->weight[i] * wc;
+            ret.weight[i][3] = sb->weight[i];
+        }
     }
 
     return ret;
