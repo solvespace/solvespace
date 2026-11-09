@@ -426,10 +426,16 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             Vector tu, tv;
             s->TangentsAt(0, 0, &tu, &tv);
 
+            // Steps in u and v along the line. tx/|tx|^2 and ty/|ty|^2 are
+            // the dual basis of (tu, tv), right even when tu and tv aren't
+            // perpendicular.
+            Vector n  = tu.Cross(tv),
+                   tx = tv.Cross(n).ScaledBy(1.0/tv.MagSquared()),
+                   ty = n.Cross(tu).ScaledBy(1.0/tu.MagSquared());
             double up, vp, ud, vd;
             s->ClosestPointTo(p, &up, &vp);
-            ud = (dl.Dot(tu)) / tu.MagSquared();
-            vd = (dl.Dot(tv)) / tv.MagSquared();
+            ud = (dl.Dot(tx)) / tx.MagSquared();
+            vd = (dl.Dot(ty)) / ty.MagSquared();
 
             // so u = up + t*ud
             //    v = vp + t*vd
