@@ -437,6 +437,8 @@ public:
                                  SEdgeList *el, SShell *useCurvesFrom);
     void RewriteSurfaceHandlesForCurves(SShell *a, SShell *b);
     void CleanupAfterBoolean();
+    double GetEdgeModifier(SCurve &sc);
+    void ModifyEdges();
 
     // Definitions when classifying regions of a surface; it is either inside,
     // outside, or coincident (with parallel or antiparallel normal) with a
@@ -470,6 +472,10 @@ public:
     void RemapFaces(Group *g, int remap);
     void Clear();
 };
+
+// The corner patch where three fillets meet, in sphere_patch.cpp.
+bool SphereTrianglePatch(Vector c, const Vector p[3], bool outward,
+                         SSurface band[3], SBezier arc[3], Vector *t);
 
 } // namespace SolveSpace
 
