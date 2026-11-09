@@ -8,16 +8,16 @@
 // Copyright 2024 Paul H Kahler.
 //-----------------------------------------------------------------------------
 //
-// PLAN
-// ====
+// DESIGN
+// ======
 //
-// Scope for now
-// -------------
-// - Edges are picked by SShell::GetEdgeModifier(), a test hook in
-//   fillet_test.cpp. It returns 0 for no change, r for a fillet of radius
-//   r, or -r for a chamfer whose edges sit where the fillet of radius r
-//   would meet the faces. Naming edges properly (topological naming) comes
-//   later.
+// Scope
+// -----
+// - Edges are picked by SShell::GetEdgeModifier(). It returns 0 for no
+//   change, r for a fillet of radius r, or -r for a chamfer whose edges sit
+//   where the fillet of radius r would meet the faces. For now it picks
+//   none, and Group::GenerateShellAndMesh() doesn't call ModifyEdges(),
+//   until edges can be picked in the user interface.
 // - Edges meeting at a vertex all have the same radius. Differing radii are
 //   not supported.
 // - Edges are pieces: a range of an exact curve with a trim on each of its
@@ -28,8 +28,7 @@
 //   fillets a triangle on the ball's sphere, made of three bands without any
 //   collapsed edge (sphere_patch.cpp).
 // - All new code goes in this file and sphere_patch.cpp, except general
-//   curve tools such as SBezier reparameterization, which go in ratpoly.cpp,
-//   and the test hook, in fillet_test.cpp.
+//   curve tools such as SBezier reparameterization, which go in ratpoly.cpp.
 //
 // Facts about the shell that drive the design
 // -------------------------------------------
@@ -161,83 +160,17 @@
 // Corner: three edges meeting at a corner. Recut: an unmodified neighbor
 // that gets shortened or extended. See their definitions below.
 //
-// STATUS (2026-11-08)
-// -------------------
-// Working, fillet and chamfer, checked for closed meshes and against exact
-// or semi-analytic volumes:
-// - Edges between planes at any angle, convex and concave; lines and arcs;
-//   plane-cylinder and cylinder-cylinder edges; arcs on cones (revolved
-//   parts) (the rolling ball's cross-section: SolveBallSection(),
-//   FollowEdge()).
-// - Flat quadratic and cubic edges (TrueType text, Bezier profiles) on
-//   straight extrusions: rows offset in the edge's plane by the Tiller and
-//   Hanson construction (OffsetInPlane()), exact at the curve's ends. Each
-//   edge is split in 2 and the pieces offset on their own, which brings
-//   bezier_test (r = 3, curvature radius 7) to within about 0.4% of the
-//   exact fillet volume, from 8-9% too much. Near-tangent joins (rounded
-//   font coordinates) are snapped together.
-// - Case 1 end faces: perpendicular, flat at an angle (exact ellipse for
-//   straight edges), and otherwise marched (kept as points), such as an arc
-//   edge ending on a flat face at an angle (arc_end_test, within 0.03% of the
-//   exact volume) or any edge ending on a curved face. Neighbors are
-//   shortened, or extended past a reflex corner when the end face is flat.
-// - Case 2 tangent chains (e.g. the arcs of a circle).
-// - Case 3 miters: straight edges between flat faces are exact conics,
-//   convex and reflex corners, equal and unequal angles (ExactMiterEnd()).
-//   Otherwise (arc edges, curved faces) traced at convex corners
-//   (TraceMiterEnd()): each cross-section point is carried along its edge,
-//   a line or around the arc's axis, to the first crossing of the partner
-//   fillet or the partner's other face. At reflex corners only when both
-//   cross-sections are equal (straight extrusions such as text): the miter
-//   then runs straight from the corner to the third edge.
-// - Case 4 corners of three edges, any angles: flat triangle for chamfers,
-//   sphere patch of three bands for fillets (sphere_patch.cpp).
-// - Edges split by Booleans, worked on as pieces (GetPiece()), including
-//   coincident curve copies on the two faces.
-// - Edges that fail are left out and the rest are filleted (text with sharp
-//   notches, such as "B8%", fillets everything else).
-// - Only the last group is modified (groupmesh.cpp), for testing.
-//
-// Not handled, by decision: point-only (non-exact) curves; differing radii
-// at a vertex; convex and concave edges meeting at a vertex.
-//
-// Next steps:
-// - Meshing: a chamfer cone (arc edge) trimmed by traced miters at both
-//   ends gets some inverted sliver triangles along the miters (arc_test
-//   variant 3, chamfer: volume about 0.4 low, and open edges at chord
-//   tolerance 0.0002). The surface and trims check out (every trim point
-//   maps onto the surface; the (u, v) outline is sound), so it looks like
-//   the triangulator.
-// - Arcs crossing in different planes (IntersectCarriers()).
-// - An edge between a flat face and the side wall of an extruded Bezier
-//   (bezier_test variant 2): in the cross-section the wall is the Bezier,
-//   neither a line nor a circle.
-// - Approximated fillet surfaces (pipes around curved spines): straight
-//   edges along cones on the end caps of revolved parts, edges on skewed
-//   extrusions of curves.
-// - Miters at reflex corners with curved faces and unequal cross-sections
-//   (refused now).
-// - Text: very sharp notches (in "B8%") where the offset curves never meet,
-//   even extended, are left out by decision (a straight extension of the
-//   fillet past the edge's end would be needed), with the edges that depend
-//   on them. "B8%SagSolveSpace" exports closed, fillet and chamfer.
-// - Naming edges, so a user can pick them, replacing the GetEdgeModifier()
-//   test hook; and making fillet/chamfer its own group type.
-//
-// Testing
-// -------
-// Test models are in misc_CAD/fillet_test. GetEdgeModifier()
-// (fillet_test.cpp) recognizes each by its shape and picks its edges;
-// constants there choose variants and r (negative for chamfers). It does
-// nothing unless the environment variable SOLVESPACE_FILLET_TEST is set.
-// Without the GUI:
-//   SOLVESPACE_FILLET_TEST=1 solvespace-cli export-mesh
-//       --chord-tol 0.005 --output %.obj <model>
-// (all on one line)
-// then check the OBJ: every triangle edge shared by exactly two triangles,
-// and the volume. Curved walls need a fine tolerance (down to 0.0002) for
-// the volume to converge. Check also for "trim was unterminated" / "trim was
-// empty" and "fillet:" messages.
+// Limits
+// ------
+// Not handled, by decision: curves that are only points (not exact);
+// differing radii at a vertex; convex and concave edges meeting at a
+// vertex; sharp notches where the offset curves never meet, even extended.
+// Not handled yet: arcs crossing in different planes; a face that is
+// neither a line nor a circle in the cross-section (such as the side wall of
+// an extruded Bezier); fillets that would need approximated surfaces (pipes
+// around curved spines); miters at reflex corners with curved faces and
+// unequal cross-sections. Edges that can't be done are left out and the rest
+// are filleted.
 //
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
@@ -355,6 +288,14 @@ struct Recut {
     hSCurve   newh;
     int       mod;            // an EdgeMod that cuts it, to blame on failure
 };
+
+// The edge modifier for curve sc: 0 for no change, r for a fillet of radius
+// r, or -r for a chamfer whose edges sit where the fillet of radius r would
+// meet the faces. Edges will be picked in the user interface; until then,
+// none.
+double SShell::GetEdgeModifier(SCurve &) {
+    return 0.0;
+}
 
 static bool SubCurve(const SBezier &b, Vector p0, Vector p1, SBezier *out);
 

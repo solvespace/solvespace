@@ -439,7 +439,7 @@ public:
     void CleanupAfterBoolean();
     double GetEdgeModifier(SCurve &sc);
     void ModifyEdges();
-    
+
     // Definitions when classifying regions of a surface; it is either inside,
     // outside, or coincident (with parallel or antiparallel normal) with a
     // shell.

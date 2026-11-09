@@ -160,7 +160,6 @@ if(ENABLE_GUI OR ENABLE_CLI)
         srf/boolean.cpp
         srf/chamfer.cpp
         srf/curve.cpp
-        srf/fillet_test.cpp
         srf/merge.cpp
         srf/ratpoly.cpp
         srf/raycast.cpp
