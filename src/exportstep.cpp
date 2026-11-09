@@ -5,257 +5,623 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+#include <cstdlib>
+#include <map>
+#include <set>
+
 namespace SolveSpace {
 
-#define FP "%.5f"   // Floating Point coordinate precision. Since LENGTH_EPS = 1e-6 output 5 decimal places thus rounding out errors e.g. 0.999999mm
-#define CARTESIAN_POINT_FORMAT "#%d=CARTESIAN_POINT('',(" FP "," FP "," FP "));\n"
+// Rational weights must not share the coordinate-cleanup policy.
+#define WEIGHT_FORMAT "%.16E"
 const double PRECISION = 2*LENGTH_EPS;
 
-//-----------------------------------------------------------------------------
-// Functions for STEP export: duplication check.
-//-----------------------------------------------------------------------------
-// Check if this point was already defined with a different ID number.
-// inputs:
-//        number -> id of the cartesian point
-//        v -> position of the cartesian point
-//        vertex -> id of the vertex linked to this point (<1 if none)
-// return:
-//        true, if the cartesian point is already defined
-bool StepFileWriter::HasCartesianPointAnAlias(int number, Vector v, int vertex, bool *vertex_has_alias) {
-    // Look for this point "v" in the alias list.
-    for(pointAliases_t &p : pointAliases) {
-        if(p.v.Equals(v, PRECISION)) {
-            // This point was already defined.
-            // The new number is just an alias.
-            p.alias.aliases.push_back(number);
-            if(vertex > 0) {
-                p.vertexAlias.reference = (p.vertexAlias.reference <= 0 ?
-                                            vertex : p.vertexAlias.reference);
-                p.vertexAlias.aliases.push_back(vertex);
+namespace {
 
-                // If the caller is interested let them know if the vertex is new or has an existing alias.
-                if(nullptr != vertex_has_alias) {
-                    if(p.vertexAlias.aliases.size() == 1) {
-                        // This is a new vertex.
-                        *vertex_has_alias = false;
+std::string FormatCoordinate(double value) {
+    // Try the historical five-decimal cleanup, but limit each coordinate change
+    // to LENGTH_EPS / 100 in exported millimetres. This is a practical cleanup
+    // policy, not a watertightness guarantee. Preserve detailed trim coordinates
+    // at full precision, and always include a decimal point for STEP REALs.
+    std::string candidate = ssprintf("%.5f", value);
+    double rounded = std::strtod(candidate.c_str(), nullptr);
+    if(fabs(rounded - value) <= LENGTH_EPS / 100) {
+        return rounded == 0 ? "0.00000" : candidate;
+    }
+    return ssprintf("%.16E", value);
+}
+
+bool Finite(Vector p) {
+    return std::isfinite(p.x) && std::isfinite(p.y) && std::isfinite(p.z);
+}
+
+bool ValidCurve(const SBezier &curve) {
+    if(curve.deg < 1 || curve.deg > 3) return false;
+    bool nonzero = false;
+    for(int i = 0; i <= curve.deg; ++i) {
+        if(!Finite(curve.ctrl[i]) || !std::isfinite(curve.weight[i]) ||
+           curve.weight[i] <= 0) return false;
+        nonzero |= !curve.ctrl[i].Equals(curve.Start());
+    }
+    return nonzero;
+}
+
+// Compare ordered control nets, allowing reversal. Positive weights related by
+// a common factor times r^i describe the same curve under a fractional-linear
+// reparameterization. This also accounts for independently restricted rational
+// arcs; ignoring weights or unordered control-point membership would not.
+bool SameCurve(const SBezier &a, const SBezier &b, bool reverse) {
+    if(a.deg != b.deg) return false;
+    double first = log(a.weight[0]) - log(b.weight[reverse ? b.deg : 0]);
+    double last = log(a.weight[a.deg]) - log(b.weight[reverse ? 0 : b.deg]);
+    for(int i = 0; i <= a.deg; ++i) {
+        int j = reverse ? b.deg - i : i;
+        if(!a.ctrl[i].Equals(b.ctrl[j])) return false;
+        // Every positive-weight rational line describes the whole segment.
+        if(a.deg == 1) continue;
+        double delta = log(a.weight[i]) - log(b.weight[j]);
+        if(fabs(delta - (first + (last - first) * i / a.deg)) > 1e-12) return false;
+    }
+    return true;
+}
+
+bool CurveParameter(const SBezier &curve, Vector p, double *t) {
+    if(p.Equals(curve.Start())) { *t = 0; return true; }
+    if(p.Equals(curve.Finish())) { *t = 1; return true; }
+    if(curve.deg == 1) {
+        Vector d = curve.Finish().Minus(curve.Start());
+        double u = p.Minus(curve.Start()).Dot(d) / d.MagSquared();
+        // SBezier::ClosestPointTo uses the affine parameter for degree one;
+        // rational lines need the inverse of their weighted parameterization.
+        if(u < 0 || u > 1) return false;
+        *t = u * curve.weight[0] /
+             ((1 - u) * curve.weight[1] + u * curve.weight[0]);
+    } else {
+        curve.ClosestPointTo(p, t, /*mustConverge=*/false);
+        // The usual early-out is sufficient for display geometry, but cuts
+        // found independently on opposite traversals need matching rational
+        // control nets, not merely points within the display/root tolerance.
+        for(int i = 0; i < 10; ++i) {
+            if(!std::isfinite(*t) || *t < 0 || *t > 1) return false;
+            Vector tangent = curve.TangentAt(*t);
+            double length2 = tangent.MagSquared();
+            if(!std::isfinite(length2) || length2 <= 0) return false;
+            double next = *t + p.Minus(curve.PointAt(*t)).Dot(tangent) / length2;
+            if(EXACT(next == *t)) break;
+            *t = next;
+        }
+    }
+    return std::isfinite(*t) && *t >= 0 && *t <= 1 && curve.PointAt(*t).Equals(p);
+}
+
+SBezier RestrictCurve(const SBezier &curve, double a, double b) {
+    SBezier before, after, restricted = curve;
+    if(b < 1) {
+        restricted.SplitAt(b, &before, &after);
+        restricted = before;
+    }
+    if(a > 0) {
+        restricted.SplitAt(a / b, &before, &after);
+        restricted = after;
+    }
+    return restricted;
+}
+
+class StepTopology {
+    struct Trim {
+        SBezier curve;
+        uint32_t source;
+        double start, finish;
+        int face, edge;
+        bool forwards;
+    };
+    struct Face {
+        SSurface *surface;
+        std::vector<std::vector<int>> loops;
+        int body;
+    };
+    struct Edge {
+        SBezier curve;
+        int start, finish, id;
+    };
+    struct Body {
+        std::vector<int> faces, edges;
+        std::vector<Vector> vertices;
+    };
+    struct CoincidentEdges {
+        SBezier curve;
+        std::vector<int> trims;
+    };
+
+    std::vector<Trim> trims;
+    std::vector<Face> faces;
+    std::vector<Edge> edges;
+    std::vector<Body> bodies;
+
+    bool Fail(const std::string &message) {
+        error = message;
+        return false;
+    }
+
+    bool MakeFaces(SShell *shell) {
+        for(SSurface &surface : shell->surface) {
+            if(surface.trim.IsEmpty()) continue;
+            if(surface.degm < 1 || surface.degm > 3 ||
+               surface.degn < 1 || surface.degn > 3) {
+                return Fail("Unsupported surface degree.");
+            }
+            for(int i = 0; i <= surface.degm; ++i) {
+                for(int j = 0; j <= surface.degn; ++j) {
+                    if(!Finite(surface.ctrl[i][j]) ||
+                       !std::isfinite(surface.weight[i][j]) || surface.weight[i][j] <= 0) {
+                        return Fail("Invalid surface control net or rational weights.");
+                    }
+                }
+            }
+
+            SBezierList sections = {};
+            std::vector<Trim> sources;
+            bool valid = true;
+            // Retain the native curve identity through loop assembly. Different
+            // curves can bound the same Boolean seam, but assembled copies have
+            // independent identities even when all of their geometry coincides.
+            for(const STrimBy &trim : surface.trim) {
+                SBezierList section = {};
+                const SCurve *source = shell->curve.FindById(trim.curve);
+                double a = 0, b = 1;
+                if(source->isExact) {
+                    const SBezier &curve = source->exact;
+                    Vector start = trim.backwards ? trim.finish : trim.start;
+                    Vector finish = trim.backwards ? trim.start : trim.finish;
+                    if(!ValidCurve(curve) ||
+                       (!start.Equals(curve.Start()) && !CurveParameter(curve, start, &a)) ||
+                       (!finish.Equals(curve.Finish()) && !CurveParameter(curve, finish, &b)) ||
+                       a >= b) {
+                        valid = false;
                     } else {
-                        *vertex_has_alias = true;
+                        SBezier restricted = RestrictCurve(curve, a, b);
+                        section.l.Add(&restricted);
+                    }
+                } else {
+                    // Keep the existing approximation for genuinely inexact
+                    // intersection curves; exact trims never take that path.
+                    SSurface single = surface;
+                    single.trim = {};
+                    single.trim.Add(&trim);
+                    single.MakeSectionEdgesInto(shell, NULL, &section);
+                    single.trim.Clear();
+                }
+                if(section.l.IsEmpty()) valid = false;
+                for(SBezier &curve : section.l) {
+                    if(!ValidCurve(curve)) valid = false;
+                    if(!source->isExact) {
+                        a = b = -1;
+                        for(int i = 0; i + 1 < source->pts.n && b < 0; ++i) {
+                            if(!source->pts[i].p.Equals(curve.Start())) continue;
+                            for(int j = i + 1; j < source->pts.n; ++j) {
+                                if(!source->pts[j].p.Equals(curve.Finish())) continue;
+                                a = i;
+                                b = j;
+                                break;
+                            }
+                        }
+                        if(a < 0 || b <= a) valid = false;
+                    }
+                    curve.auxA = 0;
+                    curve.auxB = (int)sources.size();
+                    Trim provenance = {};
+                    provenance.curve = curve;
+                    provenance.source = trim.curve.v;
+                    provenance.start = a;
+                    provenance.finish = b;
+                    sources.push_back(provenance);
+                    sections.l.Add(&curve);
+                }
+                section.Clear();
+            }
+            if(!valid) {
+                sections.Clear();
+                return Fail(ssprintf("Invalid or missing trim on surface %u.", surface.h.v));
+            }
+
+            SBezierLoopSetSet grouped = {};
+            SBezierLoopSet open = {};
+            SPolygon polygon = {};
+            bool allClosed;
+            SEdge notClosedAt;
+            grouped.FindOuterFacesFrom(&sections, &polygon, &surface,
+                                      fabs(SS.ExportChordTolMm()), &allClosed, &notClosedAt,
+                                      NULL, NULL, &open);
+            valid = allClosed && open.l.IsEmpty() && !grouped.l.IsEmpty();
+            size_t used = 0;
+            for(const SBezierLoopSet &set : grouped.l) {
+                Face face = {};
+                face.surface = &surface;
+                for(const SBezierLoop &loop : set.l) {
+                    std::vector<int> indices;
+                    for(const SBezier &curve : loop.l) {
+                        Trim trim = sources[curve.auxB];
+                        if(!SameCurve(curve, trim.curve, false)) swap(trim.start, trim.finish);
+                        trim.curve = curve;
+                        trim.face = (int)faces.size();
+                        indices.push_back((int)trims.size());
+                        trims.push_back(trim);
+                        ++used;
+                    }
+                    face.loops.push_back(std::move(indices));
+                }
+                faces.push_back(std::move(face));
+            }
+            sections.Clear();
+            grouped.Clear();
+            open.Clear();
+            polygon.Clear();
+            if(!valid || used != sources.size()) {
+                return Fail(ssprintf("Open or unused trim contour on surface %u.", surface.h.v));
+            }
+        }
+        return !faces.empty() || Fail("The model has no trimmed faces to export.");
+    }
+
+    bool SplitTrim(const Trim &trim, const std::vector<Vector> &endpoints,
+                   std::vector<Trim> *into) {
+        const SBezier &curve = trim.curve;
+        Vector pmax = curve.Start(), pmin = pmax;
+        for(int i = 1; i <= curve.deg; ++i) curve.ctrl[i].MakeMaxMin(&pmax, &pmin);
+        std::vector<double> cuts;
+        for(Vector p : endpoints) {
+            if(p.x < pmin.x - LENGTH_EPS || p.x > pmax.x + LENGTH_EPS ||
+               p.y < pmin.y - LENGTH_EPS || p.y > pmax.y + LENGTH_EPS ||
+               p.z < pmin.z - LENGTH_EPS || p.z > pmax.z + LENGTH_EPS ||
+               p.Equals(curve.Start()) || p.Equals(curve.Finish())) continue;
+            double t;
+            if(CurveParameter(curve, p, &t) && t > 0 && t < 1) cuts.push_back(t);
+        }
+        std::sort(cuts.begin(), cuts.end());
+        cuts.push_back(1.0);
+        SBezier rest = curve;
+        double previous = 0;
+        for(double t : cuts) {
+            if(t < 1 && curve.PointAt(t).Equals(curve.PointAt(previous))) continue;
+            Trim part = trim;
+            if(t < 1) {
+                SBezier after;
+                rest.SplitAt((t - previous) / (1 - previous), &part.curve, &after);
+                rest = after;
+            } else {
+                part.curve = rest;
+            }
+            if(!ValidCurve(part.curve)) {
+                return Fail(ssprintf("Degenerate trim subdivision on surface %u.",
+                                     faces[trim.face].surface->h.v));
+            }
+            into->push_back(part);
+            previous = t;
+        }
+        return true;
+    }
+
+    std::vector<CoincidentEdges> GroupEdges(std::vector<Trim> *boundary, bool byBody) {
+        std::vector<CoincidentEdges> coincident;
+        for(size_t i = 0; i < boundary->size(); ++i) {
+            Trim &trim = (*boundary)[i];
+            size_t j;
+            for(j = 0; j < coincident.size(); ++j) {
+                if(byBody && faces[trim.face].body !=
+                             faces[(*boundary)[coincident[j].trims[0]].face].body) continue;
+                if(SameCurve(trim.curve, coincident[j].curve, false)) {
+                    trim.forwards = true;
+                    break;
+                }
+                if(SameCurve(trim.curve, coincident[j].curve, true)) {
+                    trim.forwards = false;
+                    break;
+                }
+            }
+            if(j == coincident.size()) {
+                CoincidentEdges group = {};
+                group.curve = trim.curve;
+                coincident.push_back(group);
+                trim.forwards = true;
+            }
+            coincident[j].trims.push_back((int)i);
+        }
+        return coincident;
+    }
+
+    bool FindBodies(SShell *shell) {
+        std::vector<int> components;
+        for(size_t i = 0; i < faces.size(); ++i) components.push_back((int)i);
+        auto root = [&](int face) {
+            while(components[face] != face) {
+                components[face] = components[components[face]];
+                face = components[face];
+            }
+            return face;
+        };
+        auto connect = [&](int a, int b) {
+            a = root(a);
+            b = root(b);
+            components[max(a, b)] = min(a, b);
+        };
+
+        // Establish native adjacencies first, including unequal intervals of a
+        // common curve. Assembly copies have independent curve identities. An
+        // already paired native boundary must never join a different body just
+        // because their curves (or only portions of them) coincide in space.
+        std::map<uint32_t, std::vector<int>> sources;
+        for(size_t i = 0; i < trims.size(); ++i) sources[trims[i].source].push_back((int)i);
+        std::vector<Trim> open;
+        for(const auto &entry : sources) {
+            const SCurve *source = shell->curve.FindById(hSCurve{entry.first});
+            auto point = [&](double t) {
+                if(source->isExact) return source->exact.PointAt(t);
+                int i = min((int)t, source->pts.n - 2);
+                return source->pts[i].p.ScaledBy(i + 1 - t).Plus(
+                       source->pts[i + 1].p.ScaledBy(t - i));
+            };
+            std::vector<double> cuts;
+            for(int i : entry.second) {
+                cuts.push_back(trims[i].start);
+                cuts.push_back(trims[i].finish);
+            }
+            std::sort(cuts.begin(), cuts.end());
+            std::vector<double> distinct;
+            for(double t : cuts) {
+                if(!distinct.empty() && fabs(t - distinct.back()) < 1e-10 &&
+                   point(t).Equals(point(distinct.back()))) continue;
+                distinct.push_back(t);
+            }
+            for(size_t k = 1; k < distinct.size(); ++k) {
+                double a = distinct[k - 1], b = distinct[k], middle = (a + b) / 2;
+                std::vector<int> uses;
+                for(int i : entry.second) {
+                    if(min(trims[i].start, trims[i].finish) < middle &&
+                       max(trims[i].start, trims[i].finish) > middle) uses.push_back(i);
+                }
+                if(uses.empty()) continue;
+                if(uses.size() == 2 && trims[uses[0]].face != trims[uses[1]].face &&
+                   (trims[uses[0]].start < trims[uses[0]].finish) !=
+                   (trims[uses[1]].start < trims[uses[1]].finish)) {
+                    connect(trims[uses[0]].face, trims[uses[1]].face);
+                } else if(uses.size() == 1) {
+                    Trim part = trims[uses[0]];
+                    if(source->isExact) {
+                        part.curve = RestrictCurve(source->exact, a, b);
+                        if(part.start > part.finish) part.curve.Reverse();
+                    } else {
+                        double ta, tb;
+                        if(!CurveParameter(part.curve, point(a), &ta) ||
+                           !CurveParameter(part.curve, point(b), &tb)) {
+                            return Fail("Cannot synchronize an inexact native trim interval.");
+                        }
+                        part.curve = RestrictCurve(part.curve, min(ta, tb), max(ta, tb));
+                    }
+                    open.push_back(part);
+                } else {
+                    return Fail(ssprintf("Non-manifold native trim curve %u.", entry.first));
+                }
+            }
+        }
+
+        // Booleans and colour-preserving coplanar faces can retain different
+        // curve handles on opposite sides. Only the unpaired intervals may
+        // supply those additional adjacencies. Synchronize their segmentation
+        // exactly; ambiguous coincidences do not license a guessed face pair.
+        std::vector<Vector> endpoints;
+        for(const Trim &trim : open) {
+            endpoints.push_back(trim.curve.Start());
+            endpoints.push_back(trim.curve.Finish());
+        }
+        std::vector<Trim> boundary;
+        for(const Trim &trim : open) if(!SplitTrim(trim, endpoints, &boundary)) return false;
+        for(const CoincidentEdges &group : GroupEdges(&boundary, false)) {
+            if(group.trims.size() != 2) continue;
+            const Trim &a = boundary[group.trims[0]], &b = boundary[group.trims[1]];
+            if(a.face != b.face && a.forwards != b.forwards) connect(a.face, b.face);
+        }
+        std::map<int, int> bodyForRoot;
+        for(size_t i = 0; i < faces.size(); ++i) {
+            int component = root((int)i);
+            if(bodyForRoot.find(component) == bodyForRoot.end()) {
+                bodyForRoot[component] = (int)bodies.size();
+                bodies.push_back({});
+            }
+            faces[i].body = bodyForRoot[component];
+            bodies[faces[i].body].faces.push_back((int)i);
+        }
+        return true;
+    }
+
+    bool SplitTrims() {
+        // Now synchronize all face boundaries within each resolved body. Do
+        // not introduce vertices from other assembled parts: in particular,
+        // coincident circles need not have the same seams or parameterization.
+        std::vector<Trim> original;
+        original.swap(trims);
+        std::vector<std::vector<Vector>> endpoints(bodies.size());
+        for(const Trim &trim : original) {
+            std::vector<Vector> &points = endpoints[faces[trim.face].body];
+            points.push_back(trim.curve.Start());
+            points.push_back(trim.curve.Finish());
+        }
+        for(Face &face : faces) for(std::vector<int> &loop : face.loops) {
+            std::vector<int> split;
+            for(int index : loop) {
+                size_t first = trims.size();
+                if(!SplitTrim(original[index], endpoints[face.body], &trims)) return false;
+                for(size_t i = first; i < trims.size(); ++i) split.push_back((int)i);
+            }
+            loop.swap(split);
+        }
+        return true;
+    }
+
+    bool MakeEdges() {
+        for(const CoincidentEdges &group : GroupEdges(&trims, true)) {
+            const std::vector<int> &uses = group.trims;
+            if(uses.size() != 2 || trims[uses[0]].face == trims[uses[1]].face ||
+               trims[uses[0]].forwards == trims[uses[1]].forwards) {
+                return Fail(ssprintf("Boundary at (%.9g, %.9g, %.9g) does not have "
+                                     "two distinct, oppositely oriented faces in one body.",
+                                     CO(group.curve.Start())));
+            }
+            Body &body = bodies[faces[trims[uses[0]].face].body];
+            Edge edge = {};
+            edge.curve = group.curve;
+            auto vertex = [&](Vector p) {
+                for(size_t i = 0; i < body.vertices.size(); ++i) {
+                    if(body.vertices[i].Equals(p)) return (int)i;
+                }
+                body.vertices.push_back(p);
+                return (int)body.vertices.size() - 1;
+            };
+            edge.start = vertex(edge.curve.Start());
+            edge.finish = vertex(edge.curve.Finish());
+            for(int i : uses) trims[i].edge = (int)edges.size();
+            body.edges.push_back((int)edges.size());
+            edges.push_back(edge);
+        }
+        return true;
+    }
+
+    bool ValidateVertices() {
+        using HalfEdge = std::pair<int, bool>;
+        using Link = std::map<HalfEdge, std::vector<HalfEdge>>;
+        for(const Body &body : bodies) {
+            std::vector<Link> links(body.vertices.size());
+            for(int f : body.faces) {
+                std::set<int> usedEdges, usedVertices;
+                for(const std::vector<int> &loop : faces[f].loops) {
+                    for(size_t i = 0; i < loop.size(); ++i) {
+                        const Trim &before = trims[loop[(i + loop.size() - 1) % loop.size()]];
+                        const Trim &after = trims[loop[i]];
+                        const Edge &a = edges[before.edge], &b = edges[after.edge];
+                        int finish = before.forwards ? a.finish : a.start;
+                        int start = after.forwards ? b.start : b.finish;
+                        if(finish != start || !usedEdges.insert(after.edge).second ||
+                           !usedVertices.insert(start).second) {
+                            return Fail(ssprintf("Open, repeated or touching boundary on surface %u.",
+                                                 faces[f].surface->h.v));
+                        }
+                        HalfEdge incoming{before.edge, before.forwards};
+                        HalfEdge outgoing{after.edge, !after.forwards};
+                        links[start][incoming].push_back(outgoing);
+                        links[start][outgoing].push_back(incoming);
                     }
                 }
             }
-            return true;
-        }
-    }
-
-    // No point was found, it means this is a new point.
-    pointAliases_t newPoint;
-    newPoint.alias.reference = number;
-    newPoint.alias.aliases.push_back(number);
-    newPoint.v = v;
-    newPoint.vertexAlias.reference = vertex;
-    if(vertex > 0) {
-        newPoint.vertexAlias.aliases.push_back(vertex);
-    }
-
-    // A new entry in the list.
-    pointAliases.push_back(newPoint);
-    return false;
-}
-
-// Return a cartesian point index; if the point has aliases return the
-// first one.
-// input:
-//        number -> the id of the requested cartesian point
-// return:
-//        number, if the point has no aliases, otherwise its first alias
-int StepFileWriter::InsertPoint(int number) {
-    // Look for a point with index "number" in the list of aliases.
-    for(pointAliases_t p : pointAliases) {
-        for(int alias : p.alias.aliases) {
-            if(alias == number) {
-                return p.alias.reference;
-            }
-        }
-    }
-
-    // ERROR: it should never reach this point...
-    return -1;
-}
-
-// Return a vertex index; if the vertex has aliases return the
-// first one.
-// input:
-//        number -> the id of the requested vertex
-// return:
-//        number, if the vertex has no aliases, otherwise its first alias
-int StepFileWriter::InsertVertex(int number) {
-    // Look for a point with index "number" in the list of vertex aliases.
-    for(pointAliases_t p : pointAliases) {
-        for(int alias : p.vertexAlias.aliases) {
-            if(alias == number) {
-                return p.vertexAlias.reference;
-            }
-        }
-    }
-
-    // ERROR: it should never reach this point...
-    return -1;
-}
-
-// Check whether this curve was already defined with a different ID number.
-// inputs:
-//        number -> id of the curve
-//        points -> list of points that define the curve
-// return:
-//        true, if the curve is already defined
-bool StepFileWriter::HasBSplineCurveAnAlias(int number, std::vector<int> points) {
-    // Look for this curve in the alias list.
-    for(curveAliases_t &c : curveAliases) {
-        if(points.size() != c.memberPoints.size()) {
-            continue;
-        } if(exportParts && !(c.color.Equals(currentColor))) {
-          continue;
-        } else {
-            size_t matches = 0; // is this the same curve?
-            // FIXME: this hack should work _most_ of the times
-            for(size_t i = 0; i < points.size(); i++) {
-                for(size_t j = 0; j < points.size(); j++) {
-                    if(points[i] == c.memberPoints[j]) {
-                        matches++;
-                    }
+            // Two incident faces per edge are insufficient at a pinched vertex:
+            // its incident half-edges must also form one connected degree-2 fan.
+            for(const Link &link : links) {
+                if(link.empty()) return Fail("Unreferenced boundary vertex.");
+                std::set<HalfEdge> seen;
+                std::vector<HalfEdge> pending{link.begin()->first};
+                while(!pending.empty()) {
+                    HalfEdge edge = pending.back();
+                    pending.pop_back();
+                    if(!seen.insert(edge).second) continue;
+                    const std::vector<HalfEdge> &neighbors = link.at(edge);
+                    if(neighbors.size() != 2) return Fail("Non-manifold boundary vertex.");
+                    pending.insert(pending.end(), neighbors.begin(), neighbors.end());
                 }
-            }
-
-            if(matches == points.size()) {
-                // Add this alias.
-                c.alias.aliases.push_back(number);
-                return true;
+                if(seen.size() != link.size()) return Fail("Disconnected face fans at a vertex.");
             }
         }
+        return true;
     }
 
-    // No curve was found, it means this is a new curve.
-    curveAliases_t newCurve;
-    newCurve.alias.reference = number;
-    newCurve.alias.aliases.push_back(number);
-    newCurve.memberPoints = points;
-    newCurve.color = currentColor;
+public:
+    std::string error;
 
-    // A new entry in the list.
-    curveAliases.push_back(newCurve);
-    return false;
-}
+    bool MakeFrom(SShell *shell) {
+        return MakeFaces(shell) && FindBodies(shell) && SplitTrims() &&
+               MakeEdges() && ValidateVertices();
+    }
 
-// Return a curve index. As above.
-int StepFileWriter::InsertCurve(int number) {
-    for(curveAliases_t c : curveAliases) {
-        for(int alias : c.alias.aliases) {
-            if(alias == number && (!exportParts || c.color.Equals(currentColor))) {
-                return c.alias.reference;
+    void ExportTo(StepFileWriter *writer, double scale) {
+        FILE *f = writer->f;
+        int &id = writer->id;
+        std::map<SSurface *, int> surfaceIds;
+        std::vector<int> solids;
+        for(const Body &body : bodies) {
+            std::vector<int> points, vertices;
+            for(Vector p : body.vertices) {
+                int point = writer->ExportPoint(p.ScaledBy(scale));
+                points.push_back(point);
+                vertices.push_back(id);
+                fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id++, point);
             }
-        }
-    }
-
-    // ERROR: it should never reach this point...
-    return -1;
-}
-
-// Check whether this edge curve was already defined with a different ID number.
-// inputs:
-//        number -> id of the edge
-//        prevFinish, thisFinish -> points of the edge
-//        curveID -> curve of the edge
-//        flip -> if an edge curve already exists this indicates whether it is in the other direction
-// return:
-//        true, if the edge curve is already defined
-bool StepFileWriter::HasEdgeCurveAnAlias(int number, int prevFinish, int thisFinish, int curveId, bool *flip) {
-    // Look for this edge in the alias list.
-    for(edgeCurveAliases_t &e : edgeCurveAliases) {
-        if(exportParts && !(e.color.Equals(currentColor))) {
-          continue;
-        }
-        // Check both directions.
-        if(((prevFinish == e.prevFinish && thisFinish == e.thisFinish) ||
-            (prevFinish == e.thisFinish && thisFinish == e.prevFinish)) &&
-             curveId == e.curveId) {
-            e.alias.aliases.push_back(number);
-            if(nullptr != flip) {
-                if(prevFinish == e.thisFinish && thisFinish == e.prevFinish)
-                    *flip = true;
-                else
-                    *flip = false;
+            for(int e : body.edges) {
+                Edge &edge = edges[e];
+                SBezier curve = edge.curve;
+                curve.ScaleSelfBy(scale);
+                // Reuse the vertices already resolved within this body, rather
+                // than relying on rounding separate curve endpoints to agree.
+                int geometry = writer->ExportCurve(&curve, points[edge.start],
+                                                   points[edge.finish]);
+                edge.id = id++;
+                fprintf(f, "#%d=EDGE_CURVE('',#%d,#%d,#%d,.T.);\n", edge.id,
+                        vertices[edge.start], vertices[edge.finish], geometry);
             }
-            return true;
-        }
-    }
-
-    // New edge curve.
-    edgeCurveAliases_t newEdgeCurve;
-    newEdgeCurve.alias.reference = number;
-    newEdgeCurve.alias.aliases.push_back(number);
-    newEdgeCurve.prevFinish = prevFinish;
-    newEdgeCurve.thisFinish = thisFinish;
-    newEdgeCurve.curveId = curveId;
-    newEdgeCurve.color = currentColor;
-
-    edgeCurveAliases.push_back(newEdgeCurve);
-    return false;
-}
-
-// Return an edge curve index. As above.
-int StepFileWriter::InsertEdgeCurve(int number) {
-    for(edgeCurveAliases_t e : edgeCurveAliases) {
-        for(int alias : e.alias.aliases) {
-            if(alias == number && (!exportParts || e.color.Equals(currentColor))) {
-                return e.alias.reference;
+            std::vector<int> advancedFaces;
+            for(int index : body.faces) {
+                const Face &face = faces[index];
+                if(surfaceIds.find(face.surface) == surfaceIds.end()) {
+                    // Scaling the live shell here would corrupt subsequent
+                    // exports and the model's surface/trim correspondence.
+                    SSurface surface = *face.surface;
+                    surface.ScaleSelfBy(scale);
+                    surfaceIds[face.surface] = writer->ExportSurface(&surface);
+                }
+                std::vector<int> bounds;
+                for(const std::vector<int> &loop : face.loops) {
+                    std::vector<int> oriented;
+                    for(int t : loop) {
+                        const Trim &trim = trims[t];
+                        oriented.push_back(id);
+                        fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.%c.);\n", id++,
+                                edges[trim.edge].id, trim.forwards ? 'T' : 'F');
+                    }
+                    int edgeLoop = id++;
+                    fprintf(f, "#%d=EDGE_LOOP('',(", edgeLoop);
+                    for(size_t i = 0; i < oriented.size(); ++i) {
+                        fprintf(f, "%s#%d", i ? "," : "", oriented[i]);
+                    }
+                    fprintf(f, "));\n");
+                    // Native UV loops keep material on the right; both outer
+                    // and inner STEP bounds need the opposite boundary sense.
+                    fprintf(f, "#%d=%s('',#%d,.F.);\n", id,
+                            bounds.empty() ? "FACE_OUTER_BOUND" : "FACE_BOUND", edgeLoop);
+                    bounds.push_back(id++);
+                }
+                int advancedFace = id++;
+                fprintf(f, "#%d=ADVANCED_FACE('',(", advancedFace);
+                for(size_t i = 0; i < bounds.size(); ++i) {
+                    fprintf(f, "%s#%d", i ? "," : "", bounds[i]);
+                }
+                fprintf(f, "),#%d,.T.);\n", surfaceIds.at(face.surface));
+                writer->ExportFaceColor(advancedFace, face.surface->color);
+                advancedFaces.push_back(advancedFace);
             }
-        }
-    }
-
-    // ERROR: it should never reach this point...
-    return -1;
-}
-
-// Check whether this oriented edge curve was already defined with a different ID number.
-// inputs:
-//        number -> id of the edge
-//        edgeCurveId -> curve of the edge
-//        flip -> the direction of the oriented edge
-// return:
-//        true, if the oriented edge is already defined
-bool StepFileWriter::HasOrientedEdgeAnAlias(int number, int edgeCurveId, bool flip) {
-    // Look for this edge in the alias list.
-    for(orientedEdgeAliases_t &e : orientedEdgeAliases) {
-        if((edgeCurveId == e.edgeCurveId) && (flip == e.flip)) {
-            e.alias.aliases.push_back(number);
-            return true;
-        }
-    }
-
-    // New oriented edge.
-    orientedEdgeAliases_t newOrientedEdge;
-    newOrientedEdge.alias.reference = number;
-    newOrientedEdge.alias.aliases.push_back(number);
-    newOrientedEdge.edgeCurveId = edgeCurveId;
-    newOrientedEdge.flip        = flip;
-
-    orientedEdgeAliases.push_back(newOrientedEdge);
-    return false;
-}
-
-// Return an oriented edge index. As above.
-int StepFileWriter::InsertOrientedEdge(int number) {
-    for(orientedEdgeAliases_t e : orientedEdgeAliases) {
-        for(int alias : e.alias.aliases) {
-            if(alias == number) {
-                return e.alias.reference;
+            int shell = id++;
+            fprintf(f, "#%d=CLOSED_SHELL('',(", shell);
+            for(size_t i = 0; i < advancedFaces.size(); ++i) {
+                fprintf(f, "%s#%d", i ? "," : "", advancedFaces[i]);
             }
+            fprintf(f, "));\n");
+            solids.push_back(id);
+            fprintf(f, "#%d=MANIFOLD_SOLID_BREP('brep',#%d);\n", id++, shell);
         }
+        int representation = id++;
+        fprintf(f, "#%d=ADVANCED_BREP_SHAPE_REPRESENTATION('',(", representation);
+        for(int solid : solids) fprintf(f, "#%d,", solid);
+        fprintf(f, "#170),#168);\n");
+        fprintf(f, "#%d=SHAPE_REPRESENTATION_RELATIONSHIP('','',#169,#%d);\n",
+                id++, representation);
     }
+};
 
-    // ERROR: it should never reach this point...
-    return -1;
-}
+} // namespace
 
 //-----------------------------------------------------------------------------
 // Functions for STEP export: print to file.
@@ -337,289 +703,93 @@ void StepFileWriter::WriteProductHeader() {
 		"\n"
 		);
 }
-int StepFileWriter::ExportCurve(SBezier *sb) {
-    int i, ret = id;
-    std::vector<int> curvePoints = {};
-
-    for(i = 0; i <= sb->deg; i++) {
-        if (!HasCartesianPointAnAlias(id + 1 + i, sb->ctrl[i], -1))
-            fprintf(f, CARTESIAN_POINT_FORMAT,
-                id + 1 + i,
-                CO(sb->ctrl[i]));
-    }
-    
-    for(i = 0; i <= sb->deg; i++) {
-        int point = InsertPoint(id + 1 + i);
-        curvePoints.push_back(point);
-    }
-    
-    if (!HasBSplineCurveAnAlias(ret, curvePoints)) {
-        fprintf(f, "#%d=(\n", ret);
-        fprintf(f, "BOUNDED_CURVE()\n");
-        fprintf(f, "B_SPLINE_CURVE(%d,(", sb->deg);
-        for(i = 0; i <= sb->deg; i++) {
-            fprintf(f, "#%d", InsertPoint(ret + i + 1));
-            if(i != sb->deg) fprintf(f, ",");
-        }
-        fprintf(f, "),.UNSPECIFIED.,.F.,.F.)\n");
-        fprintf(f, "B_SPLINE_CURVE_WITH_KNOTS((%d,%d),",
-            (sb->deg + 1), (sb-> deg + 1));
-        fprintf(f, "(0.000,1.000),.UNSPECIFIED.)\n");
-        fprintf(f, "CURVE()\n");
-        fprintf(f, "GEOMETRIC_REPRESENTATION_ITEM()\n");
-        fprintf(f, "RATIONAL_B_SPLINE_CURVE((");
-        for(i = 0; i <= sb->deg; i++) {
-            fprintf(f, "%.10f", sb->weight[i]);
-            if(i != sb->deg) fprintf(f, ",");
-        }
-        fprintf(f, "))\n");
-        fprintf(f, "REPRESENTATION_ITEM('')\n);\n");
-        fprintf(f, "\n");
-    }
-    
-    id = ret + 1 + (sb->deg + 1);
+int StepFileWriter::ExportPoint(Vector point) {
+    int ret = id++;
+    fprintf(f, "#%d=CARTESIAN_POINT('',(%s,%s,%s));\n", ret,
+            FormatCoordinate(point.x).c_str(), FormatCoordinate(point.y).c_str(),
+            FormatCoordinate(point.z).c_str());
     return ret;
 }
 
-int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
-    ssassert(loop->l.n >= 1, "Expected at least one loop");
-
-    List<int> listOfTrims = {};
-
-    SBezier *sb = loop->l.Last();
-
-    int lastFinish, prevFinish;
-    // Generate "exactly closed" contours, with the same vertex id for the
-    // finish of a previous edge and the start of the next one. So we need
-    // the finish of the last Bezier in the loop before we start our process.
-    bool vertex_has_alias;
-    if(!HasCartesianPointAnAlias(id, sb->Finish(), id + 1, &vertex_has_alias)) {
-        fprintf(f, CARTESIAN_POINT_FORMAT,
-            id, CO(sb->Finish()));
-        fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id + 1, InsertPoint(id));
-        lastFinish = id + 1;
-    } else if(!vertex_has_alias) {
-        fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id + 1, InsertPoint(id));
-        lastFinish = id + 1; 
+int StepFileWriter::ExportCurve(SBezier *sb, int startPoint, int finishPoint) {
+    std::vector<int> points;
+    for(int i = 0; i <= sb->deg; ++i) {
+        if(i == 0 && startPoint) points.push_back(startPoint);
+        else if(i == sb->deg && finishPoint) points.push_back(finishPoint);
+        else points.push_back(ExportPoint(sb->ctrl[i]));
     }
-    else {
-        lastFinish = InsertVertex(id+1);
+    int ret = id++;
+    fprintf(f, "#%d=(\n", ret);
+    fprintf(f, "BOUNDED_CURVE()\n");
+    fprintf(f, "B_SPLINE_CURVE(%d,(", sb->deg);
+    for(size_t i = 0; i < points.size(); ++i) fprintf(f, "%s#%d", i ? "," : "", points[i]);
+    fprintf(f, "),.UNSPECIFIED.,.F.,.F.)\n");
+    fprintf(f, "B_SPLINE_CURVE_WITH_KNOTS((%d,%d),", sb->deg + 1, sb->deg + 1);
+    fprintf(f, "(0.000,1.000),.UNSPECIFIED.)\n");
+    fprintf(f, "CURVE()\n");
+    fprintf(f, "GEOMETRIC_REPRESENTATION_ITEM()\n");
+    fprintf(f, "RATIONAL_B_SPLINE_CURVE((");
+    for(int i = 0; i <= sb->deg; ++i) {
+        fprintf(f, "%s" WEIGHT_FORMAT, i ? "," : "", sb->weight[i]);
     }
-    prevFinish = lastFinish;
-    id += 2;
-
-    for(sb = loop->l.First(); sb; sb = loop->l.NextAfter(sb)) {
-        int curveId = ExportCurve(sb);
-
-        int thisFinish;
-        if(loop->l.NextAfter(sb) != NULL) {
-            if(!HasCartesianPointAnAlias(id, sb->Finish(), id + 1, &vertex_has_alias)) {
-                fprintf(f, CARTESIAN_POINT_FORMAT,
-                    id, CO(sb->Finish()));
-                fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id + 1, InsertPoint(id));
-                thisFinish = id + 1;
-            } else if(!vertex_has_alias) {
-                fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id + 1, InsertPoint(id));
-                thisFinish = id + 1;
-            } else {
-                thisFinish = InsertVertex(id+1);
-            }
-            id += 2;
-        } else {
-            thisFinish = lastFinish;
-        }
-
-        bool flip_edge;
-        if (!HasEdgeCurveAnAlias(id, prevFinish, thisFinish, InsertCurve(curveId), &flip_edge)) {
-            fprintf(f, "#%d=EDGE_CURVE('',#%d,#%d,#%d,%s);\n",
-                id, prevFinish, thisFinish, InsertCurve(curveId), ".T.");
-            if(!HasOrientedEdgeAnAlias(id + 1, id, flip_edge)) {
-                fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.T.);\n", id + 1, id);
-            } else {
-                ssassert(false, "Impossible");
-            }
-        } else if(!HasOrientedEdgeAnAlias(id + 1, id, flip_edge)) {
-            fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.%c.);\n", id + 1, InsertEdgeCurve(id),
-                    flip_edge ? 'F' : 'T');
-        }
-        
-        int oe = id+1;
-        listOfTrims.Add(&oe);
-        id += 2;
-
-        prevFinish = thisFinish;
-    }
-
-    fprintf(f, "#%d=EDGE_LOOP('',(", id);
-    int *oe;
-    for(oe = listOfTrims.First(); oe; oe = listOfTrims.NextAfter(oe)) {
-        fprintf(f, "#%d", InsertOrientedEdge(*oe));
-        if(listOfTrims.NextAfter(oe) != NULL) fprintf(f, ",");
-    }
-    fprintf(f, "));\n");
-
-    int fb = id + 1;
-    // Native UV loops keep material on the right. STEP needs the opposite
-    // boundary sense, for both outer and inner loops.
-    fprintf(f, "#%d=%s('',#%d,.F.);\n",
-        fb, inner ? "FACE_BOUND" : "FACE_OUTER_BOUND", id);
-
-    id += 2;
-    listOfTrims.Clear();
-
-    return fb;
+    fprintf(f, "))\n");
+    fprintf(f, "REPRESENTATION_ITEM('')\n);\n\n");
+    return ret;
 }
 
-void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
-    int i, j, srfid = id;
-
-    // Read the colour of the surface: use it to tell apart surfaces
-    // from different parts.
-    currentColor = ss->color;
-
-    // First, define the control points for the untrimmed surface, if they
-    // were not already defined.
-    for(i = 0; i <= ss->degm; i++) {
-        for(j = 0; j <= ss->degn; j++) {
-            if (!HasCartesianPointAnAlias(srfid + 1 + j + i*(ss->degn + 1), 
-                                          ss->ctrl[i][j], -1)) {
-                fprintf(f, CARTESIAN_POINT_FORMAT,
-                    srfid + 1 + j + i*(ss->degn + 1),
-                    CO(ss->ctrl[i][j]));
-            }
-        }
+int StepFileWriter::ExportSurface(SSurface *ss) {
+    std::vector<int> points;
+    for(int i = 0; i <= ss->degm; ++i) {
+        for(int j = 0; j <= ss->degn; ++j) points.push_back(ExportPoint(ss->ctrl[i][j]));
     }
-
-    // Then, we create the untrimmed surface. We always specify a rational
-    // B-spline surface (in fact, just a Bezier surface).
-    fprintf(f, "#%d=(\n", srfid);
+    int ret = id++;
+    fprintf(f, "#%d=(\n", ret);
     fprintf(f, "BOUNDED_SURFACE()\n");
     fprintf(f, "B_SPLINE_SURFACE(%d,%d,(", ss->degm, ss->degn);
-    for(i = 0; i <= ss->degm; i++) {
-        fprintf(f, "(");
-        for(j = 0; j <= ss->degn; j++) {
-            fprintf(f, "#%d", InsertPoint(srfid + 1 + j + i*(ss->degn + 1)));
-            if(j != ss->degn) fprintf(f, ",");
+    for(int i = 0; i <= ss->degm; ++i) {
+        fprintf(f, "%s(", i ? "," : "");
+        for(int j = 0; j <= ss->degn; ++j) {
+            fprintf(f, "%s#%d", j ? "," : "", points[i * (ss->degn + 1) + j]);
         }
         fprintf(f, ")");
-        if(i != ss->degm) fprintf(f, ",");
     }
     fprintf(f, "),.UNSPECIFIED.,.F.,.F.,.F.)\n");
     fprintf(f, "B_SPLINE_SURFACE_WITH_KNOTS((%d,%d),(%d,%d),",
-        (ss->degm + 1), (ss->degm + 1),
-        (ss->degn + 1), (ss->degn + 1));
+            ss->degm + 1, ss->degm + 1, ss->degn + 1, ss->degn + 1);
     fprintf(f, "(0.000,1.000),(0.000,1.000),.UNSPECIFIED.)\n");
     fprintf(f, "GEOMETRIC_REPRESENTATION_ITEM()\n");
     fprintf(f, "RATIONAL_B_SPLINE_SURFACE((");
-    for(i = 0; i <= ss->degm; i++) {
-        fprintf(f, "(");
-        for(j = 0; j <= ss->degn; j++) {
-            fprintf(f, "%.10f", ss->weight[i][j]);
-            if(j != ss->degn) fprintf(f, ",");
+    for(int i = 0; i <= ss->degm; ++i) {
+        fprintf(f, "%s(", i ? "," : "");
+        for(int j = 0; j <= ss->degn; ++j) {
+            fprintf(f, "%s" WEIGHT_FORMAT, j ? "," : "", ss->weight[i][j]);
         }
         fprintf(f, ")");
-        if(i != ss->degm) fprintf(f, ",");
     }
     fprintf(f, "))\n");
     fprintf(f, "REPRESENTATION_ITEM('')\n");
-    fprintf(f, "SURFACE()\n");
-    fprintf(f, ");\n");
+    fprintf(f, "SURFACE()\n);\n\n");
+    return ret;
+}
 
-    fprintf(f, "\n");
-
-    id = srfid + 1 + (ss->degm + 1)*(ss->degn + 1);
-
-    // Now we do the trim curves. We must group each outer loop separately
-    // along with its inner faces, so do that now.
-    SBezierLoopSetSet sblss = {};
-    SPolygon spxyz = {};
-    bool allClosed;
-    SEdge notClosedAt;
-    // We specify a surface, so it doesn't check for coplanarity; and we
-    // don't want it to give us any open contours. The polygon and chord
-    // tolerance are required, because they are used to calculate the
-    // contour directions and determine inner vs. outer contours.
-    sblss.FindOuterFacesFrom(sbl, &spxyz, ss,
-                             SS.ExportChordTolMm(),
-                             &allClosed, &notClosedAt,
-                             NULL, NULL,
-                             NULL);
-
-    // So in our list of SBezierLoopSet, each set contains at least one loop
-    // (the outer boundary), plus any inner loops associated with that outer
-    // loop.
-    SBezierLoopSet *sbls;
-    for(sbls = sblss.l.First(); sbls; sbls = sblss.l.NextAfter(sbls)) {
-        SBezierLoop *loop = sbls->l.First();
-
-        List<int> listOfLoops = {};
-        // Create the face outer boundary from the outer loop.
-        int fob = ExportCurveLoop(loop, /*inner=*/false);
-        listOfLoops.Add(&fob);
-
-        // And create the face inner boundaries from any inner loops that
-        // lie within this contour.
-        loop = sbls->l.NextAfter(loop);
-        for(; loop; loop = sbls->l.NextAfter(loop)) {
-            int fib = ExportCurveLoop(loop, /*inner=*/true);
-            listOfLoops.Add(&fib);
-        }
-
-        // And now create the face that corresponds to this outer loop
-        // and all of its holes.
-        int advFaceId = id;
-        fprintf(f, "#%d=ADVANCED_FACE('',(", advFaceId);
-        int *fb;
-        for(fb = listOfLoops.First(); fb; fb = listOfLoops.NextAfter(fb)) {
-            fprintf(f, "#%d", *fb);
-            if(listOfLoops.NextAfter(fb) != NULL) fprintf(f, ",");
-        }
-
-        fprintf(f, "),#%d,.T.);\n", srfid);
-        advancedFaces.Add(&advFaceId);
-
-        // Export the surface color and transparency
-        // https://www.cax-if.org/documents/rec_prac_styling_org_v16.pdf sections 4.4.2 4.2.4 etc.
-        // https://tracker.dev.opencascade.org/view.php?id=31550
-        fprintf(f, "#%d=COLOUR_RGB('',%.2f,%.2f,%.2f);\n", ++id, ss->color.redF(),
-                ss->color.greenF(), ss->color.blueF());
-
-/*      // This works in Kisters 3DViewStation but not in KiCAD and Horison EDA,
-        // it seems they do not support transparency so use the more verbose one below
-        fprintf(f, "#%d=SURFACE_STYLE_TRANSPARENT(%.2f);\n", ++id, 1.0 - ss->color.alphaF());
-        ++id;
-        fprintf(f, "#%d=SURFACE_STYLE_RENDERING_WITH_PROPERTIES(.NORMAL_SHADING.,#%d,(#%d));\n",
-                id, id - 2, id - 1);
-        ++id;
-        fprintf(f, "#%d=SURFACE_SIDE_STYLE('',(#%d));\n", id, id - 1);
-*/
-
-        // This works in Horison EDA but is more verbose.
-        ++id;
-        fprintf(f, "#%d=FILL_AREA_STYLE_COLOUR('',#%d);\n", id, id - 1);
-        ++id;
-        fprintf(f, "#%d=FILL_AREA_STYLE('',(#%d));\n", id, id - 1);
-        ++id;
-        fprintf(f, "#%d=SURFACE_STYLE_FILL_AREA(#%d);\n", id, id - 1);
-        fprintf(f, "#%d=SURFACE_STYLE_TRANSPARENT(%.2f);\n", ++id, 1.0 - ss->color.alphaF());
-        ++id;
-        fprintf(f, "#%d=SURFACE_STYLE_RENDERING_WITH_PROPERTIES(.NORMAL_SHADING.,#%d,(#%d));\n", id, id - 5, id - 1);
-        ++id;
-        fprintf(f, "#%d=SURFACE_SIDE_STYLE('',(#%d, #%d));\n", id, id - 3, id - 1);
-
-        ++id;
-        fprintf(f, "#%d=SURFACE_STYLE_USAGE(.BOTH.,#%d);\n", id, id - 1);
-        ++id;
-        fprintf(f, "#%d=PRESENTATION_STYLE_ASSIGNMENT((#%d));\n", id, id - 1);
-        ++id;
-        fprintf(f, "#%d=STYLED_ITEM('',(#%d),#%d);\n", id, id - 1, advFaceId);
-        fprintf(f, "\n");        
-        
-        id++;
-        listOfLoops.Clear();
-    }
-    sblss.Clear();
-    spxyz.Clear();
+void StepFileWriter::ExportFaceColor(int face, RgbaColor color) {
+    // https://www.cax-if.org/documents/rec_prac_styling_org_v16.pdf sections 4.4.2, 4.2.4
+    // https://tracker.dev.opencascade.org/view.php?id=31550
+    int rgb = id++, fillColor = id++, fill = id++, fillArea = id++;
+    int transparent = id++, rendering = id++, side = id++, usage = id++;
+    int assignment = id++, styled = id++;
+    fprintf(f, "#%d=COLOUR_RGB('',%.2f,%.2f,%.2f);\n", rgb,
+            color.redF(), color.greenF(), color.blueF());
+    fprintf(f, "#%d=FILL_AREA_STYLE_COLOUR('',#%d);\n", fillColor, rgb);
+    fprintf(f, "#%d=FILL_AREA_STYLE('',(#%d));\n", fill, fillColor);
+    fprintf(f, "#%d=SURFACE_STYLE_FILL_AREA(#%d);\n", fillArea, fill);
+    fprintf(f, "#%d=SURFACE_STYLE_TRANSPARENT(%.2f);\n", transparent, 1.0 - color.alphaF());
+    fprintf(f, "#%d=SURFACE_STYLE_RENDERING_WITH_PROPERTIES(.NORMAL_SHADING.,#%d,(#%d));\n",
+            rendering, rgb, transparent);
+    fprintf(f, "#%d=SURFACE_SIDE_STYLE('',(#%d,#%d));\n", side, fillArea, rendering);
+    fprintf(f, "#%d=SURFACE_STYLE_USAGE(.BOTH.,#%d);\n", usage, side);
+    fprintf(f, "#%d=PRESENTATION_STYLE_ASSIGNMENT((#%d));\n", assignment, usage);
+    fprintf(f, "#%d=STYLED_ITEM('',(#%d),#%d);\n\n", styled, assignment, face);
 }
 
 void StepFileWriter::WriteFooter() {
@@ -645,63 +815,27 @@ void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
         return;
     }
 
+    // Prepare and validate the complete boundary graph before opening the
+    // destination: a partial or ambiguous shell must not become a STEP solid.
+    StepTopology topology;
+    if(!topology.MakeFrom(shell)) {
+        Error("Cannot export STEP - %s", topology.error.c_str());
+        return;
+    }
+
     f = OpenFile(filename, "wb");
     if(!f) {
         Error("Couldn't write to '%s'", filename.raw.c_str());
         return;
     }
 
-    // Initialization of lists.
-    pointAliases = {};
-    curveAliases = {};
-    edgeCurveAliases = {};
-    orientedEdgeAliases = {};
-
     WriteHeader();
     WriteProductHeader();
-
-    advancedFaces = {};
-
-    for(SSurface &ss : shell->surface) {
-        if(ss.trim.IsEmpty())
-            continue;
-
-        // Get all of the loops of Beziers that trim our surface (with each
-        // Bezier split so that we use the section as t goes from 0 to 1), and
-        // the piecewise linearization of those loops in xyz space.
-        SBezierList sbl = {};
-        ss.MakeSectionEdgesInto(shell, NULL, &sbl);
-
-        // Apply the export scale factor.
-        ss.ScaleSelfBy(1.0/SS.exportScale);
-        sbl.ScaleSelfBy(1.0/SS.exportScale);
-
-        ExportSurface(&ss, &sbl);
-
-        sbl.Clear();
-    }
-
-    fprintf(f, "#%d=CLOSED_SHELL('',(", id);
-    int *af;
-    for(af = advancedFaces.First(); af; af = advancedFaces.NextAfter(af)) {
-        fprintf(f, "#%d", *af);
-        if(advancedFaces.NextAfter(af) != NULL) fprintf(f, ",");
-    }
-    fprintf(f, "));\n");
-    fprintf(f, "#%d=MANIFOLD_SOLID_BREP('brep',#%d);\n", id+1, id);
-    fprintf(f, "#%d=ADVANCED_BREP_SHAPE_REPRESENTATION('',(#%d,#170),#168);\n",
-        id+2, id+1);
-    fprintf(f, "#%d=SHAPE_REPRESENTATION_RELATIONSHIP('','',#169,#%d);\n",
-        id+3, id+2);
-
+    topology.ExportTo(this, 1.0 / SS.exportScale);
     WriteFooter();
 
     fclose(f);
-    advancedFaces.Clear();
-    pointAliases.clear();
-    curveAliases.clear();
-    edgeCurveAliases.clear();
-    orientedEdgeAliases.clear();
+    f = NULL;
 }
 
 void StepFileWriter::WriteWireframe() {
