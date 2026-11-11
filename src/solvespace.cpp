@@ -1147,6 +1147,7 @@ PACKAGE_VERSION, 2026);
 }
 
 void SolveSpaceUI::Clear() {
+    ClearLinkedSketches();
     sys.Clear();
     for(int i = 0; i < MAX_UNDO; i++) {
         if(i < undo.cnt) undo.d[i].Clear();
