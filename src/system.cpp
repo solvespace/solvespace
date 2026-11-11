@@ -10,6 +10,7 @@
 
 #include <Eigen/Core>
 #include <Eigen/SparseQR>
+#include <Eigen/SVD>
 
 namespace SolveSpace {
 
@@ -244,6 +245,38 @@ int System::CalculateRank() {
     SparseQR <SparseMatrix<double>, COLAMDOrdering<int>> solver;
     solver.compute(mat.A.num);
     int result = solver.rank();
+    // SparseQR uses a fill-reducing ordering rather than complete numerical
+    // pivoting. Near dependent equations it can report full row rank, even
+    // though a further Newton step makes it report redundancy (#1723).
+    // Keep its fast path, but verify an ill-conditioned full-rank result.
+    if(result == mat.m && mat.m > 1) {
+        double smallest = HUGE_VAL, largest = 0;
+        const auto &r = solver.matrixR();
+        for(int i = 0; i < result; i++) {
+            double pivot = fabs(r.coeff(i, i));
+            smallest = min(smallest, pivot);
+            largest = max(largest, pivot);
+        }
+        if(smallest < 1e-6*largest) {
+            MatrixXd a = mat.A.num;
+            // Equations and parameters have different units. Equilibrate a
+            // copy so neither the rank check nor its tolerance is dominated
+            // by a large derivative. Leave the Newton matrix unchanged.
+            for(int i = 0; i < a.rows(); i++) {
+                double norm = a.row(i).norm();
+                if(norm > 0) a.row(i) /= norm;
+            }
+            for(int i = 0; i < a.cols(); i++) {
+                double norm = a.col(i).norm();
+                if(norm > 0) a.col(i) /= norm;
+            }
+            JacobiSVD<MatrixXd> svd(a);
+            // Relative to the largest singular value of the equilibrated
+            // matrix; tighter than the residual convergence tolerance.
+            svd.setThreshold(1e-9);
+            result = svd.rank();
+        }
+    }
     return result;
 }
 
