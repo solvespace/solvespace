@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+#include <limits>
+
 namespace SolveSpace {
 
 SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
@@ -151,6 +153,79 @@ SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
     ret.ctrl[1][1] = pt.Plus(v).Plus(u);
 
     return ret;
+}
+
+static double PlanarityTolerance(double largest) {
+    // Roundoff, not model tolerance: a small bilinear warp is still curvature.
+    return std::min(LENGTH_EPS * 0.01, 64 * std::numeric_limits<double>::epsilon() * largest);
+}
+
+bool SSurface::IsPlanar(Vector *planeNormal) const {
+    if(degm == 1 && degn == 1) {
+        // The common case needs only the fourth corner's distance to the plane
+        // of the other three. Do not search the whole net for a plane basis.
+        Vector u = ctrl[1][0].Minus(ctrl[0][0]),
+               v = ctrl[0][1].Minus(ctrl[0][0]),
+               n = u.Cross(v);
+        double n2 = n.MagSquared();
+        // This angular guard chooses a stable basis; it is not a geometric
+        // tolerance for treating a warped patch as planar.
+        if(n2 > 1e-12 * u.MagSquared() * v.MagSquared()) {
+            double distance = ctrl[1][1].Minus(ctrl[0][0]).Dot(n);
+            if(distance != 0) {
+                double largest = 1;
+                for(int i = 0; i <= 1; ++i) for(int j = 0; j <= 1; ++j) {
+                    Vector p = ctrl[i][j];
+                    largest = std::max({largest, fabs(p.x), fabs(p.y), fabs(p.z)});
+                }
+                double eps = PlanarityTolerance(largest);
+                if(distance * distance > eps * eps * n2) return false;
+            }
+            if(planeNormal) {
+                // At a regular corner, the rational tangents are scalar
+                // multiples of the two control edges.
+                if(weight[1][0] * weight[0][1] < 0) n = n.Negated();
+                *planeNormal = n.ScaledBy(1 / sqrt(n2));
+            }
+            return true;
+        }
+        // Collapsed or nearly collinear corner edges need a better plane
+        // basis. Use the robust control-net search below in that rare case.
+    }
+    Vector origin = ctrl[0][0], far = origin, off = origin;
+    double farDistance = 0, offDistance = 0, largest = 1;
+    for(int i = 0; i <= degm; ++i) for(int j = 0; j <= degn; ++j) {
+        Vector p = ctrl[i][j];
+        largest = std::max({largest, fabs(p.x), fabs(p.y), fabs(p.z)});
+        double distance = p.Minus(origin).MagSquared();
+        if(distance > farDistance) { far = p; farDistance = distance; }
+    }
+    if(farDistance == 0) return false;
+    Vector along = far.Minus(origin);
+    for(int i = 0; i <= degm; ++i) for(int j = 0; j <= degn; ++j) {
+        double distance = ctrl[i][j].Minus(origin).Cross(along).MagSquared();
+        if(distance > offDistance) { off = ctrl[i][j]; offDistance = distance; }
+    }
+    if(offDistance == 0) return false;
+    Vector normal = along.Cross(off.Minus(origin)).WithMagnitude(1);
+    // Recognize at roundoff, not by flattening a slightly warped bilinear net
+    // at model tolerance. This changes no controls, weights or parameters.
+    double eps = PlanarityTolerance(largest);
+    for(int i = 0; i <= degm; ++i) for(int j = 0; j <= degn; ++j) {
+        if(fabs(ctrl[i][j].Minus(origin).Dot(normal)) > eps) return false;
+    }
+    if(planeNormal) {
+        if(normal.Dot(NormalAt(0, 0)) < 0) normal = normal.Negated();
+        *planeNormal = normal;
+    }
+    return true;
+}
+
+SSurface::Plane SSurface::GetPlane() const {
+    Plane plane = {};
+    plane.isPlanar = IsPlanar(&plane.normal);
+    if(plane.isPlanar) plane.d = plane.normal.Dot(ctrl[0][0]);
+    return plane;
 }
 
 SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q, double scale,
@@ -519,16 +594,10 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     if(el.AssemblePolygon(&poly, NULL, /*keepDir=*/true)) {
         SplitContoursAtRepeatedVertices(&poly);
         int i, start = sm->l.n;
-        if(degm == 1 && degn == 1) {
-            // A surface with curvature along one direction only; so
-            // choose the triangulation with chords that lie as much
-            // as possible within the surface. And since the trim curves
-            // have been pwl'd to within the desired chord tol, that will
-            // produce a surface good to within roughly that tol.
-            //
-            // If this is just a plane (degree (1, 1)) then the triangulation
-            // code will notice that, and not bother checking chord tols.
-            poly.UvTriangulateInto(sm, this);
+        if(IsPlanar()) {
+            // A plane may have rational or non-affine parameters, or degree
+            // greater than one. Its trim PWL suffices for triangulation.
+            poly.UvTriangulateInto(sm, this, /*planar=*/true);
         } else {
             // A surface with compound curvature. So we must overlay a
             // two-dimensional grid, and triangulate around that.

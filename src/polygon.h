@@ -146,7 +146,7 @@ public:
     bool IsEar(int bp, double scaledEps) const;
     bool BridgeToContour(SContour *sc, SEdgeList *el, List<Vector> *vl);
     void ClipEarInto(SMesh *m, int bp, double scaledEps);
-    void UvTriangulateInto(SMesh *m, SSurface *srf);
+    void UvTriangulateInto(SMesh *m, SSurface *srf, bool planar);
 };
 
 typedef struct {
@@ -171,7 +171,7 @@ public:
     bool IsEmpty() const;
     Vector AnyPoint() const;
     void OffsetInto(SPolygon *dest, double r) const;
-    void UvTriangulateInto(SMesh *m, SSurface *srf);
+    void UvTriangulateInto(SMesh *m, SSurface *srf, bool planar);
     void UvGridTriangulateInto(SMesh *m, SSurface *srf);
     void TriangulateInto(SMesh *m) const;
     void InverseTransformInto(SPolygon *sp, Vector u, Vector v, Vector n) const;

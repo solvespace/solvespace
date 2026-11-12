@@ -298,6 +298,13 @@ public:
     Vector          ctrl[4][4];
     double          weight[4][4];
 
+    // Operation-local classification, not a cache: controls and weights are mutable.
+    struct Plane {
+        bool   isPlanar;
+        Vector normal; // Unit normal, oriented with the surface.
+        double d;
+    };
+
     List<STrimBy>   trim;
 
     // For testing whether a point (u, v) on the surface lies inside the trim
@@ -327,7 +334,8 @@ public:
                                     SShell *into, SSurface::CombineAs type, int dbg_index);
     void TrimFromEdgeList(SEdgeList *el, bool asUv);
     void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
-                          SShell *into);
+                          SShell *into,
+                          const Plane *planeA=NULL, const Plane *planeB=NULL);
     bool MarchIntersection(SSurface *b, Vector start, Vector startv,
                            bool fromTangent, List<MarchPoint> *ends,
                            List<SCurvePt> *pts);
@@ -374,8 +382,20 @@ public:
     bool LineEntirelyOutsideBbox(Vector a, Vector b, bool asSegment) const;
     void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const;
     bool CoincidentWithPlane(Vector n, double d) const;
-    bool CoincidentWith(SSurface *ss, bool sameNormal) const;
-    bool ContainsPlaneCurve(SCurve *sc) const;
+    // Degree (1,1) alone does not imply a plane or an affine UV map.
+    bool IsPlanar(Vector *normal=NULL) const;
+    Plane GetPlane() const;
+    bool IsAffine() const {
+        if(degm != 1 || degn != 1 ||
+           weight[0][0] != weight[1][0] || weight[0][0] != weight[0][1] ||
+           weight[0][0] != weight[1][1]) return false;
+        Vector p = ctrl[0][0].Plus(ctrl[1][0].Minus(ctrl[0][0]))
+                            .Plus(ctrl[0][1].Minus(ctrl[0][0]));
+        return ctrl[1][1].x == p.x && ctrl[1][1].y == p.y && ctrl[1][1].z == p.z;
+    }
+    bool CoincidentWith(SSurface *ss, bool sameNormal,
+                        const Plane *planeA=NULL, const Plane *planeB=NULL) const;
+    bool ContainsPlaneCurve(SCurve *sc, const Plane *plane=NULL) const;
     bool IsExtrusion(SBezier *of, Vector *along) const;
     bool IsCylinder(Vector *axis, Vector *center, double *r,
                         Vector *start, Vector *finish) const;
