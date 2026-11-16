@@ -1,5 +1,6 @@
 // Native B-rep conversion. No STEPcode headers, types or generated bindings.
 #include "solvespace.h"
+#include "stepcolor.h"
 #include "stepgeometry.h"
 #include "stepnurbs.h"
 #include "stepreader.h"
@@ -1406,6 +1407,8 @@ GeometryResult ConvertGeometry(const Document &document, const GeometryOptions &
     } else if(result.diagnostics.empty()) {
         result.diagnostics.push_back(Diagnostic({Code::NoGeometry, 0, "No supported solid geometry was found."}, 0, 0));
     }
+    // Presentation must not influence geometric acceptance or reference identity.
+    ApplySurfaceColors(document, &result);
     return result;
 }
 
