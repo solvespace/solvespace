@@ -126,10 +126,200 @@ class StepTopology {
     struct Body {
         std::vector<int> faces, edges;
         std::vector<Vector> vertices;
+        std::vector<int> voids;
+        bool inward = false;
+        int shellId = 0, itemId = 0;
     };
     struct CoincidentEdges {
         SBezier curve;
         std::vector<int> trims;
+    };
+
+    struct ShellClassifier {
+        enum class Location { Outside, Inside, Boundary, Ambiguous };
+        struct Crossing { double distance, normal; };
+        Vector origin, pmax, pmin;
+        double size, tolerance;
+        int orientation = 0;
+        std::vector<SSurface> surfaces;
+        std::vector<Vector> maxima, minima;
+        std::vector<SSurface::Plane> planes;
+        std::vector<Vector> probes;
+
+        static Vector Direction(int i) {
+            static const Vector directions[] = {
+                {1, 0.371, 0.529}, {0.529, 1, 0.371}, {0.371, 0.529, 1},
+                {1, -0.617, 0.223}, {0.223, 1, -0.617}, {-0.617, 0.223, 1}
+            };
+            return directions[i].WithMagnitude(1);
+        }
+
+        bool Cast(Vector point, Vector direction, Location *location, int *sense) {
+            // Both ends are outside the control hull. Intersect the native
+            // surfaces, not display triangles; the trim BSPs only discard hits
+            // outside a face. Retry rays near trims or tangencies rather than
+            // allowing their PWL classification to decide shell ownership.
+            Vector p = point.Minus(origin);
+            double reach = p.Magnitude() + 2*size;
+            std::vector<Crossing> crossings;
+            for(SSurface &surface : surfaces) {
+                List<SInter> intersections = {};
+                surface.AllPointsIntersecting(p.Minus(direction.ScaledBy(reach)),
+                    p.Plus(direction.ScaledBy(reach)), &intersections,
+                    /*asSegment=*/true, /*trimmed=*/false, /*inclTangent=*/true);
+                bool reliable = true;
+                for(const SInter &hit : intersections) {
+                    if(!Finite(hit.p) || !std::isfinite(hit.pinter.x) ||
+                       !std::isfinite(hit.pinter.y)) {
+                        reliable = false;
+                        break;
+                    }
+                    auto c = surface.bsp->ClassifyPoint(hit.pinter, {0, 0}, &surface);
+                    double t = hit.p.Minus(p).Dot(direction);
+                    if(c != SBspUv::Class::OUTSIDE && fabs(t) <= LENGTH_EPS) {
+                        intersections.Clear();
+                        *location = Location::Boundary;
+                        return true;
+                    }
+                    if(surface.bsp->MinimumDistanceToEdge(hit.pinter, &surface) <=
+                       4*tolerance) {
+                        reliable = false;
+                        break;
+                    }
+                    if(c == SBspUv::Class::OUTSIDE) continue;
+                    double magnitude = hit.surfNormal.Magnitude();
+                    double dot = hit.surfNormal.Dot(direction) / magnitude;
+                    if(!std::isfinite(dot) || fabs(dot) < 1e-6) {
+                        reliable = false;
+                        break;
+                    }
+                    crossings.push_back({t, dot});
+                }
+                intersections.Clear();
+                if(!reliable) return false;
+            }
+            std::sort(crossings.begin(), crossings.end(),
+                [](const Crossing &a, const Crossing &b) { return a.distance < b.distance; });
+            if(crossings.size() % 2 != 0) return false;
+            int raySense = crossings.empty() ? 0 : (crossings[0].normal < 0 ? 1 : -1);
+            int before = 0;
+            for(size_t i = 0; i < crossings.size(); ++i) {
+                if(i != 0 && crossings[i].distance - crossings[i - 1].distance <= LENGTH_EPS) {
+                    return false;
+                }
+                if((crossings[i].normal < 0 ? 1 : -1) != (i % 2 ? -raySense : raySense)) {
+                    return false;
+                }
+                if(crossings[i].distance < 0) ++before;
+            }
+            *sense = raySense;
+            *location = before % 2 ? Location::Inside : Location::Outside;
+            return true;
+        }
+
+        bool Orient() {
+            int agreeing = 0;
+            for(int attempt = 0; attempt < 18; ++attempt) {
+                Vector point = origin;
+                if(attempt >= 6) {
+                    point = origin.Plus(probes[(attempt / 6 - 1) % probes.size()]
+                                       .Minus(origin).ScaledBy(0.173));
+                }
+                Location location;
+                int sense = 0;
+                if(!Cast(point, Direction(attempt % 6), &location, &sense) || sense == 0) continue;
+                if(orientation != 0 && orientation != sense) return false;
+                orientation = sense;
+                if(++agreeing == 2) return true;
+            }
+            return false;
+        }
+
+        Location Classify(Vector point) {
+            if(point.OutsideAndNotOn(pmax, pmin)) return Location::Outside;
+            Location result = Location::Ambiguous;
+            int agreeing = 0;
+            for(int attempt = 0; attempt < 6; ++attempt) {
+                Location location;
+                int sense = 0;
+                if(!Cast(point, Direction(attempt), &location, &sense)) continue;
+                if(location == Location::Boundary) return location;
+                if(sense != 0 && sense != orientation) return Location::Ambiguous;
+                if(agreeing != 0 && location != result) return Location::Ambiguous;
+                result = location;
+                if(++agreeing == 2) return result;
+            }
+            return Location::Ambiguous;
+        }
+
+        static bool SeparatedPatches(const SSurface &a, const SSurface &b,
+                                     Vector amax, Vector amin, Vector bmax, Vector bmin,
+                                     const SSurface::Plane &planeA,
+                                     const SSurface::Plane &planeB,
+                                     int depth, size_t *work) {
+            // Positive rational weights put each exact patch in its control
+            // hull. Subdivision can certify separation, never an intersection
+            // merely inferred from sampled boundary points. Failure to separate
+            // within these export-local limits is ambiguity, not permission to
+            // assign a cavity. No subdivided geometry is written to STEP.
+            if(++(*work) > 1000000 || depth > 32) return false;
+            Vector hi, lo;
+            a.GetAxisAlignedBounding(&hi, &lo);
+            amax = {min(amax.x, hi.x), min(amax.y, hi.y), min(amax.z, hi.z)};
+            amin = {max(amin.x, lo.x), max(amin.y, lo.y), max(amin.z, lo.z)};
+            b.GetAxisAlignedBounding(&hi, &lo);
+            bmax = {min(bmax.x, hi.x), min(bmax.y, hi.y), min(bmax.z, hi.z)};
+            bmin = {max(bmin.x, lo.x), max(bmin.y, lo.y), max(bmin.z, lo.z)};
+            if(amax.x < amin.x || amax.y < amin.y || amax.z < amin.z ||
+               bmax.x < bmin.x || bmax.y < bmin.y || bmax.z < bmin.z ||
+               amax.x < bmin.x - LENGTH_EPS || bmax.x < amin.x - LENGTH_EPS ||
+               amax.y < bmin.y - LENGTH_EPS || bmax.y < amin.y - LENGTH_EPS ||
+               amax.z < bmin.z - LENGTH_EPS || bmax.z < amin.z - LENGTH_EPS) return true;
+            auto beyondPlane = [](const SSurface &surface, Vector point, Vector normal) {
+                double lo = VERY_POSITIVE, hi = VERY_NEGATIVE;
+                for(int i = 0; i <= surface.degm; ++i) for(int j = 0; j <= surface.degn; ++j) {
+                    double d = surface.ctrl[i][j].Minus(point).Dot(normal);
+                    lo = min(lo, d);
+                    hi = max(hi, d);
+                }
+                return lo > LENGTH_EPS || hi < -LENGTH_EPS;
+            };
+            if((planeA.isPlanar && beyondPlane(b, a.ctrl[0][0], planeA.normal)) ||
+               (planeB.isPlanar && beyondPlane(a, b.ctrl[0][0], planeB.normal))) return true;
+            bool splitA = amax.Minus(amin).MagSquared() >= bmax.Minus(bmin).MagSquared();
+            SSurface split = splitA ? a : b;
+            double du = 0, dv = 0;
+            for(int i = 0; i <= split.degm; ++i) for(int j = 0; j <= split.degn; ++j) {
+                if(i) du = max(du, split.ctrl[i][j].Minus(split.ctrl[i-1][j]).MagSquared());
+                if(j) dv = max(dv, split.ctrl[i][j].Minus(split.ctrl[i][j-1]).MagSquared());
+            }
+            SSurface first = {}, second = {};
+            split.SplitInHalf(du >= dv, &first, &second);
+            if(splitA) {
+                return SeparatedPatches(first, b, amax, amin, bmax, bmin,
+                                        planeA, planeB, depth+1, work) &&
+                       SeparatedPatches(second, b, amax, amin, bmax, bmin,
+                                        planeA, planeB, depth+1, work);
+            }
+            return SeparatedPatches(a, first, amax, amin, bmax, bmin,
+                                    planeA, planeB, depth+1, work) &&
+                   SeparatedPatches(a, second, amax, amin, bmax, bmin,
+                                    planeA, planeB, depth+1, work);
+        }
+
+        bool SeparatedFrom(ShellClassifier &other, size_t *work) {
+            Vector translation = other.origin.Minus(origin);
+            for(size_t i = 0; i < surfaces.size(); ++i) {
+                for(size_t j = 0; j < other.surfaces.size(); ++j) {
+                    SSurface b = SSurface::FromTransformationOf(&other.surfaces[j],
+                        translation, Quaternion::IDENTITY, 1, /*includingTrims=*/false);
+                    if(!SeparatedPatches(surfaces[i], b, maxima[i], minima[i],
+                        other.maxima[j].Plus(translation), other.minima[j].Plus(translation),
+                        planes[i], other.planes[j], 0, work)) return false;
+                }
+            }
+            return true;
+        }
     };
 
     std::vector<Trim> trims;
@@ -530,12 +720,140 @@ class StepTopology {
         return true;
     }
 
+    bool FindVoids() {
+        // Connectivity resolves CLOSED_SHELLs, not solids. A subtraction wholly
+        // inside a solid leaves a disconnected, inward-oriented cavity shell.
+        // Outward shells remain separate solids even in a nested assembly.
+        if(!std::isfinite(SS.ChordTolMm()) || SS.ChordTolMm() <= 0) {
+            return Fail("Cannot classify closed shells with an invalid chord tolerance.");
+        }
+        std::vector<ShellClassifier> classifiers(bodies.size());
+        bool hasVoids = false;
+        for(size_t b = 0; b < bodies.size(); ++b) {
+            Body &body = bodies[b];
+            ShellClassifier &classifier = classifiers[b];
+            Vector pmax = body.vertices[0], pmin = pmax;
+            for(int f : body.faces) {
+                SSurface *surface = faces[f].surface;
+                for(int i = 0; i <= surface->degm; ++i) for(int j = 0; j <= surface->degn; ++j) {
+                    surface->ctrl[i][j].MakeMaxMin(&pmax, &pmin);
+                }
+            }
+            classifier.origin = pmin.Plus(pmax.Minus(pmin).ScaledBy(0.5));
+            classifier.pmax = pmax;
+            classifier.pmin = pmin;
+            classifier.size = pmax.Minus(pmin).Magnitude();
+            classifier.tolerance = max(4*LENGTH_EPS, classifier.size * 1e-5);
+            if(!std::isfinite(classifier.size) || classifier.size <= LENGTH_EPS) {
+                return Fail("Cannot classify a degenerate closed shell.");
+            }
+            classifier.probes = body.vertices;
+            for(int f : body.faces) {
+                // Keep classification local: neither projection caches nor trim
+                // BSPs may be installed on the live model while exporting it.
+                SSurface surface = SSurface::FromTransformationOf(faces[f].surface,
+                    classifier.origin.Negated(), Quaternion::IDENTITY, 1,
+                    /*includingTrims=*/false);
+                SEdgeList uv = {};
+                Vector trimMax = body.vertices[0].Minus(classifier.origin), trimMin = trimMax;
+                for(const auto &loop : faces[f].loops) for(int t : loop) {
+                    for(int i = 0; i <= trims[t].curve.deg; ++i) {
+                        trims[t].curve.ctrl[i].Minus(classifier.origin).MakeMaxMin(&trimMax, &trimMin);
+                    }
+                    List<Vector> points = {};
+                    trims[t].curve.MakePwlInto(&points, classifier.tolerance, 1.0/16);
+                    Point2d previous = {};
+                    for(int i = 0; i < points.n; ++i) {
+                        Point2d point;
+                        surface.ClosestPointTo(points[i].Minus(classifier.origin), &point);
+                        if(i != 0) uv.AddEdge({previous.x, previous.y, 0}, {point.x, point.y, 0});
+                        previous = point;
+                    }
+                    points.Clear();
+                }
+                surface.bsp = SBspUv::From(&uv, &surface);
+                uv.Clear();
+                if(!surface.bsp) return Fail("Cannot classify an empty trimmed face.");
+                SSurface::Plane plane = surface.GetPlane();
+                if(!plane.isPlanar) surface.GetAxisAlignedBounding(&trimMax, &trimMin);
+                classifier.maxima.push_back(trimMax);
+                classifier.minima.push_back(trimMin);
+                classifier.planes.push_back(plane);
+                classifier.surfaces.push_back(surface);
+            }
+            if(!classifier.Orient()) return Fail("Cannot determine a closed shell's orientation.");
+            body.inward = classifier.orientation < 0;
+            hasVoids |= body.inward;
+        }
+        if(!hasVoids) return true;
+
+        using Location = ShellClassifier::Location;
+        size_t separationWork = 0;
+        std::map<std::pair<size_t, size_t>, bool> separation;
+        std::map<std::pair<size_t, size_t>, Location> containment;
+        auto contains = [&](size_t outer, size_t inner) {
+            auto key = std::make_pair(outer, inner);
+            auto found = containment.find(key);
+            if(found != containment.end()) return found->second;
+            Location result = classifiers[outer].Classify(classifiers[inner].probes[0]);
+            if(result == Location::Inside || result == Location::Outside) {
+                // One point classifies a connected boundary only after proving
+                // it cannot cross the other boundary. Even two crossing shells
+                // can each have their first vertex outside the other shell.
+                auto pair = std::make_pair(min(outer, inner), max(outer, inner));
+                auto proof = separation.find(pair);
+                if(proof == separation.end()) {
+                    proof = separation.emplace(pair,
+                        classifiers[outer].SeparatedFrom(classifiers[inner], &separationWork)).first;
+                }
+                if(!proof->second) result = Location::Ambiguous;
+            }
+            containment.emplace(key, result);
+            return result;
+        };
+        for(size_t b = 0; b < bodies.size(); ++b) {
+            if(!bodies[b].inward) continue;
+            int parent = -1;
+            std::vector<int> containers;
+            for(size_t candidate = 0; candidate < bodies.size(); ++candidate) {
+                if(candidate == b) continue;
+                Location location = contains(candidate, b);
+                if(location == Location::Outside) continue;
+                if(location != Location::Inside) {
+                    return Fail("Touching or intersecting shells have ambiguous cavity ownership.");
+                }
+                containers.push_back((int)candidate);
+                if(parent < 0) {
+                    parent = (int)candidate;
+                } else if(contains(parent, candidate) == Location::Inside) {
+                    parent = (int)candidate;
+                } else if(contains(candidate, parent) != Location::Inside) {
+                    return Fail("A cavity is contained in overlapping or coincident shells.");
+                }
+            }
+            if(parent < 0 || bodies[parent].inward) {
+                return Fail("An inward-oriented shell has no enclosing outer shell.");
+            }
+            for(int outer : containers) if(outer != parent && !bodies[outer].inward) {
+                bool separatedByVoid = false;
+                for(int between : containers) if(bodies[between].inward &&
+                    contains(outer, between) == Location::Inside &&
+                    contains(between, parent) == Location::Inside) separatedByVoid = true;
+                if(!separatedByVoid) {
+                    return Fail("A cavity is enclosed by more than one assembled solid.");
+                }
+            }
+            bodies[parent].voids.push_back((int)b);
+        }
+        return true;
+    }
+
 public:
     std::string error;
 
     bool MakeFrom(SShell *shell) {
         return MakeFaces(shell) && FindBodies(shell) && SplitTrims() &&
-               MakeEdges() && ValidateVertices();
+               MakeEdges() && ValidateVertices() && FindVoids();
     }
 
     void ExportTo(StepFileWriter *writer, double scale) {
@@ -543,7 +861,7 @@ public:
         int &id = writer->id;
         std::map<SSurface *, int> surfaceIds;
         std::vector<int> solids;
-        for(const Body &body : bodies) {
+        for(Body &body : bodies) {
             std::vector<int> points, vertices;
             for(Vector p : body.vertices) {
                 int point = writer->ExportPoint(p.ScaledBy(scale));
@@ -588,10 +906,12 @@ public:
                         fprintf(f, "%s#%d", i ? "," : "", oriented[i]);
                     }
                     fprintf(f, "));\n");
-                    // Native UV loops keep material on the right; both outer
-                    // and inner STEP bounds need the opposite boundary sense.
-                    fprintf(f, "#%d=%s('',#%d,.F.);\n", id,
-                            bounds.empty() ? "FACE_OUTER_BOUND" : "FACE_BOUND", edgeLoop);
+                    // Native UV loops keep material on the right. The usual
+                    // STEP bound is reversed; reversing a cavity's base face
+                    // also reverses its bounds, not its underlying surface.
+                    fprintf(f, "#%d=%s('',#%d,.%c.);\n", id,
+                            bounds.empty() ? "FACE_OUTER_BOUND" : "FACE_BOUND", edgeLoop,
+                            body.inward ? 'T' : 'F');
                     bounds.push_back(id++);
                 }
                 int advancedFace = id++;
@@ -599,18 +919,38 @@ public:
                 for(size_t i = 0; i < bounds.size(); ++i) {
                     fprintf(f, "%s#%d", i ? "," : "", bounds[i]);
                 }
-                fprintf(f, "),#%d,.T.);\n", surfaceIds.at(face.surface));
+                fprintf(f, "),#%d,.%c.);\n", surfaceIds.at(face.surface), body.inward ? 'F' : 'T');
                 writer->ExportFaceColor(advancedFace, face.surface->color);
                 advancedFaces.push_back(advancedFace);
             }
-            int shell = id++;
-            fprintf(f, "#%d=CLOSED_SHELL('',(", shell);
+            body.shellId = id++;
+            fprintf(f, "#%d=CLOSED_SHELL('',(", body.shellId);
             for(size_t i = 0; i < advancedFaces.size(); ++i) {
                 fprintf(f, "%s#%d", i ? "," : "", advancedFaces[i]);
             }
             fprintf(f, "));\n");
-            solids.push_back(id);
-            fprintf(f, "#%d=MANIFOLD_SOLID_BREP('brep',#%d);\n", id++, shell);
+            body.itemId = id++;
+            if(body.inward) {
+                // The underlying CLOSED_SHELL is outward from the void volume;
+                // AP214 requires the oriented void shell to reverse it (.F.).
+                fprintf(f, "#%d=ORIENTED_CLOSED_SHELL('',*,#%d,.F.);\n",
+                        body.itemId, body.shellId);
+            } else {
+                solids.push_back(body.itemId);
+                if(body.voids.empty()) {
+                    fprintf(f, "#%d=MANIFOLD_SOLID_BREP('brep',#%d);\n",
+                            body.itemId, body.shellId);
+                }
+            }
+        }
+        // Defer only void-bearing solid records, keeping all existing geometry
+        // IDs and ordinary solid exports unchanged. Forward references are legal.
+        for(const Body &body : bodies) if(!body.voids.empty()) {
+            fprintf(f, "#%d=BREP_WITH_VOIDS('brep',#%d,(", body.itemId, body.shellId);
+            for(size_t i = 0; i < body.voids.size(); ++i) {
+                fprintf(f, "%s#%d", i ? "," : "", bodies[body.voids[i]].itemId);
+            }
+            fprintf(f, "));\n");
         }
         int representation = id++;
         fprintf(f, "#%d=ADVANCED_BREP_SHAPE_REPRESENTATION('',(", representation);
