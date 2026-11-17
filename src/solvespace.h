@@ -661,8 +661,8 @@ public:
     static bool IsStepFile(const Platform::Path &filename);
     // Separate from linkedSketchFiles: STEP has no editable Sketch or parameters.
     struct LinkedStepFile {
-        enum class Status { Okay, Partial, Rejected, Missing };
-        Status          status = Status::Missing;
+        enum class STEPStatus { Okay, Partial, Rejected, Missing };
+        STEPStatus          status = STEPStatus::Missing;
         std::string     source; // exact bytes; only explicit reload checks the file
         EntityList      entities = {};
         SShell          shell = {};

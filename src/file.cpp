@@ -1392,7 +1392,7 @@ try_again:
                 }
             }
         } else if(IsStepFile(g.linkFile) && linkedStepFiles.count(g.linkFile) != 0 &&
-                  linkedStepFiles[g.linkFile].status != LinkedStepFile::Status::Missing) {
+                  linkedStepFiles[g.linkFile].status != LinkedStepFile::STEPStatus::Missing) {
             // Readable but invalid/unsupported STEP (or too many persistent
             // references) isn't a missing-file problem. Diagnostics are queued
             // until generation has made the sketch safe to repaint.

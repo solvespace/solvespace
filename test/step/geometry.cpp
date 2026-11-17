@@ -1823,7 +1823,7 @@ void LinkTests(const Step::BindingInfo &binding) {
         PlaceLink(hg);
         CheckLinkedNative(hg, 1, 1000);
         auto &cache = SS.linkedStepFiles[file.path];
-        REQUIRE(cache.status == SolveSpaceUI::LinkedStepFile::Status::Partial);
+        REQUIRE(cache.status == SolveSpaceUI::LinkedStepFile::STEPStatus::Partial);
         REQUIRE(cache.solids == 1 && cache.omitted == 1);
         REQUIRE(cache.diagnostics.find("12701") != std::string::npos);
         REQUIRE(!cache.pendingDiagnostic);
@@ -1834,7 +1834,7 @@ void LinkTests(const Step::BindingInfo &binding) {
         LinkApp app;
         LinkTestFile file;
         int groups = SK.group.n, undo = SS.undo.cnt;
-        const auto rejected = SolveSpaceUI::LinkedStepFile::Status::Rejected;
+        const auto rejected = SolveSpaceUI::LinkedStepFile::STEPStatus::Rejected;
         for(const auto &text : {Exchange(schema, ""), Exchange("UNKNOWN_SCHEMA", Cube()),
              Exchange(schema, "#1=NOT_AN_ENTITY();"), Exchange(schema,
                  ReplaceRecord(Cube(), 2503, "CYLINDRICAL_SURFACE('',#2403,10.)"))}) {
@@ -1850,7 +1850,7 @@ void LinkTests(const Step::BindingInfo &binding) {
         Platform::RemoveFile(file.path);
         Group::MenuGroup(Command::GROUP_LINK, file.path);
         REQUIRE(SK.group.n == groups && SS.undo.cnt == undo);
-        REQUIRE(SS.linkedStepFiles[file.path].status == SolveSpaceUI::LinkedStepFile::Status::Missing);
+        REQUIRE(SS.linkedStepFiles[file.path].status == SolveSpaceUI::LinkedStepFile::STEPStatus::Missing);
     });
     Run(name + "cache_reload_provenance_and_no_reference_recycling", [&]() {
         LinkApp app;
@@ -1937,7 +1937,7 @@ void LinkTests(const Step::BindingInfo &binding) {
         REQUIRE(SS.ReloadAllLinked(SS.saveFile));
         REQUIRE(SK.GetGroup(hg)->linkFile.Equals(file.path));
         REQUIRE(SK.GetGroup(hg)->impShell.IsEmpty() && SK.GetGroup(hg)->impEntity.IsEmpty());
-        REQUIRE(SS.linkedStepFiles[file.path].status == SolveSpaceUI::LinkedStepFile::Status::Rejected);
+        REQUIRE(SS.linkedStepFiles[file.path].status == SolveSpaceUI::LinkedStepFile::STEPStatus::Rejected);
         REQUIRE(SS.linkedStepFiles[file.path].pendingDiagnostic);
         SS.GenerateAll(SolveSpaceUI::Generate::ALL);
         REQUIRE(SK.group.FindByIdNoOops(hg) && !SK.entity.FindByIdNoOops(point));
