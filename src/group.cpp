@@ -319,7 +319,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             if(SS.IsStepFile(g.linkFile) &&
                !SS.LoadLinkedGroup(&g, LinkValues(), /*checkFiles=*/true)) {
                 if(SS.ReadLinkedStep(g.linkFile, /*checkFiles=*/false)->status ==
-                   SolveSpaceUI::LinkedStepFile::Status::Missing) {
+                   SolveSpaceUI::LinkedStepFile::STEPStatus::Missing) {
                     Error("Couldn't read from STEP file '%s'", g.linkFile.raw.c_str());
                 } else {
                     SS.ReportStepLinkDiagnostics();

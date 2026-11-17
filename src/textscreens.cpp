@@ -637,8 +637,8 @@ void TextWindow::ShowGroupInfo() {
             Printf(true, " %FtSTEP source is read-only%E");
             if(file != SS.linkedStepFiles.end()) {
                 auto &step = file->second;
-                if(step.status == SolveSpaceUI::LinkedStepFile::Status::Okay ||
-                   step.status == SolveSpaceUI::LinkedStepFile::Status::Partial) {
+                if(step.status == SolveSpaceUI::LinkedStepFile::STEPStatus::Okay ||
+                   step.status == SolveSpaceUI::LinkedStepFile::STEPStatus::Partial) {
                     Printf(false, "%Ba   %d solid(s), %d whole solid(s) omitted",
                            (int)step.solids, (int)step.omitted);
                 } else {

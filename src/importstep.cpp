@@ -185,16 +185,16 @@ SolveSpaceUI::LinkedStepFile *SolveSpaceUI::ReadLinkedStep(const Platform::Path 
     std::string source;
     bool readable = ReadFile(filename, &source);
     if(found != linkedStepFiles.end() &&
-       ((readable && found->second.status != LinkedStepFile::Status::Missing &&
+       ((readable && found->second.status != LinkedStepFile::STEPStatus::Missing &&
                      source == found->second.source) ||
-        (!readable && found->second.status == LinkedStepFile::Status::Missing))) {
+        (!readable && found->second.status == LinkedStepFile::STEPStatus::Missing))) {
         return &found->second;
     }
     DropLinkedStep(filename);
     auto &file = linkedStepFiles[filename];
     if(!readable) return &file;
     file.source = std::move(source);
-    file.status = LinkedStepFile::Status::Rejected;
+    file.status = LinkedStepFile::STEPStatus::Rejected;
     try {
 #ifdef HAVE_STEP_IMPORT
         std::istringstream input(file.source);
@@ -217,7 +217,7 @@ SolveSpaceUI::LinkedStepFile *SolveSpaceUI::ReadLinkedStep(const Platform::Path 
         MakeLinkedGeometry(geometry, &file);
         file.solids = geometry.solids.size();
         file.status = geometry.status == Step::GeometryResult::Status::Partial ?
-                      LinkedStepFile::Status::Partial : LinkedStepFile::Status::Okay;
+                      LinkedStepFile::STEPStatus::Partial : LinkedStepFile::STEPStatus::Okay;
 #else
         file.diagnostics = "This build has no STEP linking support. "
                            "Configure with ENABLE_STEP_IMPORT=ON to enable it.";
@@ -226,7 +226,7 @@ SolveSpaceUI::LinkedStepFile *SolveSpaceUI::ReadLinkedStep(const Platform::Path 
         file.entities.Clear();
         file.shell.Clear();
         file.references.clear();
-        file.status = LinkedStepFile::Status::Rejected;
+        file.status = LinkedStepFile::STEPStatus::Rejected;
         file.diagnostics += std::string("STEP linking failed: ") + error.what();
     }
     return &file;
@@ -238,12 +238,12 @@ bool SolveSpaceUI::LoadLinkedStep(const Platform::Path &filename, EntityList *le
     m->Clear();
     sh->Clear();
     auto file = ReadLinkedStep(filename, checkFiles);
-    if(checkFiles && (file->status == LinkedStepFile::Status::Partial ||
-                      file->status == LinkedStepFile::Status::Rejected)) {
+    if(checkFiles && (file->status == LinkedStepFile::STEPStatus::Partial ||
+                      file->status == LinkedStepFile::STEPStatus::Rejected)) {
         file->pendingDiagnostic = true;
     }
-    if(file->status != LinkedStepFile::Status::Okay &&
-       file->status != LinkedStepFile::Status::Partial) return false;
+    if(file->status != LinkedStepFile::STEPStatus::Okay &&
+       file->status != LinkedStepFile::STEPStatus::Partial) return false;
 
     StepEntityMap persistent = group ? group->stepRefs : file->references;
     uint32_t next = 0;
@@ -316,14 +316,14 @@ void SolveSpaceUI::ReportStepLinkDiagnostics() {
         if(!file.pendingDiagnostic) continue;
         file.pendingDiagnostic = false;
         std::string text;
-        if(file.status == LinkedStepFile::Status::Partial) {
+        if(file.status == LinkedStepFile::STEPStatus::Partial) {
             text = ssprintf("STEP file linked with omissions: %zu complete solid(s) linked, "
                             "%zu whole solid(s) omitted.\n\nFile: %s\n\n%s",
                             file.solids, file.omitted, entry.first.raw.c_str(),
                             file.diagnostics.c_str());
             dbp("%s", text.c_str());
             Message("%s", text.c_str());
-        } else if(file.status == LinkedStepFile::Status::Rejected) {
+        } else if(file.status == LinkedStepFile::STEPStatus::Rejected) {
             text = ssprintf("Cannot link STEP file; no geometry was accepted.\n\nFile: %s\n\n%s",
                             entry.first.raw.c_str(), file.diagnostics.c_str());
             dbp("%s", text.c_str());
