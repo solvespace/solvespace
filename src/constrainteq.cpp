@@ -78,6 +78,7 @@ bool ConstraintBase::IsProjectible() const {
         case Type::CUBIC_LINE_TANGENT:
         case Type::CURVE_CURVE_TANGENT:
         case Type::ARC_LINE_TANGENT:
+        case Type::CIRCLE_LINE_TANGENT:
         case Type::EQUAL_RADIUS:
             return false;
     }
@@ -1018,6 +1019,33 @@ void ConstraintBase::GenerateEquations(Sketch *sketch, IdList<Equation,hEquation
 
             // The line is perpendicular to the radius
             AddEq(l, ld.Dot(ac.Minus(ap)), 0);
+            return;
+        }
+
+        case Type::CIRCLE_LINE_TANGENT: {
+            // In a plane a line is tangent to a circle when its distance from the
+            // center equals the radius.
+            // 
+            // In 3d (when the two are not in a plane) constraining the center-line distance equal
+            // to the radius is not tangency. The ARC_LINE_TANGENT suffers from a similar problem.
+            // Do we care?
+            //
+            // Both sides are SQUARED because In a workplane PointLineDistance()
+            // returns a signed projection (proj/m, no magnitude taken), so
+            // writing d - r = 0 would let the solver satisfy it by driving the
+            // radius negative to match the sign of d e.g. it can settle
+            // at r = -1.5 with the center 1.5 from the line. Squaring makes
+            // the equation indifferent to which side the circle sits on,
+            // which is what tangency actually means, and stops the radius
+            // being pushed through zero to get there.
+            //
+            // Note the 3D branch of PointLineDistance() DOES take a
+            // magnitude, so the sign only bites in a workplane -- which is
+            // where sketches live.
+            EntityBase *circle = sketch->GetEntity(entityA);
+            Expr *d = PointLineDistance(sketch, workplane, circle->point[0], entityB);
+            Expr *r = circle->CircleGetRadiusExpr();
+            AddEq(l, (d->Square())->Minus(r->Square()), 0);
             return;
         }
 

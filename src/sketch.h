@@ -755,6 +755,7 @@ public:
         ARC_LINE_TANGENT       = 123,
         CUBIC_LINE_TANGENT     = 124,
         CURVE_CURVE_TANGENT    = 125,
+        CIRCLE_LINE_TANGENT    = 126,
         EQUAL_RADIUS           = 130,
         WHERE_DRAGGED          = 200,
         ARC_ARC_LEN_RATIO      = 210,

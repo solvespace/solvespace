@@ -42,6 +42,7 @@ std::string Constraint::DescriptionString() const {
         case Type::ANGLE:               s = C_("constr-name", "angle"); break;
         case Type::PARALLEL:            s = C_("constr-name", "parallel"); break;
         case Type::ARC_LINE_TANGENT:    s = C_("constr-name", "arc-line-tangent"); break;
+        case Type::CIRCLE_LINE_TANGENT: s = C_("constr-name", "circle-line-tangent"); break;
         case Type::CUBIC_LINE_TANGENT:  s = C_("constr-name", "cubic-line-tangent"); break;
         case Type::CURVE_CURVE_TANGENT: s = C_("constr-name", "curve-curve-tangent"); break;
         case Type::PERPENDICULAR:       s = C_("constr-name", "perpendicular"); break;
@@ -876,6 +877,18 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityA = arc->h;
                 c.entityB = line->h;
                 newcons.push_back(c);
+            } else if(gs.lineSegments == 1 && gs.circlesOrArcs == 1 &&
+                      gs.arcs == 0 && gs.n == 2) {
+                // Circle-line tangent. The branch above handles arcs - the two cannot both match.
+                Entity *line   = SK.GetEntity(gs.entity[0]),
+                       *circle = SK.GetEntity(gs.entity[1]);
+                if(line->type == Entity::Type::CIRCLE) {
+                    swap(line, circle);
+                }
+                c.type = Type::CIRCLE_LINE_TANGENT;
+                c.entityA = circle->h;
+                c.entityB = line->h;
+                newcons.push_back(c);
             } else if(gs.lineSegments == 1 && gs.cubics == 1 &&
                       (gs.n == 2 || (gs.points == 1 && gs.n == 3))) {
                 Entity *line  = SK.GetEntity(gs.entity[0]),
@@ -914,6 +927,7 @@ void Constraint::MenuConstrain(Command id) {
                         "    * two or more line segments (parallel)\n"
                         "    * one or more line segments and one or more normals (parallel)\n"
                         "    * two or more normals (parallel)\n"
+                        "    * a line and a circle (tangent)\n"
                         "    * two line segments, arcs, or beziers, that share "
                               "an endpoint (tangent)\n"
                         "    * two line segments, arcs, or beziers, that do not share "

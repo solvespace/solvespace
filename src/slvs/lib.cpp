@@ -66,6 +66,7 @@ case SLVS_C_ANGLE:               return ConstraintBase::Type::ANGLE;
 case SLVS_C_PARALLEL:            return ConstraintBase::Type::PARALLEL;
 case SLVS_C_PERPENDICULAR:       return ConstraintBase::Type::PERPENDICULAR;
 case SLVS_C_ARC_LINE_TANGENT:    return ConstraintBase::Type::ARC_LINE_TANGENT;
+case SLVS_C_CIRCLE_LINE_TANGENT: return ConstraintBase::Type::CIRCLE_LINE_TANGENT;
 case SLVS_C_CUBIC_LINE_TANGENT:  return ConstraintBase::Type::CUBIC_LINE_TANGENT;
 case SLVS_C_EQUAL_RADIUS:        return ConstraintBase::Type::EQUAL_RADIUS;
 case SLVS_C_PROJ_PT_DISTANCE:    return ConstraintBase::Type::PROJ_PT_DISTANCE;
@@ -124,6 +125,7 @@ static bool Slvs_CanInitiallySatisfy(const ConstraintBase &c) {
     case ConstraintBase::Type::ANGLE:
     case ConstraintBase::Type::EQUAL_ANGLE:
     case ConstraintBase::Type::ARC_LINE_TANGENT:
+    case ConstraintBase::Type::CIRCLE_LINE_TANGENT:
     case ConstraintBase::Type::CURVE_CURVE_TANGENT:
         return true;
 
@@ -717,7 +719,10 @@ Slvs_Constraint Slvs_Parallel(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity 
 }
 
 Slvs_Constraint Slvs_Tangent(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
-    if(Slvs_IsArc(entityA) && Slvs_IsLine2D(entityB)) {
+    if(Slvs_IsCircle(entityA) && Slvs_IsLine2D(entityB)) {
+        return Slvs_AddConstraint(grouph, SLVS_C_CIRCLE_LINE_TANGENT, workplane, 0., SLVS_E_NONE,
+                                  SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE);
+    } else if(Slvs_IsArc(entityA) && Slvs_IsLine2D(entityB)) {
         if(Slvs_IsFreeIn3D(workplane)) {
             Platform::FatalError("3d workplane given for a 2d constraint");
         }

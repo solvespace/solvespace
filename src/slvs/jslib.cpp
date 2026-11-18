@@ -56,6 +56,7 @@ EMSCRIPTEN_BINDINGS(slvs) {
   emscripten::constant("C_PARALLEL",            SLVS_C_PARALLEL);
   emscripten::constant("C_PERPENDICULAR",       SLVS_C_PERPENDICULAR);
   emscripten::constant("C_ARC_LINE_TANGENT",    SLVS_C_ARC_LINE_TANGENT);
+  emscripten::constant("C_CIRCLE_LINE_TANGENT", SLVS_C_CIRCLE_LINE_TANGENT);
   emscripten::constant("C_CUBIC_LINE_TANGENT",  SLVS_C_CUBIC_LINE_TANGENT);
   emscripten::constant("C_EQUAL_RADIUS",        SLVS_C_EQUAL_RADIUS);
   emscripten::constant("C_PROJ_PT_DISTANCE",    SLVS_C_PROJ_PT_DISTANCE);
