@@ -364,6 +364,14 @@ void Constraint::MenuConstrain(Command id) {
                     c.ptB = gs.point[k];
                     newcons.push_back(c);
                 }
+            } else if(gs.circlesOrArcs >= 2 && gs.circlesOrArcs == gs.n) {
+                // Constrain centers of circles and arcs coincident
+                c.type = Type::POINTS_COINCIDENT;
+                c.ptA  = SK.GetEntity(gs.entity[0])->point[0];
+                for(int k = 1; k < gs.circlesOrArcs; k++) {
+                    c.ptB = SK.GetEntity(gs.entity[k])->point[0];
+                    newcons.push_back(c);
+                }
             } else if(gs.points == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = Type::PT_IN_PLANE;
                 c.ptA = gs.point[0];
@@ -390,6 +398,7 @@ void Constraint::MenuConstrain(Command id) {
                 Error(_("Bad selection for on point / curve / plane constraint. "
                         "This constraint can apply to:\n\n"
                         "    * two or more points (points coincident)\n"
+                        "    * two or more circles and/or arcs (centers coincident)\n"
                         "    * a point and a workplane (point in plane)\n"
                         "    * a point and a line segment (point on line)\n"
                         "    * a point and a circle or arc (point on curve)\n"
