@@ -416,6 +416,10 @@ SLVS_C_ARC_LINE_TANGENT**
     then the arc is tangent at its beginning (point[1]). If other is true,
     then the arc is tangent at its end (point[2]).
 
+SLVS_C_CIRCLE_LINE_TANGENT
+
+    The circle entityA is tangent to the line entityB. Does not work in 3d
+
 SLVS_C_CUBIC_LINE_TANGENT*
 
     The cubic entityA is tangent to the line entityB. The variable

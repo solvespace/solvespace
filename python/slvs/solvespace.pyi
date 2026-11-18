@@ -43,6 +43,7 @@ class ConstraintType(IntEnum):
     ARC_LINE_LEN_RATIO = 100035
     ARC_ARC_DIFFERENCE = 100036
     ARC_LINE_DIFFERENCE = 100037
+    CIRCLE_LINE_TANGENT = 100038
 
 class EntityType(IntEnum):
     POINT_IN_3D = 50000
