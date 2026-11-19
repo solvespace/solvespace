@@ -719,7 +719,7 @@ Slvs_Constraint Slvs_Parallel(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity 
 }
 
 Slvs_Constraint Slvs_Tangent(uint32_t grouph, Slvs_Entity entityA, Slvs_Entity entityB, Slvs_Entity workplane = SLVS_E_FREE_IN_3D) {
-    if(Slvs_IsCircle(entityA) && Slvs_IsLine2D(entityB)) {
+    if(entityA.type == SLVS_E_CIRCLE && Slvs_IsLine2D(entityB)) { // Slvs_IsCircle includes arcs
         return Slvs_AddConstraint(grouph, SLVS_C_CIRCLE_LINE_TANGENT, workplane, 0., SLVS_E_NONE,
                                   SLVS_E_NONE, entityA, entityB, SLVS_E_NONE, SLVS_E_NONE);
     } else if(Slvs_IsArc(entityA) && Slvs_IsLine2D(entityB)) {
