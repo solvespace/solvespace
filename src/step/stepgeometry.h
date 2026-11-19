@@ -92,8 +92,9 @@ struct GeometryOptions {
     int maxSegments = 128;
 };
 
-// Direct, explicitly unit-qualified 3D B-reps. Curves and tensor-product
-// surfaces are converted to exact rational Bezier spans of native degree <= 3;
+// Direct, explicitly unit-qualified 3D B-reps. Lines, circles/circular arcs,
+// B-spline curves and tensor-product B-spline surfaces are converted to exact
+// rational Bezier spans of native degree <= 3;
 // source boundaries are retained, not fitted or replaced by polygons. Native
 // trim PWLs and validation tessellation are not geometry-conversion fallbacks.
 // Plain shape representation relationships may connect axis-only intermediates
