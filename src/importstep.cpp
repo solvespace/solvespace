@@ -16,6 +16,14 @@ namespace SolveSpace {
 namespace {
 
 const uint32_t MAX_STEP_REFERENCES = (1u << 16) - 1;
+// Fixed input handles for the link's own frame, outside the persistent STEP
+// source-token namespace. Group::Remap still produces ordinary 16-bit IDs.
+const uint32_t STEP_FRAME_FIRST = MAX_STEP_REFERENCES + 1;
+const uint32_t STEP_FRAME_COUNT = 4;
+
+bool IsStepFrameReference(hEntity entity) {
+    return entity.v >= STEP_FRAME_FIRST && entity.v < STEP_FRAME_FIRST + STEP_FRAME_COUNT;
+}
 
 #ifdef HAVE_STEP_IMPORT
 StepEntityKey Key(Step::NativeSolid &solid, int kind, int entity) {
@@ -70,7 +78,7 @@ void MakeLinkedGeometry(Step::GeometryResult &geometry, SolveSpaceUI::LinkedStep
             file->references.emplace(Key(*solid, StepEntityKey::FACE, f.face), hEntity{});
         }
     }
-    if(file->references.size() > MAX_STEP_REFERENCES) {
+    if(file->references.size() + STEP_FRAME_COUNT > MAX_STEP_REFERENCES) {
         throw std::runtime_error("Too many STEP references for one linked group (maximum 65535). "
                                  "No geometry was linked.");
     }
@@ -157,6 +165,31 @@ void MakeLinkedGeometry(Step::GeometryResult &geometry, SolveSpaceUI::LinkedStep
             for(auto &trim : copy.trim) trim.curve = curveIds.at(trim.curve);
             file->shell.surface.Add(&copy);
         }
+    }
+
+    // Like linked sketches and STL files, expose the source origin and its
+    // three coordinate normals. Append them so existing geometry remaps are
+    // unchanged; these are link references, not fabricated STEP source items.
+    Entity origin = {};
+    origin.h.v = STEP_FRAME_FIRST;
+    origin.type = Entity::Type::POINT_N_COPY;
+    origin.construction = true;
+    origin.actVisible = true;
+    file->entities.Add(&origin);
+    const Quaternion normals[] = {
+        Quaternion::From({1, 0, 0}, {0, 1, 0}),
+        Quaternion::From({0, 1, 0}, {0, 0, 1}),
+        Quaternion::From({0, 0, 1}, {1, 0, 0})
+    };
+    uint32_t handle = STEP_FRAME_FIRST;
+    for(const Quaternion &q : normals) {
+        Entity normal = {};
+        normal.h.v = ++handle;
+        normal.type = Entity::Type::NORMAL_N_COPY;
+        normal.point[0] = origin.h;
+        normal.numNormal = normal.actNormal = q;
+        normal.actVisible = true;
+        file->entities.Add(&normal);
     }
 }
 #endif
@@ -252,7 +285,9 @@ bool SolveSpaceUI::LoadLinkedStep(const Platform::Path &filename, EntityList *le
         // Even a missing provenance row in a damaged/older container must not
         // let us reuse a source token that already has a persisted group remap.
         for(const auto &entry : group->remap) {
-            if(entry.first.copyNumber == 0) next = std::max(next, entry.first.input.v);
+            if(entry.first.copyNumber == 0 && !IsStepFrameReference(entry.first.input)) {
+                next = std::max(next, entry.first.input.v);
+            }
         }
     }
     std::map<uint32_t, uint32_t> tokens;
@@ -262,6 +297,11 @@ bool SolveSpaceUI::LoadLinkedStep(const Platform::Path &filename, EntityList *le
         if(inserted.second) inserted.first->second.v = ++next;
         hEntity token = inserted.first->second;
         tokens.emplace(entry.second.v, token.v);
+        if(group && group->remap.count({token, 0}) == 0) ++newRemaps;
+    }
+    for(uint32_t i = 0; i < STEP_FRAME_COUNT; ++i) {
+        hEntity token = {STEP_FRAME_FIRST + i};
+        tokens.emplace(token.v, token.v);
         if(group && group->remap.count({token, 0}) == 0) ++newRemaps;
     }
     // Old identities deliberately count too. Never recycle a deleted reference
@@ -282,7 +322,7 @@ bool SolveSpaceUI::LoadLinkedStep(const Platform::Path &filename, EntityList *le
         if(e.type == Entity::Type::LINE_SEGMENT) {
             copy.point[0].v = tokens.at(e.point[0].v);
             copy.point[1].v = tokens.at(e.point[1].v);
-        } else if(e.IsFace()) {
+        } else if(e.IsFace() || e.IsNormal()) {
             copy.point[0].v = tokens.at(e.point[0].v);
         }
         le->Add(&copy);
