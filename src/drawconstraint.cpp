@@ -958,21 +958,26 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
                 Entity *circle = SK.GetEntity(entityA);
                 Entity *line   = SK.GetEntity(entityB);
                 Entity *norm   = SK.GetEntity(circle->normal);
-                Vector c  = SK.GetEntity(circle->point[0])->PointGetDrawNum();
-                Vector la = SK.GetEntity(line->point[0])->PointGetDrawNum();
-                Vector lb = SK.GetEntity(line->point[1])->PointGetDrawNum();
-                Vector d  = lb.Minus(la);
-                Vector off = c.Minus(la);
+
+                // Compute the label anchor in model coordinates. Independent
+                // explosion offsets must not change the contact direction.
+                Vector c    = SK.GetEntity(circle->point[0])->PointGetNum();
+                Vector la   = SK.GetEntity(line->point[0])->PointGetNum();
+                Vector lb   = SK.GetEntity(line->point[1])->PointGetNum();
+                Vector d    = lb.Minus(la);
+                Vector off  = c.Minus(la);
                 double len2 = d.Dot(d);
-                Vector foot = (len2 > LENGTH_EPS*LENGTH_EPS)
-                                  ? la.Plus(d.ScaledBy(off.Dot(d)/len2))
-                                  : la;
+                Vector foot =
+                    (len2 > LENGTH_EPS * LENGTH_EPS) ? la.Plus(d.ScaledBy(off.Dot(d) / len2)) : la;
                 Vector out = foot.Minus(c);
                 if(out.Magnitude() < LENGTH_EPS) out = norm->NormalU();
+
                 Vector p = c.Plus(out.WithMagnitude(circle->CircleGetRadiusNum()));
-                textAt = p.Plus(out.WithMagnitude(14/camera.scale));
-                u = norm->NormalU();
-                v = norm->NormalV();
+
+                // Move the completed label with the circle.
+                textAt = p.Plus(out.WithMagnitude(14 / camera.scale)).Plus(circle->ExplodeOffset());
+                u      = norm->NormalU();
+                v      = norm->NormalV();
             } else if(type == Type::ARC_LINE_TANGENT) {
                 Entity *arc = SK.GetEntity(entityA);
                 Entity *norm = SK.GetEntity(arc->normal);
