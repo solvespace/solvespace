@@ -93,10 +93,11 @@ struct GeometryOptions {
 };
 
 // Direct, explicitly unit-qualified 3D B-reps. Lines, circles/circular arcs,
-// B-spline curves and tensor-product B-spline surfaces are converted to exact
-// rational Bezier spans of native degree <= 3;
-// source boundaries are retained, not fitted or replaced by polygons. Native
-// trim PWLs and validation tessellation are not geometry-conversion fallbacks.
+// B-spline curves, planes, regular ring tori and tensor-product B-spline
+// surfaces are converted to exact rational Bezier spans of native degree <= 3.
+// Toroidal circle bands gain paired periodic seams. Source boundaries are
+// retained, not fitted or replaced by polygons. Native trim PWLs and validation
+// tessellation are not geometry-conversion fallbacks.
 // Plain shape representation relationships may connect axis-only intermediates
 // to one geometry representation within a shared context; no transforms are inferred.
 // Unsupported geometry/trimming omits the entire solid, with an entity-specific
