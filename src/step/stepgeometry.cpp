@@ -287,6 +287,7 @@ private:
     }
 };
 
+struct Placement { Vector origin, x, y, z; };
 struct Vertex { int id, point; Vector position; };
 struct Piece {
     SBezier bezier;
@@ -454,9 +455,31 @@ private:
         return vertices.emplace(id, Vertex{id, point, Point(point)}).first->second;
     }
 
+    Placement ReadPlacement(int geometry) {
+        int placement = Ref(geometry, "position");
+        Require(document.IsA(placement, "AXIS2_PLACEMENT_3D"), Code::InvalidGeometry, placement,
+                "Analytic geometry needs AXIS2_PLACEMENT_3D.");
+        Placement result;
+        result.origin = Point(Ref(placement, "location"));
+        auto axis = Get(placement, "axis"), ref = Get(placement, "ref_direction");
+        Require((axis.kind == Kind::Null || axis.kind == Kind::Reference) &&
+                (ref.kind == Kind::Null || ref.kind == Kind::Reference),
+                Code::InvalidGeometry, placement, "Invalid optional placement axes.");
+        result.z = axis.kind == Kind::Null ? Vector{0, 0, 1} : Direction(axis.reference);
+        bool alongX = result.z.Equals({1, 0, 0}, 1e-12) || result.z.Equals({-1, 0, 0}, 1e-12);
+        result.x = ref.kind == Kind::Reference ? Direction(ref.reference) :
+                   (alongX ? Vector{0, 1, 0} : Vector{1, 0, 0});
+        result.x = result.x.Minus(result.z.ScaledBy(result.x.Dot(result.z)));
+        Require(result.x.Magnitude() > 1e-12, Code::InvalidGeometry, placement,
+                "Placement axis and reference direction are parallel.");
+        result.x = result.x.WithMagnitude(1);
+        result.y = result.z.Cross(result.x);
+        return result;
+    }
+
     std::vector<Nurbs::CurveSpan> ReadSplineCurve(int geometry) {
         Require(document.IsA(geometry, "B_SPLINE_CURVE"), Code::Unsupported, geometry,
-                "Curve has no implemented exact native conversion (expected LINE or a rational/non-rational B-spline).");
+                "Curve has no implemented exact native conversion (expected LINE, CIRCLE or a rational/non-rational B-spline).");
         auto ids = Refs(geometry, "control_points_list");
         auto knots = Knots(geometry, "degree", ids.size(), "knot_multiplicities", "knots");
         std::vector<Vector> controls;
@@ -527,6 +550,60 @@ private:
         return pieces;
     }
 
+    std::vector<Piece> ReadCircleCurve(const Edge &edge, Vector start, Vector finish, bool sameSense) {
+        Placement placement = ReadPlacement(edge.geometry);
+        double radius = Number(Get(edge.geometry, "radius"), edge.geometry);
+        Require(radius > 0, Code::InvalidGeometry, edge.geometry, "CIRCLE radius must be positive.");
+        radius *= scale;
+        Require(std::isfinite(radius) && radius > LENGTH_EPS && radius <= MAX_COORDINATE_MM,
+                Code::Unsupported, edge.geometry, "CIRCLE radius is outside the native numerical envelope.");
+        auto radial = [&](double angle) {
+            return placement.x.ScaledBy(std::cos(angle)).Plus(placement.y.ScaledBy(std::sin(angle)));
+        };
+        auto parameter = [&](Vector point) {
+            Vector delta = point.Minus(placement.origin);
+            double angle = std::atan2(delta.Dot(placement.y), delta.Dot(placement.x));
+            Require(placement.origin.Plus(radial(angle).ScaledBy(radius)).Equals(point),
+                    Code::InvalidGeometry, edge.id, "Edge vertices do not lie on their CIRCLE geometry.");
+            return angle;
+        };
+        double first = parameter(sameSense ? start : finish);
+        double last = parameter(sameSense ? finish : start);
+        Vector a = placement.origin.Plus(radial(first).ScaledBy(radius));
+        Vector b = placement.origin.Plus(radial(last).ScaledBy(radius));
+        bool closed = edge.start == edge.finish;
+        Require(closed || !a.Equals(b), Code::InvalidGeometry, edge.id,
+                "Distinct CIRCLE edge endpoints coincide within native tolerance.");
+        double sweep = closed ? 2 * PI : last - first;
+        if(sweep <= 0) sweep += 2 * PI;
+        // The source vertex selects a full circle's seam. same_sense selects
+        // the minor/major arc and traversal, including across the angular seam.
+        // Each <=90-degree span is an exact, positive-weight rational quadratic.
+        int count = (int)std::ceil(sweep / (PI / 2));
+        double step = sweep / count, weight = std::cos(step / 2);
+        std::vector<Piece> pieces;
+        for(int i = 0; i < count; ++i) {
+            Vector p0 = i == 0 ? a : pieces.back().bezier.Finish();
+            Vector p1 = placement.origin.Plus(radial(first + step * (i + 0.5)).ScaledBy(radius / weight));
+            Vector p2 = i + 1 == count ? (closed ? a : b) :
+                        placement.origin.Plus(radial(first + step * (i + 1)).ScaledBy(radius));
+            SBezier bezier = SBezier::From(p0, p1, p2);
+            bezier.weight[1] = weight;
+            for(int k = 0; k <= bezier.deg; ++k) {
+                Vector point = bezier.ctrl[k];
+                Require(Finite(point) && std::abs(point.x) <= MAX_COORDINATE_MM &&
+                        std::abs(point.y) <= MAX_COORDINATE_MM && std::abs(point.z) <= MAX_COORDINATE_MM,
+                        Code::Unsupported, edge.geometry, "CIRCLE controls exceed the native coordinate envelope.");
+            }
+            pieces.push_back({bezier, {}});
+        }
+        if(!sameSense) {
+            std::reverse(pieces.begin(), pieces.end());
+            for(auto &piece : pieces) piece.bezier.Reverse();
+        }
+        return pieces;
+    }
+
     Edge &ReadEdge(int id) {
         auto found = edges.find(id);
         if(found != edges.end()) return found->second;
@@ -538,6 +615,7 @@ private:
         Vector a = ReadVertex(edge.start).position, b = ReadVertex(edge.finish).position;
         edge.geometry = Ref(id, "edge_geometry");
         bool sameSense = Boolean(id, "same_sense");
+        bool circle = document.IsA(edge.geometry, "CIRCLE");
         if(document.IsA(edge.geometry, "LINE")) {
             Vector origin = Point(Ref(edge.geometry, "pnt"));
             int vector = Ref(edge.geometry, "dir");
@@ -552,6 +630,8 @@ private:
             Require(b.Minus(a).Dot(direction) * (sameSense ? 1 : -1) > LENGTH_EPS,
                     Code::InvalidGeometry, id, "EDGE_CURVE same_sense disagrees with its LINE geometry.");
             edge.pieces.push_back({SBezier::From(a, b), {}});
+        } else if(circle) {
+            edge.pieces = ReadCircleCurve(edge, a, b, sameSense);
         } else {
             edge.pieces = TrimCurve(id, ReadSplineCurve(edge.geometry), a, b, sameSense);
         }
@@ -565,7 +645,7 @@ private:
             Require(extent > LENGTH_EPS, Code::InvalidGeometry, edge.geometry,
                     "Degenerate Bezier span in a source edge.");
         }
-        edge.linear = !a.Equals(b);
+        edge.linear = !circle && !a.Equals(b);
         if(edge.linear) {
             double eps = Roundoff(controls);
             for(const auto &piece : edge.pieces) {
@@ -576,22 +656,10 @@ private:
     }
 
     void ReadPlane(Face *face) {
-        int placement = Ref(face->geometry, "position");
-        Require(document.IsA(placement, "AXIS2_PLACEMENT_3D"), Code::InvalidGeometry, placement,
-                "PLANE needs AXIS2_PLACEMENT_3D.");
-        face->origin = Point(Ref(placement, "location"));
-        auto axis = Get(placement, "axis"), ref = Get(placement, "ref_direction");
-        Require((axis.kind == Kind::Null || axis.kind == Kind::Reference) &&
-                (ref.kind == Kind::Null || ref.kind == Kind::Reference),
-                Code::InvalidGeometry, placement, "Invalid optional plane axes.");
-        Vector z = axis.kind == Kind::Null ? Vector{0, 0, 1} : Direction(axis.reference);
-        Vector x = ref.kind == Kind::Reference ? Direction(ref.reference) :
-                   (z.Equals({1, 0, 0}, 1e-12) ? Vector{0, 1, 0} : Vector{1, 0, 0});
-        x = x.Minus(z.ScaledBy(x.Dot(z)));
-        Require(x.Magnitude() > 1e-12, Code::InvalidGeometry, placement,
-                "Plane axis and reference direction are parallel.");
-        x = x.WithMagnitude(1);
-        face->normal = Boolean(face->id, "same_sense") ? z : z.Negated();
+        Placement placement = ReadPlacement(face->geometry);
+        face->origin = placement.origin;
+        Vector x = placement.x;
+        face->normal = Boolean(face->id, "same_sense") ? placement.z : placement.z.Negated();
         Vector y = face->normal.Cross(x);
         double xmin = VERY_POSITIVE, xmax = VERY_NEGATIVE, ymin = xmin, ymax = xmax;
         for(const auto &loop : face->loops) for(const auto &use : loop.edges) {
