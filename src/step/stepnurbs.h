@@ -71,6 +71,12 @@ bool IsMonotoneLine(const SBezier &bezier, Vector start, Vector finish, double t
 std::vector<std::pair<double, double>> Intersections(int entity, const SBezier &a,
                                                     const SBezier &b);
 
+// The boundary is already validated on a regular ring torus, and seam is one
+// of its exact iso-circular arcs. Coplanar sections comprise disjoint circles;
+// overlapping intervals therefore need endpoint cuts, not sampled tangencies.
+std::vector<std::pair<double, double>> TorusSeamIntersections(const SBezier &boundary,
+                                                             const SBezier &seam);
+
 } // namespace Nurbs
 } // namespace Step
 } // namespace SolveSpace

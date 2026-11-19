@@ -403,6 +403,46 @@ bool IsMonotoneLine(const SBezier &bezier, Vector start, Vector finish, double t
     return true;
 }
 
+std::vector<std::pair<double, double>> TorusSeamIntersections(const SBezier &boundary,
+                                                             const SBezier &seam) {
+    Vector origin = seam.Start();
+    Vector normal = seam.ctrl[1].Minus(origin).Cross(seam.Finish().Minus(origin)).WithMagnitude(1);
+    double largest = 1;
+    for(const auto *curve : {&boundary, &seam}) for(int i = 0; i <= curve->deg; ++i) {
+        Vector p = curve->ctrl[i];
+        largest = std::max({largest, std::abs(p.x), std::abs(p.y), std::abs(p.z)});
+    }
+    double eps = std::min(LENGTH_EPS * 0.01, 64 * std::numeric_limits<double>::epsilon() * largest);
+    bool coplanar = true;
+    std::vector<double> coefficients, weights;
+    for(int i = 0; i <= boundary.deg; ++i) {
+        double distance = boundary.ctrl[i].Minus(origin).Dot(normal);
+        if(std::abs(distance) > eps) coplanar = false;
+        coefficients.push_back(distance * boundary.weight[i]);
+        weights.push_back(boundary.weight[i]);
+    }
+    std::vector<std::pair<double, double>> result;
+    std::vector<double> candidates{0, 1};
+    if(!coplanar) {
+        // The positive denominator cannot introduce or remove plane roots.
+        auto roots = Roots(coefficients);
+        candidates.insert(candidates.end(), roots.begin(), roots.end());
+        // Translating/rotating a double plane root can leave its extremum a
+        // few ulps off zero. Test those isolated stationary points too, bounded
+        // by arithmetic roundoff and still by the original seam's XYZ check.
+        for(double t : Roots(Derivative(coefficients))) {
+            if(std::abs(Evaluate(coefficients, t)) <= eps * Evaluate(weights, t)) candidates.push_back(t);
+        }
+    }
+    for(double a : candidates) for(double b : Parameters(seam, boundary.PointAt(a), LENGTH_EPS * 0.01)) {
+        result.emplace_back(a, b);
+    }
+    for(double b : {0.0, 1.0}) for(double a : Parameters(boundary, seam.PointAt(b), LENGTH_EPS * 0.01)) {
+        result.emplace_back(a, b);
+    }
+    return result;
+}
+
 std::vector<std::pair<double, double>> Intersections(int entity, const SBezier &a,
                                                     const SBezier &b) {
     std::vector<std::pair<double, double>> result;
