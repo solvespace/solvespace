@@ -228,8 +228,60 @@ public:
         return Scale(length);
     }
 
+    double AnglesForContext(int context) {
+        int angle = 0;
+        for(int unit : Refs(context, "units")) {
+            if(!document.IsA(unit, "PLANE_ANGLE_UNIT")) continue;
+            Require(angle == 0, Code::Units, context, "Ambiguous plane-angle units in context.");
+            angle = unit;
+        }
+        Require(angle != 0, Code::Units, context, "No explicit PLANE_ANGLE_UNIT for a conical semi-angle.");
+        return AngleScale(angle);
+    }
+
 private:
     std::set<int> active;
+
+    double AngleScale(int unit) {
+        Require(active.size() < 16 && active.insert(unit).second, Code::Units, unit,
+                "Cyclic or excessively nested plane-angle units.");
+        Require(document.IsA(unit, "PLANE_ANGLE_UNIT"), Code::Units, unit,
+                "A plane-angle conversion factor must resolve to PLANE_ANGLE_UNIT.");
+        auto dimensions = Get(unit, "dimensions");
+        if(dimensions.kind != Kind::Derived) {
+            Require(dimensions.kind == Kind::Reference, Code::Units, unit,
+                    "Missing plane-angle dimensional exponents.");
+            for(const char *name : {"length_exponent", "mass_exponent", "time_exponent",
+                                   "electric_current_exponent", "thermodynamic_temperature_exponent",
+                                   "amount_of_substance_exponent", "luminous_intensity_exponent"}) {
+                Require(Number(Get(dimensions.reference, name), dimensions.reference) == 0,
+                        Code::Units, unit, "Plane-angle units must be dimensionless.");
+            }
+        }
+        double scale = 0;
+        if(document.IsA(unit, "SI_UNIT")) {
+            auto name = Get(unit, "name"), prefix = Get(unit, "prefix");
+            Require(name.kind == Kind::Enumeration && name.text == "RADIAN" &&
+                    prefix.kind == Kind::Null, Code::Units, unit,
+                    "Only unprefixed SI RADIAN is implemented as a base plane-angle unit.");
+            scale = 1;
+        } else if(document.IsA(unit, "CONVERSION_BASED_UNIT")) {
+            int measure = Ref(unit, "conversion_factor");
+            auto value = Get(measure, "value_component");
+            Require(value.selectedType == "PLANE_ANGLE_MEASURE" ||
+                    value.selectedType == "POSITIVE_PLANE_ANGLE_MEASURE", Code::Units, measure,
+                    "Plane-angle conversion needs a typed plane-angle measure.");
+            double factor = Number(value, measure);
+            Require(factor > 0, Code::Units, measure, "Non-positive plane-angle conversion factor.");
+            scale = factor * AngleScale(Ref(measure, "unit_component"));
+        } else {
+            throw Failure{Code::Units, unit, "Unsupported plane-angle unit definition."};
+        }
+        Require(std::isfinite(scale) && scale > 0, Code::Units, unit,
+                "Plane-angle conversion is non-finite or non-positive.");
+        active.erase(unit);
+        return scale;
+    }
 
     double Scale(int unit) {
         Require(active.size() < 16 && active.insert(unit).second, Code::Units, unit,
@@ -557,7 +609,7 @@ public:
         : Attributes(document), options(options) {}
 
     std::unique_ptr<NativeSolid> Build(int representation, int solid) {
-        int context = Ref(representation, "context_of_items");
+        context = Ref(representation, "context_of_items");
         scale = Units(document).ForContext(context);
         Require(document.IsA(solid, "MANIFOLD_SOLID_BREP"), Code::Unsupported, solid,
                 "Only MANIFOLD_SOLID_BREP is supported.");
@@ -619,6 +671,7 @@ public:
 
 private:
     const GeometryOptions &options;
+    int context = 0;
     double scale = 0;
     std::map<int, Vertex> vertices;
     std::map<int, Edge> edges;
@@ -894,7 +947,7 @@ private:
     void ReadSplineSurface(Face *face) {
         int geometry = face->geometry;
         Require(document.IsA(geometry, "B_SPLINE_SURFACE"), Code::Unsupported, geometry,
-                "Surface has no implemented exact native conversion (expected PLANE, CYLINDRICAL_SURFACE, TOROIDAL_SURFACE or a rational/non-rational tensor-product B-spline).");
+                "Surface has no implemented exact native conversion (expected a supported plane, cone, cylinder, sphere, torus or tensor-product B-spline).");
         auto net = Get(geometry, "control_points_list");
         Require(net.kind == Kind::Aggregate && !net.elements.empty(), Code::InvalidGeometry,
                 geometry, "Empty or invalid B-spline control net.");
@@ -988,8 +1041,9 @@ private:
         }
     }
 
-    bool CylinderBand(Face *face, const Placement &placement, double radius,
-                      double *bottom, double *top) {
+    bool AxialBand(Face *face, const Placement &placement,
+                   const std::function<double(double)> &radiusAt,
+                   double *bottom, double *top) {
         if(face->loops.size() != 2) return false;
         double height[2];
         int direction[2];
@@ -1002,91 +1056,190 @@ private:
             Placement circle = ReadPlacement(edge.geometry);
             Vector delta = circle.origin.Minus(placement.origin);
             height[i] = delta.Dot(placement.z);
+            double radius = radiusAt(height[i]);
             double circleRadius = Number(Get(edge.geometry, "radius"), edge.geometry) * scale;
-            Require(delta.Minus(placement.z.ScaledBy(height[i])).Magnitude() +
-                    std::abs(circleRadius - radius) + radius * circle.z.Cross(placement.z).Magnitude() <= LENGTH_EPS,
-                    Code::InvalidGeometry, face->geometry,
-                    "Circular cylinder-band boundary is not on its CYLINDRICAL_SURFACE.");
+            Require(std::isfinite(radius) && radius > LENGTH_EPS &&
+                    delta.Minus(placement.z.ScaledBy(height[i])).Magnitude() +
+                     std::abs(circleRadius - radius) + radius * circle.z.Cross(placement.z).Magnitude() <= LENGTH_EPS,
+                     Code::InvalidGeometry, face->geometry,
+                     "Circular axial-band boundary is not on its declared surface.");
             direction[i] = (circle.z.Dot(placement.z) > 0 ? 1 : -1) *
                            (Boolean(edge.id, "same_sense") ? 1 : -1) * (use.forwards ? 1 : -1);
         }
         int lower = height[0] < height[1] ? 0 : 1;
         Require(height[1 - lower] - height[lower] > LENGTH_EPS, Code::InvalidGeometry,
-                face->id, "Touching or coincident cylinder-band boundaries.");
+                face->id, "Touching or coincident axial-band boundaries.");
         int sense = Boolean(face->id, "same_sense") ? 1 : -1;
         Require(direction[lower] == sense && direction[1 - lower] == -sense,
-                Code::InvalidGeometry, face->id, "Cylinder-band winding disagrees with the oriented surface.");
+                Code::InvalidGeometry, face->id, "Axial-band winding disagrees with the oriented surface.");
         int declaredOuter = 0;
         for(const auto &loop : face->loops) if(loop.declaredOuter) ++declaredOuter;
-        Require(declaredOuter <= 1, Code::InvalidGeometry, face->id, "More than one declared outer cylinder-band bound.");
+        Require(declaredOuter <= 1, Code::InvalidGeometry, face->id, "More than one declared outer axial-band bound.");
         *bottom = height[lower]; *top = height[1 - lower];
         face->band = 0; face->bandLower = lower;
         return true;
     }
 
-    void ReadCylinder(Face *face) {
+    void AxialBounds(const Face &face, const Placement &placement, double *bottom, double *top) {
+        *bottom = VERY_POSITIVE; *top = VERY_NEGATIVE;
+        for(const auto &loop : face.loops) for(const auto &use : loop.edges) {
+            for(const auto &piece : edges.at(use.edge).pieces) for(int i = 0; i <= piece.bezier.deg; ++i) {
+                double height = piece.bezier.ctrl[i].Minus(placement.origin).Dot(placement.z);
+                *bottom = std::min(*bottom, height); *top = std::max(*top, height);
+            }
+        }
+    }
+
+    Vector ChartPoint(const Face &face) {
+        // A coordinate cut, not a choice of material or a replacement trim.
+        for(const auto &loop : face.loops) for(const auto &use : loop.edges) {
+            const auto &edge = edges.at(use.edge);
+            if(edge.start == edge.finish || !document.IsA(edge.geometry, "CIRCLE") || edge.pieces.size() < 2) continue;
+            size_t count = edge.pieces.size();
+            const auto &middle = edge.pieces[count / 2].bezier;
+            return count % 2 == 0 ? middle.Start() : middle.PointAt(0.5);
+        }
+        const auto &use = face.loops[0].edges[0];
+        const auto &pieces = edges.at(use.edge).pieces;
+        return use.forwards ? pieces.front().bezier.Start() : pieces.back().bezier.Finish();
+    }
+
+    std::vector<Nurbs::SurfacePatch> Revolve(const Placement &placement, double first,
+                                            const std::vector<SBezier> &profile,
+                                            double sweep = 2 * PI, bool periodic = true) {
+        auto arcs = CircularArcs(first, sweep, periodic);
+        std::vector<Nurbs::SurfacePatch> source;
+        for(size_t iu = 0; iu < arcs.size(); ++iu) for(size_t iv = 0; iv < profile.size(); ++iv) {
+            SSurface surface = {};
+            surface.degm = arcs[iu].deg; surface.degn = profile[iv].deg;
+            for(int i = 0; i <= surface.degm; ++i) for(int j = 0; j <= surface.degn; ++j) {
+                Vector radial = placement.x.ScaledBy(arcs[iu].ctrl[i].x).Plus(placement.y.ScaledBy(arcs[iu].ctrl[i].y));
+                Vector point = placement.origin.Plus(radial.ScaledBy(profile[iv].ctrl[j].x))
+                                               .Plus(placement.z.ScaledBy(profile[iv].ctrl[j].y));
+                Require(Finite(point) && std::abs(point.x) <= MAX_COORDINATE_MM &&
+                        std::abs(point.y) <= MAX_COORDINATE_MM && std::abs(point.z) <= MAX_COORDINATE_MM,
+                        Code::Unsupported, 0, "Surface-of-revolution controls exceed the native coordinate envelope.");
+                surface.ctrl[i][j] = point;
+                surface.weight[i][j] = arcs[iu].weight[i] * profile[iv].weight[j];
+            }
+            source.push_back({surface, iu / (double)arcs.size(), (iu + 1) / (double)arcs.size(),
+                              iv / (double)profile.size(), (iv + 1) / (double)profile.size(), (int)iu, (int)iv});
+        }
+        return source;
+    }
+
+    void ReadCylinderOrCone(Face *face, bool cone) {
         int geometry = face->geometry;
         Placement placement = ReadPlacement(geometry);
         double radius = Number(Get(geometry, "radius"), geometry);
-        Require(radius > 0, Code::InvalidGeometry, geometry, "Cylinder radius must be positive.");
+        Require(cone ? radius >= 0 : radius > 0, Code::InvalidGeometry, geometry,
+                "Cylinder radius must be positive; a cone reference radius must be non-negative.");
         radius *= scale;
-        Require(std::isfinite(radius) && radius > LENGTH_EPS && radius <= MAX_COORDINATE_MM,
-                Code::Unsupported, geometry, "Cylinder radius is outside the native numerical envelope.");
+        Require(std::isfinite(radius) && (cone || radius > LENGTH_EPS) && radius <= MAX_COORDINATE_MM,
+                Code::Unsupported, geometry, "Cone/cylinder radius is outside the native numerical envelope.");
+        double slope = 0;
+        if(cone) {
+            double angle = Number(Get(geometry, "semi_angle"), geometry) * Units(document).AnglesForContext(context);
+            Require(std::isfinite(angle) && std::abs(angle) > 0 && std::abs(angle) < PI / 2,
+                    Code::InvalidGeometry, geometry, "Cone semi-angle must be nonzero and strictly between -pi/2 and pi/2.");
+            slope = std::tan(angle);
+        }
+        auto radiusAt = [&](double height) { return radius + slope * height; };
         double bottom = VERY_POSITIVE, top = VERY_NEGATIVE, first = 0;
-        if(!CylinderBand(face, placement, radius, &bottom, &top)) {
+        if(!AxialBand(face, placement, radiusAt, &bottom, &top)) {
             // Positive rational weights bound the axial extent by the source
             // curve controls. This only bounds the support, never replaces a
             // trim; ordinary face validation still selects the finite region.
-            for(const auto &loop : face->loops) for(const auto &use : loop.edges) {
-                for(const auto &piece : edges.at(use.edge).pieces) for(int i = 0; i <= piece.bezier.deg; ++i) {
-                    double height = piece.bezier.ctrl[i].Minus(placement.origin).Dot(placement.z);
-                    bottom = std::min(bottom, height); top = std::max(top, height);
-                }
-            }
+            AxialBounds(*face, placement, &bottom, &top);
             Require(top - bottom > LENGTH_EPS, Code::InvalidGeometry, geometry,
-                    "Cylinder face has no non-degenerate finite axial extent.");
+                    "Cone/cylinder face has no non-degenerate finite axial extent.");
             double pad = std::max((top - bottom) * 0.05, 8 * LENGTH_EPS);
+            if(cone) {
+                double clearance = std::min(radiusAt(bottom), radiusAt(top));
+                Require(clearance > LENGTH_EPS, Code::Unsupported, geometry,
+                        "Cone trimming reaches or crosses its apex; singular native trims are not implemented.");
+                pad = std::min(pad, (clearance - LENGTH_EPS) / (2 * std::abs(slope)));
+            }
             bottom -= pad; top += pad;
-            auto chartPoint = [&]() {
-                // Keep the coordinate cut opposite a wide source arc's
-                // middle, not at one of its ends. This changes no trim branch.
-                for(const auto &loop : face->loops) for(const auto &use : loop.edges) {
-                    const auto &edge = edges.at(use.edge);
-                    if(edge.start == edge.finish || !document.IsA(edge.geometry, "CIRCLE") || edge.pieces.size() < 2) continue;
-                    size_t count = edge.pieces.size();
-                    const auto &middle = edge.pieces[count / 2].bezier;
-                    return count % 2 == 0 ? middle.Start() : middle.PointAt(0.5);
-                }
-                const auto &use = face->loops[0].edges[0];
-                const auto &pieces = edges.at(use.edge).pieces;
-                return use.forwards ? pieces.front().bezier.Start() : pieces.back().bezier.Finish();
-            };
-            Vector p = chartPoint().Minus(placement.origin);
+            Vector p = ChartPoint(*face).Minus(placement.origin);
             first = std::atan2(p.Dot(placement.y), p.Dot(placement.x)) - PI;
         }
+        Require(std::min(radiusAt(bottom), radiusAt(top)) > LENGTH_EPS,
+                Code::Unsupported, geometry, "Cone/cylinder support reaches a singular or sub-tolerance radius.");
         face->periodic[0] = true;
-        auto arcs = CircularArcs(first, 2 * PI, true);
-        std::vector<Nurbs::SurfacePatch> source;
-        for(size_t iu = 0; iu < arcs.size(); ++iu) {
-            SBezier circle = arcs[iu];
-            for(int i = 0; i <= circle.deg; ++i) {
-                Vector radial = placement.x.ScaledBy(circle.ctrl[i].x).Plus(placement.y.ScaledBy(circle.ctrl[i].y));
-                circle.ctrl[i] = placement.origin.Plus(radial.ScaledBy(radius));
-            }
-            SSurface surface = SSurface::FromExtrusionOf(&circle, placement.z.ScaledBy(bottom), placement.z.ScaledBy(top));
-            for(int i = 0; i <= surface.degm; ++i) for(int j = 0; j <= surface.degn; ++j) {
-                Vector point = surface.ctrl[i][j];
-                Require(Finite(point) && std::abs(point.x) <= MAX_COORDINATE_MM &&
-                        std::abs(point.y) <= MAX_COORDINATE_MM && std::abs(point.z) <= MAX_COORDINATE_MM,
-                        Code::Unsupported, geometry, "Cylinder controls exceed the native coordinate envelope.");
-            }
-            source.push_back({surface, iu / (double)arcs.size(), (iu + 1) / (double)arcs.size(), 0, 1, (int)iu, 0});
+        SBezier profile = SBezier::From(Vector{radiusAt(bottom), bottom, 0}, Vector{radiusAt(top), top, 0});
+        FinishSurface(face, Revolve(placement, first, {profile}));
+    }
+
+    void ReadSphere(Face *face) {
+        int geometry = face->geometry;
+        Placement placement = ReadPlacement(geometry);
+        double radius = Number(Get(geometry, "radius"), geometry);
+        Require(radius > 0, Code::InvalidGeometry, geometry, "Sphere radius must be positive.");
+        radius *= scale;
+        Require(std::isfinite(radius) && radius > LENGTH_EPS && radius <= MAX_COORDINATE_MM,
+                Code::Unsupported, geometry, "Sphere radius is outside the native numerical envelope.");
+        auto radiusAt = [&](double height) {
+            return std::abs(height) < radius ? std::sqrt((radius - height) * (radius + height)) : 0;
+        };
+        // A sphere has no preferred polar axis. Coaxial circular bounds define
+        // a regular band even when their axis differs from the source placement.
+        bool circles = face->loops.size() == 2;
+        if(circles) for(const auto &loop : face->loops) {
+            if(loop.edges.size() != 1) { circles = false; break; }
+            const auto &edge = edges.at(loop.edges[0].edge);
+            if(edge.start != edge.finish || !document.IsA(edge.geometry, "CIRCLE")) { circles = false; break; }
         }
-        FinishSurface(face, std::move(source));
+        if(circles) {
+            Vector axis = ReadPlacement(edges.at(face->loops[0].edges[0].edge).geometry).z;
+            if(axis.Dot(placement.z) < 0) axis = axis.Negated();
+            Vector ref = std::abs(axis.Dot(placement.x)) < 0.9 ? placement.x : placement.y;
+            placement.z = axis;
+            placement.x = ref.Minus(axis.ScaledBy(ref.Dot(axis))).WithMagnitude(1);
+            placement.y = axis.Cross(placement.x);
+            for(const auto &loop : face->loops) {
+                Placement circle = ReadPlacement(edges.at(loop.edges[0].edge).geometry);
+                Vector delta = circle.origin.Minus(placement.origin);
+                if(circle.z.Cross(axis).Magnitude() > 1e-12 ||
+                   delta.Minus(axis.ScaledBy(delta.Dot(axis))).Magnitude() > LENGTH_EPS) circles = false;
+            }
+        }
+        double bottom, top, first = 0;
+        if(!circles || !AxialBand(face, placement, radiusAt, &bottom, &top)) {
+            // Choose only a coordinate chart. Source winding still determines
+            // material; loops crossing its cut or enclosing a pole are rejected.
+            Vector middle = {};
+            for(const auto &loop : face->loops) for(const auto &use : loop.edges) {
+                for(const auto &piece : edges.at(use.edge).pieces) {
+                    for(double t : {0.0, 0.25, 0.5, 0.75}) middle = middle.Plus(piece.bezier.PointAt(t).Minus(placement.origin));
+                }
+            }
+            if(middle.Magnitude() <= LENGTH_EPS) middle = ChartPoint(*face).Minus(placement.origin);
+            Require(middle.Magnitude() > LENGTH_EPS, Code::InvalidGeometry, geometry,
+                    "Spherical boundary does not define a finite chart direction.");
+            Vector x = middle.WithMagnitude(1);
+            Vector ref = std::abs(x.Dot(placement.z)) < 0.9 ? placement.z : placement.x;
+            placement.z = x.Cross(ref).WithMagnitude(1);
+            placement.x = x; placement.y = placement.z.Cross(x);
+            first = -PI;
+            AxialBounds(*face, placement, &bottom, &top);
+            double clearance = radius - std::max(std::abs(bottom), std::abs(top));
+            Require(clearance > 8 * LENGTH_EPS, Code::Unsupported, geometry,
+                    "Sphere trimming cannot be bounded in a regular chart away from its poles.");
+            double pad = std::min(std::max((top - bottom) * 0.05, 8 * LENGTH_EPS), clearance * 0.5);
+            bottom -= pad; top += pad;
+        }
+        double a = std::atan2(bottom, radiusAt(bottom)), b = std::atan2(top, radiusAt(top));
+        Require(b > a && radiusAt(bottom) > LENGTH_EPS && radiusAt(top) > LENGTH_EPS,
+                Code::Unsupported, geometry, "Spherical support reaches a pole or has no finite regular span.");
+        face->periodic[0] = true;
+        auto profile = CircularArcs(a, b - a, false);
+        for(auto &arc : profile) for(int j = 0; j <= arc.deg; ++j) arc.ctrl[j] = arc.ctrl[j].ScaledBy(radius);
+        FinishSurface(face, Revolve(placement, first, profile));
     }
 
     bool TorusBand(Face *face, const Placement &placement, double major, double minor,
-                   double *first, double *sweep) {
+                   double *first, double *sweep, bool inner = false) {
         if(face->loops.size() != 2) return false;
         struct Bound { int periodic, direction; double angle; } bounds[2];
         for(int i = 0; i < 2; ++i) {
@@ -1102,11 +1255,12 @@ private:
             if(circle.z.Cross(placement.z).Magnitude() <= 1e-12) {
                 if(delta.Minus(placement.z.ScaledBy(height)).Magnitude() > LENGTH_EPS) return false;
                 bounds[i].periodic = 0;
-                bounds[i].angle = std::atan2(height, radius - major);
+                bounds[i].angle = std::atan2(height, (inner ? -radius : radius) - major);
                 center = placement.origin.Plus(placement.z.ScaledBy(minor * std::sin(bounds[i].angle)));
                 expectedRadius = major + minor * std::cos(bounds[i].angle);
                 axis = placement.z;
             } else {
+                if(major < minor) return false; // selected spindle branches are not periodic meridian bands
                 Vector radial = delta.Minus(placement.z.ScaledBy(height));
                 if(radial.Magnitude() <= LENGTH_EPS) return false;
                 radial = radial.WithMagnitude(1);
@@ -1117,7 +1271,7 @@ private:
                 center = placement.origin.Plus(radial.ScaledBy(major));
                 expectedRadius = minor;
             }
-            Require(circle.origin.Minus(center).Magnitude() + std::abs(radius - expectedRadius) +
+            Require(circle.origin.Minus(center).Magnitude() + std::abs(radius - std::abs(expectedRadius)) +
                     radius * circle.z.Cross(axis).Magnitude() <= LENGTH_EPS,
                     Code::InvalidGeometry, face->geometry,
                     "Circular torus-band boundary is not on its TOROIDAL_SURFACE.");
@@ -1147,8 +1301,8 @@ private:
 
     void ReadTorus(Face *face) {
         int geometry = face->geometry;
-        Require(!document.IsA(geometry, "DEGENERATE_TOROIDAL_SURFACE"), Code::Unsupported, geometry,
-                "Degenerate toroidal surfaces with a selected spindle branch are not implemented.");
+        bool degenerate = document.IsA(geometry, "DEGENERATE_TOROIDAL_SURFACE");
+        bool inner = degenerate && !Boolean(geometry, "select_outer");
         Placement placement = ReadPlacement(geometry);
         double major = Number(Get(geometry, "major_radius"), geometry);
         double minor = Number(Get(geometry, "minor_radius"), geometry);
@@ -1157,11 +1311,23 @@ private:
         Require(std::isfinite(major) && std::isfinite(minor) && minor > LENGTH_EPS &&
                 major <= MAX_COORDINATE_MM && minor <= MAX_COORDINATE_MM,
                 Code::Unsupported, geometry, "Torus radii are outside the native numerical envelope.");
-        Require(major > minor, Code::Unsupported, geometry,
-                "Only regular ring toroidal surfaces (major_radius > minor_radius) are implemented.");
+        Require(degenerate ? major < minor : major > minor,
+                degenerate ? Code::InvalidGeometry : Code::Unsupported, geometry,
+                "A ring torus requires major_radius > minor_radius; a selected degenerate torus requires major_radius < minor_radius.");
         face->periodic[0] = face->periodic[1] = true;
         double first[2] = {}, sweep[2] = {2 * PI, 2 * PI};
-        if(!TorusBand(face, placement, major, minor, first, sweep)) {
+        bool band = TorusBand(face, placement, major, minor, first, sweep, inner);
+        if(degenerate) {
+            Require(band && face->band == 0, Code::Unsupported, geometry,
+                    "A selected degenerate torus currently needs two coaxial circular bounds away from its singular tips.");
+            double phi = std::acos(-major / minor);
+            double lower = inner ? phi : -phi, upper = inner ? 2 * PI - phi : phi;
+            while(first[1] < lower) first[1] += 2 * PI;
+            Require(first[1] > lower && first[1] + sweep[1] < upper,
+                    Code::InvalidGeometry, face->id,
+                    "Degenerate torus winding selects the wrong branch or crosses a singular tip.");
+        }
+        if(!band) {
             // This only chooses a coordinate chart, never a trimming branch.
             // Ordinary loop validation still requires a continuous finite UV
             // region; a cut crossing or ambiguous periodic trim is rejected.
@@ -1173,27 +1339,11 @@ private:
             first[0] = std::atan2(y, x) - PI;
             first[1] = std::atan2(p.Dot(placement.z), std::hypot(x, y) - major) - PI;
         }
-        auto u = CircularArcs(first[0], sweep[0], face->periodic[0]);
-        auto v = CircularArcs(first[1], sweep[1], face->periodic[1]);
-        std::vector<Nurbs::SurfacePatch> source;
-        for(size_t iu = 0; iu < u.size(); ++iu) for(size_t iv = 0; iv < v.size(); ++iv) {
-            SSurface surface = {};
-            surface.degm = surface.degn = 2;
-            // Tensor product of exact rational circular arcs, not fitted nets.
-            for(int i = 0; i <= 2; ++i) for(int j = 0; j <= 2; ++j) {
-                Vector radial = placement.x.ScaledBy(u[iu].ctrl[i].x).Plus(placement.y.ScaledBy(u[iu].ctrl[i].y));
-                Vector point = placement.origin.Plus(radial.ScaledBy(major + minor * v[iv].ctrl[j].x))
-                                               .Plus(placement.z.ScaledBy(minor * v[iv].ctrl[j].y));
-                Require(Finite(point) && std::abs(point.x) <= MAX_COORDINATE_MM &&
-                        std::abs(point.y) <= MAX_COORDINATE_MM && std::abs(point.z) <= MAX_COORDINATE_MM,
-                        Code::Unsupported, geometry, "Torus controls exceed the native coordinate envelope.");
-                surface.ctrl[i][j] = point;
-                surface.weight[i][j] = u[iu].weight[i] * v[iv].weight[j];
-            }
-            source.push_back({surface, iu / (double)u.size(), (iu + 1) / (double)u.size(),
-                              iv / (double)v.size(), (iv + 1) / (double)v.size(), (int)iu, (int)iv});
+        auto profile = CircularArcs(first[1], sweep[1], face->periodic[1]);
+        for(auto &arc : profile) for(int j = 0; j <= arc.deg; ++j) {
+            arc.ctrl[j] = {major + minor * arc.ctrl[j].x, minor * arc.ctrl[j].y, 0};
         }
-        FinishSurface(face, std::move(source));
+        FinishSurface(face, Revolve(placement, first[0], profile, sweep[0], face->periodic[0]));
     }
 
     Face ReadFace(int id) {
@@ -1245,7 +1395,9 @@ private:
             face.loops.push_back(std::move(loop));
         }
         if(document.IsA(face.geometry, "PLANE")) ReadPlane(&face);
-        else if(document.IsA(face.geometry, "CYLINDRICAL_SURFACE")) ReadCylinder(&face);
+        else if(document.IsA(face.geometry, "CYLINDRICAL_SURFACE")) ReadCylinderOrCone(&face, false);
+        else if(document.IsA(face.geometry, "CONICAL_SURFACE")) ReadCylinderOrCone(&face, true);
+        else if(document.IsA(face.geometry, "SPHERICAL_SURFACE")) ReadSphere(&face);
         else if(document.IsA(face.geometry, "TOROIDAL_SURFACE")) ReadTorus(&face);
         else ReadSplineSurface(&face);
         size_t patches = face.patches.size();
@@ -1266,7 +1418,9 @@ private:
         Point2d result = {};
         bool found = false;
         bool analytic = document.IsA(face->geometry, "TOROIDAL_SURFACE") ||
-                        document.IsA(face->geometry, "CYLINDRICAL_SURFACE");
+                        document.IsA(face->geometry, "CYLINDRICAL_SURFACE") ||
+                        document.IsA(face->geometry, "CONICAL_SURFACE") ||
+                        document.IsA(face->geometry, "SPHERICAL_SURFACE");
         for(auto &patch : face->patches) {
             auto &source = patch.source;
             Vector max, min;
@@ -1540,7 +1694,8 @@ private:
         for(auto &seam : seams) {
             for(const auto &loop : seam.face->loops) for(const auto &use : loop.edges) {
                 for(auto &piece : edges.at(use.edge).pieces) {
-                    auto hits = document.IsA(seam.face->geometry, "TOROIDAL_SURFACE") ?
+                    auto hits = (document.IsA(seam.face->geometry, "TOROIDAL_SURFACE") ||
+                                 document.IsA(seam.face->geometry, "SPHERICAL_SURFACE")) ?
                         Nurbs::TorusSeamIntersections(piece.bezier, seam.bezier) :
                         Nurbs::Intersections(use.edge, piece.bezier, seam.bezier);
                     for(const auto &hit : hits) {
@@ -1809,6 +1964,54 @@ private:
         }
     }
 
+    static void ImproveValidationTriangulation(const SSurface &surface, SMesh *mesh) {
+        // Ear clipping in UV can make skinny boundary-only triangles whose XYZ
+        // chords fold or lie in a neighbouring face's plane, although the exact
+        // surface is regular. Flip only interior diagonals of convex UV quads,
+        // improving the worse XYZ triangle. No vertex, trim, UV coverage or
+        // validation tolerance changes; all normal/intersection checks follow.
+        auto quality = [&](const STriangle &uv) {
+            if(uv.Normal().z >= 0) return -std::numeric_limits<double>::infinity();
+            STriangle xyz = uv;
+            xyz.a = surface.PointAt(uv.a.x, uv.a.y);
+            xyz.b = surface.PointAt(uv.b.x, uv.b.y);
+            xyz.c = surface.PointAt(uv.c.x, uv.c.y);
+            Vector center = uv.a.Plus(uv.b).Plus(uv.c).ScaledBy(1.0 / 3);
+            double size = xyz.a.Minus(xyz.b).MagSquared() + xyz.b.Minus(xyz.c).MagSquared() +
+                          xyz.c.Minus(xyz.a).MagSquared();
+            return size > 0 ? -xyz.Normal().Dot(surface.NormalAt(center.x, center.y).WithMagnitude(1)) / size :
+                              -std::numeric_limits<double>::infinity();
+        };
+        std::vector<double> scores;
+        for(const auto &triangle : mesh->l) scores.push_back(quality(triangle));
+        for(int pass = 0; pass < 32; ++pass) {
+            using Point = std::pair<double, double>;
+            std::map<std::pair<Point, Point>, std::pair<int, int>> adjacency;
+            std::set<int> changed;
+            for(int i = 0; i < mesh->l.n; ++i) for(int edge = 0; edge < 3; ++edge) {
+                auto &triangle = mesh->l[i];
+                Vector a = triangle.vertices[edge], b = triangle.vertices[(edge + 1) % 3];
+                Point ka = {a.x, a.y}, kb = {b.x, b.y};
+                auto match = adjacency.find({kb, ka});
+                if(match == adjacency.end()) { adjacency[{ka, kb}] = {i, edge}; continue; }
+                int j = match->second.first, other = match->second.second;
+                if(changed.count(i) || changed.count(j)) continue;
+                if(triangle.Normal().z > 0 || mesh->l[j].Normal().z > 0) continue;
+                Vector c = triangle.vertices[(edge + 2) % 3], d = mesh->l[j].vertices[(other + 2) % 3];
+                STriangle first = {}, second = {};
+                first.a = c; first.b = d; first.c = b;
+                second.a = d; second.b = c; second.c = a;
+                double q1 = quality(first), q2 = quality(second);
+                if(!std::isfinite(q1) || !std::isfinite(q2) ||
+                   std::min(q1, q2) <= std::min(scores[i], scores[j]) + 1e-10) continue;
+                mesh->l[i] = first; mesh->l[j] = second;
+                scores[i] = q1; scores[j] = q2;
+                changed.insert(i); changed.insert(j);
+            }
+            if(changed.empty()) break;
+        }
+    }
+
     void ValidateNative(NativeSolid *result) {
         std::vector<Triangle> triangles;
         struct Measure { Vector anchor; double volume = 0, area = 0; };
@@ -1844,7 +2047,15 @@ private:
             MeshOwner mesh;
             if(surface.IsPlanar())
                 polygon.polygon.UvTriangulateInto(&mesh.mesh, &surface, /*planar=*/true);
-            else polygon.polygon.UvGridTriangulateInto(&mesh.mesh, &surface);
+            else {
+                polygon.polygon.UvGridTriangulateInto(&mesh.mesh, &surface);
+                bool obliqueTrim = false;
+                for(const auto &edge : edges.edges.l) {
+                    if(std::abs(edge.a.x - edge.b.x) > 1e-12 &&
+                       std::abs(edge.a.y - edge.b.y) > 1e-12) obliqueTrim = true;
+                }
+                if(obliqueTrim) ImproveValidationTriangulation(surface, &mesh.mesh);
+            }
             double coveredArea = 0;
             for(auto triangle : mesh.mesh.l) {
                 coveredArea += triangle.Area();
