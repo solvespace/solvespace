@@ -384,8 +384,13 @@ std::string SolveSpaceUI::MmToString(double v, bool editable) {
     // parse back from a string so if editable is true, we treat FEET_INCHES the
     // same as INCHES and just return the unadorned decimal number of inches.
     if(viewUnits == Unit::FEET_INCHES && !editable) {
+        // Format the magnitude and put the sign in front, so negative values do not
+        // get a sign on each part.
+        bool negative = (v < 0.0);
+        v = fabs(v);
         // Now convert v from inches to 64'ths of an inch, to make rounding easier.
         v = floor((v + (1.0 / 128.0)) * 64.0);
+        if(v == 0.0) negative = false;
         int feet = (int)(v / (12.0 * 64.0));
         v = v - (feet * 12.0 * 64.0);
         // v is now the feet-less remainder in 1/64 inches
@@ -398,15 +403,22 @@ std::string SolveSpaceUI::MmToString(double v, bool editable) {
             denominator /= 2;
         }
         std::ostringstream str;
+        if(negative) {
+            str << "-";
+        }
         if(feet != 0) {
             str << feet << "'-";
         }
         // For something like 0.5, show 1/2" rather than 0 1/2"
-        if(!(feet == 0 && inches == 0 && numerator != 0)) {
+        bool showInches = !(feet == 0 && inches == 0 && numerator != 0);
+        if(showInches) {
             str << inches;
         }
         if(numerator != 0) {
-            str << " " << numerator << "/" << denominator;
+            if(showInches) {
+                str << " ";
+            }
+            str << numerator << "/" << denominator;
         }
         str << "\"";
         return str.str();
