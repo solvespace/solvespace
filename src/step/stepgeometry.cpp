@@ -34,6 +34,9 @@ const size_t MAX_VERTICES = 1024;
 const size_t MAX_NATIVE_CURVES = 32768;
 const size_t MAX_TRIM_POINTS = 16384;
 const size_t MAX_VALIDATION_TRIANGLES = 32768;
+const size_t MAX_ASSEMBLY_SURFACES = 32768;
+const size_t MAX_ASSEMBLY_CURVES = 65536;
+const size_t MAX_ASSEMBLY_TRIM_POINTS = 1048576;
 const double MAX_COORDINATE_MM = 1e8;
 
 void Require(bool okay, Code code, int entity, const std::string &message) {
@@ -340,6 +343,375 @@ private:
 };
 
 struct Placement { Vector origin, x, y, z; };
+
+Vector ReadPoint(const Attributes &attributes, int id, double scale) {
+    Require(attributes.document.IsA(id, "CARTESIAN_POINT"), Code::InvalidGeometry, id,
+            "Expected CARTESIAN_POINT.");
+    Vector point = attributes.Triple(id, "coordinates").ScaledBy(scale);
+    Require(Finite(point) && std::abs(point.x) <= MAX_COORDINATE_MM &&
+            std::abs(point.y) <= MAX_COORDINATE_MM && std::abs(point.z) <= MAX_COORDINATE_MM,
+            Code::Unsupported, id, "Coordinates exceed the finite +/-1e8 mm native envelope.");
+    return point;
+}
+
+Placement ReadFrame(const Attributes &attributes, int id, double scale) {
+    Require(attributes.document.IsA(id, "AXIS2_PLACEMENT_3D"), Code::InvalidGeometry, id,
+            "Geometry and rigid assembly frames need AXIS2_PLACEMENT_3D.");
+    Placement result;
+    result.origin = ReadPoint(attributes, attributes.Ref(id, "location"), scale);
+    auto axis = attributes.Get(id, "axis"), ref = attributes.Get(id, "ref_direction");
+    Require((axis.kind == Kind::Null || axis.kind == Kind::Reference) &&
+            (ref.kind == Kind::Null || ref.kind == Kind::Reference),
+            Code::InvalidGeometry, id, "Invalid optional placement axes.");
+    result.z = axis.kind == Kind::Null ? Vector{0, 0, 1} : attributes.Direction(axis.reference);
+    // EXPRESS changes the default reference only at exactly +/-X. A nearly
+    // parallel default must fail below, not silently select another rotation.
+    bool alongX = EXACT(std::abs(result.z.x) == 1) && EXACT(result.z.y == 0) && EXACT(result.z.z == 0);
+    result.x = ref.kind == Kind::Reference ? attributes.Direction(ref.reference) :
+               (alongX ? Vector{0, 1, 0} : Vector{1, 0, 0});
+    result.x = result.x.Minus(result.z.ScaledBy(result.x.Dot(result.z)));
+    Require(result.x.Magnitude() > 1e-12, Code::InvalidGeometry, id,
+            "Placement axis and reference direction are parallel.");
+    result.x = result.x.WithMagnitude(1);
+    result.y = result.z.Cross(result.x);
+    return result;
+}
+
+struct RigidPlacement {
+    Vector translation = {};
+    Quaternion rotation = Quaternion::IDENTITY;
+
+    Vector Apply(Vector point) const { return rotation.Rotate(point).Plus(translation); }
+
+    RigidPlacement Inverse() const {
+        Quaternion q = rotation.Inverse();
+        return {q.Rotate(translation.Negated()), q};
+    }
+
+    RigidPlacement Compose(const RigidPlacement &child) const {
+        return {Apply(child.translation), rotation.Times(child.rotation).WithMagnitude(1)};
+    }
+
+    static RigidPlacement Frame(const Placement &frame, int entity) {
+        // A near-parallel explicit axis pair can lose orthogonality during
+        // projection. Do not let quaternion construction choose a nearby frame.
+        Require(std::abs(frame.x.Dot(frame.z)) <= 1e-12 &&
+                std::abs(frame.x.Dot(frame.y)) <= 1e-12 &&
+                std::abs(frame.y.Dot(frame.z)) <= 1e-12 &&
+                std::abs(frame.y.MagSquared() - 1) <= 1e-12,
+                Code::Representation, entity, "Numerically unresolved rigid placement axes; no nearby frame was substituted.");
+        return {frame.origin, Quaternion::From(frame.x, frame.y).WithMagnitude(1)};
+    }
+};
+
+struct SolidOccurrence {
+    int representation, solid;
+    RigidPlacement placement;
+    std::vector<int> path;
+};
+
+// Resolve the complete placement graph before accepting any solid. Definition
+// geometry is never imported again at its local origin just because an assembly
+// relationship was unsupported. Plain relationships still select one geometry
+// representation; only explicit product usages/mapped items create occurrences.
+class OccurrenceGraph : public Attributes {
+public:
+    explicit OccurrenceGraph(const Document &document) : Attributes(document) {}
+    int currentRepresentation = 0;
+    std::map<int, int> candidates; // source solid -> geometry representation
+
+    std::vector<SolidOccurrence> Resolve() {
+        auto dependent = document.EntitiesOfType("CONTEXT_DEPENDENT_SHAPE_REPRESENTATION");
+        Require(dependent.size() <= MAX_OCCURRENCES, Code::Representation, 0,
+                "Assembly occurrence count exceeds the supported work limit.");
+        std::set<int> occurrenceRelations;
+        for(int id : dependent) occurrenceRelations.insert(Ref(id, "representation_relation"));
+
+        std::set<int> contentRoots;
+        auto representations = document.EntitiesOfType("SHAPE_REPRESENTATION");
+        std::sort(representations.begin(), representations.end());
+        Require(representations.size() <= MAX_OCCURRENCES, Code::Representation, 0,
+                "Shape representation count exceeds the supported work limit.");
+        for(int representation : representations) {
+            currentRepresentation = representation;
+            parents.emplace(representation, representation);
+            contexts.emplace(representation, Ref(representation, "context_of_items"));
+            for(int item : Refs(representation, "items")) {
+                if(document.IsA(item, "AXIS2_PLACEMENT_3D")) {
+                    frameOwners[item].insert(representation);
+                    continue;
+                }
+                if(document.IsA(item, "MAPPED_ITEM")) {
+                    Require(mappedOwners.emplace(item, representation).second, Code::Representation, item,
+                            "A MAPPED_ITEM must have one unambiguous owning shape representation.");
+                } else {
+                    Require(document.IsA(item, "SOLID_MODEL"), Code::Representation, item,
+                            "Unsupported non-solid shape item; representation selection is not implemented.");
+                    Require(candidates.emplace(item, representation).second, Code::Representation, item,
+                            "Solid occurs in multiple direct representations; its unit/context ownership is ambiguous.");
+                }
+                contentRoots.insert(representation);
+            }
+        }
+
+        auto relationships = document.EntitiesOfType("REPRESENTATION_RELATIONSHIP");
+        std::sort(relationships.begin(), relationships.end());
+        for(int relationship : relationships) {
+            currentRepresentation = 0;
+            bool supported = document.IsA(relationship, "SHAPE_REPRESENTATION_RELATIONSHIP");
+            for(const auto &type : document.EntityTypes(relationship)) {
+                if(type != "SHAPE_REPRESENTATION_RELATIONSHIP" && type != "REPRESENTATION_RELATIONSHIP" &&
+                   type != "REPRESENTATION_RELATIONSHIP_WITH_TRANSFORMATION") supported = false;
+            }
+            Require(supported, Code::Representation, relationship,
+                    "Only plain shape relationships or declared rigid assembly relationships are implemented.");
+            int first = Ref(relationship, "rep_1"), second = Ref(relationship, "rep_2");
+            currentRepresentation = first;
+            Require(parents.count(first) && parents.count(second), Code::Representation, relationship,
+                    "Both related representations must be shape representations.");
+            if(occurrenceRelations.count(relationship)) continue;
+            Require(!document.IsA(relationship, "REPRESENTATION_RELATIONSHIP_WITH_TRANSFORMATION"),
+                    Code::Representation, relationship,
+                    "A transforming relationship needs an explicit assembly usage; no parent/child placement was guessed.");
+            Require(contexts.at(first) == contexts.at(second), Code::Representation, relationship,
+                    "Plain related shape representations must share one explicit coordinate/unit context.");
+            int a = Root(first), b = Root(second);
+            Require(a != b, Code::Representation, relationship,
+                    "Self-referencing, cyclic or duplicate plain shape relationships are not supported.");
+            Require(!contentRoots.count(a) || !contentRoots.count(b), Code::Representation, relationship,
+                    "Related representations contain alternative geometry; representation selection is not implemented.");
+            if(a > b) std::swap(a, b);
+            parents.at(b) = a;
+            if(contentRoots.erase(b)) contentRoots.insert(a);
+        }
+        for(int representation : representations) nodes.emplace(Root(representation), Node{});
+        for(const auto &candidate : candidates) {
+            nodes.at(Root(candidate.second)).solids.emplace_back(candidate.first, candidate.second);
+        }
+
+        ReadProductOccurrences(dependent);
+        ReadMappedOccurrences();
+        std::map<int, int> state;
+        std::map<int, bool> hasGeometry;
+        std::function<bool(int, int)> check = [&](int node, int depth) {
+            Require(depth <= MAX_DEPTH && state[node] != 1, Code::Representation, node,
+                    "Cyclic or excessively nested assembly/mapping graph.");
+            if(state[node] == 2) return hasGeometry.at(node);
+            state[node] = 1;
+            auto &value = nodes.at(node);
+            bool present = !value.solids.empty();
+            for(const auto &arc : value.children) {
+                Require(value.solids.empty() || arc.path.front() != -1, Code::Representation, node,
+                        "An assembly also advertises direct aggregate solids; alternative geometry was not selected or duplicated.");
+                Require(check(arc.child, depth + 1), Code::Representation, arc.path[1],
+                        "An assembly/mapped component has no reachable solid model definition.");
+                present = true;
+            }
+            state[node] = 2;
+            return hasGeometry[node] = present;
+        };
+        for(const auto &node : nodes) check(node.first, 0);
+
+        std::vector<SolidOccurrence> result;
+        size_t work = 0;
+        std::function<void(int, const RigidPlacement &, const std::vector<int> &, int)> expand;
+        expand = [&](int node, const RigidPlacement &placement, const std::vector<int> &path, int depth) {
+            currentRepresentation = node;
+            Require(depth <= MAX_DEPTH && ++work <= MAX_OCCURRENCES, Code::Representation, node,
+                    "Expanded assembly/mapping graph exceeds the supported depth/work limit.");
+            Require(Finite(placement.translation) && std::isfinite(placement.rotation.w) &&
+                    Finite({placement.rotation.vx, placement.rotation.vy, placement.rotation.vz}),
+                    Code::Representation, node, "Non-finite composed assembly placement.");
+            const auto &value = nodes.at(node);
+            for(const auto &solid : value.solids) {
+                Require(result.size() < MAX_OCCURRENCES, Code::Representation, node,
+                        "Expanded solid occurrence count exceeds the supported limit.");
+                result.push_back({solid.second, solid.first, placement, path});
+            }
+            for(const auto &arc : value.children) {
+                std::vector<int> next = path;
+                next.insert(next.end(), arc.path.begin(), arc.path.end());
+                expand(arc.child, placement.Compose(arc.placement), next, depth + 1);
+            }
+        };
+        for(const auto &node : nodes) if(!node.second.incoming) expand(node.first, {}, {}, 0);
+        std::sort(result.begin(), result.end(), [](const SolidOccurrence &a, const SolidOccurrence &b) {
+            if(a.path != b.path) return a.path < b.path;
+            return std::make_pair(a.solid, a.representation) < std::make_pair(b.solid, b.representation);
+        });
+        return result;
+    }
+
+private:
+    static const size_t MAX_OCCURRENCES = 4096;
+    static const int MAX_DEPTH = 64;
+    struct Arc { int child; RigidPlacement placement; std::vector<int> path; };
+    struct Node {
+        bool incoming = false;
+        std::vector<std::pair<int, int>> solids;
+        std::vector<Arc> children;
+    };
+    std::map<int, int> parents, contexts, mappedOwners;
+    std::map<int, std::set<int>> frameOwners;
+    std::map<int, double> scales;
+    std::map<int, Node> nodes;
+
+    int Root(int representation) {
+        while(parents.at(representation) != representation) {
+            parents.at(representation) = parents.at(parents.at(representation));
+            representation = parents.at(representation);
+        }
+        return representation;
+    }
+
+    double Scale(int representation) {
+        int context = contexts.at(representation);
+        auto found = scales.find(context);
+        if(found == scales.end()) found = scales.emplace(context, Units(document).ForContext(context)).first;
+        return found->second;
+    }
+
+    bool OwnsFrame(int representation, int frame) {
+        auto found = frameOwners.find(frame);
+        if(found == frameOwners.end()) return false;
+        int root = Root(representation);
+        for(int owner : found->second) if(Root(owner) == root) return true;
+        return false;
+    }
+
+    RigidPlacement ReadOperator(int id, double scale) {
+        auto types = document.EntityTypes(id);
+        Require(types.size() == 1 && types[0] == "CARTESIAN_TRANSFORMATION_OPERATOR_3D",
+                Code::Representation, id,
+                "Only a rigid 3D Cartesian transformation operator is implemented; no 2D/non-uniform transform was approximated.");
+        auto factor = Get(id, "scale");
+        Require(factor.kind == Kind::Null || Number(factor, id) == 1, Code::Representation, id,
+                "Assembly/mapping scale must be exactly one; scaling is not silently ignored.");
+        auto axis = [&](const char *name, Vector fallback) {
+            auto value = Get(id, name);
+            Require(value.kind == Kind::Null || value.kind == Kind::Reference,
+                    Code::Representation, id, "Invalid optional Cartesian transformation axis.");
+            return value.kind == Kind::Null ? fallback : Direction(value.reference);
+        };
+        // EXPRESS base_axis(3,...): derive Z, then project X, then project Y
+        // perpendicular to both. axis2 may select a reflection, which we reject.
+        Vector z = axis("axis3", {0, 0, 1});
+        bool alongX = EXACT(std::abs(z.x) == 1) && EXACT(z.y == 0) && EXACT(z.z == 0);
+        Vector x = axis("axis1", alongX ? Vector{0, 1, 0} : Vector{1, 0, 0});
+        x = x.Minus(z.ScaledBy(x.Dot(z)));
+        Require(x.Magnitude() > 1e-12, Code::Representation, id, "Undefined projected Cartesian X axis.");
+        x = x.WithMagnitude(1);
+        Vector y = axis("axis2", {0, 1, 0});
+        y = y.Minus(z.ScaledBy(y.Dot(z))).Minus(x.ScaledBy(y.Dot(x)));
+        Require(y.Magnitude() > 1e-12, Code::Representation, id, "Undefined projected Cartesian Y axis.");
+        y = y.WithMagnitude(1);
+        Require(std::abs(x.Dot(z)) <= 1e-12 && std::abs(y.Dot(z)) <= 1e-12 &&
+                std::abs(x.Dot(y)) <= 1e-12 && x.Cross(y).Dot(z) > 1 - 1e-12,
+                Code::Representation, id, "Reflected or numerically unresolved Cartesian transformation frame.");
+        return {ReadPoint(*this, Ref(id, "local_origin"), scale), Quaternion::From(x, y).WithMagnitude(1)};
+    }
+
+    void AddArc(int parent, int child, RigidPlacement placement, std::vector<int> path) {
+        Require(parent != child, Code::Representation, path[1], "Self-referencing assembly/mapping occurrence.");
+        for(const auto &arc : nodes.at(parent).children) {
+            Require(arc.child != child || arc.path.front() == path.front(), Code::Representation, path[1],
+                    "The same component is advertised by both product usage and mapping; duplicate geometry was not guessed.");
+        }
+        nodes.at(parent).children.push_back({child, placement, std::move(path)});
+        nodes.at(child).incoming = true;
+    }
+
+    void ReadProductOccurrences(const std::vector<int> &dependent) {
+        std::map<int, std::set<int>> productShapes;
+        for(int definition : document.EntitiesOfType("SHAPE_DEFINITION_REPRESENTATION")) {
+            int shape = Ref(definition, "definition");
+            if(!document.IsA(shape, "PRODUCT_DEFINITION_SHAPE")) continue;
+            int product = Ref(shape, "definition");
+            if(!document.IsA(product, "PRODUCT_DEFINITION")) continue;
+            int representation = Ref(definition, "used_representation");
+            productShapes[product].insert(parents.count(representation) ? Root(representation) : 0);
+        }
+        std::map<int, std::set<int>> shapeProducts;
+        for(const auto &product : productShapes) for(int shape : product.second) {
+            if(shape != 0) shapeProducts[shape].insert(product.first);
+        }
+        auto productRoot = [&](int product, int entity) {
+            auto found = productShapes.find(product);
+            Require(document.IsA(product, "PRODUCT_DEFINITION") && found != productShapes.end() &&
+                    found->second.size() == 1 && *found->second.begin() != 0, Code::Representation, entity,
+                    "Assembly product needs exactly one resolved shape representation; external/alternative definitions were not selected.");
+            return *found->second.begin();
+        };
+        std::set<int> used;
+        for(int id : dependent) {
+            int relationship = Ref(id, "representation_relation");
+            Require(document.IsA(relationship, "SHAPE_REPRESENTATION_RELATIONSHIP"), Code::Representation, id,
+                    "Assembly occurrence needs a shape representation relationship.");
+            int shape = Ref(id, "represented_product_relation");
+            Require(document.IsA(shape, "PRODUCT_DEFINITION_SHAPE"), Code::Representation, id,
+                    "Assembly occurrence needs a PRODUCT_DEFINITION_SHAPE usage.");
+            int usage = Ref(shape, "definition");
+            auto types = document.EntityTypes(usage);
+            Require(types.size() == 1 && types[0] == "NEXT_ASSEMBLY_USAGE_OCCURRENCE" && used.insert(usage).second,
+                    Code::Representation, id, "Only a uniquely placed NEXT_ASSEMBLY_USAGE_OCCURRENCE is implemented.");
+            int parentProduct = Ref(usage, "relating_product_definition");
+            int childProduct = Ref(usage, "related_product_definition");
+            int parent = productRoot(parentProduct, id), child = productRoot(childProduct, id);
+            Require(shapeProducts.at(parent).size() == 1, Code::Representation, usage,
+                    "An assembly shape is shared by different product definitions; product structure cannot be assigned unambiguously.");
+            int first = Ref(relationship, "rep_1"), second = Ref(relationship, "rep_2");
+            currentRepresentation = first;
+            bool forwards = Root(first) == child && Root(second) == parent;
+            Require(forwards || (Root(first) == parent && Root(second) == child), Code::Representation, id,
+                    "Representation relationship disagrees with the declared product parent/child; direction was not guessed.");
+            double firstScale = Scale(first), secondScale = Scale(second);
+            RigidPlacement placement;
+            if(document.IsA(relationship, "REPRESENTATION_RELATIONSHIP_WITH_TRANSFORMATION")) {
+                int transformation = Ref(relationship, "transformation_operator");
+                if(document.IsA(transformation, "ITEM_DEFINED_TRANSFORMATION")) {
+                    int fromFrame = Ref(transformation, "transform_item_1");
+                    int toFrame = Ref(transformation, "transform_item_2");
+                    Require(OwnsFrame(first, fromFrame) && OwnsFrame(second, toFrame),
+                            Code::Representation, transformation,
+                            "Transformation frames must belong to their respective resolved representations; coordinate/unit ownership was not guessed.");
+                    auto from = ReadFrame(*this, fromFrame, firstScale);
+                    auto to = ReadFrame(*this, toFrame, secondScale);
+                    placement = RigidPlacement::Frame(to, toFrame).Compose(RigidPlacement::Frame(from, fromFrame).Inverse());
+                } else placement = ReadOperator(transformation, secondScale);
+            } else Require(contexts.at(first) == contexts.at(second), Code::Representation, relationship,
+                           "An untransformed product usage needs one shared coordinate/unit context.");
+            if(!forwards) placement = placement.Inverse();
+            AddArc(parent, child, placement, {-1, usage, parentProduct, childProduct});
+        }
+        for(int usage : document.EntitiesOfType("ASSEMBLY_COMPONENT_USAGE")) {
+            Require(used.count(usage), Code::Representation, usage,
+                    "Assembly usage has no unique supported placement; no component was imported at its definition origin.");
+        }
+    }
+
+    void ReadMappedOccurrences() {
+        auto items = document.EntitiesOfType("MAPPED_ITEM");
+        Require(items.size() <= MAX_OCCURRENCES, Code::Representation, 0, "Mapping count exceeds the supported work limit.");
+        for(int item : items) {
+            auto owner = mappedOwners.find(item);
+            Require(owner != mappedOwners.end(), Code::Representation, item, "MAPPED_ITEM has no supported shape representation owner.");
+            int parent = owner->second;
+            currentRepresentation = parent;
+            int map = Ref(item, "mapping_source");
+            Require(document.IsA(map, "REPRESENTATION_MAP"), Code::Representation, item, "Expected REPRESENTATION_MAP.");
+            int child = Ref(map, "mapped_representation");
+            Require(parents.count(child), Code::Representation, map, "Mapped representation must be a resolved shape representation.");
+            int originFrame = Ref(map, "mapping_origin");
+            Require(OwnsFrame(child, originFrame), Code::Representation, map,
+                    "Mapping origin must belong to the resolved mapped representation; coordinate/unit ownership was not guessed.");
+            auto origin = ReadFrame(*this, originFrame, Scale(child));
+            auto target = ReadOperator(Ref(item, "mapping_target"), Scale(parent));
+            auto placement = target.Compose(RigidPlacement::Frame(origin, originFrame).Inverse());
+            AddArc(Root(parent), Root(child), placement, {-2, item, map, child});
+        }
+    }
+};
+
 struct Vertex { int id, point; Vector position; };
 struct Piece {
     SBezier bezier;
@@ -701,13 +1073,7 @@ private:
     }
 
     Vector Point(int id) {
-        Require(document.IsA(id, "CARTESIAN_POINT"), Code::InvalidGeometry, id,
-                "Expected CARTESIAN_POINT.");
-        Vector point = Triple(id, "coordinates").ScaledBy(scale);
-        Require(Finite(point) && std::abs(point.x) <= MAX_COORDINATE_MM &&
-                std::abs(point.y) <= MAX_COORDINATE_MM && std::abs(point.z) <= MAX_COORDINATE_MM,
-                Code::Unsupported, id, "Coordinates exceed the finite +/-1e8 mm native envelope.");
-        return point;
+        return ReadPoint(*this, id, scale);
     }
 
     const Vertex &ReadVertex(int id) {
@@ -721,25 +1087,7 @@ private:
     }
 
     Placement ReadPlacement(int geometry) {
-        int placement = Ref(geometry, "position");
-        Require(document.IsA(placement, "AXIS2_PLACEMENT_3D"), Code::InvalidGeometry, placement,
-                "Analytic geometry needs AXIS2_PLACEMENT_3D.");
-        Placement result;
-        result.origin = Point(Ref(placement, "location"));
-        auto axis = Get(placement, "axis"), ref = Get(placement, "ref_direction");
-        Require((axis.kind == Kind::Null || axis.kind == Kind::Reference) &&
-                (ref.kind == Kind::Null || ref.kind == Kind::Reference),
-                Code::InvalidGeometry, placement, "Invalid optional placement axes.");
-        result.z = axis.kind == Kind::Null ? Vector{0, 0, 1} : Direction(axis.reference);
-        bool alongX = result.z.Equals({1, 0, 0}, 1e-12) || result.z.Equals({-1, 0, 0}, 1e-12);
-        result.x = ref.kind == Kind::Reference ? Direction(ref.reference) :
-                   (alongX ? Vector{0, 1, 0} : Vector{1, 0, 0});
-        result.x = result.x.Minus(result.z.ScaledBy(result.x.Dot(result.z)));
-        Require(result.x.Magnitude() > 1e-12, Code::InvalidGeometry, placement,
-                "Placement axis and reference direction are parallel.");
-        result.x = result.x.WithMagnitude(1);
-        result.y = result.z.Cross(result.x);
-        return result;
+        return ReadFrame(*this, Ref(geometry, "position"), scale);
     }
 
     std::vector<Nurbs::CurveSpan> ReadSplineCurve(int geometry) {
@@ -2158,14 +2506,56 @@ private:
     }
 };
 
-GeometryDiagnostic Diagnostic(const Failure &failure, int representation, int solid) {
+GeometryDiagnostic Diagnostic(const Failure &failure, int representation, int solid,
+                              const std::vector<int> &path = {}) {
     GeometryDiagnostic diagnostic;
     diagnostic.code = failure.code;
     diagnostic.representation = representation;
     diagnostic.solid = solid;
     diagnostic.entity = failure.entity;
     diagnostic.message = failure.message;
+    diagnostic.occurrencePath = path;
     return diagnostic;
+}
+
+std::unique_ptr<NativeSolid> PlaceSolid(NativeSolid &source, const SolidOccurrence &occurrence) {
+    std::unique_ptr<NativeSolid> result(new NativeSolid);
+    result->representation = source.representation;
+    result->context = source.context;
+    result->solid = source.solid;
+    result->outerShell = source.outerShell;
+    result->lengthToMm = source.lengthToMm;
+    result->occurrencePath = occurrence.path;
+    const auto &placement = occurrence.placement;
+    result->shell.MakeFromTransformationOf(&source.shell, placement.translation, placement.rotation, 1);
+    result->vertices = source.vertices;
+    result->edges = source.edges;
+    result->faces = source.faces;
+    auto check = [&](Vector point) {
+        Require(Finite(point) && std::abs(point.x) <= MAX_COORDINATE_MM &&
+                std::abs(point.y) <= MAX_COORDINATE_MM && std::abs(point.z) <= MAX_COORDINATE_MM,
+                Code::Unsupported, source.solid,
+                "Placed native geometry exceeds the finite +/-1e8 mm coordinate envelope; no occurrence was approximated.");
+    };
+    for(auto &vertex : result->vertices) {
+        vertex.position = placement.Apply(vertex.position);
+        check(vertex.position);
+    }
+    for(auto &face : result->faces) {
+        face.origin = placement.Apply(face.origin);
+        face.normal = placement.rotation.Rotate(face.normal);
+        Require(Finite(face.origin) && Finite(face.normal), Code::Unsupported, face.face,
+                "Non-finite placed native face reference.");
+    }
+    for(const auto &surface : result->shell.surface) {
+        for(int i = 0; i <= surface.degm; ++i) for(int j = 0; j <= surface.degn; ++j) check(surface.ctrl[i][j]);
+        for(const auto &trim : surface.trim) { check(trim.start); check(trim.finish); }
+    }
+    for(const auto &curve : result->shell.curve) {
+        for(int i = 0; i <= curve.exact.deg; ++i) check(curve.exact.ctrl[i]);
+        for(const auto &point : curve.pts) check(point.p);
+    }
+    return result;
 }
 
 } // namespace
@@ -2174,93 +2564,59 @@ NativeSolid::~NativeSolid() { shell.Clear(); }
 
 GeometryResult ConvertGeometry(const Document &document, const GeometryOptions &options) {
     GeometryResult result;
-    Attributes attributes(document);
-    std::map<int, int> candidates;
-    int currentRepresentation = 0;
+    OccurrenceGraph graph(document);
+    std::vector<SolidOccurrence> occurrences;
     try {
-        // Occurrence paths/transforms remain a separate, explicit limitation.
-        // Components must never be imported at guessed definition origins.
-        for(const char *type : {"MAPPED_ITEM", "CONTEXT_DEPENDENT_SHAPE_REPRESENTATION",
-                               "ASSEMBLY_COMPONENT_USAGE"}) {
-            auto entities = document.EntitiesOfType(type);
-            Require(entities.empty(), Code::Representation, entities.empty() ? 0 : entities.front(),
-                    "Mappings and assemblies are not implemented; no flattening is performed.");
-        }
-        std::map<int, int> parents;
-        std::set<int> geometryRoots;
-        auto representations = document.EntitiesOfType("SHAPE_REPRESENTATION");
-        std::sort(representations.begin(), representations.end());
-        for(int representation : representations) {
-            currentRepresentation = representation;
-            parents.emplace(representation, representation);
-            for(int item : attributes.Refs(representation, "items")) {
-                if(document.IsA(item, "AXIS2_PLACEMENT_3D")) continue;
-                Require(document.IsA(item, "SOLID_MODEL"), Code::Representation, item,
-                        "Unsupported non-solid shape item; representation selection is not implemented.");
-                Require(candidates.emplace(item, representation).second, Code::Representation, item,
-                        "Solid occurs more than once; occurrence/context selection is ambiguous.");
-                geometryRoots.insert(representation);
-            }
-        }
-
-        // A plain shape relationship within one context needs no placement or
-        // unit conversion between representations. Accept axis-only intermediates
-        // connected to one geometry-bearing representation, retaining the latter's
-        // source ID. Do not choose between alternative geometry representations.
-        auto FindRoot = [&](int representation) -> int {
-            while(parents.at(representation) != representation) {
-                parents.at(representation) = parents.at(parents.at(representation));
-                representation = parents.at(representation);
-            }
-            return representation;
-        };
-        auto relationships = document.EntitiesOfType("REPRESENTATION_RELATIONSHIP");
-        std::sort(relationships.begin(), relationships.end());
-        for(int relationship : relationships) {
-            currentRepresentation = 0;
-            bool supported = document.IsA(relationship, "SHAPE_REPRESENTATION_RELATIONSHIP");
-            // Inspect every complex component: a shape relationship may also
-            // carry a transformation or other unsupported relationship semantics.
-            for(const auto &type : document.EntityTypes(relationship)) {
-                if(type != "SHAPE_REPRESENTATION_RELATIONSHIP" &&
-                   type != "REPRESENTATION_RELATIONSHIP") supported = false;
-            }
-            Require(supported, Code::Representation, relationship,
-                    "Only plain, non-transforming shape representation relationships are implemented; no flattening is performed.");
-            int first = attributes.Ref(relationship, "rep_1");
-            int second = attributes.Ref(relationship, "rep_2");
-            currentRepresentation = first;
-            Require(parents.count(first) && parents.count(second), Code::Representation, relationship,
-                    "Both related representations must be shape representations.");
-            Require(attributes.Ref(first, "context_of_items") ==
-                    attributes.Ref(second, "context_of_items"), Code::Representation, relationship,
-                    "Related shape representations must share one context; no placement or unit context is inferred.");
-            int a = FindRoot(first), b = FindRoot(second);
-            Require(a != b, Code::Representation, relationship,
-                    "Self-referencing, cyclic or duplicate shape representation relationships are not supported.");
-            Require(!geometryRoots.count(a) || !geometryRoots.count(b), Code::Representation, relationship,
-                    "Related representations contain alternative geometry; representation selection is not implemented.");
-            if(a > b) std::swap(a, b);
-            parents.at(b) = a;
-            if(geometryRoots.erase(b)) geometryRoots.insert(a);
-        }
+        occurrences = graph.Resolve();
     } catch(const Failure &failure) {
-        result.diagnostics.push_back(Diagnostic(failure, currentRepresentation, 0));
+        result.diagnostics.push_back(Diagnostic(failure, graph.currentRepresentation, 0));
         return result;
     }
     for(int solid : document.EntitiesOfType("SOLID_MODEL")) {
-        if(candidates.count(solid)) continue;
+        if(graph.candidates.count(solid)) continue;
         result.diagnostics.push_back(Diagnostic({Code::Representation, solid,
             "Solid has no supported direct shape representation/unit context; it is omitted."}, 0, solid));
     }
-    for(const auto &candidate : candidates) {
+    // Validate each source definition exactly once, then make independently
+    // owned rigid copies. No Boolean, fitting, per-component group or mesh is
+    // involved; local shell handles remain available to the link-layer remap.
+    std::map<int, std::unique_ptr<NativeSolid>> definitions;
+    std::map<int, GeometryDiagnostic> failures;
+    size_t surfaces = 0, curves = 0, trimPoints = 0;
+    for(const auto &occurrence : occurrences) {
+        int representation = occurrence.representation, solid = occurrence.solid;
+        if(!definitions.count(solid) && !failures.count(solid)) {
+            try {
+                definitions.emplace(solid, SolidBuilder(document, options).Build(representation, solid));
+            } catch(const Failure &failure) {
+                failures.emplace(solid, Diagnostic(failure, representation, solid));
+            } catch(const Nurbs::Error &failure) {
+                failures.emplace(solid, Diagnostic({failure.unsupported ? Code::Unsupported : Code::InvalidGeometry,
+                    failure.entity, failure.message}, representation, solid));
+            }
+        }
+        auto failure = failures.find(solid);
+        if(failure != failures.end()) {
+            auto diagnostic = failure->second;
+            diagnostic.occurrencePath = occurrence.path;
+            result.diagnostics.push_back(std::move(diagnostic));
+            continue;
+        }
+        auto &definition = *definitions.at(solid);
+        surfaces += definition.shell.surface.n; curves += definition.shell.curve.n;
+        for(const auto &curve : definition.shell.curve) trimPoints += curve.pts.n;
+        if(surfaces > MAX_ASSEMBLY_SURFACES || curves > MAX_ASSEMBLY_CURVES ||
+           trimPoints > MAX_ASSEMBLY_TRIM_POINTS) {
+            result.solids.clear();
+            result.diagnostics.push_back(Diagnostic({Code::Representation, solid,
+                "Complete assembly exceeds the native surface/curve/trim-point work limit; no geometry was linked."},
+                representation, 0, occurrence.path));
+            return result;
+        }
         try {
-            result.solids.push_back(SolidBuilder(document, options).Build(candidate.second, candidate.first));
+            result.solids.push_back(PlaceSolid(definition, occurrence));
         } catch(const Failure &failure) {
-            result.diagnostics.push_back(Diagnostic(failure, candidate.second, candidate.first));
-        } catch(const Nurbs::Error &failure) {
-            result.diagnostics.push_back(Diagnostic({failure.unsupported ? Code::Unsupported : Code::InvalidGeometry,
-                failure.entity, failure.message}, candidate.second, candidate.first));
+            result.diagnostics.push_back(Diagnostic(failure, representation, solid, occurrence.path));
         }
     }
     if(!result.solids.empty()) {
