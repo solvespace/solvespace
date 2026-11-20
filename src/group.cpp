@@ -33,8 +33,9 @@ void Group::Clear() {
     impMesh.Clear();
     impShell.Clear();
     impEntity.Clear();
-    // remap is the only one that doesn't get recreated when we regen
+    // Reference identities don't get recreated when we regenerate.
     remap.clear();
+    stepRefs.clear();
 }
 
 void Group::AddParam(ParamList *param, hParam hp, double v) {
@@ -313,11 +314,26 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
                 g.linkFile = dialog->GetFilename();
             }
 
+            // Reject an unusable STEP before inserting an empty group or
+            // changing the undo stack. Reload below will reuse the same cache.
+            if(SS.IsStepFile(g.linkFile) &&
+               !SS.LoadLinkedGroup(&g, LinkValues(), /*checkFiles=*/true)) {
+                if(SS.ReadLinkedStep(g.linkFile, /*checkFiles=*/false)->status ==
+                   SolveSpaceUI::LinkedStepFile::STEPStatus::Missing) {
+                    Error("Couldn't read from STEP file '%s'", g.linkFile.raw.c_str());
+                } else {
+                    SS.ReportStepLinkDiagnostics();
+                }
+                g.Clear();
+                return;
+            }
+
             // Assign the default name of the group based on the name of
             // the linked file.
             g.name = g.linkFile.FileStem();
             for(size_t i = 0; i < g.name.length(); i++) {
-                if(!(isalnum(g.name[i]) || (unsigned)g.name[i] >= 0x80)) {
+                unsigned char c = (unsigned char)g.name[i];
+                if(!(c >= 0x80 || isalnum(c))) {
                     // convert punctuation to dashes
                     g.name[i] = '-';
                 }
@@ -1199,7 +1215,9 @@ void Group::CopyEntity(Sketch *sketch, EntityList *el,
                 en.param[6] = qvz;
             }
             en.numPoint  = (ep->actPoint).ScaledBy(scale);
-            en.numNormal = (ep->actNormal).ScaledBy(scale);
+            // Face expressions assume a unit numerical normal. Uniform scale
+            // moves the supporting point, but only its sign changes orientation.
+            en.numNormal = (ep->actNormal).ScaledBy(scale < 0 ? -1 : 1);
             // the new face needs an associated point (old files may not have one)
             if(ep->point[0].v != 0) {
                 en.point[0] = Remap(ep->point[0], remap);

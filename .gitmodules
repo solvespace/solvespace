@@ -26,3 +26,6 @@
 [submodule "extlib/eigen"]
 	path = extlib/eigen
 	url = https://gitlab.com/libeigen/eigen.git
+[submodule "extlib/stepcode"]
+	path = extlib/stepcode
+	url = https://github.com/stepcode/stepcode.git

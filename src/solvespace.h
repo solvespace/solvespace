@@ -162,74 +162,19 @@ public:
 
 class StepFileWriter {
 public:
-    bool HasCartesianPointAnAlias(int number, Vector v, int vertex,
-                                  bool *vertex_has_alias = nullptr);
-    int InsertPoint(int number);
-    int InsertVertex(int number);
-    bool HasBSplineCurveAnAlias(int number, std::vector<int> points);
-    int InsertCurve(int number);
-    bool HasEdgeCurveAnAlias(int number, int prevFinish, int thisFinish, int curveId,
-                        bool *flip = nullptr);
-    int InsertEdgeCurve(int number);
-    bool HasOrientedEdgeAnAlias(int number, int edgeCurveId, bool flip);
-    int InsertOrientedEdge(int number);
     void ExportSurfacesTo(const Platform::Path &filename);
     void WriteHeader();
     void WriteProductHeader();
-    int ExportCurve(SBezier *sb);
-    int ExportCurveLoop(SBezierLoop *loop, bool inner);
-    void ExportSurface(SSurface *ss, SBezierList *sbl);
+    int ExportPoint(Vector point);
+    int ExportCurve(SBezier *sb, int startPoint = 0, int finishPoint = 0);
+    int ExportSurface(SSurface *ss);
+    void ExportFaceColor(int face, RgbaColor color);
     void WriteWireframe();
     void WriteFooter();
 
-    List<int> curves;
-    List<int> advancedFaces;
+    List<int> curves = {};
     FILE *f;
     int id;
-
-    // Structs to keep track of duplicated entities.
-    // Basic alias.
-    typedef struct {
-        int reference;
-        std::vector<int> aliases;
-    } alias_t;
-
-    // Cartesian points.
-    typedef struct {
-        alias_t alias;
-        alias_t vertexAlias;
-        Vector v;
-    } pointAliases_t;
-
-    // Curves.
-    typedef struct {
-        alias_t alias;
-        std::vector<int> memberPoints;
-        RgbaColor color;
-    } curveAliases_t;
-
-    // Edges.
-    typedef struct {
-        alias_t alias;
-        int prevFinish;
-        int thisFinish;
-        int curveId;
-        RgbaColor color;
-    } edgeCurveAliases_t;
-
-    // Edges.
-    typedef struct {
-        alias_t alias;
-        int edgeCurveId;
-        bool flip;
-    } orientedEdgeAliases_t;
-
-    std::vector<pointAliases_t> pointAliases;
-    std::vector<edgeCurveAliases_t> edgeCurveAliases;
-    std::vector<curveAliases_t> curveAliases;
-    std::vector<orientedEdgeAliases_t> orientedEdgeAliases;
-    bool exportParts = true;
-    RgbaColor currentColor;
 };
 
 class VectorFileWriter {
@@ -713,6 +658,28 @@ public:
     // parameters these values. If checkFiles, files read before are checked
     // for changes. Returns false if the file can't be loaded at all.
     bool LoadLinkedGroup(Group *g, const LinkValues &values, bool checkFiles);
+    static bool IsStepFile(const Platform::Path &filename);
+    // Separate from linkedSketchFiles: STEP has no editable Sketch or parameters.
+    struct LinkedStepFile {
+        enum class STEPStatus { Okay, Partial, Rejected, Missing };
+        STEPStatus          status = STEPStatus::Missing;
+        std::string     source; // exact bytes; only explicit reload checks the file
+        EntityList      entities = {};
+        SShell          shell = {};
+        StepEntityMap   references;
+        size_t          solids = 0;
+        size_t          omitted = 0;
+        std::string     diagnostics;
+        bool            pendingDiagnostic = false;
+    };
+    std::map<Platform::Path, LinkedStepFile, Platform::PathLess> linkedStepFiles;
+    std::vector<std::string> pendingStepLinkErrors;
+    std::vector<std::string> pendingStepLinkWarnings;
+    LinkedStepFile *ReadLinkedStep(const Platform::Path &filename, bool checkFiles);
+    bool LoadLinkedStep(const Platform::Path &filename, EntityList *le, SMesh *m, SShell *sh,
+                        bool checkFiles, Group *group = nullptr);
+    void DropLinkedStep(const Platform::Path &filename);
+    void ReportStepLinkDiagnostics();
     // For GenerateOptions::loadLinked
     static bool LoadLinkedForGeneration(Group *g, const LinkValues &values);
     // Load a linked .slvs file as a sketch of its own, generate it with these

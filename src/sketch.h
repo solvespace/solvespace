@@ -9,6 +9,7 @@
 #define SOLVESPACE_SKETCH_H
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <tuple>
 #include <unordered_map>
@@ -178,6 +179,28 @@ struct LinkValue {
 // The values given to a linked sketch's parameters, in order of name
 using LinkValues = std::vector<LinkValue>;
 
+// Source identities for immutable STEP references. Part 21 IDs are local to a
+// file and a solid's unit context, not semantic names across arbitrary exports.
+// A group's persistent table never reuses a token when a reference disappears.
+struct StepEntityKey {
+    enum { VERTEX = 1, EDGE = 2, FACE = 3 };
+    int representation, solid, kind, entity;
+    // Exact source connectivity, not a coordinate hash. Geometry may move or
+    // resize while keeping its topology; repurposed IDs must not retarget refs.
+    // An optional zero/length-prefixed occurrence path distinguishes repeated
+    // assembly instances. Its source IDs, not placement values, persist here.
+    std::vector<int> topology;
+    bool operator<(const StepEntityKey &other) const {
+        return std::tie(representation, solid, kind, entity, topology) <
+               std::tie(other.representation, other.solid, other.kind, other.entity, other.topology);
+    }
+    bool operator==(const StepEntityKey &other) const {
+        return std::tie(representation, solid, kind, entity, topology) ==
+               std::tie(other.representation, other.solid, other.kind, other.entity, other.topology);
+    }
+};
+using StepEntityMap = std::map<StepEntityKey, hEntity>;
+
 class Group {
 public:
     static const hGroup     HGROUP_REFERENCES;
@@ -302,6 +325,7 @@ public:
     bool forceToMesh;
 
     EntityMap remap;
+    StepEntityMap stepRefs;
 
     Platform::Path linkFile;
     SMesh       impMesh;

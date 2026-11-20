@@ -92,6 +92,18 @@ void SShell::RemapFaces(Group *g, int remap) {
         face = g->Remap(face, remap);
         ss.face = face.v;
     }
+    // Exact edge references have the same source namespace as the stored
+    // entities. Keep them bound after linked placement and step-and-repeat too.
+    for(SCurve &curve : this->curve) {
+        if(!curve.isExact || curve.exact.entity == Entity::NO_ENTITY.v) continue;
+        // Native extrusions can retain the generating sketch curve's ID, not
+        // an entity copied into this group. Don't invent a remap for that ID:
+        // only rewrite references already allocated by entity generation.
+        auto found = g->remap.find({hEntity{curve.exact.entity}, remap});
+        if(found != g->remap.end()) {
+            curve.exact.entity = g->h.entity(found->second.v).v;
+        }
+    }
 }
 
 void SMesh::RemapFaces(Group *g, int remap) {

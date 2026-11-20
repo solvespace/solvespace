@@ -506,6 +506,21 @@ void SSurface::CurvatureFormAt(double u, double v, Vector e1, Vector e2,
     *h22 = ji12*p12 + ji22*p22;
 }
 
+// Coordinates in the plane of the two corner control edges. These are the
+// inverse only for an affine patch; otherwise they are a possible Newton seed.
+static bool ControlPlaneCoordinates(const SSurface &s, Vector p, double *u, double *v) {
+    Vector bu = s.ctrl[1][0].Minus(s.ctrl[0][0]),
+           bv = s.ctrl[0][1].Minus(s.ctrl[0][0]),
+           n = bu.Cross(bv);
+    double n2 = n.MagSquared();
+    if(n2 == 0) return false;
+    Vector dp = p.Minus(s.ctrl[0][0]);
+    // The dual directions also handle skew axes. No normalization is needed.
+    *u = dp.Dot(bv.Cross(n)) / n2;
+    *v = dp.Dot(n.Cross(bu)) / n2;
+    return true;
+}
+
 void SSurface::ClosestPointTo(Vector p, Point2d *puv, bool mustConverge) {
     ClosestPointTo(p, &(puv->x), &(puv->y), mustConverge);
 }
@@ -520,22 +535,10 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
     if(p.Equals(ctrl[degm][degn])) { *u = 1; *v = 1; return; }
     if(p.Equals(ctrl[0]   [degn])) { *u = 0; *v = 1; return; }
 
-    // And planes are trivial, so don't waste time iterating over those.
-    if(degm == 1 && degn == 1) {
-        Vector orig =  ctrl[0][0],
-               bu   = (ctrl[1][0]).Minus(orig),
-               bv   = (ctrl[0][1]).Minus(orig);
-        if((ctrl[1][1]).Equals(orig.Plus(bu).Plus(bv))) {
-
-            Vector n = bu.Cross(bv);
-            Vector ty = n.Cross(bu).ScaledBy(1.0/bu.MagSquared());
-            Vector tx = bv.Cross(n).ScaledBy(1.0/bv.MagSquared());
-
-            Vector dp = p.Minus(orig);
-            *u = dp.Dot(bu) / tx.MagSquared();
-            *v = dp.Dot(bv) / ty.MagSquared();
-            return;
-        }
+    // Affine patches have a direct inverse. Keep the cheap degree rejection
+    // here; the inline predicate also checks weights and the fourth corner.
+    if(degm == 1 && degn == 1 && IsAffine() && ControlPlaneCoordinates(*this, p, u, v)) {
+        return;
     }
 
     // Try whatever the previous guess was. This is likely to do something
@@ -545,6 +548,22 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
     if(mustConverge) {
         double ut = cached.x, vt = cached.y;
         if(ClosestPointNewton(p, &ut, &vt, mustConverge)) {
+            cached.x = *u = ut;
+            cached.y = *v = vt;
+            return;
+        }
+    }
+
+    // Construction and transforms can leave an intended-affine net a few ulps
+    // short of the exact predicate. Try its linear inverse as a Newton seed,
+    // refining on the original patch rather than relaxing that predicate.
+    // This also avoids a grid search on regular non-affine/rational bilinears
+    // when the seed converges. Off-surface queries retain the general fallback.
+    if(degm == 1 && degn == 1) {
+        double ut, vt;
+        if(ControlPlaneCoordinates(*this, p, &ut, &vt) &&
+           ClosestPointNewton(p, &ut, &vt, /*mustConverge=*/true))
+        {
             cached.x = *u = ut;
             cached.y = *v = vt;
             return;

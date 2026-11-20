@@ -86,8 +86,15 @@ std::vector<FileFilter> SolveSpaceModelFileFilters = {
 };
 
 std::vector<FileFilter> SolveSpaceLinkFileFilters = {
+#ifdef HAVE_STEP_IMPORT
+    { CN_("file-type", "ALL"), { "slvs", "step", "stp", "emn", "stl" } },
+#else
     { CN_("file-type", "ALL"), { "slvs", "emn", "stl" } },
+#endif
     { CN_("file-type", "SolveSpace models"), { "slvs" } },
+#ifdef HAVE_STEP_IMPORT
+    { CN_("file-type", "STEP file (native solids)"), { "step", "stp" } },
+#endif
     { CN_("file-type", "IDF circuit board"), { "emn" } },
     { CN_("file-type", "STL triangle mesh"), { "stl" } },
 };

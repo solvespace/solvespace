@@ -5,6 +5,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+#include <sstream>
+
 namespace SolveSpace {
 
 #define VERSION_STRING "\261\262\263" "SolveSpaceREVa"
@@ -120,6 +122,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'g',  "Group.allDimsReference",   'b',    &(SS.sv.g.allDimsReference)   },
     { 'g',  "Group.scale",              'f',    &(SS.sv.g.scale)              },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
+    { 'g',  "Group.stepRefs",           'T',    &(SS.sv.g.stepRefs)           },
     { 'g',  "Group.impFile",            'i',    NULL                          },
     { 'g',  "Group.impFileRel",         'P',    &(SS.sv.g.linkFile)           },
 
@@ -217,6 +220,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
 
 struct SAVEDptr {
     EntityMap      &M() { return *((EntityMap *)this); }
+    StepEntityMap  &T() { return *((StepEntityMap *)this); }
     std::string    &S() { return *((std::string *)this); }
     Platform::Path &P() { return *((Platform::Path *)this); }
     bool      &b() { return *((bool *)this); }
@@ -240,6 +244,7 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
         if(fmt == 'f' && EXACT(p->f() == 0.0))    continue;
         if(fmt == 'x' && p->x() == 0)             continue;
         if(fmt == 'i')                            continue;
+        if(fmt == 'T' && p->T().empty())          continue;
 
         fprintf(fh, "%s=", SAVED[i].desc);
         switch(fmt) {
@@ -270,6 +275,19 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
                 for(const auto &it : sorted) {
                     fprintf(fh, "    %d %08x %d\n",
                             it.second.v, it.first.input.v, it.first.copyNumber);
+                }
+                fprintf(fh, "}");
+                break;
+            }
+
+            case 'T': {
+                fprintf(fh, "{\n");
+                for(const auto &entry : p->T()) {
+                    const auto &key = entry.first;
+                    fprintf(fh, "    %d %d %d %d %u %zu", key.representation, key.solid,
+                            key.kind, key.entity, entry.second.v, key.topology.size());
+                    for(int source : key.topology) fprintf(fh, " %d", source);
+                    fprintf(fh, "\n");
                 }
                 fprintf(fh, "}");
                 break;
@@ -461,6 +479,53 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
                             break;
                         }
                     }
+                    break;
+                }
+
+                case 'T': {
+                    p->T().clear();
+                    std::set<uint32_t> tokens;
+                    bool closed = false;
+                    for(;;) {
+                        // Connectivity signatures can exceed the usual scalar
+                        // line length; don't split a reference into two rows.
+                        std::string line2;
+                        int c;
+                        while((c = fgetc(fh)) != EOF && c != '\n') line2 += (char)c;
+                        if(line2.empty() && c == EOF) break;
+                        auto first = line2.find_first_not_of(" \t\r");
+                        if(first != std::string::npos && line2[first] == '}') {
+                            if(line2.find_first_not_of(" \t\r", first + 1) != std::string::npos) {
+                                fileLoadError = true;
+                            }
+                            closed = true;
+                            break;
+                        }
+                        StepEntityKey key = {};
+                        hEntity token = {};
+                        unsigned count = 0;
+                        std::istringstream input(line2);
+                        input.imbue(std::locale::classic());
+                        if(!(input >> key.representation >> key.solid >> key.kind >> key.entity >>
+                             token.v >> count) || count > 16384 ||
+                           key.representation <= 0 || key.solid <= 0 || key.entity <= 0 ||
+                           key.kind < StepEntityKey::VERTEX || key.kind > StepEntityKey::FACE ||
+                           token.v == 0 || token.v >= (1u << 16)) {
+                            fileLoadError = true;
+                            continue;
+                        }
+                        for(unsigned i = 0; i < count; ++i) {
+                            int source;
+                            if(!(input >> source)) break;
+                            key.topology.push_back(source);
+                        }
+                        input >> std::ws;
+                        if(key.topology.size() != count || !input.eof() ||
+                           !tokens.insert(token.v).second || !p->T().emplace(key, token).second) {
+                            fileLoadError = true;
+                        }
+                    }
+                    if(!closed) fileLoadError = true;
                     break;
                 }
 
@@ -752,16 +817,19 @@ void SolveSpaceUI::UpgradeLegacyData() {
     deleted.nonTrivialConstraints += result.nonTrivialConstraints;
 }
 
-// Whether the file is a SolveSpace sketch, rather than a mesh or a board
+// Whether the file is a SolveSpace sketch, rather than native STEP, a mesh or a board
 static bool IsSketchFile(const Platform::Path &filename) {
     std::string ext = filename.Extension();
-    return !(ext == "emn" || ext == "EMN" || ext == "stl" || ext == "STL");
+    return !SolveSpaceUI::IsStepFile(filename) &&
+           !(ext == "emn" || ext == "EMN" || ext == "stl" || ext == "STL");
 }
 
 bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                                         SMesh *m, SShell *sh)
 {
-    if(strcmp(filename.Extension().c_str(), "emn")==0) {
+    if(IsStepFile(filename)) {
+        return LoadLinkedStep(filename, le, m, sh, /*checkFiles=*/true);
+    } else if(strcmp(filename.Extension().c_str(), "emn")==0) {
         return LinkIDF(filename, le, m, sh);
     } else if(strcmp(filename.Extension().c_str(), "EMN")==0) {
         return LinkIDF(filename, le, m, sh);
@@ -787,7 +855,10 @@ bool SolveSpaceUI::LoadLinkedGroup(Group *g, const LinkValues &values, bool chec
     g->linkParams.clear();
 
     bool ok;
-    if(IsSketchFile(g->linkFile)) {
+    if(IsStepFile(g->linkFile)) {
+        ok = LoadLinkedStep(g->linkFile, &g->impEntity, &g->impMesh, &g->impShell,
+                            checkFiles, g);
+    } else if(IsSketchFile(g->linkFile)) {
         // If the linked sketch can't be generated, use what was saved in its
         // file when it was last generated, without any values.
         ok = LoadLinkedSketch(g->linkFile, values, &g->impEntity, &g->impMesh, &g->impShell,
@@ -1090,6 +1161,14 @@ void SolveSpaceUI::PruneLinkedSketches() {
     for(const Platform::Path &file : files) {
         DropLinkedSketchFile(file);
     }
+
+    files.clear();
+    for(const auto &entry : linkedStepFiles) {
+        if(filesUsed.count(entry.first.raw) == 0 && !entry.second.pendingDiagnostic) {
+            files.push_back(entry.first);
+        }
+    }
+    for(const auto &file : files) DropLinkedStep(file);
 }
 
 void SolveSpaceUI::ClearLinkedSketches() {
@@ -1104,6 +1183,9 @@ void SolveSpaceUI::ClearLinkedSketches() {
         ClearLinkedSketch(&entry.second);
     }
     linkedSketches.clear();
+    while(!linkedStepFiles.empty()) DropLinkedStep(linkedStepFiles.begin()->first);
+    pendingStepLinkErrors.clear();
+    pendingStepLinkWarnings.clear();
 }
 
 bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityList *le,
@@ -1137,6 +1219,7 @@ bool SolveSpaceUI::LoadEntitiesFromSlvs(const Platform::Path &filename, EntityLi
         } else if(strcmp(line, "AddGroup")==0) {
             // These get allocated whether we want them or not.
             sv.g.remap.clear();
+            sv.g.stepRefs.clear();
         } else if(strcmp(line, "AddParam")==0) {
 
         } else if(strcmp(line, "AddEntity")==0) {
@@ -1308,6 +1391,11 @@ try_again:
                     return false;
                 }
             }
+        } else if(IsStepFile(g.linkFile) && linkedStepFiles.count(g.linkFile) != 0 &&
+                  linkedStepFiles[g.linkFile].status != LinkedStepFile::STEPStatus::Missing) {
+            // Readable but invalid/unsupported STEP (or too many persistent
+            // references) isn't a missing-file problem. Diagnostics are queued
+            // until generation has made the sketch safe to repaint.
         } else if(linkMap.count(g.linkFile) == 0) {
             dbp("Missing file for group: %s", g.name.c_str());
             // The file was moved; prompt the user for its new location.
