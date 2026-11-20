@@ -411,6 +411,146 @@ std::vector<SBezier> CircularArcs(double first, double sweep, bool periodic) {
     return result;
 }
 
+// Cavity ownership must not be inferred from bounding boxes, mesh volume or a
+// few boundary samples. Prove exact patch separation before classifying one
+// point on each connected shell. All copies/subdivisions are validation-local.
+class ShellBoundary {
+public:
+    enum class Location { Outside, Inside, Boundary, Ambiguous };
+    struct Patch {
+        SSurface surface;
+        Vector min, max;
+        SSurface::Plane plane;
+    };
+    std::vector<Patch> patches;
+    Vector probe = {}, min = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE};
+    Vector max = {VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE};
+
+    bool SeparatedFrom(const ShellBoundary &other, size_t *work) const {
+        for(const auto &a : patches) for(const auto &b : other.patches) {
+            if(!SeparatedPatches(a.surface, b.surface, a.min, a.max, b.min, b.max,
+                                 a.plane, b.plane, 0, work)) return false;
+        }
+        return true;
+    }
+
+    Location Classify(Vector point, size_t *work) {
+        if(point.OutsideAndNotOn(max, min)) return Location::Outside;
+        static const Vector directions[] = {
+            {1, 0.371, 0.529}, {0.529, 1, 0.371}, {0.371, 0.529, 1},
+            {1, -0.617, 0.223}, {0.223, 1, -0.617}, {-0.617, 0.223, 1}
+        };
+        Location result = Location::Ambiguous;
+        int agreeing = 0;
+        for(Vector direction : directions) {
+            Location location;
+            if(!Cast(point, direction.WithMagnitude(1), &location, work)) continue;
+            if(location == Location::Boundary) return location;
+            if(agreeing && location != result) return Location::Ambiguous;
+            result = location;
+            if(++agreeing == 2) return result;
+        }
+        return Location::Ambiguous;
+    }
+
+private:
+    static bool SeparatedPatches(const SSurface &a, const SSurface &b,
+                                 Vector amin, Vector amax, Vector bmin, Vector bmax,
+                                 const SSurface::Plane &planeA, const SSurface::Plane &planeB,
+                                 int depth, size_t *work) {
+        if(++(*work) > 1000000 || depth > 32) return false;
+        Vector hi, lo;
+        a.GetAxisAlignedBounding(&hi, &lo);
+        amin = {std::max(amin.x, lo.x), std::max(amin.y, lo.y), std::max(amin.z, lo.z)};
+        amax = {std::min(amax.x, hi.x), std::min(amax.y, hi.y), std::min(amax.z, hi.z)};
+        b.GetAxisAlignedBounding(&hi, &lo);
+        bmin = {std::max(bmin.x, lo.x), std::max(bmin.y, lo.y), std::max(bmin.z, lo.z)};
+        bmax = {std::min(bmax.x, hi.x), std::min(bmax.y, hi.y), std::min(bmax.z, hi.z)};
+        if(amax.x < amin.x - LENGTH_EPS || amax.y < amin.y - LENGTH_EPS || amax.z < amin.z - LENGTH_EPS ||
+           bmax.x < bmin.x - LENGTH_EPS || bmax.y < bmin.y - LENGTH_EPS || bmax.z < bmin.z - LENGTH_EPS ||
+           amax.x < bmin.x - LENGTH_EPS || bmax.x < amin.x - LENGTH_EPS ||
+           amax.y < bmin.y - LENGTH_EPS || bmax.y < amin.y - LENGTH_EPS ||
+           amax.z < bmin.z - LENGTH_EPS || bmax.z < amin.z - LENGTH_EPS) return true;
+        auto beyondPlane = [](const SSurface &surface, Vector point, Vector normal) {
+            double lo = VERY_POSITIVE, hi = VERY_NEGATIVE;
+            for(int i = 0; i <= surface.degm; ++i) for(int j = 0; j <= surface.degn; ++j) {
+                double d = surface.ctrl[i][j].Minus(point).Dot(normal);
+                lo = std::min(lo, d); hi = std::max(hi, d);
+            }
+            return lo > LENGTH_EPS || hi < -LENGTH_EPS;
+        };
+        if((planeA.isPlanar && beyondPlane(b, a.ctrl[0][0], planeA.normal)) ||
+           (planeB.isPlanar && beyondPlane(a, b.ctrl[0][0], planeB.normal))) return true;
+        bool splitA = amax.Minus(amin).MagSquared() >= bmax.Minus(bmin).MagSquared();
+        SSurface split = splitA ? a : b;
+        double du = 0, dv = 0;
+        for(int i = 0; i <= split.degm; ++i) for(int j = 0; j <= split.degn; ++j) {
+            if(i) du = std::max(du, split.ctrl[i][j].Minus(split.ctrl[i - 1][j]).MagSquared());
+            if(j) dv = std::max(dv, split.ctrl[i][j].Minus(split.ctrl[i][j - 1]).MagSquared());
+        }
+        SSurface first = {}, second = {};
+        split.SplitInHalf(du >= dv, &first, &second);
+        if(splitA) return
+            SeparatedPatches(first, b, amin, amax, bmin, bmax, planeA, planeB, depth + 1, work) &&
+            SeparatedPatches(second, b, amin, amax, bmin, bmax, planeA, planeB, depth + 1, work);
+        return SeparatedPatches(a, first, amin, amax, bmin, bmax, planeA, planeB, depth + 1, work) &&
+               SeparatedPatches(a, second, amin, amax, bmin, bmax, planeA, planeB, depth + 1, work);
+    }
+
+    bool Cast(Vector point, Vector direction, Location *location, size_t *work) {
+        double reach = point.Magnitude() + 2 * max.Minus(min).Magnitude();
+        struct Crossing { double distance, normal; };
+        std::vector<Crossing> crossings;
+        for(auto &patch : patches) {
+            if(++(*work) > 1000000) return false;
+            auto &surface = patch.surface;
+            if(patch.plane.isPlanar && std::abs(patch.plane.normal.Dot(direction)) < 1e-8) return false;
+            List<SInter> intersections = {};
+            surface.AllPointsIntersecting(point.Minus(direction.ScaledBy(reach)),
+                point.Plus(direction.ScaledBy(reach)), &intersections,
+                /*asSegment=*/true, /*trimmed=*/false, /*inclTangent=*/true);
+            bool reliable = true;
+            for(const auto &hit : intersections) {
+                if(!Finite(hit.p) || !std::isfinite(hit.pinter.x) || !std::isfinite(hit.pinter.y)) {
+                    reliable = false; break;
+                }
+                auto c = surface.bsp->ClassifyPoint(hit.pinter, {0, 0}, &surface);
+                double distance = hit.p.Minus(point).Dot(direction);
+                if(c != SBspUv::Class::OUTSIDE && std::abs(distance) <= LENGTH_EPS) {
+                    intersections.Clear();
+                    *location = Location::Boundary;
+                    return true;
+                }
+                // Trim PWLs only discard hits well away from their uncertainty
+                // band. Retry rays near a trim, artificial seam or tangency.
+                if(surface.bsp->MinimumDistanceToEdge(hit.pinter, &surface) <=
+                   4 * std::max(4 * LENGTH_EPS, SS.ChordTolMm())) {
+                    reliable = false; break;
+                }
+                if(c == SBspUv::Class::OUTSIDE) continue;
+                double normal = hit.surfNormal.Dot(direction) / hit.surfNormal.Magnitude();
+                if(!std::isfinite(normal) || std::abs(normal) < 1e-6) { reliable = false; break; }
+                crossings.push_back({distance, normal});
+            }
+            intersections.Clear();
+            if(!reliable) return false;
+        }
+        std::sort(crossings.begin(), crossings.end(),
+                  [](const Crossing &a, const Crossing &b) { return a.distance < b.distance; });
+        if(crossings.size() % 2 != 0) return false;
+        int before = 0;
+        for(size_t i = 0; i < crossings.size(); ++i) {
+            if(i && crossings[i].distance - crossings[i - 1].distance <= LENGTH_EPS) return false;
+            // Each base shell was validated outward: crossings must alternate
+            // entering/exiting, with both ray endpoints outside its control hull.
+            if((crossings[i].normal < 0) != (i % 2 == 0)) return false;
+            if(crossings[i].distance < 0) ++before;
+        }
+        *location = before % 2 ? Location::Inside : Location::Outside;
+        return true;
+    }
+};
+
 class SolidBuilder : public Attributes {
 public:
     SolidBuilder(const Document &document, const GeometryOptions &options)
@@ -421,20 +561,26 @@ public:
         scale = Units(document).ForContext(context);
         Require(document.IsA(solid, "MANIFOLD_SOLID_BREP"), Code::Unsupported, solid,
                 "Only MANIFOLD_SOLID_BREP is supported.");
-        Require(!document.IsA(solid, "BREP_WITH_VOIDS"), Code::Unsupported, solid,
-                "Cavity-shell conversion is not implemented; the entire solid is omitted.");
         int outer = Ref(solid, "outer");
-        auto shellTypes = document.EntityTypes(outer);
-        Require(shellTypes.size() == 1 && shellTypes[0] == "CLOSED_SHELL", Code::Unsupported,
-                outer, "Only a direct CLOSED_SHELL is supported.");
-        auto faceIds = Refs(outer, "cfs_faces");
-        Require(!faceIds.empty() && faceIds.size() <= MAX_FACES, Code::Unsupported, outer,
-                "Closed-shell face count is empty or exceeds the converter limit.");
-        std::sort(faceIds.begin(), faceIds.end());
-        Require(std::adjacent_find(faceIds.begin(), faceIds.end()) == faceIds.end(),
-                Code::InvalidGeometry, outer, "Repeated face in CLOSED_SHELL.");
-        faces.reserve(faceIds.size());
-        for(int face : faceIds) faces.push_back(ReadFace(face));
+        ReadShell(outer, 0);
+        if(document.IsA(solid, "BREP_WITH_VOIDS")) {
+            auto voids = Refs(solid, "voids");
+            Require(!voids.empty() && voids.size() < MAX_FACES, Code::Unsupported, solid,
+                    "BREP_WITH_VOIDS needs a nonempty, bounded set of cavity shells.");
+            std::sort(voids.begin(), voids.end());
+            Require(std::adjacent_find(voids.begin(), voids.end()) == voids.end(),
+                    Code::InvalidGeometry, solid, "Repeated oriented cavity shell in BREP_WITH_VOIDS.");
+            for(int oriented : voids) {
+                auto types = document.EntityTypes(oriented);
+                Require(types.size() == 1 && types[0] == "ORIENTED_CLOSED_SHELL",
+                        Code::Unsupported, oriented, "A cavity must reference ORIENTED_CLOSED_SHELL.");
+                Require(!Boolean(oriented, "orientation"), Code::InvalidGeometry, oriented,
+                        "A cavity must reverse its outward CLOSED_SHELL (orientation .F.); no orientation was repaired.");
+                ReadShell(Ref(oriented, "closed_shell_element"), oriented);
+            }
+        }
+        faces.reserve(faceShell.size());
+        for(const auto &entry : faceShell) faces.push_back(ReadFace(entry.first));
         Vector min = vertices.begin()->second.position, max = min;
         for(const auto &edge : edges) for(const auto &piece : edge.second.pieces) {
             for(int i = 0; i <= piece.bezier.deg; ++i) piece.bezier.ctrl[i].MakeMaxMin(&max, &min);
@@ -445,7 +591,7 @@ public:
                 options.maxSegments >= 8 && options.maxSegments <= 4096, Code::Unsupported, solid,
                 "Native trim/validation tessellation settings are outside the supported numerical/work envelope.");
         TessellationScope tessellation(tolerance, options.maxSegments);
-        ValidateTopology(outer);
+        ValidateTopology();
         for(auto &face : faces) ValidateFace(&face);
         MakeSeams();
         SplitEdges();
@@ -460,6 +606,14 @@ public:
         result->lengthToMm = scale;
         MakeNative(result.get());
         ValidateNative(result.get());
+        ValidateVoids(result.get());
+        // Source base shells have just been validated outward. Apply only the
+        // explicit oriented-shell reversal, to both geometry and provenance.
+        for(auto &face : result->faces) if(faceShell.at(face.face) != 0) {
+            face.normal = face.normal.Negated();
+            for(auto &loop : face.boundaries) for(auto &use : loop) use.second = !use.second;
+            for(hSSurface surface : face.surfaces) result->shell.surface.FindById(surface)->Reverse();
+        }
         return result;
     }
 
@@ -471,6 +625,27 @@ private:
     std::vector<Face> faces;
     std::vector<Segment> segments;
     std::vector<Seam> seams;
+    struct SourceShell {
+        int id, oriented; // oriented is zero for the outer shell
+        std::vector<int> faces;
+    };
+    std::vector<SourceShell> shells;
+    std::map<int, size_t> faceShell;
+
+    void ReadShell(int id, int oriented) {
+        auto types = document.EntityTypes(id);
+        Require(types.size() == 1 && types[0] == "CLOSED_SHELL", Code::Unsupported, id,
+                "Only a direct CLOSED_SHELL is supported as a base shell; nested oriented shells are not allowed.");
+        for(const auto &shell : shells) Require(shell.id != id, Code::InvalidGeometry,
+                oriented ? oriented : id, "Outer and cavity shells must not reuse one CLOSED_SHELL.");
+        auto ids = Refs(id, "cfs_faces");
+        Require(!ids.empty() && ids.size() + faceShell.size() <= MAX_FACES, Code::Unsupported,
+                id, "Closed-shell face count is empty or exceeds the converter limit for the complete solid.");
+        std::sort(ids.begin(), ids.end());
+        for(int face : ids) Require(faceShell.emplace(face, shells.size()).second,
+                Code::InvalidGeometry, id, "Repeated face in or between CLOSED_SHELLs.");
+        shells.push_back({id, oriented, std::move(ids)});
+    }
 
     Vector Point(int id) {
         Require(document.IsA(id, "CARTESIAN_POINT"), Code::InvalidGeometry, id,
@@ -1272,28 +1447,41 @@ private:
         }
     }
 
-    void ValidateTopology(int outer) {
+    void ValidateTopology() {
         std::map<int, std::set<int>> neighbors;
         for(const auto &entry : edges) {
             const auto &edge = entry.second;
             Require(edge.uses.size() == 2 && edge.uses[0].face != edge.uses[1].face &&
                     edge.uses[0].forwards != edge.uses[1].forwards, Code::InvalidGeometry, edge.id,
                     "Every source edge must have exactly two distinct, oppositely oriented incident faces.");
+            Require(faceShell.at(edge.uses[0].face) == faceShell.at(edge.uses[1].face),
+                    Code::InvalidGeometry, edge.id, "An edge must not be shared between closed shells.");
             neighbors[edge.uses[0].face].insert(edge.uses[1].face);
             neighbors[edge.uses[1].face].insert(edge.uses[0].face);
         }
-        std::set<int> seen;
-        std::vector<int> pending{faces.front().id};
-        while(!pending.empty()) {
-            int face = pending.back(); pending.pop_back();
-            if(!seen.insert(face).second) continue;
-            for(int next : neighbors[face]) pending.push_back(next);
+        for(size_t s = 0; s < shells.size(); ++s) {
+            const auto &shell = shells[s];
+            std::set<int> seen, shellEdges, shellVertices;
+            std::vector<int> pending{shell.faces.front()};
+            while(!pending.empty()) {
+                int face = pending.back(); pending.pop_back();
+                if(!seen.insert(face).second) continue;
+                for(int next : neighbors[face]) pending.push_back(next);
+            }
+            Require(seen.size() == shell.faces.size(), Code::InvalidGeometry, shell.id,
+                    "Disconnected face components in CLOSED_SHELL.");
+            int euler = 0;
+            for(const auto &face : faces) if(faceShell.at(face.id) == s) {
+                euler += 2 - (int)face.loops.size();
+                for(const auto &loop : face.loops) {
+                    shellVertices.insert(loop.vertices.begin(), loop.vertices.end());
+                    for(const auto &use : loop.edges) shellEdges.insert(use.edge);
+                }
+            }
+            euler += (int)shellVertices.size() - (int)shellEdges.size();
+            Require(euler <= 2 && euler % 2 == 0, Code::InvalidGeometry, shell.id,
+                    "Source topology is not an orientable closed shell (including its inner face bounds).");
         }
-        Require(seen.size() == faces.size(), Code::InvalidGeometry, outer, "Disconnected face components in CLOSED_SHELL.");
-        int euler = (int)vertices.size() - (int)edges.size();
-        for(const auto &face : faces) euler += 2 - (int)face.loops.size();
-        Require(euler <= 2 && euler % 2 == 0, Code::InvalidGeometry, outer,
-                "Source topology is not an orientable closed shell (including its inner face bounds).");
         for(auto a = vertices.begin(); a != vertices.end(); ++a) {
             for(auto b = std::next(a); b != vertices.end(); ++b) {
                 Require(!a->second.position.Equals(b->second.position), Code::InvalidGeometry, b->first,
@@ -1503,6 +1691,8 @@ private:
             bool first = true;
             FaceReference reference = {};
             reference.face = face.id; reference.geometry = face.geometry;
+            reference.shell = shells[faceShell.at(face.id)].id;
+            reference.orientedShell = shells[faceShell.at(face.id)].oriented;
             reference.origin = face.origin; reference.normal = face.normal; reference.planar = face.planar;
             for(auto &patch : face.patches) {
                 if(patch.trims.empty()) continue; // untrimmed support outside the source face
@@ -1621,13 +1811,21 @@ private:
 
     void ValidateNative(NativeSolid *result) {
         std::vector<Triangle> triangles;
-        Vector anchor = vertices.begin()->second.position;
-        double volume = 0, area = 0;
+        struct Measure { Vector anchor; double volume = 0, area = 0; };
+        std::vector<Measure> measures;
+        for(const auto &shell : shells) {
+            const Face *first = nullptr;
+            for(const auto &face : faces) if(face.id == shell.faces.front()) first = &face;
+            ssassert(first != nullptr, "Source shell has no face");
+            measures.push_back({vertices.at(first->loops.front().vertices.front()).position});
+        }
         for(auto &surface : result->shell.surface) {
             int sourceFace = result->outerShell;
             for(const auto &face : result->faces) {
                 if(std::find(face.surfaces.begin(), face.surfaces.end(), surface.h) != face.surfaces.end()) sourceFace = face.face;
             }
+            auto &measure = measures[faceShell.at(sourceFace)];
+            Vector anchor = measure.anchor;
             EdgeListOwner edges;
             surface.MakeEdgesInto(&result->shell, &edges.edges, SSurface::MakeAs::UV);
             PolygonOwner polygon;
@@ -1658,8 +1856,8 @@ private:
                 Require(Finite(triangle.a) && Finite(triangle.b) && Finite(triangle.c) &&
                         triangle.Normal().Dot(surface.NormalAt(center.x, center.y)) > 0,
                         Code::InvalidGeometry, sourceFace, "Folded or degenerate native triangulation of a surface patch.");
-                volume += triangle.a.Minus(anchor).Dot(triangle.b.Minus(anchor).Cross(triangle.c.Minus(anchor))) / 6;
-                area += triangle.Area();
+                measure.volume += triangle.a.Minus(anchor).Dot(triangle.b.Minus(anchor).Cross(triangle.c.Minus(anchor))) / 6;
+                measure.area += triangle.Area();
                 Triangle record = {triangle, triangle.a, triangle.a};
                 triangle.b.MakeMaxMin(&record.max, &record.min); triangle.c.MakeMaxMin(&record.max, &record.min);
                 Require(triangles.size() < MAX_VALIDATION_TRIANGLES, Code::Unsupported, result->outerShell,
@@ -1669,9 +1867,83 @@ private:
             Require(std::abs(coveredArea - expectedArea) <= std::max(1e-10, expectedArea * 1e-6),
                     Code::InvalidGeometry, sourceFace, "Native triangulation does not cover its complete trimmed UV region.");
         }
+        double volume = 0, area = 0;
+        for(size_t i = 0; i < shells.size(); ++i) {
+            const auto &measure = measures[i];
+            Require(std::isfinite(measure.volume) && std::isfinite(measure.area) &&
+                    measure.volume > measure.area * LENGTH_EPS, Code::InvalidGeometry, shells[i].id,
+                    "Non-positive or numerically degenerate enclosed native volume in a base CLOSED_SHELL.");
+            volume += i == 0 ? measure.volume : -measure.volume;
+            area += measure.area;
+        }
         Require(std::isfinite(volume) && std::isfinite(area) && volume > area * LENGTH_EPS,
                 Code::InvalidGeometry, result->outerShell, "Non-positive or numerically degenerate enclosed native volume.");
         ValidateIntersections(result->outerShell, &triangles);
+    }
+
+    void ValidateVoids(NativeSolid *result) {
+        if(shells.size() == 1) return;
+        std::vector<ShellBoundary> boundaries(shells.size());
+        Vector anchor = vertices.begin()->second.position;
+        for(const auto &face : faces) {
+            size_t s = faceShell.at(face.id);
+            auto &boundary = boundaries[s];
+            if(face.id == shells[s].faces.front()) {
+                boundary.probe = vertices.at(face.loops.front().vertices.front()).position.Minus(anchor);
+            }
+            for(const auto &patch : face.patches) {
+                if(patch.trims.empty()) continue;
+                auto native = result->shell.surface.FindById(patch.handle);
+                ShellBoundary::Patch copy = {};
+                copy.surface = SSurface::FromTransformationOf(native, anchor.Negated(),
+                    Quaternion::IDENTITY, 1, /*includingTrims=*/false);
+                copy.plane = copy.surface.GetPlane();
+                copy.surface.GetAxisAlignedBounding(&copy.max, &copy.min);
+                if(copy.plane.isPlanar) {
+                    // A trimmed planar region lies inside its exact boundary's
+                    // control hull. Do not use this bound for curved interiors.
+                    Vector lo = {VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE}, hi = lo.Negated();
+                    for(const auto &loop : face.loops) for(const auto &use : loop.edges) {
+                        for(const auto &piece : edges.at(use.edge).pieces) {
+                            for(int i = 0; i <= piece.bezier.deg; ++i) {
+                                piece.bezier.ctrl[i].Minus(anchor).MakeMaxMin(&hi, &lo);
+                            }
+                        }
+                    }
+                    // Conservatively include source/surface agreement and
+                    // subdivision roundoff; this only enlarges validation boxes.
+                    Vector padding = {LENGTH_EPS, LENGTH_EPS, LENGTH_EPS};
+                    lo = lo.Minus(padding); hi = hi.Plus(padding);
+                    copy.min = {std::max(copy.min.x, lo.x), std::max(copy.min.y, lo.y), std::max(copy.min.z, lo.z)};
+                    copy.max = {std::min(copy.max.x, hi.x), std::min(copy.max.y, hi.y), std::min(copy.max.z, hi.z)};
+                }
+                EdgeListOwner uv;
+                native->MakeEdgesInto(&result->shell, &uv.edges, SSurface::MakeAs::UV);
+                copy.surface.bsp = SBspUv::From(&uv.edges, &copy.surface);
+                Require(copy.surface.bsp != nullptr, Code::InvalidGeometry, face.id,
+                        "Cannot classify an empty native cavity/outer face.");
+                copy.min.MakeMaxMin(&boundary.max, &boundary.min);
+                copy.max.MakeMaxMin(&boundary.max, &boundary.min);
+                boundary.patches.push_back(copy);
+            }
+        }
+        size_t work = 0;
+        using Location = ShellBoundary::Location;
+        auto requireLocation = [&](Location actual, Location expected, int entity) {
+            Require(actual != Location::Ambiguous, Code::Unsupported, entity,
+                    "Cavity-shell containment is numerically ambiguous or exceeds the validation work limit; no ownership was guessed.");
+            Require(actual == expected, Code::InvalidGeometry, entity,
+                    "Cavity shells must lie strictly inside the outer shell and outside one another; no cavity was stripped or merged.");
+        };
+        for(size_t i = 1; i < shells.size(); ++i) for(size_t j = 0; j < i; ++j) {
+            Require(boundaries[i].SeparatedFrom(boundaries[j], &work), Code::Unsupported,
+                    shells[i].oriented,
+                    "Cavity shells touch/intersect, or exact patch separation is unresolved within the validation limits; the entire solid is omitted.");
+            requireLocation(boundaries[j].Classify(boundaries[i].probe, &work),
+                            j == 0 ? Location::Inside : Location::Outside, shells[i].oriented);
+            requireLocation(boundaries[i].Classify(boundaries[j].probe, &work),
+                            Location::Outside, shells[i].oriented);
+        }
     }
 };
 
