@@ -22,6 +22,7 @@ struct GeometryDiagnostic {
     int solid = 0;
     int entity = 0;
     std::string message;
+    std::vector<int> occurrencePath; // same source-identity encoding as NativeSolid
 };
 
 // These are provenance, not sketch entities or persistent cross-export names.
@@ -66,6 +67,11 @@ public:
     int solid = 0;
     int outerShell = 0;
     double lengthToMm = 0;
+    // Empty for a direct solid (preserves existing reference identities).
+    // Each occurrence appends a kind marker and three IDs: {-1, usage, parent
+    // product, child product} or {-2, mapped item, representation map, source
+    // representation}. Placement values/names never participate in identity.
+    std::vector<int> occurrencePath;
     SShell shell = {};
     std::vector<VertexReference> vertices;
     std::vector<EdgeReference> edges;
@@ -105,10 +111,14 @@ struct GeometryOptions {
 // torus tips are not bridged by singular trims; unsupported charts reject the solid.
 // Source boundaries are retained, not fitted or replaced by polygons. Native trim
 // PWLs and validation tessellation are not geometry-conversion fallbacks.
-// Plain shape representation relationships may connect axis-only intermediates
-// to one geometry representation within a shared context; no transforms are inferred.
+// Plain shape relationships may connect axis-only intermediates to one geometry
+// representation in a shared context. Explicit product usages and mapped items
+// support nested/repeated rigid occurrences with independently normalized units.
+// Their source occurrence paths distinguish references; no placement is inferred.
+// Scaling, reflections, cycles and ambiguous/alternative definitions reject the
+// document. The link layer keeps one group and one construction frame per file.
 // Unsupported geometry/trimming omits the entire solid, with an entity-specific
-// diagnostic. No healing, cavity stripping or assembly flattening.
+// diagnostic. No healing, cavity stripping or guessed assembly placements.
 // Uses SolveSpace's fixed LENGTH_EPS in mm, not a relaxed STEP uncertainty.
 // Called synchronously by the GUI. Does not retain Document or vendor objects.
 GeometryResult ConvertGeometry(const Document &document,

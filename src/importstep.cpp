@@ -28,6 +28,14 @@ bool IsStepFrameReference(hEntity entity) {
 #ifdef HAVE_STEP_IMPORT
 StepEntityKey Key(Step::NativeSolid &solid, int kind, int entity) {
     StepEntityKey key = {solid.representation, solid.solid, kind, entity, {}};
+    if(!solid.occurrencePath.empty()) {
+        // Existing direct-solid topology starts with a positive source ID.
+        // A zero-prefixed, length-qualified occurrence path is disjoint from
+        // those keys and from other instances of the same definition. Keep
+        // direct-solid keys byte-for-byte compatible with saved linked files.
+        key.topology = {0, (int)solid.occurrencePath.size()};
+        key.topology.insert(key.topology.end(), solid.occurrencePath.begin(), solid.occurrencePath.end());
+    }
     auto addEdge = [&](const Step::EdgeReference &edge) {
         key.topology.insert(key.topology.end(),
             {edge.edge, edge.geometry, edge.startVertex, edge.finishVertex});
@@ -241,6 +249,14 @@ SolveSpaceUI::LinkedStepFile *SolveSpaceUI::ReadLinkedStep(const Platform::Path 
         read.document.reset(); // no runtime/schema objects in the cache
         for(const auto &d : geometry.diagnostics) {
             if(d.solid != 0) ++file.omitted;
+            if(!d.occurrencePath.empty()) {
+                file.diagnostics += "Occurrence path:";
+                for(size_t i = 0; i + 3 < d.occurrencePath.size(); i += 4) {
+                    file.diagnostics += ssprintf(" / %s #%d", d.occurrencePath[i] == -1 ? "usage" : "mapped item",
+                                                 d.occurrencePath[i + 1]);
+                }
+                file.diagnostics += "\n";
+            }
             file.diagnostics += ssprintf("Representation #%d, solid #%d, entity #%d: %s\n",
                 d.representation, d.solid, d.entity, d.message.c_str());
         }

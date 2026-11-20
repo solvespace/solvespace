@@ -187,6 +187,8 @@ struct StepEntityKey {
     int representation, solid, kind, entity;
     // Exact source connectivity, not a coordinate hash. Geometry may move or
     // resize while keeping its topology; repurposed IDs must not retarget refs.
+    // An optional zero/length-prefixed occurrence path distinguishes repeated
+    // assembly instances. Its source IDs, not placement values, persist here.
     std::vector<int> topology;
     bool operator<(const StepEntityKey &other) const {
         return std::tie(representation, solid, kind, entity, topology) <
