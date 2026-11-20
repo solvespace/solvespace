@@ -75,11 +75,11 @@ public:
         }
     }
 
-    RgbaColor ForFace(int solid, int shell, int face) const {
+    RgbaColor ForFace(int solid, int shell, int orientedShell, int face) const {
         RgbaColor color = RGBi(150, 150, 150);
         // A directly styled face overrides shell/solid defaults. RGB and opacity
         // inherit independently when a more specific style does not supply both.
-        for(int item : {solid, shell, face}) {
+        for(int item : {solid, shell, orientedShell, face}) {
             auto found = items.find(item);
             if(found != items.end()) color = found->second.Apply(color);
         }
@@ -222,7 +222,7 @@ void ApplySurfaceColors(const Document &document, GeometryResult *geometry) {
     if(geometry->solids.empty()) return;
     SurfaceColors colors(document);
     for(auto &solid : geometry->solids) for(const auto &face : solid->faces) {
-        RgbaColor color = colors.ForFace(solid->solid, solid->outerShell, face.face);
+        RgbaColor color = colors.ForFace(solid->solid, face.shell, face.orientedShell, face.face);
         for(hSSurface surface : face.surfaces) {
             solid->shell.surface.FindById(surface)->color = color;
         }

@@ -47,9 +47,11 @@ struct EdgeReference {
 struct FaceReference {
     int face;
     int geometry;
+    int shell; // source base CLOSED_SHELL, not its oriented cavity wrapper
+    int orientedShell; // zero for the outer shell
     hSSurface surface; // first retained native patch
     Vector origin;
-    Vector normal; // outward supporting-plane normal, only meaningful if planar
+    Vector normal; // outward from material (into a cavity), meaningful if planar
     bool planar; // curved walls must not masquerade as constraint planes
     std::vector<hSSurface> surfaces;
     // Effective SOURCE boundary directions, independent of native span/patch
@@ -95,6 +97,8 @@ struct GeometryOptions {
 // Direct, explicitly unit-qualified 3D B-reps. Lines, circles/circular arcs,
 // B-spline curves, planes, cylinders, regular ring tori and tensor-product
 // B-spline surfaces are converted to exact rational Bezier spans of native degree <= 3.
+// BREP_WITH_VOIDS retains complete, separately validated base shells; explicit
+// .F. cavity orientations are applied only after enclosure and separation checks.
 // Cylindrical/toroidal circle bands gain paired periodic seams. Source boundaries
 // are retained, not fitted or replaced by polygons. Native trim PWLs and validation
 // tessellation are not geometry-conversion fallbacks.
