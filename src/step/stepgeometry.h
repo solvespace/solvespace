@@ -95,13 +95,16 @@ struct GeometryOptions {
 };
 
 // Direct, explicitly unit-qualified 3D B-reps. Lines, circles/circular arcs,
-// B-spline curves, planes, cylinders, regular ring tori and tensor-product
-// B-spline surfaces are converted to exact rational Bezier spans of native degree <= 3.
+// B-spline curves, planes, regular cones/cylinders, spheres, regular ring tori and
+// tensor-product B-spline surfaces become exact rational Bezier spans of degree <= 3.
 // BREP_WITH_VOIDS retains complete, separately validated base shells; explicit
 // .F. cavity orientations are applied only after enclosure and separation checks.
-// Cylindrical/toroidal circle bands gain paired periodic seams. Source boundaries
-// are retained, not fitted or replaced by polygons. Native trim PWLs and validation
-// tessellation are not geometry-conversion fallbacks.
+// Cylindrical/toroidal circle bands gain paired periodic seams.
+// Conical/spherical bands and selected degenerate-torus bands use the same exact
+// circular patch construction. Cone apexes, spherical chart poles and degenerate
+// torus tips are not bridged by singular trims; unsupported charts reject the solid.
+// Source boundaries are retained, not fitted or replaced by polygons. Native trim
+// PWLs and validation tessellation are not geometry-conversion fallbacks.
 // Plain shape representation relationships may connect axis-only intermediates
 // to one geometry representation within a shared context; no transforms are inferred.
 // Unsupported geometry/trimming omits the entire solid, with an entity-specific
