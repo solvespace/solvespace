@@ -105,6 +105,10 @@ add_custom_target(test_solvespace
     COMMENT "Testing SolveSpace"
     VERBATIM)
 
+if(ENABLE_STEP_IMPORT_PROOF OR ENABLE_STEP_IMPORT)
+    add_subdirectory(step)
+endif()
+
 # coverage reports
 
 if(ENABLE_COVERAGE)

@@ -139,6 +139,7 @@ if(ENABLE_GUI OR ENABLE_CLI)
         importdxf.cpp
         importidf.cpp
         importmesh.cpp
+        importstep.cpp
         mesh.cpp
         modify.cpp
         mouse.cpp

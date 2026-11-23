@@ -387,8 +387,29 @@ bool SSurface::MarchIntersection(SSurface *b, Vector start, Vector startv,
     return reached;
 }
 
+// Bound an exact plane-plane intersection without assuming a linear UV map.
+// The boxes enclose the control hulls; the normal trim/split pass removes any
+// excess portions of the resulting finite XYZ line.
+static void ClipLineToBoundingBox(Vector p, Vector dl, Vector max, Vector min,
+                                  double *tmin, double *tmax)
+{
+    for(int axis = 0; axis < 3; ++axis) {
+        double direction = dl.Element(axis), origin = p.Element(axis);
+        if(fabs(direction) < 1e-12) {
+            if(origin < min.Element(axis) - LENGTH_EPS ||
+               origin > max.Element(axis) + LENGTH_EPS) *tmax = VERY_NEGATIVE;
+        } else {
+            double a = (min.Element(axis) - origin) / direction;
+            double b = (max.Element(axis) - origin) / direction;
+            *tmin = std::max(*tmin, std::min(a, b));
+            *tmax = std::min(*tmax, std::max(a, b));
+        }
+    }
+}
+
 void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
-                                SShell *into)
+                                SShell *into,
+                                const Plane *knownPlaneA, const Plane *knownPlaneB)
 {
     Vector amax, amin, bmax, bmin;
     GetAxisAlignedBounding(&amax, &amin);
@@ -404,12 +425,13 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
     bool isExtdt = this->IsExtrusion(&oft, &alongt),
          isExtdb =    b->IsExtrusion(&ofb, &alongb);
 
-    if(degm == 1 && degn == 1 && b->degm == 1 && b->degn == 1) {
-        // Line-line intersection; it's a plane or nothing.
-        Vector na = NormalAt(0, 0).WithMagnitude(1),
-               nb = b->NormalAt(0, 0).WithMagnitude(1);
-        double da = na.Dot(PointAt(0, 0)),
-               db = nb.Dot(b->PointAt(0, 0));
+    const Plane aPlane = knownPlaneA ? *knownPlaneA : GetPlane();
+    const Plane bPlane = knownPlaneB ? *knownPlaneB : b->GetPlane();
+    bool planeA = aPlane.isPlanar, planeB = bPlane.isPlanar;
+    if(planeA && planeB) {
+        // Two planes intersect along a line, unless they are parallel.
+        Vector na = aPlane.normal, nb = bPlane.normal;
+        double da = aPlane.d, db = bPlane.d;
 
         Vector dl = na.Cross(nb);
         if(dl.Magnitude() < LENGTH_EPS) return; // parallel planes
@@ -423,13 +445,32 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         double tmax = VERY_POSITIVE, tmin = VERY_NEGATIVE;
         for(i = 0; i < 2; i++) {
             SSurface *s = (i == 0) ? this : b;
-            Vector tu, tv;
-            s->TangentsAt(0, 0, &tu, &tv);
-
-            double up, vp, ud, vd;
-            s->ClosestPointTo(p, &up, &vp);
-            ud = (dl.Dot(tu)) / tu.MagSquared();
-            vd = (dl.Dot(tv)) / tv.MagSquared();
+            if(!s->IsAffine()) {
+                // The UV coordinates of a line are not linear on a rational
+                // or non-affine planar patch. Clip conservatively to its XYZ
+                // control hull instead; the ordinary trim/split pass removes
+                // excess line portions. Do not linearize the parameter map.
+                ClipLineToBoundingBox(p, dl, (i == 0) ? amax : bmax,
+                                            (i == 0) ? amin : bmin, &tmin, &tmax);
+                continue;
+            }
+            // Here the exact affine predicate is already known. Reuse its
+            // control edges instead of evaluating tangents and testing it again
+            // inside ClosestPointTo(). The dual basis also handles skew axes.
+            Vector tu = s->ctrl[1][0].Minus(s->ctrl[0][0]),
+                   tv = s->ctrl[0][1].Minus(s->ctrl[0][0]);
+            Vector n = tu.Cross(tv);
+            double n2 = n.MagSquared();
+            if(n2 == 0) {
+                ClipLineToBoundingBox(p, dl, (i == 0) ? amax : bmax,
+                                            (i == 0) ? amin : bmin, &tmin, &tmax);
+                continue;
+            }
+            Vector tx = tv.Cross(n).ScaledBy(1 / n2),
+                   ty = n.Cross(tu).ScaledBy(1 / n2),
+                   dp = p.Minus(s->ctrl[0][0]);
+            double up = dp.Dot(tx), vp = dp.Dot(ty),
+                   ud = dl.Dot(tx), vd = dl.Dot(ty);
 
             // so u = up + t*ud
             //    v = vp + t*vd
@@ -464,13 +505,12 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                                            p.Plus(dl.ScaledBy(tmax)));
             AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
         }
-    } else if((degm == 1 && degn == 1 && isExtdb) ||
-              (b->degm == 1 && b->degn == 1 && isExtdt))
+    } else if((planeA && isExtdb) || (planeB && isExtdt))
     {
         // The intersection between a plane and a surface of extrusion
         SSurface *splane, *sext;
         SShell *shext;
-        if(degm == 1 && degn == 1) {
+        if(planeA) {
             splane = this;
             sext = b;
             shext = agnstB;
@@ -480,8 +520,9 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             shext = agnstA;
         }
 
-        Vector n = splane->NormalAt(0, 0).WithMagnitude(1), along;
-        double d = n.Dot(splane->PointAt(0, 0));
+        const Plane &plane = planeA ? aPlane : bPlane;
+        Vector n = plane.normal, along;
+        double d = plane.d;
         SBezier bezier;
         (void)sext->IsExtrusion(&bezier, &along);
 
@@ -515,7 +556,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 if(sc.source == SCurve::Source::INTERSECTION) continue;
                 if(!sc.isExact) continue;
                 if((sc.surfA != sext->h) && (sc.surfB != sext->h)) continue;
-                if(splane->ContainsPlaneCurve(&sc)) {
+                if(splane->ContainsPlaneCurve(&sc, &plane)) {
                     SBezier bezier = sc.exact;
                     AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
                     exacts.Add(&bezier);
@@ -630,7 +671,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         inters.Clear();
         lv.Clear();
     } else {
-        if((degm == 1 && degn == 1) || (b->degm == 1 && b->degn == 1)) {
+        if(planeA || planeB) {
             // we should only be here if just one surface is a plane because the
             // plane-plane case was already handled above. Need to check the other
             // nonplanar surface for trim curves that lie in the plane and are not
@@ -639,7 +680,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             // This also seems necessary to merge some coincident surfaces.
             SSurface *splane, *sext;
             SShell *shext;
-            if(degm == 1 && degn == 1) { // this and other checks assume coplanar ctrl pts.
+            if(planeA) {
                 splane = this;
                 sext = b;
                 shext = agnstB;
@@ -649,13 +690,14 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 shext = agnstA;
             }
             bool foundExact = false;
+            const Plane &plane = planeA ? aPlane : bPlane;
             for(SCurve &sc : shext->curve) {
                 if(sc.source == SCurve::Source::INTERSECTION) continue;
                 if(!sc.isExact) continue;
                 if((sc.surfA != sext->h) && (sc.surfB != sext->h)) continue;
                 // we have a curve belonging to the curved surface and not the plane.
                 // does it lie completely in the plane?
-                if(splane->ContainsPlaneCurve(&sc)) {
+                if(splane->ContainsPlaneCurve(&sc, &plane)) {
                     SBezier bezier = sc.exact;
                     AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
                     foundExact = true;
@@ -799,32 +841,37 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 // Are two surfaces coincident, with the same (or with opposite) normals?
 // Currently handles planes only.
 //-----------------------------------------------------------------------------
-bool SSurface::CoincidentWith(SSurface *ss, bool sameNormal) const {
-    if(degm != 1 || degn != 1) return false;
-    if(ss->degm != 1 || ss->degn != 1) return false;
+bool SSurface::CoincidentWith(SSurface *ss, bool sameNormal,
+                              const Plane *knownPlaneA, const Plane *knownPlaneB) const {
+    const Plane aPlane = knownPlaneA ? *knownPlaneA : GetPlane();
+    if(!aPlane.isPlanar) return false;
+    const Plane bPlane = knownPlaneB ? *knownPlaneB : ss->GetPlane();
+    if(!bPlane.isPlanar) return false;
 
-    Vector p = ctrl[0][0];
-    Vector n = NormalAt(0, 0).WithMagnitude(1);
-    double d = n.Dot(p);
+    if(!ss->CoincidentWithPlane(aPlane.normal, aPlane.d)) return false;
 
-    if(!ss->CoincidentWithPlane(n, d)) return false;
-
-    Vector n2 = ss->NormalAt(0, 0);
+    double dot = bPlane.normal.Dot(aPlane.normal);
     if(sameNormal) {
-        if(n2.Dot(n) < 0) return false;
+        if(dot < 0) return false;
     } else {
-        if(n2.Dot(n) > 0) return false;
+        if(dot > 0) return false;
     }
 
     return true;
 }
 
 bool SSurface::CoincidentWithPlane(Vector n, double d) const {
-    if(degm != 1 || degn != 1) return false;
-    if(fabs(n.Dot(ctrl[0][0]) - d) > LENGTH_EPS) return false;
-    if(fabs(n.Dot(ctrl[0][1]) - d) > LENGTH_EPS) return false;
-    if(fabs(n.Dot(ctrl[1][0]) - d) > LENGTH_EPS) return false;
-    if(fabs(n.Dot(ctrl[1][1]) - d) > LENGTH_EPS) return false;
+    // Keep the common four-dot-product test unrolled. Higher-degree patches
+    // still require the entire net; checking only their corners is not enough.
+    if(degm == 1 && degn == 1) {
+        return fabs(n.Dot(ctrl[0][0]) - d) <= LENGTH_EPS &&
+               fabs(n.Dot(ctrl[0][1]) - d) <= LENGTH_EPS &&
+               fabs(n.Dot(ctrl[1][0]) - d) <= LENGTH_EPS &&
+               fabs(n.Dot(ctrl[1][1]) - d) <= LENGTH_EPS;
+    }
+    for(int i = 0; i <= degm; ++i) for(int j = 0; j <= degn; ++j) {
+        if(fabs(n.Dot(ctrl[i][j]) - d) > LENGTH_EPS) return false;
+    }
 
     return true;
 }
@@ -832,19 +879,10 @@ bool SSurface::CoincidentWithPlane(Vector n, double d) const {
 //-----------------------------------------------------------------------------
 // Does a planar surface contain a curve? Does the curve lie completely in plane?
 //-----------------------------------------------------------------------------
-bool SSurface::ContainsPlaneCurve(SCurve *sc) const {
-    if(degm != 1 || degn != 1) return false;
+bool SSurface::ContainsPlaneCurve(SCurve *sc, const Plane *knownPlane) const {
     if(!sc->isExact) return false; // we don't handle those (yet?)
-    
-    Vector p = ctrl[0][0];
-    Vector n = NormalAt(0, 0).WithMagnitude(1);
-    double d = n.Dot(p);
-
-    // check all control points on the curve
-    for(int i=0; i<= sc->exact.deg; i++) {
-        if(fabs(n.Dot(sc->exact.ctrl[i]) - d) > LENGTH_EPS) return false;
-    }
-    return true;
+    const Plane plane = knownPlane ? *knownPlane : GetPlane();
+    return plane.isPlanar && sc->exact.IsInPlane(plane.normal, plane.d);
 }
 
 //-----------------------------------------------------------------------------
@@ -856,9 +894,12 @@ bool SSurface::ContainsPlaneCurve(SCurve *sc) const {
 void SShell::MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
                                      SEdgeList *el, SShell *useCurvesFrom)
 {
-    for(SSurface &ss : surface) {
-        if(proto->CoincidentWith(&ss, sameNormal)) {
-            ss.MakeEdgesInto(this, el, SSurface::MakeAs::XYZ, useCurvesFrom);
+    const SSurface::Plane plane = proto->GetPlane();
+    if(plane.isPlanar) {
+        for(SSurface &ss : surface) {
+            if(proto->CoincidentWith(&ss, sameNormal, &plane)) {
+                ss.MakeEdgesInto(this, el, SSurface::MakeAs::XYZ, useCurvesFrom);
+            }
         }
     }
 
