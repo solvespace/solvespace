@@ -209,6 +209,48 @@ void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) const {
     }
 }
 
+//-----------------------------------------------------------------------------
+// Make the same curve, but parameterized so that the new curve's [0, 1] runs
+// over this curve's [t0, t1]. t0 and t1 may lie outside [0, 1], which
+// extends the curve. Each new control point is the blossom of the curve at
+// t0 and t1, (deg - k) copies of t0 and k of t1, found by de Casteljau with
+// a different parameter at each level. This is done in homogeneous
+// coordinates so rational curves (arcs) stay exact. Curves reparameterized
+// over the same [t0, t1] still match point for point.
+//
+// Returns false if a weight comes out zero or negative, which happens when
+// an arc would be extended to 180 degrees or more.
+//-----------------------------------------------------------------------------
+bool SBezier::Reparameterized(double t0, double t1, SBezier *out) const {
+    Vector4 ct[4], nct[4];
+    int i, k, level;
+
+    for(k = 0; k <= deg; k++) {
+        for(i = 0; i <= deg; i++) {
+            ct[i] = Vector4::From(weight[i], ctrl[i]);
+        }
+        for(level = 0; level < deg; level++) {
+            double t = (level < deg - k) ? t0 : t1;
+            for(i = 0; i < deg - level; i++) {
+                ct[i] = Vector4::Blend(ct[i], ct[i+1], t);
+            }
+        }
+        nct[k] = ct[0];
+        if(nct[k].w < LENGTH_EPS) return false;
+    }
+
+    switch(deg) {
+        case 1: *out = SBezier::From(nct[0], nct[1]); break;
+        case 2: *out = SBezier::From(nct[0], nct[1], nct[2]); break;
+        case 3: *out = SBezier::From(nct[0], nct[1], nct[2], nct[3]); break;
+        default: ssassert(false, "Unexpected degree of spline");
+    }
+    out->entity = entity;
+    out->auxA   = auxA;
+    out->auxB   = auxB;
+    return true;
+}
+
 void SBezier::MakePwlInto(SEdgeList *sel, double chordTol, double max_dt) const {
     List<Vector> lv = {};
     MakePwlInto(&lv, chordTol, max_dt);
@@ -531,9 +573,12 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge)
             Vector ty = n.Cross(bu).ScaledBy(1.0/bu.MagSquared());
             Vector tx = bv.Cross(n).ScaledBy(1.0/bv.MagSquared());
 
+            // tx/|tx|^2 and ty/|ty|^2 are the dual basis of (bu, bv): each
+            // picks out its own coordinate and ignores the other, even when
+            // bu and bv aren't perpendicular (a skewed parallelogram).
             Vector dp = p.Minus(orig);
-            *u = dp.Dot(bu) / tx.MagSquared();
-            *v = dp.Dot(bv) / ty.MagSquared();
+            *u = dp.Dot(tx) / tx.MagSquared();
+            *v = dp.Dot(ty) / ty.MagSquared();
             return;
         }
     }

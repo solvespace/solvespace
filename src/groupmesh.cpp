@@ -413,6 +413,10 @@ bool Group::GenerateShellAndMesh(Sketch *sketch) {
             runningShell.MergeCoincidentSurfaces();
         }
 
+        // Apply any edge modifiers - chamfer / fillet. Off until edges can be
+        // picked in the user interface; see SShell::ModifyEdges().
+        // runningShell.ModifyEdges();
+
         // If the Boolean failed, then that should be noted in the text
         // screen for this group, so say if that has changed.
         booleanFailed = runningShell.booleanFailed;
