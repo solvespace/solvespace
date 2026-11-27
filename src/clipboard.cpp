@@ -263,6 +263,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             case Constraint::Type::PT_PT_DISTANCE:
             case Constraint::Type::PROJ_PT_DISTANCE:
             case Constraint::Type::DIAMETER:
+            case Constraint::Type::LENGTH_DIFFERENCE:
                 c.valA *= fabs(scale);
                 c.exprScale *= fabs(scale);
                 break;
